@@ -7,7 +7,7 @@
 @time:2021/03/09
 
 change log:
-    2021/03/20 16:36:00  add filter functions.
+    2021/03/20 16:36:00  add filter functions, by Ping Qiu.
 """
 from scipy.sparse import issparse
 from anndata import AnnData
