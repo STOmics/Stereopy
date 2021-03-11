@@ -14,7 +14,7 @@ from matplotlib import rcParams, rcParamsDefault
 
 class SpateoConfig(object):
     """
-    config of spateo.
+    config of stereopy.
     """
     def __init__(
         self,
