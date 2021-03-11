@@ -11,23 +11,27 @@ change log:
 """
 from scipy.sparse import issparse
 import numpy as np
+from typing import Union
+from anndata import AnnData
+from pandas import DataFrame
 
 
-def normalize(andata, target_sum=1, inplace=True):
+def normalize(data: Union[AnnData, DataFrame], target_sum=1, inplace=True):
     """
-    total count normalize the  adata.X to `target_sum` reads per cell, so that counts become comparable among cells.
-    :param andata: AnnData object.
+    total count normalize the data to `target_sum` reads per cell, so that counts become comparable among cells.
+    :param data: AnnData object or Dataframe, which row is cells and column is genes.
     :param target_sum: the number of reads per cell after normalization.
-    :param inplace: whether inplace the original adata or return a new anndata.
+    :param inplace: whether inplace the original anndata or return a new anndata. only use for AnnData format.
     :return:
     """
-    exp_matrix = andata.X
+    exp_matrix = data.X if isinstance(data, AnnData) else data.values
     if issparse(exp_matrix):
         exp_matrix = exp_matrix.toarray()
     nor_exp_matrix = exp_matrix * target_sum / exp_matrix.sum(axis=1)[:, np.newaxis]
-    if inplace:
-        andata.X = nor_exp_matrix
-    return nor_exp_matrix if not inplace else None
+    if inplace and isinstance(data, AnnData):
+        data.X = nor_exp_matrix
+        return None
+    return nor_exp_matrix
 
 
 def log1p(andata, inplace=True):
