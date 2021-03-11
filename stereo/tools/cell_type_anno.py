@@ -12,7 +12,7 @@ import os
 from datetime import datetime
 from multiprocessing import Pool
 import traceback
-
+from ..log_manager import logger
 
 
 class CellTypeAnno(object):
@@ -28,14 +28,28 @@ class CellTypeAnno(object):
         self.strategy = strategy
 
     def parse_ref_data(self):
-
-        print(f'loading ref data')
-        refDB = pd.read_csv(ref_path, index_col=0, header=0)
-        refDB = refDB.fillna(0)
+        logger.info(f'loading ref data')
+        ref_db = pd.read_csv(self.ref_path, index_col=0, header=0)
+        ref_db = ref_db.fillna(0)
         # remove duplicate indices
-        refDB = refDB[~refDB.index.duplicated(keep='first')]
-        print('reference dataset shape: %s genes, %s samples' % refDB.shape)
-        return refDB
+        ref_db = ref_db[~ref_db.index.duplicated(keep='first')]
+        logger.info('reference dataset shape: %s genes, %s samples' % ref_db.shape)
+        return ref_db
+
+    def random_choose_genes(df, sample_rate):
+        sample_cnt = pd.Series(np.int32(df.sum(axis=0) * sample_rate), index=df.columns)
+        gene_rate = df / df.sum(axis=0)
+        sample_df = gene_rate.apply(lambda x: choose_gene(x, sample_cnt), axis=0)
+        sample_df.fillna(0, inplace=True)
+        return sample_df
+
+    def choose_gene(x, num):
+        gene_list = list(x.index)
+        p = x.values
+        res = np.random.choice(a=gene_list, size=num[x.name], p=p)
+        res = np.unique(res, return_counts=True)
+        res = pd.Series(data=res[1], index=res[0], name=x.name)
+        return res
 
 
 def annotation(refDB, testDB, keepZeros, method):
@@ -189,21 +203,7 @@ def merge_subsample_result_filter(input_dir, prefix, output_dir):
     df.to_csv(os.path.join(output_dir, 'top_annotation.csv'), index=False)
 
 
-def random_choose_genes(df, sample_rate):
-    sample_cnt = pd.Series(np.int32(df.sum(axis=0) * sample_rate), index=df.columns)
-    gene_rate = df / df.sum(axis=0)
-    sample_df = gene_rate.apply(lambda x: choose_gene(x, sample_cnt), axis=0)
-    sample_df.fillna(0, inplace=True)
-    return sample_df
 
-
-def choose_gene(x, num):
-    gene_list = list(x.index)
-    p = x.values
-    res = np.random.choice(a=gene_list, size=num[x.name], p=p)
-    res = np.unique(res, return_counts=True)
-    res = pd.Series(data=res[1], index=res[0], name=x.name)
-    return res
 
 
 def sub_process_run(sub_df, ref_df, map_df, keep_zeros, method, output, sub_index, sample_rate):
