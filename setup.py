@@ -11,11 +11,11 @@ import sys
 from pathlib import Path
 
 if sys.version_info < (3, 6):
-    sys.exit('stereopy requires Python >= 3.6')
+    sys.exit('stereo requires Python >= 3.6')
 
 
 setup(
-    name='stereopy',
+    name='stereo',
     use_scm_version=True,
     setup_requires=['setuptools_scm'],
     description='Spatial transcriptomic analysis in python.',

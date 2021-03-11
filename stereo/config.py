@@ -12,9 +12,9 @@ import os
 from matplotlib import rcParams, rcParamsDefault
 
 
-class SpateoConfig(object):
+class StereoConfig(object):
     """
-    config of stereopy.
+    config of stereo.
     """
     def __init__(
         self,
@@ -137,4 +137,4 @@ class SpateoConfig(object):
         rcParams.update(rcParamsDefault)
 
 
-spateo_conf = SpateoConfig()
+stereo_conf = StereoConfig()
