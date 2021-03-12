@@ -18,17 +18,21 @@ class StereoConfig(object):
     """
     def __init__(
         self,
-        file_format: str = "h5ad",
-        auto_show: bool = True,
-        n_jobs=1,
-        log_file: Union[str, Path, None] = None,
-        log_level: str = "info"
+            file_format: str = "h5ad",
+            auto_show: bool = True,
+            n_jobs=1,
+            log_file: Union[str, Path, None] = None,
+            log_level: str = "info",
+            output: str = "./output",
+            data_dir: str = None
     ):
         self._file_format = file_format
         self._auto_show = auto_show
         self._n_jobs = n_jobs
         self._log_file = log_file
         self._log_level = log_level
+        self.out_dir = output
+        self.data_dir = data_dir if data_dir else os.path.abspath(__file__)
 
     @property
     def log_file(self) -> Union[str, Path, None]:
