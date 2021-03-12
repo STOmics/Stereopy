@@ -8,7 +8,7 @@
 """
 
 import logging
-from .config import spateo_conf
+from .config import stereo_conf
 
 
 class LogManager(object):
@@ -18,10 +18,10 @@ class LogManager(object):
                           'warning': logging.WARNING,
                           'error': logging.ERROR,
                           'critical': logging.CRITICAL}
-        self.format = spateo_conf.log_format
+        self.format = stereo_conf.log_format
         self.formatter = logging.Formatter(self.format, "%Y-%m-%d %H:%M:%S")
         self.log_path = log_path
-        self.level = level.lower() if level else spateo_conf.log_level.lower()
+        self.level = level.lower() if level else stereo_conf.log_level.lower()
         if self.log_path:
             self.file_handler = logging.FileHandler(self.log_path)
             self.file_handler.setLevel(self.level_map[self.level])
