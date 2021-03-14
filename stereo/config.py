@@ -23,6 +23,7 @@ class StereoConfig(object):
             n_jobs=1,
             log_file: Union[str, Path, None] = None,
             log_level: str = "info",
+            log_format: str = "%(asctime)s %(name)s %(levelname)s: %(message)s",
             output: str = "./output",
             data_dir: str = None
     ):
@@ -31,8 +32,9 @@ class StereoConfig(object):
         self._n_jobs = n_jobs
         self._log_file = log_file
         self._log_level = log_level
+        self._log_format = log_format
         self.out_dir = output
-        self.data_dir = data_dir if data_dir else os.path.abspath(__file__)
+        self.data_dir = data_dir if data_dir else os.path.join(os.path.dirname(os.path.abspath(__file__)), 'data')
 
     @property
     def log_file(self) -> Union[str, Path, None]:
@@ -54,6 +56,23 @@ class StereoConfig(object):
             if not os.path.exists(dir_path):
                 raise FileExistsError("folder does not exist, please check!")
         self._log_file = value
+
+    @property
+    def log_format(self) -> str:
+        """
+        get the format of log.
+        :return:
+        """
+        return self._log_format
+
+    @log_format.setter
+    def log_format(self, value):
+        """
+        set file path of log.
+        :param value: value of log format
+        :return:
+        """
+        self._log_format = value
 
     @property
     def log_level(self) -> str:

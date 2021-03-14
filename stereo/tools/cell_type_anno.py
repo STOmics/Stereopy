@@ -14,13 +14,14 @@ import traceback
 from ..log_manager import logger
 from ..utils.correlation import spearmanr_corr, pearson_corr
 from ..preprocess.normalize import normalize
+from ..config import stereo_conf
 
 
 class CellTypeAnno(object):
     def __init__(self, adata, ref_dir=None, cores=1, keep_zeros=True, use_rf=True, sample_rate=0.8,
-                 n_estimators=20, strategy='1', method='spearmanr', split_num=None):
+                 n_estimators=20, strategy='1', method='spearmanr', split_num=1, out_dir=None):
         self.data = adata
-        self.ref_dir = ref_dir
+        self.ref_dir = ref_dir if ref_dir else os.path.join(stereo_conf.data_dir, 'ref_db', 'FANTOM5')
         self.ref_db = self.parse_ref_data()
         self.n_jobs = cores
         self.keep_zeros = keep_zeros
@@ -30,6 +31,7 @@ class CellTypeAnno(object):
         self.strategy = strategy
         self.method = method
         self.split_num = split_num
+        self.output = out_dir if out_dir else stereo_conf.out_dir
         self.cell_map = pd.read_csv(os.path.join(self.ref_dir, 'cell_map.csv'), index_col=0, header=0, sep=',')
 
     def parse_ref_data(self):
@@ -80,18 +82,13 @@ class CellTypeAnno(object):
         max_index = score.values.argmax(axis=1)
         max_value = score.values.max(axis=1)
         samples = score.columns[max_index]
-        cell_type = self.map_df.loc[samples, 'cell type']
+        cell_type = self.cell_map.loc[samples, 'cell type']
         cell = score.index
         df = pd.DataFrame({'cell': cell, 'cell type': cell_type, 'corr_score': max_value, 'corr_sample': samples})
         df.to_csv(output, index=False)
 
     def split_dataframe(self, df):
-        """
-        按列分割dataframe
-        :param df:
-        :param split_num:
-        :return:
-        """
+
         datas = []
         logger.info(f'input data:  {df.shape[0]} genes, {df.shape[1]} cells.')
         if self.split_num > 1:
@@ -107,12 +104,6 @@ class CellTypeAnno(object):
 
     @staticmethod
     def concat_top_corr_files(files, output_dir, prefix=None):
-        """
-        连接多个子进程的top相关性结果
-        :param output_dir:
-        :param method:
-        :return:
-        """
         df = pd.read_csv(files[0])
         for f in files[1:]:
             df1 = pd.read_csv(f)
@@ -190,10 +181,13 @@ class CellTypeAnno(object):
         logger.error(traceback.format_exc())
         raise
 
-    def run(self, output):
+    def run(self):
         df = self.data.to_df().transpose()
-        datas = self.split_dataframe(df) if self.split_num else [df]
-        tmp_output = os.path.join(output, 'tmp')
+        #df = pd.DataFrame(self.data.raw.X.toarray().T, index=list(self.data.var_names), columns=list(self.data.obs_names))
+        print(df.head())
+        datas = self.split_dataframe(df) if self.split_num > 1 else [df]
+        tmp_output = os.path.join(self.output, 'tmp')
+        logger.info('start to run annotation.')
         if not os.path.exists(tmp_output):
             os.makedirs(tmp_output)
         if self.use_rf:
@@ -212,9 +206,9 @@ class CellTypeAnno(object):
                 index = f'subsample_{i}'
                 self.concat_top_corr_files(files, tmp_output, index)
             if self.strategy == 1:
-                self.merge_subsample_result(tmp_output, 'top_annotation.csv', output)
+                self.merge_subsample_result(tmp_output, 'top_annotation.csv', self.output)
             else:
-                self.merge_subsample_result_filter(tmp_output, 'top_annotation.csv', output)
+                self.merge_subsample_result_filter(tmp_output, 'top_annotation.csv', self.output)
         else:
             pool = Pool(self.n_jobs)
             for i in range(len(datas)):
@@ -225,4 +219,6 @@ class CellTypeAnno(object):
             pool.join()
             logger.info(f'start to merge top result ...')
             files = [os.path.join(tmp_output, f'sub_{i}.top_{self.method}_corr.csv') for i in range(len(datas))]
-            self.concat_top_corr_files(files, output)
+            self.concat_top_corr_files(files, self.output)
+        # clear tmp directory
+        os.removedirs(tmp_output)
