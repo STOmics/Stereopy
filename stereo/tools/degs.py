@@ -13,10 +13,28 @@ from statsmodels.stats.multitest import multipletests
 import numpy as np
 
 
-def cal_degs(andata, cluster, groups='all', other_groups='rest', method='t-test', corr_method=None):
+def cal_degs(andata, cluster, groups='all', other_groups='rest', method='t-test', corr_method=None, result_key=None):
     if cluster not in andata.obs_names:
         raise ValueError(f" '{cluster}' is not in andata.")
-    groups = set(andata.obs[cluster].values) if groups == 'all' else [groups]
+    all_groups = set(andata.obs[cluster].values)
+    groups = all_groups if groups == 'all' else [groups]
+    result_info = {}
+    for g in groups:
+        if other_groups == 'rest':
+            other_g = all_groups.copy()
+            other_g.remove(g)
+        else:
+            other_g = other_groups
+        g_data = select_group(andata=andata, groups=g, clust_key=cluster)
+        other_data = select_group(andata=andata, groups=other_g, clust_key=cluster)
+        if method == 't-test':
+            result = t_test(g_data, other_data, corr_method)
+        else:
+            result = wilcoxon_test(g_data, other_data, corr_method)
+        g_name = f"{g}.vs.{other_groups}"
+        result_info[g_name] = result
+    result_key = result_key if result_key else 'DEGs'
+    andata.uns[result_key] = result_info
 
 
 def t_test(group, other_group, corr_method=None):
