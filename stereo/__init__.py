@@ -6,6 +6,3 @@
 @file:__init__.py.py
 @time:2021/03/05
 """
-
-if __name__ == '__main__':
-    pass

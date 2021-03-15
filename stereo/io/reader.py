@@ -56,3 +56,7 @@ def read_stereo_data(path, sep='\t', bin_size=100, is_sparse=True):
     # pos[:, 1] = pos[:, 1] * -1
     adata.obsm['spatial'] = pos
     return adata
+
+
+def read_h5ad(path: str) -> AnnData:
+    pass
