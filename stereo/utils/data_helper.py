@@ -11,7 +11,7 @@ import pandas as pd
 
 
 def select_group(andata, groups, clust_key):
-    if clust_key not in andata.obs_names:
+    if clust_key not in andata.obs_keys():
         raise ValueError(f" '{clust_key}' is not in andata.")
     all_groups = set(andata.obs[clust_key].values)
     groups = [groups] if isinstance(groups, str) else groups
