@@ -10,27 +10,204 @@
 from anndata import AnnData
 import pandas as pd
 import numpy as np
+import math
 
-from matplotlib.colors import Normalize
+from matplotlib.colors import Normalize, ListedColormap, to_hex
 from matplotlib import gridspec
+from matplotlib.cm import get_cmap
 import matplotlib.pyplot as plt
-
+import seaborn
 
 from ._plot_basic.scatter_plt import scatter
 from ._plot_basic.heatmap_plt import heatmap, _plot_categories_as_colorblocks, _plot_gene_groups_brackets
 
 from ..log_manager import logger
 
-def plot_spatial_distribution(): # scatter plot, 表达矩阵空间分布
-    '''
-
-    '''
+def plot_spatial_distribution(adata: AnnData, obs_key: list = ["total_counts", "n_genes_by_counts"], ncols = 2, dot_size = None, color_list = None, invert_y = False): # scatter plot, 表达矩阵空间分布
+    """
+    Plot spatial distribution of specified obs data.
+    :param adata: AnnData object.
+    :param obs_key: specified obs key list, for example: ["total_counts", "n_genes_by_counts"]
+    :param ncols: numbr of plot columns.
+    :param dot_size: marker size.
+    :param cmap: Color map.
+    :param invert_y: whether to invert y-axis.
+    :return: None.
+    """
+    #sc.pl.embedding(adata, basis="spatial", color=["total_counts", "n_genes_by_counts"],size=30)
     
+    if dot_size is None:
+        dot_size = 120000 / adata.shape[0]
+    
+    ncols = min(ncols, len(obs_key))
+    nrows = np.ceil(len(obs_key) / ncols).astype(int)
+    # each panel will have the size of rcParams['figure.figsize']
+    fig = plt.figure(figsize=(ncols * 10, nrows * 8))
+    left = 0.2 / ncols
+    bottom = 0.13 / nrows
+    axs = gridspec.GridSpec(
+        nrows=nrows,
+        ncols=ncols,
+        left=left,
+        right=1 - (ncols - 1) * left - 0.01 / ncols,
+        bottom=bottom,
+        top=1 - (nrows - 1) * bottom - 0.1 / nrows,
+        #hspace=hspace,
+        #wspace=wspace,
+    )
 
-def plot_spatial_cluster(): # scatter plot, 聚类后表达矩阵空间分布
-    '''
+    if color_list is None:
+        cmap = get_cmap()
+    else:
+        cmap = ListedColormap(color_list)
+        # 把特定值改为 np.nan 之后，可以利用 cmap.set_bad("white") 来遮盖掉这部分数据
 
-    '''
+    for i, key in enumerate(obs_key):
+        #color_data = np.asarray(adata.obs_vector(key), dtype=float)
+        color_data = adata.obs_vector(key)
+        order = np.argsort(~pd.isnull(color_data), kind="stable")
+        spatial_data = np.array(adata.obsm["spatial"])[:, 0 : 2]
+        color_data = color_data[order]
+        spatial_data = spatial_data[order, :]
+        
+        # color_data 是图像中各个点的值，也对应了每个点的颜色。data_points则对应了各个点的坐标
+        ax = fig.add_subplot(axs[i]) # ax = plt.subplot(axs[i]) || ax = fig.add_subplot(axs[1, 1]))
+        ax.set_title(key)
+        ax.set_yticks([])
+        ax.set_xticks([])
+        ax.set_xlabel("spatial1")
+        ax.set_ylabel("spatial2")
+        pathcollection = scatter(
+                    spatial_data[:, 0],
+                    spatial_data[:, 1],
+                    ax,
+                    marker=".",
+                    color= color_data,
+                    size = dot_size,
+                    cmap = cmap,
+                )
+        plt.colorbar(pathcollection, ax=ax, pad=0.01, fraction=0.08, aspect=30)
+        ax.autoscale_view()
+        #ax.invert_yaxis()
+
+def plot_spatial_cluster(adata: AnnData, obs_key: list = ["phenograph"], plot_cluster: list= None, bad_color = "lightgrey", ncols = 2, dot_size = None, invert_y = False,
+color_list = ['violet', 'turquoise', 'tomato', 'teal', 
+            'tan', 'silver','sienna', 'red','purple', 
+            'plum', 'pink','orchid','orangered','orange', 
+            'olive', 'navy','maroon','magenta','lime', 
+            'lightgreen','lightblue','lavender','khaki', 
+            'indigo', 'grey','green','gold','fuchsia', 
+            'darkgreen','darkblue','cyan','crimson','coral', 
+            'chocolate','chartreuse','brown','blue', 'black', 
+            'beige', 'azure','aquamarine','aqua']): # scatter plot, 聚类后表达矩阵空间分布
+    """
+    Plot spatial distribution of specified obs data.
+    :param adata: AnnData object.
+    :param obs_key: specified obs cluster key list, for example: ["phenograph"]
+    :param ncols: numbr of plot columns.
+    :param dot_size: marker size.
+    :param cmap: Color map.
+    :param invert_y: whether to invert y-axis.
+    :return: None.
+    """
+    #sc.pl.embedding(adata, basis="spatial", color=["total_counts", "n_genes_by_counts"],size=30)
+    
+    if dot_size is None:
+        dot_size = 120000 / adata.shape[0]
+    
+    ncols = min(ncols, len(obs_key))
+    nrows = np.ceil(len(obs_key) / ncols).astype(int)
+    # each panel will have the size of rcParams['figure.figsize']
+    fig = plt.figure(figsize=(ncols * 10, nrows * 8))
+    left = 0.2 / ncols
+    bottom = 0.13 / nrows
+    axs = gridspec.GridSpec(
+        nrows=nrows,
+        ncols=ncols,
+        left=left,
+        right=1 - (ncols - 1) * left - 0.01 / ncols,
+        bottom=bottom,
+        top=1 - (nrows - 1) * bottom - 0.1 / nrows,
+        #hspace=hspace,
+        #wspace=wspace,
+    )
+
+    if color_list is None:
+        cmap = get_cmap()
+    else:
+        cmap = ListedColormap(color_list)
+    cmap.set_bad(bad_color)
+        # 把特定值改为 np.nan 之后，可以利用 cmap.set_bad("white") 来遮盖掉这部分数据
+
+    for i, key in enumerate(obs_key):
+        color_data = adata.obs_vector(key)
+        pcLogic = False
+
+        #color_data = np.asarray(color_data_raw, dtype=float)
+        order = np.argsort(~pd.isnull(color_data), kind="stable")
+        spatial_data = np.array(adata.obsm["spatial"])[:, 0 : 2]
+        color_data = color_data[order]
+        spatial_data = spatial_data[order, :]
+
+        color_dict = {}
+        has_na = False
+        if pd.api.types.is_categorical_dtype(color_data):
+            pcLogic = True
+            if plot_cluster is None:
+                plot_cluster = list(color_data.categories)
+        if pcLogic:
+            clusterN = len(np.unique(color_data))
+            if len(color_list)<clusterN:
+                color_list = color_list * clusterN
+                cmap = ListedColormap(color_list)
+                cmap.set_bad(bad_color)
+            if (len(color_data.categories) > len(plot_cluster)):
+                color_data = color_data.replace(color_data.categories.difference(plot_cluster), np.nan)
+                has_na = True
+            color_dict = {str(k): to_hex(v) for k, v in enumerate(color_list)}
+            color_data = color_data.map(color_dict)
+            if (pd.api.types.is_categorical_dtype(color_data)):
+                color_data = pd.Categorical(color_data)
+            if has_na:
+                color_data = color_data.add_categories([to_hex(bad_color)])
+                color_data = color_data.fillna(to_hex(bad_color))
+                #color_dict["NA"]
+            
+        
+        # color_data 是图像中各个点的值，也对应了每个点的颜色。data_points则对应了各个点的坐标
+        ax = fig.add_subplot(axs[i]) # ax = plt.subplot(axs[i]) || ax = fig.add_subplot(axs[1, 1]))
+        ax.set_title(key)
+        ax.set_yticks([])
+        ax.set_xticks([])
+        ax.set_xlabel("spatial1")
+        ax.set_ylabel("spatial2")
+        pathcollection = scatter(
+                    spatial_data[:, 0],
+                    spatial_data[:, 1],
+                    ax = ax,
+                    marker=".",
+                    color= color_data,
+                    size = dot_size
+                )
+        if pcLogic:
+            box = ax.get_position()
+            ax.set_position([box.x0, box.y0, box.width * 0.91, box.height])
+            #valid_cate = color_data.categories
+            cat_num = len(adata.obs_vector(key).categories)
+            for label in adata.obs_vector(key).categories:
+                ax.scatter([], [], c=color_dict[label], label=label)
+            ax.legend(
+                frameon=False,
+                loc='center left',
+                bbox_to_anchor=(1, 0.5),
+                ncol=(1 if cat_num <= 14 else 2 if cat_num <= 30 else 3),
+                #fontsize=legend_fontsize,
+            )
+        else:
+            plt.colorbar(pathcollection, ax=ax, pad=0.01, fraction=0.08, aspect=30)
+        ax.autoscale_view()
+        #ax.invert_yaxis()
+    
 
 def plot_to_select_filter_value(): # scatter plot, 线粒体分布图
     '''
@@ -42,15 +219,26 @@ def plot_variable_gene(): # scatter plot, 表达量差异-均值图
 
     '''
 
-def plot_violin_distribution(): # 小提琴统计图
-    '''
-
-    '''
-
 def plot_cluster_umap(): # scatter plot，聚类结果PCA/umap图
     '''
 
     '''
+
+def plot_expression_difference(): # scatter plot, 差异基因显著性图，类碎石图
+    '''
+
+    '''
+
+def plot_violin_distribution(adata): # 小提琴统计图
+    '''
+    绘制数据的分布小提琴图
+    :param adata: AnnData object.
+    :return: None
+    '''
+    _, axs = plt.subplots(1, 3, figsize=(15, 4))
+    seaborn.violinplot(y=adata.obs['total_counts'], ax=axs[0])
+    seaborn.violinplot(y=adata.obs['n_genes_by_counts'], ax=axs[1])
+    seaborn.violinplot(y=adata.obs['pct_counts_mt'], ax=axs[2])
 
 def plot_heatmap_maker_genes(adata: AnnData = None, cluster_method = "phenograph", marker_uns_key = None, num_show_gene = 8, show_labels=True, order_cluster = True, marker_clusters = None, cluster_colors_array = None, **kwargs): # heatmap, 差异基因热图
     '''
@@ -196,9 +384,6 @@ def plot_heatmap_maker_genes(adata: AnnData = None, cluster_method = "phenograph
             left_adjustment=-0.3,
             right_adjustment=0.3,
         )
+    
+    #plt.savefig()
 
-
-def plot_expression_difference(): # scatter plot, 差异基因显著性图，类碎石图
-    '''
-
-    '''

@@ -17,7 +17,7 @@ from anndata import AnnData
 import numpy as np
 import pandas as pd
 
-from typing import List, Iterable, Sequence, Optional, Tuple # Classes
+from typing import List, Iterable, Sequence, Optional, Tuple
 from typing_extensions import Literal
 
 from ...log_manager import logger
@@ -76,22 +76,7 @@ def _plot_categories_as_colorblocks(
     orientation: Literal['top', 'bottom', 'left', 'right'] = 'left',
     cmap_name: str = 'tab20',
 ):
-    """\
-    Plots categories as colored blocks. If orientation is 'left', the categories
-    are plotted vertically, otherwise they are plotted horizontally.
-    Parameters
-    ----------
-    groupby_ax
-    obs_tidy
-    colors
-        Sequence of valid color names to use for each category.
-    orientation
-    cmap_name
-        Name of colormap to use, in case colors is None
-    Returns
-    -------
-    ticks position, labels, colormap
-    """
+    """from scanpy"""
 
     groupby = obs_tidy.index.name
     from matplotlib.colors import ListedColormap, BoundaryNorm
@@ -181,39 +166,7 @@ def _plot_gene_groups_brackets(
     rotation: Optional[float] = None,
     orientation: Literal['top', 'right'] = 'top',
 ):
-    """\
-    Draws brackets that represent groups of genes on the give axis.
-    For best results, this axis is located on top of an image whose
-    x axis contains gene names.
-    The gene_groups_ax should share the x axis with the main ax.
-    Eg: gene_groups_ax = fig.add_subplot(axs[0, 0], sharex=dot_ax)
-    This function is used by dotplot, heatmap etc.
-    Parameters
-    ----------
-    gene_groups_ax
-        In this axis the gene marks are drawn
-    group_positions
-        Each item in the list, should contain the start and end position that the
-        bracket should cover.
-        Eg. [(0, 4), (5, 8)] means that there are two brackets, one for the var_names (eg genes)
-        in positions 0-4 and other for positions 5-8
-    group_labels
-        List of group labels
-    left_adjustment
-        adjustment to plot the bracket start slightly before or after the first gene position.
-        If the value is negative the start is moved before.
-    right_adjustment
-        adjustment to plot the bracket end slightly before or after the last gene position
-        If the value is negative the start is moved before.
-    rotation
-        rotation degrees for the labels. If not given, small labels (<4 characters) are not
-        rotated, otherwise, they are rotated 90 degrees
-    orientation
-        location of the brackets. Either `top` or `right`
-    Returns
-    -------
-    None
-    """
+    """from scanpy"""
     import matplotlib.patches as patches
     from matplotlib.path import Path
 
@@ -310,7 +263,7 @@ def _check_indices(
     alias_index: pd.Index = None,
     use_raw: bool = False,
 ):
-    """Common logic for checking indices for obs_df and var_df."""
+    """from scanpy"""
     if use_raw:
         alt_repr = "adata.raw"
     else:
