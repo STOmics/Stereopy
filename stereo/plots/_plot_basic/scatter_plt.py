@@ -14,7 +14,7 @@ import numpy as np
 
 from ...log_manager import logger
 
-def scatter(x: list, y: list, ax: Axes = None, color=None, marker=".", size=1, cmap=None, *, plotnonfinite=True, **kwargs):
+def scatter(x: list, y: list, ax: Axes = None, color=None, marker=".", size=1, cmap = None, plotnonfinite=True, **kwargs):
     """
     Simplified scatter plot function, which wraps matplotlib.axes.Axes.scatter .
     :param x,y: Data position list.
@@ -49,5 +49,5 @@ def scatter(x: list, y: list, ax: Axes = None, color=None, marker=".", size=1, c
         **kwargs,
     )
 
-    return (pathcollection, ax)
+    return pathcollection
 
