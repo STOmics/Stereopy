@@ -11,25 +11,24 @@ change log:
     Refactor the code and add the quantile_norm function. by Ping Qiu. 2021/03/17
 """
 import numpy as np
-from typing import Union
 from anndata import AnnData
 from scipy import stats
 from ..log_manager import logger
-from ..core.base import Base
+from ..core.tool_base import ToolBase
 
 
-class Normalizer(Base):
+class Normalizer(ToolBase):
     """
     Normalizer of stereo.
     """
-    def __init__(self, data: Union[AnnData], method='normalize_total', inplace=True, target_sum=1):
+    def __init__(self, data, method='normalize_total', inplace=True, target_sum=1, name='normalize'):
         """
         :param data:
         :param method:
         :param inplace:
         :param target_sum:
         """
-        super(Normalizer, self).__init__(data=data, method=method, inplace=inplace)
+        super(Normalizer, self).__init__(data=data, method=method, inplace=inplace, name=name)
         self.target_num = target_sum
         self.check_param()
 
