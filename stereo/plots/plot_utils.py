@@ -15,24 +15,31 @@ import math
 from matplotlib.colors import Normalize, ListedColormap, to_hex
 from matplotlib import gridspec
 from matplotlib.cm import get_cmap
+from matplotlib.axes import Axes
 import matplotlib.pyplot as plt
 import seaborn
 
 from ._plot_basic.scatter_plt import scatter
 from ._plot_basic.heatmap_plt import heatmap, _plot_categories_as_colorblocks, _plot_gene_groups_brackets
 
+from typing import Optional, Sequence, Union
+
 from ..log_manager import logger
 
 def plot_spatial_distribution(adata: AnnData, obs_key: list = ["total_counts", "n_genes_by_counts"], ncols = 2, dot_size = None, color_list = None, invert_y = False): # scatter plot, 表达矩阵空间分布
     """
     Plot spatial distribution of specified obs data.
+    ============ Arguments ============
     :param adata: AnnData object.
     :param obs_key: specified obs key list, for example: ["total_counts", "n_genes_by_counts"]
     :param ncols: numbr of plot columns.
     :param dot_size: marker size.
     :param cmap: Color map.
     :param invert_y: whether to invert y-axis.
-    :return: None.
+    ============ Return ============
+    None
+    ============ Example ============
+    plot_spatial_distribution(adata=adata)
     """
     #sc.pl.embedding(adata, basis="spatial", color=["total_counts", "n_genes_by_counts"],size=30)
     
@@ -80,10 +87,10 @@ def plot_spatial_distribution(adata: AnnData, obs_key: list = ["total_counts", "
         pathcollection = scatter(
                     spatial_data[:, 0],
                     spatial_data[:, 1],
-                    ax,
-                    marker=".",
-                    color= color_data,
-                    size = dot_size,
+                    ax = ax,
+                    marker = ".",
+                    dot_colors = color_data,
+                    dot_size = dot_size,
                     cmap = cmap,
                 )
         plt.colorbar(pathcollection, ax=ax, pad=0.01, fraction=0.08, aspect=30)
@@ -102,13 +109,17 @@ color_list = ['violet', 'turquoise', 'tomato', 'teal',
             'beige', 'azure','aquamarine','aqua']): # scatter plot, 聚类后表达矩阵空间分布
     """
     Plot spatial distribution of specified obs data.
+    ============ Arguments ============
     :param adata: AnnData object.
     :param obs_key: specified obs cluster key list, for example: ["phenograph"]
     :param ncols: numbr of plot columns.
     :param dot_size: marker size.
     :param cmap: Color map.
     :param invert_y: whether to invert y-axis.
-    :return: None.
+    ============ Return ============
+    None.
+    ============ Example ============
+    plot_spatial_cluster(adata = adata)
     """
     #sc.pl.embedding(adata, basis="spatial", color=["total_counts", "n_genes_by_counts"],size=30)
     
@@ -185,9 +196,9 @@ color_list = ['violet', 'turquoise', 'tomato', 'teal',
                     spatial_data[:, 0],
                     spatial_data[:, 1],
                     ax = ax,
-                    marker=".",
-                    color= color_data,
-                    size = dot_size
+                    marker = ".",
+                    dot_colors = color_data,
+                    dot_size = dot_size
                 )
         if pcLogic:
             box = ax.get_position()
@@ -209,31 +220,213 @@ color_list = ['violet', 'turquoise', 'tomato', 'teal',
         #ax.invert_yaxis()
     
 
-def plot_to_select_filter_value(): # scatter plot, 线粒体分布图
+def plot_to_select_filter_value(adata: AnnData, x, y, ncols = 1, **kwargs): # scatter plot, 线粒体分布图
     '''
+    Plot .
+    ============ Arguments ============
+    :param adata: AnnData object.
+    :param x, y: obs key pairs for drawing.
+    ============ Return ============
+    None.
+    ============ Example ============
+    plot_spatial_cluster(adata = adata)
+    '''
+    #sc.pl.scatter(adata, x='total_counts', y='pct_counts_mt')
+    #sc.pl.scatter(adata, x='total_counts', y='n_genes_by_counts')
+    if isinstance(x, str):
+        x = [x]
+    if isinstance(y, str):
+        y = [y]
+    
+    width = 10
+    height = 10
+    nrows = math.ceil(len(x)/ncols)
+    
+    doc_color = "gray"
 
-    '''
+    fig = plt.figure(figsize=(width, height))
+    axs = gridspec.GridSpec(
+        nrows=nrows,
+        ncols=ncols,
+    )
+    for i, (xi, yi) in enumerate(zip(x, y)):
+        draw_data = np.c_[adata.obs_vector(xi), adata.obs_vector(yi)]
+        dot_size = 120000/draw_data.shape[0]
+        ax = fig.add_subplot(axs[i])
+        #ax.set_title()
+        #ax.set_yticks([])
+        #ax.set_xticks([])
+        ax.set_xlabel(xi)
+        ax.set_ylabel(yi)
+        scatter(
+            draw_data[:, 0],
+            draw_data[:, 1],
+            ax = ax,
+            marker = ".",
+            dot_colors = doc_color,
+            dot_size = dot_size
+        )
 
-def plot_variable_gene(): # scatter plot, 表达量差异-均值图
-    '''
 
+def plot_variable_gene(adata: AnnData, logarize = False): # scatter plot, 表达量差异-均值图
     '''
+    Copied from scanpy and modified.
+    '''
+    #该图像需要前置数据处理：sc.pp.highly_variable_genes(adata, min_mean=0.0125, max_mean=3, min_disp=0.5)
+    #再画图：sc.pl.highly_variable_genes(adata)
+
+    result = adata.var
+    gene_subset = result.highly_variable
+    means = result.means
+    var_or_disp = result.dispersions
+    var_or_disp_norm = result.dispersions_norm
+    width = 10
+    height = 10
+
+    plt.figure(figsize=(2 * width, height))
+    plt.subplots_adjust(wspace=0.3)
+    for idx, d in enumerate([var_or_disp_norm, var_or_disp]):
+        plt.subplot(1, 2, idx + 1)
+        for label, color, mask in zip(
+            ['highly variable genes', 'other genes'],
+            ['black', 'grey'],
+            [gene_subset, ~gene_subset],
+        ):
+            if False:
+                means_, var_or_disps_ = np.log10(means[mask]), np.log10(d[mask])
+            else:
+                means_, var_or_disps_ = means[mask], d[mask]
+            plt.scatter(means_, var_or_disps_, label=label, c=color, s=1)
+        if logarize:  # there's a bug in autoscale
+            plt.xscale('log')
+            plt.yscale('log')
+            y_min = np.min(var_or_disp)
+            y_min = 0.95 * y_min if y_min > 0 else 1e-1
+            plt.xlim(0.95 * np.min(means), 1.05 * np.max(means))
+            plt.ylim(y_min, 1.05 * np.max(var_or_disp))
+        if idx == 0:
+            plt.legend()
+        plt.xlabel(('$log_{10}$ ' if False else '') + 'mean expressions of genes')
+        data_type = 'dispersions'
+        plt.ylabel(
+            ('$log_{10}$ ' if False else '')
+            + '{} of genes'.format(data_type)
+            + (' (normalized)' if idx == 0 else ' (not normalized)')
+        )
 
 def plot_cluster_umap(): # scatter plot，聚类结果PCA/umap图
     '''
 
     '''
+    #sc.pl.umap(adata, color=[method])
 
-def plot_expression_difference(): # scatter plot, 差异基因显著性图，类碎石图
-    '''
+    
 
+def plot_expression_difference(
+    adata: AnnData,
+    groups: Union[str, Sequence[str]] = None,
+    n_genes: int = 20,
+    gene_symbols: Optional[str] = None,
+    key: Optional[str] = 'rank_genes_groups',
+    fontsize: int = 8,
+    ncols: int = 4,
+    sharey: bool = True,
+    show: Optional[bool] = None,
+    save: Optional[bool] = None,
+    ax: Optional[Axes] = None,
+    **kwds,
+): # scatter plot, 差异基因显著性图，类碎石图
     '''
+    Copied from scanpy and modified.
+    '''
+    #sc.tl.rank_genes_groups(adata, cluster_method, method=method)
+    #sc.pl.rank_genes_groups(adata, n_genes=show_genes, sharey=False)
+    if 'n_panels_per_row' in kwds:
+        n_panels_per_row = kwds['n_panels_per_row']
+    else:
+        n_panels_per_row = ncols
+    reference = str(adata.uns[key]['params']['reference'])
+    group_names = adata.uns[key]['names'].dtype.names if groups is None else groups
+    # one panel for each group
+    # set up the figure
+    n_panels_x = min(n_panels_per_row, len(group_names))
+    n_panels_y = np.ceil(len(group_names) / n_panels_x).astype(int)
+
+    width = 10
+    height = 10
+    fig = plt.figure(
+        figsize=(
+            n_panels_x * width, #rcParams['figure.figsize'][0],
+            n_panels_y * height, #rcParams['figure.figsize'][1],
+        )
+    )
+    gs = gridspec.GridSpec(nrows=n_panels_y, ncols=n_panels_x, wspace=0.22, hspace=0.3)
+
+    ax0 = None
+    ymin = np.Inf
+    ymax = -np.Inf
+    for count, group_name in enumerate(group_names):
+        gene_names = adata.uns[key]['names'][group_name][:n_genes]
+        scores = adata.uns[key]['scores'][group_name][:n_genes]
+
+        # Setting up axis, calculating y bounds
+        if sharey:
+            ymin = min(ymin, np.min(scores))
+            ymax = max(ymax, np.max(scores))
+
+            if ax0 is None:
+                ax = fig.add_subplot(gs[count])
+                ax0 = ax
+            else:
+                ax = fig.add_subplot(gs[count], sharey=ax0)
+        else:
+            ymin = np.min(scores)
+            ymax = np.max(scores)
+            ymax += 0.3 * (ymax - ymin)
+
+            ax = fig.add_subplot(gs[count])
+            ax.set_ylim(ymin, ymax)
+
+        ax.set_xlim(-0.9, n_genes - 0.1)
+
+        # Mapping to gene_symbols
+        if gene_symbols is not None:
+            if adata.raw is not None and adata.uns[key]['params']['use_raw']:
+                gene_names = adata.raw.var[gene_symbols][gene_names]
+            else:
+                gene_names = adata.var[gene_symbols][gene_names]
+
+        # Making labels
+        for ig, gene_name in enumerate(gene_names):
+            ax.text(
+                ig,
+                scores[ig],
+                gene_name,
+                rotation='vertical',
+                verticalalignment='bottom',
+                horizontalalignment='center',
+                fontsize=fontsize,
+            )
+
+        ax.set_title('{} vs. {}'.format(group_name, reference))
+        if count >= n_panels_x * (n_panels_y - 1):
+            ax.set_xlabel('ranking')
+
+        # print the 'score' label only on the first panel per row.
+        if count % n_panels_x == 0:
+            ax.set_ylabel('score')
+
+    if sharey is True:
+        ymax += 0.3 * (ymax - ymin)
+        ax.set_ylim(ymin, ymax)
 
 def plot_violin_distribution(adata): # 小提琴统计图
     '''
-    绘制数据的分布小提琴图
+    绘制数据的分布小提琴图。
+    ============ Arguments ============
     :param adata: AnnData object.
-    :return: None
+    ============ Return ============
+    None
     '''
     _, axs = plt.subplots(1, 3, figsize=(15, 4))
     seaborn.violinplot(y=adata.obs['total_counts'], ax=axs[0])
@@ -242,7 +435,13 @@ def plot_violin_distribution(adata): # 小提琴统计图
 
 def plot_heatmap_maker_genes(adata: AnnData = None, cluster_method = "phenograph", marker_uns_key = None, num_show_gene = 8, show_labels=True, order_cluster = True, marker_clusters = None, cluster_colors_array = None, **kwargs): # heatmap, 差异基因热图
     '''
-    
+    绘制 Marker gene 的热图。
+    ============ Arguments ============
+    :param adata: AnnData object.
+    ============ Return ============
+
+    ============ Example ============
+    plot_heatmap_maker_genes(adata=adata, marker_uns_key = "rank_genes_groups", figsize = (20, 10))
     '''
 
     if marker_uns_key is None:
