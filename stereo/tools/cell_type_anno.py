@@ -13,8 +13,9 @@ from multiprocessing import Pool
 import traceback
 from ..log_manager import logger
 from ..utils.correlation import spearmanr_corr, pearson_corr
-from ..preprocess.normalize import normalize
+from ..preprocess.normalize import normalize_total
 from ..config import stereo_conf
+from ..utils import remove_file
 
 
 class CellTypeAnno(object):
@@ -161,7 +162,7 @@ class CellTypeAnno(object):
         if self.use_rf:
             print(sub_df.head())
             sub_df = self.random_choose_genes(sub_df)
-        nor_x = normalize(sub_df.transpose(), target_sum=10000, inplace=False)  # TODO  select some of normalize method
+        nor_x = normalize_total(sub_df.transpose().values, target_sum=10000)  # TODO  select some of normalize method
         nor_x = np.log1p(nor_x, out=nor_x)
         sub_df = pd.DataFrame(nor_x.T, columns=sub_df.columns, index=sub_df.index)
         logger.info('annotation')
@@ -223,4 +224,4 @@ class CellTypeAnno(object):
             files = [os.path.join(tmp_output, f'sub_{i}.top_{self.method}_corr.csv') for i in range(len(datas))]
             self.concat_top_corr_files(files, self.output)
         # clear tmp directory
-        os.removedirs(tmp_output)
+        remove_file(tmp_output)
