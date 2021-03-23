@@ -11,32 +11,58 @@ from scipy import stats
 import pandas as pd
 from statsmodels.stats.multitest import multipletests
 import numpy as np
+from ..core.tool_base import ToolBase
+from ..log_manager import logger
+from ..core.stereo_result import FindMarkerResult
+from tqdm import tqdm
 
 
-def find_cluster_marker(andata, cluster, groups='all', other_groups='rest', method='t-test', corr_method=None,
-                        result_key=None):
-    if cluster not in andata.obs_keys():
-        raise ValueError(f" '{cluster}' is not in andata.")
-    all_groups = set(andata.obs[cluster].values)
-    groups = all_groups if groups == 'all' else [groups]
-    result_info = {}
-    for g in groups:
-        if other_groups == 'rest':
-            other_g = all_groups.copy()
-            other_g.remove(g)
-        else:
-            other_g = other_groups
-        g_data = select_group(andata=andata, groups=g, clust_key=cluster)
-        other_data = select_group(andata=andata, groups=other_g, clust_key=cluster)
-        if method == 't-test':
-            result = t_test(g_data, other_data, corr_method)
-        else:
-            result = wilcoxon_test(g_data, other_data, corr_method)
-        g_name = f"{g}.vs.{other_groups}"
-        result_info[g_name] = result
-    result_key = result_key if result_key else 'marker_genes'
-    andata.uns[result_key] = result_info
-    return andata
+class FindMarker(ToolBase):
+    def __init__(self, data, cluster, test_groups='all', control_groups='rest', method='t-test', corr_method=None,
+                 inplace=False, name=None):
+        super(FindMarker, self).__init__(data, method, inplace, name)
+        self.params = locals()
+        self.corr_method = corr_method.lower()
+        self.test_group = test_groups
+        self.control_group = control_groups
+        self.cluster = cluster
+
+    def check_param(self):
+        """
+        Check whether the parameters meet the requirements.
+        :return:
+        """
+        super(FindMarker, self).check_param()
+        if self.method not in ['t-test', 'wilcoxon']:
+            logger.error(f'{self.method} is out of range, please check.')
+            raise ValueError(f'{self.method} is out of range, please check.')
+        if self.corr_method not in ['bonferroni', 'benjamini-hochberg']:
+            logger.error(f'{self.corr_method} is out of range, please check.')
+            raise ValueError(f'{self.corr_method} is out of range, please check.')
+        if self.cluster not in self.data.obs_keys():
+            logger.error(f" '{self.cluster}' is not in andata.")
+            raise ValueError(f" '{self.cluster}' is not in andata.")
+
+    def fit(self):
+        all_groups = set(self.data.obs[self.cluster].values)
+        groups = all_groups if self.test_group == 'all' else [self.test_group]
+        result_info = {}
+        for g in tqdm(groups, desc='Find marker gene: '):
+            if self.control_group == 'rest':
+                other_g = all_groups.copy()
+                other_g.remove(g)
+            else:
+                other_g = self.control_group
+            g_data = select_group(andata=self.data, groups=g, clust_key=self.cluster)
+            other_data = select_group(andata=self.data, groups=other_g, clust_key=self.data)
+            if self.method == 't-test':
+                result = t_test(g_data, other_data, self.corr_method)
+            else:
+                result = wilcoxon_test(g_data, other_data, self.corr_method)
+            g_name = f"{g}.vs.{self.control_group}"
+            self.params['test_groups'] = g
+            result_info[g_name] = FindMarkerResult(name=self.name, param=self.params, degs_data=result)
+        self.add_result(result=result_info, key_added=self.name)
 
 
 def t_test(group, other_group, corr_method=None):

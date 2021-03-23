@@ -11,5 +11,4 @@ setuptools~=40.6.2
 scikit-learn>=0.21.2
 joblib
 numba
-
 statsmodels~=0.12.1
