@@ -15,6 +15,7 @@ from anndata import AnnData
 from scipy import stats
 from ..log_manager import logger
 from ..core.tool_base import ToolBase
+import scipy.spatial as spatial
 
 
 class Normalizer(ToolBase):
@@ -28,8 +29,9 @@ class Normalizer(ToolBase):
         :param inplace:
         :param target_sum:
         """
-        super(Normalizer, self).__init__(data=data, method=method, inplace=inplace, name=name)
+        super(Normalizer, self).__init__(data=data, method=method, name=name)
         self.target_num = target_sum
+        self.inplace = inplace
         self.check_param()
 
     def check_param(self):
@@ -38,7 +40,7 @@ class Normalizer(ToolBase):
         :return:
         """
         super(Normalizer, self).check_param()
-        if self.method.lower() not in ['normalize_tital', 'quantile']:
+        if self.method.lower() not in ['normalize_total', 'quantile']:
             logger.error(f'{self.method} is out of range, please check.')
             raise ValueError(f'{self.method} is out of range, please check.')
 
@@ -56,7 +58,7 @@ class Normalizer(ToolBase):
             nor_res = nor_res.T
         else:
             pass
-        if nor_res and self.inplace and isinstance(self.data, AnnData):
+        if nor_res is not None and self.inplace and isinstance(self.data, AnnData):
             self.data.X = nor_res
         return nor_res
 
@@ -95,3 +97,25 @@ def log1p(x):
     """
     log_x = np.log1p(x, out=x)
     return log_x
+
+
+def normalize_zscore_disksmooth(x, position, r):
+    position = position.astype(np.int32)
+    point_tree = spatial.cKDTree(position)
+    x = x.astype(np.float32)
+    mean_bin = x.mean(1)
+    mean_bin = np.array(mean_bin)
+    std_bin = np.std(x, axis=1)
+    zscore = []
+    for i in range(len(position)):
+        current_neighbor = point_tree.query_ball_point(position[i], r)
+        current_neighbor.remove(i)
+        if len(current_neighbor) > 0:
+            mean_bins = np.mean(mean_bin[current_neighbor])
+            std_bins = np.mean(std_bin[current_neighbor])
+            zscore.append((x[i] - mean_bins) / std_bins + 1)
+        else:
+            mean_bins = mean_bin[i]
+            std_bins = std_bin[i]
+            zscore.append((x[i] - mean_bins) / std_bins + 1)
+    return np.array(zscore)

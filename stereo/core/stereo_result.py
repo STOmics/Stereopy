@@ -48,9 +48,10 @@ class FindMarkerResult(StereoResult):
 
     def __str__(self):
         info = super(FindMarkerResult, self).__str__()
-        if self.degs_data:
+        if self.degs_data is not None:
             info += f'    result: a DataFrame which has `genes`,`pvalues`,`pvalues_adj`, `log2fc`, `score` columns.\n'
             info += f'    the shape is: {self.degs_data.shape}'
+        return info
 
     def top_k_marker(self, top_k_genes=10, sort_key='pvalues', sort_order='decreasing'):
         """
@@ -67,3 +68,29 @@ class FindMarkerResult(StereoResult):
         else:
             logger.warning('the result of degs is None, return None.')
             return None
+
+
+class CellTypeResult(StereoResult):
+    def __init__(self, name='cell_type_anno', param=None, anno_data=None):
+        super(CellTypeResult, self).__init__(name=name, param=param)
+        self.anno_data = anno_data
+
+    def __str__(self):
+        info = super(CellTypeResult, self).__str__()
+        if self.anno_data is not None:
+            info += f'    result: a DataFrame which has `cells`,`cell type`,`corr_score` columns.\n'
+            info += f'    the shape is: {self.anno_data.shape}'
+        return info
+
+
+class ClusterResult(StereoResult):
+    def __init__(self, name='cluster', param=None, cluster_info=None):
+        super(ClusterResult, self).__init__(name=name, param=param)
+        self.cluster = cluster_info
+
+    def __str__(self):
+        info = super(ClusterResult, self).__str__()
+        if self.cluster is not None:
+            info += f'    result: a DataFrame which has `cells`,`cell cluster` columns.\n'
+            info += f'    the shape is: {self.cluster.shape}'
+        return info
