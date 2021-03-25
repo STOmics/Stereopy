@@ -22,10 +22,10 @@ from ..core.stereo_result import DimReduceResult
 
 
 class DimReduce(ToolBase):
-    def __init__(self, andata: AnnData, method='pca', n_pcs=2, min_variance=0.01, n_iter=200,
+    def __init__(self, andata: AnnData, method='pca', n_pcs=2, min_variance=0.01, n_iter=250,
                  n_neighbors=5, min_dist=0.3, inplace=False, name='dim_reduce'):
         self.params = locals()
-        super(DimReduce, self).__init__(data=andata, method=method, inplace=inplace)
+        super(DimReduce, self).__init__(data=andata, method=method, name=name)
         self.n_pcs = n_pcs
         self.min_variance = min_variance
         self.n_iter = n_iter
@@ -44,17 +44,18 @@ class DimReduce(ToolBase):
             logger.error(f'{self.method} is out of range, please check.')
             raise ValueError(f'{self.method} is out of range, please check.')
 
-    def fit(self):
+    def fit(self, exp_matrix=None):
+        exp_matrix = exp_matrix if exp_matrix is not None else self.exp_matrix
         if self.method == 'low_variance':
-            self.result.x_reduce = low_variance(self.exp_matrix, self.min_variance)
+            self.result.x_reduce = low_variance(exp_matrix, self.min_variance)
         elif self.method == 'factor_analysis':
-            self.result.x_reduce = factor_analysis(self.exp_matrix, self.n_pcs)
+            self.result.x_reduce = factor_analysis(exp_matrix, self.n_pcs)
         elif self.method == 'tsen':
-            self.result.x_reduce = t_sne(self.exp_matrix, self.n_iter)
+            self.result.x_reduce = t_sne(exp_matrix, self.n_pcs, self.n_iter)
         elif self.method == 'umap':
-            self.result.x_reduce = u_map(self.exp_matrix, self.n_pcs, self.n_neighbors, self.min_dist)
+            self.result.x_reduce = u_map(exp_matrix, self.n_pcs, self.n_neighbors, self.min_dist)
         else:
-            pca_res = pca(self.exp_matrix, self.n_pcs)
+            pca_res = pca(exp_matrix, self.n_pcs)
             self.result.x_reduce = pca_res['x_pca']
             self.result.variance_ratio = pca_res['variance_ratio']
             self.result.variance_pca = pca_res['variance']
@@ -70,7 +71,7 @@ def low_variance(x, threshold=0.01):
     :return: a new array which filtered the feature with low variance.
     """
     x_var = np.var(x, axis=0)
-    var_index = np.where(x_var > threshold)
+    var_index = np.where(x_var > threshold)[0]
     x = x[:, var_index]
     return x
 

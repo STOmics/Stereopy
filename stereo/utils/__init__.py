@@ -8,6 +8,8 @@
 """
 import shutil
 import os
+from .correlation import pearson_corr, spearmanr_corr
+from .data_helper import select_group
 
 
 def remove_file(path):

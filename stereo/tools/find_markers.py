@@ -18,9 +18,8 @@ from tqdm import tqdm
 
 
 class FindMarker(ToolBase):
-    def __init__(self, data, cluster, test_groups='all', control_groups='rest', method='t-test', corr_method=None,
-                 inplace=False, name=None):
-        super(FindMarker, self).__init__(data, method, inplace, name)
+    def __init__(self, data, cluster, test_groups='all', control_groups='rest', method='t-test', corr_method=None, name=None):
+        super(FindMarker, self).__init__(data, method, name)
         self.params = locals()
         self.corr_method = corr_method.lower()
         self.test_group = test_groups
@@ -54,14 +53,15 @@ class FindMarker(ToolBase):
             else:
                 other_g = self.control_group
             g_data = select_group(andata=self.data, groups=g, clust_key=self.cluster)
-            other_data = select_group(andata=self.data, groups=other_g, clust_key=self.data)
+            other_data = select_group(andata=self.data, groups=other_g, clust_key=self.cluster)
             if self.method == 't-test':
                 result = t_test(g_data, other_data, self.corr_method)
             else:
                 result = wilcoxon_test(g_data, other_data, self.corr_method)
             g_name = f"{g}.vs.{self.control_group}"
-            self.params['test_groups'] = g
-            result_info[g_name] = FindMarkerResult(name=self.name, param=self.params, degs_data=result)
+            params = self.params.copy()
+            params['test_groups'] = g
+            result_info[g_name] = FindMarkerResult(name=self.name, param=params, degs_data=result)
         self.add_result(result=result_info, key_added=self.name)
 
 

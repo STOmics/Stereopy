@@ -20,7 +20,7 @@ setup(
     setup_requires=['setuptools_scm'],
     description='Spatial transcriptomic analysis in python.',
     long_description=Path('README.md').read_text('utf-8'),
-    url='https://github.com/BGIResearch/spateo-release',
+    url='https://github.com/BGIResearch/stereopy-release',
     author='BGIResearch',
     author_email='qiuping1@genomics.cn',
     python_requires='>=3.6',

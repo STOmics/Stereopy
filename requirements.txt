@@ -5,10 +5,12 @@ pandas>=0.21
 scipy>=1.0
 seaborn
 h5py>=2.10.0
-tables
-tqdm
+tqdm>=4.55.0
 setuptools~=40.6.2
 scikit-learn>=0.21.2
-joblib
 numba
 statsmodels~=0.12.1
+leidenalg>=0.8.3
+umap_learn==0.4.6
+
+
