@@ -26,7 +26,14 @@ from typing import Optional, Sequence, Union
 
 from ..log_manager import logger
 
-def plot_spatial_distribution(adata: AnnData, obs_key: list = ["total_counts", "n_genes_by_counts"], ncols = 2, dot_size = None, color_list = None, invert_y = False): # scatter plot, 表达矩阵空间分布
+def plot_spatial_distribution(
+    adata: AnnData, 
+    obs_key: list = ["total_counts", "n_genes_by_counts"], 
+    ncols = 2, 
+    dot_size = None, 
+    color_list = None, 
+    invert_y = False
+    ): # scatter plot, 表达矩阵空间分布
     """
     Plot spatial distribution of specified obs data.
     ============ Arguments ============
@@ -86,21 +93,34 @@ def plot_spatial_distribution(adata: AnnData, obs_key: list = ["total_counts", "
         ax.set_xlabel("spatial1")
         ax.set_ylabel("spatial2")
         pathcollection = scatter(
-                    spatial_data[:, 0],
-                    spatial_data[:, 1],
-                    ax = ax,
-                    marker = ".",
-                    dot_colors = color_data,
-                    dot_size = dot_size,
-                    cmap = cmap,
-                )
-        plt.colorbar(pathcollection, ax=ax, pad=0.01, fraction=0.08, aspect=30)
+                            spatial_data[:, 0],
+                            spatial_data[:, 1],
+                            ax = ax,
+                            marker = ".",
+                            dot_colors = color_data,
+                            dot_size = dot_size,
+                            cmap = cmap,
+                        )
+        plt.colorbar(
+            pathcollection, 
+            ax=ax, 
+            pad=0.01, 
+            fraction=0.08, 
+            aspect=30,
+        )
         ax.autoscale_view()
         if invert_y:
             ax.invert_yaxis()
 
-def plot_spatial_cluster(adata: AnnData, obs_key: list = ["phenograph"], plot_cluster: list= None, bad_color = "lightgrey", ncols = 2, dot_size = None, invert_y = False,
-color_list = ['violet', 'turquoise', 'tomato', 'teal', 
+def plot_spatial_cluster(
+    adata: AnnData, 
+    obs_key: list = ["phenograph"], 
+    plot_cluster: list= None, 
+    bad_color = "lightgrey", 
+    ncols = 2, 
+    dot_size = None, 
+    invert_y = False,
+    color_list = ['violet', 'turquoise', 'tomato', 'teal', 
             'tan', 'silver','sienna', 'red','purple', 
             'plum', 'pink','orchid','orangered','orange', 
             'olive', 'navy','maroon','magenta','lime', 
@@ -131,7 +151,12 @@ color_list = ['violet', 'turquoise', 'tomato', 'teal',
 
     plot_cluster_result(adata, obs_key = obs_key, pos_key = "spatial", plot_cluster = plot_cluster, bad_color = bad_color, ncols = ncols, dot_size = dot_size, invert_y = invert_y, color_list = color_list)
 
-def plot_to_select_filter_value(adata: AnnData, x=["total_counts", "total_counts"], y=["pct_counts_mt", "n_genes_by_counts"], ncols = 1, **kwargs): # scatter plot, 线粒体分布图
+def plot_to_select_filter_value(
+    adata: AnnData, 
+    x=["total_counts", "total_counts"], 
+    y=["pct_counts_mt", "n_genes_by_counts"], 
+    ncols = 1, 
+    **kwargs): # scatter plot, 线粒体分布图
     """
     Plot .
     ============ Arguments ============
@@ -225,8 +250,15 @@ def plot_variable_gene(adata: AnnData, logarize = False): # scatter plot, 表达
             + (' (normalized)' if idx == 0 else ' (not normalized)')
         )
 
-def plot_cluster_umap(adata: AnnData, obs_key: list = ["phenograph"], plot_cluster: list= None, bad_color = "lightgrey", ncols = 2, dot_size = None, invert_y = False,
-color_list = ['violet', 'turquoise', 'tomato', 'teal', 
+def plot_cluster_umap(
+    adata: AnnData, 
+    obs_key: list = ["phenograph"], 
+    plot_cluster: list= None, 
+    bad_color = "lightgrey", 
+    ncols = 2, 
+    dot_size = None, 
+    invert_y = False,
+    color_list = ['violet', 'turquoise', 'tomato', 'teal', 
             'tan', 'silver','sienna', 'red','purple', 
             'plum', 'pink','orchid','orangered','orange', 
             'olive', 'navy','maroon','magenta','lime', 
@@ -234,7 +266,9 @@ color_list = ['violet', 'turquoise', 'tomato', 'teal',
             'indigo', 'grey','green','gold','fuchsia', 
             'darkgreen','darkblue','cyan','crimson','coral', 
             'chocolate','chartreuse','brown','blue', 'black', 
-            'beige', 'azure','aquamarine','aqua']): # scatter plot，聚类结果PCA/umap图
+            'beige', 'azure','aquamarine','aqua',
+            ]
+    ): # scatter plot，聚类结果PCA/umap图
     """
     Plot spatial distribution of specified obs data.
     ============ Arguments ============
@@ -260,7 +294,6 @@ def plot_expression_difference(
     adata: AnnData,
     groups: Union[str, Sequence[str]] = None,
     n_genes: int = 20,
-    gene_symbols: Optional[str] = None,
     key: Optional[str] = 'rank_genes_groups',
     fontsize: int = 8,
     ncols: int = 4,
@@ -279,7 +312,6 @@ def plot_expression_difference(
         n_panels_per_row = kwds['n_panels_per_row']
     else:
         n_panels_per_row = ncols
-    reference = str(adata.uns[key]['params']['reference'])
     group_names = adata.uns[key]['names'].dtype.names if groups is None else groups
     # one panel for each group
     # set up the figure
@@ -325,13 +357,6 @@ def plot_expression_difference(
 
         ax.set_xlim(-0.9, n_genes - 0.1)
 
-        # Mapping to gene_symbols
-        if gene_symbols is not None:
-            if adata.raw is not None and adata.uns[key]['params']['use_raw']:
-                gene_names = adata.raw.var[gene_symbols][gene_names]
-            else:
-                gene_names = adata.var[gene_symbols][gene_names]
-
         # Making labels
         for ig, gene_name in enumerate(gene_names):
             ax.text(
@@ -344,7 +369,7 @@ def plot_expression_difference(
                 fontsize=fontsize,
             )
 
-        ax.set_title('{} vs. {}'.format(group_name, reference))
+        ax.set_title('{} vs. {}'.format(group_name, "Others"))
         if count >= n_panels_x * (n_panels_y - 1):
             ax.set_xlabel('ranking')
 
@@ -369,11 +394,28 @@ def plot_violin_distribution(adata): # 小提琴统计图
     seaborn.violinplot(y=adata.obs['n_genes_by_counts'], ax=axs[1])
     seaborn.violinplot(y=adata.obs['pct_counts_mt'], ax=axs[2])
 
-def plot_heatmap_maker_genes(adata: AnnData = None, cluster_method = "phenograph", marker_uns_key = None, num_show_gene = 8, show_labels=True, order_cluster = True, marker_clusters = None, cluster_colors_array = None, **kwargs): # heatmap, 差异基因热图
+def plot_heatmap_maker_genes(
+        adata: AnnData = None, 
+        cluster_method = "phenograph", 
+        marker_uns_key = None, 
+        num_show_gene = 8, 
+        show_labels=True, 
+        order_cluster = True, 
+        marker_clusters = None, 
+        cluster_colors_array = None, 
+        **kwargs
+    ): # heatmap, 差异基因热图
     """
     绘制 Marker gene 的热图。热图中每一行代表一个 bin 的所有基因的表达量，所有的 bin 会根据所属的 cluster 进行聚集， cluster 具体展示在热图的左侧，用颜色区分。
     ============ Arguments ============
     :param adata: AnnData object.
+    :param cluster_methpd: method used in clustering. for example: phenograph, leiden
+    :param marker_uns_key: the key of adata.uns, the default value is "marker_genes"
+    :param num_show_gene: number of genes to show in each cluster.
+    :param show_labels: show gene name on axis.
+    :param order_cluster: reorder the cluster list in plot (y axis).
+    :param marker_clusters: the list of clusters to show on the heatmap.
+    :param cluster_colors_array: the list of colors in the color block on the left of heatmap.
     ============ Return ============
 
     ============ Example ============
@@ -381,7 +423,7 @@ def plot_heatmap_maker_genes(adata: AnnData = None, cluster_method = "phenograph
     """
 
     if marker_uns_key is None:
-        marker_uns_key = 'marker_genes'
+        marker_uns_key = 'marker_genes' # "rank_genes_groups" in original scanpy pipeline
 
     #if cluster_method is None:
     #    cluster_method = str(adata.uns[marker_uns_key]['params']['groupby'])
