@@ -8,3 +8,4 @@
 """
 from .filter import filter_cells, filter_genes, filter_coordinates
 from .normalize import Normalizer, normalize_total, normalize_zscore_disksmooth, quantile_norm
+from .qc import cal_qc

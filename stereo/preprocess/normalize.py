@@ -44,6 +44,17 @@ class Normalizer(ToolBase):
             logger.error(f'{self.method} is out of range, please check.')
             raise ValueError(f'{self.method} is out of range, please check.')
 
+    @property
+    def methods(self):
+        return self.method
+
+    @methods.setter
+    def methods(self, v):
+        if v not in ['normalize_total', 'quantile']:
+            logger.error(f'{self.method} is out of range, please check.')
+            raise ValueError(f'{self.method} is out of range, please check.')
+        self.method = v
+
     def fit(self):
         """
         compute the scale value of self.exp_matrix.

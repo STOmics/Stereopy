@@ -15,16 +15,7 @@ from scipy import sparse
 import os
 from ..log_manager import logger
 import sys
-from anndata import (
-    AnnData,
-    read_csv,
-    read_text,
-    read_excel,
-    read_mtx,
-    read_loom,
-    read_hdf,
-)
-
+from anndata import AnnData, read_mtx
 
 
 def read_stereo_data(path, sep='\t', bin_size=100, is_sparse=True):
@@ -66,50 +57,49 @@ def read_stereo_data(path, sep='\t', bin_size=100, is_sparse=True):
     adata.obsm['spatial'] = pos
     return adata
 
-def check_file(path,prefix,suffix):
+
+def check_file(path, prefix, suffix):
     filename = f"{path}/{prefix}{suffix}"
     if os.path.isfile(filename):
         return filename
-    elif suffix in {"matrix.mtx","barcodes.tsv"} and os.path.isfile(f"{filename}.gz"):
+    elif suffix in {"matrix.mtx", "barcodes.tsv"} and os.path.isfile(f"{filename}.gz"):
         return f'{filename}.gz'
     elif suffix == "genes.tsv" and os.path.isfile(f'{path}/{prefix}features.tsv.gz'):
         return f'{path}/{prefix}features.tsv.gz'
     else:
-        ##logger.error(f"{path} is not exist!")
-        ##raise FileExistsError(f"can not find {path}/{prefix}{suffix}(or with .gz)!")
+        # logger.error(f"{path} is not exist!")
+        # raise FileExistsError(f"can not find {path}/{prefix}{suffix}(or with .gz)!")
         raise ValueError(f"can not find {filename}(or with .gz).")
 
-def read_10x_data (path,prefix="",gene_ex_only=True) :
-    ## 1.   check file status.
-    ##if not os.path.exists(path):
-    ##    logger.error(f"{path} is not exist!")
-   ##     raise FileExistsError(f"{path} is not exist!")
-    basic_fileset={'barcodes.tsv','genes.tsv','matrix.mtx'}
+
+def read_10x_data(path, prefix="", gene_ex_only=True):
+    # 1.   check file status.
+    # if not os.path.exists(path):
+    #    logger.error(f"{path} is not exist!")
+    #     raise FileExistsError(f"{path} is not exist!")
+    basic_fileset = {'barcodes.tsv', 'genes.tsv', 'matrix.mtx'}
     genefile = (f"{path}/{prefix}genes.tsv")
     featurefile = (f"{path}/{prefix}features.tsv.gz")
-    adata = read_10x_mtx(path,prefix)
+    adata = read_10x_mtx(path, prefix)
     if os.path.isfile(genefile) or not gene_ex_only:
         return adata
-
     else:
-        gex_rows = list(map(lambda x: x == 'Gene Expression', adata.var['feature_types'])) 
-
-        
+        gex_rows = list(map(lambda x: x == 'Gene Expression', adata.var['feature_types']))
         return adata[:, gex_rows].copy()
 
-def read_10x_mtx (path,prefix="",var_names='gene_symbols',make_unique=True):
-    mtxfile      = check_file(path,prefix,"matrix.mtx")
-    genesfile    = check_file(path,prefix,"genes.tsv")
-    barcodesfile = check_file(path,prefix,"barcodes.tsv")
-    adata        = read_mtx(mtxfile).T  ##transpose
-    genes        = pd.read_csv(genesfile,header=None,sep='\t')
-    gene_id      = genes[0].values
-    gene_symbol  = genes[1].values
-    
+
+def read_10x_mtx(path, prefix="", var_names='gene_symbols', make_unique=True):
+    mtxfile = check_file(path, prefix, "matrix.mtx")
+    genesfile = check_file(path, prefix, "genes.tsv")
+    barcodesfile = check_file(path, prefix, "barcodes.tsv")
+    adata = read_mtx(mtxfile).T  # transpose
+    genes = pd.read_csv(genesfile, header=None, sep='\t')
+    gene_id = genes[0].values
+    gene_symbol = genes[1].values
     if var_names == 'gene_symbols':
         var_names = genes[1].values
-        ##if make_unique:
-        ##    var_names = anndata.utils.make_index_unique(pd.Index(var_names))
+        # if make_unique:
+        #    var_names = anndata.utils.make_index_unique(pd.Index(var_names))
         adata.var_names = var_names
         adata.var['gene_ids'] = genes[0].values
     elif var_names == 'gene_ids':
@@ -119,6 +109,6 @@ def read_10x_mtx (path,prefix="",var_names='gene_symbols',make_unique=True):
         raise ValueError("`var_names` needs to be 'gene_symbols' or 'gene_ids'")
     if os.path.isfile(f"{path}/{prefix}features.tsv.gz"):
         adata.var['feature_types'] = genes[2].values
-   
+
     adata.obs_names = pd.read_csv(barcodesfile, header=None)[0].values
-    return adata    
+    return adata

@@ -14,12 +14,14 @@ from anndata import AnnData
 import numpy as np
 
 
-def filter_cells(adata, min_gene=None, max_gene=None, cell_list=None, obs_key=None, inplace=True):
+def filter_cells(adata, min_gene=None, max_gene=None, n_genes_by_counts=None, pct_counts_mt=None,
+                 cell_list=None, obs_key=None, inplace=True):
     """
     filter cells based on numbers of genes expressed .
     :param adata: AnnData object
     :param min_gene: Minimum number of genes expressed for a cell pass filtering.
     :param max_gene: Maximum number of genes expressed for a cell pass filtering.
+    :param n_genes_by_counts: Minimum number of  n_genes_by_counts for a cell pass filtering.
     :param cell_list: the list of cells which will be filtered.
     :param obs_key: the key of adata.obs to find the name of cell. if None, adata.obs.index replace.
     :param inplace: whether inplace the original adata or return a new anndata.
@@ -29,14 +31,24 @@ def filter_cells(adata, min_gene=None, max_gene=None, cell_list=None, obs_key=No
     adata = adata if inplace else adata.copy()
     if min_gene is None and max_gene is None and cell_list is None:
         raise ValueError('please set `min_gene` or `max_gene` or `cell_list` or all of them.')
-    exp_matrix = adata.X.toarray() if issparse(adata.X) else adata.X
-    genes_per_cell = exp_matrix.sum(axis=1)
-    adata.obs['n_genes'] = genes_per_cell
+    if 'total_counts' not in adata.obs_keys():
+        exp_matrix = adata.X.toarray() if issparse(adata.X) else adata.X
+        genes_per_cell = exp_matrix.sum(axis=1)
+        adata.obs['total_counts'] = genes_per_cell
     if min_gene:
-        cell_subset = adata.obs['n_genes'] >= min_gene
+        cell_subset = adata.obs['total_counts'] >= min_gene
         adata._inplace_subset_obs(cell_subset)
     if max_gene:
-        cell_subset = adata.obs['n_genes'] <= max_gene
+        cell_subset = adata.obs['total_counts'] <= max_gene
+        adata._inplace_subset_obs(cell_subset)
+    if n_genes_by_counts:
+        cell_subset = adata.obs['n_genes_by_counts'] >= n_genes_by_counts
+        adata._inplace_subset_obs(cell_subset)
+    if pct_counts_mt:
+        if 'pct_counts_mt' not in adata.obs_keys():
+            mt_index = adata.var_names.str.startswith('MT-')
+            adata.obs['pct_counts_mt'] = adata.X[:, mt_index].sum(1)
+        cell_subset = adata.obs['pct_counts_mt'] <= pct_counts_mt
         adata._inplace_subset_obs(cell_subset)
     if cell_list:
         cell_subset = adata.obs.index.isin(cell_list) if not obs_key else adata.obs[obs_key].isin(cell_list)
@@ -58,9 +70,10 @@ def filter_genes(adata, min_cell=None, max_cell=None, gene_list=None, inplace=Tr
     adata = adata if inplace else adata.copy()
     if min_cell is None and max_cell is None and gene_list is None:
         raise ValueError('please set `min_cell` or `max_cell` or `gene_list` or both of them.')
-    exp_matrix = adata.X.toarray() if issparse(adata.X) else adata.X
-    cells_per_gene = exp_matrix.sum(axis=0)
-    adata.var['n_cells'] = cells_per_gene
+    if 'n_cells' not in adata.var_keys():
+        exp_matrix = adata.X.toarray() if issparse(adata.X) else adata.X
+        cells_per_gene = exp_matrix.sum(axis=0)
+        adata.var['n_cells'] = cells_per_gene
     if min_cell:
         gene_subset = adata.var['n_cells'] >= min_cell
         adata._inplace_subset_var(gene_subset)

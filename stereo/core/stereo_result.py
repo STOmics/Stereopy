@@ -53,7 +53,7 @@ class FindMarkerResult(StereoResult):
             info += f'    the shape is: {self.degs_data.shape}'
         return info
 
-    def top_k_marker(self, top_k_genes=10, sort_key='pvalues', sort_order='decreasing'):
+    def top_k_marker(self, top_k_genes=10, sort_key='pvalues', sort_order='asc'):
         """
         obtain the first k significantly different genes
         :param top_k_genes:  the number of top k
