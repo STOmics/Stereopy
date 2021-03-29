@@ -20,7 +20,17 @@ import pandas as pd
 
 from ...log_manager import logger
 
-def scatter(x: list, y: list, ax: Axes = None, dot_colors=None, marker=".", dot_size=1, cmap = None, plotnonfinite=True, **kwargs):
+def scatter(
+    x: list, 
+    y: list, 
+    ax: Axes = None, 
+    dot_colors=None, 
+    marker=".", 
+    dot_size=1, 
+    cmap = None, 
+    plotnonfinite=True, 
+    **kwargs
+    ):
     """
     Simplified scatter plot function, which wraps matplotlib.axes.Axes.scatter .
     :param x,y: Data position list.
@@ -59,8 +69,16 @@ def scatter(x: list, y: list, ax: Axes = None, dot_colors=None, marker=".", dot_
 
     return pathcollection
 
-def plot_cluster_result(adata: AnnData, obs_key: list = ["phenograph"], pos_key = "spatial", plot_cluster: list= None, bad_color = "lightgrey", ncols = 2, dot_size = None, invert_y = False,
-color_list = ['violet', 'turquoise', 'tomato', 'teal', 
+def plot_cluster_result(
+        adata: AnnData, 
+        obs_key: list = ["phenograph"], 
+        pos_key = "spatial", 
+        plot_cluster: list= None, 
+        bad_color = "lightgrey", 
+        ncols = 2, 
+        dot_size = None, 
+        invert_y = False,
+        color_list = ['violet', 'turquoise', 'tomato', 'teal', 
             'tan', 'silver','sienna', 'red','purple', 
             'plum', 'pink','orchid','orangered','orange', 
             'olive', 'navy','maroon','magenta','lime', 
@@ -68,7 +86,9 @@ color_list = ['violet', 'turquoise', 'tomato', 'teal',
             'indigo', 'grey','green','gold','fuchsia', 
             'darkgreen','darkblue','cyan','crimson','coral', 
             'chocolate','chartreuse','brown','blue', 'black', 
-            'beige', 'azure','aquamarine','aqua']): # scatter plot, 聚类后表达矩阵空间分布
+            'beige', 'azure','aquamarine','aqua',
+            ],
+        ): # scatter plot, 聚类后表达矩阵空间分布
     """
     Plot spatial distribution of specified obs data.
     ============ Arguments ============
