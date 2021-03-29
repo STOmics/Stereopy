@@ -140,7 +140,8 @@ class CellTypeAnno(ToolBase):
             if self.strategy == 1:
                 self.result.anno_data = self.merge_subsample_result(tmp_output, 'top_annotation.csv', self.output)
             else:
-                self.result.anno_data = self.merge_subsample_result_filter(tmp_output, 'top_annotation.csv', self.output)
+                self.result.anno_data = self.merge_subsample_result_filter(tmp_output, 'top_annotation.csv',
+                                                                           self.output)
         else:
             pool = Pool(self.n_jobs)
             for i in range(len(datas)):

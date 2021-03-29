@@ -37,10 +37,10 @@ class ToolBase(object):
     def fit(self):
         pass
 
-    def get_params(self, vars):
+    def get_params(self, vars_info):
         params = {}
         for arg in inspect.signature(self.__init__).parameters:
-            params[arg] = vars[arg]
+            params[arg] = vars_info[arg]
         return params
 
     def add_result(self, result, key_added: str = 'stereo'):
