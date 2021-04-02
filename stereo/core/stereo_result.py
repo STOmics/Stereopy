@@ -91,6 +91,6 @@ class ClusterResult(StereoResult):
     def __str__(self):
         info = super(ClusterResult, self).__str__()
         if self.cluster is not None:
-            info += f'    result: a DataFrame which has `cells`,`cell cluster` columns.\n'
+            info += f'    result: a DataFrame which has `cells`,`cluster` columns.\n'
             info += f'    the shape is: {self.cluster.shape}'
         return info

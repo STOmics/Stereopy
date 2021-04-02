@@ -73,3 +73,5 @@ class Clustering(ToolBase):
         df = pd.DataFrame(info)
         result = ClusterResult(name=self.name, param=self.param, cluster_info=df)
         self.add_result(result, key_added=self.name)
+        # TODO  added for find marker
+        self.data.obs[self.name] = cluster

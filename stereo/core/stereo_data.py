@@ -9,12 +9,15 @@
 
 
 class StereoData(object):
-    def __init__(self, index, exp_matrix, genes, bins, position):
-        self.index = index
+    def __init__(self, raw_file=None, exp_matrix=None, genes=None, bins=None, position=None, partitions=1):
+        self.index = None
+        self.index_file = None
         self.exp_matrix = exp_matrix
         self.genes = genes
         self.bins = bins
         self.position = position
+        self.raw_file = raw_file
+        self.partitions = partitions
 
     def filter_genes(self):
         pass
@@ -41,4 +44,10 @@ class StereoData(object):
         pass
 
     def get_bins(self):
+        pass
+
+    def split_data(self):
+        pass
+
+    def sparse2array(self):
         pass
