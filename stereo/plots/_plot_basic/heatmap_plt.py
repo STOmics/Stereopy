@@ -22,13 +22,15 @@ from typing_extensions import Literal
 
 from ...log_manager import logger
 
-def heatmap(df: pd.DataFrame = None, ax: Axes = None, cmap = None, norm = None, plot_colorbar = False, colorbar_ax: Axes = None, show_labels = True, plot_hline = False, **kwargs):
+
+def heatmap(df: pd.DataFrame = None, ax: Axes = None, cmap=None, norm=None, plot_colorbar=False,
+            colorbar_ax: Axes = None, show_labels=True, plot_hline=False, **kwargs):
     """
     Simplified heatmap plot function.
     :param df: Data.
     :return: None.
     """
-    
+
     if norm == None:
         norm = Normalize(vmin=None, vmax=None)
     if (plot_colorbar and colorbar_ax == None):
@@ -41,7 +43,7 @@ def heatmap(df: pd.DataFrame = None, ax: Axes = None, cmap = None, norm = None, 
 
     ax.set_ylim(df.shape[0] - 0.5, -0.5)
     ax.set_xlim(-0.5, df.shape[1] - 0.5)
-    ax.tick_params(axis='y', left=False,labelleft=False)
+    ax.tick_params(axis='y', left=False, labelleft=False)
     ax.set_ylabel('')
     ax.grid(False)
 
@@ -54,10 +56,10 @@ def heatmap(df: pd.DataFrame = None, ax: Axes = None, cmap = None, norm = None, 
 
     if plot_colorbar:
         plt.colorbar(im, cax=colorbar_ax)
-    
+
     if plot_hline:
         line_coord = (
-        np.cumsum(df.index.value_counts(sort=False))[:-1] - 0.5
+                np.cumsum(df.index.value_counts(sort=False))[:-1] - 0.5
         )
         ax.hlines(
             line_coord,
@@ -69,12 +71,13 @@ def heatmap(df: pd.DataFrame = None, ax: Axes = None, cmap = None, norm = None, 
             clip_on=False,
         )
 
+
 def _plot_categories_as_colorblocks(
-    groupby_ax: Axes,
-    obs_tidy: pd.DataFrame,
-    colors=None,
-    orientation: Literal['top', 'bottom', 'left', 'right'] = 'left',
-    cmap_name: str = 'tab20',
+        groupby_ax: Axes,
+        obs_tidy: pd.DataFrame,
+        colors=None,
+        orientation: Literal['top', 'bottom', 'left', 'right'] = 'left',
+        cmap_name: str = 'tab20',
 ):
     """from scanpy"""
 
@@ -94,7 +97,7 @@ def _plot_categories_as_colorblocks(
     labels = []
     label2code = {}  # dictionary of numerical values asigned to each label
     for code, (label, value) in enumerate(
-        obs_tidy.index.value_counts(sort=False).iteritems()
+            obs_tidy.index.value_counts(sort=False).iteritems()
     ):
         ticks.append(value_sum + (value / 2))
         labels.append(label)
@@ -157,14 +160,15 @@ def _plot_categories_as_colorblocks(
 
     return label2code, ticks, labels, groupby_cmap, norm
 
+
 def _plot_gene_groups_brackets(
-    gene_groups_ax: Axes,
-    group_positions: Iterable[Tuple[int, int]],
-    group_labels: Sequence[str],
-    left_adjustment: float = -0.3,
-    right_adjustment: float = 0.3,
-    rotation: Optional[float] = None,
-    orientation: Literal['top', 'right'] = 'top',
+        gene_groups_ax: Axes,
+        group_positions: Iterable[Tuple[int, int]],
+        group_labels: Sequence[str],
+        left_adjustment: float = -0.3,
+        right_adjustment: float = 0.3,
+        rotation: Optional[float] = None,
+        orientation: Literal['top', 'right'] = 'top',
 ):
     """from scanpy"""
     import matplotlib.patches as patches
@@ -255,13 +259,14 @@ def _plot_gene_groups_brackets(
         axis='x', bottom=False, labelbottom=False, labeltop=False
     )
 
+
 def _check_indices(
-    dim_df: pd.DataFrame,
-    alt_index: pd.Index,
-    dim: "Literal['obs', 'var']",
-    keys: List[str],
-    alias_index: pd.Index = None,
-    use_raw: bool = False,
+        dim_df: pd.DataFrame,
+        alt_index: pd.Index,
+        dim: "Literal['obs', 'var']",
+        keys: List[str],
+        alias_index: pd.Index = None,
+        use_raw: bool = False,
 ):
     """from scanpy"""
     if use_raw:
@@ -332,5 +337,3 @@ def _check_indices(
         )
 
     return col_keys, index_keys, index_aliases
-
-    
