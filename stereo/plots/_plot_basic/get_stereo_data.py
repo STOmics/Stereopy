@@ -25,8 +25,10 @@ def get_position_array(data, obs_key='spatial'):
     return np.array(data.obsm[obs_key])[:, 0: 2]
 
 
-def get_degs_res(data, group_key, data_key='find_marker'):
+def get_degs_res(data, group_key, data_key='find_marker', top_k=None):
     degs_dict = data.uns[data_key]
     degs_data = degs_dict[group_key]
-    res = degs_data.degs_data
-    return res
+    if top_k is not None:
+        return degs_data.top_k_marker(top_k_genes=top_k, sort_key='scores')
+    else:
+        return degs_data.degs_data
