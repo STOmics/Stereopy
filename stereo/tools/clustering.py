@@ -69,6 +69,7 @@ class Clustering(ToolBase):
             cluster = self.run_knn_leiden(neighbor, nn_idx, nn_dist)
         else:
             cluster = self.run_louvain(neighbor, nn_idx, nn_dist)
+        cluster = [str(i) for i in cluster]
         info = {'bins': self.data.obs_names, 'cluster': cluster}
         df = pd.DataFrame(info)
         result = ClusterResult(name=self.name, param=self.param, cluster_info=df)

@@ -56,6 +56,7 @@ class FindMarker(ToolBase):
                 other_g = self.control_group
             g_data = select_group(andata=self.data, groups=g, clust_key=self.cluster)
             other_data = select_group(andata=self.data, groups=other_g, clust_key=self.cluster)
+            g_data, other_data = self.merge_groups_data(g_data, other_data)
             if self.method == 't-test':
                 result = t_test(g_data, other_data, self.corr_method)
             else:
@@ -65,6 +66,15 @@ class FindMarker(ToolBase):
             params['test_groups'] = g
             result_info[g_name] = FindMarkerResult(name=self.name, param=params, degs_data=result)
         self.add_result(result=result_info, key_added=self.name)
+
+    @staticmethod
+    def merge_groups_data(g1, g2):
+        g1 = g1.loc[:, ~g1.columns.duplicated()]
+        g2 = g2.loc[:, ~g2.columns.duplicated()]
+        zeros = list(set(g1.columns[g1.sum(axis=0) == 0]) & set(g2.columns[g2.sum(axis=0) == 0]))
+        g1.drop(zeros, axis=1, inplace=True)
+        g2.drop(zeros, axis=1, inplace=True)
+        return g1, g2
 
 
 def t_test(group, other_group, corr_method=None):

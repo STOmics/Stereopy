@@ -53,16 +53,15 @@ class FindMarkerResult(StereoResult):
             info += f'    the shape is: {self.degs_data.shape}'
         return info
 
-    def top_k_marker(self, top_k_genes=10, sort_key='pvalues', sort_order='asc'):
+    def top_k_marker(self, top_k_genes=10, sort_key='pvalues', ascend=False):
         """
         obtain the first k significantly different genes
         :param top_k_genes:  the number of top k
         :param sort_key: sort by the column
-        :param sort_order: the order of sorting. asc or dec.
+        :param ascend: the ascend order of sorting.
         :return:
         """
-        ascend = False if sort_order == 'asc' else True
-        if self.degs_data:
+        if self.degs_data is not None:
             top_k_data = self.degs_data.sort_values(by=sort_key, ascending=ascend).head(top_k_genes)
             return top_k_data
         else:

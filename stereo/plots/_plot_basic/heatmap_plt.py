@@ -26,9 +26,16 @@ from ...log_manager import logger
 def heatmap(df: pd.DataFrame = None, ax: Axes = None, cmap=None, norm=None, plot_colorbar=False,
             colorbar_ax: Axes = None, show_labels=True, plot_hline=False, **kwargs):
     """
-    Simplified heatmap plot function.
-    :param df: Data.
-    :return: None.
+    :param df:
+    :param ax:
+    :param cmap:
+    :param norm:
+    :param plot_colorbar:
+    :param colorbar_ax:
+    :param show_labels:
+    :param plot_hline:
+    :param kwargs:
+    :return:
     """
 
     if norm == None:
@@ -72,7 +79,7 @@ def heatmap(df: pd.DataFrame = None, ax: Axes = None, cmap=None, norm=None, plot
         )
 
 
-def _plot_categories_as_colorblocks(
+def plot_categories_as_colorblocks(
         groupby_ax: Axes,
         obs_tidy: pd.DataFrame,
         colors=None,
@@ -161,7 +168,7 @@ def _plot_categories_as_colorblocks(
     return label2code, ticks, labels, groupby_cmap, norm
 
 
-def _plot_gene_groups_brackets(
+def plot_gene_groups_brackets(
         gene_groups_ax: Axes,
         group_positions: Iterable[Tuple[int, int]],
         group_labels: Sequence[str],
