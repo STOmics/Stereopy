@@ -2,25 +2,7 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="638be34f-c792-43f2-aed0-721611fdb670" name="Default Changelist" comment="">
-      <change afterPath="$PROJECT_DIR$/stereo/core/stereo_data.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/stereo/tools/cluster.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/stereo/tools/neighbors.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/deployment.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/deployment.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/spateo-release.iml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/spateo-release.iml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/requirements.txt" beforeDir="false" afterPath="$PROJECT_DIR$/requirements.txt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/setup.py" beforeDir="false" afterPath="$PROJECT_DIR$/setup.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/stereo/__init__.py" beforeDir="false" afterPath="$PROJECT_DIR$/stereo/__init__.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/stereo/core/stereo_result.py" beforeDir="false" afterPath="$PROJECT_DIR$/stereo/core/stereo_result.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/stereo/core/tool_base.py" beforeDir="false" afterPath="$PROJECT_DIR$/stereo/core/tool_base.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/stereo/io/__init__.py" beforeDir="false" afterPath="$PROJECT_DIR$/stereo/io/__init__.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/stereo/preprocess/__init__.py" beforeDir="false" afterPath="$PROJECT_DIR$/stereo/preprocess/__init__.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/stereo/preprocess/normalize.py" beforeDir="false" afterPath="$PROJECT_DIR$/stereo/preprocess/normalize.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/stereo/tools/__init__.py" beforeDir="false" afterPath="$PROJECT_DIR$/stereo/tools/__init__.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/stereo/tools/cell_type_anno.py" beforeDir="false" afterPath="$PROJECT_DIR$/stereo/tools/cell_type_anno.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/stereo/tools/dim_reduce.py" beforeDir="false" afterPath="$PROJECT_DIR$/stereo/tools/dim_reduce.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/stereo/tools/find_markers.py" beforeDir="false" afterPath="$PROJECT_DIR$/stereo/tools/find_markers.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/stereo/utils/__init__.py" beforeDir="false" afterPath="$PROJECT_DIR$/stereo/utils/__init__.py" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
@@ -31,10 +13,34 @@
   <component name="FileEditorManager">
     <leaf SIDE_TABS_SIZE_LIMIT_KEY="300">
       <file pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/stereo/tools/find_markers.py">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="359">
+              <caret line="58" column="74" selection-start-line="58" selection-start-column="74" selection-end-line="58" selection-end-column="74" />
+              <folding>
+                <element signature="e#161#205#0" expanded="true" />
+              </folding>
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/stereo/plots/_plot_basic/heatmap_plt.py">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="473">
+              <caret line="333" column="40" selection-start-line="333" selection-start-column="40" selection-end-line="333" selection-end-column="40" />
+              <folding>
+                <element signature="e#153#187#0" expanded="true" />
+              </folding>
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/stereo/tools/clustering.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="225">
-              <caret line="21" column="45" selection-start-line="21" selection-start-column="45" selection-end-line="21" selection-end-column="45" />
+            <state relative-caret-position="361">
+              <caret line="77" column="42" lean-forward="true" selection-start-line="77" selection-start-column="42" selection-end-line="77" selection-end-column="42" />
               <folding>
                 <element signature="e#88#106#0" expanded="true" />
               </folding>
@@ -43,103 +49,55 @@
         </entry>
       </file>
       <file pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/stereo/preprocess/__init__.py">
+        <entry file="file://$PROJECT_DIR$/stereo/plots/_plot_basic/get_stereo_data.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="250">
-              <caret line="10" lean-forward="true" selection-start-line="10" selection-end-line="10" />
-              <folding>
-                <element signature="e#153#219#0" expanded="true" />
-              </folding>
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/stereo/tools/__init__.py">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="300">
-              <caret line="12" lean-forward="true" selection-start-line="12" selection-end-line="12" />
-              <folding>
-                <element signature="e#153#193#0" expanded="true" />
-              </folding>
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/stereo/utils/__init__.py">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="310">
-              <caret line="13" lean-forward="true" selection-start-line="13" selection-end-line="13" />
-              <folding>
-                <element signature="e#153#166#0" expanded="true" />
-              </folding>
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/stereo/__init__.py">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="275">
-              <caret line="11" column="31" selection-start-line="11" selection-start-column="31" selection-end-line="11" selection-end-column="31" />
-              <folding>
-                <element signature="e#153#179#0" expanded="true" />
-              </folding>
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/setup.py">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="160">
-              <caret line="22" column="48" selection-start-line="22" selection-start-column="48" selection-end-line="22" selection-end-column="48" />
-              <folding>
-                <element signature="e#147#190#0" expanded="true" />
-              </folding>
+            <state relative-caret-position="186">
+              <caret line="26" lean-forward="true" selection-start-line="26" selection-end-line="26" />
             </state>
           </provider>
         </entry>
       </file>
       <file pinned="false" current-in-tab="true">
-        <entry file="file://$PROJECT_DIR$/requirements.txt">
+        <entry file="file://$PROJECT_DIR$/stereo/preprocess/normalize.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="325">
-              <caret line="13" column="17" lean-forward="true" selection-start-line="13" selection-start-column="17" selection-end-line="13" selection-end-column="17" />
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/stereo/config.py">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="275">
-              <caret line="11" column="48" selection-start-line="11" selection-start-column="48" selection-end-line="11" selection-end-column="48" />
+            <state relative-caret-position="211">
+              <caret line="113" column="40" lean-forward="true" selection-start-line="113" selection-start-column="40" selection-end-line="113" selection-end-column="40" />
               <folding>
-                <element signature="e#148#182#0" expanded="true" />
+                <element signature="e#312#330#0" expanded="true" />
               </folding>
             </state>
           </provider>
         </entry>
       </file>
       <file pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/stereo/core/tool_base.py">
+        <entry file="file://$PROJECT_DIR$/stereo/tools/cluster.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="361">
-              <caret line="17" selection-start-line="17" selection-end-line="17" />
+            <state relative-caret-position="2284">
+              <caret line="103" column="7" selection-start-line="103" selection-start-column="7" selection-end-line="103" selection-end-column="7" />
               <folding>
-                <element signature="e#151#188#0" expanded="true" />
+                <element signature="e#149#171#0" expanded="true" />
               </folding>
             </state>
           </provider>
         </entry>
       </file>
       <file pinned="false" current-in-tab="false">
-        <entry file="file://D:/ananconda3/Lib/inspect.py">
+        <entry file="file://$PROJECT_DIR$/stereo/preprocess/filter.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="186">
-              <caret line="3034" column="4" selection-start-line="3034" selection-start-column="4" selection-end-line="3034" selection-end-column="4" />
+            <state relative-caret-position="-2189">
+              <caret line="16" column="91" selection-start-line="16" selection-start-column="78" selection-end-line="16" selection-end-column="91" />
+              <folding>
+                <element signature="e#221#254#0" expanded="true" />
+              </folding>
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/stereo/utils/data_helper.py">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="225">
+              <caret line="9" column="17" selection-start-line="9" selection-start-column="17" selection-end-line="9" selection-end-column="17" />
             </state>
           </provider>
         </entry>
@@ -153,18 +111,27 @@
       </list>
     </option>
   </component>
+  <component name="FindInProjectRecents">
+    <findStrings>
+      <find>plot_to_select_filter_value</find>
+      <find>pos_key</find>
+      <find>adata</find>
+      <find>obs_vector</find>
+      <find>logger</find>
+      <find>pcLogic</find>
+      <find>clusterN</find>
+      <find>plot_cluster_result</find>
+      <find>self.cluster</find>
+      <find>marker_uns_key</find>
+      <find>gene_group_labels</find>
+    </findStrings>
+  </component>
   <component name="Git.Settings">
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
   </component>
   <component name="IdeDocumentHistory">
     <option name="CHANGED_PATHS">
       <list>
-        <option value="$PROJECT_DIR$/spateo/spateo_log.py" />
-        <option value="$PROJECT_DIR$/spateo/utils/__init__.py" />
-        <option value="$PROJECT_DIR$/spateo/tools/__init__.py" />
-        <option value="$PROJECT_DIR$/spateo/preprocess/__init__.py" />
-        <option value="$PROJECT_DIR$/spateo/plots/__init__.py" />
-        <option value="$PROJECT_DIR$/spateo/io/__init__.py" />
         <option value="$PROJECT_DIR$/spateo/logging.py" />
         <option value="$PROJECT_DIR$/spateo/config.py" />
         <option value="$PROJECT_DIR$/spateo/log_manager.py" />
@@ -177,43 +144,53 @@
         <option value="$PROJECT_DIR$/README.md" />
         <option value="$PROJECT_DIR$/stereopy/tools/cell_type_anno.py" />
         <option value="$PROJECT_DIR$/stereopy/config.py" />
-        <option value="$PROJECT_DIR$/stereo/io/reader.py" />
         <option value="$PROJECT_DIR$/test/test_cell_type_anno.py" />
         <option value="$PROJECT_DIR$/stereo/log_manager.py" />
         <option value="$PROJECT_DIR$/stereo/tools/degs.py" />
         <option value="$PROJECT_DIR$/test/test_data_helper.py" />
-        <option value="$PROJECT_DIR$/stereo/utils/data_helper.py" />
         <option value="$PROJECT_DIR$/test/test_find_markers.py" />
         <option value="$PROJECT_DIR$/stereo/tools/base.py" />
         <option value="$PROJECT_DIR$/stereo/tools/tool_base.py" />
         <option value="$PROJECT_DIR$/stereo/core/Result.py" />
         <option value="$PROJECT_DIR$/stereo/core/result.py" />
         <option value="$PROJECT_DIR$/stereo/core/base.py" />
-        <option value="$PROJECT_DIR$/stereo/tools/find_markers.py" />
-        <option value="$PROJECT_DIR$/stereo/tools/cluster.py" />
-        <option value="$PROJECT_DIR$/stereo/core/stereo_data.py" />
-        <option value="$PROJECT_DIR$/stereo/tools/cell_type_anno.py" />
-        <option value="$PROJECT_DIR$/stereo/preprocess/normalize.py" />
         <option value="$PROJECT_DIR$/stereo/tools/neighbors.py" />
-        <option value="$PROJECT_DIR$/stereo/tools/dim_reduce.py" />
-        <option value="$PROJECT_DIR$/stereo/core/stereo_result.py" />
-        <option value="$PROJECT_DIR$/stereo/core/tool_base.py" />
-        <option value="$PROJECT_DIR$/stereo/tools/clustering.py" />
-        <option value="$PROJECT_DIR$/stereo/io/__init__.py" />
-        <option value="$PROJECT_DIR$/stereo/preprocess/__init__.py" />
         <option value="$PROJECT_DIR$/stereo/tools/__init__.py" />
         <option value="$PROJECT_DIR$/stereo/utils/__init__.py" />
         <option value="$PROJECT_DIR$/setup.py" />
         <option value="$PROJECT_DIR$/stereo/config.py" />
-        <option value="$PROJECT_DIR$/stereo/__init__.py" />
         <option value="$PROJECT_DIR$/requirements.txt" />
+        <option value="$PROJECT_DIR$/stereo/tools/cell_type_anno.py" />
+        <option value="$PROJECT_DIR$/stereo/io/reader.py" />
+        <option value="$PROJECT_DIR$/stereo/__init__.py" />
+        <option value="$PROJECT_DIR$/stereo/io/__init__.py" />
+        <option value="$PROJECT_DIR$/stereo/preprocess/__init__.py" />
+        <option value="$PROJECT_DIR$/stereo/preprocess/filter.py" />
+        <option value="$PROJECT_DIR$/stereo/preprocess/qc.py" />
+        <option value="$PROJECT_DIR$/stereo/core/tool_base.py" />
+        <option value="$PROJECT_DIR$/stereo/preprocess/normalize.py" />
+        <option value="$PROJECT_DIR$/stereo/tools/dim_reduce.py" />
+        <option value="$PROJECT_DIR$/stereo/plots/plotting.py" />
+        <option value="$PROJECT_DIR$/stereo/tools/cluster.py" />
+        <option value="$PROJECT_DIR$/stereo/plots/_plot_basic/get_stereo_res.py" />
+        <option value="$PROJECT_DIR$/stereo/plots/_plot_basic/scatter_plt.py" />
+        <option value="$PROJECT_DIR$/stereo/plots/plot_utils.py" />
+        <option value="$PROJECT_DIR$/stereo/core/stereo_data.py" />
+        <option value="$PROJECT_DIR$/stereo/plots/_plot_basic/heatmap_plt.py" />
+        <option value="$PROJECT_DIR$/stereo/utils/data_helper.py" />
+        <option value="$PROJECT_DIR$/stereo/tools/clustering.py" />
+        <option value="$PROJECT_DIR$/stereo/tools/find_markers.py" />
+        <option value="$PROJECT_DIR$/stereo/core/stereo_result.py" />
+        <option value="$PROJECT_DIR$/stereo/plots/_plot_basic/get_stereo_data.py" />
+        <option value="$PROJECT_DIR$/stereo/plots/plots.py" />
       </list>
     </option>
   </component>
   <component name="ProjectFrameBounds" extendedState="6">
-    <option name="x" value="-7" />
-    <option name="width" value="697" />
-    <option name="height" value="735" />
+    <option name="x" value="-8" />
+    <option name="y" value="-8" />
+    <option name="width" value="1936" />
+    <option name="height" value="1056" />
   </component>
   <component name="ProjectView">
     <navigator proportions="" version="1">
@@ -232,6 +209,49 @@
               <item name="spateo-release" type="b2602c69:ProjectViewProjectNode" />
               <item name="spateo-release" type="462c0819:PsiDirectoryNode" />
               <item name="stereo" type="462c0819:PsiDirectoryNode" />
+            </path>
+            <path>
+              <item name="spateo-release" type="b2602c69:ProjectViewProjectNode" />
+              <item name="spateo-release" type="462c0819:PsiDirectoryNode" />
+              <item name="stereo" type="462c0819:PsiDirectoryNode" />
+              <item name="core" type="462c0819:PsiDirectoryNode" />
+            </path>
+            <path>
+              <item name="spateo-release" type="b2602c69:ProjectViewProjectNode" />
+              <item name="spateo-release" type="462c0819:PsiDirectoryNode" />
+              <item name="stereo" type="462c0819:PsiDirectoryNode" />
+              <item name="io" type="462c0819:PsiDirectoryNode" />
+            </path>
+            <path>
+              <item name="spateo-release" type="b2602c69:ProjectViewProjectNode" />
+              <item name="spateo-release" type="462c0819:PsiDirectoryNode" />
+              <item name="stereo" type="462c0819:PsiDirectoryNode" />
+              <item name="plots" type="462c0819:PsiDirectoryNode" />
+            </path>
+            <path>
+              <item name="spateo-release" type="b2602c69:ProjectViewProjectNode" />
+              <item name="spateo-release" type="462c0819:PsiDirectoryNode" />
+              <item name="stereo" type="462c0819:PsiDirectoryNode" />
+              <item name="plots" type="462c0819:PsiDirectoryNode" />
+              <item name="_plot_basic" type="462c0819:PsiDirectoryNode" />
+            </path>
+            <path>
+              <item name="spateo-release" type="b2602c69:ProjectViewProjectNode" />
+              <item name="spateo-release" type="462c0819:PsiDirectoryNode" />
+              <item name="stereo" type="462c0819:PsiDirectoryNode" />
+              <item name="preprocess" type="462c0819:PsiDirectoryNode" />
+            </path>
+            <path>
+              <item name="spateo-release" type="b2602c69:ProjectViewProjectNode" />
+              <item name="spateo-release" type="462c0819:PsiDirectoryNode" />
+              <item name="stereo" type="462c0819:PsiDirectoryNode" />
+              <item name="tools" type="462c0819:PsiDirectoryNode" />
+            </path>
+            <path>
+              <item name="spateo-release" type="b2602c69:ProjectViewProjectNode" />
+              <item name="spateo-release" type="462c0819:PsiDirectoryNode" />
+              <item name="stereo" type="462c0819:PsiDirectoryNode" />
+              <item name="utils" type="462c0819:PsiDirectoryNode" />
             </path>
           </expand>
           <select />
@@ -329,7 +349,9 @@
       <workItem from="1614924835714" duration="72358000" />
       <workItem from="1615771107206" duration="49713000" />
       <workItem from="1616032215245" duration="20808000" />
-      <workItem from="1616376064071" duration="41850000" />
+      <workItem from="1616376064071" duration="82269000" />
+      <workItem from="1617248227128" duration="27558000" />
+      <workItem from="1617673000100" duration="22604000" />
     </task>
     <task id="LOCAL-00001" summary="init the frame">
       <created>1614934665629</created>
@@ -422,20 +444,72 @@
       <option name="project" value="LOCAL" />
       <updated>1616144131950</updated>
     </task>
-    <option name="localTasksCounter" value="14" />
+    <task id="LOCAL-00014" summary="finish basic tools">
+      <created>1616665353923</created>
+      <option name="number" value="00014" />
+      <option name="presentableId" value="LOCAL-00014" />
+      <option name="project" value="LOCAL" />
+      <updated>1616665353923</updated>
+    </task>
+    <task id="LOCAL-00015" summary="update after debug">
+      <created>1616985578558</created>
+      <option name="number" value="00015" />
+      <option name="presentableId" value="LOCAL-00015" />
+      <option name="project" value="LOCAL" />
+      <updated>1616985578559</updated>
+    </task>
+    <task id="LOCAL-00016" summary="modified plot func">
+      <created>1617358387385</created>
+      <option name="number" value="00016" />
+      <option name="presentableId" value="LOCAL-00016" />
+      <option name="project" value="LOCAL" />
+      <updated>1617358387385</updated>
+    </task>
+    <task id="LOCAL-00017" summary="modified heatmap funcs">
+      <created>1617930437858</created>
+      <option name="number" value="00017" />
+      <option name="presentableId" value="LOCAL-00017" />
+      <option name="project" value="LOCAL" />
+      <updated>1617930437858</updated>
+    </task>
+    <option name="localTasksCounter" value="18" />
     <servers />
   </component>
   <component name="TimeTrackingManager">
-    <option name="totallyTimeSpent" value="184729000" />
+    <option name="totallyTimeSpent" value="275310000" />
   </component>
   <component name="ToolWindowManager">
     <frame x="-8" y="-8" width="1382" height="744" extended-state="6" />
     <editor active="true" />
     <layout>
-      <window_info active="true" content_ui="combo" id="Project" order="0" visible="true" weight="0.1785174" />
+      <window_info active="true" content_ui="combo" id="Project" order="0" visible="true" weight="0.18986385" />
       <window_info id="Structure" order="1" side_tool="true" weight="0.25" />
       <window_info id="Favorites" order="2" side_tool="true" />
-      <window_info anchor="bottom" id="File Transfer" weight="0.32935154" />
+      <window_info anchor="bottom" id="Message" order="0" />
+      <window_info anchor="bottom" id="Find" order="1" weight="0.32850778" />
+      <window_info anchor="bottom" id="Run" order="2" weight="0.34812286" />
+      <window_info anchor="bottom" id="Debug" order="3" weight="0.4" />
+      <window_info anchor="bottom" id="Cvs" order="4" weight="0.25" />
+      <window_info anchor="bottom" id="Inspection" order="5" weight="0.4" />
+      <window_info anchor="bottom" id="TODO" order="6" />
+      <window_info anchor="bottom" id="Docker" order="7" show_stripe_button="false" />
+      <window_info anchor="bottom" id="Version Control" order="8" weight="0.32935154" />
+      <window_info anchor="bottom" id="Database Changes" order="9" />
+      <window_info anchor="bottom" id="Event Log" order="10" side_tool="true" />
+      <window_info anchor="bottom" id="Terminal" order="11" weight="0.7286689" />
+      <window_info anchor="bottom" id="Python Console" order="12" weight="0.38737202" />
+      <window_info anchor="bottom" id="File Transfer" order="13" weight="0.32935154" />
+      <window_info anchor="right" id="Commander" internal_type="SLIDING" order="0" type="SLIDING" weight="0.4" />
+      <window_info anchor="right" id="Ant Build" order="1" weight="0.25" />
+      <window_info anchor="right" content_ui="combo" id="Hierarchy" order="2" weight="0.25" />
+      <window_info anchor="right" id="Remote Host" order="3" />
+      <window_info anchor="right" id="SciView" order="4" />
+      <window_info anchor="right" id="Database" order="5" />
+    </layout>
+    <layout-to-restore>
+      <window_info active="true" content_ui="combo" id="Project" order="0" visible="true" weight="0.13313162" />
+      <window_info id="Structure" order="1" side_tool="true" weight="0.25" />
+      <window_info id="Favorites" order="2" side_tool="true" />
       <window_info anchor="bottom" id="Message" order="0" />
       <window_info anchor="bottom" id="Find" order="1" weight="0.32935154" />
       <window_info anchor="bottom" id="Run" order="2" weight="0.34812286" />
@@ -449,30 +523,7 @@
       <window_info anchor="bottom" id="Event Log" order="10" side_tool="true" />
       <window_info anchor="bottom" id="Terminal" order="11" weight="0.7286689" />
       <window_info anchor="bottom" id="Python Console" order="12" weight="0.38737202" />
-      <window_info anchor="right" id="Commander" internal_type="SLIDING" order="0" type="SLIDING" weight="0.4" />
-      <window_info anchor="right" id="Ant Build" order="1" weight="0.25" />
-      <window_info anchor="right" content_ui="combo" id="Hierarchy" order="2" weight="0.25" />
-      <window_info anchor="right" id="Remote Host" order="3" />
-      <window_info anchor="right" id="SciView" order="4" />
-      <window_info anchor="right" id="Database" order="5" />
-    </layout>
-    <layout-to-restore>
-      <window_info active="true" content_ui="combo" id="Project" order="0" visible="true" weight="0.1762481" />
-      <window_info id="Structure" order="1" side_tool="true" weight="0.25" />
-      <window_info id="Favorites" order="2" side_tool="true" />
-      <window_info anchor="bottom" id="Message" order="0" />
-      <window_info anchor="bottom" id="Find" order="1" weight="0.32935154" />
-      <window_info anchor="bottom" id="Run" order="2" weight="0.34812286" />
-      <window_info anchor="bottom" id="Debug" order="3" weight="0.4" />
-      <window_info anchor="bottom" id="Cvs" order="4" weight="0.25" />
-      <window_info anchor="bottom" id="Inspection" order="5" weight="0.4" />
-      <window_info anchor="bottom" id="TODO" order="6" />
-      <window_info anchor="bottom" id="Docker" order="7" show_stripe_button="false" />
-      <window_info anchor="bottom" id="Version Control" order="8" weight="0.32935154" />
-      <window_info anchor="bottom" id="Database Changes" order="9" />
-      <window_info anchor="bottom" id="Event Log" order="10" side_tool="true" />
-      <window_info anchor="bottom" id="Terminal" order="11" weight="0.7286689" />
-      <window_info anchor="bottom" id="Python Console" order="12" weight="0.552901" />
+      <window_info anchor="bottom" id="File Transfer" order="13" weight="0.32935154" />
       <window_info anchor="right" id="Commander" internal_type="SLIDING" order="0" type="SLIDING" weight="0.4" />
       <window_info anchor="right" id="Ant Build" order="1" weight="0.25" />
       <window_info anchor="right" content_ui="combo" id="Hierarchy" order="2" weight="0.25" />
@@ -498,54 +549,17 @@
     <MESSAGE value="fit bugs of `find_markers.py`" />
     <MESSAGE value="add quantile_norm func od `normalize.py` and refactor the code." />
     <MESSAGE value="Refactor the code" />
-    <option name="LAST_COMMIT_MESSAGE" value="Refactor the code" />
+    <MESSAGE value="finish basic tools" />
+    <MESSAGE value="update after debug" />
+    <MESSAGE value="modified plot func" />
+    <MESSAGE value="modified heatmap funcs" />
+    <option name="LAST_COMMIT_MESSAGE" value="modified heatmap funcs" />
   </component>
   <component name="com.intellij.coverage.CoverageDataManagerImpl">
     <SUITE FILE_PATH="coverage/spateo_release$normalize.coverage" NAME="normalize Coverage Results" MODIFIED="1615280225946" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/spateo/preprocess" />
     <SUITE FILE_PATH="coverage/spateo_release$normalize__1_.coverage" NAME="normalize (1) Coverage Results" MODIFIED="1615950007468" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/stereo/preprocess" />
   </component>
   <component name="editorHistoryManager">
-    <entry file="file://$USER_HOME$/AppData/Roaming/Python/Python36/site-packages/setuptools/__init__.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="167">
-          <caret line="119" column="4" selection-start-line="119" selection-start-column="4" selection-end-line="119" selection-end-column="4" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/stereo/plots/__init__.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="200">
-          <caret line="8" selection-start-line="8" selection-end-line="8" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$USER_HOME$/AppData/Roaming/Python/Python36/site-packages/pandas/core/frame.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="186">
-          <caret line="440" column="8" selection-start-line="440" selection-start-column="8" selection-end-line="440" selection-end-column="8" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/README.md">
-      <provider selected="true" editor-type-id="split-provider[text-editor;markdown-preview-editor]">
-        <state split_layout="SPLIT">
-          <first_editor relative-caret-position="75">
-            <caret line="3" selection-start-line="3" selection-end-line="7" />
-          </first_editor>
-          <second_editor />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/stereo/log_manager.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="475">
-          <caret line="20" column="19" selection-start-line="20" selection-start-column="13" selection-end-line="20" selection-end-column="19" />
-          <folding>
-            <element signature="e#154#168#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/stereo/utils/correlation.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="1225">
@@ -625,108 +639,6 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/stereo/tools/cluster.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="350">
-          <caret line="14" selection-start-line="14" selection-end-line="14" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/stereo/preprocess/filter.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="-14">
-          <caret line="12" column="27" selection-start-line="12" selection-start-column="27" selection-end-line="12" selection-end-column="27" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/stereo/tools/find_markers.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="325">
-          <caret line="64" column="19" selection-start-line="64" selection-start-column="19" selection-end-line="64" selection-end-column="19" />
-          <folding>
-            <element signature="e#161#205#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/stereo/utils/data_helper.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="111">
-          <caret line="12" column="4" selection-start-line="12" selection-start-column="4" selection-end-line="12" selection-end-column="4" />
-          <folding>
-            <element signature="e#160#193#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/stereo/tools/cell_type_anno.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="1111">
-          <caret line="140" column="45" selection-start-line="140" selection-start-column="45" selection-end-line="140" selection-end-column="45" />
-          <folding>
-            <element signature="e#156#175#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/stereo/io/reader.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="200">
-          <caret line="17" column="22" selection-start-line="17" selection-start-column="22" selection-end-line="17" selection-end-column="22" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$USER_HOME$/AppData/Roaming/Python/Python36/site-packages/anndata/_core/anndata.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="186">
-          <caret line="144" column="6" selection-start-line="144" selection-start-column="6" selection-end-line="144" selection-end-column="6" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/stereo/preprocess/normalize.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="2125">
-          <caret line="100" selection-start-line="100" selection-end-line="100" />
-          <folding>
-            <element signature="e#312#330#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/stereo/tools/neighbors.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="-414">
-          <caret line="10" column="13" selection-start-line="10" selection-start-column="7" selection-end-line="10" selection-end-column="13" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/stereo/core/stereo_data.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="86">
-          <caret line="8" lean-forward="true" selection-start-line="8" selection-end-line="8" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/stereo/tools/dim_reduce.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="253">
-          <caret line="55" column="97" lean-forward="true" selection-start-line="55" selection-start-column="97" selection-end-line="55" selection-end-column="97" />
-          <folding>
-            <element signature="e#226#263#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/stereo/core/stereo_result.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="86">
-          <caret line="32" column="90" selection-start-line="32" selection-start-column="90" selection-end-line="32" selection-end-column="90" />
-          <folding>
-            <element signature="e#155#182#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
     <entry file="file://D:/ananconda3/Lib/inspect.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="186">
@@ -734,39 +646,12 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/stereo/core/tool_base.py">
+    <entry file="file://$PROJECT_DIR$/stereo/config.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="361">
-          <caret line="17" selection-start-line="17" selection-end-line="17" />
+        <state relative-caret-position="275">
+          <caret line="11" column="48" selection-start-line="11" selection-start-column="48" selection-end-line="11" selection-end-column="48" />
           <folding>
-            <element signature="e#151#188#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/stereo/tools/clustering.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="225">
-          <caret line="21" column="45" selection-start-line="21" selection-start-column="45" selection-end-line="21" selection-end-column="45" />
-          <folding>
-            <element signature="e#88#106#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/stereo/io/__init__.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="200">
-          <caret line="8" column="36" lean-forward="true" selection-start-line="8" selection-start-column="36" selection-end-line="8" selection-end-column="36" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/stereo/preprocess/__init__.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="250">
-          <caret line="10" lean-forward="true" selection-start-line="10" selection-end-line="10" />
-          <folding>
-            <element signature="e#153#219#0" expanded="true" />
+            <element signature="e#148#182#0" expanded="true" />
           </folding>
         </state>
       </provider>
@@ -774,19 +659,123 @@
     <entry file="file://$PROJECT_DIR$/stereo/tools/__init__.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="300">
-          <caret line="12" lean-forward="true" selection-start-line="12" selection-end-line="12" />
+          <caret line="12" selection-start-line="12" selection-end-line="12" />
           <folding>
             <element signature="e#153#193#0" expanded="true" />
           </folding>
         </state>
       </provider>
     </entry>
+    <entry file="file://$PROJECT_DIR$/stereo/__init__.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="375">
+          <caret line="15" column="19" selection-start-line="15" selection-start-column="19" selection-end-line="15" selection-end-column="19" />
+          <folding>
+            <element signature="e#153#179#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/stereo/io/__init__.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="200">
+          <caret line="8" column="51" selection-start-line="8" selection-start-column="51" selection-end-line="8" selection-end-column="51" />
+        </state>
+      </provider>
+    </entry>
     <entry file="file://$PROJECT_DIR$/stereo/utils/__init__.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="310">
-          <caret line="13" lean-forward="true" selection-start-line="13" selection-end-line="13" />
+          <caret line="13" selection-start-line="13" selection-end-line="13" />
           <folding>
             <element signature="e#153#166#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/stereo/tools/cell_type_anno.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="350">
+          <caret line="14" column="26" selection-start-line="14" selection-start-column="26" selection-end-line="14" selection-end-column="26" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/stereo/preprocess/__init__.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="275">
+          <caret line="11" selection-start-line="11" selection-end-line="11" />
+          <folding>
+            <element signature="e#153#219#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/stereo/plots/plotting.py" />
+    <entry file="file://$PROJECT_DIR$/stereo/plots/__init__.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="200">
+          <caret line="8" selection-start-line="8" selection-end-line="8" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/stereo/preprocess/qc.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="386">
+          <caret line="22" selection-start-line="22" selection-end-line="22" />
+          <folding>
+            <element signature="e#144#177#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/stereo/plots/plot_data_description.md">
+      <provider selected="true" editor-type-id="split-provider[text-editor;markdown-preview-editor]">
+        <state split_layout="SPLIT">
+          <first_editor relative-caret-position="-525" />
+          <second_editor />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$USER_HOME$/AppData/Roaming/Python/Python36/site-packages/matplotlib/__init__.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="487">
+          <caret line="521" column="59" selection-start-line="521" selection-end-line="522" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/stereo/tools/neighbors.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="798">
+          <caret line="72" selection-start-line="8" selection-end-line="72" />
+          <folding>
+            <element signature="e#151#186#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$USER_HOME$/AppData/Roaming/Python/Python36/site-packages/anndata/_core/index.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="48">
+          <caret line="147" column="4" selection-start-line="147" selection-start-column="4" selection-end-line="147" selection-end-column="4" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/stereo/io/reader.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="1125">
+          <caret line="87" selection-start-line="87" selection-end-line="88" />
+          <folding>
+            <element signature="e#222#241#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/stereo/log_manager.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="697">
+          <caret line="57" selection-start-line="57" selection-end-line="57" />
+          <folding>
+            <element signature="e#154#168#0" expanded="true" />
           </folding>
         </state>
       </provider>
@@ -801,30 +790,165 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/stereo/config.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="275">
-          <caret line="11" column="48" selection-start-line="11" selection-start-column="48" selection-end-line="11" selection-end-column="48" />
-          <folding>
-            <element signature="e#148#182#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/stereo/__init__.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="275">
-          <caret line="11" column="31" selection-start-line="11" selection-start-column="31" selection-end-line="11" selection-end-column="31" />
-          <folding>
-            <element signature="e#153#179#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/requirements.txt">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="325">
-          <caret line="13" column="17" lean-forward="true" selection-start-line="13" selection-start-column="17" selection-end-line="13" selection-end-column="17" />
+          <caret line="13" column="10" selection-start-line="13" selection-end-line="13" selection-end-column="10" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/stereo/plots/_plot_basic/__init__.py">
+      <provider selected="true" editor-type-id="text-editor" />
+    </entry>
+    <entry file="file://$PROJECT_DIR$/stereo/tools/dim_reduce.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="2900">
+          <caret line="124" column="26" selection-start-line="124" selection-start-column="26" selection-end-line="124" selection-end-column="26" />
+          <folding>
+            <element signature="e#226#263#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/stereo/core/tool_base.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="825">
+          <caret line="37" column="12" selection-start-line="37" selection-start-column="8" selection-end-line="37" selection-end-column="12" />
+          <folding>
+            <element signature="e#151#188#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/stereo/core/stereo_data.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="900">
+          <caret line="36" column="10" selection-start-line="36" selection-start-column="10" selection-end-line="36" selection-end-column="10" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$USER_HOME$/AppData/Roaming/Python/Python36/site-packages/anndata/_core/anndata.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="207">
+          <caret line="1160" column="40" selection-start-line="1160" selection-start-column="38" selection-end-line="1160" selection-end-column="40" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/stereo/plots/plot_utils.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="200">
+          <caret line="260" column="33" selection-start-line="260" selection-start-column="33" selection-end-line="260" selection-end-column="33" />
+          <folding>
+            <element signature="e#152#179#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/stereo/plots/_plot_basic/heatmap_plt.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="473">
+          <caret line="333" column="40" selection-start-line="333" selection-start-column="40" selection-end-line="333" selection-end-column="40" />
+          <folding>
+            <element signature="e#153#187#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$USER_HOME$/AppData/Roaming/Python/Python36/site-packages/scipy/stats/stats.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="-1735">
+          <caret line="5529" column="4" selection-start-line="5529" selection-start-column="4" selection-end-line="5529" selection-end-column="4" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/stereo/tools/find_markers.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="359">
+          <caret line="58" column="74" selection-start-line="58" selection-start-column="74" selection-end-line="58" selection-end-column="74" />
+          <folding>
+            <element signature="e#161#205#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/stereo/core/stereo_result.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="709">
+          <caret line="70" lean-forward="true" selection-start-line="70" selection-end-line="70" />
+          <folding>
+            <element signature="e#155#182#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/stereo/utils/data_helper.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="225">
+          <caret line="9" column="17" selection-start-line="9" selection-start-column="17" selection-end-line="9" selection-end-column="17" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/stereo/plots/plots.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="984">
+          <caret line="496" lean-forward="true" selection-start-line="496" selection-end-line="496" />
+          <folding>
+            <element signature="e#147#181#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/stereo/plots/_plot_basic/scatter_plt.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="300">
+          <caret line="12" selection-start-line="12" selection-end-line="15" selection-end-column="33" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/stereo/preprocess/filter.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="-2189">
+          <caret line="16" column="91" selection-start-line="16" selection-start-column="78" selection-end-line="16" selection-end-column="91" />
+          <folding>
+            <element signature="e#221#254#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/stereo/tools/cluster.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="2284">
+          <caret line="103" column="7" selection-start-line="103" selection-start-column="7" selection-end-line="103" selection-end-column="7" />
+          <folding>
+            <element signature="e#149#171#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/stereo/tools/clustering.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="361">
+          <caret line="77" column="42" lean-forward="true" selection-start-line="77" selection-start-column="42" selection-end-line="77" selection-end-column="42" />
+          <folding>
+            <element signature="e#88#106#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/stereo/plots/_plot_basic/get_stereo_data.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="186">
+          <caret line="26" lean-forward="true" selection-start-line="26" selection-end-line="26" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/stereo/preprocess/normalize.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="211">
+          <caret line="113" column="40" lean-forward="true" selection-start-line="113" selection-start-column="40" selection-end-line="113" selection-end-column="40" />
+          <folding>
+            <element signature="e#312#330#0" expanded="true" />
+          </folding>
         </state>
       </provider>
     </entry>
