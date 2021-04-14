@@ -22,6 +22,7 @@ def filter_cells(adata, min_gene=None, max_gene=None, n_genes_by_counts=None, pc
     :param min_gene: Minimum number of genes expressed for a cell pass filtering.
     :param max_gene: Maximum number of genes expressed for a cell pass filtering.
     :param n_genes_by_counts: Minimum number of  n_genes_by_counts for a cell pass filtering.
+    :param pct_counts_mt: Maximum number of  pct_counts_mt for a cell pass filtering.
     :param cell_list: the list of cells which will be filtered.
     :param obs_key: the key of adata.obs to find the name of cell. if None, adata.obs.index replace.
     :param inplace: whether inplace the original adata or return a new anndata.
