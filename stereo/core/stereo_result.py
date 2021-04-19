@@ -106,3 +106,16 @@ class SpatialLagResult(StereoResult):
             info += f'    result: a DataFrame which has `genes`,`lag_coeff`, `lag_zstat`, `lag_pval` columns.\n'
             info += f'    the shape is: {self.score.shape}'
         return info
+
+
+class SpatialPatternScoreResult(StereoResult):
+    def __init__(self, name='spatial_pattern_score_result', param=None, pattern_info=None):
+        super(SpatialPatternScoreResult, self).__init__(name, param)
+        self.spatial_pattern_score = pattern_info
+
+    def __str__(self):
+        info = super(SpatialPatternScoreResult, self).__str__()
+        if self.spatial_pattern_score is not None:
+            info += f'    result: a DataFrame which has `E10`, `pattern_attribute` columns.\n'
+            info += f'    the shape is: {self.spatial_pattern_score.shape}'
+        return info
