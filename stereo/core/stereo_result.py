@@ -93,3 +93,16 @@ class ClusterResult(StereoResult):
             info += f'    result: a DataFrame which has `cells`,`cluster` columns.\n'
             info += f'    the shape is: {self.cluster.shape}'
         return info
+
+
+class SpatialLagResult(StereoResult):
+    def __init__(self, name='spatial_lag', param=None, score=None):
+        super(SpatialLagResult, self).__init__(name=name, param=param)
+        self.score = score
+
+    def __str__(self):
+        info = super(SpatialLagResult, self).__str__()
+        if self.score is not None:
+            info += f'    result: a DataFrame which has `genes`,`lag_coeff`, `lag_zstat`, `lag_pval` columns.\n'
+            info += f'    the shape is: {self.score.shape}'
+        return info
