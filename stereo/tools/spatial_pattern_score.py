@@ -14,13 +14,12 @@ import statistics
 import scipy.stats as stats
 from ..core.tool_base import ToolBase
 from ..core.stereo_result import SpatialPatternScoreResult
-from ..log_manager import logger
 
 
 class SpatialPatternScore(ToolBase):
     def __init__(self, data: AnnData, method='enrichment',
                  name='spatial_pattern_score'):
-        self.params = locals()
+        self.params = self.get_params(locals())
         super(SpatialPatternScore, self).__init__(data=data, method=method, name=name)
         self.check_param()
         self.result = SpatialPatternScoreResult(name=name, param=self.params)
@@ -31,9 +30,6 @@ class SpatialPatternScore(ToolBase):
         :return:
         """
         super(SpatialPatternScore, self).check_param()
-        if not isinstance(self.data, AnnData):
-            logger.error('the format of data must be AnnData.')
-            raise ValueError('the format of data must be AnnData.')
 
     def fit(self):
         report = []
