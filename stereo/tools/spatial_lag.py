@@ -16,14 +16,15 @@ import pandas as pd
 from tqdm import tqdm
 from random import sample
 from ..core.stereo_result import SpatialLagResult
+from ..log_manager import logger
 
 
 class SpatialLag(ToolBase):
-    def __init__(self, andata: AnnData, method='gm_lag', name='spatial_lag', cluster=None, genes=None,
+    def __init__(self, data: AnnData, method='gm_lag', name='spatial_lag', cluster=None, genes=None,
                  random_drop=True, drop_dummy=None, n_neighbors=8):
-        super(SpatialLag, self).__init__(data=andata, method=method, name=name)
+        super(SpatialLag, self).__init__(data=data, method=method, name=name)
         self.param = self.get_params(locals())
-        self.cluster = get_cluster_res(self.data, data_key=cluster)
+        self.cluster = self.data.uns[cluster].cluster
         self.genes = genes
         self.random_drop = random_drop
         self.drop_dummy = drop_dummy
@@ -35,6 +36,7 @@ class SpatialLag(ToolBase):
         res = self.gm_model(x, uniq_group)
         result = SpatialLagResult(name=self.name, param=self.param, score=res)
         self.add_result(result=result, key_added=self.name)
+        return result
 
     def get_data(self):
         group_num = self.cluster['cluster'].value_counts()
@@ -67,7 +69,8 @@ class SpatialLag(ToolBase):
         knn.transform = 'R'
         genes = self.get_genes()
         result = pd.DataFrame(index=genes)
-        for i in ['const'] + uniq_group + ['W_log_exp']:
+        vars_info = ['const'] + uniq_group + ['W_log_exp']
+        for i in vars_info:
             result[str(i) + '_lag_coeff'] = None
             result[str(i) + '_lag_zstat'] = None
             result[str(i) + '_lag_pval'] = None
@@ -76,19 +79,18 @@ class SpatialLag(ToolBase):
             x['log_exp'] = self.data[:, cur_g].X
             try:
                 model = spreg.GM_Lag(x[['log_exp']].values, x.values,
-                                     w=knn, name_y='log_exp', name_x=x.columns)
+                                     w=knn, name_y='log_exp')
                 a = pd.DataFrame(model.betas, model.name_x + ['W_log_exp'], columns=['coef'])
                 b = pd.DataFrame(model.z_stat, model.name_x + ['W_log_exp'], columns=['z_stat', 'p_val'])
                 df = a.merge(b, left_index=True, right_index=True)
-                print(df.head())
-                for ind, g in enumerate(['const'] + uniq_group + ['W_log_exp']):
-                    result.loc[cur_g, str(g) + '_GM_lag_coeff'] = df.iloc[ind, 0]
-                    result.loc[cur_g, str(g) + '_GM_lag_zstat'] = df.iloc[ind, 1]
-                    result.loc[cur_g, str(g) + '_GM_lag_pval'] = df.iloc[ind, 2]
+                for ind, g in enumerate(vars_info):
+                    result.loc[cur_g, str(g) + '_lag_coeff'] = df.iloc[ind, 0]
+                    result.loc[cur_g, str(g) + '_lag_zstat'] = df.iloc[ind, 1]
+                    result.loc[cur_g, str(g) + '_lag_pval'] = df.iloc[ind, 2]
             except Exception as e:
-                print(e)
-                for ind, g in enumerate(['const'] + uniq_group + ['W_log_exp']):
-                    result.loc[cur_g, str(g) + '_GM_lag_coeff'] = np.nan
-                    result.loc[cur_g, str(g) + '_GM_lag_zstat'] = np.nan
-                    result.loc[cur_g, str(g) + '_GM_lag_pval'] = np.nan
+                logger.error(f'spatial lag get an error: {e}.')
+                for ind, g in enumerate(vars_info):
+                    result.loc[cur_g, str(g) + '_lag_coeff'] = np.nan
+                    result.loc[cur_g, str(g) + '_lag_zstat'] = np.nan
+                    result.loc[cur_g, str(g) + '_lag_pval'] = np.nan
         return result
