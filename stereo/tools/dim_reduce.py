@@ -22,10 +22,10 @@ from ..core.stereo_result import DimReduceResult
 
 
 class DimReduce(ToolBase):
-    def __init__(self, andata: AnnData, method='pca', n_pcs=2, min_variance=0.01, n_iter=250,
+    def __init__(self, data: AnnData, method='pca', n_pcs=2, min_variance=0.01, n_iter=250,
                  n_neighbors=5, min_dist=0.3, inplace=False, name='dim_reduce'):
         self.params = self.get_params(locals())
-        super(DimReduce, self).__init__(data=andata, method=method, name=name)
+        super(DimReduce, self).__init__(data=data, method=method, name=name)
         self.n_pcs = n_pcs
         self.min_variance = min_variance
         self.n_iter = n_iter
