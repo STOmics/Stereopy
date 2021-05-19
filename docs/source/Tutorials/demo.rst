@@ -4,7 +4,7 @@ demo
 以小鼠stereo-seq后整理的空间组学表达矩阵为例，利用stereopy工具对小鼠的空间组学进行数据分析。
 
 数据矩阵格式如下, x,
-y分别为基因在组织切片的空间位置，count为基因表达数量？
+y分别为基因在组织切片的空间位置，count为基因表达数量。
 
 +----------+-------+-------+---------+
 | GeneID   | x     | y     | count   |
@@ -16,7 +16,7 @@ y分别为基因在组织切片的空间位置，count为基因表达数量？
 
 该矩阵作为初始输入，分析流程大概分为如下几步。
 
-1. read data
+1. 数据读取
 ~~~~~~~~~~~~
 
 .. code:: python
@@ -28,11 +28,11 @@ y分别为基因在组织切片的空间位置，count为基因表达数量？
 为了方便处理，将矩阵信息取成andata的格式，andata将数据分成三个模块存储，其详细介绍在
 *https://scanpy.readthedocs.io/en/latest/usage-principles.html#anndata*
 
-由于stereo-seq是纳米级别的空间位置测序，所以每一个位置的捕捉到的表达基因数目有限，
-为了达到更好的分析效果可以扩大空间，即通过设置bin
-size为参数，比如将范围内的10\*10（bin\_size=100）个位置合并成一个位置。
+由于stereo-seq是纳米级别的空间位置测序，每一个位置捕捉到的表达基因数目有限，
+可以通过设置bin
+size参数，将范围内的位点10\*10（bin\_size=10）合并成一个，适当的bin size能达到单细胞水平的分析效果。
 
-2.preprocess
+2.预处理
 ~~~~~~~~~~~~
 
 .. code:: python
@@ -44,10 +44,9 @@ size为参数，比如将范围内的10\*10（bin\_size=100）个位置合并成
     # normalize
     st.preprocess.Normalizer(data=andata, method='normalize_total', inplace=True, target_sum=10000).fit()
 
-预处理主要包括质控、过滤和标准化三个部分，返回的都是处理后的andata,
-也可以用inplace参数直接替之前的andata
+预处理主要包括质控、过滤和标准化三个部分，返回的都是处理后的andata。
 
-3.spatial distribution visualization
+3.空间分布可视化
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. code:: python
@@ -64,7 +63,7 @@ size为参数，比如将范围内的10\*10（bin\_size=100）个位置合并成
 
 小提琴图
 
-4.Dimensionality reduction
+4.降维分析
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. code:: python
@@ -73,9 +72,9 @@ size为参数，比如将范围内的10\*10（bin\_size=100）个位置合并成
     dim_reduce.fit()
     pca_x = dim_reduce.result.x_reduce
 
-降维分析
 
-5.cluster
+
+5.聚类分析
 ~~~~~~~~~
 
 .. code:: python
@@ -88,7 +87,7 @@ size为参数，比如将范围内的10\*10（bin\_size=100）个位置合并成
 
 对所有位点进行聚类后，再查看其空间分布情况
 
-6.find marker
+6.差异基因分析
 ~~~~~~~~~~~~~
 
 .. code:: python
@@ -100,8 +99,9 @@ size为参数，比如将范围内的10\*10（bin\_size=100）个位置合并成
 
 .. image:: ../_static/heatmap.png
 
+可以通过差异分析，找出聚类后每一组的差异基因，观察空间上各类‘细胞’的表达差异。
 
-7.annotation
+7.细胞注释
 ~~~~~~~~~~~~
 
 .. code:: python
@@ -111,3 +111,5 @@ size为参数，比如将范围内的10\*10（bin\_size=100）个位置合并成
     st.plots.plot_degs(andata, key='marker_test')
 
 .. image:: ../_static/degs.png
+
+如果bin size为细胞水平大小，可以通过此分析，对细胞进行注释，注释结果包括细胞的类型
