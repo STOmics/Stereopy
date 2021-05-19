@@ -8,7 +8,7 @@
 
 change log:
     2021/04/02 14:07  modified by qiuping, change the way of getting plot data of plot_cluster_result,
-                      and remove it to ..plots.py.
+                      and remove it to ..marker_genes.py.
 """
 from matplotlib.cm import get_cmap
 from matplotlib.axes import Axes

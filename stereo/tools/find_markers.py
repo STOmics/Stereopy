@@ -21,7 +21,7 @@ class FindMarker(ToolBase):
     def __init__(self, data, cluster, test_groups='all', control_groups='rest', method='t-test',
                  corr_method=None, name=None):
         super(FindMarker, self).__init__(data, method, name)
-        self.params = locals()
+        self.params = self.get_params(locals())
         self.corr_method = corr_method.lower()
         self.test_group = test_groups
         self.control_group = control_groups

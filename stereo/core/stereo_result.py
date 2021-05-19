@@ -93,3 +93,52 @@ class ClusterResult(StereoResult):
             info += f'    result: a DataFrame which has `cells`,`cluster` columns.\n'
             info += f'    the shape is: {self.cluster.shape}'
         return info
+
+
+class SpatialLagResult(StereoResult):
+    def __init__(self, name='spatial_lag', param=None, score=None):
+        super(SpatialLagResult, self).__init__(name=name, param=param)
+        self.score = score
+
+    def __str__(self):
+        info = super(SpatialLagResult, self).__str__()
+        if self.score is not None:
+            info += f'    result: a DataFrame which has `genes`,`lag_coeff`, `lag_zstat`, `lag_pval` columns.\n'
+            info += f'    the shape is: {self.score.shape}'
+        return info
+
+    def top_markers(self, top_k=10, ascend=False):
+        """
+        obtain the first k significantly different genes
+        :param top_k:  the number of top k
+        :param ascend: the ascend order of sorting.
+        :return:
+        """
+        if self.score is not None:
+            coef_col = self.score.columns[self.score.columns.str.endswith('lag_coeff')]
+            col1 = np.array([(i, i) for i in coef_col]).flatten()
+            col2 = np.array([('genes', 'values') for _ in coef_col]).flatten()
+            tmp = []
+            for col in coef_col:
+                top_df = self.score.sort_values(by=col, ascending=ascend).head(top_k)
+                tmp.append(list(top_df.index))
+                tmp.append(top_df[col])
+            x = np.array(tmp).T
+            top_res = pd.DataFrame(x, columns=[col1, col2], index=np.arange(top_k))
+            return top_res
+        else:
+            logger.warning('the result of degs is None, return None.')
+            return None
+
+
+class SpatialPatternScoreResult(StereoResult):
+    def __init__(self, name='spatial_pattern_score_result', param=None, pattern_info=None):
+        super(SpatialPatternScoreResult, self).__init__(name, param)
+        self.spatial_pattern_score = pattern_info
+
+    def __str__(self):
+        info = super(SpatialPatternScoreResult, self).__str__()
+        if self.spatial_pattern_score is not None:
+            info += f'    result: a DataFrame which has `E10`, `pattern_attribute` columns.\n'
+            info += f'    the shape is: {self.spatial_pattern_score.shape}'
+        return info
