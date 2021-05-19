@@ -1,5 +1,7 @@
 |Downloads| |Docs| |Github|
 
+.. _topics-index:
+
 Stereopy - Spatial transcriptomics analysis in Python
 ================================================
 
@@ -19,22 +21,21 @@ Update later.
 .. toctree::
    :caption: General
    :maxdepth: 2
-   :hidden:
 
-   Installation
-   Quick start
-   API
-   Classes
-   Release note
-   Reference
+
+   General/Installation
+   General/API
+
+
 
 .. toctree::
    :caption: Tutorials
    :maxdepth: 2
-   :hidden:
 
-   Core
-   Examples
+
+   Tutorials/demo
+
+
 
 .. |Docs| image:: https://github.com/BGIResearch/stereopy
     :target: https://github.com/BGIResearch/stereopy
