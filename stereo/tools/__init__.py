@@ -10,3 +10,5 @@ from .cell_type_anno import CellTypeAnno
 from .clustering import Clustering
 from .dim_reduce import DimReduce, pca, u_map, factor_analysis, low_variance, t_sne
 from .find_markers import FindMarker
+from .spatial_pattern_score import SpatialPatternScore
+from .spatial_lag import SpatialLag

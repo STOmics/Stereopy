@@ -8,6 +8,7 @@
 """
 from scipy.sparse import issparse
 import pandas as pd
+import numpy as np
 
 
 def select_group(andata, groups, clust_key):
@@ -23,3 +24,13 @@ def select_group(andata, groups, clust_key):
     group_sub = exp_matrix[group_index, :]
     obs = andata.obs_names[group_index]
     return pd.DataFrame(group_sub, index=obs, columns=list(andata.var_names))
+
+
+def get_cluster_res(adata, data_key='clustering'):
+    cluster_data = adata.uns[data_key].cluster
+    cluster = cluster_data['cluster'].astype(str).astype('category').values
+    return cluster
+
+
+def get_position_array(data, obs_key='spatial'):
+    return np.array(data.obsm[obs_key])[:, 0: 2]

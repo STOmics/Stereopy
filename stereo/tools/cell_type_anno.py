@@ -25,7 +25,7 @@ class CellTypeAnno(ToolBase):
     def __init__(self, adata, ref_dir=None, cores=1, keep_zeros=True, use_rf=True, sample_rate=0.8,
                  n_estimators=20, strategy='1', method='spearmanr', split_num=1, out_dir=None, name='cell_type_anno'):
         super(CellTypeAnno, self).__init__(data=adata, method=method, name=name)
-        self.param = locals()
+        self.param = self.get_params(locals())
         self.data = adata
         self.ref_dir = ref_dir if ref_dir else os.path.join(stereo_conf.data_dir, 'ref_db', 'FANTOM5')
         self.n_jobs = cores
