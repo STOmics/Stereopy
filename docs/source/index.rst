@@ -13,11 +13,6 @@ It provides a series of analysis of spatial omics, and will be added to the tiss
     :width: 400px
     :align: center
 
-Manuscript
-----------
-Update later.
-
-
 .. toctree::
    :caption: General
    :maxdepth: 2
@@ -33,18 +28,19 @@ Update later.
    :maxdepth: 2
 
 
-   Tutorials/tools_test2
+   Tutorials/Quick start
+   Tutorials/Examples
 
 
 
-.. |Docs| image:: https://github.com/BGIResearch/stereopy
+.. |Docs| image:: https://img.shields.io/static/v1?label=docs&message=streopy&color=green
     :target: https://github.com/BGIResearch/stereopy
     :alt: Documentation
 
-.. |Github| image:: https://github.com/BGIResearch/stereopy
+.. |Github| image:: https://img.shields.io/github/stars/BGIResearch/stereopy?logo=GitHub&color=yellow
     :target: https://github.com/BGIResearch/stereopy
     :alt: Github
 
-.. |Downloads| image:: https://github.com/BGIResearch/stereopy
+.. |Downloads| image:: https://img.shields.io/static/v1?label=download&message=github&color=blue
     :target: https://github.com/BGIResearch/stereopy
     :alt: Downloads
