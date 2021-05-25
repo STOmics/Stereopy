@@ -19,7 +19,7 @@ It provides a series of analysis of spatial omics, and will be added to the tiss
 
 
    General/Installation
-   General/API
+   api/index
 
 
 
