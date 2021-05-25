@@ -11,7 +11,7 @@ scikit-learn>=0.21.2
 numba
 statsmodels~=0.12.1
 leidenalg>=0.8.3
-umap_learn==0.4.6
+umap_learn>=0.4.6
 KDEpy>=1.0.10
 
 
