@@ -28,8 +28,8 @@ It provides a series of analysis of spatial omics, and will be added to the tiss
    :maxdepth: 2
 
 
-   Tutorials/Quick start
-   Tutorials/Examples
+   Tutorials/quick_start
+   Tutorials/Demo
 
 
 
