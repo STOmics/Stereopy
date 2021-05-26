@@ -23,12 +23,6 @@ class Normalizer(ToolBase):
     Normalizer of stereo.
     """
     def __init__(self, data, method='normalize_total', inplace=True, target_sum=1, name='normalize'):
-        """
-        :param data:
-        :param method:
-        :param inplace:
-        :param target_sum:
-        """
         super(Normalizer, self).__init__(data=data, method=method, name=name)
         self.target_num = target_sum
         self.inplace = inplace
@@ -37,7 +31,7 @@ class Normalizer(ToolBase):
     def check_param(self):
         """
         Check whether the parameters meet the requirements.
-        :return:
+
         """
         super(Normalizer, self).check_param()
         if self.method.lower() not in ['normalize_total', 'quantile']:
@@ -58,7 +52,6 @@ class Normalizer(ToolBase):
     def fit(self):
         """
         compute the scale value of self.exp_matrix.
-        :return:
         """
         nor_res = None
         self.sparse2array()  # TODO: add  normalize of sparseMatrix
@@ -77,6 +70,7 @@ class Normalizer(ToolBase):
 def normalize_total(x, target_sum):
     """
     total count normalize the data to `target_sum` reads per cell, so that counts become comparable among cells.
+
     :param x: 2D array, shape (M, N), which row is cells and column is genes.
     :param target_sum: the number of reads per cell after normalization.
     :return: the normalized data.
@@ -87,9 +81,8 @@ def normalize_total(x, target_sum):
 
 def quantile_norm(x):
     """
-    Normalize the columns of X to each have the same distribution.
-    Given an expression matrix  of M genes by N samples, quantile normalization ensures all samples have the same
-    spread of data (by construction).
+    Normalize the columns of X to each have the same distribution. Given an expression matrix  of M genes by N samples, quantile normalization ensures all samples have the same spread of data (by construction).
+
     :param x: 2D array of float, shape (M, N)
     :return: The normalized data.
     """
@@ -103,6 +96,7 @@ def quantile_norm(x):
 def log1p(x):
     """
     Logarithmize the data. log(1 + x)
+
     :param x: 2D array, shape (M, N).
     :return:
     """
@@ -111,6 +105,14 @@ def log1p(x):
 
 
 def normalize_zscore_disksmooth(x, position, r):
+    """
+    for each position, given a radius, calculate the z-score within this circle as final normalized value.
+
+    :param x: 2D array, shape (M, N), which row is cells and column is genes.
+    :param position: each cell's position , [[x1, y1], [x2, y2], ..., M]
+    :param r: radius
+    :return: normalized data, shape (M, N), which row is cells and column is genes.
+    """
     position = position.astype(np.int32)
     point_tree = spatial.cKDTree(position)
     x = x.astype(np.float32)

@@ -56,6 +56,7 @@ class FindMarkerResult(StereoResult):
     def top_k_marker(self, top_k_genes=10, sort_key='pvalues', ascend=False):
         """
         obtain the first k significantly different genes
+
         :param top_k_genes:  the number of top k
         :param sort_key: sort by the column
         :param ascend: the ascend order of sorting.
@@ -110,6 +111,7 @@ class SpatialLagResult(StereoResult):
     def top_markers(self, top_k=10, ascend=False):
         """
         obtain the first k significantly different genes
+
         :param top_k:  the number of top k
         :param ascend: the ascend order of sorting.
         :return:

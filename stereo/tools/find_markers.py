@@ -31,7 +31,6 @@ class FindMarker(ToolBase):
     def check_param(self):
         """
         Check whether the parameters meet the requirements.
-        :return:
         """
         super(FindMarker, self).check_param()
         if self.method not in ['t-test', 'wilcoxon']:

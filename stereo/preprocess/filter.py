@@ -18,6 +18,7 @@ def filter_cells(adata, min_gene=None, max_gene=None, n_genes_by_counts=None, pc
                  cell_list=None, obs_key=None, inplace=True):
     """
     filter cells based on numbers of genes expressed .
+
     :param adata: AnnData object
     :param min_gene: Minimum number of genes expressed for a cell pass filtering.
     :param max_gene: Maximum number of genes expressed for a cell pass filtering.
@@ -26,7 +27,7 @@ def filter_cells(adata, min_gene=None, max_gene=None, n_genes_by_counts=None, pc
     :param cell_list: the list of cells which will be filtered.
     :param obs_key: the key of adata.obs to find the name of cell. if None, adata.obs.index replace.
     :param inplace: whether inplace the original adata or return a new anndata.
-    :return:
+    :return: AnnData object if inplace id true else none
     """
     assert isinstance(adata, AnnData)
     adata = adata if inplace else adata.copy()
@@ -60,12 +61,13 @@ def filter_cells(adata, min_gene=None, max_gene=None, n_genes_by_counts=None, pc
 def filter_genes(adata, min_cell=None, max_cell=None, gene_list=None, inplace=True):
     """
     filter genes based on the numbers of cells.
+
     :param adata: AnnData object.
     :param min_cell: Minimum number of cells for a gene pass filtering.
     :param max_cell: Maximun number of cells for a gene pass filtering.
     :param gene_list: the list of genes which will be filtered.
     :param inplace: whether inplace the original adata or return a new anndata.
-    :return:
+    :return: AnnData object if inplace id true else none
     """
     assert isinstance(adata, AnnData)
     adata = adata if inplace else adata.copy()
@@ -90,13 +92,14 @@ def filter_genes(adata, min_cell=None, max_cell=None, gene_list=None, inplace=Tr
 def filter_coordinates(adata, min_x=None, max_x=None, min_y=None, max_y=None, inplace=True):
     """
     filter cells based on the coordinates of cells.
+
     :param adata: AnnData object.
     :param min_x: Minimum of x for a cell pass filtering.
     :param max_x: Maximum of x for a cell pass filtering.
     :param min_y: Minimum of y for a cell pass filtering.
     :param max_y: Maximum of y for a cell pass filtering.
     :param inplace: whether inplace the original adata or return a new anndata.
-    :return:
+    :return: AnnData object if inplace id true else none
     """
     assert isinstance(adata, AnnData)
     assert 'spatial' in adata.obsm_keys()
