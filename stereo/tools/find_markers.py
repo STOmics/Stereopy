@@ -18,8 +18,23 @@ from tqdm import tqdm
 
 
 class FindMarker(ToolBase):
+    """
+    a tool for finding maker gene
+    define a cluster as group, find statistical test different genes between one group and the others using t-test or wilcoxon_test
+    """
     def __init__(self, data, cluster, test_groups='all', control_groups='rest', method='t-test',
                  corr_method=None, name=None):
+        """
+        initialization
+
+        :param data: anndata
+        :param cluster: the 'Clustering' tool name, defined when running 'Clustering' tool
+        :param test_groups: default all clusters
+        :param control_groups: rest of groups
+        :param method: t-test or wilcoxon_test
+        :param corr_method: correlation method
+        :param name: name of this tool and will be used as a key when adding tool result to andata object.
+        """
         super(FindMarker, self).__init__(data, method, name)
         self.params = self.get_params(locals())
         self.corr_method = corr_method.lower()
@@ -44,6 +59,9 @@ class FindMarker(ToolBase):
             raise ValueError(f" '{self.cluster}' is not in andata.")
 
     def fit(self):
+        """
+        run
+        """
         all_groups = set(self.data.obs[self.cluster].values)
         groups = all_groups if self.test_group == 'all' else [self.test_group]
         result_info = {}
@@ -68,6 +86,13 @@ class FindMarker(ToolBase):
 
     @staticmethod
     def merge_groups_data(g1, g2):
+        """
+        drop duplicated and the columns that all the values are 0
+
+        :param g1:
+        :param g2:
+        :return:
+        """
         g1 = g1.loc[:, ~g1.columns.duplicated()]
         g2 = g2.loc[:, ~g2.columns.duplicated()]
         zeros = list(set(g1.columns[g1.sum(axis=0) == 0]) & set(g2.columns[g2.sum(axis=0) == 0]))
@@ -77,6 +102,14 @@ class FindMarker(ToolBase):
 
 
 def t_test(group, other_group, corr_method=None):
+    """
+    student t test
+
+    :param group:
+    :param other_group:
+    :param corr_method:
+    :return:
+    """
     scores, pvals = stats.ttest_ind(group.values, other_group.values, axis=0, equal_var=False)
     result = {'genes': group.columns, 'scores': scores, 'pvalues': pvals}
     n_genes = len(group.columns)
@@ -88,6 +121,14 @@ def t_test(group, other_group, corr_method=None):
 
 
 def corr_pvalues(pvals, method, n_genes):
+    """
+    calculate correlation's p values
+
+    :param pvals:
+    :param method:
+    :param n_genes:
+    :return:
+    """
     pvals_adj = None
     if method == 'benjamini-hochberg':
         pvals[np.isnan(pvals)] = 1
@@ -98,6 +139,14 @@ def corr_pvalues(pvals, method, n_genes):
 
 
 def wilcoxon_test(group, other_group, corr_method=None):
+    """
+    wilcoxon_test
+
+    :param group:
+    :param other_group:
+    :param corr_method:
+    :return:
+    """
     result = group.apply(lambda x: pd.Series(stats.mannwhitneyu(x, other_group[x.name])), axis=0).transpose()
     result.columns = ['scores', 'pvalues']
     result['genes'] = list(result.index)
