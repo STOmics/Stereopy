@@ -22,8 +22,27 @@ from scipy.sparse import issparse
 
 
 class CellTypeAnno(ToolBase):
+    """
+    predict bin-cells's type
+    """
     def __init__(self, adata, ref_dir=None, cores=1, keep_zeros=True, use_rf=True, sample_rate=0.8,
                  n_estimators=20, strategy='1', method='spearmanr', split_num=1, out_dir=None, name='cell_type_anno'):
+        """
+        initialization
+
+        :param adata: anndata object
+        :param ref_dir: reference database directory
+        :param cores: set running core to fasten running speed
+        :param keep_zeros: if true, keeping the genes that in reference but not in input expression data
+        :param use_rf: if running random choosing genes or not
+        :param sample_rate: ratio of data as sample data
+        :param n_estimators: training times
+        :param strategy:
+        :param method: calculate correlation's method
+        :param split_num:
+        :param out_dir: output directory
+        :param name: define this running tool name that will be used as a key when adding tool result to andata object.
+        """
         super(CellTypeAnno, self).__init__(data=adata, method=method, name=name)
         self.param = self.get_params(locals())
         self.data = adata
@@ -41,7 +60,12 @@ class CellTypeAnno(ToolBase):
         self.check_param()
 
     def split_dataframe(self, df):
+        """
+        split input data to N(param: split_num) part
 
+        :param df: input expression data frame
+        :return: N part of data frame
+        """
         datas = []
         logger.info(f'input data:  {df.shape[0]} genes, {df.shape[1]} cells.')
         if self.split_num > 1:
@@ -57,6 +81,13 @@ class CellTypeAnno(ToolBase):
 
     @staticmethod
     def concat_top_corr_files(files, output_dir, prefix=None):
+        """
+        concat correlation files from
+        :param files:
+        :param output_dir:
+        :param prefix:
+        :return:
+        """
         df = pd.read_csv(files[0])
         for f in files[1:]:
             df1 = pd.read_csv(f)
