@@ -31,8 +31,8 @@ def plot_dim_reduce(
     :param cluster_names: the cluster task's name, defined when running 'Clustering' tool by setting 'name' property.
     :param dim_reduce_key: the dimensionality reduction task's name, defined when running 'DimReduce' tool by setting 'name' property.
     :param plot_cluster: the name list of clusters to show.
-    :param bad_color: set nan values color.
-    :param ncols: numbr of plot columns.
+    :param bad_color: set color for nan values.
+    :param ncols: number of plot columns.
     :param dot_size: marker size.
     :param color_list: whether to invert y-axis.
     :return: None

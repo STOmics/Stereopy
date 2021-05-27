@@ -22,7 +22,7 @@ class Clustering(ToolBase):
     def __init__(self, data, method='louvain', outdir=None, dim_reduce_key='dim_reduce', n_neighbors=30,
                  normalize_key='cluster_normalize', normalize_method=None, nor_target_sum=10000, name='clustering'):
         """
-        initialization of this tool
+        initialization
 
         :param data: anndata object
         :param method: louvain or leiden
@@ -30,9 +30,9 @@ class Clustering(ToolBase):
         :param dim_reduce_key: defined when running 'DimReduce' tool by setting 'name' property.
         :param n_neighbors: number of neighbors
         :param normalize_key: defined when running 'Normalize' tool by setting 'name' property.
-        :param normalize_method: normalize method
+        :param normalize_method: normalization method
         :param nor_target_sum: summary of target
-        :param name: define this running tool name that will be used as a key when adding tool result to andata object.
+        :param name: name of this tool and will be used as a key when adding tool result to andata object.
         """
         super(Clustering, self).__init__(data=data, method=method, name=name)
         self.param = self.get_params(locals())
