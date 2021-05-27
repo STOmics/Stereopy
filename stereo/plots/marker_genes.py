@@ -35,7 +35,7 @@ def plot_marker_genes(
         **kwds,
 ):  # scatter plot, 差异基因显著性图，类碎石图
     """
-    Copied from scanpy and modified.
+    marker gene scatter visualization
 
     :param adata: anndata
     :param groups: list of cluster ids or 'all' clusters, a cluster equal a group
@@ -135,7 +135,7 @@ def plot_heatmap_marker_genes(
         **kwargs
 ):  # heatmap, 差异基因热图
     """
-    plot marker gene heatmap.
+    marker gene heatmap.
 
     :param adata: AnnData object.
     :param cluster_name: the task's name, defined when running 'Clustering' tool by setting 'name' property.

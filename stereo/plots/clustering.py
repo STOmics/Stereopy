@@ -27,7 +27,7 @@ def plot_spatial_cluster(
                     ],
 ):
     """
-    plot spatial distribution after clustering
+    showing spatial bin-cell distribution after clustering
 
     :param adata: the annotation data which contents cluster's analysis results.
     :param cluster_names: the cluster task's name, defined when running 'Clustering' tool by setting 'name' property.

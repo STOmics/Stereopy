@@ -25,7 +25,7 @@ def plot_genes_count(
         ncols=2,
         **kwargs):  # scatter plot, 线粒体分布图
     """
-    Plot quality control index
+    quality control index distribution visualization
 
     :param adata: AnnData object.
     :param x: obs key pairs for drawing. For example, assume x=["a", "a", "b"], the output plots will \include "a-c", "a-d", "b-e".
@@ -84,7 +84,7 @@ def plot_spatial_distribution(
         invert_y=False
 ):  # scatter plot, 表达矩阵空间分布
     """
-    Plot spatial distribution of specified obs data.
+    spatial bin-cell distribution.
 
     :param adata: AnnData object.
     :param obs_key: specified obs key list, for example: ["total_counts", "n_genes_by_counts"]
@@ -168,7 +168,7 @@ def plot_spatial_distribution(
 
 def plot_violin_distribution(adata):  # 小提琴统计图
     """
-    plot violin showing quality control index distribution
+    violin plot showing quality control index distribution
 
     :param adata: AnnData object.
 

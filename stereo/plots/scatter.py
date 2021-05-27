@@ -28,7 +28,7 @@ def plot_scatter(
         color_list=None,
 ):  # scatter plot, 聚类后表达矩阵空间分布
     """
-    Plot spatial distribution of specified obs data.
+    spatial bin-cell distribution.
 
     :param adata: AnnData object.
     :param plot_key: specified obs cluster key list, for example: ["phenograph"].
