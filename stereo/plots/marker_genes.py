@@ -27,7 +27,7 @@ def plot_marker_genes(
         adata: AnnData,
         groups: Union[str, Sequence[str]] = 'all',
         n_genes: int = 20,
-        key: Optional[str] = 'find_marker',
+        find_maker_name: Optional[str] = 'find_marker',
         fontsize: int = 8,
         ncols: int = 4,
         sharey: bool = True,
@@ -36,6 +36,14 @@ def plot_marker_genes(
 ):  # scatter plot, 差异基因显著性图，类碎石图
     """
     Copied from scanpy and modified.
+
+    :param adata: anndata
+    :param groups: list of cluster ids or 'all' clusters, a cluster equal a group
+    :param n_genes: top N genes to show in each cluster
+    :param find_maker_name: the task's name, defined when running 'FindMaker' tool by setting 'name' property.
+    :param fontsize: font size
+    :param ncols: number of columns
+    :return: None
     """
 
     # 调整图像 panel/grid 相关参数
@@ -45,7 +53,7 @@ def plot_marker_genes(
         n_panels_per_row = ncols
     # group_names = adata.uns[key]['names'].dtype.names if groups is None else groups
     if groups == 'all':
-        group_names = list(adata.uns[key].keys())
+        group_names = list(adata.uns[find_maker_name].keys())
     else:
         group_names = [groups] if isinstance(groups, str) else groups
     # one panel for each group
@@ -67,7 +75,7 @@ def plot_marker_genes(
     ymin = np.Inf
     ymax = -np.Inf
     for count, group_name in enumerate(group_names):
-        result = get_degs_res(adata, data_key=key, group_key=group_name, top_k=n_genes)
+        result = get_degs_res(adata, data_key=find_maker_name, group_key=group_name, top_k=n_genes)
         gene_names = result.genes.values
         scores = result.scores.values
         # Setting up axis, calculating y bounds
@@ -117,8 +125,8 @@ def plot_marker_genes(
 
 def plot_heatmap_marker_genes(
         adata: AnnData = None,
-        cluster_method="phenograph",
-        marker_uns_key=None,
+        cluster_name="phenograph",
+        fine_maker_name=None,
         num_show_gene=8,
         show_labels=True,
         order_cluster=True,
@@ -127,24 +135,28 @@ def plot_heatmap_marker_genes(
         **kwargs
 ):  # heatmap, 差异基因热图
     """
-    绘制 Marker gene 的热图。热图中每一行代表一个 bin 的所有基因的表达量，所有的 bin 会根据所属的 cluster 进行聚集， cluster 具体展示在热图的左侧，用颜色区分。
-    ============ Arguments ============
+    plot marker gene heatmap.
+
     :param adata: AnnData object.
-    :param cluster_method: method used in clustering. for example: phenograph, leiden
-    :param marker_uns_key: the key of adata.uns, the default value is "marker_genes"
+    :param cluster_name: the task's name, defined when running 'Clustering' tool by setting 'name' property.
+    :param fine_maker_name: the task's name, defined when running 'FindMaker' tool by setting 'name' property.
     :param num_show_gene: number of genes to show in each cluster.
     :param show_labels: show gene name on axis.
     :param order_cluster: reorder the cluster list in plot (y axis).
     :param marker_clusters: the list of clusters to show on the heatmap.
     :param cluster_colors_array: the list of colors in the color block on the left of heatmap.
-    ============ Return ============
+    :return: None
 
-    ============ Example ============
-    plot_heatmap_maker_genes(adata=adata, marker_uns_key = "rank_genes_groups", figsize = (20, 10))
+    Example:
+
+    .. code:: python
+
+        plot_heatmap_maker_genes(adata=adata, marker_uns_key = "rank_genes_groups", figsize = (20, 10))
+
     """
-    if marker_uns_key is None:
-        marker_uns_key = 'marker_genes'  # "rank_genes_groups" in original scanpy pipeline
-    marker_res = adata.uns[marker_uns_key]
+    if fine_maker_name is None:
+        fine_maker_name = 'marker_genes'  # "rank_genes_groups" in original scanpy pipeline
+    marker_res = adata.uns[fine_maker_name]
     default_cluster = [i for i in marker_res.keys()]
     if marker_clusters is None:
         marker_clusters = default_cluster
@@ -178,7 +190,7 @@ def plot_heatmap_marker_genes(
     draw_df = pd.DataFrame(exp_matrix[:, adata.var.index.get_indexer(uniq_gene_names)],
                            columns=uniq_gene_names, index=adata.obs_names)
     # add obs values
-    cluster_data = adata.uns[cluster_method].cluster.set_index('bins')
+    cluster_data = adata.uns[cluster_name].cluster.set_index('bins')
     draw_df = pd.concat([draw_df, cluster_data], axis=1)
     draw_df = draw_df[gene_names].set_index(draw_df['cluster'].astype('category'))
     if order_cluster:
@@ -256,5 +268,3 @@ def plot_heatmap_marker_genes(
             left_adjustment=-0.3,
             right_adjustment=0.3,
         )
-
-

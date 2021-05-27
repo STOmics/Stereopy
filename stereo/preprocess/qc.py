@@ -11,6 +11,12 @@ import numpy as np
 
 
 def cal_qc(andata):
+    """
+    calculate three qc index including the number of genes expressed in the count matrix, the total counts per cell and the percentage of counts in mitochondrial genes.
+
+    :param: andata
+    :return: anndata object storing quality control results
+    """
     exp_matrix = andata.X.toarray() if issparse(andata.X) else andata.X
     total_count = exp_matrix.sum(1)
     n_gene_by_count = np.count_nonzero(exp_matrix, axis=1)

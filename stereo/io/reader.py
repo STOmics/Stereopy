@@ -20,12 +20,14 @@ from anndata import AnnData, read_mtx
 
 def read_stereo_data(path, sep='\t', bin_size=100, is_sparse=True):
     """
-    transform stereo data into Anndata
+    transform stereo matrix into Anndata
+
     :param path: input file path
     :param sep: separator string
     :param bin_size: size of bin to merge
     :param is_sparse: the matrix is sparse matrix if is_sparse is True else np.ndarray
-    :return:
+
+    :return: anndata
     """
     if not os.path.exists(path):
         logger.error(f"{path} is not exist!")
@@ -73,6 +75,14 @@ def check_file(path, prefix, suffix):
 
 
 def read_10x_data(path, prefix="", gene_ex_only=True):
+    """
+    read 10x data
+
+    :param path: the dictionary of the input files
+    :param prefix: the prefix of the input files
+    :param gene_ex_only: return gene expression data only if is True
+    :return: anndata
+    """
     # 1.   check file status.
     # if not os.path.exists(path):
     #    logger.error(f"{path} is not exist!")

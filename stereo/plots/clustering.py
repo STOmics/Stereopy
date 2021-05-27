@@ -8,11 +8,12 @@
 """
 from .scatter import plot_scatter
 from anndata import AnnData
+from ._params_doc import anndata
 
 
 def plot_spatial_cluster(
         adata: AnnData,
-        obs_key: list = ["phenograph"],
+        cluster_names: list = ["phenograph"],
         pos_key: str = "spatial",
         plot_cluster: list = None,
         bad_color: str = "lightgrey",
@@ -25,7 +26,20 @@ def plot_spatial_cluster(
                     'beige', 'azure', 'aquamarine', 'aqua',
                     ],
 ):
-    plot_scatter(adata=adata, plot_key=obs_key, pos_key=pos_key, plot_cluster=plot_cluster, bad_color=bad_color,
+    """
+    plot spatial distribution after clustering
+
+    :param adata: the annotation data which contents cluster's analysis results.
+    :param cluster_names: the cluster task's name, defined when running 'Clustering' tool by setting 'name' property.
+    :param pos_key: the coordinates of data points for scatter plots. the data points are stored in adata.obsm[pos_key]. choice: "spatial", "X_umap", "X_pca".
+    :param plot_cluster: the name list of clusters to show.
+    :param bad_color: set nan values color.
+    :param ncols: numbr of plot columns.
+    :param dot_size: marker size.
+    :param color_list: whether to invert y-axis.
+    :return: None
+    """
+    plot_scatter(adata=adata, plot_key=cluster_names, pos_key=pos_key, plot_cluster=plot_cluster, bad_color=bad_color,
                  ncols=ncols, dot_size=dot_size, color_list=color_list)
 
 # from matplotlib.cm import get_cmap

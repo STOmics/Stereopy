@@ -27,7 +27,6 @@ class SpatialPatternScore(ToolBase):
     def check_param(self):
         """
         Check whether the parameters meet the requirements.
-        :return:
         """
         super(SpatialPatternScore, self).check_param()
 
@@ -62,6 +61,7 @@ class SpatialPatternScore(ToolBase):
 def get_enrichment_score(gene, gene_expression):
     """
     calculate enrichment score E10 and C50.
+
     :param gene: gene name
     :param gene_expression: expression data for the input gene
     :return: list of gene name, E10 score, C50 score and total MID counts of input gene
@@ -80,6 +80,7 @@ def get_enrichment_score(gene, gene_expression):
 def find_cutoff(score_list, p):
     """
     calculate
+
     :param score_list:
     :param p: expression data for gene
     :return: the cutoff of E10 or C50
