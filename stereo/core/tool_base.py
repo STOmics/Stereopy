@@ -28,7 +28,7 @@ class ToolBase(object):
     def sparse2array(self):
         """
         transform `self.exp_matrix` to np.array if it is sparseMatrix.`
-        :return:
+
         """
         if issparse(self.exp_matrix):
             self.exp_matrix = self.exp_matrix.toarray()
@@ -46,9 +46,10 @@ class ToolBase(object):
     def add_result(self, result, key_added: str = 'stereo'):
         """
         add the result of analysis into anndata , which is be added in AnnData.uns[key_added]
+
         :param result: the result of analysis.
         :param key_added: the name of AnnData.uns for the StereoResult
-        :return:
+        :return: anndata object adding tool's results
         """
         if not isinstance(self.data, AnnData):
             logger.error('the data must be a AnnData.')

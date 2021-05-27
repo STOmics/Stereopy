@@ -18,7 +18,7 @@ io: `reader`
 .. module:: stereo.io
 .. currentmodule:: stereo
 
-文件读取模块
+io module, reading matrix and transform to annotation data.
 
 reader
 ~~~~~~~~~~~~~~~~~~~
@@ -36,7 +36,7 @@ preprocess: `pp`
 .. module:: stereo.pp
 .. currentmodule:: stereo
 
-预处理模块
+preprocess module
 
 filter
 ~~~~~~~~~~~~~~~~~~~
@@ -76,7 +76,7 @@ tools: `tl`
 .. module:: stereo.tl
 .. currentmodule:: stereo
 
-工具分析模块
+analysis tool module
 
 Cell type annotation
 ~~~~~~~~~~~~~~~~~~~
@@ -141,9 +141,9 @@ plots: `pt`
 .. module:: stereo.pt
 .. currentmodule:: stereo
 
-画图模块
+visualization module
 
-Basic plots
+quality control plots
 ~~~~~~~~~~~~~~~~~~~
 
 .. autosummary::
@@ -152,6 +152,14 @@ Basic plots
    plots.plot_spatial_distribution
    plots.plot_genes_count
    plots.plot_violin_distribution
+
+
+analysis plots
+~~~~~~~~~~~~~~~~~~~
+
+.. autosummary::
+   :toctree: .
+
    plots.plot_dim_reduce
    plots.plot_spatial_cluster
    plots.plot_scatter

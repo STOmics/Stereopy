@@ -25,18 +25,20 @@ def plot_genes_count(
         ncols=2,
         **kwargs):  # scatter plot, 线粒体分布图
     """
-    Plot .
-    ============ Arguments ============
+    Plot quality control index
+
     :param adata: AnnData object.
-    :param x: obs key pairs for drawing. For example, assume x=["a", "a", "b"] ,
-    the output plots will include "a-c", "a-d", "b-e".
-    :param y: obs key pairs for drawing. For example, assume y=["c", "d", "e"],
-    :param ncols: the columns of figures.
-    the output plots will include "a-c", "a-d", "b-e".
-    ============ Return ============
-    None.
-    ============ Example ============
-    plot_spatial_cluster(adata = adata)
+    :param x: obs key pairs for drawing. For example, assume x=["a", "a", "b"], the output plots will \include "a-c", "a-d", "b-e".
+    :param y: obs key pairs for drawing. For example, assume y=["c", "d", "e"].
+    :param ncols: the columns of figures. the output plots will include "a-c", "a-d", "b-e".
+    :return: None
+
+    Example:
+
+    .. code:: python
+
+        plot_spatial_cluster(adata = adata)
+
     """
     if isinstance(x, str):
         x = [x]
@@ -83,17 +85,21 @@ def plot_spatial_distribution(
 ):  # scatter plot, 表达矩阵空间分布
     """
     Plot spatial distribution of specified obs data.
-    ============ Arguments ============
+
     :param adata: AnnData object.
     :param obs_key: specified obs key list, for example: ["total_counts", "n_genes_by_counts"]
     :param ncols: numbr of plot columns.
     :param dot_size: marker size.
     :param color_list: Color list.
     :param invert_y: whether to invert y-axis.
-    ============ Return ============
-    None
-    ============ Example ============
-    plot_spatial_distribution(adata=adata)
+    :return: None
+
+    Example:
+
+    .. code:: python
+
+        plot_spatial_distribution(adata=adata)
+
     """
     # sc.pl.embedding(adata, basis="spatial", color=["total_counts", "n_genes_by_counts"],size=30)
 
@@ -162,11 +168,11 @@ def plot_spatial_distribution(
 
 def plot_violin_distribution(adata):  # 小提琴统计图
     """
-    绘制数据的分布小提琴图。
-    ============ Arguments ============
+    plot violin showing quality control index distribution
+
     :param adata: AnnData object.
-    ============ Return ============
-    None
+
+    :return: None
     """
     _, axs = plt.subplots(1, 3, figsize=(15, 4))
     seaborn.violinplot(y=adata.obs['total_counts'], ax=axs[0])

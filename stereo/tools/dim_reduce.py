@@ -37,7 +37,6 @@ class DimReduce(ToolBase):
     def check_param(self):
         """
         Check whether the parameters meet the requirements.
-        :return:
         """
         super(DimReduce, self).check_param()
         if self.method.lower() not in ['pca', 'tsen', 'umap', 'factor_analysis', 'low_variance']:
@@ -66,6 +65,7 @@ class DimReduce(ToolBase):
 def low_variance(x, threshold=0.01):
     """
     filter the features which have low variance between the samples.
+
     :param x: 2D array, shape (M, N)
     :param threshold: the min threshold of variance.
     :return: a new array which filtered the feature with low variance.
@@ -79,6 +79,7 @@ def low_variance(x, threshold=0.01):
 def factor_analysis(x, n_pcs):
     """
     the dim reduce function of factor analysis
+
     :param x: 2D array, shape (M, N)
     :param n_pcs: the number of features for a return array after reducing.
     :return:  ndarray of shape (n_samples, n_components)
@@ -93,10 +94,10 @@ def factor_analysis(x, n_pcs):
 def pca(x, n_pcs):
     """
     the dim reduce function of PCA
+
     :param x: 2D array, shape (M, N)
     :param n_pcs: the number of features for a return array after reducing.
-    :return:  ndarray of shape (n_samples, n_components)
-            Embedding of the training data in low-dimensional space.
+    :return:  ndarray of shape (n_samples, n_components) Embedding of the training data in low-dimensional space.
     """
     pca_obj = PCA(n_components=n_pcs)
     x_pca = pca_obj.fit_transform(x)
@@ -109,11 +110,11 @@ def pca(x, n_pcs):
 def t_sne(x, n_pcs, n_iter=200):
     """
     the dim reduce function of TSEN
+
     :param x: 2D array, shape (M, N)
     :param n_pcs: the number of features for a return array after reducing.
     :param n_iter: the number of iterators.
-    :return:  ndarray of shape (n_samples, n_components)
-            Embedding of the training data in low-dimensional space.
+    :return:  ndarray of shape (n_samples, n_components) Embedding of the training data in low-dimensional space.
     """
     tsen = TSNE(n_components=n_pcs, n_iter=n_iter)
     tsne_x = tsen.fit_transform(x)
@@ -123,12 +124,12 @@ def t_sne(x, n_pcs, n_iter=200):
 def u_map(x, n_pcs, n_neighbors=5, min_dist=0.3):
     """
     the dim reduce fanction of UMAP
+
     :param x: 2D array, shape (M, N)
     :param n_pcs: the number of features for a return array after reducing.
     :param n_neighbors: the number of neighbors
     :param min_dist: the min value of distance.
-    :return: ndarray of shape (n_samples, n_components)
-            Embedding of the training data in low-dimensional space.
+    :return: ndarray of shape (n_samples, n_components) Embedding of the training data in low-dimensional space.
     """
     umap_obj = umap.UMAP(n_neighbors=n_neighbors, n_components=n_pcs, min_dist=min_dist)
     umap_x = umap_obj.fit_transform(x)

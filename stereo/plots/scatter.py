@@ -29,20 +29,23 @@ def plot_scatter(
 ):  # scatter plot, 聚类后表达矩阵空间分布
     """
     Plot spatial distribution of specified obs data.
-    ============ Arguments ============
+
     :param adata: AnnData object.
     :param plot_key: specified obs cluster key list, for example: ["phenograph"].
-    :param pos_key: the coordinates of data points for scatter plots. the data points are stored
-    in adata.obsm[pos_key]. choice: "spatial", "X_umap", "X_pca".
+    :param pos_key: the coordinates of data points for scatter plots. the data points are stored in adata.obsm[pos_key]. choice: "spatial", "X_umap", "X_pca".
     :param plot_cluster: the name list of clusters to show.
     :param bad_color: the name list of clusters to show.
     :param ncols: numbr of plot columns.
     :param dot_size: marker size.
     :param color_list: whether to invert y-axis.
-    ============ Return ============
-    None.
-    ============ Example ============
-    plot_spatial_cluster(adata = adata)
+    :return: None
+
+    Example:
+
+    .. code:: python
+
+        plot_spatial_cluster(adata = adata)
+
     """
     # sc.pl.embedding(adata, basis="spatial", color=["total_counts", "n_genes_by_counts"],size=30)
 
