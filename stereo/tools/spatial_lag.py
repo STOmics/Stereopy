@@ -20,8 +20,23 @@ from ..log_manager import logger
 
 
 class SpatialLag(ToolBase):
+    """
+    spatial lag model, calculate bin-cell's lag coefficient, lag z-stat and p-value
+    """
     def __init__(self, data: AnnData, method='gm_lag', name='spatial_lag', cluster=None, genes=None,
                  random_drop=True, drop_dummy=None, n_neighbors=8):
+        """
+        initialization
+
+        :param data: anndata object contenting cluster results
+        :param method: method
+        :param name: tool name, will be used as a key when adding tool result to andata object.
+        :param cluster: the 'Clustering' tool name, defined when running 'Clustering' tool
+        :param genes: specify genes, default using all genes
+        :param random_drop: randomly drop bin-cells if True
+        :param drop_dummy: drop specify clusters
+        :param n_neighbors: number of neighbors
+        """
         super(SpatialLag, self).__init__(data=data, method=method, name=name)
         self.param = self.get_params(locals())
         self.cluster = self.data.uns[cluster].cluster
@@ -32,6 +47,9 @@ class SpatialLag(ToolBase):
         self.position = get_position_array(self.data, obs_key='spatial')
 
     def fit(self):
+        """
+        run analysis
+        """
         x, uniq_group = self.get_data()
         res = self.gm_model(x, uniq_group)
         result = SpatialLagResult(name=self.name, param=self.param, score=res)
@@ -39,6 +57,10 @@ class SpatialLag(ToolBase):
         return result
 
     def get_data(self):
+        """
+        get cluster result, convert cluster Series to dummy codes
+        :return: cluster dummy codes and cluster names
+        """
         group_num = self.cluster['cluster'].value_counts()
         max_group, min_group, min_group_ncells = group_num.index[0], group_num.index[-1], group_num[-1]
         df = pd.DataFrame({'group': self.cluster['cluster']})
@@ -58,6 +80,11 @@ class SpatialLag(ToolBase):
         return x, list(uniq_group)
 
     def get_genes(self):
+        """
+        get specify genes
+
+        :return : gene names
+        """
         if self.genes is None:
             genes = self.data.var.index
         else:
@@ -65,6 +92,13 @@ class SpatialLag(ToolBase):
         return genes
 
     def gm_model(self, x, uniq_group):
+        """
+        run gm model
+
+        :param x:
+        :param uniq_group:
+        :return:
+        """
         knn = weights.distance.KNN.from_array(self.position, k=self.n_neighbors)
         knn.transform = 'R'
         genes = self.get_genes()

@@ -22,8 +22,24 @@ from ..core.stereo_result import DimReduceResult
 
 
 class DimReduce(ToolBase):
+    """
+    bin-cell dimensionality reduction
+    """
     def __init__(self, data: AnnData, method='pca', n_pcs=2, min_variance=0.01, n_iter=250,
                  n_neighbors=5, min_dist=0.3, inplace=False, name='dim_reduce'):
+        """
+        initialization
+
+        :param data: anndata object
+        :param method: default pca, options are pca, tsen, umap, factor_analysis and low_variance
+        :param n_pcs: the number of features for a return array after reducing.
+        :param min_variance: minus variance
+        :param n_iter: number of iteration
+        :param n_neighbors: number of neighbors
+        :param min_dist: param for UMAP method, the minus value of distance.
+        :param inplace: inplace the input anndata if True
+        :param name: name of this tool and will be used as a key when adding tool result to andata object.
+        """
         self.params = self.get_params(locals())
         super(DimReduce, self).__init__(data=data, method=method, name=name)
         self.n_pcs = n_pcs
@@ -123,7 +139,7 @@ def t_sne(x, n_pcs, n_iter=200):
 
 def u_map(x, n_pcs, n_neighbors=5, min_dist=0.3):
     """
-    the dim reduce fanction of UMAP
+    the dim reduce function of UMAP
 
     :param x: 2D array, shape (M, N)
     :param n_pcs: the number of features for a return array after reducing.
