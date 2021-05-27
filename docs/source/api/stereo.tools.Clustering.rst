@@ -22,7 +22,7 @@
       ~Clustering.run_knn_leiden
       ~Clustering.run_louvain
       ~Clustering.run_neighbors
-      ~Clustering.run_nomalize
+      ~Clustering.run_normalize
       ~Clustering.sparse2array
    
    

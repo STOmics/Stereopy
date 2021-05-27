@@ -35,13 +35,13 @@ class CellTypeAnno(ToolBase):
         :param cores: set running core to fasten running speed
         :param keep_zeros: if true, keeping the genes that in reference but not in input expression data
         :param use_rf: if running random choosing genes or not
-        :param sample_rate: ratio of data as sample data
-        :param n_estimators: training times
+        :param sample_rate: ratio of sampling data
+        :param n_estimators: prediction times
         :param strategy:
         :param method: calculate correlation's method
         :param split_num:
         :param out_dir: output directory
-        :param name: define this running tool name that will be used as a key when adding tool result to andata object.
+        :param name: name of this tool and will be used as a key when adding tool result to andata object.
         """
         super(CellTypeAnno, self).__init__(data=adata, method=method, name=name)
         self.param = self.get_params(locals())
@@ -61,7 +61,7 @@ class CellTypeAnno(ToolBase):
 
     def split_dataframe(self, df):
         """
-        split input data to N(param: split_num) part
+        split input data to N(split_num) part
 
         :param df: input expression data frame
         :return: N part of data frame
@@ -82,11 +82,12 @@ class CellTypeAnno(ToolBase):
     @staticmethod
     def concat_top_corr_files(files, output_dir, prefix=None):
         """
-        concat correlation files from
-        :param files:
-        :param output_dir:
-        :param prefix:
-        :return:
+        concat correlation files from n-times prediction's result
+
+        :param files: all prediction results
+        :param output_dir: output directory
+        :param prefix: prefix of output files
+        :return: correlation dataframe
         """
         df = pd.read_csv(files[0])
         for f in files[1:]:
@@ -97,6 +98,14 @@ class CellTypeAnno(ToolBase):
         return df
 
     def merge_subsample_result(self, input_dir, prefix, output_dir):
+        """
+        generate result
+
+        :param input_dir: input directory, output of previous step
+        :param prefix: prefix of output file
+        :param output_dir: output directory
+        :return: result data frame
+        """
         files = [os.path.join(input_dir, f) for f in os.listdir(input_dir) if prefix in f]
         df = pd.read_csv(files[0])
         for f in files[1:]:
@@ -118,6 +127,14 @@ class CellTypeAnno(ToolBase):
 
     @staticmethod
     def merge_subsample_result_filter(input_dir, prefix, output_dir):
+        """
+        filter and generate result
+
+        :param input_dir: input directory, output of previous step
+        :param prefix: prefix of output file
+        :param output_dir: output directory
+        :return: result data frame
+        """
         files = [os.path.join(input_dir, f) for f in os.listdir(input_dir) if prefix in f]
         df = pd.read_csv(files[0])
         for f in files[1:]:
@@ -144,6 +161,9 @@ class CellTypeAnno(ToolBase):
         return df
 
     def fit(self):
+        """
+        run
+        """
         exp_matrix = self.data.X.toarray().T if issparse(self.data.X) else self.data.X.T
         df = pd.DataFrame(exp_matrix, index=list(self.data.var_names),
                           columns=list(self.data.obs_names))
@@ -191,6 +211,11 @@ class CellTypeAnno(ToolBase):
 
 
 def parse_ref_data(ref_dir):
+    """
+    read reference database
+    :param ref_dir: reference directory
+    :return: reference data
+    """
     logger.info(f'loading ref data')
     ref_sample_path = os.path.join(ref_dir, 'ref_sample_epx.csv')
     ref_db = pd.read_csv(ref_sample_path, index_col=0, header=0)
@@ -202,6 +227,13 @@ def parse_ref_data(ref_dir):
 
 
 def random_choose_genes(df, sample_rate):
+    """
+    select genes randomly
+
+    :param df: input data frame
+    :param sample_rate: percentage of sampling
+    :return: sampling data frame
+    """
     sample_cnt = pd.Series(np.int32(df.sum(axis=0) * sample_rate), index=df.columns)
     gene_rate = df / df.sum(axis=0)
     sample_df = gene_rate.apply(lambda x: choose_gene(x, sample_cnt), axis=0)
@@ -210,6 +242,13 @@ def random_choose_genes(df, sample_rate):
 
 
 def choose_gene(x, num):
+    """
+    gene selection
+
+    :param x:
+    :param num:
+    :return:
+    """
     gene_list = list(x.index)
     p = x.values
     res = np.random.choice(a=gene_list, size=num[x.name], p=p)
@@ -219,6 +258,14 @@ def choose_gene(x, num):
 
 
 def annotation(df, ref_db, method, keep_zeros):
+    """
+
+    :param df:
+    :param ref_db:
+    :param method:
+    :param keep_zeros:
+    :return:
+    """
     # find common genes between test data and ref data
     test_genes = set(df.index)
     ref_genes = set(ref_db.index)
@@ -238,6 +285,13 @@ def annotation(df, ref_db, method, keep_zeros):
 
 
 def get_top_corr(score, cell_map, output):
+    """
+
+    :param score:
+    :param cell_map:
+    :param output:
+    :return:
+    """
     max_index = score.values.argmax(axis=1)
     max_value = score.values.max(axis=1)
     samples = score.columns[max_index]
@@ -249,6 +303,18 @@ def get_top_corr(score, cell_map, output):
 
 
 def run_annotation(sub_df, ref_dir, method, keep_zero, output, sub_index, use_rf, sample_rate):
+    """
+
+    :param sub_df:
+    :param ref_dir:
+    :param method:
+    :param keep_zero:
+    :param output:
+    :param sub_index:
+    :param use_rf:
+    :param sample_rate:
+    :return:
+    """
     ref_db = parse_ref_data(ref_dir)
     cell_map = pd.read_csv(os.path.join(ref_dir, 'cell_map.csv'), index_col=0, header=0, sep=',')
     if use_rf:

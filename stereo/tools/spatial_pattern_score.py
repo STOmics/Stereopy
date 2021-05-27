@@ -17,6 +17,9 @@ from ..core.stereo_result import SpatialPatternScoreResult
 
 
 class SpatialPatternScore(ToolBase):
+    """
+    calculate spatial pattern score
+    """
     def __init__(self, data: AnnData, method='enrichment',
                  name='spatial_pattern_score'):
         self.params = self.get_params(locals())
@@ -31,6 +34,9 @@ class SpatialPatternScore(ToolBase):
         super(SpatialPatternScore, self).check_param()
 
     def fit(self):
+        """
+        run
+        """
         report = []
         for gene in self.data.var.index:
             gene_expression = pd.DataFrame(self.data[:, gene].X, columns=['values'],
@@ -79,7 +85,7 @@ def get_enrichment_score(gene, gene_expression):
 
 def find_cutoff(score_list, p):
     """
-    calculate
+    find cutoff
 
     :param score_list:
     :param p: expression data for gene
