@@ -9,6 +9,7 @@
 change log:
     add basic functions of normalization. by Ping Qiu. 2021/03/05
     Refactor the code and add the quantile_norm function. by Ping Qiu. 2021/03/17
+    add the zscore_disksmooth function. by Ping Qiu. 2021/05/28
 """
 import numpy as np
 from anndata import AnnData
@@ -22,11 +23,13 @@ class Normalizer(ToolBase):
     """
     Normalizer of stereo.
     """
-    def __init__(self, data, method='normalize_total', inplace=True, target_sum=1, name='normalize'):
+    def __init__(self, data, method='normalize_total', inplace=True, target_sum=1, name='normalize', r=20):
         super(Normalizer, self).__init__(data=data, method=method, name=name)
         self.target_num = target_sum
         self.inplace = inplace
         self.check_param()
+        self.position = data.obsm['spatial']
+        self.r = r
 
     def check_param(self):
         """
@@ -34,7 +37,7 @@ class Normalizer(ToolBase):
 
         """
         super(Normalizer, self).check_param()
-        if self.method.lower() not in ['normalize_total', 'quantile']:
+        if self.method.lower() not in ['normalize_total', 'quantile', 'zscore_disksmooth']:
             logger.error(f'{self.method} is out of range, please check.')
             raise ValueError(f'{self.method} is out of range, please check.')
 
@@ -60,6 +63,8 @@ class Normalizer(ToolBase):
         elif self.method == 'quantile':
             nor_res = quantile_norm(self.exp_matrix.T)
             nor_res = nor_res.T
+        elif self.method == 'zscore_disksmooth':
+            nor_res = zscore_disksmooth(self.exp_matrix, self.position, self.r)
         else:
             pass
         if nor_res is not None and self.inplace and isinstance(self.data, AnnData):
@@ -104,7 +109,7 @@ def log1p(x):
     return log_x
 
 
-def normalize_zscore_disksmooth(x, position, r):
+def zscore_disksmooth(x, position, r):
     """
     for each position, given a radius, calculate the z-score within this circle as final normalized value.
 
