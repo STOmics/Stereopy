@@ -32,3 +32,17 @@ def get_degs_res(data, group_key, data_key='find_marker', top_k=None):
         return degs_data.top_k_marker(top_k_genes=top_k, sort_key='scores')
     else:
         return degs_data.degs_data
+
+
+def get_find_marker_group(data, data_key='find_marker'):
+    return [i for i in data.uns[data_key].keys()]
+
+
+def get_spatial_lag_group(data, data_key='spatial_lag'):
+    lag_res = data.uns[data_key]
+    lag_coeff = list(lag_res.score.columns[lag_res.score.columns.str.endswith('lag_coeff')])
+    if 'const_lag_coeff' in lag_coeff:
+        lag_coeff.remove('const_lag_coeff')
+    if 'W_log_exp_lag_coeff' in lag_coeff:
+        lag_coeff.remove('W_log_exp_lag_coeff')
+    return [i.strip('_lag_coeff') for i in lag_coeff]

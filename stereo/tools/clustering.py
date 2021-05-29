@@ -30,7 +30,7 @@ class Clustering(ToolBase):
         :param dim_reduce_key: defined when running 'DimReduce' tool by setting 'name' property.
         :param n_neighbors: number of neighbors
         :param normalize_key: defined when running 'Normalize' tool by setting 'name' property.
-        :param normalize_method: normalization method
+        :param normalize_method: normalization method, Normalizer will be run before clustering if the param is set.
         :param nor_target_sum: summary of target
         :param name: name of this tool and will be used as a key when adding tool result to andata object.
         """

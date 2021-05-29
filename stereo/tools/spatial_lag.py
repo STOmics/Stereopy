@@ -59,6 +59,7 @@ class SpatialLag(ToolBase):
     def get_data(self):
         """
         get cluster result, convert cluster Series to dummy codes
+
         :return: cluster dummy codes and cluster names
         """
         group_num = self.cluster['cluster'].value_counts()
