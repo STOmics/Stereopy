@@ -3,17 +3,9 @@
 import os
 import sys
 from pathlib import Path
-from datetime import datetime
-
-# import matplotlib  # noqa
-
-# Don’t use tkinter agg when importing scanpy → … → matplotlib
-# matplotlib.use('agg')
 
 HERE = Path(__file__).parent
-# print(HERE)
 sys.path[:0] = [str(HERE.parent), str(HERE / 'extensions')]
-# import stereo
 
 on_rtd = os.environ.get('READTHEDOCS') == 'True'
 
@@ -65,7 +57,6 @@ language = None
 html_theme = 'sphinx_rtd_theme'
 
 html_static_path = ['_static']
-
 
 
 
