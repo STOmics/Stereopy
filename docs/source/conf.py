@@ -59,4 +59,12 @@ html_theme = 'sphinx_rtd_theme'
 html_static_path = ['_static']
 
 
+import nbclean, glob
+
+for filename in glob.glob('**/*.ipynb', recursive=True):
+    ntbk = nbclean.NotebookCleaner(filename)
+    ntbk.clear('stderr')
+    ntbk.save(filename)
+
+
 
