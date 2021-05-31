@@ -5,12 +5,7 @@ import sys
 from pathlib import Path
 
 HERE = Path(__file__).parent
-print(HERE)
-print(HERE.parent.parent)
-print(sys.path)
 sys.path[:0] = [str(HERE.parent), str(HERE / 'extensions')]
-sys.path.append(HERE.parent.parent)
-import stereo
 
 on_rtd = os.environ.get('READTHEDOCS') == 'True'
 
