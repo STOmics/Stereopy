@@ -57,7 +57,7 @@ normalize
 
    preprocess.Normalizer
    preprocess.normalize_total
-   preprocess.normalize_zscore_disksmooth
+   preprocess.zscore_disksmooth
    preprocess.quantile_norm
 
 
