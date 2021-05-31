@@ -47,11 +47,6 @@ extensions = [
     'sphinx.ext.mathjax',
     'sphinx.ext.napoleon',
     'sphinx.ext.autosummary',
-    # 'plot_generator',
-    # 'matplotlib.sphinxext.plot_directive',
-    'sphinx_autodoc_typehints',  # needs to be after napoleon
-    # 'ipython_directive',
-    # 'ipython_console_highlighting',
     'nbsphinx',
     # 'scanpydoc',
     *[p.stem for p in (HERE / 'extensions').glob('*.py')],
@@ -61,12 +56,6 @@ extensions = [
 autosummary_generate = True
 autodoc_member_order = 'bysource'
 autodoc_default_flags = ['members']
-# napoleon_google_docstring = False
-# napoleon_numpy_docstring = False
-# napoleon_include_init_with_doc = False
-# napoleon_use_rtype = True  # having a separate entry generally helps readability
-# napoleon_use_param = True
-# napoleon_custom_sections = [('Params', 'Parameters')]
 todo_include_todos = False
 api_dir = HERE / 'api'  # function_images
 # print(api_dir)
@@ -77,20 +66,6 @@ html_theme = 'sphinx_rtd_theme'
 
 html_static_path = ['_static']
 
-# html_sidebars = {
-#     '**': [
-#         'about.html',
-#         'navigation.html',
-#         'relations.html',  # needs 'show_related': True theme option to display
-#         'searchbox.html',
-#         'donate.html',
-#     ]
-# }
-
-
-# -- Options for HTMLHelp output ------------------------------------------
-
-# htmlhelp_basename = 'htmlhelp_basename'
 
 
 
