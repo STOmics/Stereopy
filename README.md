@@ -5,9 +5,8 @@
 
 ![Stereopy](./docs/source/_static/stereopy.PNG)
 
-stereopy is a tool for the analysis and visualization of spatial transcriptomics data, such as stereo-seq data.
-It provides a series of analysis of spatial omics, and will be added to the tissue image related analysis later.
-Maybe the performance of this version is not optimal, and we will improve performance and calculation efficiency, and can support a large number of analyses in the future. 
+Stereopy is a tool for data mining and visualization of spatial transcriptomics. It provides a series of analysis of spatial omics, and some tissue image related analysis  will be added later. As the first version may not fully meet the requirements, we will keep on improving it's performance and calculation efficiency, and adding more analyses.
+
 ## Discussion 
 Please use github issue tracker to report coding related [issues](https://github.com/BGIResearch/stereopy/issues) of stereopy.
 
