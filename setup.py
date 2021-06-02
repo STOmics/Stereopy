@@ -17,10 +17,12 @@ if sys.version_info < (3, 6):
 setup(
     name='stereo',
     use_scm_version=True,
+    version='0.1',
+    keywords=['Spatial transcriptomic'],
     setup_requires=['setuptools_scm'],
     description='Spatial transcriptomic analysis in python.',
     long_description=Path('README.md').read_text('utf-8'),
-    url='https://github.com/BGIResearch/stereopy-release',
+    url='https://github.com/BGIResearch/stereopy',
     author='BGIResearch',
     author_email='qiuping1@genomics.cn',
     python_requires='>=3.6',
