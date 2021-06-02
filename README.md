@@ -3,7 +3,9 @@
 
 [Installation](https://stereopy.readthedocs.io/en/latest/General/Installation.html) - [Quick start](https://stereopy.readthedocs.io/en/latest/Tutorials/quick_start.html) - [Documentation](https://stereopy.readthedocs.io/en/latest/index.html) - [API](https://stereopy.readthedocs.io/en/latest/api/index.html)
 
-![Stereopy](./docs/source/_static/stereopy.PNG)
+![Stereopy](https://github.com/BGIResearch/stereopy/blob/main/docs/source/_static/stereopy.PNG)
+
+[comment]: <> (![Stereopy]&#40;./docs/source/_static/stereopy.PNG&#41;)
 
 Stereopy is a tool for data mining and visualization of spatial transcriptomics. It provides a series of analysis of spatial omics, and some tissue image related analysis  will be added later. As the first version may not fully meet the requirements, we will keep on improving it's performance and calculation efficiency, and adding more analyses.
 
