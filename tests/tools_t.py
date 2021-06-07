@@ -13,10 +13,26 @@ mouse_data_path = '/data/workspace/st/test_qdh/mouse/DP8400013846TR_F5.gem'
 # def get_data:
 
 if __name__ == '__main__':
-    andata = pickle.load(open('./temp.pk', 'rb'))  # load
+    # andata = pickle.load(open('./temp2.pk', 'rb'))  # load
+    # print(andata)
+    # pattern_genes = andata.uns['spatial_pattern_score'].spatial_pattern_score[
+    #     andata.uns['spatial_pattern_score'].spatial_pattern_score['attribute'] == 'pattern']
+    # print(pattern_genes.head(10))
 
-    # andata = read_stereo_data(mouse_data_path)  # 读取bin文件
-    # andata = st.preprocess.cal_qc(andata=andata)   # 指控
+    andata = read_stereo_data(mouse_data_path)  # 读取bin文件
+    # # andata.raw = andata
+    andata = st.preprocess.cal_qc(andata=andata)   # 指控
+    #
+    sps = st.tools.SpatialPatternScore(data=andata)
+    # print(sps.data.X)
+    sps.data.X = sps.sparse2array()
+    # sps = st.tools.SpatialPatternScore(data=andata)
+    # print(sps.data.X)
+    sps.fit()
+    # #
+    print(andata)
+    # pickle.dump(andata, open('./temp2.pk', 'wb'))
+
     # st.preprocess.filter_cells(adata=andata, min_gene=200, n_genes_by_counts=3, pct_counts_mt=4, inplace=True)
     # normalizer = st.preprocess.Normalizer(data=andata, method='normalize_total', inplace=False,
     #                                       target_sum=10000, name='normalize_total')
@@ -43,14 +59,10 @@ if __name__ == '__main__':
     # lag = st.tools.SpatialLag(data=andata, cluster='clustering')
     # lag.fit()
     # normalizer = st.preprocess.Normalizer(data=andata, method='zscore_disksmooth',
-    #                                       inplace=False, r=20, name='zscore_disksmooth')
+    #                                       inplace=True, r=20, name='zscore_disksmooth')
     # nor_total = normalizer.fit()
-    # andata.X = andata.raw.X
-    # spc = st.tools.SpatialPatternScore(data=andata)
-    # spc.fit()
-    #
-    print(andata)
-    pickle.dump(andata, open('./temp2.pk', 'wb'))
+
+
 
     # print('可视化')
 
