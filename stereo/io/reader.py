@@ -32,11 +32,7 @@ def read_stereo_data(path, sep='\t', bin_size=100, is_sparse=True):
     if not os.path.exists(path):
         logger.error(f"{path} is not exist!")
         raise FileExistsError(f"{path} is not exist!")
-    col_names, has_head = get_col_names(path, sep)
-    if has_head:
-        df = pd.read_csv(path, sep=sep, comment='#', names=col_names)
-    else:
-        df = pd.read_csv(path, sep=sep, comment='#', header=0)
+    df = pd.read_csv(path, sep=sep, comment='#', header=0)
     df.dropna(inplace=True)
     if "MIDCounts" in df.columns:
         df.rename(columns={"MIDCounts": "UMICount"}, inplace=True)
@@ -126,27 +122,3 @@ def read_10x_mtx(path, prefix="", var_names='gene_symbols', make_unique=True):
 
     adata.obs_names = pd.read_csv(barcodesfile, header=None)[0].values
     return adata
-
-
-def get_col_names(path, sep):
-    import re
-    col_names = ['geneID', 'x', 'y', 'UMICount']
-    col_names_f = []
-    has_head = False
-    f = open(path, 'r')
-    for line in f:
-        if re.match(r'##', line):
-            has_head = True
-            pass
-        else:
-            if re.match(r'#', line):
-                col_names_f = line[1:].strip().split(sep)
-            else:
-                break
-    f.close()
-    # print(has_head)
-    # if not col_names_f == col_names:
-    #     col_names = col_names_f
-    return col_names, has_head
-
-
