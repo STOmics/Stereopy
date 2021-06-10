@@ -98,10 +98,10 @@ Class MultiToolManager(data, tool, *args, **kwargs):
      run(): 并行调度
 ```
 
-- **结果基类（StereoResult）**
+- **结果基类（StereoRes）**
     分析结果基类
 ```text
-Class StereoResult(name='stereo', param=None):
+Class StereoRes(name='stereo', param=None):
   参数：
     name： 名称， str
   属性：
@@ -111,6 +111,18 @@ Class StereoResult(name='stereo', param=None):
     __str__(): 返回类的参数信息及结果信息
     __repr__()：打印类的参数信息及结果信息
     get()
+```
+
+- **可视化类（Plotting）**
+    分析结果基类
+```text
+Class Plotting(data):
+  参数：
+    data： 绘图数据， str
+  属性：
+
+  方法：
+
 ```
 
 ### 目录结构
