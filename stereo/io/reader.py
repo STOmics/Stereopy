@@ -32,7 +32,7 @@ def read_stereo_data(path, sep='\t', bin_size=100, is_sparse=True):
     if not os.path.exists(path):
         logger.error(f"{path} is not exist!")
         raise FileExistsError(f"{path} is not exist!")
-    df = pd.read_csv(path, sep=sep)
+    df = pd.read_csv(path, sep=sep, comment='#', header=0)
     df.dropna(inplace=True)
     if "MIDCounts" in df.columns:
         df.rename(columns={"MIDCounts": "UMICount"}, inplace=True)
