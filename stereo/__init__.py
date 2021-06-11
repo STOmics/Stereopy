@@ -8,6 +8,7 @@ from . import io
 from . import preprocess
 from . import tools
 from . import utils
+from . import image
 
 # do the end.
 sys.modules.update({f'{__name__}.{m}': globals()[m] for m in ['plt']})
