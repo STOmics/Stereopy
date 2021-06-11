@@ -3,7 +3,7 @@ numpy>=1.17.0
 matplotlib>=3.1.2
 pandas>=0.21
 scipy>=1.0
-seaborn
+seaborn~=0.11.1
 h5py>=2.10.0
 tqdm>=4.55.0
 setuptools~=40.6.2
@@ -13,5 +13,6 @@ statsmodels~=0.12.1
 leidenalg>=0.8.3
 umap_learn>=0.4.6
 KDEpy>=1.0.10
-pysal
+pysal~=2.3.0
 Jinja2==2.11
+tifffile~=2020.10.1
