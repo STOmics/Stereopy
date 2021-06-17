@@ -16,9 +16,11 @@ from ..log_manager import logger
 
 class Data(object):
     def __init__(self, file_path, file_format, partitions=1):
-        self.file = Path(file_path)
-        self.partitions = int(partitions)
-        self.file_format = file_format
+        self._file = Path(file_path)
+        self._partitions = int(partitions)
+        self._file_format = file_format
+        self.format_range = ['txt', 'csv', 'mtx', 'h5ad']
+        self.logger = logger
 
     def check(self):
         """
@@ -26,11 +28,29 @@ class Data(object):
 
         :return:
         """
-        if not self.file.exists():
-            logger.error(f"{str(self.file)} is not exist, please check!")
+        self.file_check(file=self.file)
+        self.format_check(f_format=self.file_format)
+
+    def file_check(self, file):
+        """
+        Check if the file exists.
+
+        :param file: the Path of file.
+        :return:
+        """
+        if not file.exists():
+            self.logger.error(f"{str(file)} is not exist, please check!")
             raise FileExistsError
-        if self.file_format not in ['stereo_exp', '10x']:
-            logger.warning(f"the file format `{self.file_format}` is not in the range, please check!")
+
+    def format_check(self, f_format):
+        """
+        Check whether the file format is in the range.
+
+        :param f_format: the format of file.
+        :return:
+        """
+        if f_format not in self.format_range:
+            self.logger.warning(f"the file format `{f_format}` is not in the range, please check!")
 
     @property
     def file(self):
@@ -39,7 +59,7 @@ class Data(object):
 
         :return:
         """
-        return self.file
+        return self._file
 
     @file.setter
     def file(self, path):
@@ -50,11 +70,12 @@ class Data(object):
         :return:
         """
         if isinstance(path, str):
-            self.file = Path(path)
+            file = Path(path)
         elif isinstance(path, Path):
-            self.file = path
+            file = path
         else:
             raise TypeError
+        self._file = file
 
     @property
     def file_format(self):
@@ -63,7 +84,7 @@ class Data(object):
 
         :return:
         """
-        return self.file_format
+        return self._file_format
 
     @file_format.setter
     def file_format(self, f_format):
@@ -73,10 +94,30 @@ class Data(object):
         :param f_format: the file format
         :return:
         """
-        self.file_format = f_format
+        self.format_check(f_format)
+        self._file_format = f_format
 
-    def read(self):
+    @property
+    def partitions(self):
+        """
+        get the partitions property
+
+        :return:
+        """
+        return self._partitions
+
+    @partitions.setter
+    def partitions(self, partition):
+        """
+        set the partitions property
+
+        :param partition: the partitions number, which define the cores of multi processes.
+        :return:
+        """
+        self._partitions = partition
+
+    def read(self, *args, **kwargs):
         raise NotImplementedError
 
-    def write(self):
+    def write(self, *args, **kwargs):
         raise NotImplementedError
