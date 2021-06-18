@@ -2,61 +2,91 @@
 # coding: utf-8
 """
 @author: Ping Qiu  qiuping1@genomics.cn
-@last modified by: Ping Qiu
+@rewritten by: qindanhua
 @file:tool_base.py
-@time:2021/03/17
+@time:2021/06/15
 """
 from stereo.log_manager import logger
 from anndata import AnnData
 import pandas as pd
+import numpy as np
 from scipy.sparse import issparse
 import inspect
 
 
 class ToolBase(object):
-    def __init__(self, data, method, name=None):
+    """
+    A base tool for preparing
+
+    Parameters
+    ----------
+    data : st data object
+        .
+    method : .
+        the core method of the analysis
+    """
+    def __init__(
+            self,
+            data=None,
+            method=None,
+            name=None
+    ):
         self.data = data
-        self.method = method.lower()
-        self.exp_matrix = self.data.values if isinstance(self.data, pd.DataFrame) else self.data.X.copy()
+        self.method = method.lower() if method else None
         self.name = name if name else self.__class__.__name__
 
-    def check_param(self):
-        if not isinstance(self.data, AnnData) and not isinstance(self.data, pd.DataFrame):
-            logger.error('the format of data must be AnnData or pd.DataFrame.')
-            raise ValueError('the format of data must be AnnData or pd.DataFrame.')
+    @property
+    def data(self):
+        return self._data
 
-    def sparse2array(self):
-        """
-        transform `self.exp_matrix` to np.array if it is sparseMatrix.`
+    @data.setter
+    def data(self, data):
+        self._data = self.data_check(data)
 
+    @staticmethod
+    def data_check(data):
         """
-        if issparse(self.exp_matrix):
-            self.exp_matrix = self.exp_matrix.toarray()
-        return self.exp_matrix
+        check data type
+        :return:
+        """
+        data_type_allowed = (AnnData, pd.DataFrame, np.ndarray)
+        if data is not None:
+            if not isinstance(data, data_type_allowed):
+                logger.error('the format of data must be AnnData or pd.DataFrame.')
+                raise ValueError('the format of data must be AnnData or pd.DataFrame.')
+        return data
+
+    def extract_exp_matrix(self):
+        """
+        extract expression data array from input data
+        :return: expression data frame [[], [], ..., []]
+        """
+        # exp_matrix = np.array()
+        if isinstance(self.data, AnnData):
+            exp_matrix = np.array(self.data.X)
+        elif isinstance(self.data, pd.DataFrame):
+            exp_matrix = np.array(self.data.values)
+        else:
+            exp_matrix = np.array(self.data)
+        return exp_matrix
+
+    def add_result(self):
+        pass
+
+    def merge_result(self):
+        pass
 
     def fit(self):
         pass
 
-    def get_params(self, vars_info):
-        params = {}
-        for arg in inspect.signature(self.__init__).parameters:
-            params[arg] = vars_info[arg]
-        return params
 
-    def add_result(self, result, key_added: str = 'stereo'):
-        """
-        add the result of analysis into anndata , which is be added in AnnData.uns[key_added]
+if __name__ == '__main__':
+    da = pd.DataFrame([[1, 2], [4, 3]], columns=['one', 'two'])
+    da1 = pd.DataFrame([[1, 1], [4, 4]], columns=['three', 'four'])
+    a = ToolBase(da, 't')
+    # a = ToolBase()
+    print(a.data)
+    c = np.ndarray([2, 3])
 
-        :param result: the result of analysis.
-        :param key_added: the name of AnnData.uns for the StereoResult
-        :return: anndata object adding tool's results
-        """
-        if not isinstance(self.data, AnnData):
-            logger.error('the data must be a AnnData.')
-            raise
-        # if not isinstance(result, StereoResult):
-        #     logger.warning("the result must be a StereoResult, please check.")
-        #     raise
-        if key_added in self.data.uns.keys():
-            logger.warning(f"your AnnData.uns['{key_added}'] is used by others, replacing it with a StereoResult.")
-        self.data.uns[key_added] = result
+    a.data = c
+    print(a.data)
