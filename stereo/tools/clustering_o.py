@@ -18,29 +18,22 @@ import pandas as pd
 class Clustering(ToolBase):
     """
     clustering bin-cell using nearest neighbor algorithm.
-
-    :param data: anndata object
-    :param method: louvain or leiden
-    :param outdir: output directory
-    :param dim_reduce_key: defined when running 'DimReduce' tool by setting 'name' property.
-    :param n_neighbors: number of neighbors
-    :param normalize_key: defined when running 'Normalize' tool by setting 'name' property.
-    :param normalize_method: normalization method, Normalizer will be run before clustering if the param is set.
-    :param nor_target_sum: summary of target
-    :param name: name of this tool and will be used as a key when adding tool result to andata object.
     """
-    def __init__(
-            self,
-            data,
-            method='louvain',
-            outdir=None,
-            dim_reduce_key='dim_reduce',
-            n_neighbors=30,
-            normalize_key='cluster_normalize',
-            normalize_method=None,
-            nor_target_sum=10000,
-            name='clustering'
-    ):
+    def __init__(self, data, method='louvain', outdir=None, dim_reduce_key='dim_reduce', n_neighbors=30,
+                 normalize_key='cluster_normalize', normalize_method=None, nor_target_sum=10000, name='clustering'):
+        """
+        initialization
+
+        :param data: anndata object
+        :param method: louvain or leiden
+        :param outdir: output directory
+        :param dim_reduce_key: defined when running 'DimReduce' tool by setting 'name' property.
+        :param n_neighbors: number of neighbors
+        :param normalize_key: defined when running 'Normalize' tool by setting 'name' property.
+        :param normalize_method: normalization method, Normalizer will be run before clustering if the param is set.
+        :param nor_target_sum: summary of target
+        :param name: name of this tool and will be used as a key when adding tool result to andata object.
+        """
         super(Clustering, self).__init__(data=data, method=method, name=name)
         self.param = self.get_params(locals())
         self.outdir = outdir
