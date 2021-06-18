@@ -16,3 +16,5 @@ KDEpy>=1.0.10
 pysal~=2.3.0
 Jinja2==2.11
 tifffile~=2020.10.1
+scanpy~=1.7.2
+shapely~=1.7.1
