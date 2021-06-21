@@ -12,10 +12,11 @@ change log:
 """
 from pathlib import Path
 from ..log_manager import logger
+from typing import Optional
 
 
 class Data(object):
-    def __init__(self, file_path, file_format, partitions=1):
+    def __init__(self, file_path: Optional[str] = None, file_format: Optional[str] = None, partitions: int = 1):
         self._file = Path(file_path)
         self._partitions = int(partitions)
         self._file_format = file_format
@@ -38,7 +39,7 @@ class Data(object):
         :param file: the Path of file.
         :return:
         """
-        if not file.exists():
+        if file is not None and not file.exists():
             self.logger.error(f"{str(file)} is not exist, please check!")
             raise FileExistsError
 
@@ -49,7 +50,7 @@ class Data(object):
         :param f_format: the format of file.
         :return:
         """
-        if f_format not in self.format_range:
+        if f_format is not None and f_format not in self.format_range:
             self.logger.warning(f"the file format `{f_format}` is not in the range, please check!")
 
     @property
@@ -75,6 +76,7 @@ class Data(object):
             file = path
         else:
             raise TypeError
+        self.file_check(file=file)
         self._file = file
 
     @property

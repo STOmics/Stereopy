@@ -18,9 +18,9 @@ from shapely.geometry import Point, MultiPoint
 class StereoExpData(Data):
     def __init__(
             self,
-            file_path: str = None,
-            file_format: str = None,
-            bin_type: str = None,
+            file_path: Optional[str] = None,
+            file_format: Optional[str] = None,
+            bin_type: Optional[str] = None,
             exp_matrix: Optional[Union[np.ndarray, spmatrix]] = None,
             genes: Optional[pd.DataFrame] = None,
             cells: Optional[pd.DataFrame] = None,
@@ -40,6 +40,7 @@ class StereoExpData(Data):
         :return:
         """
         super(StereoExpData, self).check()
+        self.bin_type_check(self._bin_type)
 
     def bin_type_check(self, bin_type):
         """
@@ -88,7 +89,7 @@ class StereoExpData(Data):
         :param df: a dataframe whose index is cell id
         :return:
         """
-        self._genes = df
+        self._cells = df
 
     @property
     def exp_matrix(self):
@@ -126,6 +127,7 @@ class StereoExpData(Data):
         :param b_type: the value of bin type, 'bins' or 'cell_bins'.
         :return:
         """
+        self.bin_type_check(b_type)
         self._bin_type = b_type
 
     @property
@@ -147,7 +149,7 @@ class StereoExpData(Data):
         """
         self._position = pos
 
-    def read(self, sep='\t', bin_size=100, is_sparse=True):
+    def read_txt(self, sep='\t', bin_size=100, is_sparse=True):
         """
         read the stereo-seq file, and generate the object of StereoExpData.
 
@@ -162,7 +164,7 @@ class StereoExpData(Data):
         df.dropna(inplace=True)
         gdf = None
         if self.bin_type == 'cell_bins':
-            df.rename(columns={'label': 'cell_id'})
+            df.rename(columns={'label': 'cell_id'}, inplace=True)
             gdf = self.parse_cell_bin_coor(df)
         else:
             df = self.parse_bin_coor(df, bin_size)
@@ -174,15 +176,14 @@ class StereoExpData(Data):
         cols = df['geneID'].map(genes_dict)
         self.logger.info(f'the martrix has {len(cells)} cells, and {len(genes)} genes.')
         exp_matrix = csr_matrix((df['UMICount'], (rows, cols)), shape=(cells.shape[0], genes.shape[0]), dtype=np.int)
-        self.cells = pd.DataFrame(index=rows)
-        self.genes = pd.DataFrame(index=cols)
+        self.cells = pd.DataFrame(index=cells)
+        self.genes = pd.DataFrame(index=genes)
         self.exp_matrix = exp_matrix if is_sparse else exp_matrix.toarray()
-        if self.file_format == 'bins':
-            self.position = df.loc[:, df[['x_center', 'y_center']]].drop_duplicates().values
+        if self.bin_type == 'bins':
+            self.position = df.loc[:, ['x_center', 'y_center']].drop_duplicates().values
         else:
             self.position = gdf.loc[cells][['x_center', 'y_center']].values
             self.cells['cell_point'] = gdf.loc[cells]['cell_point']
-        self.logger.info(f'the size of matrix is {sys.getsizeof(self.exp_matrix) / 1048576} M.')
         return self
 
     def parse_bin_coor(self, df, bin_size):
@@ -223,6 +224,12 @@ class StereoExpData(Data):
     def get_bin_center(bin_coor: np.ndarray, coor_min: int, bin_size: int):
         return bin_coor*bin_size+coor_min+int(bin_size/2)
 
+    def read(self, sep='\t', bin_size=100, is_sparse=True):
+        if self.file_format == 'txt':
+            return self.read_txt(sep=sep, bin_size=bin_size, is_sparse=is_sparse)
+        else:
+            pass
+
     def write(self):
         pass
 
@@ -230,12 +237,6 @@ class StereoExpData(Data):
         pass
 
     def filter_bins(self):
-        pass
-
-    def search(self):
-        pass
-
-    def combine_bins(self, bin_size, step):
         pass
 
     def select_by_genes(self, gene_list):
