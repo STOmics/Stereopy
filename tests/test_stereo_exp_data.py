@@ -42,4 +42,52 @@ def test_read_cell_bins():
     print(stereo_data.exp_matrix)
 
 
-test_read_cell_bins()
+def make_data():
+    import numpy as np
+    import pandas as pd
+    from scipy import sparse
+    genes = ['g1', 'g2', 'g3']
+    rows = [0, 1, 0, 1, 2, 0, 1, 2]
+    cols = [0, 0, 1, 1, 1, 2, 2, 2]
+    cells = ['c1', 'c2', 'c3']
+    v = [2, 3, 4, 5, 6, 3, 4, 5]
+    exp_matrix = sparse.csr_matrix((v, (rows, cols)))
+    position = np.random.randint(0, 10, (len(cells), 2))
+    out_path = '/home/qiuping//workspace/st/stereopy_data/test.h5ad'
+    data = StereoExpData(bin_type='cell_bins', exp_matrix=exp_matrix, genes=pd.DataFrame(index=genes),
+                         cells=pd.DataFrame(index=cells), position=position, output=out_path)
+    return data
+
+
+def print_data(data):
+    print('genes:')
+    print(data.genes)
+    print('cells:')
+    print(data.cells)
+    print('exp_matrix:')
+    print(data.exp_matrix.shape)
+    print(data.exp_matrix)
+    print('pos:')
+    print(data.position)
+    print('bin_type:')
+    print(data.bin_type)
+
+
+def test_write_h5ad():
+    data = make_data()
+    data.write_h5ad()
+    print_data(data)
+
+
+def test_read_h5ad():
+    file_path = '/home/qiuping//workspace/st/stereopy_data/test.h5ad'
+    data = StereoExpData(file_path=file_path, file_format='h5ad')
+    data.read_h5ad()
+    print_data(data)
+
+
+if __name__ == '__main__':
+    print('test write...')
+    test_write_h5ad()
+    print('test read....')
+    test_read_h5ad()
