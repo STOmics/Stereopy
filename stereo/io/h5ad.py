@@ -13,10 +13,41 @@ change log:
 import h5py
 import numpy as np
 import pandas as pd
-from typing import Literal
+from typing import Union
 from types import MappingProxyType
 from pandas.api.types import is_categorical_dtype
 from scipy import sparse
+from packaging import version
+from ..utils.spmatrix_helper import idx_chunks_along_axis
+from functools import singledispatch
+
+
+H5PY_V3 = version.parse(h5py.__version__).major >= 3
+
+
+@singledispatch
+def write(v, f, k, *args, **kwargs):
+    write_scalar(f, k, v)
+
+
+@write.register(np.ndarray)
+def _(v, f, k):
+    write_array(f, k, v)
+
+
+@write.register(list)
+def _(v, f, k):
+    write_list(f, k, v)
+
+
+@write.register(pd.DataFrame)
+def _(v, f, k):
+    write_dataframe(f, k, v)
+
+
+@write.register(sparse.spmatrix)
+def _(v, f, k, sp_format):
+    write_spmatrix(f, k, v, sp_format)
 
 
 def write_array(f, key, value, dataset_kwargs=MappingProxyType({})):
@@ -36,7 +67,7 @@ def write_scalar(f, key, value, dataset_kwargs=MappingProxyType({})):
     write_array(f, key, np.array(value), dataset_kwargs=dataset_kwargs)
 
 
-def write_spmatrix(f, k, v, fmt: Literal["csr", "csc"], dataset_kwargs=MappingProxyType({})):
+def write_spmatrix(f, k, v, fmt: str, dataset_kwargs=MappingProxyType({})):
     g = f.create_group(k)
     g.attrs["encoding-type"] = f"{fmt}_matrix"
     g.attrs["shape"] = v.shape
@@ -132,21 +163,106 @@ def _to_hdf5_vlen_strings(value: np.ndarray) -> np.ndarray:
     return value.astype(new_dtype)
 
 
-def idx_chunks_along_axis(shape: tuple, axis: int, chunk_size: int):
-    """
-    Gives indexer tuples chunked along an axis.
+def read_dataframe(group) -> pd.DataFrame:
+    columns = list(group.attrs["column-order"])
+    idx_key = group.attrs["_index"]
+    df = pd.DataFrame(
+        {k: read_series(group[k]) for k in columns},
+        index=read_series(group[idx_key]),
+        columns=list(columns),
+    )
+    if idx_key != "_index":
+        df.index.name = idx_key
+    return df
 
-    :param shape: Shape of array to be chunked
-    :param axis: Axis to chunk along
-    :param chunk_size: Size of chunk along axis
-    :return: An iterator of tuples for indexing into an array of passed shape.
-    """
-    total = shape[axis]
-    cur = 0
-    mutable_idx = [slice(None) for i in range(len(shape))]
-    while cur + chunk_size < total:
-        mutable_idx[axis] = slice(cur, cur + chunk_size)
-        yield tuple(mutable_idx)
-        cur += chunk_size
-    mutable_idx[axis] = slice(cur, None)
-    yield tuple(mutable_idx)
+
+def read_spmatrix(group) -> sparse.spmatrix:
+    shape = tuple(group.attrs["shape"])
+    dtype = group["data"].dtype
+    mtx = sparse.csr_matrix(shape, dtype=dtype) if group.attrs["encoding-type"] == "csr_matrix" \
+        else sparse.csc_matrix(shape, dtype=dtype)
+    mtx.data = group["data"][...]
+    mtx.indices = group["indices"][...]
+    mtx.indptr = group["indptr"][...]
+    return mtx
+
+
+def read_series(dataset) -> Union[np.ndarray, pd.Categorical]:
+    if "categories" in dataset.attrs:
+        categories = dataset.attrs["categories"]
+        ordered = False
+        if isinstance(categories, h5py.Reference):
+            categories_dset = dataset.parent[dataset.attrs["categories"]]
+            categories = read_dataset(categories_dset)
+            ordered = bool(categories_dset.attrs.get("ordered", False))
+        else:
+            pass
+        return pd.Categorical.from_codes(
+            read_dataset(dataset), categories, ordered=ordered
+        )
+    else:
+        return read_dataset(dataset)
+
+
+def read_dataset(dataset: h5py.Dataset):
+    if H5PY_V3:
+        string_dtype = h5py.check_string_dtype(dataset.dtype)
+        if (string_dtype is not None) and (string_dtype.encoding == "utf-8"):
+            dataset = dataset.asstr()
+    value = dataset[()]
+    if not hasattr(value, "dtype"):
+        return value
+    elif isinstance(value.dtype, str):
+        pass
+    elif issubclass(value.dtype.type, np.string_):
+        value = value.astype(str)
+        # Backwards compat, old datasets have strings as one element 1d arrays
+        if len(value) == 1:
+            return value[0]
+    if value.shape == ():
+        value = value[()]
+    return value
+
+
+def read_group(group: h5py.Group) -> Union[dict, pd.DataFrame, sparse.spmatrix]:
+    encoding_type = group.attrs.get("encoding-type")
+    if encoding_type is None:
+        pass
+    elif encoding_type == "dataframe":
+        return read_dataframe(group)
+    elif encoding_type in {"csr_matrix", "csc_matrix"}:
+        return read_spmatrix(group)
+    else:
+        raise ValueError(f"Unfamiliar `encoding-type`: {encoding_type}.")
+    d = dict()
+    for sub_key, sub_value in group.items():
+        d[sub_key] = read_dataset(sub_value)
+    return d
+
+
+def read_dense_as_sparse(
+    dataset: h5py.Dataset, sparse_format: sparse.spmatrix, axis_chunk: int
+):
+    if sparse_format == sparse.csr_matrix:
+        return read_dense_as_csr(dataset, axis_chunk)
+    elif sparse_format == sparse.csc_matrix:
+        return read_dense_as_csc(dataset, axis_chunk)
+    else:
+        raise ValueError(f"Cannot read dense array as type: {sparse_format}")
+
+
+def read_dense_as_csr(dataset, axis_chunk=6000):
+    sub_matrices = []
+    for idx in idx_chunks_along_axis(dataset.shape, 0, axis_chunk):
+        dense_chunk = dataset[idx]
+        sub_matrix = sparse.csr_matrix(dense_chunk)
+        sub_matrices.append(sub_matrix)
+    return sparse.vstack(sub_matrices, format="csr")
+
+
+def read_dense_as_csc(dataset, axis_chunk=6000):
+    sub_matrices = []
+    for idx in idx_chunks_along_axis(dataset.shape, 1, axis_chunk):
+        sub_matrix = sparse.csc_matrix(dataset[idx])
+        sub_matrices.append(sub_matrix)
+    return sparse.hstack(sub_matrices, format="csc")

@@ -13,15 +13,21 @@ change log:
 from pathlib import Path
 from ..log_manager import logger
 from typing import Optional
+import os
 
 
 class Data(object):
-    def __init__(self, file_path: Optional[str] = None, file_format: Optional[str] = None, partitions: int = 1):
-        self._file = Path(file_path)
+    def __init__(self,
+                 file_path: Optional[str] = None,
+                 file_format: Optional[str] = None,
+                 output: Optional[str] = None,
+                 partitions: int = 1):
+        self._file = Path(file_path) if file_path is not None else None
         self._partitions = int(partitions)
         self._file_format = file_format
         self.format_range = ['txt', 'csv', 'mtx', 'h5ad']
         self.logger = logger
+        self._output = output
 
     def check(self):
         """
@@ -31,6 +37,31 @@ class Data(object):
         """
         self.file_check(file=self.file)
         self.format_check(f_format=self.file_format)
+
+    @property
+    def output(self):
+        return self._output
+
+    @output.setter
+    def output(self, path):
+        self.output_check(path)
+        self._output = path
+
+    def output_check(self, path):
+        """
+        check if the output dir is exists. It will be created if not exists.
+
+        :param path:
+        :return:
+        """
+        if path is None:
+            self.logger.warning(f'the output path is set as None.')
+            return
+        out_dir = os.path.dirname(path)
+        if not os.path.exists(out_dir):
+            os.makedirs(out_dir)
+        if os.path.exists(path):
+            self.logger.warning(f'the output file is exists, we will replace it with new file.')
 
     def file_check(self, file):
         """
@@ -70,7 +101,9 @@ class Data(object):
         :param path: the file path
         :return:
         """
-        if isinstance(path, str):
+        if path is None:
+            file = path
+        elif isinstance(path, str):
             file = Path(path)
         elif isinstance(path, Path):
             file = path

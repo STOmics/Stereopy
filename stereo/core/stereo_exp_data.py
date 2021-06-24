@@ -11,8 +11,10 @@ import pandas as pd
 import numpy as np
 from typing import Optional, Union
 from scipy.sparse import spmatrix, csr_matrix
-import sys
 from shapely.geometry import Point, MultiPoint
+import h5py
+from ..io import h5ad
+from functools import singledispatch
 
 
 class StereoExpData(Data):
@@ -25,8 +27,10 @@ class StereoExpData(Data):
             genes: Optional[pd.DataFrame] = None,
             cells: Optional[pd.DataFrame] = None,
             position: Optional[np.ndarray] = None,
+            output: Optional[str] = None,
             partitions: int = 1):
-        super(StereoExpData, self).__init__(file_path=file_path, file_format=file_format, partitions=partitions)
+        super(StereoExpData, self).__init__(file_path=file_path, file_format=file_format,
+                                            partitions=partitions, output=output)
         self._exp_matrix = exp_matrix
         self._genes = genes
         self._cells = cells
@@ -49,7 +53,7 @@ class StereoExpData(Data):
         :param bin_type: bin type value, 'bins' or 'cell_bins'.
         :return:
         """
-        if bin_type not in ['bins', 'cell_bins']:
+        if (bin_type is not None) and (bin_type not in ['bins', 'cell_bins']):
             self.logger.error(f"the bin type `{bin_type}` is not in the range, please check!")
             raise Exception
 
@@ -224,38 +228,72 @@ class StereoExpData(Data):
     def get_bin_center(bin_coor: np.ndarray, coor_min: int, bin_size: int):
         return bin_coor*bin_size+coor_min+int(bin_size/2)
 
+    def read_h5ad(self):
+        """
+        read the h5ad file, and generate the object of StereoExpData.
+        :return:
+        """
+        if not self.file.exists():
+            self.logger.error('the input file is not exists, please check!')
+            raise FileExistsError('the input file is not exists, please check!')
+        with h5py.File(self.file, mode='r') as f:
+            for k in f.keys():
+                if k == 'cells':
+                    self.cells = h5ad.read_group(f[k])
+                elif k == 'genes':
+                    self.genes = h5ad.read_group(f[k])
+                elif k == 'position':
+                    self.position = h5ad.read_dataset(f[k])
+                elif k == 'bin_type':
+                    self.bin_type = h5ad.read_dataset(f[k])
+                elif k == 'exp_matrix':
+                    if isinstance(f[k], h5py.Group):
+                        self.exp_matrix = h5ad.read_group(f[k])
+                    else:
+                        self.exp_matrix = h5ad.read_dataset(f[k])
+                else:
+                    pass
+        return self
+
     def read(self, sep='\t', bin_size=100, is_sparse=True):
+        """
+        read different format file and generate the object of StereoExpData.
+
+        :param sep: separator string
+        :param bin_size: the size of bin to merge. The parameter only takes effect
+                         when the value of self.bin_type is 'bins'.
+        :param is_sparse: the matrix is sparse matrix if is_sparse is True else np.ndarray
+        :return:
+        """
         if self.file_format == 'txt':
             return self.read_txt(sep=sep, bin_size=bin_size, is_sparse=is_sparse)
+        elif self.file_format == 'h5ad':
+            return self.read_h5ad()
         else:
             pass
 
+    def write_h5ad(self):
+        """
+        write the SetreoExpData into h5ad file.
+        :return:
+        """
+        if self.output is None:
+            self.logger.error("the output path must be set before writting.")
+        with h5py.File(self.output, mode='w') as f:
+            h5ad.write(self.genes, f, 'genes')
+            h5ad.write(self.cells, f, 'cells')
+            h5ad.write(self.position, f, 'position')
+            sp_format = 'csr' if isinstance(self.exp_matrix, csr_matrix) else 'csc'
+            h5ad.write(self.exp_matrix, f, 'exp_matrix', sp_format)
+            h5ad.write(self.bin_type, f, 'bin_type')
+
     def write(self):
-        pass
+        """
+        write the SetreoExpData into file.
 
-    def filter_genes(self):
-        pass
+        :return:
+        """
+        self.write_h5ad()
 
-    def filter_bins(self):
-        pass
-
-    def select_by_genes(self, gene_list):
-        pass
-
-    def select_by_position(self, x_min, y_min, x_max, y_max, bin_size):
-        pass
-
-    def transform_matrix(self):
-        pass
-
-    def get_genes(self):
-        pass
-
-    def get_bins(self):
-        pass
-
-    def split_data(self):
-        pass
-
-    def sparse2array(self):
+    def read_by_bulk(self):
         pass
