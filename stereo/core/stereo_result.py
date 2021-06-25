@@ -2,106 +2,125 @@
 # coding: utf-8
 """
 @author: Ping Qiu  qiuping1@genomics.cn
-@last modified by: qindanhua
+@last modified by: Ping Qiu
 @file:stereo_result.py
-@time:2021/06/16
+@time:2021/03/14
+
+change log:
+    rewritten by: qindanhua. 2021/06/15
 """
 from typing import Optional
 import numpy as np
 import pandas as pd
 from stereo.log_manager import logger
-from stereo.core.tool_base import ToolBase
-from collections import OrderedDict
-from typing import Any, MutableMapping, Mapping, Tuple
+# from stereo.core.tool_base import ToolBase
+# from collections import OrderedDict
+# from typing import Any, MutableMapping, Mapping, Tuple
 
 
 class StereoResult(object):
     """
-
+    analysis result
     """
     def __init__(
             self,
-            # result=None,
-            result: MutableMapping[str, Any] = None,
-            name: str = None,
+            matrix: pd.DataFrame = None,
+            name: str = 'tool result',
             params: Optional[dict] = None,
 
     ):
-        print('log_1')
-        self.result = result
+        # self.matrix = data
         self.params = params
         self.name = name
+        self._matrix = matrix
+        self._cols = self._get_cols()
 
-    # @property
-    # def result(self) -> MutableMapping:
-    #     print('log_2')
-    #     """Unstructured annotation (ordered dictionary)."""
-    #     # uns = _overloaded_uns(self)
-    #     return self._result
-    #
-    # @result.setter
-    # def result(self, value: [Tuple[str, Any], MutableMapping]):
-    #     print('log_3')
-    #     if value is not None:
-    #         if not isinstance(value, (MutableMapping, Tuple)):
-    #             raise ValueError(
-    #                 "Only mutable mapping types (e.g. dict) are allowed for `.uns`."
-    #             )
-    #     self._result = value
-    #
-    # @result.deleter
-    # def result(self):
-    #     print('log_4')
-    #     self.result = OrderedDict()
+    def _get_cols(self):
+        if isinstance(self.matrix, pd.DataFrame):
+            cols = [str(i) for i in self.matrix.columns]
+        else:
+            cols = None
+        return cols
 
-    # def set(self, name, value):
-    #     self.
+    @property
+    def matrix(self):
+        return self._matrix
 
-    # def add(self, value, name):
-    #     self.result[name] = value
-    #
-    # def delete(self, name):
-    #     self.result.pop(name)
-    #
-    # def to_csv(self):
-    #     pass
+    @matrix.setter
+    def matrix(self, matrix):
+        if not isinstance(matrix, pd.DataFrame):
+            logger.error(f'result data needs to be a Dataframe.')
+        else:
+            self._matrix = matrix
+
+    @property
+    def params(self):
+        return self._params
+
+    @params.setter
+    def params(self, p):
+        self._params = p
+
+    def __str__(self):
+        self._cols = self._get_cols()
+        describe_cols = ','.join(self._cols)
+        class_info = f'{self.__class__.__name__} of {self.name},'
+        class_info += f'a DataFrame which has {describe_cols} columns. \n'
+        class_info += f'the shape is {self.matrix.shape if isinstance(self.matrix, pd.DataFrame) else None} \n'
+        class_info += f'params: {self.params}\n'
+        return class_info
+
+    def __repr__(self):
+        return self.__str__()
+
+    def top_n(self, sort_key, top_n=10, ascend=False):
+        """
+        obtain the first k significantly different genes
+
+        :param top_n:  the number of top n
+        :param sort_key: sort by this column
+        :param ascend: the ascend order of sorting.
+        :return:
+        """
+        if self.matrix is not None:
+            top_n_data = self.matrix.sort_values(by=sort_key, ascending=ascend).head(top_n)
+            return top_n_data
+        else:
+            logger.warning('the analysis result data is None, return None.')
+            return None
+
+    def check_columns(self, cols):
+        cols_m = self.matrix.columns
+        if sorted(list(cols_m)) == sorted(list(cols)):
+            return True
+        else:
+            return False
 
 
-if __name__ == '__main__':
-    n = 'pca'
-    r = np.ndarray([2, 3])
-    res = StereoResult({n: r})
-    print(res.result)
-    res.add(r, 'b')
-    print(res.result)
-    res.delete('b')
-    print(res.result)
+class SpatialLagResult(StereoResult):
+    def __init__(self, matrix=None, name='spatial_lag'):
+        super(SpatialLagResult, self).__init__(matrix=matrix, name=name)
 
-    # print(res.data)
-    # print(res.method)
-    # print(res.__str__)
+    def top_markers(self, top_k=10, ascend=False):
+        """
+        obtain the first k significantly different genes
 
-    # class BaseResult(ToolBase):
-    #     """
-    #
-    #     """
-    #     def __init__(
-    #             self,
-    #             data=None,
-    #             name: str = 'stereo',
-    #             param: Optional[dict] = None
-    #     ):
-    #         super(BaseResult, self).__init__(data)
-    #         self.name = name
-    #         self.params = {} if param is None else param
-    #
-    #     def update_params(self, v):
-    #         self.params = v
-    #
-    #     def __str__(self):
-    #         class_info = f'{self.__class__.__name__} of {self.name}. \n'
-    #         class_info += f'  params: {self.params}\n'
-    #         return class_info
-    #
-    #     def __repr__(self):
-    #         return self.__str__()
+        :param top_k:  the number of top k
+        :param ascend: the ascend order of sorting.
+        :return:
+        """
+        if self.matrix is not None:
+            coef_col = self.matrix.columns[self.matrix.columns.str.endswith('lag_coeff')]
+            col1 = np.array([(i, i) for i in coef_col]).flatten()
+            col2 = np.array([('genes', 'values') for _ in coef_col]).flatten()
+            tmp = []
+            for col in coef_col:
+                top_df = self.matrix.sort_values(by=col, ascending=ascend).head(top_k)
+                tmp.append(list(top_df.index))
+                tmp.append(top_df[col])
+            x = np.array(tmp).T
+            top_res = pd.DataFrame(x, columns=[col1, col2], index=np.arange(top_k))
+            return top_res
+        else:
+            logger.warning('the result of degs is None, return None.')
+            return None
