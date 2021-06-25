@@ -11,15 +11,18 @@ import pandas as pd
 import numpy as np
 
 
-def select_group(andata, groups, clust_key):
-    if clust_key not in andata.obs_keys():
-        raise ValueError(f" '{clust_key}' is not in andata.")
-    all_groups = set(andata.obs[clust_key].values)
+def select_group(andata, groups, cluster):
+    # if clust_key not in andata.obs_keys():
+    #     raise ValueError(f" '{clust_key}' is not in andata.")
+    all_groups = set(cluster['cluster'].values)
     groups = [groups] if isinstance(groups, str) else groups
     for g in groups:
         if g not in all_groups:
             raise ValueError(f"cluster {g} is not in all cluster.")
-    group_index = andata.obs[clust_key].isin(groups)
+    cluster = cluster.set_index(['bins'])
+    andata.obs['cluster'] = cluster['cluster']
+    # print(andata.obs)
+    group_index = andata.obs['cluster'].isin(groups)
     exp_matrix = andata.X.toarray() if issparse(andata.X) else andata.X
     group_sub = exp_matrix[group_index, :]
     obs = andata.obs_names[group_index]
@@ -34,3 +37,19 @@ def get_cluster_res(adata, data_key='clustering'):
 
 def get_position_array(data, obs_key='spatial'):
     return np.array(data.obsm[obs_key])[:, 0: 2]
+
+
+# def select_group(andata, groups, clust_key):
+#     if clust_key not in andata.obs_keys():
+#         raise ValueError(f" '{clust_key}' is not in andata.")
+#     all_groups = set(andata.obs[clust_key].values)
+#     groups = [groups] if isinstance(groups, str) else groups
+#     for g in groups:
+#         if g not in all_groups:
+#             raise ValueError(f"cluster {g} is not in all cluster.")
+#     group_index = andata.obs[clust_key].isin(groups)
+#     exp_matrix = andata.X.toarray() if issparse(andata.X) else andata.X
+#     group_sub = exp_matrix[group_index, :]
+#     obs = andata.obs_names[group_index]
+#     return pd.DataFrame(group_sub, index=obs, columns=list(andata.var_names))
+

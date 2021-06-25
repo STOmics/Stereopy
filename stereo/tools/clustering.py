@@ -3,12 +3,16 @@
 Create on 2020-12-04
 @author liulin4
 @revised on Jan22-2021
+
+change log:
+    2021/05/20 rst supplement. by: qindanhua.
+    2021/06/20 adjust for restructure base class . by: qindanhua.
 """
 
 import numpy as np
 import leidenalg as la
 from ..core.tool_base import ToolBase
-from ..core.stereo_result import ClusterResult
+# from ..log_manager import logger
 from .neighbors import Neighbors
 from ..preprocess.normalize import Normalizer
 from .dim_reduce import DimReduce
@@ -18,51 +22,65 @@ import pandas as pd
 class Clustering(ToolBase):
     """
     clustering bin-cell using nearest neighbor algorithm.
+
+    :param data: anndata object
+    :param method: louvain or leiden\
+    :param n_neighbors: number of neighbors
+    # :param normalize_key: defined when running 'Normalize' tool by setting 'name' property.
+    # :param normalize_method: normalization method, Normalizer will be run before clustering if the param is set.
+    # :param nor_target_sum: summary of target
+    # :param name: name of this tool and will be used as a key when adding tool result to andata object.
     """
-    def __init__(self, data, method='louvain', outdir=None, dim_reduce_key='dim_reduce', n_neighbors=30,
-                 normalize_key='cluster_normalize', normalize_method=None, nor_target_sum=10000, name='clustering'):
-        """
-        initialization
-
-        :param data: anndata object
-        :param method: louvain or leiden
-        :param outdir: output directory
-        :param dim_reduce_key: defined when running 'DimReduce' tool by setting 'name' property.
-        :param n_neighbors: number of neighbors
-        :param normalize_key: defined when running 'Normalize' tool by setting 'name' property.
-        :param normalize_method: normalization method, Normalizer will be run before clustering if the param is set.
-        :param nor_target_sum: summary of target
-        :param name: name of this tool and will be used as a key when adding tool result to andata object.
-        """
-        super(Clustering, self).__init__(data=data, method=method, name=name)
-        self.param = self.get_params(locals())
-        self.outdir = outdir
-        self.normakizer = Normalizer(self.data, method=normalize_method, inplace=False, target_sum=nor_target_sum,
-                                     name=normalize_key) if normalize_method is not None else None
-        self.dim_reduce_key = dim_reduce_key
+    def __init__(
+            self,
+            data=None,
+            method: str = 'louvain',
+            pca_x=None,
+            n_neighbors: int = 30,
+            normalize=False,
+            # normalize_key='cluster_normalize',
+            # normalize_method=None,
+            # nor_target_sum=10000,
+            # name='clustering'
+    ):
+        super(Clustering, self).__init__(data=data, method=method)
+        # self.param = self.get_params(locals())
+        # self.dim_reduce_key = dim_reduce_key
         self.neighbors = n_neighbors
+        self.normalize = normalize
+        self._pca_x = pca_x
 
-    def run_normalize(self):
+    @property
+    def pca_x(self):
+        return self._pca_x
+
+    @pca_x.setter
+    def pca_x(self, pca_x):
+        input_df = self.check_input_data(pca_x)
+        self._pca_x = input_df
+
+    def run_normalize(self, normalize_method='normalize_total', nor_target_sum=10000):
         """
         normalize input data
 
         :return: normalized data
         """
-        nor_x = self.normakizer.fit() if self.normakizer is not None else None
+        normakizer = Normalizer(self.data, method=normalize_method, inplace=False, target_sum=nor_target_sum)
+        nor_x = normakizer.fit()
         return nor_x
 
-    def get_dim_reduce_x(self, nor_x):
+    def get_dim_reduce_x(self):
         """
         get dimensionality reduction results
 
-        :param nor_x: normalized x array
         :return: pca results
         """
-        if self.dim_reduce_key not in self.data.uns.keys():
-            dim_reduce = DimReduce(self.data, method='pca', n_pcs=30, name=self.dim_reduce_key)
+        if self.pca_x is None:
+            nor_x = self.run_normalize() if self.normalize else self.data.X
+            dim_reduce = DimReduce(self.data, method='pca', n_pcs=30)
             dim_reduce.fit(nor_x)
-        pca_x = self.data.uns[self.dim_reduce_key].x_reduce
-        return pca_x
+            self.pca_x = dim_reduce.result.x_reduce
+        return self.pca_x
 
     def run_neighbors(self, x):
         """
@@ -115,9 +133,8 @@ class Clustering(ToolBase):
         """
         running and add results
         """
-        nor_x = self.sparse2array() if self.normakizer is None else self.run_normalize()
-        reduce_x = self.get_dim_reduce_x(nor_x)
-        neighbor, nn_idx, nn_dist = self.run_neighbors(reduce_x)
+        self.get_dim_reduce_x()
+        neighbor, nn_idx, nn_dist = self.run_neighbors(self.pca_x)
         if self.method == 'leiden':
             cluster = self.run_knn_leiden(neighbor, nn_idx, nn_dist)
         else:
@@ -125,7 +142,7 @@ class Clustering(ToolBase):
         cluster = [str(i) for i in cluster]
         info = {'bins': self.data.obs_names, 'cluster': cluster}
         df = pd.DataFrame(info)
-        result = ClusterResult(name=self.name, param=self.param, cluster_info=df)
-        self.add_result(result, key_added=self.name)
+        self.result.matrix = df
         # TODO  added for find marker
-        self.data.obs[self.name] = cluster
+        # self.data.obs[self.name] = cluster
+        return df
