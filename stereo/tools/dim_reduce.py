@@ -8,11 +8,14 @@
 
 change log:
     2021/03/17 16:36:00  add filter functions, by Ping Qiu.
+    2021/05/20 rst supplement. by: qindanhua.
+    2021/06/15 adjust for restructure base class . by: qindanhua.
 """
 
 from sklearn.decomposition import PCA
 from anndata import AnnData
 import numpy as np
+import pandas as pd
 import umap
 from sklearn.decomposition import FactorAnalysis
 from sklearn.manifold import TSNE
@@ -24,6 +27,7 @@ from stereo.core.stereo_result import StereoResult
 class DimReduce(ToolBase):
     """
     bin-cell dimensionality reduction
+
     :param data: anndata object
     :param method: default pca, options are pca, tsen, umap, factor_analysis and low_variance
     :param n_pcs: the number of features for a return array after reducing.
@@ -31,7 +35,7 @@ class DimReduce(ToolBase):
     :param n_iter: number of iteration
     :param n_neighbors: number of neighbors
     :param min_dist: param for UMAP method, the minus value of distance.
-    :param name: name of this tool and will be used as a key when adding tool result to andata object.
+    # :param name: name of this tool and will be used as a key when adding tool result to andata object.
 
     Examples
     --------
@@ -41,32 +45,36 @@ class DimReduce(ToolBase):
     >>> X = np.array([[1, 2], [1, 4], [1, 0],
     ...               [10, 2], [10, 4], [10, 0]])
     >>> dr = DimReduce(X).fit()
-    >>> dr.result.pcs
-    array([1, 1, 1, 0, 0, 0], dtype=int32)
-    array([[10.,  2.],
-           [ 1.,  2.]])
+    >>> dr.result.matrix
+           0         1
+    0  13.754602 -3.000469
+    1  12.671173 -2.698209
+    2  13.715853 -1.961277
+    3  11.762485 -1.426327
+    4  12.028677 -0.300320
+    5  12.879782 -0.918522
+    >>> dr.method = 'umap'
+    >>> dr.fit()
     """
     def __init__(
             self,
             data=None,
-            method='pca',
-            n_pcs=2,
-            min_variance=0.01,
-            n_iter=250,
-            n_neighbors=5,
-            min_dist=0.3,
-            # inplace=False,
-            name='dim_reduce'
+            method: str = 'pca',
+            n_pcs: int = 2,
+            min_variance: float = 0.01,
+            n_iter: int = 250,
+            n_neighbors: int = 5,
+            min_dist: float = 0.3,
+            # name='dim_reduce'
     ):
         # self.params = self.get_params(locals())
-        super(DimReduce, self).__init__(data=data, method=method, name=name)
+        super(DimReduce, self).__init__(data=data, method=method)
         self.n_pcs = n_pcs
         self.min_variance = min_variance
         self.n_iter = n_iter
         self.n_neighbors = n_neighbors
         self.min_dist = min_dist
         # self.check_param()
-        self.result = StereoResult(name=name)
 
     @property
     def method(self):
@@ -95,7 +103,8 @@ class DimReduce(ToolBase):
             self.result.variance_ratio = pca_res['variance_ratio']
             self.result.variance_pca = pca_res['variance']
             self.result.pcs = pca_res['pcs']
-        return self.result
+        self.result.matrix = pd.DataFrame(self.result.x_reduce)
+        return self.result.matrix
         # self.add_result(result=self.result, key_added=self.name)
 
     @staticmethod
@@ -171,14 +180,3 @@ class DimReduce(ToolBase):
         umap_obj = umap.UMAP(n_neighbors=n_neighbors, n_components=n_pcs, min_dist=min_dist)
         umap_x = umap_obj.fit_transform(x)
         return umap_x
-
-
-if __name__ == '__main__':
-    d = np.ndarray([10, 3])
-    # print(d)
-    dr = DimReduce(d)
-    dr.fit()
-    print(dr.result)
-    print(dr.result.pcs)
-    # print(dir(dr.result))
-    # dr.data = np.ndarray([2, 6])

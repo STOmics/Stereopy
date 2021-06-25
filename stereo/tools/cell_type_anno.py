@@ -5,6 +5,10 @@
 @last modified by: Ping Qiu
 @file:cell_type_anno.py
 @time:2021/03/09
+
+change log:
+    2021/05/20 rst supplement. by: qindanhua.
+    2021/06/20 adjust for restructure base class . by: qindanhua.
 """
 import pandas as pd
 import numpy as np
@@ -17,7 +21,7 @@ from ..preprocess.normalize import normalize_total
 from ..config import stereo_conf
 from ..utils import remove_file
 from ..core.tool_base import ToolBase
-from ..core.stereo_result import CellTypeResult
+from ..core.stereo_result import StereoResult
 from scipy.sparse import issparse
 
 
@@ -43,8 +47,8 @@ class CellTypeAnno(ToolBase):
         :param out_dir: output directory
         :param name: name of this tool and will be used as a key when adding tool result to andata object.
         """
-        super(CellTypeAnno, self).__init__(data=adata, method=method, name=name)
-        self.param = self.get_params(locals())
+        super(CellTypeAnno, self).__init__(data=adata, method=method)
+        # self.param = self.get_params(locals())
         self.data = adata
         self.ref_dir = ref_dir if ref_dir else os.path.join(stereo_conf.data_dir, 'ref_db', 'FANTOM5')
         self.n_jobs = cores
@@ -56,8 +60,7 @@ class CellTypeAnno(ToolBase):
         self.method = method
         self.split_num = split_num
         self.output = out_dir if out_dir else stereo_conf.out_dir
-        self.result = CellTypeResult(name=name, param=self.param)
-        self.check_param()
+        # self.check_param()
 
     def split_dataframe(self, df):
         """
@@ -189,9 +192,9 @@ class CellTypeAnno(ToolBase):
                 index = f'subsample_{i}'
                 self.concat_top_corr_files(files, tmp_output, index)
             if self.strategy == 1:
-                self.result.anno_data = self.merge_subsample_result(tmp_output, 'top_annotation.csv', self.output)
+                self.result.matrix = self.merge_subsample_result(tmp_output, 'top_annotation.csv', self.output)
             else:
-                self.result.anno_data = self.merge_subsample_result_filter(tmp_output, 'top_annotation.csv',
+                self.result.matrix = self.merge_subsample_result_filter(tmp_output, 'top_annotation.csv',
                                                                            self.output)
         else:
             pool = Pool(self.n_jobs)
@@ -204,10 +207,9 @@ class CellTypeAnno(ToolBase):
             pool.join()
             logger.info(f'start to merge top result ...')
             files = [os.path.join(tmp_output, f'sub_{i}.top_{self.method}_corr.csv') for i in range(len(datas))]
-            self.result.anno_data = self.concat_top_corr_files(files, self.output)
+            self.result.matrix = self.concat_top_corr_files(files, self.output)
         # clear tmp directory
         remove_file(tmp_output)
-        self.add_result(result=self.result, key_added=self.name)
 
 
 def parse_ref_data(ref_dir):
