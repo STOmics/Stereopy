@@ -5,6 +5,10 @@
 @last modified by: Leying Wang
 @file: spatial_pattern_score.py
 @time: 2021/4/19 17:20
+
+change log:
+    2021/05/20 rst supplement. by: qindanhua.
+    2021/06/20 adjust for restructure base class . by: qindanhua.
 """
 
 from anndata import AnnData
@@ -13,25 +17,19 @@ import numpy as np
 import statistics
 import scipy.stats as stats
 from ..core.tool_base import ToolBase
-from ..core.stereo_result import SpatialPatternScoreResult
 
 
 class SpatialPatternScore(ToolBase):
     """
     calculate spatial pattern score
     """
-    def __init__(self, data: AnnData, method='enrichment',
-                 name='spatial_pattern_score'):
-        self.params = self.get_params(locals())
-        super(SpatialPatternScore, self).__init__(data=data, method=method, name=name)
-        self.check_param()
-        self.result = SpatialPatternScoreResult(name=name, param=self.params)
-
-    def check_param(self):
-        """
-        Check whether the parameters meet the requirements.
-        """
-        super(SpatialPatternScore, self).check_param()
+    def __init__(
+            self,
+            data=None,
+            method='enrichment',
+    ):
+        # self.params = self.get_params(locals())
+        super(SpatialPatternScore, self).__init__(data=data, method=method)
 
     def fit(self):
         """
@@ -57,11 +55,11 @@ class SpatialPatternScore(ToolBase):
             + low_exp.shape[0] * ["low_exp"]
         report_out.index = report_out['gene']
         report_out = report_out.reindex(self.data.var.index)
-        result = SpatialPatternScoreResult(name=self.name, param=self.params, pattern_info=report_out)
-        self.add_result(result, key_added=self.name)
+        self.result.matrix = report_out
+        # self.add_result(result, key_added=self.name)
         # TODO  added for spatial pattern score
-        self.data.var['E10'] = report_out['E10']
-        self.data.var['pattern_attribute'] = report_out['attribute']
+        # self.data.var['E10'] = report_out['E10']
+        # self.data.var['pattern_attribute'] = report_out['attribute']
 
 
 def get_enrichment_score(gene, gene_expression):
