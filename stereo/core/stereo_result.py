@@ -24,7 +24,7 @@ class StereoResult(object):
     """
     def __init__(
             self,
-            matrix: pd.DataFrame = None,
+            matrix: pd.DataFrame = pd.DataFrame(),
             name: str = 'tool result',
             params: Optional[dict] = None,
 
@@ -36,11 +36,7 @@ class StereoResult(object):
         self._cols = self._get_cols()
 
     def _get_cols(self):
-        if isinstance(self.matrix, pd.DataFrame):
-            cols = [str(i) for i in self.matrix.columns]
-        else:
-            cols = None
-        return cols
+        return [str(i) for i in self.matrix.columns]
 
     @property
     def matrix(self):
@@ -61,10 +57,14 @@ class StereoResult(object):
     def params(self, p):
         self._params = p
 
+    @property
+    def is_empty(self):
+        return self.matrix.empty
+
     def __str__(self):
         self._cols = self._get_cols()
         describe_cols = ','.join(self._cols)
-        class_info = f'{self.__class__.__name__} of {self.name},'
+        class_info = f'{self.__class__.__name__} result of stereo tool {self.name},'
         class_info += f'a DataFrame which has {describe_cols} columns. \n'
         class_info += f'the shape is {self.matrix.shape if isinstance(self.matrix, pd.DataFrame) else None} \n'
         class_info += f'params: {self.params}\n'
@@ -91,7 +91,7 @@ class StereoResult(object):
 
     def check_columns(self, cols):
         cols_m = self.matrix.columns
-        if sorted(list(cols_m)) == sorted(list(cols)):
+        if len(set(cols_m) & set(cols)) == len(cols):
             return True
         else:
             return False

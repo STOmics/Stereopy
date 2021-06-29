@@ -58,6 +58,15 @@ class StereoExpData(Data):
             raise Exception
 
     @property
+    def gene_names(self):
+        """
+        get the value of self._genes.
+
+        :return:
+        """
+        return self._genes['gene']
+
+    @property
     def genes(self):
         """
         get the value of self._genes.
