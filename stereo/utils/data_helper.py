@@ -11,7 +11,7 @@ import pandas as pd
 import numpy as np
 
 
-def select_group(andata, groups, cluster):
+def select_group(st_data, groups, cluster):
     # if clust_key not in andata.obs_keys():
     #     raise ValueError(f" '{clust_key}' is not in andata.")
     all_groups = set(cluster['cluster'].values)
@@ -20,13 +20,13 @@ def select_group(andata, groups, cluster):
         if g not in all_groups:
             raise ValueError(f"cluster {g} is not in all cluster.")
     cluster = cluster.set_index(['bins'])
-    andata.obs['cluster'] = cluster['cluster']
+    st_data.cells['cluster'] = cluster['cluster']
     # print(andata.obs)
-    group_index = andata.obs['cluster'].isin(groups)
-    exp_matrix = andata.X.toarray() if issparse(andata.X) else andata.X
+    group_index = st_data.cells['cluster'].isin(groups)
+    exp_matrix = st_data.exp_matrix.toarray() if issparse(st_data.exp_matrix) else st_data.exp_matrix
     group_sub = exp_matrix[group_index, :]
-    obs = andata.obs_names[group_index]
-    return pd.DataFrame(group_sub, index=obs, columns=list(andata.var_names))
+    obs = st_data.cell_names[group_index]
+    return pd.DataFrame(group_sub, index=obs, columns=list(st_data.gene_names))
 
 
 def get_cluster_res(adata, data_key='clustering'):
