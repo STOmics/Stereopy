@@ -22,23 +22,29 @@ from ..log_manager import logger
 class SpatialLag(ToolBase):
     """
     spatial lag model, calculate bin-cell's lag coefficient, lag z-stat and p-value
-    """
-    def __init__(self, data: AnnData, method='gm_lag', name='spatial_lag', cluster=None, genes=None,
-                 random_drop=True, drop_dummy=None, n_neighbors=8):
-        """
-        initialization
 
-        :param data: anndata object contenting cluster results
-        :param method: method
-        :param name: tool name, will be used as a key when adding tool result to andata object.
-        :param cluster: the 'Clustering' tool name, defined when running 'Clustering' tool
-        :param genes: specify genes, default using all genes
-        :param random_drop: randomly drop bin-cells if True
-        :param drop_dummy: drop specify clusters
-        :param n_neighbors: number of neighbors
-        """
-        super(SpatialLag, self).__init__(data=data, method=method, name=name)
-        self.param = self.get_params(locals())
+    initialization
+
+    :param data: anndata object contenting cluster results
+    :param method: method
+    :param name: tool name, will be used as a key when adding tool result to andata object.
+    :param cluster: the 'Clustering' tool name, defined when running 'Clustering' tool
+    :param genes: specify genes, default using all genes
+    :param random_drop: randomly drop bin-cells if True
+    :param drop_dummy: drop specify clusters
+    :param n_neighbors: number of neighbors
+    """
+    def __init__(
+            self,
+            data: AnnData,
+            method='gm_lag',
+            cluster=None,
+            genes=None,
+            random_drop=True,
+            drop_dummy=None,
+            n_neighbors=8
+    ):
+        super(SpatialLag, self).__init__(data=data, method=method)
         self.cluster = self.data.uns[cluster].cluster
         self.genes = genes
         self.random_drop = random_drop
@@ -52,8 +58,7 @@ class SpatialLag(ToolBase):
         """
         x, uniq_group = self.get_data()
         res = self.gm_model(x, uniq_group)
-        result = SpatialLagResult(name=self.name, param=self.param, score=res)
-        self.add_result(result=result, key_added=self.name)
+        result = SpatialLagResult(res)
         return result
 
     def get_data(self):

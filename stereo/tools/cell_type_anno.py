@@ -21,7 +21,7 @@ from ..preprocess.normalize import normalize_total
 from ..config import stereo_conf
 from ..utils import remove_file
 from ..core.tool_base import ToolBase
-from ..core.stereo_result import StereoResult
+# from ..core.stereo_result import StereoResult
 from scipy.sparse import issparse
 
 
