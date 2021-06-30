@@ -37,6 +37,9 @@ class Data(object):
         """
         self.file_check(file=self.file)
         self.format_check(f_format=self.file_format)
+        if self.file is not None and self.file_format is None:
+            self.logger.error('the file format must be not None , if the file path is set.')
+            raise Exception
 
     @property
     def output(self):
