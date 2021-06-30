@@ -11,7 +11,6 @@ change log:
     2021/06/20 adjust for restructure base class . by: qindanhua.
 """
 
-from anndata import AnnData
 import pandas as pd
 import numpy as np
 import statistics

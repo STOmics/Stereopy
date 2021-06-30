@@ -14,8 +14,15 @@ from anndata import AnnData
 import numpy as np
 
 
-def filter_cells(adata, min_gene=None, max_gene=None, n_genes_by_counts=None, pct_counts_mt=None,
-                 cell_list=None, obs_key=None, inplace=True):
+def filter_cells(
+        adata,
+        min_gene=None,
+        max_gene=None,
+        n_genes_by_counts=None,
+        pct_counts_mt=None,
+        cell_list=None,
+        obs_key=None,
+        inplace=True):
     """
     filter cells based on numbers of genes expressed .
 
