@@ -14,7 +14,8 @@ from scipy.sparse import spmatrix, csr_matrix
 from shapely.geometry import Point, MultiPoint
 import h5py
 from ..io import h5ad
-from functools import singledispatch
+from .cell import Cell
+from .gene import Gene
 
 
 class StereoExpData(Data):
@@ -23,19 +24,45 @@ class StereoExpData(Data):
             file_path: Optional[str] = None,
             file_format: Optional[str] = None,
             bin_type: Optional[str] = None,
+            bin_size: int = 100,
             exp_matrix: Optional[Union[np.ndarray, spmatrix]] = None,
-            genes: Optional[pd.DataFrame] = None,
-            cells: Optional[pd.DataFrame] = None,
+            genes: Optional[Union[np.ndarray, Gene]] = None,
+            cells: Optional[Union[np.ndarray, Cell]] = None,
             position: Optional[np.ndarray] = None,
             output: Optional[str] = None,
             partitions: int = 1):
+        """
+        a Data designed for express matrix of spatial omics. It can directly set the corresponding properties
+        information to initialize the data. If the file path is not None, we will read the file information to
+        initialize the properties.
+
+        :param file_path: the path of express matrix file.
+        :param file_format: the file format of the file_path.
+        :param bin_type: the type of bin, if file format is stereo-seq file. `bins` or `cell_bins`.
+        :param bin_size: size of bin to merge if bin type is 'bins'.
+        :param exp_matrix: the expresss matrix.
+        :param genes: the gene object which contain some info of gene.
+        :param cells: the cell object which contain some info of cell.
+        :param position: the spatial location.
+        :param output: the path of output.
+        :param partitions: the number of multi-process cores, used when processing files in parallel.
+        """
         super(StereoExpData, self).__init__(file_path=file_path, file_format=file_format,
                                             partitions=partitions, output=output)
         self._exp_matrix = exp_matrix
-        self._genes = genes
-        self._cells = cells
+        self._genes = genes if isinstance(genes, Gene) else Gene(gene_name=genes)
+        self._cells = cells if isinstance(cells, Cell) else Cell(cell_name=cells)
         self._position = position
         self._bin_type = bin_type
+        self.bin_size = bin_size
+        self.init()
+
+    def init(self):
+        self.check()
+        if self.file is not None:
+            self.logger.info("init the property of StereoData from a file, which take some time if file is too large.")
+            self.read(bin_size=self.bin_size)
+        self.logger.info("init finish.")
 
     def check(self):
         """
@@ -57,6 +84,22 @@ class StereoExpData(Data):
             self.logger.error(f"the bin type `{bin_type}` is not in the range, please check!")
             raise Exception
 
+    def gene_names(self):
+        """
+        get the gene names.
+
+        :return:
+        """
+        return self.genes.gene_name
+
+    def cell_names(self):
+        """
+        get the cell names.
+
+        :return:
+        """
+        return self.cells.cell_name
+
     @property
     def genes(self):
         """
@@ -67,14 +110,14 @@ class StereoExpData(Data):
         return self._genes
 
     @genes.setter
-    def genes(self, df):
+    def genes(self, gene):
         """
         set the value of self._genes.
 
-        :param df:
+        :param gene: a object of Gene
         :return:
         """
-        self._genes = df
+        self._genes = gene
 
     @property
     def cells(self):
@@ -86,14 +129,14 @@ class StereoExpData(Data):
         return self._cells
 
     @cells.setter
-    def cells(self, df):
+    def cells(self, cell):
         """
         set the value of self._cells.
 
-        :param df: a dataframe whose index is cell id
+        :param cell: a object of Cell
         :return:
         """
-        self._cells = df
+        self._cells = cell
 
     @property
     def exp_matrix(self):
@@ -180,14 +223,14 @@ class StereoExpData(Data):
         cols = df['geneID'].map(genes_dict)
         self.logger.info(f'the martrix has {len(cells)} cells, and {len(genes)} genes.')
         exp_matrix = csr_matrix((df['UMICount'], (rows, cols)), shape=(cells.shape[0], genes.shape[0]), dtype=np.int)
-        self.cells = pd.DataFrame(index=cells)
-        self.genes = pd.DataFrame(index=genes)
+        self.cells = Cell(cell_name=cells)
+        self.genes = Gene(gene_name=genes)
         self.exp_matrix = exp_matrix if is_sparse else exp_matrix.toarray()
         if self.bin_type == 'bins':
             self.position = df.loc[:, ['x_center', 'y_center']].drop_duplicates().values
         else:
             self.position = gdf.loc[cells][['x_center', 'y_center']].values
-            self.cells['cell_point'] = gdf.loc[cells]['cell_point']
+            self.cells.cell_point = gdf.loc[cells]['cell_point'].values
         return self
 
     def parse_bin_coor(self, df, bin_size):

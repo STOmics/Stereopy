@@ -20,6 +20,8 @@ from scipy import sparse
 from packaging import version
 from ..utils.spmatrix_helper import idx_chunks_along_axis
 from functools import singledispatch
+from ..core.gene import Gene
+from ..core.cell import Cell
 
 
 H5PY_V3 = version.parse(h5py.__version__).major >= 3
@@ -50,6 +52,16 @@ def _(v, f, k, sp_format):
     write_spmatrix(f, k, v, sp_format)
 
 
+@write.register(Gene)
+def _(v, f, k):
+    write_genes(f, k, v)
+
+
+@write.register(Cell)
+def _(v, f, k):
+    write_cells(f, k, v)
+
+
 def write_array(f, key, value, dataset_kwargs=MappingProxyType({})):
     # Convert unicode to fixed length strings
     if value.dtype.kind in {"U", "O"}:
@@ -77,6 +89,18 @@ def write_spmatrix(f, k, v, fmt: str, dataset_kwargs=MappingProxyType({})):
     g.create_dataset("data", data=v.data, **dataset_kwargs)
     g.create_dataset("indices", data=v.indices, **dataset_kwargs)
     g.create_dataset("indptr", data=v.indptr, **dataset_kwargs)
+
+
+def write_genes(f, k, v, dataset_kwargs=MappingProxyType({})):
+    g = f.create_group(k)
+    g.attrs["encoding-type"] = "gene"
+    write_array(g, 'gene_name', v.gene_name, dataset_kwargs)
+
+
+def write_cells(f, k, v, dataset_kwargs=MappingProxyType({})):
+    g = f.create_group(k)
+    g.attrs["encoding-type"] = "cell"
+    write_array(g, 'cell_name', v.cell_name, dataset_kwargs)
 
 
 def write_spmatrix_as_dense(f, key, value, dataset_kwargs=MappingProxyType({})):
@@ -187,6 +211,18 @@ def read_spmatrix(group) -> sparse.spmatrix:
     return mtx
 
 
+def read_genes(group) -> Gene:
+    gene_name = group["gene_name"][...]
+    gene = Gene(gene_name=gene_name)
+    return gene
+
+
+def read_cells(group) -> Cell:
+    cell_name = group["cell_name"][...]
+    cell = Cell(cell_name=cell_name)
+    return cell
+
+
 def read_series(dataset) -> Union[np.ndarray, pd.Categorical]:
     if "categories" in dataset.attrs:
         categories = dataset.attrs["categories"]
@@ -224,7 +260,7 @@ def read_dataset(dataset: h5py.Dataset):
     return value
 
 
-def read_group(group: h5py.Group) -> Union[dict, pd.DataFrame, sparse.spmatrix]:
+def read_group(group: h5py.Group) -> Union[dict, pd.DataFrame, sparse.spmatrix, Gene, Cell]:
     encoding_type = group.attrs.get("encoding-type")
     if encoding_type is None:
         pass
@@ -232,6 +268,10 @@ def read_group(group: h5py.Group) -> Union[dict, pd.DataFrame, sparse.spmatrix]:
         return read_dataframe(group)
     elif encoding_type in {"csr_matrix", "csc_matrix"}:
         return read_spmatrix(group)
+    elif encoding_type == "cell":
+        return read_cells(group)
+    elif encoding_type == "gene":
+        return read_genes(group)
     else:
         raise ValueError(f"Unfamiliar `encoding-type`: {encoding_type}.")
     d = dict()

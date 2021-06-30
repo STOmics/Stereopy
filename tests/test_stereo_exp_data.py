@@ -54,16 +54,16 @@ def make_data():
     exp_matrix = sparse.csr_matrix((v, (rows, cols)))
     position = np.random.randint(0, 10, (len(cells), 2))
     out_path = '/home/qiuping//workspace/st/stereopy_data/test.h5ad'
-    data = StereoExpData(bin_type='cell_bins', exp_matrix=exp_matrix, genes=pd.DataFrame(index=genes),
-                         cells=pd.DataFrame(index=cells), position=position, output=out_path)
+    data = StereoExpData(bin_type='cell_bins', exp_matrix=exp_matrix, genes=np.array(genes),
+                         cells=np.array(cells), position=position, output=out_path)
     return data
 
 
 def print_data(data):
     print('genes:')
-    print(data.genes)
+    print(data.genes.gene_name)
     print('cells:')
-    print(data.cells)
+    print(data.cells.cell_name)
     print('exp_matrix:')
     print(data.exp_matrix.shape)
     print(data.exp_matrix)
