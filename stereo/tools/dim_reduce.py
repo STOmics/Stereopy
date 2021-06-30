@@ -89,7 +89,12 @@ class DimReduce(ToolBase):
         else:
             self._n_pcs = n_pcs
 
+    def _check_params(self):
+        if not isinstance(self.n_iter, int):
+            raise ValueError(f'{self.n_iter} should be int type')
+
     def fit(self, exp_matrix=None):
+        self._check_params()
         exp_matrix = exp_matrix if exp_matrix is not None else self.extract_exp_matrix()
         if self.method == 'low_variance':
             self.result.x_reduce = low_variance(exp_matrix, self.min_variance)

@@ -25,7 +25,7 @@ class ToolBase(object):
 
     Parameters
     ----------
-    data : expression matrix, a StereoExpData or pandas.Dataframe object. matrix format is:
+    :param: data : expression matrix, a StereoExpData or pandas.Dataframe object. matrix format is:
 
             gene_1  gene_2  gene_3
     cell_1       0       1       0
@@ -35,16 +35,15 @@ class ToolBase(object):
     cell_5       3       3       3
     cell_6       4       0       1
 
-    method : .
-        the core method of the analysis
+    :param: method : the core method of the analysis
     """
     def __init__(
             self,
             data=None,
-            method: str = None,
+            method: str = 'stereo',
     ):
         self.data = data
-        self._method = method.lower()
+        self._method = method
         self.result = StereoResult()
 
     @property

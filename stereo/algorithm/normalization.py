@@ -1,3 +1,10 @@
+#!/usr/bin/env python3
+# coding: utf-8
+"""
+@author: Ping Qiu  qiuping1@genomics.cn
+"""
+
+
 import numpy as np
 from scipy import stats
 import scipy.spatial as spatial
