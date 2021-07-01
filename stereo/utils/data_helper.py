@@ -12,17 +12,15 @@ import numpy as np
 
 
 def select_group(st_data, groups, cluster):
-    # if clust_key not in andata.obs_keys():
-    #     raise ValueError(f" '{clust_key}' is not in andata.")
-    all_groups = set(cluster['cluster'].values)
+    all_groups = set(cluster['group'].values)
     groups = [groups] if isinstance(groups, str) else groups
     for g in groups:
         if g not in all_groups:
             raise ValueError(f"cluster {g} is not in all cluster.")
-    cluster = cluster.set_index(['bins'])
-    st_data.cells['cluster'] = cluster['cluster']
+    # cluster = cluster.set_index(['bins'])
+    # st_data.cells['cluster'] = cluster['cluster']
     # print(andata.obs)
-    group_index = st_data.cells['cluster'].isin(groups)
+    group_index = cluster['group'].isin(groups)
     exp_matrix = st_data.exp_matrix.toarray() if issparse(st_data.exp_matrix) else st_data.exp_matrix
     group_sub = exp_matrix[group_index, :]
     obs = st_data.cell_names[group_index]
