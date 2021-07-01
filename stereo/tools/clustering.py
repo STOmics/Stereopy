@@ -61,7 +61,7 @@ class Clustering(ToolBase):
             normalization: bool = False,
     ):
         super(Clustering, self).__init__(data=data, method=method)
-        self._neighbors = n_neighbors if n_neighbors < len(self.data.cells) else int(len(self.data.cells) / 2)
+        self._neighbors = n_neighbors if n_neighbors < len(self.data.cell_names) else int(len(self.data.cell_names) / 2)
         # self.neighbors = n_neighbors
         self.normalization = normalization
         # self._pca_x = pca_x
@@ -73,8 +73,8 @@ class Clustering(ToolBase):
 
     @neighbors.setter
     def neighbors(self, n_neighbors: int):
-        if n_neighbors > len(self.data.cells):
-            logger.error(f'n neighbor should be less than {len(self.data.cells)}')
+        if n_neighbors > len(self.data.cell_names):
+            logger.error(f'n neighbor should be less than {len(self.data.cell_names)}')
             self._neighbors = self.neighbors
         else:
             self._neighbors = n_neighbors
@@ -138,7 +138,7 @@ class Clustering(ToolBase):
         """
         g = neighbor.get_igraph_from_knn(nn_idx, nn_dist)
         louvain_partition = g.community_multilevel(weights=g.es['weight'], return_levels=False)
-        clusters = np.arange(len(self.data.cells))
+        clusters = np.arange(len(self.data.cell_names))
         for i in range(len(louvain_partition)):
             clusters[louvain_partition[i]] = str(i)
         return clusters
@@ -158,7 +158,7 @@ class Clustering(ToolBase):
         leiden_partition = la.ModularityVertexPartition(g, weights=g.es['weight'])
         while diff > 0:
             diff = optimiser.optimise_partition(leiden_partition, n_iterations=10)
-        clusters = np.arange(len(self.data.cells))
+        clusters = np.arange(len(self.data.cell_names))
         for i in range(len(leiden_partition)):
             clusters[leiden_partition[i]] = str(i)
         return clusters
@@ -174,7 +174,7 @@ class Clustering(ToolBase):
         else:
             cluster = self.run_louvain(neighbor, nn_idx, nn_dist)
         cluster = [str(i) for i in cluster]
-        info = {'bins': self.cell_names, 'cluster': cluster}
+        info = {'bins': self.data.cell_names, 'cluster': cluster}
         df = pd.DataFrame(info)
         self.result.matrix = df
         # TODO  added for find marker

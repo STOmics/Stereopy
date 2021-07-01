@@ -16,7 +16,7 @@ from ..core.stereo_result import StereoResult
 from ..core.stereo_exp_data import StereoExpData
 # from scipy.sparse import issparse
 # import inspect
-from typing import Optional
+from typing import Optional, Union
 
 
 class ToolBase(object):
@@ -40,7 +40,7 @@ class ToolBase(object):
     """
     def __init__(
             self,
-            data=None,
+            data: Optional[Union[StereoExpData]] = None,
             method: str = 'stereo',
     ):
         self.data = data

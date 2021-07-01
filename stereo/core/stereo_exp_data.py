@@ -84,6 +84,7 @@ class StereoExpData(Data):
             self.logger.error(f"the bin type `{bin_type}` is not in the range, please check!")
             raise Exception
 
+    @property
     def gene_names(self):
         """
         get the gene names.
@@ -92,6 +93,7 @@ class StereoExpData(Data):
         """
         return self.genes.gene_name
 
+    @property
     def cell_names(self):
         """
         get the cell names.
@@ -100,14 +102,14 @@ class StereoExpData(Data):
         """
         return self.cells.cell_name
 
-    @property
-    def gene_names(self):
-        """
-        get the value of self._genes.
-
-        :return:
-        """
-        return self._genes['gene']
+    # @property
+    # def gene_names(self):
+    #     """
+    #     get the value of self._genes.
+    #
+    #     :return:
+    #     """
+    #     return self._genes['gene']
 
     @property
     def genes(self):
