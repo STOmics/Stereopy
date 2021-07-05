@@ -19,3 +19,9 @@ tifffile~=2020.10.1
 scanpy~=1.7.2
 shapely~=1.7.1
 packaging~=20.9
+tensorflow==2.4.1
+glog==0.3.1
+scikit-image==0.18.1
+opencv-contrib-python==4.5.2.52
+opencv-python-headless==4.5.2.52
+Pillow==8.2.0
