@@ -84,7 +84,7 @@ class DimReduce(ToolBase):
 
     @n_pcs.setter
     def n_pcs(self, n_pcs):
-        if self._params_range_check(n_pcs, 2, len(self.data.genes), int):
+        if self._params_range_check(n_pcs, 2, len(self.data.gene_names), int):
             self._n_pcs = self.n_pcs
         else:
             self._n_pcs = n_pcs
