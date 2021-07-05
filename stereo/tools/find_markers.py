@@ -16,44 +16,55 @@ from ..log_manager import logger
 from .clustering import Clustering
 from tqdm import tqdm
 from ..algorithm.statistics import t_test, wilcoxon_test
+from typing import Union, Optional
+import numpy as np
+import pandas as pd
+from ..core.stereo_result import StereoResult
 
 
 class FindMarker(ToolBase):
     """
     a tool of finding maker gene
-    treat a cluster as a group, find statistical test different genes between one group and the others using t-test or wilcoxon_test
+    for each group, find statistical test different genes between one group and the rest groups using t-test or wilcoxon_test
 
-    :param data: expression matrix, pd.Dataframe or StereoExpData object
-    :param test_groups: default all clusters
+    :param data: expression matrix, StereoExpData object
+    :param groups: group information matrix, at least two columns, treat first column as sample name, and the second as
+    group name e.g pd.Dataframe({'bin_cell': ['cell_1', 'cell_2'], 'cluster': ['1', '2']})
+    :param case_groups: default all clusters
     :param control_groups: rest of groups
     :param method: t-test or wilcoxon_test
     :param corr_method: correlation method
+
+    Examples
+    --------
+
+    >>> from stereo.tools.find_markers import FindMarker
+    >>> fm = FindMarker()
     """
     def __init__(
             self,
             data=None,
             method: str = 't-test',
-            cluster=None,
-            test_groups: str = 'all',
-            control_groups: str = 'rest',
+            groups: Optional[Union[pd.DataFrame, StereoResult, ToolBase]] = StereoResult(),
+            case_groups: Union[str, np.ndarray] = 'all',
+            control_groups: Union[str, np.ndarray] = 'rest',
             corr_method: str = 'bonferroni',
     ):
         super(FindMarker, self).__init__(data=data, method=method)
         self.corr_method = corr_method.lower()
-        self.test_group = test_groups
+        self.case_groups = case_groups
         self.control_group = control_groups
-        self.cluster = self.result if cluster is None else cluster
+        self.groups = self.result if groups is None else groups
 
     @property
-    def cluster(self):
-        return self._cluster
+    def groups(self):
+        return self._groups
 
-    @cluster.setter
-    def cluster(self, cluster):
-        self._cluster = self._check_input_data(cluster)
-        if not self._cluster.check_columns(['cluster']):
-            logger.error('cluster matrix should content a cluster columns')
-            self._cluster = self.cluster
+    @groups.setter
+    def groups(self, groups):
+        self._groups = self._check_input_data(groups)
+        if len(self._groups.matrix.columns) < 2:
+            raise ValueError(f'group file should content two columns')
 
     @ToolBase.method.setter
     def method(self, method):
@@ -75,35 +86,39 @@ class FindMarker(ToolBase):
     def run_cluster(self, method='louvain'):
         ct = Clustering(self.data, method=method)
         ct.fit()
-        self.cluster = ct.result
+        self.groups = ct.result
+        return ct.result.matrix
+
+    def group_format(self):
+        cells = self.groups.matrix.iloc[:, 0].values
+        if not list(cells) == list(self.data.cell_names):
+            raise ValueError(f'cell index is not match')
+        else:
+            group_info = pd.DataFrame({'group': self.groups.matrix.iloc[:, 1].values}, index=cells)
+        return group_info
 
     def fit(self):
         """
         run
         """
-        if self.cluster.is_empty:
+        if self.groups.is_empty:
             self.run_cluster()
-        cluster_matrix = self.cluster.matrix
-        all_groups = set(cluster_matrix['cluster'])
-        groups = all_groups if self.test_group == 'all' else [self.test_group]
-        result_info = {}
-        for g in tqdm(groups, desc='Find marker gene: '):
+        group_info = self.group_format()
+        all_groups = set(group_info['group'].values)
+        case_groups = all_groups if self.case_groups == 'all' else set(self.case_groups)
+        for g in tqdm(case_groups, desc='Find marker gene: '):
             if self.control_group == 'rest':
                 other_g = all_groups.copy()
                 other_g.remove(g)
             else:
                 other_g = self.control_group
-            g_data = select_group(st_data=self.data, groups=g, cluster=cluster_matrix)
-            other_data = select_group(st_data=self.data, groups=other_g, cluster=cluster_matrix)
+            g_data = select_group(st_data=self.data, groups=g, cluster=group_info)
+            other_data = select_group(st_data=self.data, groups=other_g, cluster=group_info)
             g_data, other_data = self.merge_groups_data(g_data, other_data)
             if self.method == 't-test':
                 result = t_test(g_data, other_data, self.corr_method)
             else:
                 result = wilcoxon_test(g_data, other_data, self.corr_method)
-            # g_name = f"{g}.vs.{self.control_group}"
-            # params = self.params.copy()
-            # params['test_groups'] = g
-            # result_info[g_name] = StereoResult(data=result)
             self.result.matrix = result
         return self.result.matrix
 

@@ -93,6 +93,7 @@ class StereoExpData(Data):
         """
         return self.genes.gene_name
 
+    @property
     def cell_names(self):
         """
         get the cell names.

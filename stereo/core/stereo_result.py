@@ -9,10 +9,10 @@
 change log:
     rewritten by: qindanhua. 2021/06/15
 """
-from typing import Optional
 import numpy as np
 import pandas as pd
 from stereo.log_manager import logger
+# from typing import Optional
 # from stereo.core.tool_base import ToolBase
 # from collections import OrderedDict
 # from typing import Any, MutableMapping, Mapping, Tuple
@@ -21,18 +21,18 @@ from stereo.log_manager import logger
 class StereoResult(object):
     """
     analysis result
+    :param matrix: main result data frame
+    :param name: analysis tool name
+
     """
     def __init__(
             self,
             matrix: pd.DataFrame = pd.DataFrame(),
             name: str = 'tool result',
-            params: Optional[dict] = None,
 
     ):
-        # self.matrix = data
-        self.params = params
         self.name = name
-        self._matrix = matrix
+        self.matrix = matrix
         self._cols = self._get_cols()
 
     def _get_cols(self):
@@ -50,15 +50,11 @@ class StereoResult(object):
             self._matrix = matrix
 
     @property
-    def params(self):
-        return self._params
-
-    @params.setter
-    def params(self, p):
-        self._params = p
-
-    @property
     def is_empty(self):
+        """
+        check if the matrix is empty
+        :return: bool
+        """
         return self.matrix.empty
 
     def __str__(self):
@@ -67,7 +63,6 @@ class StereoResult(object):
         class_info = f'{self.__class__.__name__} result of stereo tool {self.name},'
         class_info += f'a DataFrame which has {describe_cols} columns. \n'
         class_info += f'the shape is {self.matrix.shape if isinstance(self.matrix, pd.DataFrame) else None} \n'
-        class_info += f'params: {self.params}\n'
         return class_info
 
     def __repr__(self):
@@ -90,6 +85,11 @@ class StereoResult(object):
             return None
 
     def check_columns(self, cols):
+        """
+        check if column in matrix
+        :param cols: column names, ['col1', 'cols2']
+        :return: bool
+        """
         cols_m = self.matrix.columns
         if len(set(cols_m) & set(cols)) == len(cols):
             return True

@@ -16,7 +16,7 @@ from ..core.stereo_result import StereoResult
 from ..core.stereo_exp_data import StereoExpData
 # from scipy.sparse import issparse
 # import inspect
-from typing import Optional
+from typing import Optional, Union
 
 
 class ToolBase(object):
@@ -25,6 +25,7 @@ class ToolBase(object):
 
     Parameters
     ----------
+
     :param: data : expression matrix, a StereoExpData or pandas.Dataframe object. matrix format is:
 
             gene_1  gene_2  gene_3
@@ -39,7 +40,7 @@ class ToolBase(object):
     """
     def __init__(
             self,
-            data=None,
+            data: Optional[Union[StereoExpData]] = None,
             method: str = 'stereo',
     ):
         self.data = data
@@ -89,16 +90,12 @@ class ToolBase(object):
         if isinstance(data, pd.DataFrame):
             st_data = StereoExpData(
                 exp_matrix=data.values,
-                cells=pd.DataFrame(data.index),
-                genes=pd.DataFrame(data.columns)
+                cells=np.array(data.index),
+                genes=np.array(data.columns)
             )
         else:
             st_data = data
         return st_data
-
-    @property
-    def cell_names(self):
-        return list(self.data.cells[0].values)
 
     def extract_exp_matrix(self):
         """
