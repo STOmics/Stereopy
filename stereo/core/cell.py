@@ -18,6 +18,9 @@ import numpy as np
 class Cell(object):
     def __init__(self, cell_name: Optional[np.ndarray] = None):
         self._cell_name = cell_name
+        self.total_count = None
+        self.pct_counts_mt = None
+        self.n_gene_by_counts = None
 
     @property
     def cell_name(self):
