@@ -17,6 +17,7 @@ import numpy as np
 class Gene(object):
     def __init__(self, gene_name: Optional[np.ndarray]):
         self._gene_name = gene_name
+        self.n_cells = None
 
     @property
     def gene_name(self):
@@ -27,3 +28,9 @@ class Gene(object):
         if not isinstance(name, np.ndarray):
             raise TypeError('gene name must be a np.ndarray object.')
         self._gene_name = name
+
+    def sub_set(self, index):
+        if self.gene_name is not None:
+            self.gene_name = self.gene_name[index]
+            self.n_cells = self.n_cells[index]
+        return self

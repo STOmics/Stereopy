@@ -64,6 +64,16 @@ class StereoExpData(Data):
             self.read(bin_size=self.bin_size)
         self.logger.info("init finish.")
 
+    def sub_set(self, cell_index=None, gene_index=None):
+        if cell_index is not None:
+            self.exp_matrix = self.exp_matrix[cell_index, :]
+            self.position = self.position[cell_index, :]
+            self.cells = self.cells.sub_set(cell_index)
+        if gene_index is not None:
+            self.exp_matrix = self.exp_matrix[:, gene_index]
+            self.genes.sub_set(gene_index)
+        return self
+
     def check(self):
         """
         checking whether the params is in the range.

@@ -18,9 +18,9 @@ import numpy as np
 class Cell(object):
     def __init__(self, cell_name: Optional[np.ndarray] = None):
         self._cell_name = cell_name
-        self.total_count = None
+        self.total_counts = None
         self.pct_counts_mt = None
-        self.n_gene_by_counts = None
+        self.n_genes_by_counts = None
 
     @property
     def cell_name(self):
@@ -31,3 +31,14 @@ class Cell(object):
         if not isinstance(name, np.ndarray):
             raise TypeError('cell name must be a np.ndarray object.')
         self._cell_name = name
+
+    def sub_set(self, index):
+        if self.cell_name is not None:
+            self.cell_name = self.cell_name[index]
+        if self.total_counts is not None:
+            self.total_counts = self.total_counts[index]
+        if self.pct_counts_mt is not None:
+            self.pct_counts_mt = self.pct_counts_mt[index]
+        if self.n_genes_by_counts is not None:
+            self.n_genes_by_counts = self.n_genes_by_counts[index]
+        return self
