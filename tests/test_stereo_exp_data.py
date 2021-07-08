@@ -44,7 +44,6 @@ def test_read_cell_bins():
 
 def make_data():
     import numpy as np
-    import pandas as pd
     from scipy import sparse
     genes = ['g1', 'g2', 'g3']
     rows = [0, 1, 0, 1, 2, 0, 1, 2]
