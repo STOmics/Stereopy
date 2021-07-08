@@ -15,6 +15,7 @@ import pandas as pd
 from ..log_manager import logger
 from ..core.tool_base import ToolBase
 from ..algorithm.normalization import normalize_total, quantile_norm, zscore_disksmooth
+from typing import Optional
 
 
 class Normalizer(ToolBase):
@@ -24,39 +25,19 @@ class Normalizer(ToolBase):
     def __init__(
             self,
             data,
-            method='normalize_total',
-            inplace=True,
-            target_sum=1,
-            # name='normalize',
-            r=20
+            method: Optional[str] = 'normalize_total',
+            target_sum: Optional[int] = 1,
+            r: Optional[int] = 20
     ):
         super(Normalizer, self).__init__(data=data, method=method)
         self.target_num = target_sum
-        self.inplace = inplace
-        self.check_param()
-        self.position = data.obsm['spatial']
         self.r = r
-        self._method = method
+        self.position = self.data.position
 
-    def check_param(self):
-        """
-        Check whether the parameters meet the requirements.
-
-        """
-        if self.method.lower() not in ['normalize_total', 'quantile', 'zscore_disksmooth']:
-            logger.error(f'{self.method} is out of range, please check.')
-            raise ValueError(f'{self.method} is out of range, please check.')
-
-    @property
-    def method(self):
-        return self._method
-
-    @method.setter
-    def method(self, v):
-        if v.lower() not in ['normalize_total', 'quantile', 'zscore_disksmooth']:
-            logger.error(f'{self.method} is out of range, please check.')
-            raise ValueError(f'{self.method} is out of range, please check.')
-        self._method = v
+    @ToolBase.method.setter
+    def method(self, method):
+        m_range = ['normalize_total', 'quantile', 'zscore_disksmooth']
+        self._method_check(method, m_range)
 
     def fit(self):
         """
@@ -73,7 +54,5 @@ class Normalizer(ToolBase):
             nor_res = zscore_disksmooth(self.data.exp_matrix, self.position, self.r)
         else:
             pass
-        # if nor_res is not None and self.inplace and isinstance(self.data, AnnData):
-        #     self.data.X = nor_res
-        self.result.matrix = pd.Dataframe(nor_res, columns=self.data.genes, index=self.data.cells)
+        self.result.matrix = pd.DataFrame(nor_res, columns=self.data.gene_names, index=self.data.cell_names)
         return nor_res

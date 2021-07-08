@@ -49,8 +49,6 @@ class Clustering(ToolBase):
     >>> ct = Clustering(test_exp_matrix)
     >>> ct.fit()
     >>> ct.result.matrix
-    >>> ct.method = 'leiden'
-    >>> ct.fit()
     """
     def __init__(
             self,
@@ -99,7 +97,7 @@ class Clustering(ToolBase):
 
         :return: normalized data
         """
-        normakizer = Normalizer(self.data, method=normalize_method, inplace=False, target_sum=nor_target_sum)
+        normakizer = Normalizer(self.data, method=normalize_method, target_sum=nor_target_sum)
         nor_x = normakizer.fit()
         return nor_x
 
@@ -110,6 +108,7 @@ class Clustering(ToolBase):
         :return: pca results
         """
         if self.pca_x.is_empty:
+            # TODO normalize or not if set Clustering().normalization = True and self.pca_x.is_empty if False.
             nor_x = self.run_normalize() if self.normalization else self.data.exp_matrix
             dim_reduce = DimReduce(self.data, method='pca', n_pcs=self.neighbors)
             dim_reduce.fit(nor_x)

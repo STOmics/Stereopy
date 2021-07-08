@@ -44,27 +44,16 @@ class FindMarker(ToolBase):
     def __init__(
             self,
             data=None,
+            groups=None,
             method: str = 't-test',
-            groups: Optional[Union[pd.DataFrame, StereoResult, ToolBase]] = StereoResult(),
             case_groups: Union[str, np.ndarray] = 'all',
             control_groups: Union[str, np.ndarray] = 'rest',
             corr_method: str = 'bonferroni',
     ):
-        super(FindMarker, self).__init__(data=data, method=method)
+        super(FindMarker, self).__init__(data=data, groups=groups, method=method)
         self.corr_method = corr_method.lower()
         self.case_groups = case_groups
         self.control_group = control_groups
-        self.groups = self.result if groups is None else groups
-
-    @property
-    def groups(self):
-        return self._groups
-
-    @groups.setter
-    def groups(self, groups):
-        self._groups = self._check_input_data(groups)
-        if len(self._groups.matrix.columns) < 2:
-            raise ValueError(f'group file should content two columns')
 
     @ToolBase.method.setter
     def method(self, method):
@@ -86,24 +75,16 @@ class FindMarker(ToolBase):
     def run_cluster(self, method='louvain'):
         ct = Clustering(self.data, method=method)
         ct.fit()
-        self.groups = ct.result
+        self.groups = ct.result.matrix
         return ct.result.matrix
-
-    def group_format(self):
-        cells = self.groups.matrix.iloc[:, 0].values
-        if not list(cells) == list(self.data.cell_names):
-            raise ValueError(f'cell index is not match')
-        else:
-            group_info = pd.DataFrame({'group': self.groups.matrix.iloc[:, 1].values}, index=cells)
-        return group_info
 
     def fit(self):
         """
         run
         """
-        if self.groups.is_empty:
+        if self.groups is None:
             self.run_cluster()
-        group_info = self.group_format()
+        group_info = self.groups
         all_groups = set(group_info['group'].values)
         case_groups = all_groups if self.case_groups == 'all' else set(self.case_groups)
         for g in tqdm(case_groups, desc='Find marker gene: '):
