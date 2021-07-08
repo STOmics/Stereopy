@@ -108,9 +108,11 @@ class SpatialLag(ToolBase):
             result[str(i) + '_lag_coeff'] = None
             result[str(i) + '_lag_zstat'] = None
             result[str(i) + '_lag_pval'] = None
+        self.sparse2array()
+        data_pd = pd.DataFrame(self.data.exp_matrix, columns=self.data.gene_names, index=self.data.cell_names)
         for i, cur_g in tqdm(enumerate(genes),
                              desc="performing GM_lag_model and assign coefficient and p-val to cell type"):
-            x['log_exp'] = self.data[:, cur_g].X
+            x['log_exp'] = data_pd[cur_g].values
             try:
                 model = spreg.GM_Lag(x[['log_exp']].values, x.values,
                                      w=knn, name_y='log_exp')
