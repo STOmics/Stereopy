@@ -10,16 +10,15 @@ from matplotlib.cm import get_cmap
 import matplotlib.pyplot as plt
 from matplotlib.colors import ListedColormap, to_hex, Normalize
 from matplotlib import gridspec
-from ._plot_basic.get_stereo_data import get_cluster_res, get_reduce_x, get_position_array, get_degs_res
 import numpy as np
 import pandas as pd
-from anndata import AnnData
 from ._plot_basic.scatter_plt import scatter
+from typing import Optional
 
 
 def plot_scatter(
-        adata: AnnData,
-        plot_key: list = ["phenograph"],
+        data,
+        groups: Optional[np.ndarray],
         pos_key: str = "spatial",
         plot_cluster: list = None,
         bad_color: str = "lightgrey",
@@ -30,8 +29,8 @@ def plot_scatter(
     """
     spatial bin-cell distribution.
 
-    :param adata: AnnData object.
-    :param plot_key: specified obs cluster key list, for example: ["phenograph"].
+    # :param data: AnnData object.
+    # :param plot_key: specified obs cluster key list, for example: ["phenograph"].
     :param pos_key: the coordinates of data points for scatter plots. the data points are stored in adata.obsm[pos_key]. choice: "spatial", "X_umap", "X_pca".
     :param plot_cluster: the name list of clusters to show.
     :param bad_color: the name list of clusters to show.
@@ -50,10 +49,10 @@ def plot_scatter(
     # sc.pl.embedding(adata, basis="spatial", color=["total_counts", "n_genes_by_counts"],size=30)
 
     if dot_size is None:
-        dot_size = 120000 / adata.shape[0]
+        dot_size = 120000 / len(data.cell_names)
 
-    ncols = min(ncols, len(plot_key))
-    nrows = np.ceil(len(plot_key) / ncols).astype(int)
+    ncols = min(ncols, 1)
+    nrows = np.ceil(1 / ncols).astype(int)
     # each panel will have the size of rcParams['figure.figsize']
     fig = plt.figure(figsize=(ncols * 10, nrows * 8))
     left = 0.2 / ncols
@@ -76,20 +75,21 @@ def plot_scatter(
     cmap.set_bad(bad_color)
     # 把特定值改为 np.nan 之后，可以利用 cmap.set_bad("white") 来遮盖掉这部分数据
 
-    for i, key in enumerate(plot_key):
+    for i, key in enumerate([data]):
         # color_data = adata.obs_vector(key)  # TODO  replace by get_cluster_res
-        if key not in adata.uns_keys():
-            color_data = adata.obs_vector(key)
-        else:
-            color_data = get_cluster_res(adata, data_key=key)
+        # if key not in adata.uns_keys():
+        #     color_data = adata.obs_vector(key)
+        # else:
+        #     color_data = get_cluster_res(adata, data_key=key)
+        group_category = pd.DataFrame(groups)[0].astype(str).astype('category').values
         pc_logic = False
 
         # color_data = np.asarray(color_data_raw, dtype=float)
-        order = np.argsort(~pd.isnull(color_data), kind="stable")
-#         spatial_data = np.array(adata.obsm[pos_key])[:, 0: 2]
-        spatial_data = get_reduce_x(data=adata, data_key=pos_key)[:, 0:2] if pos_key != 'spatial' \
-            else get_position_array(adata, pos_key)
-        color_data = color_data[order]
+        order = np.argsort(~pd.isnull(group_category), kind="stable")
+        spatial_data = np.array(data.position)
+        # spatial_data = get_reduce_x(data=adata, data_key=pos_key)[:, 0:2] if pos_key != 'spatial' \
+        #     else get_position_array(adata, pos_key)
+        color_data = group_category[order]
         spatial_data = spatial_data[order, :]
 
         color_dict = {}
@@ -140,7 +140,7 @@ def plot_scatter(
             # valid_cate = color_data.categories
             # cat_num = len(adata.obs_vector(key).categories)
             # for label in adata.obs_vector(key).categories:
-            categories = get_cluster_res(adata, data_key=key).categories
+            categories = group_category.categories
             cat_num = len(categories)
             for label in categories:
                 # --------modified end------------------
@@ -155,4 +155,5 @@ def plot_scatter(
         else:
             plt.colorbar(pathcollection, ax=ax, pad=0.01, fraction=0.08, aspect=30)
         ax.autoscale_view()
+        # plt.show()
 
