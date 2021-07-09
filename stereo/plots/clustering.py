@@ -7,7 +7,6 @@
 @time:2021/04/13
 """
 from .scatter import plot_scatter
-# from anndata import AnnData
 
 
 def plot_spatial_cluster(
@@ -28,7 +27,7 @@ def plot_spatial_cluster(
     """
     showing spatial bin-cell distribution after clustering
 
-    :param adata: the annotation data which contents cluster's analysis results.
+    :param data: the annotation data which contents cluster's analysis results.
     :param cluster_names: the cluster task's name, defined when running 'Clustering' tool by setting 'name' property.
     :param pos_key: the coordinates of data points for scatter plots. the data points are stored in adata.obsm[pos_key]. choice: "spatial", "X_umap", "X_pca".
     :param plot_cluster: the name list of clusters to show.
@@ -38,5 +37,5 @@ def plot_spatial_cluster(
     :param color_list: whether to invert y-axis.
     :return: None
     """
-    plot_scatter(adata=data, plot_key=cluster_names, pos_key=pos_key, plot_cluster=plot_cluster, bad_color=bad_color,
+    plot_scatter(data=data, groups=cluster_names, pos_key=pos_key, plot_cluster=plot_cluster, bad_color=bad_color,
                  ncols=ncols, dot_size=dot_size, color_list=color_list)

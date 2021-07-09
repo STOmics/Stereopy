@@ -26,38 +26,43 @@ from ..core.tool_base import ToolBase
 class CellTypeAnno(ToolBase):
     """
     predict bin-cells's type
+
+    :param data: StereoExpData object
+    :param ref_dir: reference database directory
+    :param cores: set running core to fasten running speed
+    :param keep_zeros: if true, keeping the genes that in reference but not in input expression data
+    :param use_rf: if running random choosing genes or not
+    :param sample_rate: ratio of sampling data
+    :param n_estimators: prediction times
+    :param strategy:
+    :param method: calculate correlation's method
+    :param split_num:
+
+    Example
+    -------
+    >>> from stereo.io.reader import read_stereo
+    >>>sed = read_stereo('test_gem', 'txt', 'bins')
+    >>>cta = CellTypeAnno(sed, ref_dir='/path/to/reference_exp_data_dir/')
+    >>>cta.fit()
+          cell                           cell type  ...  type_cnt_sum  type_rate
+    0      0_0  hereditary spherocytosis cell line  ...            20        1.0
+    1      0_1  hereditary spherocytosis cell line  ...            20        1.0
+    2     0_10  hereditary spherocytosis cell line  ...            20        1.0
     """
     def __init__(
             self,
             data,
-            ref_dir=None,
-            cores=1,
-            keep_zeros=True,
-            use_rf=True,
-            sample_rate=0.8,
-            n_estimators=20,
-            strategy='1',
             method='spearmanr',
-            split_num=1,
-            # out_dir=None,
+            ref_dir: str = None,
+            cores: int = 1,
+            keep_zeros: bool = True,
+            use_rf: bool = True,
+            sample_rate: float = 0.8,
+            n_estimators: int = 20,
+            strategy='1',
+            split_num: int = 1,
     ):
-        """
-        initialization
-
-        :param data: StereoExpData object
-        :param ref_dir: reference database directory
-        :param cores: set running core to fasten running speed
-        :param keep_zeros: if true, keeping the genes that in reference but not in input expression data
-        :param use_rf: if running random choosing genes or not
-        :param sample_rate: ratio of sampling data
-        :param n_estimators: prediction times
-        :param strategy:
-        :param method: calculate correlation's method
-        :param split_num:
-        # :param out_dir: output directory
-        """
         super(CellTypeAnno, self).__init__(data=data, method=method)
-        self.data = data
         self.ref_dir = ref_dir
         self.n_jobs = cores
         self.keep_zeros = keep_zeros
@@ -67,7 +72,6 @@ class CellTypeAnno(ToolBase):
         self.strategy = strategy
         self.split_num = split_num
         self.output = stereo_conf.out_dir
-        # self.check_param()
 
     @property
     def ref_dir(self):
@@ -75,6 +79,9 @@ class CellTypeAnno(ToolBase):
 
     @ref_dir.setter
     def ref_dir(self, ref_dir):
+        """
+        set reference directory which must exist two file ref_sample_epx.csv and cell_map.csv
+        """
         git_ref = 'https://github.com/BGIResearch/stereopy/raw/data/FANTOM5/ref_sample_epx.csv'
         if ref_dir is None:
             logger.info(f'reference file not found, download from {git_ref}')

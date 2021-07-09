@@ -18,8 +18,10 @@ from typing import Optional
 
 def plot_scatter(
         data,
-        groups: Optional[np.ndarray],
-        pos_key: str = "spatial",
+        groups: Optional[np.ndarray] = None,
+        title=None,
+        x_label=None,
+        y_label=None,
         plot_cluster: list = None,
         bad_color: str = "lightgrey",
         ncols: int = 2,
@@ -27,11 +29,11 @@ def plot_scatter(
         color_list=None,
 ):  # scatter plot, 聚类后表达矩阵空间分布
     """
-    spatial bin-cell distribution.
-
-    # :param data: AnnData object.
-    # :param plot_key: specified obs cluster key list, for example: ["phenograph"].
-    :param pos_key: the coordinates of data points for scatter plots. the data points are stored in adata.obsm[pos_key]. choice: "spatial", "X_umap", "X_pca".
+    :param data: expression data object.
+    :param groups:
+    :param title:
+    :param x_label:
+    :param y_label:
     :param plot_cluster: the name list of clusters to show.
     :param bad_color: the name list of clusters to show.
     :param ncols: numbr of plot columns.
@@ -76,19 +78,11 @@ def plot_scatter(
     # 把特定值改为 np.nan 之后，可以利用 cmap.set_bad("white") 来遮盖掉这部分数据
 
     for i, key in enumerate([data]):
-        # color_data = adata.obs_vector(key)  # TODO  replace by get_cluster_res
-        # if key not in adata.uns_keys():
-        #     color_data = adata.obs_vector(key)
-        # else:
-        #     color_data = get_cluster_res(adata, data_key=key)
         group_category = pd.DataFrame(groups)[0].astype(str).astype('category').values
         pc_logic = False
 
-        # color_data = np.asarray(color_data_raw, dtype=float)
         order = np.argsort(~pd.isnull(group_category), kind="stable")
         spatial_data = np.array(data.position)
-        # spatial_data = get_reduce_x(data=adata, data_key=pos_key)[:, 0:2] if pos_key != 'spatial' \
-        #     else get_position_array(adata, pos_key)
         color_data = group_category[order]
         spatial_data = spatial_data[order, :]
 
@@ -121,10 +115,8 @@ def plot_scatter(
         ax.set_title(key)
         ax.set_yticks([])
         ax.set_xticks([])
-        xlabel = 'spatial1' if pos_key == 'spatial' else 'pc1'
-        ylabel = 'spatial2' if pos_key == 'spatial' else 'pc2'
-        ax.set_xlabel(xlabel)
-        ax.set_ylabel(ylabel)
+        ax.set_xlabel(x_label)
+        ax.set_ylabel(y_label)
         pathcollection = scatter(
             spatial_data[:, 0],
             spatial_data[:, 1],
