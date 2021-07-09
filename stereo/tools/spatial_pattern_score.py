@@ -16,6 +16,7 @@ import numpy as np
 import statistics
 import scipy.stats as stats
 from ..core.tool_base import ToolBase
+from tqdm import tqdm
 
 
 class SpatialPatternScore(ToolBase):
@@ -27,20 +28,19 @@ class SpatialPatternScore(ToolBase):
             data=None,
             method='enrichment',
     ):
-        # self.params = self.get_params(locals())
         super(SpatialPatternScore, self).__init__(data=data, method=method)
 
     def fit(self):
         """
         run
         """
-        report = []
-        for gene in self.data.var.index:
-            gene_expression = pd.DataFrame(self.data[:, gene].X, columns=['values'],
-                                           index=list(self.data.obs.index))
-            gene_expression = gene_expression[gene_expression['values'] > 0]
-            report.append(get_enrichment_score(gene, gene_expression))
-        report = pd.DataFrame(report, columns=['gene', 'E10', 'C50', 'total_count'])
+        self.sparse2array()
+        d = pd.DataFrame(self.data.exp_matrix, columns=self.data.gene_names, index=self.data.cell_names)
+        tqdm.pandas(desc="calculating enrichment score")
+        report = d.progress_apply(get_enrichment_score, axis=0)
+        report = report.T.reset_index()
+        report.columns = ['gene', 'E10', 'C50', 'total_count']
+
         tmp = report[report['total_count'] > 300]
         e10_cutoff = find_cutoff(list(tmp['E10']), 0.9)
         c50_cutoff = find_cutoff(list(tmp['C50']), 0.1)
@@ -53,7 +53,7 @@ class SpatialPatternScore(ToolBase):
             + no_pattern.shape[0] * ["no_pattern"] \
             + low_exp.shape[0] * ["low_exp"]
         report_out.index = report_out['gene']
-        report_out = report_out.reindex(self.data.var.index)
+        report_out = report_out.reindex(self.data.gene_names)
         self.result.matrix = report_out
         # self.add_result(result, key_added=self.name)
         # TODO  added for spatial pattern score
@@ -61,23 +61,22 @@ class SpatialPatternScore(ToolBase):
         # self.data.var['pattern_attribute'] = report_out['attribute']
 
 
-def get_enrichment_score(gene, gene_expression):
+def get_enrichment_score(gene_expression):
     """
     calculate enrichment score E10 and C50.
-
-    :param gene: gene name
     :param gene_expression: expression data for the input gene
-    :return: list of gene name, E10 score, C50 score and total MID counts of input gene
+    :return: list E10 score, C50 score and total MID counts of input gene
     """
-    gene_expression = gene_expression.sort_values(by='values', ascending=False).reset_index(drop=True)
-    count_list = list(gene_expression['values'])
+    gene_expression = gene_expression[gene_expression > 0]
+    gene_expression = gene_expression.sort_values(ascending=False).reset_index(drop=True)
+    count_list = gene_expression.values
     total_count = np.sum(count_list)
     e10 = np.around(100 * (np.sum(count_list[:int(len(count_list) * 0.1)]) / total_count), 2)
     cdf = np.cumsum(count_list)
     count_fraction_list = cdf / total_count
     c50 = np.around((next(idx for idx, count_fraction in enumerate(count_fraction_list) if count_fraction > 0.5)
                      / len(count_fraction_list)) * 100, 2)
-    return gene, e10, c50, total_count
+    return e10, c50, total_count
 
 
 def find_cutoff(score_list, p):

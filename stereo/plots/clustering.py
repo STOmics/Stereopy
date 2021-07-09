@@ -7,12 +7,11 @@
 @time:2021/04/13
 """
 from .scatter import plot_scatter
-from anndata import AnnData
-from ._params_doc import anndata
+# from anndata import AnnData
 
 
 def plot_spatial_cluster(
-        adata: AnnData,
+        data,
         cluster_names: list = ["phenograph"],
         pos_key: str = "spatial",
         plot_cluster: list = None,
@@ -39,5 +38,5 @@ def plot_spatial_cluster(
     :param color_list: whether to invert y-axis.
     :return: None
     """
-    plot_scatter(adata=adata, plot_key=cluster_names, pos_key=pos_key, plot_cluster=plot_cluster, bad_color=bad_color,
+    plot_scatter(adata=data, plot_key=cluster_names, pos_key=pos_key, plot_cluster=plot_cluster, bad_color=bad_color,
                  ncols=ncols, dot_size=dot_size, color_list=color_list)
