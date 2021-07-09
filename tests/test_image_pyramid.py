@@ -16,7 +16,7 @@ from stereo import image as im
 def test_merge_image():
     h5_path = '/home/qiuping/workspace/st/data/pyramid/T90_fullsize_pyramid.h5'
     bin_size = 50
-    out_path = '/home/qiuping/workspace/st/data/pyramid/T90.tiff'
+    out_path = '/home/qiuping/workspace/st/data/pyramid/T90'
     im.merge_pyramid(h5_path, bin_size, out_path)
 
 
