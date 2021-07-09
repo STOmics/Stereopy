@@ -14,6 +14,7 @@ import time
 import h5py
 import numpy as np
 import tifffile as tifi
+from PIL import Image
 
 
 def _write_attrs(gp, d):
@@ -83,7 +84,10 @@ def merge_pyramid(h5_path, bin_size, out_path):
     h5.close()
     t1 = time.time()
     print(f"Merge image: {t1 - t0:.2f} seconds.")
-    tifi.imsave(out_path, im)
+    tifi.imsave(out_path + '.tiff', im)
+    image = Image.open(out_path + '.tiff')
+    image.mode = 'I'
+    image.point(lambda i: i * (1. / 256)).convert('L').save(out_path + '.jpeg')
     return im
 
 
