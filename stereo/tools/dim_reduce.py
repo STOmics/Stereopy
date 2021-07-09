@@ -37,7 +37,8 @@ class DimReduce(ToolBase):
     >>> import numpy as np
     >>> X = np.array([[1, 2], [1, 4], [1, 0],
     ...               [10, 2], [10, 4], [10, 0]])
-    >>> dr = DimReduce(X).fit()
+    >>> dr = DimReduce(pd.DataFrame(X, columns=['gene1', 'gene2'], index=['c1', 'c2', 'c3', 'c4', 'c5', 'c6']))
+    >>> dr.fit()
     >>> dr.result.matrix
            0         1
     0  13.754602 -3.000469
@@ -51,7 +52,7 @@ class DimReduce(ToolBase):
     >>> dr.fit()
 
     Or
-    >>> dr.umap(X, n_pcs=3, n_neighbors=5, min_dist=0.3)
+    >>> dr.u_map(X, n_pcs=3, n_neighbors=5, min_dist=0.3)
     """
     def __init__(
             self,
@@ -62,16 +63,13 @@ class DimReduce(ToolBase):
             n_iter: int = 250,
             n_neighbors: int = 5,
             min_dist: float = 0.3,
-            # name='dim_reduce'
     ):
-        # self.params = self.get_params(locals())
         super(DimReduce, self).__init__(data=data, method=method)
         self.n_pcs = n_pcs
         self.min_variance = min_variance
         self.n_iter = n_iter
         self.n_neighbors = n_neighbors
         self.min_dist = min_dist
-        # self.check_param()
 
     @ToolBase.method.setter
     def method(self, method):

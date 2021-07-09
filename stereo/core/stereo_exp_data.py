@@ -220,6 +220,7 @@ class StereoExpData(Data):
         :return: an object of StereoExpData.
         """
         df = pd.read_csv(str(self.file), sep=sep, comment='#', header=0)
+
         df.dropna(inplace=True)
         gdf = None
         if self.bin_type == 'cell_bins':

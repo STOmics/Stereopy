@@ -28,7 +28,7 @@ class StereoResult(object):
     def __init__(
             self,
             matrix: pd.DataFrame = pd.DataFrame(),
-            name: str = 'tool result',
+            name: str = '',
 
     ):
         self.name = name
