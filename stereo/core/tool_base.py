@@ -17,6 +17,8 @@ from ..core.stereo_exp_data import StereoExpData
 from scipy.sparse import issparse
 # import inspect
 from typing import Optional, Union
+import requests
+import os
 
 
 class ToolBase(object):
@@ -159,6 +161,18 @@ class ToolBase(object):
             else:
                 input_df = StereoResult(pd.DataFrame(input_data))
         return input_df
+
+    @staticmethod
+    def download_ref(ref_dir):
+        logger.info("downloading reference sample expression matrix")
+        url = 'https://github.com/BGIResearch/stereopy/raw/data/FANTOM5/ref_sample_epx.csv'
+        # url = 'https://github.com/molindoudou/bio_tools/raw/main/data/FANTOM5/ref_sample_epx.csv'
+        r = requests.get(url)
+        if not os.path.exists(ref_dir):
+            os.makedirs(ref_dir)
+        with open(os.path.join(ref_dir, "ref_sample_epx.csv"), "wb") as code:
+            code.write(r.content)
+        logger.info('download reference matrix done')
 
     def add_result(self):
         pass
