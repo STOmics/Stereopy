@@ -50,6 +50,7 @@ class SpatialLag(ToolBase):
         """
         run analysis
         """
+        self.sparse2array()
         x, uniq_group = self.get_data()
         res = self.gm_model(x, uniq_group)
         result = SpatialLagResult(res)

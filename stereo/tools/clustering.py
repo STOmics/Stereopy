@@ -166,6 +166,7 @@ class Clustering(ToolBase):
         """
         running and add results
         """
+        self.sparse2array()
         self.get_dim_reduce_x()
         neighbor, nn_idx, nn_dist = self.run_neighbors(self.pca_x.matrix)
         if self.method == 'leiden':
