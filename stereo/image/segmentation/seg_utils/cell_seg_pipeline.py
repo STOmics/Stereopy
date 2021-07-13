@@ -6,10 +6,10 @@ from os.path import join, splitext, exists, split
 import tifffile
 import cv2
 import numpy as np
-import tissue_seg as tissue_seg
-import cell_infer as cell_infer
-import grade as grade
-import utils as utils
+from . import tissue_seg as tissue_seg
+from . import cell_infer as cell_infer
+from . import grade as grade
+from . import utils as utils
 import glog
 
 

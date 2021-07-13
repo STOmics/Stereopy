@@ -2,7 +2,7 @@ import numpy as np
 import os
 import logging
 import tensorflow as tf
-from utils import normalize, cell_watershed, resize, tile_image, untile_image, split, merge, outline, view_bar
+from .utils import normalize, cell_watershed, resize, tile_image, untile_image, split, merge, outline, view_bar
 
 
 class CellInfer(object):
