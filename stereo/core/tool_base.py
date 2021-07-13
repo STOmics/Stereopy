@@ -164,14 +164,19 @@ class ToolBase(object):
 
     @staticmethod
     def download_ref(ref_dir):
-        logger.info("downloading reference sample expression matrix")
-        url = 'https://github.com/BGIResearch/stereopy/raw/data/FANTOM5/ref_sample_epx.csv'
-        # url = 'https://github.com/molindoudou/bio_tools/raw/main/data/FANTOM5/ref_sample_epx.csv'
-        r = requests.get(url)
+        logger.info("downloading reference expression matrix")
+        url = 'https://raw.githubusercontent.com/molindoudou/bio_tools/main/data/FANTOM5/ref_sample_epx.csv'
+        url2 = 'https://raw.githubusercontent.com/molindoudou/bio_tools/main/data/FANTOM5/cell_map.csv'
         if not os.path.exists(ref_dir):
             os.makedirs(ref_dir)
-        with open(os.path.join(ref_dir, "ref_sample_epx.csv"), "wb") as code:
-            code.write(r.content)
+        for u in [url, url2]:
+            try:
+                r = requests.get(u)
+                file_name = u.split('/')[-1]
+                with open(os.path.join(ref_dir, file_name), "wb") as code:
+                    code.write(r.content)
+            except IOError:
+                logger.error(f'can not download reference file from {u}')
         logger.info('download reference matrix done')
 
     def add_result(self):

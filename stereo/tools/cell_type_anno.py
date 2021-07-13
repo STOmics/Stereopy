@@ -87,7 +87,7 @@ class CellTypeAnno(ToolBase):
             logger.info(f'reference file not found, download from {git_ref}')
             ref_dir = os.path.join(stereo_conf.data_dir, 'ref_db', 'FANTOM5')
             self.download_ref(ref_dir)
-        if not os.path.exists(os.path.join(ref_dir, 'ref_sample_epx.csv')) or \
+        if not os.path.exists(os.path.join(ref_dir, 'ref_sample_epx.csv')) and \
                 os.path.exists(os.path.join(ref_dir, 'cell_map.csv')):
             raise ValueError(
                 f'reference file not found, ref_dir should exist two file ref_sample_epx.csv and cell_map.csv'
