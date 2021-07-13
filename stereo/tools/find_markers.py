@@ -88,7 +88,6 @@ class FindMarker(ToolBase):
         group_info = self.groups
         all_groups = set(group_info['group'].values)
         case_groups = all_groups if self.case_groups == 'all' else set(self.case_groups)
-        # all_group_result = pd.DataFrame(columns=['genes', 'scores', 'pvalues', 'pvalues_adj', 'log2fc', 'group'])
         all_group_result = []
         for g in tqdm(case_groups, desc='Find marker gene: '):
             if self.control_group == 'rest':

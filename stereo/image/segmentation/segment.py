@@ -2,7 +2,7 @@
 # coding: utf-8
 
 import os
-import seg_utils.cell_seg_pipeline as pipeline
+from .seg_utils import cell_seg_pipeline as pipeline
 
 
 def cell_seg(img_path, out_path, flag, depp_cro_size=20000, overlap=100, gpu=None):
