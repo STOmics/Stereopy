@@ -1,5 +1,5 @@
 import cv2
-import utils as utils
+from . import utils as utils
 from skimage import measure
 import numpy as np
 from PIL import Image

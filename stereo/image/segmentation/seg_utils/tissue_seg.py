@@ -4,7 +4,7 @@ from skimage import measure
 from PIL import Image
 import multiprocessing as mp
 
-import utils as utils  #
+from . import utils as utils  #
 
 
 def down_sample(img, scale=5):
