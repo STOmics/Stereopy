@@ -87,6 +87,9 @@ class FindMarker(ToolBase):
         group_info = self.groups
         all_groups = set(group_info['group'].values)
         case_groups = all_groups if self.case_groups == 'all' else set(self.case_groups)
+        control_str = self.control_group if isinstance(self.control_group, str) else \
+            '-'.join([str(i) for i in self.control_group])
+        all_res = None
         for g in tqdm(case_groups, desc='Find marker gene: '):
             if self.control_group == 'rest':
                 other_g = all_groups.copy()
@@ -100,7 +103,12 @@ class FindMarker(ToolBase):
                 result = t_test(g_data, other_data, self.corr_method)
             else:
                 result = wilcoxon_test(g_data, other_data, self.corr_method)
-            self.result.matrix = result
+            result['groups'] = f"{g}.vs.{control_str}"
+            if all_res is None:
+                all_res = result
+            else:
+                all_res = pd.concat([all_res, result])
+        self.result.matrix = all_res
         return self.result.matrix
 
     @staticmethod

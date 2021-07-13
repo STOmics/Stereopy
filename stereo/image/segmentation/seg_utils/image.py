@@ -3,7 +3,7 @@ import tifffile
 import cv2
 import glog
 from os.path import join, splitext, split
-import utils as utils
+from . import utils as utils
 
 
 SPLIT_SIZE = 20000

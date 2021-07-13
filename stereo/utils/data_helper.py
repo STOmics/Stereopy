@@ -9,6 +9,9 @@
 from scipy.sparse import issparse
 import pandas as pd
 import numpy as np
+from ..core.stereo_exp_data import StereoExpData
+from typing import Optional
+from ..core.stereo_result import StereoResult
 
 
 def select_group(st_data, groups, cluster):
@@ -35,6 +38,23 @@ def get_cluster_res(adata, data_key='clustering'):
 
 def get_position_array(data, obs_key='spatial'):
     return np.array(data.obsm[obs_key])[:, 0: 2]
+
+
+def exp_matrix2df(data: StereoExpData, cell_name: Optional[np.ndarray] = None, gene_name: Optional[np.ndarray] = None):
+    cell_name = data.cell_names if cell_name is None else cell_name
+    gene_name = data.gene_names if gene_name is None else gene_name
+    cell_index = np.isin(data.cells.cell_name, cell_name)
+    gene_index = np.isin(data.genes.gene_name, gene_name)
+    x = data.exp_matrix[cell_index, gene_index].toarray()
+    df = pd.DataFrame(data=x, index=cell_name, columns=gene_name)
+    return df
+
+
+def get_top_marker(g_name: str, marker_res: StereoResult, sort_key: str, ascend: bool = False, top_n: int = 10):
+    result = marker_res.matrix
+    result = result[result['groups'] == g_name]
+    top_res = result.sort_values(by=sort_key, ascending=ascend).head(top_n)
+    return top_res
 
 
 # def select_group(andata, groups, clust_key):

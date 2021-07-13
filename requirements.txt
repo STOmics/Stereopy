@@ -25,3 +25,5 @@ scikit-image==0.18.1
 opencv-contrib-python==4.5.2.52
 opencv-python-headless==4.5.2.52
 Pillow==8.2.0
+slideio
+imagecodecs-lite
