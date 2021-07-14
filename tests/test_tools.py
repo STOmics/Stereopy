@@ -4,13 +4,9 @@ from stereo.tools.dim_reduce import DimReduce
 from stereo.tools.clustering import Clustering
 from stereo.tools.find_markers import FindMarker
 from stereo.tools.spatial_pattern_score import SpatialPatternScore
-# from stereo.tools.spatial_lag import SpatialLag
+
 from stereo.tools.cell_type_anno import CellTypeAnno
 from stereo.core.stereo_exp_data import StereoExpData
-
-from anndata import AnnData
-from stereo.plots.clustering import plot_spatial_cluster
-from stereo.plots.scatter import plot_scatter
 
 test_gem = 'D:\projects\data\sgm.gem'
 test_exp = 'D:\projects\data\sem.csv'
@@ -48,6 +44,7 @@ def test_cluster():
     # ct.pca_x = dr
     ct.method = 'leiden'
     ct.fit()
+    return ct
 
 
 # maker
