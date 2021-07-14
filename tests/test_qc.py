@@ -12,6 +12,7 @@ change log:
 """
 from stereo.core.stereo_exp_data import StereoExpData
 from stereo.preprocess.qc import cal_qc
+from stereo.io.reader import read_h5ad
 
 
 def make_data():
@@ -31,10 +32,27 @@ def make_data():
     return data
 
 
-if __name__ == '__main__':
+def quick_test():
     data = make_data()
+    data = cal_qc(data)
+    print(data.gene_names.dtype)
+    print(data.cells.total_counts)
+    print(data.cells.n_genes_by_counts)
+    print(data.cells.pct_counts_mt)
+
+
+def test_file():
+    path = '/home/qiuping//workspace/st/stereopy_data/mource_bin100.h5ad'
+    data = read_h5ad(path)
+    print(data.gene_names.dtype)
+
     data = cal_qc(data)
     print(data.cells.total_counts)
     print(data.cells.n_genes_by_counts)
     print(data.cells.pct_counts_mt)
+
+
+if __name__ == '__main__':
+    quick_test()
+    test_file()
 
