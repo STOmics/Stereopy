@@ -142,7 +142,8 @@ def make_draw_df(data: StereoExpData, group: pd.DataFrame, marker_res: StereoRes
     # add obs values
     cluster_data = group.set_index('bins')
     draw_df = pd.concat([draw_df, cluster_data], axis=1)
-    draw_df = draw_df.set_index(draw_df['cluster'].astype('category'))
+    draw_df['cluster'] = draw_df['cluster'].astype('category')
+    draw_df = draw_df.set_index(['cluster'])
     draw_df = draw_df.sort_index()
     return draw_df, gene_group_labels, gene_group_positions
 
