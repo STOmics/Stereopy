@@ -27,7 +27,7 @@ def test_io(file_input):
     return se
 
 
-def test_dim_reduce():
+def test_dim_reduce(test_gem):
     se = test_io(test_gem)
     dr = DimReduce(se)
     dr.fit()
@@ -37,7 +37,7 @@ def test_dim_reduce():
 
 
 # cluster
-def test_cluster():
+def test_cluster(test_gem):
     se = test_io(test_gem)
     ct = Clustering(se, normalization=True)
     # dr = test_dim_reduce()
@@ -48,7 +48,7 @@ def test_cluster():
 
 
 # maker
-def test_maker():
+def test_maker(test_gem):
     se = test_io(test_gem)
     fm = FindMarker(se)
     # fm = FindMarker(se, groups=ct.result.matrix)
@@ -56,7 +56,7 @@ def test_maker():
     return fm
 
 
-def test_sps():
+def test_sps(test_gem):
     se = test_io(test_gem)
     sps = SpatialPatternScore(se)
     sps.fit()
@@ -69,11 +69,17 @@ def test_sps():
 #     sl = SpatialLag(ct.data, groups=ct.result.matrix)
 #     sl.fit()
 #     return sl
-
-def test_cell_type():
+def test_cell_type(test_gem, ref_dir):
     se = test_io(test_gem)
     ca = CellTypeAnno(se, ref_dir=ref_dir)
     # ca = CellTypeAnno(se)
     ca.fit()
     return ca
 
+
+if __name__ == '__main__':
+    test_gem = 'D:\projects\data\sgm.gem'
+    test_exp = 'D:\projects\data\sem.csv'
+    ref_dir = 'D:\projects\data\FANTOM5'
+    # test_gem = '/ldfssz1/ST_BI/USER/qindanhua/data/sgm.gem'
+    # test_exp = '/ldfssz1/ST_BI/USER/qindanhua/data/sem.csv'

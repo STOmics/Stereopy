@@ -41,12 +41,14 @@ def get_position_array(data, obs_key='spatial'):
 
 
 def exp_matrix2df(data: StereoExpData, cell_name: Optional[np.ndarray] = None, gene_name: Optional[np.ndarray] = None):
-    cell_name = data.cell_names if cell_name is None else cell_name
-    gene_name = data.gene_names if gene_name is None else gene_name
-    cell_index = np.isin(data.cells.cell_name, cell_name)
-    gene_index = np.isin(data.genes.gene_name, gene_name)
-    x = data.exp_matrix[cell_index, gene_index].toarray()
-    df = pd.DataFrame(data=x, index=cell_name, columns=gene_name)
+    cell_index = [np.argwhere(data.cells.cell_name == i)[0][0] for i in cell_name] if cell_name is not None else None
+    gene_index = [np.argwhere(data.genes.gene_name == i)[0][0] for i in gene_name] if gene_name is not None else None
+    x = data.exp_matrix[cell_index, :] if cell_index is not None else data.exp_matrix
+    x = x[:, gene_index] if gene_index is not None else x
+    x = x if isinstance(x, np.ndarray) else x.toarray()
+    index = cell_name if cell_name is not None else data.cell_names
+    columns = gene_name if gene_name is not None else data.gene_names
+    df = pd.DataFrame(data=x, index=index, columns=columns)
     return df
 
 
