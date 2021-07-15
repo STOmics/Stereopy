@@ -31,7 +31,7 @@ class LogManager(object):
             self.stream_handler.setLevel(self.level_map[self.level])
             self.stream_handler.setFormatter(self.formatter)
 
-    def get_logger(self, name="Spateo"):
+    def get_logger(self, name="Stereo"):
         """
         get logger object
         :param name: logger name

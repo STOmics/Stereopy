@@ -37,9 +37,10 @@ def filter_cells(
     :return: StereoExpData object.
     """
     assert isinstance(data, StereoExpData)
-    data = data if inplace else copy.copy(data)
-    if min_gene is None and max_gene is None and cell_list is None:
-        raise ValueError('please set `min_gene` or `max_gene` or `cell_list` or all of them.')
+    data = data if inplace else copy.deepcopy(data)
+    if min_gene is None and max_gene is None and cell_list is None and n_genes_by_counts is None \
+            and pct_counts_mt is None:
+        raise ValueError('At least one filter must be set.')
     if data.cells.total_counts is None:
         total_counts = cal_total_counts(data.exp_matrix)
         data.cells.total_counts = total_counts
@@ -77,7 +78,7 @@ def filter_genes(data, min_cell=None, max_cell=None, gene_list=None, inplace=Tru
     :return: StereoExpData object.
     """
     assert isinstance(data, StereoExpData)
-    data = data if inplace else copy.copy(data)
+    data = data if inplace else copy.deepcopy(data)
     if min_cell is None and max_cell is None and gene_list is None:
         raise ValueError('please set `min_cell` or `max_cell` or `gene_list` or both of them.')
     if data.genes.n_cells is None:
@@ -107,7 +108,7 @@ def filter_coordinates(data, min_x=None, max_x=None, min_y=None, max_y=None, inp
     :return: StereoExpData object
     """
     assert isinstance(data, StereoExpData)
-    data = data if inplace else copy.copy(data)
+    data = data if inplace else copy.deepcopy(data)
     none_param = [i for i in [min_x, min_y, max_x, max_y] if i is None]
     if len(none_param) == 4:
         raise ValueError('Only provide one of the optional parameters `min_x`, `min_y`, `max_x`, `max_y` per call.')
