@@ -4,13 +4,15 @@ from stereo.tools.dim_reduce import DimReduce
 from stereo.tools.clustering import Clustering
 from stereo.tools.find_markers import FindMarker
 from stereo.tools.spatial_pattern_score import SpatialPatternScore
-# from stereo.tools.spatial_lag import SpatialLag
+
 from stereo.tools.cell_type_anno import CellTypeAnno
 from stereo.core.stereo_exp_data import StereoExpData
 
-from anndata import AnnData
-from stereo.plots.clustering import plot_spatial_cluster
-from stereo.plots.scatter import plot_scatter
+test_gem = 'D:\projects\data\sgm.gem'
+test_exp = 'D:\projects\data\sem.csv'
+ref_dir = 'D:\projects\data\FANTOM5'
+# test_gem = '/ldfssz1/ST_BI/USER/qindanhua/data/sgm.gem'
+# test_exp = '/ldfssz1/ST_BI/USER/qindanhua/data/sem.csv'
 
 
 def test_exp_data(file_input):
@@ -67,7 +69,6 @@ def test_sps(test_gem):
 #     sl = SpatialLag(ct.data, groups=ct.result.matrix)
 #     sl.fit()
 #     return sl
-
 def test_cell_type(test_gem, ref_dir):
     se = test_io(test_gem)
     ca = CellTypeAnno(se, ref_dir=ref_dir)
