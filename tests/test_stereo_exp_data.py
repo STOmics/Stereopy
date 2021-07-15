@@ -31,6 +31,7 @@ def test_read_bins():
     print(stereo_data.genes)
     print(stereo_data.cells)
     print(stereo_data.exp_matrix)
+    return stereo_data
 
 
 def test_read_cell_bins():
@@ -72,8 +73,8 @@ def print_data(data):
     print(data.bin_type)
 
 
-def test_write_h5ad():
-    data = make_data()
+def test_write_h5ad(data=None):
+    data = make_data() if data is None else data
     data.write_h5ad()
     print_data(data)
 
@@ -87,6 +88,6 @@ def test_read_h5ad():
 
 if __name__ == '__main__':
     print('test write...')
-    test_write_h5ad()
-    print('test read....')
-    test_read_h5ad()
+    data = test_read_bins()
+    data.output = '/home/qiuping//workspace/st/stereopy_data/mource_bin100.h5ad'
+    test_write_h5ad(data)
