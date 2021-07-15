@@ -32,5 +32,6 @@ class Gene(object):
     def sub_set(self, index):
         if self.gene_name is not None:
             self.gene_name = self.gene_name[index]
+        if self.n_cells is not None:
             self.n_cells = self.n_cells[index]
         return self

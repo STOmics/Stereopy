@@ -17,11 +17,13 @@ from ..core.stereo_exp_data import StereoExpData
 
 def read_stereo(path, bin_type, bin_size):
     data = StereoExpData(file_path=path, file_format='txt', bin_type=bin_type, bin_size=bin_size)
+    data.init()
     return data
 
 
 def read_h5ad(path):
     data = StereoExpData(file_path=path, file_format='h5ad')
+    data.init()
     return data
 
 
