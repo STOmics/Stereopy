@@ -72,19 +72,20 @@ class FindMarker(ToolBase):
         else:
             self._corr_method = corr_method
 
-    def run_cluster(self, method='louvain'):
-        ct = Clustering(self.data, method=method)
-        ct.fit()
-        self.groups = ct.result.matrix
-        return ct.result.matrix
+    # def run_cluster(self, method='louvain'):
+    #     ct = Clustering(self.data, method=method)
+    #     ct.fit()
+    #     self.groups = ct.result.matrix
+    #     return ct.result.matrix
 
+    @ToolBase.check_fit
     def fit(self):
         """
         run
         """
         self.sparse2array()
         if self.groups is None:
-            self.run_cluster()
+            raise ValueError(f'group information must be set')
         group_info = self.groups
         all_groups = set(group_info['group'].values)
         case_groups = all_groups if self.case_groups == 'all' else set(self.case_groups)
@@ -106,6 +107,7 @@ class FindMarker(ToolBase):
                 result = wilcoxon_test(g_data, other_data, self.corr_method)
             result['groups'] = f"{g}.vs.{control_str}"
             all_group_result.append(result)
+
         all_result = pd.concat(all_group_result, ignore_index=True)
         self.result.matrix = all_result
         return self.result.matrix
