@@ -39,6 +39,7 @@ def quick_test():
     print(data.cells.total_counts)
     print(data.cells.n_genes_by_counts)
     print(data.cells.pct_counts_mt)
+    return data
 
 
 def test_file():
