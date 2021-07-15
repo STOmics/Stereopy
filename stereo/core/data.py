@@ -26,7 +26,7 @@ class Data(object):
         self._partitions = int(partitions)
         self._file_format = file_format
         self.format_range = ['txt', 'csv', 'mtx', 'h5ad']
-        self.logger = logger
+        # self.logger = logger
         self._output = output
 
     def check(self):
@@ -38,7 +38,7 @@ class Data(object):
         self.file_check(file=self.file)
         self.format_check(f_format=self.file_format)
         if self.file is not None and self.file_format is None:
-            self.logger.error('the file format must be not None , if the file path is set.')
+            logger.error('the file format must be not None , if the file path is set.')
             raise Exception
 
     @property
@@ -58,15 +58,16 @@ class Data(object):
         :return:
         """
         if path is None:
-            self.logger.warning(f'the output path is set as None.')
+            logger.warning(f'the output path is set as None.')
             return
         out_dir = os.path.dirname(path)
         if not os.path.exists(out_dir):
             os.makedirs(out_dir)
         if os.path.exists(path):
-            self.logger.warning(f'the output file is exists, we will replace it with new file.')
+            logger.warning(f'the output file is exists, we will replace it with new file.')
 
-    def file_check(self, file):
+    @staticmethod
+    def file_check(file):
         """
         Check if the file exists.
 
@@ -74,7 +75,7 @@ class Data(object):
         :return:
         """
         if file is not None and not file.exists():
-            self.logger.error(f"{str(file)} is not exist, please check!")
+            logger.error(f"{str(file)} is not exist, please check!")
             raise FileExistsError
 
     def format_check(self, f_format):
@@ -85,7 +86,7 @@ class Data(object):
         :return:
         """
         if f_format is not None and f_format not in self.format_range:
-            self.logger.warning(f"the file format `{f_format}` is not in the range, please check!")
+            logger.warning(f"the file format `{f_format}` is not in the range, please check!")
 
     @property
     def file(self):
