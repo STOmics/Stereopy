@@ -42,3 +42,11 @@ class Cell(object):
         if self.n_genes_by_counts is not None:
             self.n_genes_by_counts = self.n_genes_by_counts[index]
         return self
+
+    def get_property(self, name):
+        if name == 'total_counts':
+            return self.total_counts
+        if name == 'pct_counts_mt':
+            return self.pct_counts_mt
+        if name == 'n_genes_by_counts':
+            return self.n_genes_by_counts
