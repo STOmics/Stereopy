@@ -66,7 +66,7 @@ class StereoExpData(Data):
             self.read(bin_size=self.bin_size)
         logger.info("init finish.")
 
-    def sub_set(self, cell_index=None, gene_index=None):
+    def sub_by_index(self, cell_index=None, gene_index=None):
         """
         get sub data by cell index or gene index list.
 
@@ -83,8 +83,8 @@ class StereoExpData(Data):
             self.genes = self.genes.sub_set(gene_index)
         return self
 
-    def sub(self, cell_name: Optional[Union[np.ndarray, list]] = None,
-            gene_name: Optional[Union[np.ndarray, list]] = None):
+    def sub_by_name(self, cell_name: Optional[Union[np.ndarray, list]] = None,
+                    gene_name: Optional[Union[np.ndarray, list]] = None):
         """
         get sub data by cell name list or gene name list.
 
@@ -97,7 +97,7 @@ class StereoExpData(Data):
             if cell_name is not None else None
         gene_index = [np.argwhere(data.genes.gene_name == i)[0][0] for i in
                       gene_name] if gene_name is not None else None
-        return data.sub_set(cell_index, gene_index)
+        return data.sub_by_index(cell_index, gene_index)
 
     def check(self):
         """
