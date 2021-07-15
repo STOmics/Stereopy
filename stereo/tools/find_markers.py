@@ -29,7 +29,7 @@ class FindMarker(ToolBase):
 
     :param data: expression matrix, StereoExpData object
     :param groups: group information matrix, at least two columns, treat first column as sample name, and the second as
-    group name e.g pd.Dataframe({'bin_cell': ['cell_1', 'cell_2'], 'cluster': ['1', '2']})
+    group name e.g pd.DataFrame({'bin_cell': ['cell_1', 'cell_2'], 'cluster': ['1', '2']})
     :param case_groups: default all clusters
     :param control_groups: rest of groups
     :param method: t-test or wilcoxon_test

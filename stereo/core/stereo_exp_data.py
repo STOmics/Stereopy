@@ -16,6 +16,8 @@ import h5py
 from ..io import h5ad
 from .cell import Cell
 from .gene import Gene
+from ..log_manager import logger
+import copy
 
 
 class StereoExpData(Data):
@@ -55,24 +57,47 @@ class StereoExpData(Data):
         self._position = position
         self._bin_type = bin_type
         self.bin_size = bin_size
-        self.init()
+        # self.init()
 
     def init(self):
         self.check()
         if self.file is not None:
-            self.logger.info("init the property of StereoData from a file, which take some time if file is too large.")
+            logger.info("init the property of StereoData from a file, which take some time if file is too large.")
             self.read(bin_size=self.bin_size)
-        self.logger.info("init finish.")
+        logger.info("init finish.")
 
     def sub_set(self, cell_index=None, gene_index=None):
+        """
+        get sub data by cell index or gene index list.
+
+        :param cell_index: a list of cell index.
+        :param gene_index: a list of gene index.
+        :return:
+        """
         if cell_index is not None:
             self.exp_matrix = self.exp_matrix[cell_index, :]
             self.position = self.position[cell_index, :]
             self.cells = self.cells.sub_set(cell_index)
         if gene_index is not None:
             self.exp_matrix = self.exp_matrix[:, gene_index]
-            self.genes.sub_set(gene_index)
+            self.genes = self.genes.sub_set(gene_index)
         return self
+
+    def sub(self, cell_name: Optional[Union[np.ndarray, list]] = None,
+            gene_name: Optional[Union[np.ndarray, list]] = None):
+        """
+        get sub data by cell name list or gene name list.
+
+        :param cell_name: a list of cell name.
+        :param gene_name: a list of gene name.
+        :return:
+        """
+        data = copy.deepcopy(self)
+        cell_index = [np.argwhere(data.cells.cell_name == i)[0][0] for i in cell_name] \
+            if cell_name is not None else None
+        gene_index = [np.argwhere(data.genes.gene_name == i)[0][0] for i in
+                      gene_name] if gene_name is not None else None
+        return data.sub_set(cell_index, gene_index)
 
     def check(self):
         """
@@ -91,7 +116,7 @@ class StereoExpData(Data):
         :return:
         """
         if (bin_type is not None) and (bin_type not in ['bins', 'cell_bins']):
-            self.logger.error(f"the bin type `{bin_type}` is not in the range, please check!")
+            logger.error(f"the bin type `{bin_type}` is not in the range, please check!")
             raise Exception
 
     @property
@@ -234,7 +259,7 @@ class StereoExpData(Data):
         genes_dict = dict(zip(genes, range(0, len(genes))))
         rows = df['cell_id'].map(cells_dict)
         cols = df['geneID'].map(genes_dict)
-        self.logger.info(f'the martrix has {len(cells)} cells, and {len(genes)} genes.')
+        logger.info(f'the martrix has {len(cells)} cells, and {len(genes)} genes.')
         exp_matrix = csr_matrix((df['UMICount'], (rows, cols)), shape=(cells.shape[0], genes.shape[0]), dtype=np.int)
         self.cells = Cell(cell_name=cells)
         self.genes = Gene(gene_name=genes)
@@ -290,7 +315,7 @@ class StereoExpData(Data):
         :return:
         """
         if not self.file.exists():
-            self.logger.error('the input file is not exists, please check!')
+            logger.error('the input file is not exists, please check!')
             raise FileExistsError('the input file is not exists, please check!')
         with h5py.File(self.file, mode='r') as f:
             for k in f.keys():
@@ -334,7 +359,7 @@ class StereoExpData(Data):
         :return:
         """
         if self.output is None:
-            self.logger.error("the output path must be set before writting.")
+            logger.error("the output path must be set before writting.")
         with h5py.File(self.output, mode='w') as f:
             h5ad.write(self.genes, f, 'genes')
             h5ad.write(self.cells, f, 'cells')
