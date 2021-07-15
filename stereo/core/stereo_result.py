@@ -12,7 +12,7 @@ change log:
 import numpy as np
 import pandas as pd
 from stereo.log_manager import logger
-# from typing import Optional
+from typing import Optional
 # from stereo.core.tool_base import ToolBase
 # from collections import OrderedDict
 # from typing import Any, MutableMapping, Mapping, Tuple
@@ -27,16 +27,16 @@ class StereoResult(object):
     """
     def __init__(
             self,
-            matrix: pd.DataFrame = pd.DataFrame(),
+            matrix: Optional[pd.DataFrame] = None,
             name: str = '',
 
     ):
         self.name = name
-        self.matrix = matrix
+        self._matrix = matrix
         self._cols = self._get_cols()
 
     def _get_cols(self):
-        return [str(i) for i in self.matrix.columns]
+        return [] if self.matrix is None else [str(i) for i in self.matrix.columns]
 
     @property
     def matrix(self):
@@ -55,7 +55,7 @@ class StereoResult(object):
         check if the matrix is empty
         :return: bool
         """
-        return self.matrix.empty
+        return True if self.matrix is None else self.matrix.empty
 
     def __str__(self):
         self._cols = self._get_cols()
