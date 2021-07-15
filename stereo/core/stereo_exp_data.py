@@ -10,7 +10,7 @@ from .data import Data
 import pandas as pd
 import numpy as np
 from typing import Optional, Union
-from scipy.sparse import spmatrix, csr_matrix
+from scipy.sparse import spmatrix, csr_matrix, issparse
 from shapely.geometry import Point, MultiPoint
 import h5py
 from ..io import h5ad
@@ -40,7 +40,7 @@ class StereoExpData(Data):
         :param file_format: the file format of the file_path.
         :param bin_type: the type of bin, if file format is stereo-seq file. `bins` or `cell_bins`.
         :param bin_size: size of bin to merge if bin type is 'bins'.
-        :param exp_matrix: the expresss matrix.
+        :param exp_matrix: the express matrix.
         :param genes: the gene object which contain some info of gene.
         :param cells: the cell object which contain some info of cell.
         :param position: the spatial location.
@@ -350,6 +350,14 @@ class StereoExpData(Data):
         :return:
         """
         self.write_h5ad()
+
+    def to_df(self):
+        df = pd.DataFrame(
+            self.exp_matrix.toarray() if issparse(self.exp_matrix) else self.exp_matrix,
+            columns=self.gene_names,
+            index=self.cell_names
+        )
+        return df
 
     def read_by_bulk(self):
         pass
