@@ -108,7 +108,8 @@ class StereoExpData(Data):
         super(StereoExpData, self).check()
         self.bin_type_check(self._bin_type)
 
-    def bin_type_check(self, bin_type):
+    @staticmethod
+    def bin_type_check(bin_type):
         """
         check whether the bin type is in range.
 
