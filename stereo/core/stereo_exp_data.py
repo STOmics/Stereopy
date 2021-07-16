@@ -13,7 +13,7 @@ from typing import Optional, Union
 from scipy.sparse import spmatrix, csr_matrix, issparse
 from shapely.geometry import Point, MultiPoint
 import h5py
-from ..io import h5ad
+from . import h5ad
 from .cell import Cell
 from .gene import Gene
 from ..log_manager import logger

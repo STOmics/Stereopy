@@ -18,10 +18,10 @@ from types import MappingProxyType
 from pandas.api.types import is_categorical_dtype
 from scipy import sparse
 from packaging import version
-from ..utils.spmatrix_helper import idx_chunks_along_axis
+from stereo.utils.spmatrix_helper import idx_chunks_along_axis
 from functools import singledispatch
-from ..core.gene import Gene
-from ..core.cell import Cell
+from stereo.core.gene import Gene
+from stereo.core.cell import Cell
 
 
 H5PY_V3 = version.parse(h5py.__version__).major >= 3
