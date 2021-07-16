@@ -13,7 +13,6 @@ from matplotlib import gridspec
 import numpy as np
 import pandas as pd
 import math
-from anndata import AnnData
 from ._plot_basic.scatter_plt import scatter
 import seaborn
 from ..core.stereo_exp_data import StereoExpData
