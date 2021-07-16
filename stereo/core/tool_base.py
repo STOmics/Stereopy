@@ -15,7 +15,8 @@ import numpy as np
 from ..core.stereo_result import StereoResult
 from ..core.stereo_exp_data import StereoExpData
 from scipy.sparse import issparse
-# import inspect
+import functools
+import time
 from typing import Optional, Union
 import requests
 import os
@@ -178,6 +179,17 @@ class ToolBase(object):
             except IOError:
                 logger.error(f'can not download reference file from {u}')
         logger.info('download reference matrix done')
+
+    @classmethod
+    def check_fit(cls, func):
+        @functools.wraps(func)
+        def wrapper(self, *args, **kw):
+            if self.data is None:
+                raise ValueError(f'data must be set if running fit()')
+            logger.info('start running {}'.format(time.asctime(time.localtime(time.time()))))
+            return func(self, *args, **kw)
+        logger.info('end running {}'.format(time.asctime(time.localtime(time.time()))))
+        return wrapper
 
     def add_result(self):
         pass

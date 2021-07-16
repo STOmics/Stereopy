@@ -16,10 +16,11 @@ import math
 from anndata import AnnData
 from ._plot_basic.scatter_plt import scatter
 import seaborn
+from ..core.stereo_exp_data import StereoExpData
 
 
 def plot_genes_count(
-        adata: AnnData,
+        data: StereoExpData,
         x=["total_counts", "total_counts"],
         y=["pct_counts_mt", "n_genes_by_counts"],
         ncols=2,
@@ -27,7 +28,7 @@ def plot_genes_count(
     """
     quality control index distribution visualization
 
-    :param adata: AnnData object.
+    :param data: StereoExpData object.
     :param x: obs key pairs for drawing. For example, assume x=["a", "a", "b"], the output plots will \include "a-c", "a-d", "b-e".
     :param y: obs key pairs for drawing. For example, assume y=["c", "d", "e"].
     :param ncols: the columns of figures. the output plots will include "a-c", "a-d", "b-e".
@@ -37,7 +38,7 @@ def plot_genes_count(
 
     .. code:: python
 
-        plot_spatial_cluster(adata = adata)
+        plot_spatial_cluster(data = data)
 
     """
     if isinstance(x, str):
@@ -57,7 +58,7 @@ def plot_genes_count(
         ncols=ncols,
     )
     for i, (xi, yi) in enumerate(zip(x, y)):
-        draw_data = np.c_[adata.obs_vector(xi), adata.obs_vector(yi)]
+        draw_data = np.c_[data.cells.get_property(xi), data.cells.get_property(yi)]
         dot_size = 120000 / draw_data.shape[0]
         ax = fig.add_subplot(axs[i])
         # ax.set_title()
@@ -76,8 +77,8 @@ def plot_genes_count(
 
 
 def plot_spatial_distribution(
-        adata: AnnData,
-        obs_key: list = ["total_counts", "n_genes_by_counts"],
+        data: StereoExpData,
+        cells_key: list = ["total_counts", "n_genes_by_counts"],
         ncols=2,
         dot_size=None,
         color_list=None,
@@ -86,8 +87,8 @@ def plot_spatial_distribution(
     """
     spatial bin-cell distribution.
 
-    :param adata: AnnData object.
-    :param obs_key: specified obs key list, for example: ["total_counts", "n_genes_by_counts"]
+    :param data: StereoExpData object.
+    :param cells_key: specified obs key list, for example: ["total_counts", "n_genes_by_counts"]
     :param ncols: numbr of plot columns.
     :param dot_size: marker size.
     :param color_list: Color list.
@@ -98,16 +99,16 @@ def plot_spatial_distribution(
 
     .. code:: python
 
-        plot_spatial_distribution(adata=adata)
+        plot_spatial_distribution(data=data)
 
     """
     # sc.pl.embedding(adata, basis="spatial", color=["total_counts", "n_genes_by_counts"],size=30)
 
     if dot_size is None:
-        dot_size = 120000 / adata.shape[0]
+        dot_size = 120000 / data.exp_matrix.shape[0]
 
-    ncols = min(ncols, len(obs_key))
-    nrows = np.ceil(len(obs_key) / ncols).astype(int)
+    ncols = min(ncols, len(cells_key))
+    nrows = np.ceil(len(cells_key) / ncols).astype(int)
     # each panel will have the size of rcParams['figure.figsize']
     fig = plt.figure(figsize=(ncols * 10, nrows * 8))
     left = 0.2 / ncols
@@ -130,11 +131,11 @@ def plot_spatial_distribution(
         # 把特定值改为 np.nan 之后，可以利用 cmap.set_bad("white") 来遮盖掉这部分数据
 
     # 散点图上每个点的坐标数据来自于 adata 的 obsm["spatial"]，每个点的颜色（数值）数据来自于 adata 的 obs_vector()
-    for i, key in enumerate(obs_key):
+    for i, key in enumerate(cells_key):
         # color_data = np.asarray(adata.obs_vector(key), dtype=float)
-        color_data = adata.obs_vector(key)
+        color_data = data.cells.get_property(key)
         order = np.argsort(~pd.isnull(color_data), kind="stable")
-        spatial_data = np.array(adata.obsm["spatial"])[:, 0: 2]
+        spatial_data = data.position[:, 0: 2]
         color_data = color_data[order]
         spatial_data = spatial_data[order, :]
 
@@ -166,15 +167,19 @@ def plot_spatial_distribution(
             ax.invert_yaxis()
 
 
-def plot_violin_distribution(adata):  # 小提琴统计图
+def plot_violin_distribution(data):  # 小提琴统计图
     """
     violin plot showing quality control index distribution
 
-    :param adata: AnnData object.
+    :param data: StereoExpData object.
 
     :return: None
     """
     _, axs = plt.subplots(1, 3, figsize=(15, 4))
-    seaborn.violinplot(y=adata.obs['total_counts'], ax=axs[0])
-    seaborn.violinplot(y=adata.obs['n_genes_by_counts'], ax=axs[1])
-    seaborn.violinplot(y=adata.obs['pct_counts_mt'], ax=axs[2])
+    seaborn.violinplot(y=data.cells.get_property('total_counts'), ax=axs[0])
+    seaborn.violinplot(y=data.cells.get_property('n_genes_by_counts'), ax=axs[1])
+    seaborn.violinplot(y=data.cells.get_property('pct_counts_mt'), ax=axs[2])
+
+
+def save_fig(output):
+    plt.savefig(output, bbox_inches="tight")

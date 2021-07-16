@@ -20,7 +20,7 @@ from ..algorithm.dim_reduce import low_variance, factor_analysis, pca, t_sne, u_
 
 class DimReduce(ToolBase):
     """
-    bin-cell dimensionality reduction
+    bin-cell dimension reduction
 
     :param data: stereo expression data object
     :param method: default pca, options are pca, tsen, umap, factor_analysis and low_variance
