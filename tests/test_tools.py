@@ -24,6 +24,7 @@ def test_exp_data(file_input):
 
 def test_io(file_input):
     se = StereoExpData(file_input, 'txt', 'bins')
+    se.init()
     return se
 
 
@@ -39,7 +40,7 @@ def test_dim_reduce(test_gem):
 # cluster
 def test_cluster(test_gem):
     se = test_io(test_gem)
-    ct = Clustering(se, normalization=True)
+    ct = Clustering(se)
     # dr = test_dim_reduce()
     # ct.pca_x = dr
     ct.method = 'leiden'
@@ -50,8 +51,10 @@ def test_cluster(test_gem):
 # maker
 def test_maker(test_gem):
     se = test_io(test_gem)
-    fm = FindMarker(se)
-    # fm = FindMarker(se, groups=ct.result.matrix)
+    ct = Clustering(se)
+    ct.fit()
+    # fm = FindMarker()
+    fm = FindMarker(se, groups=ct.result.matrix)
     fm.fit()
     return fm
 
@@ -69,6 +72,7 @@ def test_sps(test_gem):
 #     sl = SpatialLag(ct.data, groups=ct.result.matrix)
 #     sl.fit()
 #     return sl
+
 def test_cell_type(test_gem, ref_dir):
     se = test_io(test_gem)
     ca = CellTypeAnno(se, ref_dir=ref_dir)
@@ -83,3 +87,5 @@ if __name__ == '__main__':
     ref_dir = 'D:\projects\data\FANTOM5'
     # test_gem = '/ldfssz1/ST_BI/USER/qindanhua/data/sgm.gem'
     # test_exp = '/ldfssz1/ST_BI/USER/qindanhua/data/sem.csv'
+    # fm = test_maker(test_gem)
+    ct = test_cluster(test_gem)
