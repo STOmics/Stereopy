@@ -20,6 +20,7 @@ import time
 from typing import Optional, Union
 import requests
 import os
+from ..plots.scatter import plot_multi_scatter, plt
 
 
 class ToolBase(object):
@@ -190,6 +191,15 @@ class ToolBase(object):
             return func(self, *args, **kw)
         logger.info('end running {}'.format(time.asctime(time.localtime(time.time()))))
         return wrapper
+
+    def plot_top_gene_scatter(self, file_path=None):
+        df = pd.DataFrame(self.data.exp_matrix, columns=self.data.gene_names, index=self.data.cell_names)
+        sum_top_genes = list(df.sum().sort_values(ascending=False).index[:3])
+        plot_multi_scatter(self.data.position[:, 0], self.data.position[:, 1],
+                           color_values=np.array(df[sum_top_genes]).T,
+                           color_bar=True, ncols=2)
+        if file_path:
+            plt.savefig(file_path)
 
     def add_result(self):
         pass

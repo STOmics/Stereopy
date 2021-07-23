@@ -19,6 +19,14 @@ from ._plot_basic.scatter_plt import scatter
 from typing import Optional, Union
 
 
+colors = ['violet', 'turquoise', 'tomato', 'teal','tan', 'silver', 'sienna', 'red', 'purple', 'plum', 'pink',
+              'orchid', 'orangered', 'orange', 'olive', 'navy', 'maroon', 'magenta', 'lime',
+              'lightgreen', 'lightblue', 'lavender', 'khaki', 'indigo', 'grey', 'green', 'gold', 'fuchsia',
+              'darkgreen', 'darkblue', 'cyan', 'crimson', 'coral', 'chocolate', 'chartreuse', 'brown', 'blue', 'black',
+              'beige', 'azure', 'aquamarine', 'aqua',
+              ]
+
+
 def plot_scatter(
         x: Optional[Union[np.ndarray, list]],
         y: Optional[Union[np.ndarray, list]],
@@ -72,6 +80,7 @@ def plot_scatter(
         cmap = get_cmap()
         color_list = cmap.colors
     else:
+        color_list = list(color_list)
         cmap = ListedColormap(color_list)
     cmap.set_bad(bad_color)
     # 把特定值改为 np.nan 之后，可以利用 cmap.set_bad("white") 来遮盖掉这部分数据
