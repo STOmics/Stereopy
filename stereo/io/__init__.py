@@ -7,3 +7,4 @@
 @time:2021/03/05
 """
 from .reader import read_h5ad, read_stereo, read_10x
+from .writer import write_h5ad

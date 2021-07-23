@@ -1,4 +1,3 @@
-anndata>=0.7.4
 numpy>=1.17.0
 matplotlib>=3.1.2
 pandas>=0.21
@@ -6,7 +5,7 @@ scipy>=1.0
 seaborn~=0.11.1
 h5py>=2.10.0
 tqdm>=4.55.0
-setuptools~=40.6.2
+setuptools>=41.0.0
 scikit-learn>=0.21.2
 numba
 statsmodels~=0.12.1
@@ -15,15 +14,14 @@ umap_learn>=0.4.6
 KDEpy>=1.0.10
 pysal~=2.3.0
 Jinja2==2.11
-tifffile~=2020.10.1
-scanpy~=1.7.2
+tifffile
 shapely~=1.7.1
 packaging~=20.9
 tensorflow==2.4.1
 glog==0.3.1
-scikit-image==0.18.1
-opencv-contrib-python==4.5.2.52
-opencv-python-headless==4.5.2.52
+scikit-image
+opencv-contrib-python
+opencv-python-headless
 Pillow==8.2.0
 slideio
 imagecodecs-lite

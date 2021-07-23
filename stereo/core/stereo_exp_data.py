@@ -246,7 +246,8 @@ class StereoExpData(Data):
         :return: an object of StereoExpData.
         """
         df = pd.read_csv(str(self.file), sep=sep, comment='#', header=0)
-
+        if 'MIDCounts' in df.columns:
+            df.rename(columns={'MIDCounts': 'UMICount'}, inplace=True)
         df.dropna(inplace=True)
         gdf = None
         if self.bin_type == 'cell_bins':
