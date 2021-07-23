@@ -7,13 +7,9 @@
 @time:2021/03/15
 """
 
-from matplotlib.cm import get_cmap
 from matplotlib.axes import Axes
 import matplotlib.pyplot as plt
 from matplotlib.colors import Normalize
-from matplotlib import gridspec
-
-from anndata import AnnData
 import numpy as np
 import pandas as pd
 
