@@ -367,7 +367,10 @@ class StereoExpData(Data):
             h5ad.write(self.cells, f, 'cells')
             h5ad.write(self.position, f, 'position')
             sp_format = 'csr' if isinstance(self.exp_matrix, csr_matrix) else 'csc'
-            h5ad.write(self.exp_matrix, f, 'exp_matrix', sp_format)
+            if issparse(self.exp_matrix):
+                h5ad.write(self.exp_matrix, f, 'exp_matrix', sp_format)
+            else:
+                h5ad.write(self.exp_matrix, f, 'exp_matrix')
             h5ad.write(self.bin_type, f, 'bin_type')
 
     def write(self):
