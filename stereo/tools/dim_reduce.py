@@ -188,12 +188,12 @@ class DimReduce(ToolBase):
         if len(gene_name) > 1:
             plot_multi_scatter(self.result.matrix.values[:, 0], self.result.matrix.values[:, 1],
                                color_values=np.array(self.data.sub_by_name(gene_name=gene_name).exp_matrix).T,
-                               color_list=colors
+                               color_list=colors, color_bar=True
                                )
         else:
             plot_scatter(self.result.matrix.values[:, 0], self.result.matrix.values[:, 1],
                          color_values=np.array(self.data.sub_by_name(gene_name=gene_name).exp_matrix[:, 0]),
-                         color_list=colors)
+                         color_list=colors, color_bar=True)
         if file_path:
             plt.savefig(file_path)
 
