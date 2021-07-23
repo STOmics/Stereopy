@@ -19,6 +19,7 @@ from ..preprocess.normalize import Normalizer
 from .dim_reduce import DimReduce
 import pandas as pd
 from typing import Optional
+from ..plots.scatter import plot_scatter, plt, colors
 
 
 class Clustering(ToolBase):
@@ -180,3 +181,15 @@ class Clustering(ToolBase):
         # TODO  added for find marker
         # self.data.obs[self.name] = cluster
         return df
+
+    def plot_scatter(self, file_path=None):
+        """
+        plot scatter after
+        :param file_path:
+        :return:
+        """
+        plot_scatter(self.data.position[:, 0], self.data.position[:, 1],
+                     color_values=np.array(self.result.matrix['cluster']),
+                     color_list=colors)
+        if file_path:
+            plt.savefig(file_path)
