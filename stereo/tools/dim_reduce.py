@@ -16,6 +16,8 @@ import pandas as pd
 # from stereo.log_manager import logger
 from stereo.core.tool_base import ToolBase
 from ..algorithm.dim_reduce import low_variance, factor_analysis, pca, t_sne, u_map
+from ..plots.scatter import plt, plot_scatter, colors
+import numpy as np
 
 
 class DimReduce(ToolBase):
@@ -168,3 +170,16 @@ class DimReduce(ToolBase):
         :return: {'x_pca': array([]), 'variance': array([]), 'variance_ratio': array([]), 'pcs': array([])}
         """
         return pca(x, n_pcs)
+
+    def plot_scatter(self, cluster, file_path=None):
+        """
+        plot scatter after
+        :param cluster tool object
+        :param file_path:
+        :return:
+        """
+        plot_scatter(self.result.matrix.values[:, 0], self.result.matrix.values[:, 1],
+                     color_values=np.array(cluster.result.matrix['cluster']), color_list=colors)
+        if file_path:
+            plt.savefig(file_path)
+
