@@ -100,9 +100,7 @@ def plot_scatter(
             plot_cluster = list(color_data.categories)
         cluster_n = len(np.unique(color_data))
         if len(color_list) < cluster_n:
-            print(len(color_list))
             color_list = color_list * cluster_n
-            print(len(color_list))
             cmap = ListedColormap(color_list)
             cmap.set_bad(bad_color)
         if len(color_data.categories) > len(plot_cluster):

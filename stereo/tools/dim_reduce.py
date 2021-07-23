@@ -16,8 +16,9 @@ import pandas as pd
 # from stereo.log_manager import logger
 from stereo.core.tool_base import ToolBase
 from ..algorithm.dim_reduce import low_variance, factor_analysis, pca, t_sne, u_map
-from ..plots.scatter import plt, plot_scatter, colors
+from ..plots.scatter import plt, plot_scatter, colors, plot_multi_scatter
 import numpy as np
+from typing import Optional
 
 
 class DimReduce(ToolBase):
@@ -171,15 +172,28 @@ class DimReduce(ToolBase):
         """
         return pca(x, n_pcs)
 
-    def plot_scatter(self, cluster, file_path=None):
+    def plot_scatter(self,
+                     gene_name: Optional[list],
+                     file_path=None):
         """
         plot scatter after
-        :param cluster tool object
+        :param gene_name list of gene names
         :param file_path:
         :return:
         """
-        plot_scatter(self.result.matrix.values[:, 0], self.result.matrix.values[:, 1],
-                     color_values=np.array(cluster.result.matrix['cluster']), color_list=colors)
+        # from scipy.sparse import issparse
+        # if issparse(self.data.exp_matrix):
+        #     self.data.exp_matrix = self.data.exp_matrix.toarray()
+        self.sparse2array()
+        if len(gene_name) > 1:
+            plot_multi_scatter(self.result.matrix.values[:, 0], self.result.matrix.values[:, 1],
+                               color_values=np.array(self.data.sub_by_name(gene_name=gene_name).exp_matrix).T,
+                               color_list=colors
+                               )
+        else:
+            plot_scatter(self.result.matrix.values[:, 0], self.result.matrix.values[:, 1],
+                         color_values=np.array(self.data.sub_by_name(gene_name=gene_name).exp_matrix[:, 0]),
+                         color_list=colors)
         if file_path:
             plt.savefig(file_path)
 
