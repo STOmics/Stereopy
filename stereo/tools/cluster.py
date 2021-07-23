@@ -19,6 +19,7 @@ from ..preprocess.normalize import Normalizer
 from .dim_reduce import DimReduce
 import pandas as pd
 from typing import Optional
+from ..plots.scatter import plot_scatter, plt, colors
 
 
 class Cluster(ToolBase):
@@ -156,9 +157,13 @@ class Cluster(ToolBase):
         running and add results
         """
         self.sparse2array()
+        self.logger.info('start to run normalization...')
+        self.run_normalize()
+        self.logger.info('start to run dim reduce...')
         self.run_dim_reduce()
-        self.run_dim_reduce()
+        self.logger.info('start to run neighbors...')
         neighbor, nn_idx, nn_dist = self.run_neighbors(self.pca_x.matrix)
+        self.logger.info(f'start to run {self.method} cluster...')
         if self.method == 'leiden':
             cluster = self.run_knn_leiden(neighbor, nn_idx, nn_dist)
         else:
@@ -168,3 +173,15 @@ class Cluster(ToolBase):
         df = pd.DataFrame(info)
         self.result.matrix = df
         return df
+
+    def plot_scatter(self, file_path=None):
+        """
+        plot scatter after
+        :param file_path:
+        :return:
+        """
+        plot_scatter(self.data.position[:, 0], self.data.position[:, 1],
+                     color_values=np.array(self.result.matrix['cluster']),
+                     color_list=colors)
+        if file_path:
+            plt.savefig(file_path)
