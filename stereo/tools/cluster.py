@@ -172,16 +172,22 @@ class Cluster(ToolBase):
         info = {'bins': self.data.cell_names, 'cluster': cluster}
         df = pd.DataFrame(info)
         self.result.matrix = df
+        self.logger.info('finish...')
         return df
 
-    def plot_scatter(self, file_path=None):
+    def plot_scatter(self, plot_dim_reduce=False, file_path=None):
         """
         plot scatter after
+        :param plot_dim_reduce: plot cluster after dimension reduce if true
         :param file_path:
         :return:
         """
-        plot_scatter(self.data.position[:, 0], self.data.position[:, 1],
-                     color_values=np.array(self.result.matrix['cluster']),
-                     color_list=colors)
+        if plot_dim_reduce:
+            plot_scatter(self.pca_x.matrix.values[:, 0], self.pca_x.matrix.values[:, 1],
+                         color_values=np.array(self.result.matrix['cluster']), color_list=colors)
+        else:
+            plot_scatter(self.data.position[:, 0], self.data.position[:, 1],
+                         color_values=np.array(self.result.matrix['cluster']),
+                         color_list=colors)
         if file_path:
             plt.savefig(file_path)
