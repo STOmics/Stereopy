@@ -53,6 +53,7 @@ class ToolBase(object):
         self.groups = groups
         self._method = method
         self.result = StereoResult()
+        self.logger = logger
 
     @property
     def data(self):

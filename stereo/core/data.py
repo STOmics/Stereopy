@@ -26,7 +26,6 @@ class Data(object):
         self._partitions = int(partitions)
         self._file_format = file_format
         self.format_range = ['txt', 'csv', 'mtx', 'h5ad']
-        # self.logger = logger
         self._output = output
 
     def check(self):
@@ -50,7 +49,8 @@ class Data(object):
         self.output_check(path)
         self._output = path
 
-    def output_check(self, path):
+    @staticmethod
+    def output_check(path):
         """
         check if the output dir is exists. It will be created if not exists.
 

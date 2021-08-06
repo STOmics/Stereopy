@@ -94,7 +94,6 @@ class FindMarker(ToolBase):
                 other_g = self.control_group
             g_data = select_group(st_data=self.data, groups=g, cluster=group_info)
             other_data = select_group(st_data=self.data, groups=other_g, cluster=group_info)
-            print(g_data.values)
             g_data, other_data = self.merge_groups_data(g_data, other_data)
             if self.method == 't-test':
                 result = t_test(g_data, other_data, self.corr_method)
