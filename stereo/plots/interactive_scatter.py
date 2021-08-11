@@ -14,13 +14,13 @@ import panel as pn
 import param
 import io
 from typing import Optional
-# import datashader as ds
 import holoviews.operation.datashader as hd
-# from stereo.core.stereo_exp_data import StereoExpData
 from stereo.log_manager import logger
-import time
-# from holoviews.element.selection import spatial_select_columnar
 import copy
+# import time
+# from holoviews.element.selection import spatial_select_columnar
+# from stereo.core.stereo_exp_data import StereoExpData
+# import datashader as ds
 
 colormaps = {n: palette[n] for n in ['rainbow', 'fire', 'bgy', 'bgyw', 'bmy', 'gray', 'kbc', 'CET_D4']}
 link = link_selections.instance()
@@ -59,7 +59,7 @@ class InteractiveScatter:
             name='bin size',
             options=[1, 10, 20],
             width=100,
-            disable=True
+            # disable=True
         )
         self.download = pn.widgets.Button(
             # filename='exp_matrix.csv',
@@ -70,7 +70,7 @@ class InteractiveScatter:
             width=100
         )
         self.download.on_click(self._download_callback)
-        self.comps = None
+        self.figure = None
 
     def generate_selected_expr_matrix(self, selected_pos, drop=False):
         if selected_pos is not None:
@@ -101,6 +101,7 @@ class InteractiveScatter:
         # return sio
 
     def interact_scatter(self):
+        pn.extension()
         cmap = pn.widgets.Select(value='rainbow', options=colormaps, name='colormaps')
         # alpha = pn.widgets.FloatSlider(value=1)
         reverse_colormap = pn.widgets.Checkbox(name='reverse_colormap')
@@ -126,7 +127,7 @@ class InteractiveScatter:
             # print(link.selection_expr)
             return hv.element.Table(hv.Dataset(scatter_df).select(link.selection_expr)).opts(width=300, height=200)
 
-        self.comps = pn.Column(
+        self.figure = pn.Column(
             pn.Row(cmap, reverse_colormap),
             pn.Row(
                 _df_plot,
@@ -145,4 +146,4 @@ class InteractiveScatter:
                     ),
                 ))
         )
-        return self.comps
+        return self.figure

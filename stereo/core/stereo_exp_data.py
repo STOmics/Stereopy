@@ -393,9 +393,9 @@ class StereoExpData(Data):
     def read_by_bulk(self):
         pass
 
-    def interact_scatter(self, inline=True):
+    def interact_scatter(self, inline=False):
         ins = InteractiveScatter(self)
-        comps = ins.interact_scatter()
+        fig = ins.interact_scatter()
         if not inline:
-            comps.show(threaded=True)
+            fig.show()
         return ins
