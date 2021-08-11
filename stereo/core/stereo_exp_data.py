@@ -18,6 +18,7 @@ from .cell import Cell
 from .gene import Gene
 from ..log_manager import logger
 import copy
+from ..plots.interactive_scatter import InteractiveScatter
 
 
 class StereoExpData(Data):
@@ -391,3 +392,10 @@ class StereoExpData(Data):
 
     def read_by_bulk(self):
         pass
+
+    def interact_scatter(self, inline=True):
+        ins = InteractiveScatter(self)
+        comps = ins.interact_scatter()
+        if not inline:
+            comps.show(threaded=True)
+        return ins
