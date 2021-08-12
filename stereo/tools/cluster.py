@@ -20,6 +20,7 @@ from .dim_reduce import DimReduce
 import pandas as pd
 from typing import Optional
 from ..plots.scatter import plot_scatter, plt, colors
+import phenograph
 
 
 class Cluster(ToolBase):
@@ -46,6 +47,7 @@ class Cluster(ToolBase):
             n_iter: int = 250,
             n_neighbors: int = 10,
             min_dist: float = 0.3,
+            phenograpg_k: int = 20
     ):
         super(Cluster, self).__init__(data=data, method=method)
         self._neighbors = n_neighbors if n_neighbors < len(self.data.cell_names) else int(len(self.data.cell_names) / 2)
@@ -58,6 +60,7 @@ class Cluster(ToolBase):
         self.min_dist = min_dist
         self.nor_x = None
         self.pca_x = None
+        self.phenograph_k = phenograpg_k
 
     @property
     def neighbors(self):
@@ -140,6 +143,11 @@ class Cluster(ToolBase):
             clusters[leiden_partition[i]] = str(i)
         return clusters
 
+    def run_phenograph(self, phenograph_k):
+        communities, _, _ = phenograph.cluster(self.pca_x.matrix, k=phenograph_k)
+        cluster = communities.astype(str)
+        return cluster
+
     def reset_normalize_params(self, method, target_sum, zscore_r):
         self.normalize_method = method
         self.target_sum = target_sum
@@ -166,6 +174,8 @@ class Cluster(ToolBase):
         self.logger.info(f'start to run {self.method} cluster...')
         if self.method == 'leiden':
             cluster = self.run_knn_leiden(neighbor, nn_idx, nn_dist)
+        elif self.method == 'phenograph':
+            cluster = self.run_phenograph(self.phenograph_k)
         else:
             cluster = self.run_louvain(neighbor, nn_idx, nn_dist)
         cluster = [str(i) for i in cluster]
