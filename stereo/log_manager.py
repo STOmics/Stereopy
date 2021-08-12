@@ -46,7 +46,7 @@ class LogManager(object):
     def _add_handler(self, alogger):
         """
         add handler of logger
-        :param logger: logger object
+        :param alogger: logger object
         :return:
         """
         if self.log_path:
@@ -55,4 +55,4 @@ class LogManager(object):
             alogger.addHandler(self.stream_handler)
 
 
-logger = LogManager().get_logger(name='Spateo')
+logger = LogManager().get_logger(name='Stereo')
