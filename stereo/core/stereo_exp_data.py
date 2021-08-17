@@ -393,7 +393,7 @@ class StereoExpData(Data):
     def read_by_bulk(self):
         pass
 
-    def interact_scatter(self, inline=False):
+    def interact_scatter(self, inline=True):
         ins = InteractiveScatter(self)
         fig = ins.interact_scatter()
         if not inline:

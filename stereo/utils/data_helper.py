@@ -57,19 +57,3 @@ def get_top_marker(g_name: str, marker_res: StereoResult, sort_key: str, ascend:
     result = result[result['groups'] == g_name]
     top_res = result.sort_values(by=sort_key, ascending=ascend).head(top_n)
     return top_res
-
-
-# def select_group(andata, groups, clust_key):
-#     if clust_key not in andata.obs_keys():
-#         raise ValueError(f" '{clust_key}' is not in andata.")
-#     all_groups = set(andata.obs[clust_key].values)
-#     groups = [groups] if isinstance(groups, str) else groups
-#     for g in groups:
-#         if g not in all_groups:
-#             raise ValueError(f"cluster {g} is not in all cluster.")
-#     group_index = andata.obs[clust_key].isin(groups)
-#     exp_matrix = andata.X.toarray() if issparse(andata.X) else andata.X
-#     group_sub = exp_matrix[group_index, :]
-#     obs = andata.obs_names[group_index]
-#     return pd.DataFrame(group_sub, index=obs, columns=list(andata.var_names))
-

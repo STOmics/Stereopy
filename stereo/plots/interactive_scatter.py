@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # coding: utf-8
 """
-@author: qindanhua
+@author: qindanhua@genomics.cn
 @time:2021/08/04
 """
 import pandas as pd
@@ -102,6 +102,7 @@ class InteractiveScatter:
 
     def interact_scatter(self):
         pn.extension()
+        hv.extension('bokeh')
         cmap = pn.widgets.Select(value='rainbow', options=colormaps, name='colormaps')
         # alpha = pn.widgets.FloatSlider(value=1)
         reverse_colormap = pn.widgets.Checkbox(name='reverse_colormap')
