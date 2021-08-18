@@ -49,12 +49,19 @@ def pickle_res(in_path):
     pickle.dump(ft.result, open('./ft.pk', 'wb'))
 
 
+def test_heatmap_gene_list(data, ct_res, ft_res, gene_list, min_value, max_value):
+    plot_marker_genes_heatmap(data, ct_res, ft_res, gene_list=gene_list, min_value=min_value, max_value=max_value)
+    plt.savefig('./heatmap1.jpg')
+
+
 if __name__ == '__main__':
     in_path = '/home/qiuping/workspace/st/stereopy_data/mouse/DP8400013846TR_F5.gem'
     # pickle_res(in_path)
     data = get_data(in_path)
     ct_result = pickle.load(open('./ct.pk', 'rb'))
     ft_result = pickle.load(open('./ft.pk', 'rb'))
-    test_heatmap(data, ct_result, ft_result)
+    test_heatmap_gene_list(data, ct_result, ft_result, None, 300, 800)
+    # test_heatmap_gene_list(data, ct_result, ft_result, ['Fga', 'Apoe'], 1, 50)
+    # test_heatmap(data, ct_result, ft_result)
     test_text(ft_result)
 

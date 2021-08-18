@@ -125,8 +125,9 @@ def plot_marker_genes_text(
 
 
 def make_draw_df(data: StereoExpData, group: pd.DataFrame, marker_res: StereoResult, top_genes: int = 8,
-                 sort_key: str = 'scores', ascend: bool = False):
-    gene_names_dict = get_groups_marker(marker_res, top_genes, sort_key, ascend)
+                 sort_key: str = 'scores', ascend: bool = False, gene_list: Optional[list] = None,
+                 min_value: Optional[int] = None, max_value: Optional[int] = None):
+    gene_names_dict = get_groups_marker(marker_res, top_genes, sort_key, ascend, gene_list)
     gene_names = list()
     gene_group_labels = list()
     gene_group_positions = list()
@@ -145,12 +146,21 @@ def make_draw_df(data: StereoExpData, group: pd.DataFrame, marker_res: StereoRes
     draw_df['cluster'] = draw_df['cluster'].astype('category')
     draw_df = draw_df.set_index(['cluster'])
     draw_df = draw_df.sort_index()
+    print(draw_df.describe())
+    if min_value is not None or max_value is not None:
+        draw_df.clip(lower=min_value, upper=max_value, inplace=True)
+    print(draw_df.describe())
     return draw_df, gene_group_labels, gene_group_positions
 
 
-def get_groups_marker(marker_res: StereoResult, top_genes: int = 8, sort_key: str = 'scores', ascend: bool = False):
+def get_groups_marker(marker_res: StereoResult, top_genes: int = 8, sort_key: str = 'scores',
+                      ascend: bool = False, gene_list: Optional[list] = None):
     groups = set(marker_res.matrix['groups'])
     groups_genes = {}
+    if gene_list is not None:
+        for g in groups:
+            groups_genes[g] = gene_list
+        return groups_genes
     for g in groups:
         res = data_helper.get_top_marker(g, marker_res, sort_key, ascend, top_genes)
         genes = res['genes'].values
@@ -258,8 +268,12 @@ def plot_marker_genes_heatmap(
         show_labels: bool = True,
         show_group: bool = True,
         show_group_txt: bool = True,
-        cluster_colors_array=None):
+        cluster_colors_array=None,
+        min_value=None,
+        max_value=None,
+        gene_list=None):
     draw_df, group_labels, group_position = make_draw_df(data=data, group=cluster_res.matrix, marker_res=marker_res,
-                                                         top_genes=markers_num, sort_key=sort_key, ascend=ascend)
+                                                         top_genes=markers_num, sort_key=sort_key, ascend=ascend,
+                                                         gene_list=gene_list, min_value=min_value, max_value=max_value)
     plot_heatmap(df=draw_df, show_labels=show_labels, show_group=show_group, show_group_txt=show_group_txt,
                  group_position=group_position, group_labels=group_labels, cluster_colors_array=cluster_colors_array)
