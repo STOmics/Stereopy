@@ -53,13 +53,24 @@ def cal_per_gene_counts(exp_matrix):
 
 def cal_n_cells_by_counts(exp_matrix):
     """
+    total counts of each gene.
+
+    :param exp_matrix: the express matrix.
+    :return:
+    """
+    n_cells_by_counts = np.array(exp_matrix.sum(0)).reshape(-1)
+    return n_cells_by_counts
+
+
+def cal_n_cells(exp_matrix):
+    """
     Number of cells that occur in each gene.
 
     :param exp_matrix: the express matrix.
     :return:
     """
-    n_cells_by_counts = exp_matrix.getnnz(axis=0) if issparse(exp_matrix) else np.count_nonzero(exp_matrix, axis=0)
-    return n_cells_by_counts
+    n_cells = exp_matrix.getnnz(axis=0) if issparse(exp_matrix) else np.count_nonzero(exp_matrix, axis=0)
+    return n_cells
 
 
 def cal_n_genes_by_counts(exp_matrix):

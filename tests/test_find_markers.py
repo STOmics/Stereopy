@@ -51,7 +51,7 @@ def pickle_res(in_path):
 
 if __name__ == '__main__':
     in_path = '/home/qiuping/workspace/st/stereopy_data/mouse/DP8400013846TR_F5.gem'
-    # pickle_res(in_path)
+    pickle_res(in_path)
     data = get_data(in_path)
     ct_result = pickle.load(open('./ct.pk', 'rb'))
     ft_result = pickle.load(open('./ft.pk', 'rb'))

@@ -5,6 +5,9 @@
 @last modified by: Ping Qiu
 @file:stereo_exp_data.py
 @time:2021/03/22
+
+change log:
+    2021/08/12  add to_andata function , by wuyiran.
 """
 from .data import Data
 import pandas as pd
@@ -18,7 +21,8 @@ from .cell import Cell
 from .gene import Gene
 from ..log_manager import logger
 import copy
-
+from anndata import AnnData
+#from ..io.reader import read
 
 class StereoExpData(Data):
     def __init__(
@@ -32,7 +36,8 @@ class StereoExpData(Data):
             cells: Optional[Union[np.ndarray, Cell]] = None,
             position: Optional[np.ndarray] = None,
             output: Optional[str] = None,
-            partitions: int = 1):
+            partitions: int = 1,
+            anndata: Optional[AnnData] = None):
         """
         a Data designed for express matrix of spatial omics. It can directly set the corresponding properties
         information to initialize the data. If the file path is not None, we will read the file information to
@@ -48,6 +53,7 @@ class StereoExpData(Data):
         :param position: the spatial location.
         :param output: the path of output.
         :param partitions: the number of multi-process cores, used when processing files in parallel.
+        :param anndata: object in Anndata format which will be transformed into StereoExpData
         """
         super(StereoExpData, self).__init__(file_path=file_path, file_format=file_format,
                                             partitions=partitions, output=output)
@@ -63,7 +69,7 @@ class StereoExpData(Data):
         self.check()
         if self.file is not None:
             logger.info("init the property of StereoData from a file, which take some time if file is too large.")
-            self.read(bin_size=self.bin_size)
+            #read(self,bin_size=self.bin_size)
         logger.info("init finish.")
 
     def sub_by_index(self, cell_index=None, gene_index=None):
@@ -234,45 +240,6 @@ class StereoExpData(Data):
         """
         self._position = pos
 
-    def read_txt(self, sep='\t', bin_size=100, is_sparse=True):
-        """
-        read the stereo-seq file, and generate the object of StereoExpData.
-
-        :param sep: separator string
-        :param bin_size: the size of bin to merge. The parameter only takes effect
-                         when the value of self.bin_type is 'bins'.
-        :param is_sparse: the matrix is sparse matrix if is_sparse is True else np.ndarray
-
-        :return: an object of StereoExpData.
-        """
-        df = pd.read_csv(str(self.file), sep=sep, comment='#', header=0)
-        if 'MIDCounts' in df.columns:
-            df.rename(columns={'MIDCounts': 'UMICount'}, inplace=True)
-        df.dropna(inplace=True)
-        gdf = None
-        if self.bin_type == 'cell_bins':
-            df.rename(columns={'label': 'cell_id'}, inplace=True)
-            gdf = self.parse_cell_bin_coor(df)
-        else:
-            df = self.parse_bin_coor(df, bin_size)
-        cells = df['cell_id'].unique()
-        genes = df['geneID'].unique()
-        cells_dict = dict(zip(cells, range(0, len(cells))))
-        genes_dict = dict(zip(genes, range(0, len(genes))))
-        rows = df['cell_id'].map(cells_dict)
-        cols = df['geneID'].map(genes_dict)
-        logger.info(f'the martrix has {len(cells)} cells, and {len(genes)} genes.')
-        exp_matrix = csr_matrix((df['UMICount'], (rows, cols)), shape=(cells.shape[0], genes.shape[0]), dtype=np.int)
-        self.cells = Cell(cell_name=cells)
-        self.genes = Gene(gene_name=genes)
-        self.exp_matrix = exp_matrix if is_sparse else exp_matrix.toarray()
-        if self.bin_type == 'bins':
-            self.position = df.loc[:, ['x_center', 'y_center']].drop_duplicates().values
-        else:
-            self.position = gdf.loc[cells][['x_center', 'y_center']].values
-            self.cells.cell_point = gdf.loc[cells]['cell_point'].values
-        return self
-
     def parse_bin_coor(self, df, bin_size):
         """
         merge bins to a bin unit according to the bin size, also calculate the center coordinate of bin unit,
@@ -311,76 +278,6 @@ class StereoExpData(Data):
     def get_bin_center(bin_coor: np.ndarray, coor_min: int, bin_size: int):
         return bin_coor*bin_size+coor_min+int(bin_size/2)
 
-    def read_h5ad(self):
-        """
-        read the h5ad file, and generate the object of StereoExpData.
-        :return:
-        """
-        if not self.file.exists():
-            logger.error('the input file is not exists, please check!')
-            raise FileExistsError('the input file is not exists, please check!')
-        with h5py.File(self.file, mode='r') as f:
-            for k in f.keys():
-                if k == 'cells':
-                    self.cells = h5ad.read_group(f[k])
-                elif k == 'genes':
-                    self.genes = h5ad.read_group(f[k])
-                elif k == 'position':
-                    self.position = h5ad.read_dataset(f[k])
-                elif k == 'bin_type':
-                    self.bin_type = h5ad.read_dataset(f[k])
-                elif k == 'exp_matrix':
-                    if isinstance(f[k], h5py.Group):
-                        self.exp_matrix = h5ad.read_group(f[k])
-                    else:
-                        self.exp_matrix = h5ad.read_dataset(f[k])
-                else:
-                    pass
-        return self
-
-    def read(self, sep='\t', bin_size=100, is_sparse=True):
-        """
-        read different format file and generate the object of StereoExpData.
-
-        :param sep: separator string
-        :param bin_size: the size of bin to merge. The parameter only takes effect
-                         when the value of self.bin_type is 'bins'.
-        :param is_sparse: the matrix is sparse matrix if is_sparse is True else np.ndarray
-        :return:
-        """
-        if self.file_format == 'txt':
-            return self.read_txt(sep=sep, bin_size=bin_size, is_sparse=is_sparse)
-        elif self.file_format == 'h5ad':
-            return self.read_h5ad()
-        else:
-            pass
-
-    def write_h5ad(self):
-        """
-        write the SetreoExpData into h5ad file.
-        :return:
-        """
-        if self.output is None:
-            logger.error("the output path must be set before writting.")
-        with h5py.File(self.output, mode='w') as f:
-            h5ad.write(self.genes, f, 'genes')
-            h5ad.write(self.cells, f, 'cells')
-            h5ad.write(self.position, f, 'position')
-            sp_format = 'csr' if isinstance(self.exp_matrix, csr_matrix) else 'csc'
-            if issparse(self.exp_matrix):
-                h5ad.write(self.exp_matrix, f, 'exp_matrix', sp_format)
-            else:
-                h5ad.write(self.exp_matrix, f, 'exp_matrix')
-            h5ad.write(self.bin_type, f, 'bin_type')
-
-    def write(self):
-        """
-        write the SetreoExpData into file.
-
-        :return:
-        """
-        self.write_h5ad()
-
     def to_df(self):
         df = pd.DataFrame(
             self.exp_matrix.toarray() if issparse(self.exp_matrix) else self.exp_matrix,
@@ -391,3 +288,12 @@ class StereoExpData(Data):
 
     def read_by_bulk(self):
         pass
+
+
+    def to_andata(self):
+        andata = AnnData(X=self.exp_matrix,
+                         obs=self.cells.to_df(),
+                         var=self.genes.to_df(),
+                         )
+        return andata
+

@@ -13,7 +13,7 @@ change log:
 import numpy as np
 from ..core.stereo_exp_data import StereoExpData
 import copy
-from .qc import cal_total_counts, cal_pct_counts_mt, cal_n_genes_by_counts, cal_n_cells_by_counts
+from .qc import cal_total_counts, cal_pct_counts_mt, cal_n_genes_by_counts, cal_n_cells_by_counts, cal_n_cells
 
 
 def filter_cells(
@@ -82,7 +82,7 @@ def filter_genes(data, min_cell=None, max_cell=None, gene_list=None, inplace=Tru
     if min_cell is None and max_cell is None and gene_list is None:
         raise ValueError('please set `min_cell` or `max_cell` or `gene_list` or both of them.')
     if data.genes.n_cells is None:
-        data.genes.n_cells = cal_n_cells_by_counts(data.exp_matrix)
+        data.genes.n_cells = cal_n_cells(data.exp_matrix)
     if min_cell:
         gene_subset = data.genes.n_cells >= min_cell
         data.sub_by_index(gene_index=gene_subset)
@@ -123,5 +123,5 @@ def filter_coordinates(data, min_x=None, max_x=None, min_y=None, max_y=None, inp
     if max_y:
         obs_subset &= pos[:, 1] <= max_y
     data.sub_by_index(cell_index=obs_subset)
-    data.genes.n_cells = cal_n_cells_by_counts(data.exp_matrix)
+    data.genes.n_cells = cal_n_cells(data.exp_matrix)
     return data
