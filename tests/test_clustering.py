@@ -6,21 +6,26 @@
 @file:test_cell_type_anno.py
 @time:2021/03/12
 """
-import sys
-sys.path.append('/data/workspace/st/stereopy-release')
-from stereo.tools.clustering import Clustering
-import scanpy as sc
+from stereo.tools.cluster import Cluster
+from stereo.io.reader import read_stereo
+import matplotlib.pyplot as plt
 
 
-andata = sc.read_h5ad('/data/workspace/st/data/E4/raw_andata.bin100.h5ad')
-method='louvain'
-outdir=None
-dim_reduce_key='dim_reduce'
-n_neighbors=30
-normalize_key='cluster_normalize'
-normalize_method='quantile'
-nor_target_sum=10000
-name='test_clustering'
-cluster = Clustering(data=andata, method=method, outdir=outdir,dim_reduce_key=dim_reduce_key,normalize_method=normalize_method,name=name)
-cluster.fit()
-print(cluster.data.uns['test_clustering'])
+def get_data(path):
+    data = read_stereo(path, bin_type='bins', bin_size=100)
+    return data
+
+
+def run_cluster(data):
+    ct = Cluster(data, method='phenograph', normalize_method='zscore_disksmooth', dim_reduce_method='pca', n_neighbors=30)
+    ct.fit()
+    ct.plot_scatter(plot_dim_reduce=False)
+    plt.show()
+    return ct
+
+
+if __name__ == '__main__':
+    in_path = '/home/qiuping/workspace/st/stereopy_data/mouse/DP8400013846TR_F5.gem'
+    data = get_data(in_path)
+    run_cluster(data)
+
