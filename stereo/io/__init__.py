@@ -6,5 +6,5 @@
 @file:__init__.py.py
 @time:2021/03/05
 """
-from .reader import read, read_txt, read_ann_h5ad, read_stereo, read_10x, andata_to_stereo
+from .reader import read_txt, read_ann_h5ad, read_stereo_h5ad, anndata_to_stereo, stereo_to_anndata
 from .writer import write, write_h5ad

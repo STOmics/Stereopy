@@ -20,13 +20,13 @@ binsize = 100
 
 
 def test_data():
-    data = Data(file_path=filename, file_format='txt')
+    data = Data(file_path=filename, file_format='gem')
     data.check()
     print(data.file)
 
 
 def test_read_bins():
-    stereo_data = StereoExpData(file_path=filename, file_format='txt', bin_type='bins')
+    stereo_data = StereoExpData(file_path=filename, file_format='gem', bin_type='bins')
     stereo_data.read()
     print(stereo_data.genes)
     print(stereo_data.cells)
@@ -36,7 +36,7 @@ def test_read_bins():
 
 def test_read_cell_bins():
     path = '/home/qiuping//workspace/st/stereopy_data/cell_bin/ssdna_Cell_GetExp_gene.txt'
-    stereo_data = StereoExpData(file_path=path, file_format='txt', bin_type='cell_bins')
+    stereo_data = StereoExpData(file_path=path, file_format='gem', bin_type='cell_bins')
     stereo_data.read()
     print(stereo_data.genes)
     print(stereo_data.cells)
@@ -82,12 +82,12 @@ def test_write_h5ad(data=None):
 def test_read_h5ad():
     file_path = '/home/qiuping//workspace/st/stereopy_data/test.h5ad'
     data = StereoExpData(file_path=file_path, file_format='h5ad')
-    data.read_h5ad()
+    data.read()
     print_data(data)
 
 
 if __name__ == '__main__':
     print('test write...')
     data = test_read_bins()
-    data.output = '/home/qiuping//workspace/st/stereopy_data/mource_bin100.h5ad'
-    test_write_h5ad(data)
+    # data.output = '/home/qiuping//workspace/st/stereopy_data/mource_bin100.h5ad'
+    # test_write_h5ad(data)

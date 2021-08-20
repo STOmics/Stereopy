@@ -1,32 +1,38 @@
 #!/usr/bin/env python3
 # coding: utf-8
+
 """
-@author: Ping Qiu  qiuping1@genomics.cn
+@file: reader.py
+@description:
+@author: Ping Qiu
+@email: qiuping1@genomics.cn
 @last modified by: Ping Qiu
-@file:reader.py
-@time:2021/03/05
 
 change log:
     2021/03/05  add read_stereo_data function , by Ping Qiu.
-    2021/08/12  move read_txt functions from StereoExpData here. Add read_ann_h5ad, andata_to_stereo function by Yiran Wu.
+    2021/08/12  move read_txt functions from StereoExpData here. Add read_ann_h5ad,
+    andata_to_stereo function by Yiran Wu.
+    2021/08/20
 
 """
 import pandas as pd
-import os
 from ..core.stereo_exp_data import StereoExpData
 from ..log_manager import logger
 import h5py
-from ..core import h5ad
-from scipy.sparse import spmatrix, csr_matrix, issparse
+from stereo.io import h5ad
+from scipy.sparse import csr_matrix
 from ..core.cell import Cell
 from ..core.gene import Gene
 import numpy as np
 from anndata import AnnData
+from shapely.geometry import Point, MultiPoint
 
-def read_txt(file_path, sep='\t', bin_type="bins", bin_size=100, is_sparse=True):
+
+def read_gem(file_path, sep='\t', bin_type="bins", bin_size=100, is_sparse=True):
     """
     read the stereo-seq file, and generate the object of StereoExpData.
 
+    :param file_path: input file
     :param sep: separator string
     :param bin_type: the type of bin, if file format is stereo-seq file. `bins` or `cell_bins`.
     :param bin_size: the size of bin to merge. The parameter only takes effect
@@ -43,9 +49,9 @@ def read_txt(file_path, sep='\t', bin_type="bins", bin_size=100, is_sparse=True)
     gdf = None
     if data.bin_type == 'cell_bins':
         df.rename(columns={'label': 'cell_id'}, inplace=True)
-        gdf = data.parse_cell_bin_coor(df)
+        gdf = parse_cell_bin_coor(df)
     else:
-        df = data.parse_bin_coor(df, bin_size)
+        df = parse_bin_coor(df, bin_size)
     cells = df['cell_id'].unique()
     genes = df['geneID'].unique()
     cells_dict = dict(zip(cells, range(0, len(cells))))
@@ -65,7 +71,47 @@ def read_txt(file_path, sep='\t', bin_type="bins", bin_size=100, is_sparse=True)
     return data
 
 
-def read_stereo(file_path):
+def parse_bin_coor(df, bin_size):
+    """
+    merge bins to a bin unit according to the bin size, also calculate the center coordinate of bin unit,
+    and generate cell id of bin unit using the coordinate after merged.
+
+    :param df: a dataframe of the bin file.
+    :param bin_size: the size of bin to merge.
+    :return:
+    """
+    x_min = df['x'].min()
+    y_min = df['y'].min()
+    df['bin_x'] = merge_bin_coor(df['x'].values, x_min, bin_size)
+    df['bin_y'] = merge_bin_coor(df['y'].values, y_min, bin_size)
+    df['cell_id'] = df['bin_x'].astype(str) + '_' + df['bin_y'].astype(str)
+    df['x_center'] = get_bin_center(df['bin_x'], x_min, bin_size)
+    df['y_center'] = get_bin_center(df['bin_y'], y_min, bin_size)
+    return df
+
+
+def parse_cell_bin_coor(df):
+    gdf = df.groupby('cell_id').apply(lambda x: make_multipoint(x))
+    return gdf
+
+
+def make_multipoint(x):
+    p = [Point(i) for i in zip(x['x'], x['y'])]
+    mlp = MultiPoint(p).convex_hull
+    x_center = mlp.centroid.x
+    y_center = mlp.centroid.y
+    return pd.Series({'cell_point': mlp, 'x_center': x_center, 'y_center': y_center})
+
+
+def merge_bin_coor(coor: np.ndarray, coor_min: int, bin_size: int):
+    return np.floor((coor-coor_min)/bin_size).astype(np.int)
+
+
+def get_bin_center(bin_coor: np.ndarray, coor_min: int, bin_size: int):
+    return bin_coor*bin_size+coor_min+int(bin_size/2)
+
+
+def read_stereo_h5ad(file_path):
     """
     read the h5ad file, and generate the object of StereoExpData.
     :return:
@@ -93,6 +139,7 @@ def read_stereo(file_path):
                 pass
     return data
 
+
 def read_ann_h5ad(file_path):
     """
     read the h5ad file in Anndata format, and generate the object of StereoExpData.
@@ -101,16 +148,16 @@ def read_ann_h5ad(file_path):
     """
     data = StereoExpData(file_path=file_path)
 
-    ## basic
-    attributes = ["obsm", "varm", "obsp", "varp", "uns", "layers"]
-    df_attributes = ["obs", "var"]
+    # basic
+    # attributes = ["obsm", "varm", "obsp", "varp", "uns", "layers"]
+    # df_attributes = ["obs", "var"]
 
     with h5py.File(data.file, mode='r') as f:
 
         for k in f.keys():
             if k == "raw" or k.startswith("raw."):
                 continue
-            if k == "X" :
+            if k == "X":
                 if isinstance(f[k], h5py.Group):
                     data.exp_matrix = h5ad.read_group(f[k])
                 else:
@@ -128,42 +175,18 @@ def read_ann_h5ad(file_path):
             elif k == "var":
                 genes_df = h5ad.read_dataframe(f[k])
                 data.genes.gene_name = genes_df.index.values
-                #data.genes.n_cells = genes_df['n_cells']
-                #data.genes.n_counts = genes_df['n_counts']
+                # data.genes.n_cells = genes_df['n_cells']
+                # data.genes.n_counts = genes_df['n_counts']
             else:  # Base case
                 pass
     return data
 
 
+# def read_10x(path):
+#     pass
 
-def read(file_path,file_format,sep='\t', bin_type="bins", bin_size=100, is_sparse=True,ann_format=False):
-    """
-    read different format file and generate the object of StereoExpData.
-    :param file_path: the path of express matrix file.
-    :param file_fomat: the file format of the file_path.
 
-    :param sep: separator string
-    :param bin_type: the type of bin, if file format is stereo-seq file. `bins` or `cell_bins`.
-    :param bin_size: the size of bin to merge. The parameter only takes effect
-                     when the value of data.bin_type is 'bins'.
-    :param is_sparse: the matrix is sparse matrix if is_sparse is True else np.ndarray
-    :param ann_format: if input data format is Anndata, it should be True. Defalut False.
-    :return:
-    """
-    if file_format == 'txt':
-        return read_txt(file_path,sep=sep, bin_type=bin_type, bin_size=bin_size, is_sparse=is_sparse)
-    elif file_format == 'h5ad':
-        if not ann_format:
-            return read_stereo(file_path)
-        else:
-            return read_ann_h5ad(file_path)
-    else:
-        pass
-
-def read_10x(path):
-    pass
-
-def andata_to_stereo(andata: AnnData, use_raw=False,pos_sep='-'):
+def anndata_to_stereo(andata: AnnData, use_raw=False, pos_sep='-'):
     """
     transform the Anndata object into StereoExpData object.
     :param andata: input Anndata object,
@@ -175,31 +198,39 @@ def andata_to_stereo(andata: AnnData, use_raw=False,pos_sep='-'):
     data = StereoExpData()
     data.exp_matrix = andata.raw.X if use_raw else andata.X
     data.position = np.array(list(andata.obs.index.str.split(pos_sep, expand=True)), dtype=np.int)
-    #obs -> cell
+    # obs -> cell
     data.cells.cell_name = np.array(andata.obs_names)
-    data.cells.n_genes_by_counts = andata.obs['n_genes_by_counts'] if 'n_genes_by_counts' in andata.obs.columns.tolist() else None
+    data.cells.n_genes_by_counts = andata.obs[
+        'n_genes_by_counts'] if 'n_genes_by_counts' in andata.obs.columns.tolist() else None
     data.cells.total_counts = andata.obs['total_counts'] if 'total_counts' in andata.obs.columns.tolist() else None
     data.cells.pct_counts_mt = andata.obs['pct_counts_mt'] if 'pct_counts_mt' in andata.obs.columns.tolist() else None
-    ##var
+    # var
     data.genes.gene_name = np.array(andata.var_names)
     data.genes.n_cells = andata.var['n_cells'] if 'n_cells' in andata.var.columns.tolist() else None
     data.genes.n_counts = andata.var['n_counts'] if 'n_counts' in andata.var.columns.tolist() else None
     return data
 
 
-def check_file(path, prefix, suffix):
-    filename = f"{path}/{prefix}{suffix}"
-    if os.path.isfile(filename):
-        return filename
-    elif suffix in {"matrix.mtx", "barcodes.tsv"} and os.path.isfile(f"{filename}.gz"):
-        return f'{filename}.gz'
-    elif suffix == "genes.tsv" and os.path.isfile(f'{path}/{prefix}features.tsv.gz'):
-        return f'{path}/{prefix}features.tsv.gz'
-    else:
-        # logger.error(f"{path} is not exist!")
-        # raise FileExistsError(f"can not find {path}/{prefix}{suffix}(or with .gz)!")
-        raise ValueError(f"can not find {filename}(or with .gz).")
+def stereo_to_anndata(stereo_data: StereoExpData):
+    andata = AnnData(X=stereo_data.exp_matrix,
+                     obs=stereo_data.cells.to_df(),
+                     var=stereo_data.genes.to_df(),
+                     )
+    return andata
 
+
+# def check_file(path, prefix, suffix):
+#     filename = f"{path}/{prefix}{suffix}"
+#     if os.path.isfile(filename):
+#         return filename
+#     elif suffix in {"matrix.mtx", "barcodes.tsv"} and os.path.isfile(f"{filename}.gz"):
+#         return f'{filename}.gz'
+#     elif suffix == "genes.tsv" and os.path.isfile(f'{path}/{prefix}features.tsv.gz'):
+#         return f'{path}/{prefix}features.tsv.gz'
+#     else:
+#         # logger.error(f"{path} is not exist!")
+#         # raise FileExistsError(f"can not find {path}/{prefix}{suffix}(or with .gz)!")
+#         raise ValueError(f"can not find {filename}(or with .gz).")
 
 # def read_10x_data(path, prefix="", gene_ex_only=True):
 #     """

@@ -25,7 +25,7 @@ class Data(object):
         self._file = Path(file_path) if file_path is not None else None
         self._partitions = int(partitions)
         self._file_format = file_format
-        self.format_range = ['txt', 'csv', 'mtx', 'h5ad']
+        self.format_range = ['gem', 'gef', 'mtx', 'h5ad', 'scanpy_h5ad']
         self._output = output
 
     def check(self):

@@ -9,20 +9,17 @@
 change log:
     2021/08/12  add to_andata function , by wuyiran.
 """
+
 from .data import Data
 import pandas as pd
 import numpy as np
 from typing import Optional, Union
-from scipy.sparse import spmatrix, csr_matrix, issparse
-from shapely.geometry import Point, MultiPoint
-import h5py
-from . import h5ad
+from scipy.sparse import spmatrix, issparse
 from .cell import Cell
 from .gene import Gene
 from ..log_manager import logger
 import copy
-from anndata import AnnData
-#from ..io.reader import read
+
 
 class StereoExpData(Data):
     def __init__(
@@ -36,8 +33,7 @@ class StereoExpData(Data):
             cells: Optional[Union[np.ndarray, Cell]] = None,
             position: Optional[np.ndarray] = None,
             output: Optional[str] = None,
-            partitions: int = 1,
-            anndata: Optional[AnnData] = None):
+            partitions: int = 1):
         """
         a Data designed for express matrix of spatial omics. It can directly set the corresponding properties
         information to initialize the data. If the file path is not None, we will read the file information to
@@ -53,7 +49,6 @@ class StereoExpData(Data):
         :param position: the spatial location.
         :param output: the path of output.
         :param partitions: the number of multi-process cores, used when processing files in parallel.
-        :param anndata: object in Anndata format which will be transformed into StereoExpData
         """
         super(StereoExpData, self).__init__(file_path=file_path, file_format=file_format,
                                             partitions=partitions, output=output)
@@ -63,13 +58,12 @@ class StereoExpData(Data):
         self._position = position
         self._bin_type = bin_type
         self.bin_size = bin_size
-        # self.init()
 
     def init(self):
         self.check()
         if self.file is not None:
             logger.info("init the property of StereoData from a file, which take some time if file is too large.")
-            #read(self,bin_size=self.bin_size)
+            # read(self,bin_size=self.bin_size)
         logger.info("init finish.")
 
     def sub_by_index(self, cell_index=None, gene_index=None):
@@ -240,44 +234,6 @@ class StereoExpData(Data):
         """
         self._position = pos
 
-    def parse_bin_coor(self, df, bin_size):
-        """
-        merge bins to a bin unit according to the bin size, also calculate the center coordinate of bin unit,
-        and generate cell id of bin unit using the coordinate after merged.
-
-        :param df: a dataframe of the bin file.
-        :param bin_size: the size of bin to merge.
-        :return:
-        """
-        x_min = df['x'].min()
-        y_min = df['y'].min()
-        df['bin_x'] = self.merge_bin_coor(df['x'].values, x_min, bin_size)
-        df['bin_y'] = self.merge_bin_coor(df['y'].values, y_min, bin_size)
-        df['cell_id'] = df['bin_x'].astype(str) + '_' + df['bin_y'].astype(str)
-        df['x_center'] = self.get_bin_center(df['bin_x'], x_min, bin_size)
-        df['y_center'] = self.get_bin_center(df['bin_y'], y_min, bin_size)
-        return df
-
-    def parse_cell_bin_coor(self, df):
-        gdf = df.groupby('cell_id').apply(lambda x: self.make_multipoint(x))
-        return gdf
-
-    @staticmethod
-    def make_multipoint(x):
-        p = [Point(i) for i in zip(x['x'], x['y'])]
-        mlp = MultiPoint(p).convex_hull
-        x_center = mlp.centroid.x
-        y_center = mlp.centroid.y
-        return pd.Series({'cell_point': mlp, 'x_center': x_center, 'y_center': y_center})
-
-    @staticmethod
-    def merge_bin_coor(coor: np.ndarray, coor_min: int, bin_size: int):
-        return np.floor((coor-coor_min)/bin_size).astype(np.int)
-
-    @staticmethod
-    def get_bin_center(bin_coor: np.ndarray, coor_min: int, bin_size: int):
-        return bin_coor*bin_size+coor_min+int(bin_size/2)
-
     def to_df(self):
         df = pd.DataFrame(
             self.exp_matrix.toarray() if issparse(self.exp_matrix) else self.exp_matrix,
@@ -289,11 +245,16 @@ class StereoExpData(Data):
     def read_by_bulk(self):
         pass
 
+    def read(self):
+        from ..io.reader import read_gem, read_ann_h5ad, read_stereo_h5ad
 
-    def to_andata(self):
-        andata = AnnData(X=self.exp_matrix,
-                         obs=self.cells.to_df(),
-                         var=self.genes.to_df(),
-                         )
-        return andata
+        if self.file_format == 'gem':
+            read_gem(file_path=self.file, sep='\t', bin_type=self.bin_type, bin_size=self.bin_size)
+        elif self.file_format == 'h5ad':
+            read_stereo_h5ad(str(self.file))
+        elif self.file_format == 'scanpy_h5ad':
+            read_ann_h5ad(str(self.file))
+        else:
+            logger.error('the file format is not supported.')
+            raise Exception
 
