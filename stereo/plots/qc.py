@@ -175,8 +175,11 @@ def plot_violin_distribution(data):  # 小提琴统计图
     :return: None
     """
     _, axs = plt.subplots(1, 3, figsize=(15, 4))
+    plt.ylabel("total_counts")
     seaborn.violinplot(y=data.cells.get_property('total_counts'), ax=axs[0])
+    plt.ylabel("n_genes_by_counts")
     seaborn.violinplot(y=data.cells.get_property('n_genes_by_counts'), ax=axs[1])
+    plt.ylabel("pct_counts_mt")
     seaborn.violinplot(y=data.cells.get_property('pct_counts_mt'), ax=axs[2])
 
 

@@ -9,10 +9,12 @@
 
 change log:
     2021/06/29  create file.
+    2021/08/17  add get_property and to_df function to file, by wuyiran.
 """
 from typing import Optional
 
 import numpy as np
+import pandas as pd
 
 
 class Cell(object):
@@ -50,3 +52,12 @@ class Cell(object):
             return self.pct_counts_mt
         if name == 'n_genes_by_counts':
             return self.n_genes_by_counts
+
+    def to_df(self):
+        attributes = {
+            'total_counts' : self.total_counts,
+            'pct_counts_mt' : self.pct_counts_mt,
+            'n_genes_by_counts': self.n_genes_by_counts
+        }
+        df = pd.DataFrame(attributes,index=self.cell_name)
+        return df

@@ -12,12 +12,13 @@ change log:
 """
 from typing import Optional
 import numpy as np
-
+import pandas as pd
 
 class Gene(object):
     def __init__(self, gene_name: Optional[np.ndarray]):
         self._gene_name = gene_name if gene_name is None else gene_name.astype('U')
         self.n_cells = None
+        self.n_counts = None
 
     @property
     def gene_name(self):
@@ -34,4 +35,14 @@ class Gene(object):
             self.gene_name = self.gene_name[index]
         if self.n_cells is not None:
             self.n_cells = self.n_cells[index]
+        if self.n_counts is not None:
+            self.n_counts = self.n_counts[index]
         return self
+
+    def to_df(self):
+        attributes = {
+            'n_counts' : self.n_counts,
+            'n_cells' : self.n_cells,
+        }
+        df = pd.DataFrame(attributes,index=self.gene_name)
+        return df
