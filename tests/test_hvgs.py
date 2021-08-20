@@ -5,6 +5,7 @@ from stereo.tools.highly_variable_genes import HighlyVariableGenes
 from stereo.algorithm.highly_variable_genes import highly_variable_genes_seurat_v3, highly_variable_genes_single_batch
 from stereo.utils.hvg_utils import materialize_as_ndarray, get_mean_var, check_nonnegative_integers
 # from stereo.io.reader import read_stereo
+
 #
 # path = '/ldfssz1/ST_BI/USER/qindanhua/projects/st/data/FP200000381BL_B2.bin1.Lasso.gem'
 # data = read_stereo(path, 'bins', 200)
@@ -17,12 +18,8 @@ import pickle
 with open('/ldfssz1/ST_BI/USER/qindanhua/projects/st/data/test_data.pickle', 'rb') as r:
     data = pickle.load(r)
 
-
-def test_single_batch():
-    import pandas as pd
-    matrix = pd.read_csv('/ldfssz1/ST_BI/USER/qindanhua/projects/st/data/exp_matrix.csv')
-    data = matrix.values()
-    highly_variable_genes_single_batch(data, method='seurat', n_top_genes=None)
+from anndata import AnnData
+adata = AnnData(data.to_df())
 
 
 def test_highly_variable_genes_basic(data):
@@ -40,10 +37,21 @@ def test_highly_variable_genes_basic(data):
         'group': np.random.binomial(3, 0.5, size=(len(data.cell_names)))
     }, index=data.cell_names)
 
-    hvg = HighlyVariableGenes(data, groups=groups, method='cell_ranger')
+    hvg = HighlyVariableGenes(data, groups=groups, method='cell_ranger', n_top_genes=200)
     hvg.fit()
     hvg.method = 'seurat_v3'
     hvg.fit()
     hvg.method = 'seurat'
     hvg.fit()
 #
+    adata.obs['batch'] = groups['group']
+    adata.obs['batch'] = adata.obs['batch'].astype('category')
+    import scanpy as sc
+    sc.pp.highly_variable_genes(adata, flavor='cell_ranger', n_top_genes=None, batch_key='batch')
+
+
+# def test_single_batch():
+#     import pandas as pd
+#     matrix = pd.read_csv('/ldfssz1/ST_BI/USER/qindanhua/projects/st/data/exp_matrix.csv')
+#     data = matrix.values()
+#     highly_variable_genes_single_batch(data, method='seurat', n_top_genes=None)

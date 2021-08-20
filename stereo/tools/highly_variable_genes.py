@@ -55,7 +55,8 @@ class HighlyVariableGenes(ToolBase):
         self._method_check(method, m_range)
 
     def fit(self):
-        group_info = None if self.groups is None else np.array(self.groups['group'])
+        # group_info = None if self.groups is None else np.array(self.groups['group'])
+        group_info = None if self.groups is None else self.groups['group'].astype('category')
         if self.method == 'seurat_v3':
             df = highly_variable_genes_seurat_v3(
                 self.data.exp_matrix,
