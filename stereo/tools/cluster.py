@@ -19,7 +19,8 @@ from ..preprocess.normalize import Normalizer
 from .dim_reduce import DimReduce
 import pandas as pd
 from typing import Optional
-from ..plots.scatter import plot_scatter, plt, colors
+from ..plots.scatter import plot_scatter, plt
+import colorcet as cc
 import phenograph
 import colorcet as cc
 

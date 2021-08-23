@@ -12,9 +12,9 @@ change log:
 """
 from ..core.stereo_exp_data import StereoExpData
 from ..log_manager import logger
-from scipy.sparse import spmatrix, csr_matrix, issparse
+from scipy.sparse import csr_matrix, issparse
 import h5py
-from ..core import h5ad
+from stereo.io import h5ad
 
 
 def write_h5ad(data):

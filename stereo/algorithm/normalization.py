@@ -8,18 +8,35 @@
 import numpy as np
 from scipy import stats
 import scipy.spatial as spatial
+from functools import singledispatch
+from scipy.sparse import spmatrix
+from sklearn.utils import sparsefuncs
 
 
+@singledispatch
 def normalize_total(x, target_sum):
     """
-    total count normalize the data to `target_sum` reads per cell, so that counts become comparable among cells.
+        total count normalize the data to `target_sum` reads per cell, so that counts become comparable among cells.
 
-    :param x: 2D array, shape (M, N), which row is cells and column is genes.
-    :param target_sum: the number of reads per cell after normalization.
-    :return: the normalized data.
-    """
+        :param x: 2D array, shape (M, N), which row is cells and column is genes.
+        :param target_sum: the number of reads per cell after normalization.
+        :return: the normalized data.
+        """
+    pass
+
+
+@normalize_total.register(np.ndarray)
+def _(x, target_sum):
     nor_x = x * target_sum / x.sum(axis=1)[:, np.newaxis]
     return nor_x
+
+
+@normalize_total.register(spmatrix)
+def _(x, target_sum):
+    x = x.astype(np.float64)
+    counts = target_sum / np.ravel(x.sum(1))
+    sparsefuncs.inplace_row_scale(x, counts)
+    return x
 
 
 def quantile_norm(x):

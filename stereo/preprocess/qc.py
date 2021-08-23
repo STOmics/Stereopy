@@ -8,10 +8,9 @@
 """
 from scipy.sparse import issparse
 import numpy as np
-from ..core.stereo_exp_data import StereoExpData
 
 
-def cal_qc(data: StereoExpData):
+def cal_qc(data):
     """
     calculate three qc index including the number of genes expressed in the count matrix, the total counts per cell
     and the percentage of counts in mitochondrial genes.
