@@ -11,13 +11,12 @@ change log:
     2021/07/06  create file.
 """
 import numpy as np
-from ..core.stereo_exp_data import StereoExpData
 import copy
 from .qc import cal_total_counts, cal_pct_counts_mt, cal_n_genes_by_counts, cal_n_cells_by_counts, cal_n_cells
 
 
 def filter_cells(
-        data: StereoExpData,
+        data,
         min_gene=None,
         max_gene=None,
         n_genes_by_counts=None,
@@ -36,7 +35,6 @@ def filter_cells(
     :param inplace: whether inplace the original data or return a new data.
     :return: StereoExpData object.
     """
-    assert isinstance(data, StereoExpData)
     data = data if inplace else copy.deepcopy(data)
     if min_gene is None and max_gene is None and cell_list is None and n_genes_by_counts is None \
             and pct_counts_mt is None:
@@ -77,7 +75,6 @@ def filter_genes(data, min_cell=None, max_cell=None, gene_list=None, inplace=Tru
     :param inplace: whether inplace the original data or return a new data.
     :return: StereoExpData object.
     """
-    assert isinstance(data, StereoExpData)
     data = data if inplace else copy.deepcopy(data)
     if min_cell is None and max_cell is None and gene_list is None:
         raise ValueError('please set `min_cell` or `max_cell` or `gene_list` or both of them.')
@@ -107,7 +104,6 @@ def filter_coordinates(data, min_x=None, max_x=None, min_y=None, max_y=None, inp
     :param inplace: whether inplace the original adata or return a new anndata.
     :return: StereoExpData object
     """
-    assert isinstance(data, StereoExpData)
     data = data if inplace else copy.deepcopy(data)
     none_param = [i for i in [min_x, min_y, max_x, max_y] if i is None]
     if len(none_param) == 4:

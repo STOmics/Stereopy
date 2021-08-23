@@ -87,7 +87,12 @@ def test_read_h5ad():
 
 
 if __name__ == '__main__':
-    print('test write...')
-    data = test_read_bins()
+    data = make_data()
+    data.exp_matrix = data.exp_matrix.toarray()
+    print(data.log1p(inplace=False))
+    data.normalize_total(inplace=True)
+    print(data.exp_matrix)
+    # print('test write...')
+    # data = test_read_bins()
     # data.output = '/home/qiuping//workspace/st/stereopy_data/mource_bin100.h5ad'
     # test_write_h5ad(data)

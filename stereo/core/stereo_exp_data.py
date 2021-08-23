@@ -19,6 +19,9 @@ from .cell import Cell
 from .gene import Gene
 from ..log_manager import logger
 import copy
+from ..preprocess.qc import cal_qc
+from ..preprocess.filter import filter_cells, filter_genes, filter_coordinates
+from ..algorithm.normalization import normalize_total, quantile_norm, zscore_disksmooth
 
 
 class StereoExpData(Data):
@@ -258,3 +261,54 @@ class StereoExpData(Data):
             logger.error('the file format is not supported.')
             raise Exception
 
+    def cal_qc(self):
+        cal_qc(self)
+
+    def filter_cells(self, min_gene=None, max_gene=None, n_genes_by_counts=None, pct_counts_mt=None, cell_list=None,
+                     inplace=True):
+        filter_cells(self, min_gene, max_gene, n_genes_by_counts, pct_counts_mt, cell_list, inplace)
+
+    def filter_genes(self, min_cell=None, max_cell=None, gene_list=None, inplace=True):
+        filter_genes(self, min_cell, max_cell, gene_list, inplace)
+
+    def filter_coordinates(self, min_x=None, max_x=None, min_y=None, max_y=None, inplace=True):
+        filter_coordinates(self, min_x, max_x, min_y, max_y, inplace)
+
+    def log1p(self, inplace=True):
+        if inplace:
+            self.exp_matrix = np.log1p(self.exp_matrix)
+        else:
+            return np.log1p(self.exp_matrix)
+
+    def normalize_total(self, target_sum=10000, inplace=True):
+        if inplace:
+            self.exp_matrix = normalize_total(self.exp_matrix, target_sum=target_sum)
+        else:
+            return normalize_total(self.exp_matrix, target_sum=target_sum)
+
+    def quantile(self):
+        pass
+
+    def sctransform(self):
+        pass
+
+    def pca(self):
+        pass
+
+    def umap(self):
+        pass
+
+    def tsen(self):
+        pass
+
+    def highly_variable_genes(self):
+        pass
+
+    def find_margers(self):
+        pass
+
+    def spatial_lag(self):
+        pass
+
+    def spatial_pattern_score(self):
+        pass
