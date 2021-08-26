@@ -47,7 +47,7 @@ def test_highly_variable_genes_basic(data):
     adata.obs['batch'] = groups['group']
     adata.obs['batch'] = adata.obs['batch'].astype('category')
     import scanpy as sc
-    sc.pp.highly_variable_genes(adata, flavor='cell_ranger', n_top_genes=None, batch_key='batch')
+    sc.pp.highly_variable_genes(adata)
 
 
 # def test_single_batch():

@@ -1,5 +1,6 @@
 from stereo.algorithm.pysctransform import get_hvg_residuals, vst, SCTransform
 from stereo.preprocess.sc_transform import sc_transform
+from stereo.algorithm.pysctransform.plotting import compare_with_sct
 
 import pickle
 with open('/ldfssz1/ST_BI/USER/qindanhua/projects/st/data/test_data.pickle', 'rb') as r:

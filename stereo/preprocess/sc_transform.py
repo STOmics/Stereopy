@@ -60,4 +60,4 @@ def sc_transform(
     data.exp_matrix = residuals.values
     gene_index = np.isin(data.gene_names, np.array(residuals.columns))
     data.genes = data.genes.sub_set(gene_index)
-    return data
+    return data, vst_out
