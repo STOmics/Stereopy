@@ -81,7 +81,7 @@ def logreg(x, y, **kwds):
     clf = LogisticRegression(**kwds)
     clf.fit(x, y)
     scores_all = clf.coef_
-    groups_order = y.cat.categories
+    groups_order = pd.Series(y).astype('category').cat.categories
     for igroup, _ in enumerate(groups_order):
         if len(groups_order) <= 2:  # binary logistic regression
             scores = scores_all[0]
@@ -92,3 +92,26 @@ def logreg(x, y, **kwds):
 
         if len(groups_order) <= 2:
             break
+
+
+# def t_test_overestim_var():
+#     if method == 't-test':
+#         ns_rest = ns_other
+#     elif method == 't-test_overestim_var':
+#         # hack for overestimating the variance for small groups
+#         ns_rest = ns_group
+#     else:
+#         raise ValueError('Method does not exist.')
+#
+#     # TODO: Come up with better solution. Mask unexpressed genes?
+#     # See https://github.com/scipy/scipy/issues/10269
+#     with np.errstate(invalid="ignore"):
+#         scores, pvals = stats.ttest_ind_from_stats(
+#             mean1=mean_group,
+#             std1=np.sqrt(var_group),
+#             nobs1=ns_group,
+#             mean2=mean_rest,
+#             std2=np.sqrt(var_rest),
+#             nobs2=ns_rest,
+#             equal_var=False,  # Welch's
+#         )
