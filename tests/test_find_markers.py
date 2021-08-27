@@ -8,14 +8,14 @@
 """
 from stereo.tools.find_markers import FindMarker
 from stereo.tools.clustering import Clustering
-from stereo.io.reader import read_stereo
+from stereo.io.reader import read_gem
 from stereo.plots.marker_genes import plot_marker_genes_text, plot_marker_genes_heatmap
 import matplotlib.pyplot as plt
 import pickle
 
 
 def get_data(path):
-    data = read_stereo(path, bin_type='bins', bin_size=100)
+    data = read_gem(path, bin_type='bins', bin_size=100)
     return data
 
 
@@ -26,8 +26,11 @@ def run_cluster(data):
 
 
 def run_find_marker(data, group):
-    ft = FindMarker(data, group)
-    ft.fit()
+    ft = FindMarker(data, group, method='wilcoxon_test')
+    ft.plot_heatmap()
+    plt.savefig('./heatmap.jpg')
+    ft.plot_marker_text()
+    plt.savefig('./text.jpg')
     return ft
 
 
@@ -56,12 +59,13 @@ def test_heatmap_gene_list(data, ct_res, ft_res, gene_list, min_value, max_value
 
 if __name__ == '__main__':
     in_path = '/home/qiuping/workspace/st/stereopy_data/mouse/DP8400013846TR_F5.gem'
-    pickle_res(in_path)
+    # pickle_res(in_path)
     data = get_data(in_path)
     ct_result = pickle.load(open('./ct.pk', 'rb'))
-    ft_result = pickle.load(open('./ft.pk', 'rb'))
-    test_heatmap_gene_list(data, ct_result, ft_result, None, 300, 800)
+    # ft_result = pickle.load(open('./ft.pk', 'rb'))
+    ft = run_find_marker(data, ct_result.matrix)
+    # test_heatmap_gene_list(data, ct_result, ft_result, None, 300, 800)
     # test_heatmap_gene_list(data, ct_result, ft_result, ['Fga', 'Apoe'], 1, 50)
     # test_heatmap(data, ct_result, ft_result)
-    test_text(ft_result)
+    # test_text(ft_result)
 

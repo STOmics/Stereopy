@@ -52,6 +52,7 @@ class FindMarker(ToolBase):
         self.corr_method = corr_method.lower()
         self.case_groups = case_groups
         self.control_group = control_groups
+        self.fit()
 
     @ToolBase.method.setter
     def method(self, method):
@@ -74,6 +75,7 @@ class FindMarker(ToolBase):
         """
         run
         """
+        self.logger.info('start to run find marker genes...')
         self.data.sparse2array()
         if self.groups is None:
             raise ValueError(f'group information must be set')
@@ -96,6 +98,7 @@ class FindMarker(ToolBase):
                                                                                        self.corr_method)
             result['groups'] = f"{g}.vs.{control_str}"
             self.result[f"{g}.vs.{control_str}"] = result
+        self.logger.info('end to run find marker genes...')
 
     @staticmethod
     def merge_groups_data(g1, g2):
@@ -132,9 +135,9 @@ class FindMarker(ToolBase):
                      cluster_colors_array=None,
                      min_value=None,
                      max_value=None,
-                     gene_list=None):
+                     gene_list=None, do_log=True):
         plot_marker_genes_heatmap(data=self.data, cluster_res=self.groups, marker_res=self.result,
                                   markers_num=markers_num, sort_key=sort_key, ascend=ascend, show_labels=show_labels,
                                   show_group=show_group, show_group_txt=show_group_txt,
                                   cluster_colors_array=cluster_colors_array, min_value=min_value, max_value=max_value,
-                                  gene_list=gene_list)
+                                  gene_list=gene_list, do_log=do_log)

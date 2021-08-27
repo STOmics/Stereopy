@@ -139,10 +139,9 @@ def make_draw_df(data: StereoExpData, group: pd.DataFrame, marker_res: dict, top
         start += len(gene_list)
     draw_df = data_helper.exp_matrix2df(data, gene_name=np.array(gene_names))
     # add obs values
-    cluster_data = group.set_index('bins')
-    draw_df = pd.concat([draw_df, cluster_data], axis=1)
-    draw_df['cluster'] = draw_df['cluster'].astype('category')
-    draw_df = draw_df.set_index(['cluster'])
+    draw_df = pd.concat([draw_df, group], axis=1)
+    draw_df['group'] = draw_df['group'].astype('category')
+    draw_df = draw_df.set_index(['group'])
     draw_df = draw_df.sort_index()
     if min_value is not None or max_value is not None:
         draw_df.clip(lower=min_value, upper=max_value, inplace=True)
@@ -267,9 +266,12 @@ def plot_marker_genes_heatmap(
         cluster_colors_array=None,
         min_value=None,
         max_value=None,
-        gene_list=None):
-    draw_df, group_labels, group_position = make_draw_df(data=data, group=cluster_res.matrix, marker_res=marker_res,
+        gene_list=None,
+        do_log=True):
+    draw_df, group_labels, group_position = make_draw_df(data=data, group=cluster_res, marker_res=marker_res,
                                                          top_genes=markers_num, sort_key=sort_key, ascend=ascend,
                                                          gene_list=gene_list, min_value=min_value, max_value=max_value)
+    if do_log:
+        draw_df = np.log1p(draw_df)
     plot_heatmap(df=draw_df, show_labels=show_labels, show_group=show_group, show_group_txt=show_group_txt,
                  group_position=group_position, group_labels=group_labels, cluster_colors_array=cluster_colors_array)
