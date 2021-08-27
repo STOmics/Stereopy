@@ -33,4 +33,5 @@ colorcet==2.0.6
 spatialpandas==0.4.2
 datashader==0.7.0
 anndata
+phenograph
 adjustText

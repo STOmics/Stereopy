@@ -15,12 +15,11 @@ from typing import Optional, Sequence, Union
 from matplotlib.axes import Axes
 from ._plot_basic.heatmap_plt import heatmap, plot_categories_as_colorblocks, plot_gene_groups_brackets
 from ..core.stereo_exp_data import StereoExpData
-from ..core.stereo_result import StereoResult
 from ..utils import data_helper
 
 
 def plot_marker_genes_text(
-        marker_res: StereoResult,
+        marker_res,
         groups: Union[str, Sequence[str]] = 'all',
         markers_num: int = 20,
         sort_key: str = 'scores',
@@ -51,9 +50,8 @@ def plot_marker_genes_text(
         n_panels_per_row = kwargs['n_panels_per_row']
     else:
         n_panels_per_row = ncols
-    # group_names = adata.uns[key]['names'].dtype.names if groups is None else groups
     if groups == 'all':
-        group_names = list(set(marker_res.matrix['groups']))
+        group_names = list(marker_res.keys())
     else:
         group_names = [groups] if isinstance(groups, str) else groups
     # one panel for each group
@@ -124,7 +122,7 @@ def plot_marker_genes_text(
         ax.set_ylim(ymin, ymax)
 
 
-def make_draw_df(data: StereoExpData, group: pd.DataFrame, marker_res: StereoResult, top_genes: int = 8,
+def make_draw_df(data: StereoExpData, group: pd.DataFrame, marker_res: dict, top_genes: int = 8,
                  sort_key: str = 'scores', ascend: bool = False, gene_list: Optional[list] = None,
                  min_value: Optional[int] = None, max_value: Optional[int] = None):
     gene_names_dict = get_groups_marker(marker_res, top_genes, sort_key, ascend, gene_list)
@@ -146,16 +144,14 @@ def make_draw_df(data: StereoExpData, group: pd.DataFrame, marker_res: StereoRes
     draw_df['cluster'] = draw_df['cluster'].astype('category')
     draw_df = draw_df.set_index(['cluster'])
     draw_df = draw_df.sort_index()
-    print(draw_df.describe())
     if min_value is not None or max_value is not None:
         draw_df.clip(lower=min_value, upper=max_value, inplace=True)
-    print(draw_df.describe())
     return draw_df, gene_group_labels, gene_group_positions
 
 
-def get_groups_marker(marker_res: StereoResult, top_genes: int = 8, sort_key: str = 'scores',
+def get_groups_marker(marker_res: dict, top_genes: int = 8, sort_key: str = 'scores',
                       ascend: bool = False, gene_list: Optional[list] = None):
-    groups = set(marker_res.matrix['groups'])
+    groups = marker_res.keys()
     groups_genes = {}
     if gene_list is not None:
         for g in groups:
@@ -260,8 +256,8 @@ def plot_heatmap(
 
 def plot_marker_genes_heatmap(
         data: StereoExpData,
-        cluster_res: StereoResult,
-        marker_res: StereoResult,
+        cluster_res: pd.DataFrame,
+        marker_res: dict,
         markers_num: int = 5,
         sort_key: str = 'scores',
         ascend: bool = False,
