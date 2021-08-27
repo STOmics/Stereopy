@@ -35,3 +35,4 @@ datashader==0.7.0
 anndata
 phenograph
 adjustText
+scikit-misc
