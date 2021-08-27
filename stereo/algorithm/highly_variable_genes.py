@@ -8,7 +8,7 @@ import scipy.sparse as sp_sparse
 
 
 def highly_variable_genes_single_batch(
-    data,
+    data: Optional[sp_sparse.spmatrix],
     min_disp: Optional[float] = 0.5,
     max_disp: Optional[float] = np.inf,
     min_mean: Optional[float] = 0.0125,
@@ -25,7 +25,6 @@ def highly_variable_genes_single_batch(
     A DataFrame that contains the columns
     `highly_variable`, `means`, `dispersions`, and `dispersions_norm`.
     """
-    data = data
     # TODO how to deal with log data
     # if method == 'seurat':
         # if 'log1p' in adata.uns_keys() and adata.uns['log1p']['base'] is not None:
@@ -120,7 +119,7 @@ def highly_variable_genes_single_batch(
 
 
 def highly_variable_genes_seurat_v3(
-    data,
+    data: Optional[sp_sparse.spmatrix],
     n_top_genes: int = 2000,
     batch_info: Optional[np.ndarray] = None,
     check_values: bool = True,

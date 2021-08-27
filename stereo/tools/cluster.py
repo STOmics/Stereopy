@@ -21,7 +21,7 @@ import pandas as pd
 from typing import Optional
 from ..plots.scatter import plot_scatter, plt
 import colorcet as cc
-import phenograph
+# import phenograph
 import colorcet as cc
 
 

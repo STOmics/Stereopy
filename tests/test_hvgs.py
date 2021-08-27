@@ -49,6 +49,12 @@ def test_highly_variable_genes_basic(data):
     import scanpy as sc
     sc.pp.highly_variable_genes(adata, flavor='cell_ranger', n_top_genes=200)
 
+    mr = hvg.result[hvg.result['highly_variable']]
+    mr_sc = adata.var[adata.var['highly_variable']]
+    len(set(mr.index))
+    len(set(mr.index))
+    len(set(mr.index) & set(mr_sc.index))
+
 
 # def test_single_batch():
 #     import pandas as pd
