@@ -11,7 +11,6 @@ import pandas as pd
 import numpy as np
 from ..core.stereo_exp_data import StereoExpData
 from typing import Optional
-from ..core.stereo_result import StereoResult
 
 
 def select_group(st_data, groups, cluster):
@@ -52,8 +51,7 @@ def exp_matrix2df(data: StereoExpData, cell_name: Optional[np.ndarray] = None, g
     return df
 
 
-def get_top_marker(g_name: str, marker_res: StereoResult, sort_key: str, ascend: bool = False, top_n: int = 10):
-    result = marker_res.matrix
-    result = result[result['groups'] == g_name]
+def get_top_marker(g_name: str, marker_res: dict, sort_key: str, ascend: bool = False, top_n: int = 10):
+    result = marker_res[g_name]
     top_res = result.sort_values(by=sort_key, ascending=ascend).head(top_n)
     return top_res

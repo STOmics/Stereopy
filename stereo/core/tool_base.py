@@ -11,16 +11,12 @@ change log:
 """
 from stereo.log_manager import logger
 import pandas as pd
-import numpy as np
-from ..core.stereo_result import StereoResult
 from ..core.stereo_exp_data import StereoExpData
 from scipy.sparse import issparse
-import functools
-import time
-from typing import Optional, Union
+from typing import Optional
 import requests
 import os
-from ..plots.scatter import plot_multi_scatter, plt
+import importlib
 
 
 class ToolBase(object):
@@ -45,14 +41,14 @@ class ToolBase(object):
     """
     def __init__(
             self,
-            data: Optional[Union[StereoExpData, pd.DataFrame]] = None,
-            groups: Optional[Union[StereoResult, pd.DataFrame]] = None,
+            data: Optional[StereoExpData] = None,
+            groups: Optional[pd.DataFrame] = None,
             method: str = 'stereo',
     ):
         self.data = data
         self.groups = groups
         self._method = method
-        self.result = StereoResult()
+        self.result = None
         self.logger = logger
 
     @property
@@ -99,20 +95,9 @@ class ToolBase(object):
         check data type
         :return:
         """
-        data_type_allowed = (pd.DataFrame, StereoExpData)
         if data is not None:
-            if not isinstance(data, data_type_allowed):
-                logger.error('the format of data must be StereoExpData or pd.DataFrame.')
-                raise ValueError('the format of data must be StereoExpData or pd.DataFrame.')
-        if isinstance(data, pd.DataFrame):
-            st_data = StereoExpData(
-                exp_matrix=data.values,
-                cells=np.array(data.index),
-                genes=np.array(data.columns)
-            )
-        else:
-            st_data = data
-        return st_data
+            assert isinstance(data, StereoExpData)
+        return data
 
     def _group_check(self, groups):
         if groups is None:
@@ -133,38 +118,6 @@ class ToolBase(object):
                     group_info = pd.DataFrame({'group': groups.iloc[:, 1].values}, index=cells)
                 return group_info
 
-    def extract_exp_matrix(self):
-        """
-        extract expression data array from input data
-        :return: expression data frame [[], [], ..., []]
-        """
-        return self.data.exp_matrix.toarray() if issparse(self.data.exp_matrix) else self.data.exp_matrix
-
-    def sparse2array(self):
-        """
-        transform expression matrix to array if it is parse matrix
-        :return:
-        """
-        if issparse(self.data.exp_matrix):
-            self.data.exp_matrix = self.data.exp_matrix.toarray()
-
-    @staticmethod
-    def _check_input_data(input_data):
-        if input_data is None:
-            input_df = StereoResult()
-        else:
-            if not isinstance(input_data, (ToolBase, StereoResult, pd.DataFrame, np.ndarray)):
-                logger.error('the format of data must be AnnData or pd.DataFrame.')
-            if isinstance(input_data, StereoResult):
-                input_df = input_data
-            elif isinstance(input_data, ToolBase):
-                input_df = input_data.result
-            elif isinstance(input_data, pd.DataFrame):
-                input_df = StereoResult(input_data)
-            else:
-                input_df = StereoResult(pd.DataFrame(input_data))
-        return input_df
-
     @staticmethod
     def download_ref(ref_dir):
         logger.info("downloading reference expression matrix")
@@ -182,32 +135,19 @@ class ToolBase(object):
                 logger.error(f'can not download reference file from {u}')
         logger.info('download reference matrix done')
 
-    @classmethod
-    def check_fit(cls, func):
-        @functools.wraps(func)
-        def wrapper(self, *args, **kw):
-            if self.data is None:
-                raise ValueError(f'data must be set if running fit()')
-            logger.info('start running {}'.format(time.asctime(time.localtime(time.time()))))
-            return func(self, *args, **kw)
-        logger.info('end running {}'.format(time.asctime(time.localtime(time.time()))))
-        return wrapper
-
-    def plot_top_gene_scatter(self, file_path=None):
-        df = pd.DataFrame(self.data.exp_matrix, columns=self.data.gene_names, index=self.data.cell_names)
-        sum_top_genes = list(df.sum().sort_values(ascending=False).index[:3])
-        plot_multi_scatter(self.data.position[:, 0], self.data.position[:, 1],
-                           color_values=np.array(df[sum_top_genes]).T,
-                           color_bar=True, ncols=2)
-        if file_path:
-            plt.savefig(file_path)
-
-    def add_result(self):
-        pass
-
-    def merge_result(self):
-        pass
+    # def plot_top_gene_scatter(self, file_path=None):
+    #     df = pd.DataFrame(self.data.exp_matrix, columns=self.data.gene_names, index=self.data.cell_names)
+    #     sum_top_genes = list(df.sum().sort_values(ascending=False).index[:3])
+    #     plot_multi_scatter(self.data.position[:, 0], self.data.position[:, 1],
+    #                        color_values=np.array(df[sum_top_genes]).T,
+    #                        color_bar=True, ncols=2)
+    #     if file_path:
+    #         plt.savefig(file_path)
 
     def fit(self):
         pass
 
+    @staticmethod
+    def get_func_by_path(path, func_name):
+        imp = importlib.import_module(path)
+        return getattr(imp, func_name)
