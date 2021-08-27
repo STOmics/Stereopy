@@ -90,7 +90,7 @@ class HighlyVariableGenes(ToolBase):
                     # with settings.verbosity.override(Verbosity.error):
                     #
                     filt = filter_genes(data_subset, min_cells=1)[0]
-                    # data_subset = data_subset[:, filt]
+                    data_subset = data_subset[:, filt]
 
                     hvg = highly_variable_genes_single_batch(
                         data_subset,
@@ -102,8 +102,8 @@ class HighlyVariableGenes(ToolBase):
                         n_bins=self.n_bins,
                         method=self.method,
                     )
-                    # hvg.index = gene_list[filt]
-                    hvg.index = gene_list
+                    hvg.index = gene_list[filt]
+                    # hvg.index = gene_list
                     # Add 0 values for genes that were filtered out
                     missing_hvg = pd.DataFrame(
                         np.zeros((np.sum(~filt), len(hvg.columns))),
@@ -111,7 +111,7 @@ class HighlyVariableGenes(ToolBase):
                     )
                     missing_hvg['highly_variable'] = missing_hvg['highly_variable'].astype(bool)
                     missing_hvg['gene'] = gene_list[~filt]
-                    hvg['gene'] = gene_list
+                    hvg['gene'] = gene_list[filt]
                     hvg = hvg.append(missing_hvg, ignore_index=True)
 
                     # Order as before filtering
