@@ -189,3 +189,4 @@ class HighlyVariableGenes(ToolBase):
                     )
                     df['highly_variable'] = gene_subset
         self.result = df
+        self.data.genes.hvgs = np.array(df['highly_variable'])

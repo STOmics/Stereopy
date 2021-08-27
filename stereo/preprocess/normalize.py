@@ -44,7 +44,7 @@ class Normalizer(ToolBase):
         compute the scale value of self.exp_matrix.
         """
         nor_res = None
-        self.sparse2array()  # TODO: add  normalize of sparseMatrix
+        self.data.sparse2array()  # TODO: add  normalize of sparseMatrix
         if self.method == 'normalize_total':
             nor_res = normalize_total(self.data.exp_matrix, self.target_num)
         elif self.method == 'quantile':
@@ -54,5 +54,5 @@ class Normalizer(ToolBase):
             nor_res = zscore_disksmooth(self.data.exp_matrix, self.position, self.r)
         else:
             pass
-        self.result.matrix = pd.DataFrame(nor_res, columns=self.data.gene_names, index=self.data.cell_names)
+        self.result = pd.DataFrame(nor_res, columns=self.data.gene_names, index=self.data.cell_names)
         return nor_res

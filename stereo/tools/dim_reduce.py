@@ -98,21 +98,21 @@ class DimReduce(ToolBase):
         self._check_params()
         exp_matrix = exp_matrix if exp_matrix is not None else self.extract_exp_matrix()
         if self.method == 'low_variance':
-            self.result.x_reduce = low_variance(exp_matrix, self.min_variance)
+            x_reduce = low_variance(exp_matrix, self.min_variance)
         elif self.method == 'factor_analysis':
-            self.result.x_reduce = factor_analysis(exp_matrix, self.n_pcs)
+            x_reduce = factor_analysis(exp_matrix, self.n_pcs)
         elif self.method == 'tsen':
-            self.result.x_reduce = t_sne(exp_matrix, self.n_pcs, self.n_iter)
+            x_reduce = t_sne(exp_matrix, self.n_pcs, self.n_iter)
         elif self.method == 'umap':
-            self.result.x_reduce = u_map(exp_matrix, self.n_pcs, self.n_neighbors, self.min_dist)
+            x_reduce = u_map(exp_matrix, self.n_pcs, self.n_neighbors, self.min_dist)
         else:
             pca_res = pca(exp_matrix, self.n_pcs)
-            self.result.x_reduce = pca_res['x_pca']
-            self.result.variance_ratio = pca_res['variance_ratio']
-            self.result.variance_pca = pca_res['variance']
-            self.result.pcs = pca_res['pcs']
-        self.result.matrix = pd.DataFrame(self.result.x_reduce)
-        return self.result.matrix
+            x_reduce = pca_res['x_pca']
+            # self.result.variance_ratio = pca_res['variance_ratio']
+            # self.result.variance_pca = pca_res['variance']
+            # self.result.pcs = pca_res['pcs']
+        self.result = pd.DataFrame(x_reduce)
+        return self.result
         # self.add_result(result=self.result, key_added=self.name)
 
     @staticmethod
@@ -184,7 +184,7 @@ class DimReduce(ToolBase):
         # from scipy.sparse import issparse
         # if issparse(self.data.exp_matrix):
         #     self.data.exp_matrix = self.data.exp_matrix.toarray()
-        self.sparse2array()
+        self.data.sparse2array()
         if len(gene_name) > 1:
             plot_multi_scatter(self.result.matrix.values[:, 0], self.result.matrix.values[:, 1],
                                color_values=np.array(self.data.sub_by_name(gene_name=gene_name).exp_matrix).T,

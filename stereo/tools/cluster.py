@@ -146,7 +146,7 @@ class Cluster(ToolBase):
         return clusters
 
     def run_phenograph(self, phenograph_k):
-        communities, _, _ = phenograph.cluster(self.pca_x.matrix, k=phenograph_k)
+        communities, _, _ = phenograph.cluster(self.pca_x, k=phenograph_k)
         cluster = communities.astype(str)
         return cluster
 
@@ -166,13 +166,13 @@ class Cluster(ToolBase):
         """
         running and add results
         """
-        self.sparse2array()
+        self.data.sparse2array()
         self.logger.info('start to run normalization...')
         self.run_normalize()
         self.logger.info('start to run dim reduce...')
         self.run_dim_reduce()
         self.logger.info('start to run neighbors...')
-        neighbor, nn_idx, nn_dist = self.run_neighbors(self.pca_x.matrix)
+        neighbor, nn_idx, nn_dist = self.run_neighbors(self.pca_x)
         self.logger.info(f'start to run {self.method} cluster...')
         if self.method == 'leiden':
             cluster = self.run_knn_leiden(neighbor, nn_idx, nn_dist)
@@ -183,7 +183,7 @@ class Cluster(ToolBase):
         cluster = [str(i) for i in cluster]
         info = {'bins': self.data.cell_names, 'cluster': cluster}
         df = pd.DataFrame(info)
-        self.result.matrix = df
+        self.result = df
         self.logger.info('finish...')
         return df
 
@@ -195,11 +195,11 @@ class Cluster(ToolBase):
         :return:
         """
         if plot_dim_reduce:
-            plot_scatter(self.pca_x.matrix.values[:, 0], self.pca_x.matrix.values[:, 1],
-                         color_values=np.array(self.result.matrix['cluster']), color_list=cc.glasbey)
+            plot_scatter(self.pca_x.values[:, 0], self.pca_x.values[:, 1],
+                         color_values=np.array(self.result['cluster']), color_list=cc.glasbey)
         else:
             plot_scatter(self.data.position[:, 0], self.data.position[:, 1],
-                         color_values=np.array(self.result.matrix['cluster']),
+                         color_values=np.array(self.result['cluster']),
                          color_list=cc.glasbey)
         if file_path:
             plt.savefig(file_path)
