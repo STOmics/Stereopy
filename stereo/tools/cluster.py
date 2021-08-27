@@ -22,6 +22,7 @@ from typing import Optional
 from ..plots.scatter import plot_scatter, plt
 import colorcet as cc
 import phenograph
+import colorcet as cc
 
 
 class Cluster(ToolBase):

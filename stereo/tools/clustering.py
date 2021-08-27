@@ -20,6 +20,7 @@ from .dim_reduce import DimReduce
 import pandas as pd
 from typing import Optional
 from ..plots.scatter import plot_scatter, plt, colors
+import colorcet as cc
 
 
 class Clustering(ToolBase):
@@ -191,10 +192,10 @@ class Clustering(ToolBase):
         """
         if plot_dim_reduce:
             plot_scatter(self.pca_x.matrix.values[:, 0], self.pca_x.matrix.values[:, 1],
-                         color_values=np.array(self.result.matrix['cluster']), color_list=colors)
+                         color_values=np.array(self.result.matrix['cluster']), color_list=cc.glasbey)
         else:
             plot_scatter(self.data.position[:, 0], self.data.position[:, 1],
                          color_values=np.array(self.result.matrix['cluster']),
-                         color_list=colors)
+                         color_list=cc.glasbey)
         if file_path:
             plt.savefig(file_path)

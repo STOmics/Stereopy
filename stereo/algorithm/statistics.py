@@ -73,3 +73,22 @@ def cal_log2fc(group, other_group):
     other_mean = np.mean(other_group.values, axis=0)
     log2fc = g_mean - np.log2(other_mean + 10e-5)
     return log2fc
+
+
+def logreg(x, y, **kwds):
+    from sklearn.linear_model import LogisticRegression
+    # Indexing with a series causes issues, possibly segfault
+    clf = LogisticRegression(**kwds)
+    clf.fit(x, y)
+    scores_all = clf.coef_
+    groups_order = y.cat.categories
+    for igroup, _ in enumerate(groups_order):
+        if len(groups_order) <= 2:  # binary logistic regression
+            scores = scores_all[0]
+        else:
+            scores = scores_all[igroup]
+
+        yield igroup, scores, None
+
+        if len(groups_order) <= 2:
+            break
