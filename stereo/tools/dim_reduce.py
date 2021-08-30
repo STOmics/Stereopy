@@ -96,7 +96,7 @@ class DimReduce(ToolBase):
 
     def fit(self, exp_matrix=None):
         self._check_params()
-        exp_matrix = exp_matrix if exp_matrix is not None else self.extract_exp_matrix()
+        exp_matrix = exp_matrix if exp_matrix is not None else self.data.exp_matrix
         if self.method == 'low_variance':
             x_reduce = low_variance(exp_matrix, self.min_variance)
         elif self.method == 'factor_analysis':
