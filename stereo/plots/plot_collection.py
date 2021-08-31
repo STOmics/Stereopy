@@ -19,8 +19,8 @@ class PlotCollection:
             data
     ):
         self.data = data
-        # self.result = self.data.tl.result
-        self.result = dict()
+        self.result = self.data.tl.result
+        # self.result = dict()
 
     def plot_genes_count(self, **kwargs):
         """
@@ -52,74 +52,104 @@ class PlotCollection:
             fig.show()
         return ins
 
-    def plot_dim_reduce(self, gene_name: Optional[list], file_path=None, **kwargs):
+    def plot_dim_reduce(self,
+                        gene_name: Optional[list],
+                        res_key='dim_reduce',
+                        cluster_key='None',
+                        **kwargs):
         """
         plot scatter after dimension reduce
         :param gene_name list of gene names
-        :param file_path:
+        :param cluster_key: dot color set by cluster if given
+        :param res_key:
         :return:
         """
-        # from scipy.sparse import issparse
-        # if issparse(self.data.exp_matrix):
-        #     self.data.exp_matrix = self.data.exp_matrix.toarray()
-        if 'dim_reduce' not in self.result:
-            raise ValueError(f'can not found dimension reduce result, please run stereo.tool.DimReduce before plot')
+        res = self.check_res_key(res_key)
         self.data.sparse2array()
-        if len(gene_name) > 1:
-            plot_multi_scatter(self.result['dim_reduce'].values[:, 0], self.result['dim_reduce'].values[:, 1],
-                               color_values=np.array(self.data.sub_by_name(gene_name=gene_name).exp_matrix).T,
-                               color_list=colors, color_bar=True, **kwargs
-                               )
+        if cluster_key:
+            cluster_res = self.check_res_key(cluster_key)
+            return plot_scatter(
+                res.values[:, 0],
+                res.values[:, 1],
+                color_values=np.array(cluster_res['cluster']),
+                color_list=cc.glasbey,
+                **kwargs)
         else:
-            plot_scatter(self.result['dim_reduce'].values[:, 0], self.result['dim_reduce'].values[:, 1],
-                         color_values=np.array(self.data.sub_by_name(gene_name=gene_name).exp_matrix[:, 0]),
-                         color_list=colors, color_bar=True, **kwargs)
-        if file_path:
-            plt.savefig(file_path)
+            if len(gene_name) > 1:
+                return plot_multi_scatter(
+                    res.values[:, 0],
+                    res.values[:, 1],
+                    color_values=np.array(self.data.sub_by_name(gene_name=gene_name).exp_matrix).T,
+                    color_list=colors,
+                    color_bar=True,
+                    **kwargs
+                )
+            else:
+                return plot_scatter(
+                    res.values[:, 0],
+                    res.values[:, 1],
+                    color_values=np.array(self.data.sub_by_name(gene_name=gene_name).exp_matrix[:, 0]),
+                    color_list=colors,
+                    color_bar=True,
+                    **kwargs
+                )
 
-    def plot_cluster_scatter(self, plot_dim_reduce=False, file_path=None, **kwargs):
+    def plot_cluster_scatter(
+            self,
+            res_key='cluster',
+            # file_path=None,
+            **kwargs):
         """
         plot scatter after
-        :param plot_dim_reduce: plot cluster after dimension reduce if true
-        :param file_path:
+        :param res_key: plot cluster after dimension reduce if true
 
         :return:
         """
-        if 'cluster' not in self.result:
-            raise ValueError(f'can not found cluster result, please run stereo.tool.Cluster before plot')
-        if plot_dim_reduce:
-            if 'dim_reduce' not in self.result:
-                raise ValueError(f'can not found dimension reduce result, please run stereo.tool.DimReduce before plot')
-            plot_scatter(self.result['dim_reduce'].values[:, 0], self.result['dim_reduce'].values[:, 1],
-                         color_values=np.array(self.result['cluster']['cluster']), color_list=cc.glasbey, **kwargs)
-        else:
-            plot_scatter(self.data.position[:, 0], self.data.position[:, 1],
-                         color_values=np.array(self.result['cluster']['cluster']),
-                         color_list=cc.glasbey, **kwargs)
-        if file_path:
-            plt.savefig(file_path)
-
-    def plot_marker_genes_text(self, **kwargs):
-        """
-
-        :param kwargs:
-        :return:
-        """
-        if 'gene_maker' not in self.result:
-            raise ValueError(f'can not found gene maker result, please run stereo.tool.GeneMaker before plot')
-        plot_marker_genes_text(self.result['gene_maker'], **kwargs)
-
-    def plot_marker_genes_heatmap(self, **kwargs):
-        """
-
-        :param kwargs:
-        :return:
-        """
-        if 'gene_maker' not in self.result:
-            raise ValueError(f'can not found gene maker result, please run stereo.tool.GeneMaker before plot')
-        plot_marker_genes_heatmap(
-            self.data,
-            self.result['cluster'],
-            self.result['gene_maker'],
+        res = self.check_res_key(res_key)
+        ax = plot_scatter(
+            self.data.position[:, 0],
+            self.data.position[:, 1],
+            color_values=np.array(res['cluster']),
+            color_list=cc.glasbey,
             **kwargs
         )
+        return ax
+        # if file_path:
+        #     plt.savefig(file_path)
+
+    def plot_marker_genes_text(self, res_key='marker_genes', **kwargs):
+        """
+        :param res_key
+        :param kwargs:
+        :return:
+        """
+        res = self.check_res_key(res_key)
+        plot_marker_genes_text(res, **kwargs)
+
+    def plot_marker_genes_heatmap(self, res_key='marker_genes', cluster_res_key='cluster', **kwargs):
+        """
+        :param res_key
+        :param cluster_res_key
+        :param kwargs:
+        :return:
+        """
+        maker_res = self.check_res_key(res_key)
+        cluster_res = self.check_res_key(cluster_res_key)
+        plot_marker_genes_heatmap(
+            self.data,
+            cluster_res,
+            maker_res,
+            **kwargs
+        )
+
+    def check_res_key(self, res_key):
+        """
+        check if result exist
+        :param res_key:
+        :return:
+        """
+        if res_key in self.result:
+            res = res_key[res_key]
+            return res
+        else:
+            raise ValueError(f'{res_key} result not found, please run tool before plot')
