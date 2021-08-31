@@ -14,17 +14,43 @@ from ..utils.hvg_utils import filter_genes
 
 class HighlyVariableGenes(ToolBase):
     """
+    Annotate highly variable genes. reference by scanpy
 
-    :param data:
-    :param groups:
-    :param method:
-    :param n_top_genes:
-    :param min_disp:
-    :param max_disp:
-    :param min_mean:
-    :param max_mean:
-    :param span:
-    :param n_bins:
+    :param data: stereo exp data object
+    :param groups
+    If specified, highly-variable genes are selected within each batch separately and merged.
+    This simple process avoids the selection of batch-specific genes and acts as a
+    lightweight batch correction method. For all flavors, genes are first sorted
+    by how many batches they are a HVG. For dispersion-based flavors ties are broken
+    by normalized dispersion. If `flavor = 'seurat_v3'`, ties are broken by the median
+    (across batches) rank based on within-batch normalized variance.
+    :param n_top_genes
+        Number of highly-variable genes to keep. Mandatory if `flavor='seurat_v3'`.
+    :param min_mean
+        If `n_top_genes` unequals `None`, this and all other cutoffs for the means and the
+        normalized dispersions are ignored. Ignored if `flavor='seurat_v3'`.
+    :param max_mean
+        If `n_top_genes` unequals `None`, this and all other cutoffs for the means and the
+        normalized dispersions are ignored. Ignored if `flavor='seurat_v3'`.
+    :param min_disp
+        If `n_top_genes` unequals `None`, this and all other cutoffs for the means and the
+        normalized dispersions are ignored. Ignored if `flavor='seurat_v3'`.
+    :param max_disp
+        If `n_top_genes` unequals `None`, this and all other cutoffs for the means and the
+        normalized dispersions are ignored. Ignored if `flavor='seurat_v3'`.
+    s:param pan
+        The fraction of the data (cells) used when estimating the variance in the loess
+        model fit if `flavor='seurat_v3'`.
+    :param n_bins
+        Number of bins for binning the mean gene expression. Normalization is
+        done with respect to each bin. If just a single gene falls into a bin,
+        the normalized dispersion is artificially set to 1. You'll be informed
+        about this if you set `settings.verbosity = 4`.
+    :param method
+        Choose the flavor for identifying highly variable genes. For the dispersion
+        based methods in their default workflows, Seurat passes the cutoffs whereas
+        Cell Ranger passes `n_top_genes`.
+
     :return:
     """
     def __init__(
@@ -67,7 +93,7 @@ class HighlyVariableGenes(ToolBase):
             df.index = self.data.gene_names
         else:
             if self.groups is None:
-                print('groups none')
+                # print('groups none')
                 df = highly_variable_genes_single_batch(
                     self.data.exp_matrix,
                     min_disp=self.min_disp,
@@ -80,7 +106,7 @@ class HighlyVariableGenes(ToolBase):
                 )
                 df.index = self.data.gene_names
             else:
-                print('groups not none')
+                # print('groups not none')
                 batches = set(group_info)
                 df = []
                 gene_list = self.data.gene_names
@@ -163,3 +189,4 @@ class HighlyVariableGenes(ToolBase):
                     )
                     df['highly_variable'] = gene_subset
         self.result = df
+        self.data.genes.hvgs = np.array(df['highly_variable'])
