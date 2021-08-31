@@ -7,8 +7,6 @@
 @time:2021/04/19
 """
 from ..core.tool_base import ToolBase
-# from ..utils.data_helper import get_cluster_res, get_position_array
-# from anndata import AnnData
 from pysal.model import spreg
 from pysal.lib import weights
 import numpy as np
@@ -44,13 +42,12 @@ class SpatialLag(ToolBase):
         self.random_drop = random_drop
         self.drop_dummy = drop_dummy
         self.n_neighbors = n_neighbors
-        # self.position = self.data.partition
 
     def fit(self):
         """
         run analysis
         """
-        self.sparse2array()
+        self.data.sparse2array()
         x, uniq_group = self.get_data()
         res = self.gm_model(x, uniq_group)
         result = SpatialLagResult(res)
@@ -109,7 +106,6 @@ class SpatialLag(ToolBase):
             result[str(i) + '_lag_coeff'] = None
             result[str(i) + '_lag_zstat'] = None
             result[str(i) + '_lag_pval'] = None
-        self.sparse2array()
         data_pd = pd.DataFrame(self.data.exp_matrix, columns=self.data.gene_names, index=self.data.cell_names)
         for i, cur_g in tqdm(enumerate(genes),
                              desc="performing GM_lag_model and assign coefficient and p-val to cell type"):

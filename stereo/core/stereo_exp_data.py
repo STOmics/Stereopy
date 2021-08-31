@@ -302,27 +302,3 @@ class StereoExpData(Data):
             self.exp_matrix = quantile_norm(self.exp_matrix)
         else:
             return quantile_norm(self.exp_matrix)
-
-    def sctransform(self):
-        pass
-
-    def pca(self):
-        pass
-
-    def umap(self):
-        pass
-
-    def tsen(self):
-        pass
-
-    def highly_variable_genes(self):
-        pass
-
-    def find_margers(self):
-        pass
-
-    def spatial_lag(self):
-        pass
-
-    def spatial_pattern_score(self):
-        pass
