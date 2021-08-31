@@ -11,3 +11,4 @@
 from .qc import plot_spatial_distribution, plot_genes_count, plot_violin_distribution
 from .scatter import plot_scatter
 from .marker_genes import plot_marker_genes_text, plot_marker_genes_heatmap
+from .plot_collection import PlotCollection

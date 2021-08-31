@@ -51,6 +51,17 @@ def plot(data,out):
     # plot_genes_count(data)
 
 
+# add by qdh
+def plot_object():
+    import pickle
+    from stereo.plots.plot_collection import PlotCollection
+    from stereo.preprocess.qc import cal_qc
+    with open('/ldfssz1/ST_BI/USER/qindanhua/projects/st/data/test_data.pickle', 'rb') as r:
+        data = pickle.load(r)
+    cal_qc(data)
+    plt = PlotCollection(data)
+
+
 if __name__ == '__main__':
     out=sys.argv[1]
     print(out)
