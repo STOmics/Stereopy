@@ -10,7 +10,6 @@ from scipy.sparse import coo_matrix
 from sklearn.neighbors import NearestNeighbors
 import igraph as ig
 import numpy as np
-from umap.umap_ import fuzzy_simplicial_set
 
 
 class Neighbors(object):
@@ -62,6 +61,7 @@ class Neighbors(object):
         return distances.tocsr()
 
     def get_connectivities(self, nn_idx, nn_dist):
+        from umap.umap_ import fuzzy_simplicial_set
         n_obs = self.x.shape[0]
         x = coo_matrix(([], ([], [])), shape=(n_obs, 1))
         connectivities = fuzzy_simplicial_set(x, self.n_neighbors, None, None, knn_indices=nn_idx, knn_dists=nn_dist,

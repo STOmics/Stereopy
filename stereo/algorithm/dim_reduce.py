@@ -5,7 +5,7 @@
 """
 
 import numpy as np
-import umap
+# import umap
 from sklearn.decomposition import FactorAnalysis
 from sklearn.manifold import TSNE
 from sklearn.decomposition import PCA
@@ -80,6 +80,7 @@ def u_map(x, n_pcs, n_neighbors=5, min_dist=0.3):
     :param min_dist: the min value of distance.
     :return: ndarray of shape (n_samples, n_components) Embedding of the training data in low-dimensional space.
     """
+    import umap
     umap_obj = umap.UMAP(n_neighbors=n_neighbors, n_components=n_pcs, min_dist=min_dist)
     umap_x = umap_obj.fit_transform(x)
     return umap_x

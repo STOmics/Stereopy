@@ -71,11 +71,11 @@ class FindMarker(ToolBase):
         else:
             self._corr_method = corr_method
 
+    @ToolBase.fit_log
     def fit(self):
         """
         run
         """
-        self.logger.info('start to run find marker genes...')
         self.data.sparse2array()
         if self.groups is None:
             raise ValueError(f'group information must be set')
@@ -98,7 +98,6 @@ class FindMarker(ToolBase):
                                                                                        self.corr_method)
             result['groups'] = f"{g}.vs.{control_str}"
             self.result[f"{g}.vs.{control_str}"] = result
-        self.logger.info('end to run find marker genes...')
 
     @staticmethod
     def merge_groups_data(g1, g2):

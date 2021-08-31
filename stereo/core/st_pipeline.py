@@ -216,12 +216,3 @@ class StPipeline(object):
         tool = SpatialPatternScore(data=self.data)
         tool.fit()
         self.result[res_key] = tool.result
-
-    def plot_qc_spatial_scatter(self):
-        pass
-
-    def plot_qc_voinlin(self):
-        pass
-
-    def plot_qc_distribution(self):
-        pass

@@ -12,11 +12,11 @@ change log:
 from stereo.log_manager import logger
 import pandas as pd
 from ..core.stereo_exp_data import StereoExpData
-from scipy.sparse import issparse
 from typing import Optional
 import requests
 import os
 import importlib
+import functools
 
 
 class ToolBase(object):
@@ -146,6 +146,16 @@ class ToolBase(object):
 
     def fit(self):
         pass
+
+    @classmethod
+    def fit_log(cls, func):
+
+        @functools.wraps(func)
+        def wrapper(*args, **kwargs):
+            logger.info('start to run...')
+            func(*args, **kwargs)
+            logger.info('end to run.')
+        return wrapper
 
     @staticmethod
     def get_func_by_path(path, func_name):
