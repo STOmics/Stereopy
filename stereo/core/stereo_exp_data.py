@@ -22,6 +22,7 @@ import copy
 from ..preprocess.qc import cal_qc
 from ..preprocess.filter import filter_cells, filter_genes, filter_coordinates
 from ..algorithm.normalization import normalize_total, quantile_norm, zscore_disksmooth
+from .st_pipeline import StPipeline
 
 
 class StereoExpData(Data):
@@ -61,6 +62,8 @@ class StereoExpData(Data):
         self._position = position
         self._bin_type = bin_type
         self.bin_size = bin_size
+        self.tl = StPipeline(self)
+        self.plt = self.get_plot()
 
     def init(self):
         self.check()
@@ -68,6 +71,11 @@ class StereoExpData(Data):
             logger.info("init the property of StereoData from a file, which take some time if file is too large.")
             # read(self,bin_size=self.bin_size)
         logger.info("init finish.")
+
+    def get_plot(self):
+        from ..plots.plot_collection import PlotCollection
+
+        return PlotCollection(self)
 
     def sub_by_index(self, cell_index=None, gene_index=None):
         """

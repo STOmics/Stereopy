@@ -91,6 +91,7 @@ class FindMarker(ToolBase):
                 other_g.remove(g)
             else:
                 other_g = self.control_group
+            other_g = list(other_g)
             g_data = select_group(st_data=self.data, groups=g, cluster=group_info)
             other_data = select_group(st_data=self.data, groups=other_g, cluster=group_info)
             g_data, other_data = self.merge_groups_data(g_data, other_data)
