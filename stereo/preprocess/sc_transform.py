@@ -6,7 +6,7 @@
 """
 from stereo.algorithm.pysctransform import get_hvg_residuals, vst
 # from stereo.core.stereo_exp_data import StereoExpData
-from scipy.sparse import issparse
+from scipy.sparse import issparse, csr_matrix
 import numpy as np
 
 
@@ -38,6 +38,7 @@ def sc_transform(
     :return:
     """
     if not issparse(data.exp_matrix):
+        data.exp_matrix = csr_matrix(data.exp_matrix)
         raise ValueError(f'data.exp_matrix should be sparse matrix')
     exclude_poisson = False
     vst_out = vst(

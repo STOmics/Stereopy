@@ -15,13 +15,10 @@ from typing import Optional
 
 def select_group(st_data, groups, cluster):
     all_groups = set(cluster['group'].values)
-    groups = [groups] if isinstance(groups, str) else groups
+    groups = groups if isinstance(groups, list) else [groups]
     for g in groups:
         if g not in all_groups:
             raise ValueError(f"cluster {g} is not in all cluster.")
-    # cluster = cluster.set_index(['bins'])
-    # st_data.cells['cluster'] = cluster['cluster']
-    # print(andata.obs)
     group_index = cluster['group'].isin(groups)
     exp_matrix = st_data.exp_matrix.toarray() if issparse(st_data.exp_matrix) else st_data.exp_matrix
     group_sub = exp_matrix[group_index, :]

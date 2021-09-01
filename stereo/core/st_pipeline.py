@@ -22,9 +22,6 @@ from ..algorithm.neighbors import Neighbors
 import leidenalg as la
 import phenograph
 import pandas as pd
-from ..tools.find_markers import FindMarker
-from ..tools.spatial_pattern_score import SpatialPatternScore
-from ..tools.spatial_lag import SpatialLag
 
 
 class StPipeline(object):
@@ -82,8 +79,23 @@ class StPipeline(object):
         else:
             self.result[res_key] = zscore_disksmooth(self.data.exp_matrix, self.data.partitions, r)
 
-    def sctransform(self):
-        pass
+    def sctransform(self,
+                    method="theta_ml",
+                    n_cells=5000,
+                    n_genes=2000,
+                    filter_hvgs=False,
+                    res_clip_range="seurat",
+                    var_features_n=3000,
+                    inplace=True,
+                    res_key='sctransform'):
+        from ..preprocess.sc_transform import sc_transform
+        if inplace:
+            sc_transform(self.data, method, n_cells, n_genes, filter_hvgs, res_clip_range, var_features_n)
+        else:
+            import copy
+            data = copy.deepcopy(self.data)
+            self.result[res_key] = sc_transform(data, method, n_cells, n_genes, filter_hvgs,
+                                                res_clip_range, var_features_n)
 
     def highly_var_genes(self,
                          groups=None,
@@ -110,15 +122,15 @@ class StPipeline(object):
         data.sub_by_index(gene_index=genes_index)
         return data
 
-    def pca(self, use_highly_genes, hvg_res_key, n_pcs, res_key='pca'):
+    def pca(self, use_highly_genes, hvg_res_key, n_pcs, res_key='dim_reduce'):
         if use_highly_genes and hvg_res_key not in self.result:
             raise Exception(f'{hvg_res_key} is not in the result, please check and run the highly_var_genes func.')
         data = self.subset_by_hvg(hvg_res_key, inplace=False) if use_highly_genes else self.data
         x = data.exp_matrix.toarray() if issparse(data.exp_matrix) else data.exp_matrix
         res = pca(x, n_pcs)
-        self.result[res_key] = res
+        self.result[res_key] = pd.DataFrame(res['x_pca'])
 
-    def umap(self, use_highly_genes, hvg_res_key, n_pcs, n_neighbors=5, min_dist=0.3, res_key='pca'):
+    def umap(self, use_highly_genes, hvg_res_key, n_pcs, n_neighbors=5, min_dist=0.3, res_key='dim_reduce'):
         if use_highly_genes and hvg_res_key not in self.result:
             raise Exception(f'{hvg_res_key} is not in the result, please check and run the highly_var_genes func.')
         data = self.subset_by_hvg(hvg_res_key, inplace=False) if use_highly_genes else self.data
@@ -143,7 +155,7 @@ class StPipeline(object):
         nn_dist = neighbors_res['nn_dist']
         return neighbor, nn_idx, nn_dist
 
-    def leiden(self, neighbors_res_key, res_key='leiden', diff=1):
+    def leiden(self, neighbors_res_key, res_key='cluster', diff=1):
         neighbor, nn_idx, nn_dist = self.get_neighbors_res(neighbors_res_key)
         g = neighbor.get_igraph_from_knn(nn_idx, nn_dist)
         optimiser = la.Optimiser()
@@ -153,25 +165,25 @@ class StPipeline(object):
         clusters = np.arange(len(self.data.cell_names))
         for i in range(len(leiden_partition)):
             clusters[leiden_partition[i]] = str(i)
-        df = pd.DataFrame({'bins': self.data.cell_names, 'cluster': clusters})
+        df = pd.DataFrame({'bins': self.data.cell_names, 'group': clusters})
         self.result[res_key] = df
 
-    def louvain(self, neighbors_res_key, res_key='louvain'):
+    def louvain(self, neighbors_res_key, res_key='cluster'):
         neighbor, nn_idx, nn_dist = self.get_neighbors_res(neighbors_res_key)
         g = neighbor.get_igraph_from_knn(nn_idx, nn_dist)
         louvain_partition = g.community_multilevel(weights=g.es['weight'], return_levels=False)
         clusters = np.arange(len(self.data.cell_names))
         for i in range(len(louvain_partition)):
             clusters[louvain_partition[i]] = str(i)
-        df = pd.DataFrame({'bins': self.data.cell_names, 'cluster': clusters})
+        df = pd.DataFrame({'bins': self.data.cell_names, 'group': clusters})
         self.result[res_key] = df
 
-    def phenograph_cluster(self, phenograph_k, pca_res_key, res_key='phenograph'):
+    def phenograph_cluster(self, phenograph_k, pca_res_key, res_key='cluster'):
         if pca_res_key not in self.result:
             raise Exception(f'{pca_res_key} is not in the result, please check and run the pca func.')
-        communities, _, _ = phenograph.cluster(self.result[phenograph_k], k=phenograph_k)
+        communities, _, _ = phenograph.cluster(self.result[pca_res_key], k=phenograph_k)
         clusters = communities.astype(str)
-        df = pd.DataFrame({'bins': self.data.cell_names, 'cluster': clusters})
+        df = pd.DataFrame({'bins': self.data.cell_names, 'group': clusters})
         self.result[res_key] = df
 
     def find_marker_genes(self,
@@ -185,6 +197,8 @@ class StPipeline(object):
                           hvg_res_key: Optional[str] = None,
                           res_key: str = 'marker_genes'
                           ):
+        from ..tools.find_markers import FindMarker
+
         if use_highly_genes and hvg_res_key not in self.result:
             raise Exception(f'{hvg_res_key} is not in the result, please check and run the highly_var_genes func.')
         if use_raw and not self.raw:
@@ -195,7 +209,6 @@ class StPipeline(object):
         data = self.subset_by_hvg(hvg_res_key, inplace=False) if use_highly_genes else data
         tool = FindMarker(data=data, groups=self.result[cluster_res_key], method=method, case_groups=case_groups,
                           control_groups=control_groups, corr_method=corr_method)
-        tool.fit()
         self.result[res_key] = tool.result
 
     def spatial_lag(self,
@@ -205,6 +218,7 @@ class StPipeline(object):
                     drop_dummy=None,
                     n_neighbors=8,
                     res_key='spatial_lag'):
+        from ..tools.spatial_lag import SpatialLag
         if cluster_res_key not in self.result:
             raise Exception(f'{cluster_res_key} is not in the result, please check and run the func of cluster.')
         tool = SpatialLag(data=self.data, groups=self.result[cluster_res_key], genes=genes, random_drop=random_drop,
@@ -213,6 +227,8 @@ class StPipeline(object):
         self.result[res_key] = tool.result
 
     def spatial_pattern_score(self, res_key='spatial_pattern'):
+        from ..tools.spatial_pattern_score import SpatialPatternScore
+
         tool = SpatialPatternScore(data=self.data)
         tool.fit()
         self.result[res_key] = tool.result

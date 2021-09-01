@@ -5,22 +5,19 @@
 @time:2021/04/14
 """
 from typing import Optional
-from .qc import plot_genes_count, plot_spatial_distribution, plot_violin_distribution
-from .interactive_scatter import InteractiveScatter
-from .marker_genes import plot_marker_genes_heatmap, plot_marker_genes_text
-from .scatter import plot_scatter, plot_multi_scatter, colors, plt
 import colorcet as cc
 import numpy as np
+from .scatter import plot_scatter, plot_multi_scatter, colors
 
 
 class PlotCollection:
+
     def __init__(
             self,
             data
     ):
         self.data = data
         self.result = self.data.tl.result
-        # self.result = dict()
 
     def plot_genes_count(self, **kwargs):
         """
@@ -28,6 +25,8 @@ class PlotCollection:
         :param kwargs:
         :return:
         """
+        from .qc import plot_genes_count
+
         plot_genes_count(data=self.data, **kwargs)
 
     def plot_spatial_distribution(self, **kwargs):
@@ -36,6 +35,8 @@ class PlotCollection:
         :param kwargs:
         :return:
         """
+        from .qc import plot_spatial_distribution
+
         plot_spatial_distribution(self.data, **kwargs)
 
     def plot_violin_distribution(self):
@@ -43,9 +44,12 @@ class PlotCollection:
 
         :return:
         """
+        from .qc import plot_violin_distribution
         plot_violin_distribution(self.data)
 
     def interact_spatial_distribution(self, inline=True):
+        from .interactive_scatter import InteractiveScatter
+
         ins = InteractiveScatter(self.data)
         fig = ins.interact_scatter()
         if not inline:
@@ -53,9 +57,9 @@ class PlotCollection:
         return ins
 
     def plot_dim_reduce(self,
-                        gene_name: Optional[list],
+                        gene_name: Optional[list] = None,
                         res_key='dim_reduce',
-                        cluster_key='None',
+                        cluster_key=None,
                         **kwargs):
         """
         plot scatter after dimension reduce
@@ -71,7 +75,7 @@ class PlotCollection:
             return plot_scatter(
                 res.values[:, 0],
                 res.values[:, 1],
-                color_values=np.array(cluster_res['cluster']),
+                color_values=np.array(cluster_res['group']),
                 color_list=cc.glasbey,
                 **kwargs)
         else:
@@ -109,7 +113,7 @@ class PlotCollection:
         ax = plot_scatter(
             self.data.position[:, 0],
             self.data.position[:, 1],
-            color_values=np.array(res['cluster']),
+            color_values=np.array(res['group']),
             color_list=cc.glasbey,
             **kwargs
         )
@@ -123,6 +127,7 @@ class PlotCollection:
         :param kwargs:
         :return:
         """
+        from .marker_genes import plot_marker_genes_text
         res = self.check_res_key(res_key)
         plot_marker_genes_text(res, **kwargs)
 
@@ -133,6 +138,7 @@ class PlotCollection:
         :param kwargs:
         :return:
         """
+        from .marker_genes import plot_marker_genes_heatmap
         maker_res = self.check_res_key(res_key)
         cluster_res = self.check_res_key(cluster_res_key)
         plot_marker_genes_heatmap(
@@ -149,7 +155,7 @@ class PlotCollection:
         :return:
         """
         if res_key in self.result:
-            res = res_key[res_key]
+            res = self.result[res_key]
             return res
         else:
             raise ValueError(f'{res_key} result not found, please run tool before plot')
