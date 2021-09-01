@@ -17,6 +17,7 @@ import numpy as np
 import pandas as pd
 from ._plot_basic.scatter_plt import scatter
 from typing import Optional, Union
+import seaborn as sns
 
 
 colors = ['violet', 'turquoise', 'tomato', 'teal','tan', 'silver', 'sienna', 'red', 'purple', 'plum', 'pink',
@@ -215,3 +216,39 @@ def plot_multi_scatter(
                      color_list=color_list
                      )
     return fig
+
+
+def plot_volcano(
+        data,
+        x,
+        y,
+        hue,
+        hue_order=('down', 'normal', 'up'),
+        palette=("#377EB8", "grey", "#E41A1C"),
+        alpha=0.5,
+        s=15,
+        x_label='log2(fold change)',
+        y_label='-log10(pvalue)',
+        cut_off_pvalue=0.0000001,
+        cut_off_logFC=1,
+        xmin=-6,
+        xmax=10,
+        ymin=7,
+        ymax=13,
+):
+    ax = sns.scatterplot(
+        x=x,
+        y=y,
+        hue=hue,
+        hue_order=hue_order,
+        palette=palette,
+        alpha=alpha,
+        s=s,
+        data=data
+    )
+    ax.vlines(-cut_off_logFC, ymin, ymax, color='dimgrey', linestyle='dashed', linewidth=1)  # 画竖直线
+    ax.vlines(cut_off_logFC, ymin, ymax, color='dimgrey', linestyle='dashed', linewidth=1)  # 画竖直线
+    ax.hlines(-np.log10(cut_off_pvalue), xmin, xmax, color='dimgrey', linestyle='dashed', linewidth=1)  # 画竖水平线
+    ax.set_ylabel(y_label, fontweight='bold')  # 设置y轴标签
+    ax.set_xlabel(x_label, fontweight='bold')  # 设置x轴标签
+    return ax
