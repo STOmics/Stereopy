@@ -15,7 +15,7 @@ import pickle
 # with open('/ldfssz1/ST_BI/USER/qindanhua/projects/st/data/test_data', 'wb') as w:
 #     pickle.dump(data, w)
 
-with open('/ldfssz1/ST_BI/USER/qindanhua/projects/st/data/test_data.pickle', 'rb') as r:
+with open('/ldfssz1/ST_BI/USER/qindanhua/projects/st/data/b2_bin200.pk', 'rb') as r:
     data = pickle.load(r)
 
 from anndata import AnnData

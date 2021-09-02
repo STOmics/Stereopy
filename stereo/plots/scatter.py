@@ -218,37 +218,101 @@ def plot_multi_scatter(
     return fig
 
 
-def plot_volcano(
-        data,
-        x,
-        y,
-        hue,
+def volcano(
+        data: Optional[pd.DataFrame], x: Optional[str], y: Optional[str], hue: Optional[str],
         hue_order=('down', 'normal', 'up'),
         palette=("#377EB8", "grey", "#E41A1C"),
-        alpha=0.5,
-        s=15,
-        x_label='log2(fold change)',
-        y_label='-log10(pvalue)',
-        cut_off_pvalue=0.0000001,
-        cut_off_logFC=1,
-        xmin=-6,
-        xmax=10,
-        ymin=7,
-        ymax=13,
+        alpha=1, s=15,
+        label: Optional[str] = None, text_visible: Optional[str] = None,
+        x_label='log2(fold change)', y_label='-log10(pvalue)',
+        vlines=True, cut_off_pvalue=0.01, cut_off_logFC=1,
 ):
+    """
+
+    :param data: data frame
+    :param x: key in data, variables that specify positions on the x axes.
+    :param y: key in data, variables that specify positions on the y axes.
+    :param hue: key in data, variables that specify maker gene.
+    :param hue_order:
+    :param palette: color set
+    :param alpha: visible alpha
+    :param s: dot size
+    :param label: key in data, variables that specify dot label
+    :param text_visible: key in data, variables that specify to show this dot's label or not
+    :param x_label:
+    :param y_label:
+    :param cut_off_pvalue: used when plot vlines
+    :param cut_off_logFC: used when plot vlines
+    :param vlines: plot vlines or not
+    :return:
+    """
     ax = sns.scatterplot(
-        x=x,
-        y=y,
-        hue=hue,
+        data=data,
+        x=x, y=y, hue=hue,
         hue_order=hue_order,
         palette=palette,
-        alpha=alpha,
-        s=s,
-        data=data
+        alpha=alpha, s=s,
     )
-    ax.vlines(-cut_off_logFC, ymin, ymax, color='dimgrey', linestyle='dashed', linewidth=1)  # 画竖直线
-    ax.vlines(cut_off_logFC, ymin, ymax, color='dimgrey', linestyle='dashed', linewidth=1)  # 画竖直线
-    ax.hlines(-np.log10(cut_off_pvalue), xmin, xmax, color='dimgrey', linestyle='dashed', linewidth=1)  # 画竖水平线
+    ax.spines['right'].set_visible(False)  # 去掉右边框
+    ax.spines['top'].set_visible(False)  # 去掉上边框
     ax.set_ylabel(y_label, fontweight='bold')  # 设置y轴标签
     ax.set_xlabel(x_label, fontweight='bold')  # 设置x轴标签
+
+    if vlines:
+        xmin = int(data['x'].min())
+        xmax = int(data['x'].max())
+        ymin = int(data['y'].min())
+        ymax = int(data['y'].max())
+        ax.vlines(-cut_off_logFC, ymin, ymax, color='dimgrey', linestyle='dashed', linewidth=1)  # 画竖直线
+        ax.vlines(cut_off_logFC, ymin, ymax, color='dimgrey', linestyle='dashed', linewidth=1)  # 画竖直线
+        ax.hlines(-np.log10(cut_off_pvalue), xmin, xmax, color='dimgrey', linestyle='dashed', linewidth=1)  # 画竖水平线
+        # ax.set_xticks(range(xmin, xmax, 4))# 设置x轴刻度
+        # ax.set_yticks(range(ymin, ymax, 2))# 设置y轴刻度
+    if label and text_visible:
+        for line in range(0, data.shape[0]):
+            if data[text_visible][line]:
+                ax.text(
+                    data[x][line] + 0.01,
+                    data[y][line],
+                    data[label][line],
+                    horizontalalignment='left',
+                    size='medium',
+                    color='black',
+                    # weight='semibold'
+                )
     return ax
+
+
+def highly_variable_genes(
+        data: Optional[pd.DataFrame]
+):
+    seurat_v3_flavor = "variances_norm" in data.columns
+    if seurat_v3_flavor:
+        y_label = 'variances'
+    else:
+        y_label = 'dispersions'
+    data['gene type'] = ['highly variable genes' if i else 'other genes' for i in data['highly_variable']]
+    fig = plt.figure(figsize=(12, 6))
+    ax1 = fig.add_subplot(121)
+    ax2 = fig.add_subplot(122)
+    sns.scatterplot(x="means", y=y_label+'_norm',
+                    hue='gene type',
+                    hue_order=('highly variable genes', 'other genes'),
+                    palette=("black", "#ccc"),
+                    alpha=1,
+                    s=15,
+                    data=data, ax=ax1
+                    )
+    sns.scatterplot(x="means", y=y_label,
+                    hue='gene type',
+                    hue_order=('highly variable genes', 'other genes'),
+                    palette=("black", "#ccc"),
+                    alpha=1,
+                    s=15,
+                    data=data, ax=ax2
+                    )
+    ax1.set_xlabel('mean expression of genes', fontsize=15)
+    ax1.set_ylabel('dispersions of genes (normalized)', fontsize=15)
+    ax2.set_xlabel('mean expression of genes', fontsize=15)
+    ax2.set_ylabel('dispersions of genes (not normalized)', fontsize=15)
+    return fig
