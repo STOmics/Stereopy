@@ -41,7 +41,6 @@ def heatmap(df: pd.DataFrame = None, ax: Axes = None, cmap=None, norm=None, plot
         plot_colorbar = False
 
     kwargs.setdefault('interpolation', 'nearest')
-    print(df.values)
     im = ax.imshow(df.values, aspect='auto', norm=norm, **kwargs)
 
     ax.set_ylim(df.shape[0] - 0.5, -0.5)
