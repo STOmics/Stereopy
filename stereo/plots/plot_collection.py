@@ -141,6 +141,7 @@ class PlotCollection:
         from .marker_genes import plot_marker_genes_heatmap
         maker_res = self.check_res_key(res_key)
         cluster_res = self.check_res_key(cluster_res_key)
+        cluster_res = cluster_res.set_index(['bins'])
         plot_marker_genes_heatmap(
             self.data,
             cluster_res,

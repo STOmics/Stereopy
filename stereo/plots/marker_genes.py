@@ -138,7 +138,6 @@ def make_draw_df(data: StereoExpData, group: pd.DataFrame, marker_res: dict, top
         gene_group_positions.append((start, start + len(gene_list) - 1))
         start += len(gene_list)
     draw_df = data_helper.exp_matrix2df(data, gene_name=np.array(gene_names))
-    # add obs values
     draw_df = pd.concat([draw_df, group], axis=1)
     draw_df['group'] = draw_df['group'].astype('category')
     draw_df = draw_df.set_index(['group'])
