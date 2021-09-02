@@ -71,7 +71,7 @@ def wilcoxon_test(group, other_group, corr_method=None):
 def cal_log2fc(group, other_group):
     g_mean = np.mean(group.values, axis=0)
     other_mean = np.mean(other_group.values, axis=0)
-    log2fc = g_mean - np.log2(other_mean + 10e-5)
+    log2fc = np.log2(g_mean/other_mean + 10e-5)
     return log2fc
 
 
