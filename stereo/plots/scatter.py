@@ -283,6 +283,21 @@ def volcano(
     return ax
 
 
+def maker_gene_volcano(
+        data,
+        cut_off_pvalue=0.01,
+        cut_off_logFC=1,
+        **kwargs
+):
+    df = data
+    df['x'] = df['log2fc']
+    df['y'] = -df['pvalues'].apply(np.log10)
+    df.loc[(df.x > cut_off_logFC) & (df.pvalues < cut_off_pvalue), 'group'] = 'up'
+    df.loc[(df.x < -cut_off_logFC) & (df.pvalues < cut_off_pvalue), 'group'] = 'down'
+    df.loc[(df.x >= -cut_off_logFC) & (df.x <= cut_off_logFC) | (df.pvalues >= cut_off_pvalue), 'group'] = 'normal'
+    volcano(df, x='x', y='y', hue='group', **kwargs)
+
+
 def highly_variable_genes(
         data: Optional[pd.DataFrame]
 ):

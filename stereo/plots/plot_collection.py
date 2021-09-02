@@ -7,7 +7,7 @@
 from typing import Optional
 import colorcet as cc
 import numpy as np
-from .scatter import plot_scatter, plot_multi_scatter, colors
+from .scatter import plot_scatter, plot_multi_scatter, colors, maker_gene_volcano, highly_variable_genes
 
 
 class PlotCollection:
@@ -18,6 +18,14 @@ class PlotCollection:
     ):
         self.data = data
         self.result = self.data.tl.result
+
+    def highly_variable_genes(self, res_key='highly_var_genes'):
+        res = self.check_res_key(res_key)
+        highly_variable_genes(res)
+
+    def maker_gene_volcano(self, group_name, res_key='marker_genes'):
+        res = self.check_res_key(res_key)[group_name]
+        maker_gene_volcano(res)
 
     def plot_genes_count(self, **kwargs):
         """

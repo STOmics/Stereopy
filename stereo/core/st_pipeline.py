@@ -20,7 +20,7 @@ from typing import Optional, Union
 import copy
 from ..algorithm.neighbors import Neighbors
 import leidenalg as la
-import phenograph
+# import phenograph
 import pandas as pd
 
 
