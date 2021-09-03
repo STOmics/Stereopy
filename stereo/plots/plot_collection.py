@@ -23,9 +23,9 @@ class PlotCollection:
         res = self.check_res_key(res_key)
         highly_variable_genes(res)
 
-    def maker_gene_volcano(self, group_name, res_key='marker_genes'):
+    def marker_gene_volcano(self, group_name, res_key='marker_genes', **kwargs):
         res = self.check_res_key(res_key)[group_name]
-        maker_gene_volcano(res)
+        maker_gene_volcano(res, **kwargs)
 
     def plot_genes_count(self, **kwargs):
         """
