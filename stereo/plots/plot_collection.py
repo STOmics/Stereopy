@@ -19,11 +19,37 @@ class PlotCollection:
         self.data = data
         self.result = self.data.tl.result
 
+    def interact_cluster(self, res_key='cluster', inline=True, **kwargs):
+        res = self.check_res_key(res_key)
+        from .interact_plot.spatial_cluster import interact_spatial_cluster
+        import pandas as pd
+        df = pd.DataFrame({
+            'x': self.data.position[:, 0],
+            'y': self.data.position[:, 1],
+            'group': np.array(res['group'])
+        })
+        fig = interact_spatial_cluster(df, **kwargs)
+        if not inline:
+            fig.show()
+        return fig
+
     def highly_variable_genes(self, res_key='highly_var_genes'):
+        """
+
+        :param res_key: result key
+        :return:
+        """
         res = self.check_res_key(res_key)
         highly_variable_genes(res)
 
     def marker_gene_volcano(self, group_name, res_key='marker_genes', **kwargs):
+        """
+
+        :param group_name: group name
+        :param res_key: result key
+        :param kwargs:
+        :return:
+        """
         res = self.check_res_key(res_key)[group_name]
         maker_gene_volcano(res, **kwargs)
 
@@ -56,7 +82,12 @@ class PlotCollection:
         plot_violin_distribution(self.data)
 
     def interact_spatial_distribution(self, inline=True):
-        from .interactive_scatter import InteractiveScatter
+        """
+
+        :param inline: notebook out if true else open at a new window
+        :return:
+        """
+        from .interact_plot.interactive_scatter import InteractiveScatter
 
         ins = InteractiveScatter(self.data)
         fig = ins.interact_scatter()
@@ -73,7 +104,7 @@ class PlotCollection:
         plot scatter after dimension reduce
         :param gene_name list of gene names
         :param cluster_key: dot color set by cluster if given
-        :param res_key:
+        :param res_key: result key
         :return:
         """
         res = self.check_res_key(res_key)

@@ -12,3 +12,5 @@ from .qc import plot_spatial_distribution, plot_genes_count, plot_violin_distrib
 from .scatter import plot_scatter
 from .marker_genes import plot_marker_genes_text, plot_marker_genes_heatmap
 from .plot_collection import PlotCollection
+from .interact_plot.spatial_cluster import interact_spatial_cluster
+from .interact_plot.interactive_scatter import InteractiveScatter
