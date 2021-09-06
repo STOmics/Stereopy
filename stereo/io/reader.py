@@ -280,3 +280,54 @@ def stereo_to_anndata(stereo_data: StereoExpData):
 #
 #     adata.obs_names = pd.read_csv(barcodesfile, header=None)[0].values
 #     return adata
+
+
+def read_gef(file_path, bin_type='bins', bin_size=100, is_sparse=True, genes=None):
+    logger.info(f'read_gef begin')
+    data = StereoExpData(file_path=file_path)
+    with h5py.File(file_path, mode='r') as h5f:
+        bin_tag = 'bin{}'.format(bin_size)
+        if bin_tag not in h5f['geneExp'].keys():
+            raise Exception('The bin size {} info is not in the GEF file'.format(bin_size))
+
+        h5exp = h5f['geneExp'][bin_tag]['expression']
+        h5gene = h5f['geneExp'][bin_tag]['gene']
+        cols = np.zeros(h5exp.shape[0], dtype='uint32')
+        gene_index = 0
+        exp_index = 0
+        df_gene = pd.DataFrame(h5gene['offset', 'count'])
+        for offset, count in zip(df_gene['offset'], df_gene['count']):
+            for i in range(count):
+                cols[exp_index] = gene_index
+                exp_index += 1
+            gene_index += 1
+
+        genes = h5gene['gene']
+
+        df = pd.DataFrame(h5exp['x', 'y'])
+        gdf = None
+        if bin_type == 'cell_bins':
+            # TODO
+            raise Exception("TODO cell_bins ...")
+            # df.rename(columns={'label': 'cell_id'}, inplace=True)
+            # gdf = data.parse_cell_bin_coor(df)
+        else:
+            df['cell_id'] = df['x'].astype(str) + '_' + df['y'].astype(str)
+            df['x_center'] = df['x'] * bin_size + int(bin_size / 2)
+            df['y_center'] = df['y'] * bin_size + int(bin_size / 2)
+        cells = df['cell_id'].unique()
+        cells_dict = dict(zip(cells, range(0, len(cells))))
+
+        rows = df['cell_id'].map(cells_dict)
+        logger.info(f'the martrix has {len(cells)} cells, and {len(genes)} genes.')
+        exp_matrix = csr_matrix((h5exp['count'], (rows, cols)), shape=(cells.shape[0], genes.shape[0]), dtype=np.int)
+        data.cells = Cell(cell_name=cells)
+        data.genes = Gene(gene_name=genes)
+        data.exp_matrix = exp_matrix if is_sparse else exp_matrix.toarray()
+        if bin_type == 'bins':
+            data.position = df.loc[:, ['x_center', 'y_center']].drop_duplicates().values
+        else:
+            data.position = gdf.loc[cells][['x_center', 'y_center']].values
+            data.cells.cell_point = gdf.loc[cells]['cell_point'].values
+    logger.info(f'read_gef end')
+    return data

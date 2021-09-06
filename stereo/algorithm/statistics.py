@@ -77,21 +77,12 @@ def cal_log2fc(group, other_group):
 
 def logreg(x, y, **kwds):
     from sklearn.linear_model import LogisticRegression
-    # Indexing with a series causes issues, possibly segfault
     clf = LogisticRegression(**kwds)
     clf.fit(x, y)
     scores_all = clf.coef_
-    groups_order = pd.Series(y).astype('category').cat.categories
-    for igroup, _ in enumerate(groups_order):
-        if len(groups_order) <= 2:  # binary logistic regression
-            scores = scores_all[0]
-        else:
-            scores = scores_all[igroup]
-
-        yield igroup, scores, None
-
-        if len(groups_order) <= 2:
-            break
+    group = [str(i) for i in clf.classes_] if len(clf.classes_) > 2 else None
+    res = pd.DataFrame(scores_all, index=group)
+    return res
 
 
 # def t_test_overestim_var():

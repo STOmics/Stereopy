@@ -10,6 +10,8 @@ change log:
     2021/05/20 rst supplement. by: qindanhua.
     2021/06/20 adjust for restructure base class . by: qindanhua.
 """
+import pandas as pd
+
 from ..utils.data_helper import select_group
 from ..core.tool_base import ToolBase
 from ..log_manager import logger
@@ -45,7 +47,7 @@ class FindMarker(ToolBase):
             groups=None,
             method: str = 't_test',
             case_groups: Union[str, np.ndarray] = 'all',
-            control_groups: Union[str, np.ndarray] = 'rest',
+            control_groups: str = 'rest',
             corr_method: str = 'bonferroni',
     ):
         super(FindMarker, self).__init__(data=data, groups=groups, method=method)
@@ -81,24 +83,54 @@ class FindMarker(ToolBase):
             raise ValueError(f'group information must be set')
         group_info = self.groups
         all_groups = set(group_info['group'].values)
-        case_groups = all_groups if self.case_groups == 'all' else set(self.case_groups)
+        if isinstance(self.case_groups, np.ndarray):
+            case_groups = set(self.case_groups)
+        elif self.case_groups == 'all':
+            case_groups = all_groups
+        else:
+            case_groups = [self.case_groups]
         control_str = self.control_group if isinstance(self.control_group, str) else \
             '-'.join([str(i) for i in self.control_group])
         self.result = {}
+        logres_score = self.logres_score() if self.method == 'logres' else None
         for g in tqdm(case_groups, desc='Find marker gene: '):
             if self.control_group == 'rest':
                 other_g = all_groups.copy()
                 other_g.remove(g)
             else:
-                other_g = self.control_group
+                other_g = [self.control_group]
             other_g = list(other_g)
             g_data = select_group(st_data=self.data, groups=g, cluster=group_info)
             other_data = select_group(st_data=self.data, groups=other_g, cluster=group_info)
             g_data, other_data = self.merge_groups_data(g_data, other_data)
             result = self.get_func_by_path('stereo.algorithm.statistics', self.method)(g_data, other_data,
-                                                                                       self.corr_method)
-            result['groups'] = f"{g}.vs.{control_str}"
+                                                                                       self.corr_method) \
+                if logres_score is None else self.run_logres(logres_score, g_data, other_data, g)
             self.result[f"{g}.vs.{control_str}"] = result
+
+    def logres_score(self):
+        from ..algorithm.statistics import logreg
+        x = self.data.exp_matrix
+        y = self.groups['group'].values
+        if (isinstance(self.case_groups, str) and self.case_groups != 'all') or isinstance(self.case_groups, np.ndarray):
+            use_group = [self.case_groups] if isinstance(self.case_groups, str) else list(self.case_groups)
+            use_group.append(self.control_group)
+            group_index = self.groups['group'].isin(use_group)
+            x = x[group_index, :]
+            y = y[group_index]
+        score_df = logreg(x, y)
+        score_df.columns = self.data.gene_names
+        return score_df
+
+    def run_logres(self, score_df, g_data, other_data, group_name):
+        from ..algorithm.statistics import cal_log2fc
+        res = pd.DataFrame()
+        res['genes'] = g_data.columns
+        gene_index = score_df.columns.isin(g_data.columns)
+        scores = score_df.loc[group_name].values if score_df.shape[0] > 1 else score_df.values[0]
+        res['scores'] = scores[gene_index]
+        res['log2fc'] = cal_log2fc(g_data, other_data)
+        return res
 
     @staticmethod
     def merge_groups_data(g1, g2):
