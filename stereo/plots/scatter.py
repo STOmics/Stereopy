@@ -20,7 +20,7 @@ from typing import Optional, Union
 import seaborn as sns
 
 
-colors = ['violet', 'turquoise', 'tomato', 'teal','tan', 'silver', 'sienna', 'red', 'purple', 'plum', 'pink',
+colors = ['violet', 'turquoise', 'tomato', 'teal', 'tan', 'silver', 'sienna', 'red', 'purple', 'plum', 'pink',
               'orchid', 'orangered', 'orange', 'olive', 'navy', 'maroon', 'magenta', 'lime',
               'lightgreen', 'lightblue', 'lavender', 'khaki', 'indigo', 'grey', 'green', 'gold', 'fuchsia',
               'darkgreen', 'darkblue', 'cyan', 'crimson', 'coral', 'chocolate', 'chartreuse', 'brown', 'blue', 'black',
@@ -285,17 +285,31 @@ def volcano(
 
 def maker_gene_volcano(
         data,
+        text_genes=None,
         cut_off_pvalue=0.01,
         cut_off_logFC=1,
         **kwargs
 ):
     df = data
+    if 'log2fc' not in df.columns or 'pvalues' not in df.columns:
+        raise ValueError(f'data frame should content log2fc and pvalues columns')
     df['x'] = df['log2fc']
     df['y'] = -df['pvalues'].apply(np.log10)
     df.loc[(df.x > cut_off_logFC) & (df.pvalues < cut_off_pvalue), 'group'] = 'up'
     df.loc[(df.x < -cut_off_logFC) & (df.pvalues < cut_off_pvalue), 'group'] = 'down'
     df.loc[(df.x >= -cut_off_logFC) & (df.x <= cut_off_logFC) | (df.pvalues >= cut_off_pvalue), 'group'] = 'normal'
-    volcano(df, x='x', y='y', hue='group', **kwargs)
+    if text_genes is not None:
+        # df['text'] = df['group'] == 'up'
+        df['label'] = df['genes'].isin(text_genes)
+        volcano(df, x='x', y='y', hue='group', label='genes', text_visible='label',
+                cut_off_pvalue=cut_off_pvalue,
+                cut_off_logFC=cut_off_logFC,
+                **kwargs)
+    else:
+        volcano(df, x='x', y='y', hue='group',
+                cut_off_pvalue=cut_off_pvalue,
+                cut_off_logFC=cut_off_logFC,
+                **kwargs)
 
 
 def highly_variable_genes(
