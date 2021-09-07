@@ -1,72 +1,113 @@
 #!/usr/bin/env python3
 # coding: utf-8
 """
-@author: Ping Qiu  qiuping1@genomics.cn
-@last modified by: Ping Qiu
-@file:neighbors.py
-@time:2021/03/23
+@file: neighbors.py
+@description: 
+@author: Yiran Wu
+@email: wuyiran@genomics.cn
+@last modified by: Yiran Wu
+
+change log:
+    2021/9/3 create file.
 """
-from scipy.sparse import coo_matrix
-from sklearn.neighbors import NearestNeighbors
-import igraph as ig
+
+from ..utils.data_helper import select_group
+from ..core.tool_base import ToolBase
+from ..log_manager import logger
+from tqdm import tqdm
+from typing import Union, Sequence
 import numpy as np
+from ..plots.marker_genes import plot_marker_genes_text, plot_marker_genes_heatmap
+from ..algorithm.neighbors import Neighbors
+from sklearn.metrics import pairwise_distances
+from typing import Optional
+import pandas as pd
 
+class Neighbors(ToolBase):
+    """
+    a tool of finding maker gene
+    for each group, find statistical test different genes between one group and the rest groups using t-test or wilcoxon_test
+    :param data: expression matrix, StereoExpData object
+    :param groups: group information matrix, at least two columns, treat first column as sample name, and the second as
+    group name e.g pd.DataFrame({'bin_cell': ['cell_1', 'cell_2'], 'cluster': ['1', '2']})
+    :param case_groups: default all clusters
+    :param control_groups: rest of groups
+    :param method: t-test or wilcoxon_test
+    :param corr_method: correlation method
+    Examples
+    --------
+    >>> from stereo.tools.find_markers import FindMarker
+    >>> fm = FindMarker()
+    """
 
-class Neighbors(object):
-    def __init__(self, x, n_neighbors):
-        self.x = x
-        self.n_neighbors = n_neighbors
+    def __init__(
+            self,
+            method: str = 'umap',
+            pca_x: Optional[pd.DataFrame] = None,
+            n_neighbors: Optional[int] = 30,
+            n_pcs: Optional[int] = 40,
+            metric: Optional[str] = 'euclidean',
+            knn: Optional[bool] = True,
+            find_neighbors: bool = False,
+            clustering: bool = True,
+            pca_pcs: Optional[int] = 50,
+    ):
+        super(Neighbors, self).__init__(pca_x=pca_x)
+        self.n_pcs = n_pcs,
+        self.metric = metric,
+        self.method = method,
+        self.knn = knn,
+        self.find_neighbors = find_neighbors,
+        self.n_neighbors = n_neighbors,
 
-    def find_n_neighbors(self):
-        nbrs = NearestNeighbors(n_neighbors=self.n_neighbors + 1, algorithm='ball_tree').fit(self.x)
-        dists, indices = nbrs.kneighbors(self.x)
-        nn_idx = indices[:, 1:]
-        nn_dist = dists[:, 1:]
-        return nn_idx, nn_dist
+    @property
+    def neighbors(self):
+        return self._neighbors
 
-    def get_igraph_from_knn(self, nn_idx, nn_dist):
-        j = nn_idx.ravel().astype(int)
-        dist = nn_dist.ravel()
-        i = np.repeat(np.arange(nn_idx.shape[0]), self.n_neighbors)
+    @neighbors.setter
+    def neighbors(self, n_neighbors: int):
+        if n_neighbors > len(self.data.cell_names):
+            logger.error(f'n neighbor should be less than {len(self.data.cell_names)}')
+            self._neighbors = self.neighbors
+        else:
+            self._neighbors = n_neighbors
 
-        vertex = list(range(nn_dist.shape[0]))
-        edges = list(tuple(zip(i, j)))
-        G = ig.Graph()
-        G.add_vertices(vertex)
-        G.add_edges(edges)
-        G.es['weight'] = dist
-        return G
+    @property
+    def pca_x(self):
+        return self.pca_x
 
-    def get_parse_distances(self, nn_idx, nn_dist):
-        n_obs = self.x.shape[0]
-        rows = np.zeros((n_obs * self.n_neighbors), dtype=np.int64)
-        cols = np.zeros((n_obs * self.n_neighbors), dtype=np.int64)
-        vals = np.zeros((n_obs * self.n_neighbors), dtype=np.float64)
+    @pca_x.setter
+    def pca_x(self, pca_x):
+        input_df = self._check_input_data(pca_x)
+        self.pca_x = input_df
 
-        for i in range(nn_idx.shape[0]):
-            for j in range(self.n_neighbors):
-                if nn_idx[i, j] == -1:
-                    continue  # We didn't get the full knn for i
-                if nn_idx[i, j] == i:
-                    val = 0.0
-                else:
-                    val = nn_dist[i, j]
+    def fit(self):
+        """
+        find neighbors
 
-                rows[i * self.n_neighbors + j] = i
-                cols[i * self.n_neighbors + j] = nn_idx[i, j]
-                vals[i * self.n_neighbors + j] = val
-
-        distances = coo_matrix((vals, (rows, cols)), shape=(n_obs, n_obs))
-        distances.eliminate_zeros()
-        return distances.tocsr()
-
-    def get_connectivities(self, nn_idx, nn_dist):
-        from umap.umap_ import fuzzy_simplicial_set
-        n_obs = self.x.shape[0]
-        x = coo_matrix(([], ([], [])), shape=(n_obs, 1))
-        connectivities = fuzzy_simplicial_set(x, self.n_neighbors, None, None, knn_indices=nn_idx, knn_dists=nn_dist,
-                                              set_op_mix_ratio=1.0, local_connectivity=1.0)
-        if isinstance(connectivities, tuple):
-            connectivities = connectivities[0]
-        return connectivities.tocsr()
-
+        :param x: input data array. [[cell_1, gene_count_1], [cell_1, gene_count_2], ..., [cell_M, gene_count_N]]
+        :return: neighbor object and neighbor cluster info
+        """
+        neighbor = Neighbors(self.pca_x, self.n_neighbors, self.n_pcs, self.metric, self.method, self.knn)
+        neighbor.check_setting()
+        self.pca_x = neighbor.choose_x()
+        use_dense_distances = (self.metric == 'euclidean' and self.pca_x.shape[0] < 8192) or not self.knn
+        dists = self.pca_x
+        if use_dense_distances:
+            dists = pairwise_distances(self.pca_x, metric=self.metric, )
+            knn_indices, knn_distances = neighbor.get_indices_distances_from_dense_matrix(dists, self.n_neighbors)
+            if self.knn:
+                dists = neighbor.get_parse_distances_numpy(
+                    knn_indices, knn_distances, self.pca_x.shape[0],
+                )
+        else:
+            if self.pca_x.shape[0] < 4096:
+                dists = pairwise_distances(self.pca_x, metric=self.metric)
+            self.metric = 'precomputed'
+            knn_indices, knn_distances, forest = neighbor.compute_neighbors_umap(dists, )
+        if not use_dense_distances or self.method in {'umap'}:
+            connectivities = neighbor.get_connectivities_umap(knn_indices, knn_distances)
+            dists = neighbor.get_parse_distances_umap(knn_indices, knn_distances, )
+        if self.method == 'gauss':
+            neighbor.compute_connectivities_diffmap(dists)
+        return neighbor, dists, connectivities
