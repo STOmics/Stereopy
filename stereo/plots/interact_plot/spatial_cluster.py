@@ -45,8 +45,8 @@ def interact_spatial_cluster(
     dot_slider = pn.widgets.IntSlider(name='dot size', value=dot_size_default, start=0, end=200, step=1, width=200)
     cs = list(sorted(np.array(list(s for s in set(df['group'])))))
 
-    theme_select = pn.widgets.Select(name='Select', options=list(colormaps.keys()), value=theme_default, width=200)
-    cluster_select = pn.widgets.Select(name='Select', options=cs, value=cs[0], width=100, loading=False)
+    theme_select = pn.widgets.Select(name='color theme', options=list(colormaps.keys()), value=theme_default, width=200)
+    cluster_select = pn.widgets.Select(name='cluster', options=cs, value=cs[0], width=100, loading=False)
 
     global color_key
     color_key = {k: c for k, c in zip(cs, cc.glasbey[0:len(cs)])}
