@@ -27,7 +27,7 @@ def interact_spatial_cluster(
 ):
     """
     :param df: data frame, eg:
-       x  y  cluster
+       x  y  group
     0  1  2        0
     1  2  3        1
     2  3  4        2
