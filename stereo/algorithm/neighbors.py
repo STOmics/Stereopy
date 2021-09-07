@@ -6,18 +6,20 @@
 @file:neighbors.py
 @time:2021/09/01
 """
-from scipy.sparse import issparse,coo_matrix,csr_matrix
+from scipy.sparse import issparse, coo_matrix, csr_matrix
 from sklearn.neighbors import NearestNeighbors
 import igraph as ig
 import numpy as np
-
-from sklearn.metrics import pairwise_distances
+from types import MappingProxyType
 from ..log_manager import logger
 from sklearn.utils import check_random_state
 from numpy import random
+from typing import Union, Any, Mapping
+AnyRandom = Union[None, int, random.RandomState]
+
 
 class Neighbors(object):
-    def __init__(self, x, n_neighbors=10, n_pcs=40,metric='euclidean', method='umap',knn=True):
+    def __init__(self, x, n_neighbors=10, n_pcs=40, metric='euclidean', method='umap', knn=True):
         self.x = x
         self.n_neighbors = n_neighbors
         self.n_pcs = n_pcs
@@ -26,48 +28,48 @@ class Neighbors(object):
         self.knn = knn
 
     def check_setting(self):
-        if self.method == 'umap' and not self.knn :
+        if self.method == 'umap' and not self.knn:
             logger.error(f'method=umap only with knn=True')
-        if self.method not in {'umap', 'gauss'} :
+        if self.method not in {'umap', 'gauss'}:
             logger.error(f'method=umap/gauss')
 
     def choose_x(self):
         self.x = self.x.iloc[:, :self.n_pcs]
         return self.x
 
-    def get_indices_distances_from_sparse_matrix(self,D, n_neighbors: int):
-        indices = np.zeros((D.shape[0], n_neighbors), dtype=int)
-        distances = np.zeros((D.shape[0], n_neighbors), dtype=D.dtype)
-        n_neighbors_m1 = n_neighbors - 1
+    def get_indices_distances_from_dense_matrix(self, dists,):
+        sample_range = np.arange(dists.shape[0])[:, None]
+        indices = np.argpartition(dists, self.n_neighbors - 1, axis=1)[:, :self.n_neighbors]
+        indices = indices[sample_range, np.argsort(dists[sample_range, indices])]
+        distances = dists[sample_range, indices]
+        return indices, distances
+
+    def get_indices_distances_from_sparse_matrix(self, dists):
+        indices = np.zeros((dists.shape[0], self.n_neighbors), dtype=int)
+        distances = np.zeros((dists.shape[0], self.n_neighbors), dtype=dists.dtype)
+        n_neighbors_m1 = self.n_neighbors - 1
         for i in range(indices.shape[0]):
-            neighbors = D[i].nonzero()  # 'true' and 'spurious' zeros
+            neighbors = dists[i].nonzero()  # 'true' and 'spurious' zeros
             indices[i, 0] = i
             distances[i, 0] = 0
             # account for the fact that there might be more than n_neighbors
             # due to an approximate search
             # [the point itself was not detected as its own neighbor during the search]
             if len(neighbors[1]) > n_neighbors_m1:
-                sorted_indices = np.argsort(D[i][neighbors].A1)[:n_neighbors_m1]
+                sorted_indices = np.argsort(dists[i][neighbors].A1)[:n_neighbors_m1]
                 indices[i, 1:] = neighbors[1][sorted_indices]
-                distances[i, 1:] = D[i][
+                distances[i, 1:] = dists[i][
                     neighbors[0][sorted_indices], neighbors[1][sorted_indices]
                 ]
             else:
                 indices[i, 1:] = neighbors[1]
-                distances[i, 1:] = D[i][neighbors]
+                distances[i, 1:] = dists[i][neighbors]
         return indices, distances
 
-    def get_indices_distances_from_dense_matrix(self,D, n_neighbors: int):
-        sample_range = np.arange(D.shape[0])[:, None]
-        indices = np.argpartition(D, n_neighbors - 1, axis=1)[:, :n_neighbors]
-        indices = indices[sample_range, np.argsort(D[sample_range, indices])]
-        distances = D[sample_range, indices]
-        return indices, distances
-
-    def get_parse_distances_numpy(self,indices, distances, n_obs,):
+    def get_parse_distances_numpy(self, indices, distances, n_obs,):
         n_nonzero = n_obs * self.n_neighbors
         indptr = np.arange(0, n_nonzero + 1, self.n_neighbors)
-        D = csr_matrix(
+        dists = csr_matrix(
             (
                 distances.copy().ravel(),  # copy the data, otherwise strange behavior here
                 indices.copy().ravel(),
@@ -75,8 +77,8 @@ class Neighbors(object):
             ),
             shape=(n_obs, n_obs),
         )
-        D.eliminate_zeros()
-        return D
+        dists.eliminate_zeros()
+        return dists
 
     def get_parse_distances_umap(self, nn_idx, nn_dist):
         n_obs = self.x.shape[0]
@@ -103,18 +105,20 @@ class Neighbors(object):
 
     def compute_neighbors_umap(
             self,
-            X,
-            #random_state: AnyRandom = None,
+            x,
+            random_state: AnyRandom = None,
             angular: bool = False,
             verbose: bool = False,
+            metric_kwds: Mapping[str, Any] = MappingProxyType({}),
     ):
         from umap.umap_ import nearest_neighbors
-        #random_state = check_random_state(random_state)
-
+        random_state = check_random_state(random_state)
         knn_indices, knn_dists, forest = nearest_neighbors(
-            X,
-            random_state=0,
-            #metric_kwds=metric_kwds,
+            x,
+            self.n_neighbors,
+            random_state=random_state,
+            metric=self.metric,
+            metric_kwds=metric_kwds,
             angular=angular,
             verbose=verbose,
         )
@@ -135,12 +139,13 @@ class Neighbors(object):
 
         vertex = list(range(nn_dist.shape[0]))
         edges = list(tuple(zip(i, j)))
-        G = ig.Graph()
-        G.add_vertices(vertex)
-        G.add_edges(edges)
-        G.es['weight'] = dist
-        return G
+        g = ig.Graph()
+        g.add_vertices(vertex)
+        g.add_edges(edges)
+        g.es['weight'] = dist
+        return g
 
+    @staticmethod
     def get_igraph_from_adjacency(adjacency, directed=None):
         """Get igraph graph from adjacency matrix."""
         sources, targets = adjacency.nonzero()
@@ -171,18 +176,14 @@ class Neighbors(object):
             connectivities = connectivities[0]
         return connectivities.tocsr()
 
-    def compute_connectivities_diffmap(self, distances,density_normalize=True):
+    def compute_connectivities_diffmap(self, dists,):
         # init distances
         if self.knn:
-            Dsq = distances.power(2)
-            indices, distances_sq = self.get_indices_distances_from_sparse_matrix(
-                Dsq, self.n_neighbors
-            )
+            dsq = dists.power(2)
+            indices, distances_sq = self.get_indices_distances_from_sparse_matrix(dsq,)
         else:
-            Dsq = np.power(distances, 2)
-            indices, distances_sq = self.get_indices_distances_from_dense_matrix(
-                Dsq, self.n_neighbors
-            )
+            dsq = np.power(dists, 2)
+            indices, distances_sq = self.get_indices_distances_from_dense_matrix(dsq,)
 
         # exclude the first point, the 0th neighbor
         indices = indices[:, 1:]
@@ -201,10 +202,10 @@ class Neighbors(object):
         sigmas = np.sqrt(sigmas_sq)
 
         # compute the symmetric weight matrix
-        if not issparse(distances):
+        if not issparse(dists):
             Num = 2 * np.multiply.outer(sigmas, sigmas)
             Den = np.add.outer(sigmas_sq, sigmas_sq)
-            W = np.sqrt(Num / Den) * np.exp(-Dsq / Den)
+            W = np.sqrt(Num / Den) * np.exp(-dsq / Den)
             # make the weight matrix sparse
             if not self.knn:
                 mask = W > 1e-14
@@ -212,7 +213,7 @@ class Neighbors(object):
             else:
                 # restrict number of neighbors to ~k
                 # build a symmetric mask
-                mask = np.zeros(Dsq.shape, dtype=bool)
+                mask = np.zeros(dsq.shape, dtype=bool)
                 for i, row in enumerate(indices):
                     mask[i, row] = True
                     for j in row:
@@ -223,14 +224,14 @@ class Neighbors(object):
                 W[~mask] = 0
         else:
             W = (
-                Dsq.copy()
+                dsq.copy()
             )  # need to copy the distance matrix here; what follows is inplace
-            for i in range(len(Dsq.indptr[:-1])):
-                row = Dsq.indices[Dsq.indptr[i] : Dsq.indptr[i + 1]]
+            for i in range(len(dsq.indptr[:-1])):
+                row = dsq.indices[dsq.indptr[i]: dsq.indptr[i + 1]]
                 num = 2 * sigmas[i] * sigmas[row]
                 den = sigmas_sq[i] + sigmas_sq[row]
-                W.data[Dsq.indptr[i] : Dsq.indptr[i + 1]] = np.sqrt(num / den) * np.exp(
-                    -Dsq.data[Dsq.indptr[i] : Dsq.indptr[i + 1]] / den
+                W.data[dsq.indptr[i]: dsq.indptr[i + 1]] = np.sqrt(num / den) * np.exp(
+                    -dsq.data[dsq.indptr[i]: dsq.indptr[i + 1]] / den
                 )
             W = W.tolil()
             for i, row in enumerate(indices):
@@ -238,7 +239,5 @@ class Neighbors(object):
                     if i not in set(indices[j]):
                         W[j, i] = W[i, j]
             W = W.tocsr()
-
         connectivities = W
         return connectivities
-
