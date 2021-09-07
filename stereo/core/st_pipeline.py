@@ -20,7 +20,7 @@ from typing import Optional, Union
 import copy
 from ..algorithm.neighbors import Neighbors
 import leidenalg as la
-# import phenograph
+import phenograph
 import pandas as pd
 
 
@@ -130,12 +130,11 @@ class StPipeline(object):
         res = pca(x, n_pcs)
         self.result[res_key] = pd.DataFrame(res['x_pca'])
 
-    def umap(self, use_highly_genes, n_pcs, hvg_res_key=None, n_neighbors=5, min_dist=0.3, res_key='dim_reduce'):
-        if use_highly_genes and hvg_res_key not in self.result:
-            raise Exception(f'{hvg_res_key} is not in the result, please check and run the highly_var_genes func.')
-        data = self.subset_by_hvg(hvg_res_key, inplace=False) if use_highly_genes else self.data
-        x = data.exp_matrix.toarray() if issparse(data.exp_matrix) else data.exp_matrix
-        res = u_map(x, n_pcs, n_neighbors, min_dist)
+    def umap(self, pca_res_key, n_pcs=None, n_neighbors=5, min_dist=0.3, res_key='dim_reduce'):
+        if pca_res_key not in self.result:
+            raise Exception(f'{pca_res_key} is not in the result, please check and run the pca func.')
+        x = self.result[pca_res_key][:, n_pcs] if n_pcs is not None else self.result[pca_res_key]
+        res = u_map(x, 2, n_neighbors, min_dist)
         self.result[res_key] = pd.DataFrame(res)
 
     def neighbors(self, pca_res_key, n_neighbors, res_key='neighbors'):

@@ -68,6 +68,7 @@ def read_gem(file_path, sep='\t', bin_type="bins", bin_size=100, is_sparse=True)
     else:
         data.position = gdf.loc[cells][['x_center', 'y_center']].values
         data.cells.cell_point = gdf.loc[cells]['cell_point'].values
+    data.cal_qc()
     return data
 
 
