@@ -6,16 +6,51 @@
 @file:neighbors.py
 @time:2021/09/01
 """
+from ..log_manager import logger
 from scipy.sparse import issparse, coo_matrix, csr_matrix
 from sklearn.neighbors import NearestNeighbors
-import igraph as ig
-import numpy as np
-from types import MappingProxyType
-from ..log_manager import logger
 from sklearn.utils import check_random_state
 from numpy import random
-from typing import Union, Any, Mapping
+import igraph as ig
+import numpy as np
+import pandas as pd
+from typing import Union, Any, Mapping, Optional
+from types import MappingProxyType
+from sklearn.metrics import pairwise_distances
 AnyRandom = Union[None, int, random.RandomState]
+
+
+def find_neighbors(
+    x: Optional[pd.DataFrame] = None,
+    method: str = 'umap',
+    n_pcs: int = 40,
+    n_neighbors: int = 10,
+    metric: Optional[str] = 'euclidean',
+    knn: bool = True,
+):
+    neighbor = Neighbors(x, n_neighbors, n_pcs, metric, method, knn)
+    neighbor.check_setting()
+    neighbor.x = neighbor.choose_x()
+    use_dense_distances = (neighbor.metric == 'euclidean' and neighbor.x.shape[0] < 8192) or not neighbor.knn
+    dists = neighbor.x
+    if use_dense_distances:
+        dists = pairwise_distances(neighbor.x, metric=neighbor.metric, )
+        knn_indices, knn_distances = neighbor.get_indices_distances_from_dense_matrix(dists)
+        if knn:
+            dists = neighbor.get_parse_distances_numpy(
+                knn_indices, knn_distances, neighbor.x.shape[0],
+            )
+    else:
+        if neighbor.x.shape[0] < 4096:
+            dists = pairwise_distances(neighbor.x, metric=neighbor.metric)
+        neighbor.metric = 'precomputed'
+        knn_indices, knn_distances, forest = neighbor.compute_neighbors_umap(dists, )
+    if not use_dense_distances or neighbor.method in {'umap'}:
+        connectivities = neighbor.get_connectivities_umap(knn_indices, knn_distances)
+        dists = neighbor.get_parse_distances_umap(knn_indices, knn_distances, )
+    if method == 'gauss':
+        connectivities = neighbor.compute_connectivities_diffmap(dists)
+    return neighbor, dists, connectivities
 
 
 class Neighbors(object):
