@@ -104,11 +104,11 @@ def make_multipoint(x):
 
 
 def merge_bin_coor(coor: np.ndarray, coor_min: int, bin_size: int):
-    return np.floor((coor-coor_min)/bin_size).astype(np.int)
+    return np.floor((coor - coor_min) / bin_size).astype(np.int)
 
 
 def get_bin_center(bin_coor: np.ndarray, coor_min: int, bin_size: int):
-    return bin_coor*bin_size+coor_min+int(bin_size/2)
+    return bin_coor * bin_size + coor_min + int(bin_size / 2)
 
 
 def read_stereo_h5ad(file_path):
@@ -282,7 +282,7 @@ def stereo_to_anndata(stereo_data: StereoExpData):
 #     return adata
 
 
-def read_gef(file_path, bin_type='bins', bin_size=100, is_sparse=True, genes=None):
+def read_gef(file_path, bin_type='bins', bin_size=100, is_sparse=True, gene_lst=None, region=None):
     logger.info(f'read_gef begin')
     data = StereoExpData(file_path=file_path)
     with h5py.File(file_path, mode='r') as h5f:
@@ -293,41 +293,70 @@ def read_gef(file_path, bin_type='bins', bin_size=100, is_sparse=True, genes=Non
         h5exp = h5f['geneExp'][bin_tag]['expression']
         h5gene = h5f['geneExp'][bin_tag]['gene']
         cols = np.zeros(h5exp.shape[0], dtype='uint32')
+
+        if gene_lst is None:
+            genes = h5gene['gene']
+        else:
+            genes = np.array(len(gene_lst), dtype=str)
+
         gene_index = 0
         exp_index = 0
-        df_gene = pd.DataFrame(h5gene['offset', 'count'])
-        for offset, count in zip(df_gene['offset'], df_gene['count']):
+        df_gene = pd.DataFrame(h5gene['gene', 'count'])
+        for gene, count in zip(df_gene['gene'], df_gene['count']):
+            if gene_lst is not None:
+                if gene not in genes:
+                    for i in range(count):
+                        cols[exp_index] = -1
+                        exp_index += 1
+                    continue
+                else:
+                    genes[gene_index] = gene
+
             for i in range(count):
                 cols[exp_index] = gene_index
                 exp_index += 1
             gene_index += 1
 
-        genes = h5gene['gene']
+        df_pos = pd.DataFrame(h5exp['x', 'y'])
+        if region is not None:
+            df_pos['gene_index'] = cols
+            df_pos = df_pos[(region[0] <= df_pos['x'] <= region[1]) & (region[2] <= df_pos['y'] <= region[3])]
+            cols = df_pos['gene_index'].values
 
-        df = pd.DataFrame(h5exp['x', 'y'])
-        gdf = None
-        if bin_type == 'cell_bins':
-            # TODO
-            raise Exception("TODO cell_bins ...")
-            # df.rename(columns={'label': 'cell_id'}, inplace=True)
-            # gdf = data.parse_cell_bin_coor(df)
-        else:
-            df['cell_id'] = df['x'].astype(str) + '_' + df['y'].astype(str)
-            df['x_center'] = df['x'] * bin_size + int(bin_size / 2)
-            df['y_center'] = df['y'] * bin_size + int(bin_size / 2)
-        cells = df['cell_id'].unique()
-        cells_dict = dict(zip(cells, range(0, len(cells))))
+        if gene_lst is not None:
+            df_pos['gene_index'] = cols
+            df_pos = df_pos[df_pos['x'] != -1]
+            cols = df_pos['gene_index'].values
 
-        rows = df['cell_id'].map(cells_dict)
-        logger.info(f'the martrix has {len(cells)} cells, and {len(genes)} genes.')
-        exp_matrix = csr_matrix((h5exp['count'], (rows, cols)), shape=(cells.shape[0], genes.shape[0]), dtype=np.int)
+        df_pos_uni = df_pos.loc[:, ['x', 'y']].drop_duplicates()
+        data.position = df_pos_uni.values
+
+        df_pos['cell_id'] = np.bitwise_or(np.left_shift(df_pos['x'].astype('uint64'), 32), df_pos['y'])
+        # df_pos_uni['cell_id'] = np.bitwise_or(np.left_shift(df_pos_uni['x'].astype('uint64'), 32), df_pos_uni['y'])
+        # cells_dict = dict(zip(df_pos_uni['cell_id'], range(0, df_pos_uni.shape[0])))
+
+        cells = df_pos['cell_id'].unique()
+        # cells_dict = dict(zip(cells, range(0, len(cells))))
+        # rows = df_pos['cell_id'].map(cells_dict)
+
+        grp = df_pos.groupby('cell_id').groups
+        rows = np.zeros(h5exp.shape[0], dtype='uint32')
+        i = 0
+        for cell_id in cells:
+            for j in grp[cell_id]:
+                rows[j] = i
+            i += 1
+
+        # exp_matrix = np.zeros((df_pos_uni.shape[0], genes.shape[0]), dtype='uint32')
+        # for row in df_pos.itertuples():
+        #     row_i = df_pos_uni.loc[(getattr(row, 'x'), getattr(row, 'y'))]['cell_id']
+        #     exp_matrix[row_i]
+
+        # logger.info(f'the martrix has {len(cells)} cells, and {len(genes)} genes.')
+        exp_matrix = csr_matrix((h5exp['count'], (rows, cols)), shape=(cells.shape[0], genes.shape[0]),
+                                dtype=np.int)
         data.cells = Cell(cell_name=cells)
         data.genes = Gene(gene_name=genes)
         data.exp_matrix = exp_matrix if is_sparse else exp_matrix.toarray()
-        if bin_type == 'bins':
-            data.position = df.loc[:, ['x_center', 'y_center']].drop_duplicates().values
-        else:
-            data.position = gdf.loc[cells][['x_center', 'y_center']].values
-            data.cells.cell_point = gdf.loc[cells]['cell_point'].values
     logger.info(f'read_gef end')
     return data
