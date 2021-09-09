@@ -18,10 +18,12 @@ from scipy.sparse import issparse
 from ..algorithm.dim_reduce import pca, u_map
 from typing import Optional, Union
 import copy
-from ..algorithm.neighbors import Neighbors
-import leidenalg as la
+from ..algorithm.neighbors import find_neighbors
 import phenograph
 import pandas as pd
+from ..algorithm.leiden import leiden
+from ..algorithm._louvain import louvain
+from typing_extensions import Literal
 
 
 class StPipeline(object):
@@ -36,7 +38,10 @@ class StPipeline(object):
 
     @raw.setter
     def raw(self, value):
-        self._raw = value
+        self._raw = copy.deepcopy(value)
+
+    def data2raw(self):
+        self.data = self.raw
 
     def cal_qc(self):
         cal_qc(self.data)
@@ -137,12 +142,14 @@ class StPipeline(object):
         res = u_map(x, 2, n_neighbors, min_dist)
         self.result[res_key] = pd.DataFrame(res)
 
-    def neighbors(self, pca_res_key, n_neighbors, res_key='neighbors'):
+    def neighbors(self, pca_res_key, method='umap', metric='euclidean', n_pcs=40, n_neighbors=10, knn=True,
+                  res_key='neighbors'):
+
         if pca_res_key not in self.result:
             raise Exception(f'{pca_res_key} is not in the result, please check and run the pca func.')
-        neighbor = Neighbors(self.result[pca_res_key], n_neighbors)
-        nn_idx, nn_dist = neighbor.find_n_neighbors()
-        res = {'neighbor': neighbor, 'nn_idx': nn_idx, 'nn_dist': nn_dist}
+        neighbor, dists, connectivities = find_neighbors(self.result[pca_res_key], method, n_pcs, n_neighbors,
+                                                         metric, knn)
+        res = {'neighbor': neighbor, 'connectivities': connectivities, 'nn_dist': dists}
         self.result[res_key] = res
 
     def get_neighbors_res(self, neighbors_res_key):
@@ -150,34 +157,45 @@ class StPipeline(object):
             raise Exception(f'{neighbors_res_key} is not in the result, please check and run the neighbors func.')
         neighbors_res = self.result[neighbors_res_key]
         neighbor = neighbors_res['neighbor']
-        nn_idx = neighbors_res['nn_idx']
+        connectivities = neighbors_res['connectivities']
         nn_dist = neighbors_res['nn_dist']
-        return neighbor, nn_idx, nn_dist
+        return neighbor, connectivities, nn_dist
 
-    def leiden(self, neighbors_res_key, res_key='cluster', diff=1):
-        neighbor, nn_idx, nn_dist = self.get_neighbors_res(neighbors_res_key)
-        g = neighbor.get_igraph_from_knn(nn_idx, nn_dist)
-        optimiser = la.Optimiser()
-        leiden_partition = la.ModularityVertexPartition(g, weights=g.es['weight'])
-        while diff > 0:
-            diff = optimiser.optimise_partition(leiden_partition, n_iterations=10)
-        clusters = np.arange(len(self.data.cell_names))
-        for i in range(len(leiden_partition)):
-            clusters[leiden_partition[i]] = str(i)
+    def run_leiden(self,
+                   neighbors_res_key,
+                   res_key='cluster',
+                   adjacency=None,
+                   directed: bool = True,
+                   resolution: float = 1,
+                   use_weights: bool = True,
+                   random_state: int = 0,
+                   n_iterations: int = -1,
+                   **partition_kwargs,
+                   ):
+        neighbor, _, _ = self.get_neighbors_res(neighbors_res_key)
+        clusters = leiden(neighbor=neighbor, adjacency=adjacency, directed=directed, resolution=resolution,
+                          use_weights=use_weights, random_state=random_state, n_iterations=n_iterations,
+                          partition_kwargs=partition_kwargs)
         df = pd.DataFrame({'bins': self.data.cell_names, 'group': clusters})
         self.result[res_key] = df
 
-    def louvain(self, neighbors_res_key, res_key='cluster'):
-        neighbor, nn_idx, nn_dist = self.get_neighbors_res(neighbors_res_key)
-        g = neighbor.get_igraph_from_knn(nn_idx, nn_dist)
-        louvain_partition = g.community_multilevel(weights=g.es['weight'], return_levels=False)
-        clusters = np.arange(len(self.data.cell_names))
-        for i in range(len(louvain_partition)):
-            clusters[louvain_partition[i]] = str(i)
+    def run_louvain(self,
+                    neighbors_res_key,
+                    res_key='cluster',
+                    resolution: float = None,
+                    random_state: int = 0,
+                    adjacency=None,
+                    flavor: Literal['vtraag', 'igraph', 'rapids'] = 'vtraag',
+                    directed: bool = True,
+                    use_weights: bool = False
+                    ):
+        neighbor, _, _ = self.get_neighbors_res(neighbors_res_key)
+        clusters = louvain(neighbor=neighbor, resolution= resolution, random_state=random_state, adjacency=adjacency,
+                           flavor=flavor, directed=directed, use_weights=use_weights)
         df = pd.DataFrame({'bins': self.data.cell_names, 'group': clusters})
         self.result[res_key] = df
 
-    def phenograph_cluster(self, phenograph_k, pca_res_key, res_key='cluster'):
+    def run_phenograph(self, phenograph_k, pca_res_key, res_key='cluster'):
         if pca_res_key not in self.result:
             raise Exception(f'{pca_res_key} is not in the result, please check and run the pca func.')
         communities, _, _ = phenograph.cluster(self.result[pca_res_key], k=phenograph_k)

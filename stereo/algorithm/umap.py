@@ -70,7 +70,6 @@ def umap(
     init_pos
         How to initialize the low dimensional embedding. Called `init` in the
         original UMAP. Options are:
-
         * 'spectral': use a spectral embedding of the graph.
         * 'random': assign initial embedding positions at random.
     random_state

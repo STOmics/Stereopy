@@ -12,15 +12,13 @@ import pandas as pd
 from types import MappingProxyType
 from typing import Optional, Type, Mapping, Any, Union
 from natsort import natsorted
-from scipy.sparse import spmatrix
 from packaging import version
-from sklearn.utils import check_random_state
 from numpy import random
 AnyRandom = Union[None, int, random.RandomState]
 from typing_extensions import Literal
 
 try:
-    from louvain.VertexPartition import MutableVertexPartition
+    from _louvain.VertexPartition import MutableVertexPartition
 except ImportError:
 
     class MutableVertexPartition:
