@@ -58,6 +58,13 @@ html_theme = 'sphinx_rtd_theme'
 
 html_static_path = ['_static']
 
+html_css_files = [
+    'html.css',
+]
+# html_css_files = [
+#     '_static/html.css',
+# ]
+
 
 import nbclean, glob
 
