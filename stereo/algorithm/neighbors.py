@@ -18,10 +18,18 @@ from typing import Union, Any, Mapping, Optional
 from types import MappingProxyType
 from sklearn.metrics import pairwise_distances
 AnyRandom = Union[None, int, random.RandomState]
-
+"""
+run:sc_neighbors
+run:compute_neighbors
+run:_get_indices_distances_from_dense_matrix
+run:_get_sparse_matrix_from_indices_distances_numpy
+run:_compute_connectivities_umap
+run:_get_sparse_matrix_from_indices_distances_umap
+run:get_igraph_from_adjacency
+"""
 
 def find_neighbors(
-    x: Optional[pd.DataFrame] = None,
+    x: Optional[np.ndarray] = None,
     method: str = 'umap',
     n_pcs: int = 40,
     n_neighbors: int = 10,
@@ -69,7 +77,7 @@ class Neighbors(object):
             logger.error(f'method=umap/gauss')
 
     def choose_x(self):
-        self.x = self.x.iloc[:, :self.n_pcs]
+        self.x = self.x[:, :self.n_pcs]
         return self.x
 
     def get_indices_distances_from_dense_matrix(self, dists,):
