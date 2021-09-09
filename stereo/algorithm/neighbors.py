@@ -18,10 +18,18 @@ from typing import Union, Any, Mapping, Optional
 from types import MappingProxyType
 from sklearn.metrics import pairwise_distances
 AnyRandom = Union[None, int, random.RandomState]
-
+"""
+run:sc_neighbors
+run:compute_neighbors
+run:_get_indices_distances_from_dense_matrix
+run:_get_sparse_matrix_from_indices_distances_numpy
+run:_compute_connectivities_umap
+run:_get_sparse_matrix_from_indices_distances_umap
+run:get_igraph_from_adjacency
+"""
 
 def find_neighbors(
-    x: Optional[pd.DataFrame] = None,
+    x: Optional[np.ndarray] = None,
     method: str = 'umap',
     n_pcs: int = 40,
     n_neighbors: int = 10,
@@ -43,10 +51,10 @@ def find_neighbors(
     else:
         if neighbor.x.shape[0] < 4096:
             dists = pairwise_distances(neighbor.x, metric=neighbor.metric)
-        neighbor.metric = 'precomputed'
+            neighbor.metric = 'precomputed'
         knn_indices, knn_distances, forest = neighbor.compute_neighbors_umap(dists, )
     if not use_dense_distances or neighbor.method in {'umap'}:
-        connectivities = neighbor.get_connectivities_umap(knn_indices, knn_distances)
+        connectivities = neighbor.compute_connectivities_umap(knn_indices, knn_distances)
         dists = neighbor.get_parse_distances_umap(knn_indices, knn_distances, )
     if method == 'gauss':
         connectivities = neighbor.compute_connectivities_diffmap(dists)
@@ -69,7 +77,7 @@ class Neighbors(object):
             logger.error(f'method=umap/gauss')
 
     def choose_x(self):
-        self.x = self.x.iloc[:, :self.n_pcs]
+        self.x = self.x[:, :self.n_pcs]
         return self.x
 
     def get_indices_distances_from_dense_matrix(self, dists,):
@@ -201,7 +209,7 @@ class Neighbors(object):
             )
         return g
 
-    def get_connectivities_umap(self, nn_idx, nn_dist):
+    def compute_connectivities_umap(self, nn_idx, nn_dist):
         from umap.umap_ import fuzzy_simplicial_set
         n_obs = self.x.shape[0]
         x = coo_matrix(([], ([], [])), shape=(n_obs, 1))
