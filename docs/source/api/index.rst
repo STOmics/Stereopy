@@ -26,8 +26,8 @@ reader
 .. autosummary::
    :toctree: .
 
-   io.read_stereo_data
-   io.read_10x_data
+   io.read_gem
+   io.read_stereo_h5ad
 
 
 preprocess: `pp`
@@ -138,30 +138,15 @@ Spatial lag
 plots: `pt`
 -------------------
 
-.. module:: stereo.pt
+.. module:: stereo.plt
 .. currentmodule:: stereo
 
 visualization module
 
-quality control plots
-~~~~~~~~~~~~~~~~~~~
-
 .. autosummary::
    :toctree: .
 
-   plots.plot_spatial_distribution
-   plots.plot_genes_count
-   plots.plot_violin_distribution
-
-
-analysis plots
-~~~~~~~~~~~~~~~~~~~
-
-.. autosummary::
-   :toctree: .
-
-   plots.plot_dim_reduce
-   plots.plot_spatial_cluster
    plots.plot_scatter
    plots.plot_marker_genes
    plots.plot_heatmap_marker_genes
+   plots.plot_collection.PlotCollection

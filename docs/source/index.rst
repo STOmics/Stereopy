@@ -29,8 +29,8 @@ It provides a series of analysis of spatial omics, and will be added to the tiss
 
 
    Tutorials/quick_start
+   Tutorials/interactive_cluster
    Tutorials/Examples
-
 
 
 .. |Docs| image:: https://img.shields.io/static/v1?label=docs&message=streopy&color=green
