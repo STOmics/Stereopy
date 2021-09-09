@@ -7,7 +7,7 @@
 from typing import Optional, Union, Sequence
 import colorcet as cc
 import numpy as np
-from .scatter import plot_scatter, plot_multi_scatter, maker_gene_volcano, highly_variable_genes
+from .scatter import plot_scatter, plot_multi_scatter, marker_gene_volcano, highly_variable_genes
 
 
 class PlotCollection:
@@ -85,10 +85,10 @@ class PlotCollection:
         pvalues < cut_off and log2fc < -cut_off_logFC define as down genes
         :param cut_off_logFC: cut off of log2fc to define gene type
 
-        :return:
+        :return: (axes, df) a axes object and a DataFrame
         """
         res = self.check_res_key(res_key)[group_name]
-        maker_gene_volcano(
+        marker_gene_volcano(
             res,
             text_genes=text_genes,
             cut_off_pvalue=cut_off_pvalue,
@@ -99,6 +99,7 @@ class PlotCollection:
             x_label=x_label, y_label=y_label,
             vlines=vlines
         )
+        # return df
 
     def plot_genes_count(
             self,

@@ -43,10 +43,10 @@ def find_neighbors(
     else:
         if neighbor.x.shape[0] < 4096:
             dists = pairwise_distances(neighbor.x, metric=neighbor.metric)
-        neighbor.metric = 'precomputed'
+            neighbor.metric = 'precomputed'
         knn_indices, knn_distances, forest = neighbor.compute_neighbors_umap(dists, )
     if not use_dense_distances or neighbor.method in {'umap'}:
-        connectivities = neighbor.get_connectivities_umap(knn_indices, knn_distances)
+        connectivities = neighbor.compute_connectivities_umap(knn_indices, knn_distances)
         dists = neighbor.get_parse_distances_umap(knn_indices, knn_distances, )
     if method == 'gauss':
         connectivities = neighbor.compute_connectivities_diffmap(dists)
@@ -201,7 +201,7 @@ class Neighbors(object):
             )
         return g
 
-    def get_connectivities_umap(self, nn_idx, nn_dist):
+    def compute_connectivities_umap(self, nn_idx, nn_dist):
         from umap.umap_ import fuzzy_simplicial_set
         n_obs = self.x.shape[0]
         x = coo_matrix(([], ([], [])), shape=(n_obs, 1))

@@ -283,7 +283,7 @@ def volcano(
     return ax
 
 
-def maker_gene_volcano(
+def marker_gene_volcano(
         data,
         text_genes=None,
         cut_off_pvalue=0.01,
@@ -301,15 +301,15 @@ def maker_gene_volcano(
     if text_genes is not None:
         # df['text'] = df['group'] == 'up'
         df['label'] = df['genes'].isin(text_genes)
-        volcano(df, x='x', y='y', hue='group', label='genes', text_visible='label',
-                cut_off_pvalue=cut_off_pvalue,
-                cut_off_logFC=cut_off_logFC,
-                **kwargs)
+        ax = volcano(df, x='x', y='y', hue='group', label='genes', text_visible='label',
+                     cut_off_pvalue=cut_off_pvalue,
+                     cut_off_logFC=cut_off_logFC,
+                     **kwargs)
     else:
-        volcano(df, x='x', y='y', hue='group',
-                cut_off_pvalue=cut_off_pvalue,
-                cut_off_logFC=cut_off_logFC,
-                **kwargs)
+        ax = volcano(df, x='x', y='y', hue='group',
+                     cut_off_pvalue=cut_off_pvalue, cut_off_logFC=cut_off_logFC,
+                     **kwargs)
+    return ax
 
 
 def highly_variable_genes(

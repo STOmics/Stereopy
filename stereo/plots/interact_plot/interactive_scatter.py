@@ -34,8 +34,7 @@ class InteractiveScatter:
     def __init__(
             self,
             data,
-            width: Optional[int] = 700,
-            height: Optional[int] = 600,
+            width: Optional[int] = 680, height: Optional[int] = 500,
             bgcolor='#23238E'
     ):
         self.data = data
@@ -104,11 +103,11 @@ class InteractiveScatter:
     def interact_scatter(self):
         pn.extension()
         hv.extension('bokeh')
-        cmap = pn.widgets.Select(value='rainbow', options=colormaps, name='colormaps')
+        cmap = pn.widgets.Select(value='rainbow', options=colormaps, name='color theme', width=200)
         # alpha = pn.widgets.FloatSlider(value=1)
         reverse_colormap = pn.widgets.Checkbox(name='reverse_colormap')
         scatter_df = self.scatter_df
-
+        # dot_size = self.dot_size
         width, height = self.width, self.height
         @pn.depends(cmap, reverse_colormap)
         def _df_plot(cmap, reverse_colormap):
@@ -149,3 +148,9 @@ class InteractiveScatter:
                 ))
         )
         return self.figure
+
+    def show(self, inline=True):
+        if inline:
+            return self.figure
+        else:
+            self.figure.show()
