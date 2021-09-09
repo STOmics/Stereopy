@@ -12,7 +12,6 @@ change log:
 """
 
 import pandas as pd
-from ..algorithm.spatial_pattern_score import spatial_pattern_score
 from ..core.tool_base import ToolBase
 
 
@@ -33,7 +32,7 @@ class SpatialPatternScore(ToolBase):
         """
         self.data.sparse2array()
         df = pd.DataFrame(self.data.exp_matrix, columns=self.data.gene_names, index=self.data.cell_names)
-        result = self.get_func_by_path('stereo.algorithm.spatial_pattern_score', spatial_pattern_score)(df)
+        result = self.get_func_by_path('stereo.algorithm.spatial_pattern_score', 'spatial_pattern_score')(df)
         self.result = result
 
     def plot(self):

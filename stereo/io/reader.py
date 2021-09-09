@@ -359,5 +359,6 @@ def read_gef(file_path, bin_type='bins', bin_size=100, is_sparse=True, gene_lst=
         data.cells = Cell(cell_name=cells)
         data.genes = Gene(gene_name=genes)
         data.exp_matrix = exp_matrix if is_sparse else exp_matrix.toarray()
+        data.cal_qc()
     logger.info(f'read_gef end')
     return data

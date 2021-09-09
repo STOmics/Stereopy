@@ -142,12 +142,35 @@ class StPipeline(object):
         res = u_map(x, 2, n_neighbors, min_dist)
         self.result[res_key] = pd.DataFrame(res)
 
+    def u_map(self,
+              pca_res_key,
+              neighbors_res_key,
+              res_key='dim_reduce',
+              min_dist: float = 0.5,
+              spread: float = 1.0,
+              n_components: int = 2,
+              maxiter: Optional[int] = None,
+              alpha: float = 1.0,
+              gamma: float = 1.0,
+              negative_sample_rate: int = 5,
+              init_pos: str = 'spectral', ):
+        from ..algorithm.umap import umap
+        if pca_res_key not in self.result:
+            raise Exception(f'{pca_res_key} is not in the result, please check and run the pca func.')
+        if neighbors_res_key not in self.result:
+            raise Exception(f'{neighbors_res_key} is not in the result, please check and run the neighbors func.')
+        _, connectivities, _ = self.get_neighbors_res(neighbors_res_key)
+        x_umap = umap(x=self.result[pca_res_key], neighbors_connectivities=connectivities,
+                      min_dist=min_dist, spread=spread, n_components=n_components, maxiter=maxiter, alpha=alpha,
+                      gamma=gamma, negative_sample_rate=negative_sample_rate, init_pos=init_pos)
+        self.result[res_key] = pd.DataFrame(x_umap)
+
     def neighbors(self, pca_res_key, method='umap', metric='euclidean', n_pcs=40, n_neighbors=10, knn=True,
                   res_key='neighbors'):
 
         if pca_res_key not in self.result:
             raise Exception(f'{pca_res_key} is not in the result, please check and run the pca func.')
-        neighbor, dists, connectivities = find_neighbors(self.result[pca_res_key], method, n_pcs, n_neighbors,
+        neighbor, dists, connectivities = find_neighbors(self.result[pca_res_key].values, method, n_pcs, n_neighbors,
                                                          metric, knn)
         res = {'neighbor': neighbor, 'connectivities': connectivities, 'nn_dist': dists}
         self.result[res_key] = res
@@ -164,18 +187,15 @@ class StPipeline(object):
     def run_leiden(self,
                    neighbors_res_key,
                    res_key='cluster',
-                   adjacency=None,
                    directed: bool = True,
                    resolution: float = 1,
                    use_weights: bool = True,
                    random_state: int = 0,
-                   n_iterations: int = -1,
-                   **partition_kwargs,
+                   n_iterations: int = -1
                    ):
-        neighbor, _, _ = self.get_neighbors_res(neighbors_res_key)
-        clusters = leiden(neighbor=neighbor, adjacency=adjacency, directed=directed, resolution=resolution,
-                          use_weights=use_weights, random_state=random_state, n_iterations=n_iterations,
-                          partition_kwargs=partition_kwargs)
+        neighbor, connectivities, _ = self.get_neighbors_res(neighbors_res_key)
+        clusters = leiden(neighbor=neighbor, adjacency=connectivities, directed=directed, resolution=resolution,
+                          use_weights=use_weights, random_state=random_state, n_iterations=n_iterations)
         df = pd.DataFrame({'bins': self.data.cell_names, 'group': clusters})
         self.result[res_key] = df
 
@@ -184,14 +204,13 @@ class StPipeline(object):
                     res_key='cluster',
                     resolution: float = None,
                     random_state: int = 0,
-                    adjacency=None,
                     flavor: Literal['vtraag', 'igraph', 'rapids'] = 'vtraag',
                     directed: bool = True,
                     use_weights: bool = False
                     ):
-        neighbor, _, _ = self.get_neighbors_res(neighbors_res_key)
-        clusters = louvain(neighbor=neighbor, resolution= resolution, random_state=random_state, adjacency=adjacency,
-                           flavor=flavor, directed=directed, use_weights=use_weights)
+        neighbor, connectivities, _ = self.get_neighbors_res(neighbors_res_key)
+        clusters = louvain(neighbor=neighbor, resolution=resolution, random_state=random_state,
+                           adjacency=connectivities, flavor=flavor, directed=directed, use_weights=use_weights)
         df = pd.DataFrame({'bins': self.data.cell_names, 'group': clusters})
         self.result[res_key] = df
 
@@ -243,9 +262,13 @@ class StPipeline(object):
         tool.fit()
         self.result[res_key] = tool.result
 
-    def spatial_pattern_score(self, res_key='spatial_pattern'):
-        from ..tools.spatial_pattern_score import SpatialPatternScore
+    def spatial_pattern_score(self, use_raw=True, res_key='spatial_pattern'):
+        from ..algorithm.spatial_pattern_score import spatial_pattern_score
 
-        tool = SpatialPatternScore(data=self.data)
-        tool.fit()
-        self.result[res_key] = tool.result
+        if use_raw and not self.raw:
+            raise Exception(f'self.raw must be set if use_raw is True.')
+        data = self.raw if use_raw else self.data
+        x = data.exp_matrix.toarray() if issparse(data.exp_matrix) else data.exp_matrix
+        df = pd.DataFrame(x, columns=data.gene_names, index=data.cell_names)
+        res = spatial_pattern_score(df)
+        self.result[res_key] = res
