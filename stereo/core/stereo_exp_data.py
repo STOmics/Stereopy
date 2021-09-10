@@ -64,6 +64,7 @@ class StereoExpData(Data):
         self.bin_size = bin_size
         self.tl = StPipeline(self)
         self.plt = self.get_plot()
+        self.raw = None
 
     def init(self):
         self.check()

@@ -14,11 +14,9 @@ change log:
 import numpy as np
 import leidenalg
 import pandas as pd
-from typing import Optional, Type, Union
+from typing import Optional, Type
 from natsort import natsorted
-from sklearn.utils import check_random_state
-from numpy import random
-AnyRandom = Union[None, int, random.RandomState]
+
 
 try:
     from leidenalg.VertexPartition import MutableVertexPartition
@@ -35,7 +33,7 @@ def leiden(
     directed: bool = True,
     resolution: float = 1,
     use_weights: bool = True,
-    random_state:  AnyRandom = 0,
+    random_state:  int = 0,
     n_iterations: int = -1,
     partition_type: Optional[Type[MutableVertexPartition]] = None,
     **partition_kwargs,
