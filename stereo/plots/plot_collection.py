@@ -11,6 +11,11 @@ from .scatter import plot_scatter, plot_multi_scatter, marker_gene_volcano, high
 
 
 class PlotCollection:
+    """
+    stereo plot collection
+
+    :param data: StereoExpData object
+    """
 
     def __init__(
             self,
@@ -26,10 +31,12 @@ class PlotCollection:
     ):
         """
         interactive spatial scatter after clustering
+
         :param res_key: cluster result key
         :param inline: show in notebook
         :param width: figure width
         :param height: figure height
+
         :return:
         """
         res = self.check_res_key(res_key)
@@ -48,7 +55,9 @@ class PlotCollection:
     def highly_variable_genes(self, res_key='highly_var_genes'):
         """
         scatter of highly variable genes
+
         :param res_key: result key
+
         :return:
         """
         res = self.check_res_key(res_key)
@@ -69,6 +78,7 @@ class PlotCollection:
     ):
         """
         volcano of maker genes
+
         :param group_name: group name
         :param res_key: result key
         :param hue_order: order of gene type
@@ -79,10 +89,7 @@ class PlotCollection:
         :param x_label: x label
         :param y_label: y label
         :param vlines: plot cutoff line or not
-        :param cut_off_pvalue: /
-        cut off of pvalue to define gene type,
-        pvalues < cut_off and log2fc > cut_off_logFC define as up genes,
-        pvalues < cut_off and log2fc < -cut_off_logFC define as down genes
+        :param cut_off_pvalue: cut off of pvalue to define gene type, pvalues < cut_off and log2fc > cut_off_logFC define as up genes, pvalues < cut_off and log2fc < -cut_off_logFC define as down genes
         :param cut_off_logFC: cut off of log2fc to define gene type
 
         :return: (axes, df) a axes object and a DataFrame
@@ -112,6 +119,7 @@ class PlotCollection:
         :param x:
         :param y:
         :param ncols:
+
         :return:
         """
         from .qc import plot_genes_count
@@ -131,6 +139,17 @@ class PlotCollection:
             color_list=None,
             invert_y=False
     ):
+        """
+        spatial distribution of total_counts and n_genes_by_counts
+
+        :param cells_key:
+        :param ncols:
+        :param dot_size: dot size
+        :param color_list:
+        :param invert_y:
+
+        :return:
+        """
         from .qc import plot_spatial_distribution
 
         plot_spatial_distribution(
@@ -143,6 +162,11 @@ class PlotCollection:
         )
 
     def plot_violin_distribution(self):
+        """
+        violin plot
+
+        :return:
+        """
         from .qc import plot_violin_distribution
         plot_violin_distribution(self.data)
 
@@ -158,7 +182,7 @@ class PlotCollection:
         :param width: width
         :param height: height
         :param bgcolor: background color
-        :return:
+
         """
         from .interact_plot.interactive_scatter import InteractiveScatter
 
@@ -173,9 +197,9 @@ class PlotCollection:
             gene_name: Optional[list] = None,
             res_key='dim_reduce',
             cluster_key=None,
-            title: Optional[Union[str, list, np.ndarray]] = None,
-            x_label: Optional[Union[str, list, np.ndarray]] = None,
-            y_label: Optional[Union[str, list, np.ndarray]] = None,
+            title: Optional[Union[str, list]] = None,
+            x_label: Optional[Union[str, list]] = None,
+            y_label: Optional[Union[str, list]] = None,
             dot_size: int = None,
             colors=cc.glasbey,
             **kwargs
@@ -192,6 +216,7 @@ class PlotCollection:
         :param dot_size: dot size
         :param colors: color list
         :param kwargs:
+
         :return:
         """
         res = self.check_res_key(res_key)
@@ -238,6 +263,7 @@ class PlotCollection:
             **kwargs
     ):
         """
+
         :param res_key: cluster result key
         :param title: title
         :param x_label: x label
@@ -245,6 +271,7 @@ class PlotCollection:
         :param dot_size: dot size
         :param colors: color list
         :param kwargs:
+
         :return:
         """
         res = self.check_res_key(res_key)
@@ -283,6 +310,7 @@ class PlotCollection:
         :param ncols: number of plot columns.
         :param sharey:
         :param kwargs:
+
         :return:
         """
         from .marker_genes import plot_marker_genes_text
@@ -330,6 +358,7 @@ class PlotCollection:
         :param max_value:
         :param gene_list:
         :param do_log:
+
         :return:
         """
         from .marker_genes import plot_marker_genes_heatmap
@@ -356,7 +385,9 @@ class PlotCollection:
     def check_res_key(self, res_key):
         """
         check if result exist
-        :param res_key:
+
+        :param res_key: result key
+
         :return:
         """
         if res_key in self.result:

@@ -40,7 +40,6 @@ extensions = [
     'sphinx.ext.napoleon',
     'sphinx.ext.autosummary',
     'nbsphinx',
-    # 'scanpydoc',
     *[p.stem for p in (HERE / 'extensions').glob('*.py')],
 ]
 
