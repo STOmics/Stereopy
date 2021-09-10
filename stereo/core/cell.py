@@ -26,15 +26,32 @@ class Cell(object):
 
     @property
     def cell_name(self):
+        """
+        get the name of cell.
+
+        :return: cell name
+        """
         return self._cell_name
 
     @cell_name.setter
-    def cell_name(self, name):
+    def cell_name(self, name: np.ndarray):
+        """
+        set the name of cell.
+
+        :param name: a numpy array of names.
+        :return:
+        """
         if not isinstance(name, np.ndarray):
             raise TypeError('cell name must be a np.ndarray object.')
         self._cell_name = name
 
     def sub_set(self, index):
+        """
+        get the subset of Cell by the index info， the Cell object will be inplaced by the subset.
+
+        :param index: a numpy array of index info.
+        :return: the subset of Cell object.
+        """
         if self.cell_name is not None:
             self.cell_name = self.cell_name[index]
         if self.total_counts is not None:
@@ -46,6 +63,12 @@ class Cell(object):
         return self
 
     def get_property(self, name):
+        """
+        get the property value by the name.
+
+        :param name: the name of property.
+        :return: the property.
+        """
         if name == 'total_counts':
             return self.total_counts
         if name == 'pct_counts_mt':
@@ -54,10 +77,15 @@ class Cell(object):
             return self.n_genes_by_counts
 
     def to_df(self):
+        """
+        transform Cell object to pd.DataFrame.
+
+        :return: a dataframe of Cell.
+        """
         attributes = {
-            'total_counts' : self.total_counts,
-            'pct_counts_mt' : self.pct_counts_mt,
+            'total_counts': self.total_counts,
+            'pct_counts_mt': self.pct_counts_mt,
             'n_genes_by_counts': self.n_genes_by_counts
         }
-        df = pd.DataFrame(attributes,index=self.cell_name)
+        df = pd.DataFrame(attributes, index=self.cell_name)
         return df

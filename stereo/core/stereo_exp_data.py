@@ -66,13 +66,6 @@ class StereoExpData(Data):
         self.plt = self.get_plot()
         self.raw = None
 
-    def init(self):
-        self.check()
-        if self.file is not None:
-            logger.info("init the property of StereoData from a file, which take some time if file is too large.")
-            # read(self,bin_size=self.bin_size)
-        logger.info("init finish.")
-
     def get_plot(self):
         from ..plots.plot_collection import PlotCollection
 
