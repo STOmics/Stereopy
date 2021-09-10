@@ -13,6 +13,17 @@ It provides a series of analysis of spatial omics, and will be added to the tiss
     :width: 400px
     :align: center
 
+StereoExpData
+-------------
+
+StereoExpData is designed for
+
+Highlights of stereopy
+----------------------
+
+pending upgrade.
+
+
 .. toctree::
    :caption: General
    :maxdepth: 2
@@ -29,8 +40,12 @@ It provides a series of analysis of spatial omics, and will be added to the tiss
 
 
    Tutorials/quick_start
-   Tutorials/interactive_cluster
    Tutorials/Examples
+
+.. toctree::
+    :maxdepth: 2
+
+    release_note
 
 
 .. |Docs| image:: https://img.shields.io/static/v1?label=docs&message=streopy&color=green

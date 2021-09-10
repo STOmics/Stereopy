@@ -14,19 +14,29 @@
    .. autosummary::
    
       ~Clustering.__init__
-      ~Clustering.add_result
-      ~Clustering.check_param
+      ~Clustering.download_ref
       ~Clustering.fit
+      ~Clustering.fit_log
       ~Clustering.get_dim_reduce_x
-      ~Clustering.get_params
+      ~Clustering.get_func_by_path
+      ~Clustering.plot_scatter
       ~Clustering.run_knn_leiden
       ~Clustering.run_louvain
       ~Clustering.run_neighbors
       ~Clustering.run_normalize
-      ~Clustering.sparse2array
    
    
 
    
+   
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~Clustering.data
+      ~Clustering.groups
+      ~Clustering.method
+      ~Clustering.neighbors
+      ~Clustering.pca_x
    
    

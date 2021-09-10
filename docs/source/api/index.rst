@@ -12,7 +12,7 @@ Import stereopy as::
    import stereo as st
 
 
-io: `reader`
+IO
 -------------------
 
 .. module:: stereo.io

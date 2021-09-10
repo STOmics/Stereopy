@@ -14,15 +14,27 @@
    .. autosummary::
    
       ~FindMarker.__init__
-      ~FindMarker.add_result
-      ~FindMarker.check_param
+      ~FindMarker.download_ref
       ~FindMarker.fit
-      ~FindMarker.get_params
+      ~FindMarker.fit_log
+      ~FindMarker.get_func_by_path
+      ~FindMarker.logres_score
       ~FindMarker.merge_groups_data
-      ~FindMarker.sparse2array
+      ~FindMarker.plot_heatmap
+      ~FindMarker.plot_marker_text
+      ~FindMarker.run_logres
    
    
 
    
+   
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~FindMarker.corr_method
+      ~FindMarker.data
+      ~FindMarker.groups
+      ~FindMarker.method
    
    

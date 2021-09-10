@@ -1,0 +1,25 @@
+Release Notes
+=============
+
+.. role:: small
+
+Version 0.1
+-----------
+0.1.1 :small:`2021-09-15`
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
+**Features**
+
+- add the pipeline for the StereoExpData.
+- surport reading the gef file.
+- add the methode of logres for find marker genes.
+
+
+**Bugfixes**
+
+- fit the bug of umap.
+
+
+0.1.0 :small:`2021-05-30`
+~~~~~~~~~~~~~~~~~~~~~~~~~
+- Initial release
