@@ -21,8 +21,8 @@ def sc_transform(
 ):
     """
 
-    :param data:
-    :param method:
+    :param data: stereoExpData object
+    :param method: offset, theta_ml, theta_lbfgs, alpha_lbfgs
     :param n_cells: int
              Number of cells to use for estimating parameters in Step1: default is 5000
     :param n_genes: int
@@ -39,7 +39,6 @@ def sc_transform(
     """
     if not issparse(data.exp_matrix):
         data.exp_matrix = csr_matrix(data.exp_matrix)
-        raise ValueError(f'data.exp_matrix should be sparse matrix')
     exclude_poisson = False
     vst_out = vst(
         data.exp_matrix.T,

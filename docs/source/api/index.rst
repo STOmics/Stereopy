@@ -18,124 +18,37 @@ IO
 .. module:: stereo.io
 .. currentmodule:: stereo
 
-io module, reading matrix and transform to annotation data.
-
-reader
-~~~~~~~~~~~~~~~~~~~
+io module, reading gem format file into StereoExoData object.
 
 .. autosummary::
    :toctree: .
 
    io.read_gem
    io.read_stereo_h5ad
+   io.write_h5ad
 
 
-preprocess: `pp`
+data: `StereoExoData`
 -------------------
 
-.. module:: stereo.pp
+.. module:: stereo
 .. currentmodule:: stereo
 
-preprocess module
-
-filter
-~~~~~~~~~~~~~~~~~~~
-
-.. autosummary::
-   :toctree: .
-
-   preprocess.filter_cells
-   preprocess.filter_genes
-   preprocess.filter_coordinates
+.. autoclass:: stereo.core.stereo_exp_data.StereoExpData
+   :members:
+   :inherited-members:
 
 
-normalize
-~~~~~~~~~~~~~~~~~~~
-
-.. autosummary::
-   :toctree: .
-
-   preprocess.Normalizer
-   preprocess.normalize_total
-   preprocess.zscore_disksmooth
-   preprocess.quantile_norm
-
-
-qc
-~~~~~~~~~~~~~~~~~~~
-
-.. autosummary::
-   :toctree: .
-
-   preprocess.cal_qc
-
-
-tools: `tl`
+pipeline: `tl`
 -------------------
-
-.. module:: stereo.tl
-.. currentmodule:: stereo
 
 analysis tool module
 
-Cell type annotation
-~~~~~~~~~~~~~~~~~~~
+.. autoclass:: stereo.core.st_pipeline.StPipeline
+   :members:
+   :inherited-members:
 
-.. autosummary::
-   :toctree: .
-
-   tools.CellTypeAnno
-
-
-clustering
-~~~~~~~~~~~~~~~~~~~
-
-.. autosummary::
-   :toctree: .
-
-   tools.Clustering
-
-dimensionality reduce
-~~~~~~~~~~~~~~~~~~~
-
-.. autosummary::
-   :toctree: .
-
-   tools.DimReduce
-   tools.pca
-   tools.u_map
-   tools.factor_analysis
-   tools.low_variance
-   tools.t_sne
-
-find marker
-~~~~~~~~~~~~~~~~~~~
-
-.. autosummary::
-   :toctree: .
-
-   tools.FindMarker
-
-
-Spatial pattern score
-~~~~~~~~~~~~~~~~~~~
-
-.. autosummary::
-   :toctree: .
-
-   tools.SpatialPatternScore
-
-
-Spatial lag
-~~~~~~~~~~~~~~~~~~~
-
-.. autosummary::
-   :toctree: .
-
-   tools.SpatialLag
-
-
-plots: `pt`
+plots: `plt`
 -------------------
 
 .. module:: stereo.plt
@@ -143,10 +56,6 @@ plots: `pt`
 
 visualization module
 
-.. autosummary::
-   :toctree: .
-
-   plots.plot_scatter
-   plots.plot_marker_genes
-   plots.plot_heatmap_marker_genes
-   plots.plot_collection.PlotCollection
+.. autoclass:: stereo.plt.PlotCollection
+   :members:
+   :inherited-members:
