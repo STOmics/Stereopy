@@ -5,9 +5,12 @@
 @time:2021/08/31
 """
 from typing import Optional, Union, Sequence
-import colorcet as cc
+# import colorcet as cc
 import numpy as np
-from .scatter import plot_scatter, plot_multi_scatter, marker_gene_volcano, highly_variable_genes
+from .scatter import base_scatter, multi_scatter, marker_gene_volcano, highly_variable_genes
+from stereo.config import StereoConfig
+
+conf = StereoConfig()
 
 
 class PlotCollection:
@@ -15,6 +18,7 @@ class PlotCollection:
     stereo plot collection
 
     :param data: StereoExpData object
+
     """
 
     def __init__(
@@ -37,7 +41,6 @@ class PlotCollection:
         :param width: figure width
         :param height: figure height
 
-        :return:
         """
         res = self.check_res_key(res_key)
         from .interact_plot.spatial_cluster import interact_spatial_cluster
@@ -58,7 +61,6 @@ class PlotCollection:
 
         :param res_key: result key
 
-        :return:
         """
         res = self.check_res_key(res_key)
         highly_variable_genes(res)
@@ -108,30 +110,30 @@ class PlotCollection:
         )
         # return df
 
-    def plot_genes_count(
+    def genes_count(
             self,
             x=["total_counts", "total_counts"],
             y=["pct_counts_mt", "n_genes_by_counts"],
             ncols=2
     ):
         """
+        quality control index distribution visualization
 
-        :param x:
-        :param y:
-        :param ncols:
+        :param x: list of x label
+        :param y: list of y label
+        :param ncols: number of cols
 
-        :return:
         """
-        from .qc import plot_genes_count
+        from .qc import genes_count
 
-        plot_genes_count(
+        genes_count(
             data=self.data,
             x=x,
             y=y,
             ncols=ncols
         )
 
-    def plot_spatial_distribution(
+    def spatial_distribution(
             self,
             cells_key: list = ["total_counts", "n_genes_by_counts"],
             ncols=2,
@@ -142,17 +144,16 @@ class PlotCollection:
         """
         spatial distribution of total_counts and n_genes_by_counts
 
-        :param cells_key:
-        :param ncols:
-        :param dot_size: dot size
-        :param color_list:
-        :param invert_y:
+        :param cells_key: specified obs key list, for example: ["total_counts", "n_genes_by_counts"]
+        :param ncols: numbr of plot columns.
+        :param dot_size: marker size.
+        :param color_list: Color list.
+        :param invert_y: whether to invert y-axis.
 
-        :return:
         """
-        from .qc import plot_spatial_distribution
+        from .qc import spatial_distribution
 
-        plot_spatial_distribution(
+        spatial_distribution(
             self.data,
             cells_key=cells_key,
             ncols=ncols,
@@ -161,14 +162,14 @@ class PlotCollection:
             invert_y=invert_y
         )
 
-    def plot_violin_distribution(self):
+    def violin_distribution(self):
         """
-        violin plot
+        violin plot showing quality control index distribution
 
         :return:
         """
-        from .qc import plot_violin_distribution
-        plot_violin_distribution(self.data)
+        from .qc import violin_distribution
+        violin_distribution(self.data)
 
     def interact_spatial_distribution(
             self, inline=True,
@@ -192,7 +193,7 @@ class PlotCollection:
             fig.show()
         return ins
 
-    def plot_dim_reduce(
+    def dim_reduce(
             self,
             gene_name: Optional[list] = None,
             res_key='dim_reduce',
@@ -201,7 +202,7 @@ class PlotCollection:
             x_label: Optional[Union[str, list]] = None,
             y_label: Optional[Union[str, list]] = None,
             dot_size: int = None,
-            colors=cc.glasbey,
+            colors: Optional[Union[str, list]] = 'glasbey',
             **kwargs
     ):
         """
@@ -215,24 +216,22 @@ class PlotCollection:
         :param y_label: y label
         :param dot_size: dot size
         :param colors: color list
-        :param kwargs:
 
-        :return:
         """
         res = self.check_res_key(res_key)
         self.data.sparse2array()
         if cluster_key:
             cluster_res = self.check_res_key(cluster_key)
-            return plot_scatter(
+            return base_scatter(
                 res.values[:, 0],
                 res.values[:, 1],
                 color_values=np.array(cluster_res['group']),
-                color_list=colors,
+                color_list=conf.get_colors(colors),
                 title=title, x_label=x_label, y_label=y_label, dot_size=dot_size,
                 **kwargs)
         else:
             if len(gene_name) > 1:
-                return plot_multi_scatter(
+                return multi_scatter(
                     res.values[:, 0],
                     res.values[:, 1],
                     color_values=np.array(self.data.sub_by_name(gene_name=gene_name).exp_matrix).T,
@@ -242,7 +241,7 @@ class PlotCollection:
                     **kwargs
                 )
             else:
-                return plot_scatter(
+                return base_scatter(
                     res.values[:, 0],
                     res.values[:, 1],
                     color_values=np.array(self.data.sub_by_name(gene_name=gene_name).exp_matrix[:, 0]),
@@ -252,17 +251,18 @@ class PlotCollection:
                     **kwargs
                 )
 
-    def plot_cluster_scatter(
+    def cluster_scatter(
             self,
             res_key='cluster',
             title: Optional[str] = None,
             x_label: Optional[str] = None,
             y_label: Optional[str] = None,
             dot_size: int = None,
-            colors=cc.glasbey,
+            colors='glasbey',
             **kwargs
     ):
         """
+        spatial distribution ofter scatter
 
         :param res_key: cluster result key
         :param title: title
@@ -270,16 +270,14 @@ class PlotCollection:
         :param y_label: y label
         :param dot_size: dot size
         :param colors: color list
-        :param kwargs:
 
-        :return:
         """
         res = self.check_res_key(res_key)
-        ax = plot_scatter(
+        ax = base_scatter(
             self.data.position[:, 0],
             self.data.position[:, 1],
             color_values=np.array(res['group']),
-            color_list=colors,
+            color_list=conf.get_colors(colors),
             title=title, x_label=x_label, y_label=y_label, dot_size=dot_size,
             **kwargs
         )
@@ -287,7 +285,7 @@ class PlotCollection:
         # if file_path:
         #     plt.savefig(file_path)
 
-    def plot_marker_genes_text(
+    def marker_genes_text(
             self,
             res_key='marker_genes',
             groups: Union[str, Sequence[str]] = 'all',
@@ -300,9 +298,10 @@ class PlotCollection:
             **kwargs
     ):
         """
+        maker genes plot
 
         :param res_key: marker genes result key
-        :param groups:
+        :param groups: group name
         :param markers_num: top N genes to show in each cluster.
         :param sort_key: the sort key for getting top n marker genes, default `scores`.
         :param ascend: asc or dec.
@@ -311,11 +310,10 @@ class PlotCollection:
         :param sharey:
         :param kwargs:
 
-        :return:
         """
-        from .marker_genes import plot_marker_genes_text
+        from .marker_genes import marker_genes_text
         res = self.check_res_key(res_key)
-        plot_marker_genes_text(
+        marker_genes_text(
             res,
             groups=groups,
             markers_num=markers_num,
@@ -327,7 +325,7 @@ class PlotCollection:
             **kwargs
         )
 
-    def plot_marker_genes_heatmap(
+    def marker_genes_heatmap(
             self,
             res_key='marker_genes',
             cluster_res_key='cluster',
@@ -344,11 +342,12 @@ class PlotCollection:
             do_log=True
     ):
         """
+        heatmap of maker genes
 
-        :param res_key:
-        :param cluster_res_key:
-        :param markers_num:
-        :param sort_key:
+        :param res_key: results key
+        :param cluster_res_key: cluster result key
+        :param markers_num: top N maker
+        :param sort_key: sorted by key
         :param ascend:
         :param show_labels:
         :param show_group:
@@ -359,13 +358,12 @@ class PlotCollection:
         :param gene_list:
         :param do_log:
 
-        :return:
         """
-        from .marker_genes import plot_marker_genes_heatmap
+        from .marker_genes import marker_genes_heatmap
         maker_res = self.check_res_key(res_key)
         cluster_res = self.check_res_key(cluster_res_key)
         cluster_res = cluster_res.set_index(['bins'])
-        plot_marker_genes_heatmap(
+        marker_genes_heatmap(
             self.data,
             cluster_res,
             maker_res,
@@ -388,7 +386,7 @@ class PlotCollection:
 
         :param res_key: result key
 
-        :return:
+        :return: tool result
         """
         if res_key in self.result:
             res = self.result[res_key]

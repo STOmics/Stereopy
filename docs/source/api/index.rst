@@ -15,6 +15,9 @@ Import stereopy as::
 IO
 -------------------
 
+.. module:: stereo.io
+.. currentmodule:: stereo
+
 io module, reading gem format file into StereoExoData object.
 
 .. autosummary::
@@ -25,29 +28,23 @@ io module, reading gem format file into StereoExoData object.
    io.write_h5ad
 
 
-StereoExoData
+data: `StereoExoData`
 -------------------
 
-.. autosummary::
-   :toctree: generated/classes
+.. module:: stereo
+.. currentmodule:: stereo
 
-   core.stereo_exp_data.StereoExpData
+.. autoclass:: stereo.core.stereo_exp_data.StereoExpData
+   :members:
+   :inherited-members:
 
 
-
-StPipeline: `StereoExpData.tl`
+pipeline: `tl`
 -------------------
 
 analysis tool module
 
 .. autoclass:: stereo.core.st_pipeline.StPipeline
-   :members:
-   :inherited-members:
-
-PlotCollection: `StereoExpData.plt`
--------------
-
-.. autoclass:: stereo.plt.PlotCollection
    :members:
    :inherited-members:
 
@@ -57,4 +54,47 @@ plots: `plt`
 .. module:: stereo.plt
 .. currentmodule:: stereo
 
+visualization module
 
+.. autosummary::
+   :toctree: .
+
+
+plot collection
+~~~~~~~~~~~~~~~~~~~
+
+.. autosummary::
+   :toctree: .
+
+   plots.PlotCollection
+
+
+scatter
+~~~~~~~~
+.. autosummary::
+   :toctree: .
+
+   plots.scatter.base_scatter
+   plots.scatter.volcano
+   plots.scatter.highly_variable_genes
+   plots.genes_count
+   plots.spatial_distribution
+
+
+interactive plot
+~~~~~~~~~~~~~~~~~
+.. autosummary::
+   :toctree: .
+
+   plots.interact_spatial_cluster
+   plots.InteractiveScatter
+
+
+others
+~~~~~~~~
+.. autosummary::
+   :toctree: .
+
+   plots.violin_distribution
+   plots.marker_genes_text
+   plots.marker_genes_heatmap

@@ -108,6 +108,7 @@ class InteractiveScatter:
         reverse_colormap = pn.widgets.Checkbox(name='reverse_colormap')
         scatter_df = self.scatter_df
         # dot_size = self.dot_size
+        bgcolor = self.bgcolor
         width, height = self.width, self.height
         @pn.depends(cmap, reverse_colormap)
         def _df_plot(cmap, reverse_colormap):
@@ -121,7 +122,7 @@ class InteractiveScatter:
                 datashade=True,
                 dynspread=True,
 
-            ).opts(bgcolor='#2F2F4F'), selection_mode='union')
+            ).opts(bgcolor=bgcolor), selection_mode='union')
 
         @param.depends(link.param.selection_expr)
         def _selection_table(_):
@@ -136,14 +137,13 @@ class InteractiveScatter:
                     # pn.panel(pn.bind(random_plot, button), loading_indicator=True),
                     _selection_table,
                     pn.Column(
-                        "above in the table is selected points, pick or drop them to generate a new expression matrix",
+                        "above in the table is selected points, pick or drop them to generate a new StereoExpData",
                         pn.Row(
                             self.drop_checkbox,
                             # self.bin_select
                         ),
-                        'extract',
+                        'export selected data a new StereoExpData object',
                         self.download,
-                        "self.selected_exp_data will be the new StereoExpData object"
                     ),
                 ))
         )

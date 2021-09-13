@@ -13,6 +13,9 @@ Version 0.1
 - add the pipeline for the StereoExpData.
 - surport reading the gef file.
 - add the methode of logres for find marker genes.
+- add interactive plot
+- add sc transform method
+- add finding highly variable genes analysis
 
 
 **Bugfixes**

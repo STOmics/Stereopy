@@ -18,7 +18,7 @@ from ..core.stereo_exp_data import StereoExpData
 from ..utils import data_helper
 
 
-def plot_marker_genes_text(
+def marker_genes_text(
         marker_res,
         groups: Union[str, Sequence[str]] = 'all',
         markers_num: int = 20,
@@ -173,6 +173,7 @@ def plot_heatmap(
         **kwargs
 ):
     """
+    heatmap
 
     :param df: the dataframe object. the index of df is group info if show group is True.
     :param show_labels: whether to show the labels of the heatmap plot.
@@ -252,7 +253,7 @@ def plot_heatmap(
         )
 
 
-def plot_marker_genes_heatmap(
+def marker_genes_heatmap(
         data: StereoExpData,
         cluster_res: pd.DataFrame,
         marker_res: dict,
@@ -267,6 +268,25 @@ def plot_marker_genes_heatmap(
         max_value=None,
         gene_list=None,
         do_log=True):
+    """
+    heatmap of marker genes
+
+    :param data: StereoExpData object
+    :param cluster_res: cluster result
+    :param marker_res: maker genes result
+    :param markers_num: top N maker genes
+    :param sort_key: sorted key
+    :param ascend: False or True
+    :param show_labels: show labels or not
+    :param show_group: show group or not
+    :param show_group_txt: show group names or not
+    :param cluster_colors_array: color values
+    :param min_value: minus value
+    :param max_value: max value
+    :param gene_list: gene name list
+    :param do_log: calculate log or not
+
+    """
     draw_df, group_labels, group_position = make_draw_df(data=data, group=cluster_res, marker_res=marker_res,
                                                          top_genes=markers_num, sort_key=sort_key, ascend=ascend,
                                                          gene_list=gene_list, min_value=min_value, max_value=max_value)

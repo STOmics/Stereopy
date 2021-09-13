@@ -19,7 +19,7 @@ from ..preprocess.normalize import Normalizer
 from .dim_reduce import DimReduce
 import pandas as pd
 from typing import Optional
-from ..plots.scatter import plot_scatter, plt, colors
+from ..plots.scatter import base_scatter, plt, colors
 import colorcet as cc
 
 
@@ -168,7 +168,7 @@ class Clustering(ToolBase):
         """
         running and add results
         """
-        self.sparse2array()
+        self.data.sparse2array()
         self.get_dim_reduce_x()
         neighbor, nn_idx, nn_dist = self.run_neighbors(self.pca_x.matrix)
         if self.method == 'leiden':
@@ -191,10 +191,10 @@ class Clustering(ToolBase):
         :return:
         """
         if plot_dim_reduce:
-            plot_scatter(self.pca_x.matrix.values[:, 0], self.pca_x.matrix.values[:, 1],
+            base_scatter(self.pca_x.matrix.values[:, 0], self.pca_x.matrix.values[:, 1],
                          color_values=np.array(self.result.matrix['cluster']), color_list=cc.glasbey)
         else:
-            plot_scatter(self.data.position[:, 0], self.data.position[:, 1],
+            base_scatter(self.data.position[:, 0], self.data.position[:, 1],
                          color_values=np.array(self.result.matrix['cluster']),
                          color_list=cc.glasbey)
         if file_path:

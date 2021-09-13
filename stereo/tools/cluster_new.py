@@ -18,7 +18,7 @@ from stereo.algorithm.neighbors import Neighbors
 from .dim_reduce import DimReduce
 import pandas as pd
 from typing import Optional, Type
-from ..plots.scatter import plot_scatter, plt, colors
+from ..plots.scatter import base_scatter, plt, colors
 from natsort import natsorted
 from sklearn.metrics import pairwise_distances
 from typing import Any, Mapping
@@ -223,10 +223,10 @@ class Cluster(ToolBase):
         :return:
         """
         if plot_dim_reduce:
-            plot_scatter(self.pca_x.values[:, 0], self.pca_x.values[:, 1],
+            base_scatter(self.pca_x.values[:, 0], self.pca_x.values[:, 1],
                          color_values=np.array(self.result.matrix['cluster']), color_list=colors)
         else:
-            plot_scatter(self.data.position[:, 0], self.data.position[:, 1],
+            base_scatter(self.data.position[:, 0], self.data.position[:, 1],
                          color_values=np.array(self.result.matrix['cluster']),
                          color_list=colors)
         if file_path:

@@ -28,7 +28,7 @@ colors = ['violet', 'turquoise', 'tomato', 'teal', 'tan', 'silver', 'sienna', 'r
               ]
 
 
-def plot_scatter(
+def base_scatter(
         x: Optional[Union[np.ndarray, list]],
         y: Optional[Union[np.ndarray, list]],
         color_values: Optional[Union[np.ndarray, list]] = None,
@@ -63,10 +63,10 @@ def plot_scatter(
     -------
 
     >>> color_values = np.array(['g1', 'g3', 'g1', 'g2', 'g1'])
-    >>> plot_scatter(np.array([2, 4, 5, 7, 9]), np.array([3, 4, 5, 6, 7]), color_values=color_values)
+    >>> base_scatter(np.array([2, 4, 5, 7, 9]), np.array([3, 4, 5, 6, 7]), color_values=color_values)
 
     OR
-    >>> plot_scatter(np.array([2, 4, 5, 7, 9]), np.array([3, 4, 5, 6, 7]), color_values=np.array([0, 2, 3, 1, 1], color_bar=True)
+    >>> base_scatter(np.array([2, 4, 5, 7, 9]), np.array([3, 4, 5, 6, 7]), color_values=np.array([0, 2, 3, 1, 1], color_bar=True)
 
     color_values must be int array or list when color_bar is True
 
@@ -156,7 +156,7 @@ def plot_scatter(
     # plt.show()
 
 
-def plot_multi_scatter(
+def multi_scatter(
         x,
         y,
         color_values: Union[np.ndarray] = None,
@@ -205,7 +205,7 @@ def plot_multi_scatter(
     )
     for i, cv in enumerate(color_values):
         ax = fig.add_subplot(axs[i])  # ax = plt.subplot(axs[i]) || ax = fig.add_subplot(axs[1, 1]))
-        plot_scatter(x, y, cv,
+        base_scatter(x, y, cv,
                      ax=ax,
                      title=title[i] if title else None,
                      x_label=x_label[i] if x_label else None,
@@ -228,6 +228,7 @@ def volcano(
         vlines=True, cut_off_pvalue=0.01, cut_off_logFC=1,
 ):
     """
+    volcano plot
 
     :param data: data frame
     :param x: key in data, variables that specify positions on the x axes.
@@ -315,6 +316,13 @@ def marker_gene_volcano(
 def highly_variable_genes(
         data: Optional[pd.DataFrame]
 ):
+    """
+    scatter of highly variable genes
+
+    :param data: pd.DataFrame
+
+    :return: figure object
+    """
     seurat_v3_flavor = "variances_norm" in data.columns
     if seurat_v3_flavor:
         y_label = 'variances'
