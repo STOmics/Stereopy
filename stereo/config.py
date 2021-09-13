@@ -37,6 +37,22 @@ class StereoConfig(object):
         self.data_dir = data_dir if data_dir else os.path.join(os.path.dirname(os.path.abspath(__file__)), 'data')
 
     @property
+    def colormaps(self):
+        from colorcet import palette
+        colormaps = {n: palette[n] for n in ['glasbey', 'glasbey_bw', 'glasbey_cool', 'glasbey_warm', 'glasbey_dark',
+                                             'glasbey_light', 'glasbey_category10', 'glasbey_hv']}
+        return colormaps
+
+    def get_colors(self, colors):
+        if isinstance(colors, str):
+            if colors not in self.colormaps:
+                raise ValueError(f'{colors} not in colormaps, color value range in {self.colormaps.keys()}')
+            else:
+                return self.colormaps[colors]
+        else:
+            return colors
+
+    @property
     def log_file(self) -> Union[str, Path, None]:
         """
         get the file path of log.

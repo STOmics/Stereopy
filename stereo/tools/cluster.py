@@ -19,7 +19,7 @@ from ..preprocess.normalize import Normalizer
 from .dim_reduce import DimReduce
 import pandas as pd
 from typing import Optional
-from ..plots.scatter import plot_scatter, plt
+from ..plots.scatter import base_scatter, plt
 import colorcet as cc
 # import phenograph
 
@@ -194,10 +194,10 @@ class Cluster(ToolBase):
         :return:
         """
         if plot_dim_reduce:
-            plot_scatter(self.pca_x.values[:, 0], self.pca_x.values[:, 1],
+            base_scatter(self.pca_x.values[:, 0], self.pca_x.values[:, 1],
                          color_values=np.array(self.result['cluster']), color_list=cc.glasbey)
         else:
-            plot_scatter(self.data.position[:, 0], self.data.position[:, 1],
+            base_scatter(self.data.position[:, 0], self.data.position[:, 1],
                          color_values=np.array(self.result['cluster']),
                          color_list=cc.glasbey)
         if file_path:

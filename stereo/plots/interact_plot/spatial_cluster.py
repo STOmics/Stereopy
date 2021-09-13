@@ -26,14 +26,17 @@ def interact_spatial_cluster(
         height=500,
 ):
     """
+    spatial distribution color mapped by cluster
+
     :param df: data frame, eg:
        x  y  group
     0  1  2        0
     1  2  3        1
     2  3  4        2
-    :param width
-    :param height
-    :return:
+    :param width: width
+    :param height: height
+
+    :return: panel widgets
     """
     # for notebook show
     pn.extension()
@@ -42,7 +45,7 @@ def interact_spatial_cluster(
     dot_size_default = int(120000 / len(df))
 
     bg_colorpicker = pn.widgets.ColorPicker(name='background color', value='#000000', width=200)
-    dot_slider = pn.widgets.IntSlider(name='dot size', value=dot_size_default, start=0, end=200, step=1, width=200)
+    dot_slider = pn.widgets.IntSlider(name='dot size', value=dot_size_default, start=1, end=200, step=1, width=200)
     cs = list(sorted(np.array(list(s for s in set(df['group'])))))
 
     theme_select = pn.widgets.Select(name='color theme', options=list(colormaps.keys()), value=theme_default, width=200)

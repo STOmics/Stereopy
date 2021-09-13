@@ -18,7 +18,7 @@ import seaborn
 from ..core.stereo_exp_data import StereoExpData
 
 
-def plot_genes_count(
+def genes_count(
         data: StereoExpData,
         x=["total_counts", "total_counts"],
         y=["pct_counts_mt", "n_genes_by_counts"],
@@ -37,7 +37,7 @@ def plot_genes_count(
 
     .. code:: python
 
-        plot_spatial_cluster(data = data)
+        spatial_cluster(data = data)
 
     """
     if isinstance(x, str):
@@ -75,7 +75,7 @@ def plot_genes_count(
         )
 
 
-def plot_spatial_distribution(
+def spatial_distribution(
         data: StereoExpData,
         cells_key: list = ["total_counts", "n_genes_by_counts"],
         ncols=2,
@@ -98,7 +98,7 @@ def plot_spatial_distribution(
 
     .. code:: python
 
-        plot_spatial_distribution(data=data)
+        spatial_distribution(data=data)
 
     """
     # sc.pl.embedding(adata, basis="spatial", color=["total_counts", "n_genes_by_counts"],size=30)
@@ -166,7 +166,7 @@ def plot_spatial_distribution(
             ax.invert_yaxis()
 
 
-def plot_violin_distribution(data):  # 小提琴统计图
+def violin_distribution(data):  # 小提琴统计图
     """
     violin plot showing quality control index distribution
 

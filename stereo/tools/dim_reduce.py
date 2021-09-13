@@ -16,7 +16,7 @@ import pandas as pd
 # from stereo.log_manager import logger
 from stereo.core.tool_base import ToolBase
 from ..algorithm.dim_reduce import low_variance, factor_analysis, pca, t_sne, u_map
-from ..plots.scatter import plt, plot_scatter, colors, plot_multi_scatter
+from ..plots.scatter import plt, base_scatter, colors, multi_scatter
 import numpy as np
 from typing import Optional
 
@@ -186,12 +186,12 @@ class DimReduce(ToolBase):
         #     self.data.exp_matrix = self.data.exp_matrix.toarray()
         self.data.sparse2array()
         if len(gene_name) > 1:
-            plot_multi_scatter(self.result.matrix.values[:, 0], self.result.matrix.values[:, 1],
+            multi_scatter(self.result.matrix.values[:, 0], self.result.matrix.values[:, 1],
                                color_values=np.array(self.data.sub_by_name(gene_name=gene_name).exp_matrix).T,
                                color_list=colors, color_bar=True
                                )
         else:
-            plot_scatter(self.result.matrix.values[:, 0], self.result.matrix.values[:, 1],
+            base_scatter(self.result.matrix.values[:, 0], self.result.matrix.values[:, 1],
                          color_values=np.array(self.data.sub_by_name(gene_name=gene_name).exp_matrix[:, 0]),
                          color_list=colors, color_bar=True)
         if file_path:

@@ -56,6 +56,45 @@ plots: `plt`
 
 visualization module
 
-.. autoclass:: stereo.plt.PlotCollection
-   :members:
-   :inherited-members:
+.. autosummary::
+   :toctree: .
+
+
+plot collection
+~~~~~~~~~~~~~~~~~~~
+
+.. autosummary::
+   :toctree: .
+
+   plots.PlotCollection
+
+
+scatter
+~~~~~~~~
+.. autosummary::
+   :toctree: .
+
+   plots.scatter.base_scatter
+   plots.scatter.volcano
+   plots.scatter.highly_variable_genes
+   plots.genes_count
+   plots.spatial_distribution
+
+
+interactive plot
+~~~~~~~~~~~~~~~~~
+.. autosummary::
+   :toctree: .
+
+   plots.interact_spatial_cluster
+   plots.InteractiveScatter
+
+
+others
+~~~~~~~~
+.. autosummary::
+   :toctree: .
+
+   plots.violin_distribution
+   plots.marker_genes_text
+   plots.marker_genes_heatmap
