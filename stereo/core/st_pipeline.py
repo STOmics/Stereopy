@@ -19,56 +19,136 @@ from ..algorithm.dim_reduce import pca, u_map
 from typing import Optional, Union
 import copy
 from ..algorithm.neighbors import find_neighbors
-import phenograph
+import phenograph as phe
 import pandas as pd
-from ..algorithm.leiden import leiden
-from ..algorithm._louvain import louvain
+from ..algorithm.leiden import leiden as le
+from ..algorithm._louvain import louvain as lo
 from typing_extensions import Literal
 
 
 class StPipeline(object):
     def __init__(self, data):
+        """
+        A analysis tool sets for StereoExpData. include preprocess, filter, cluster, plot and so on.
+
+        :param data: StereoExpData object.
+        """
         self.data = data
         self.result = dict()
         self._raw = None
 
     @property
     def raw(self):
+        """
+        get the StereoExpData whose exp_matrix is raw count.
+
+        :return:
+        """
         return self._raw
 
     @raw.setter
     def raw(self, value):
+        """
+        set the raw data.
+
+        :param value: StereoExpData.
+        :return:
+        """
         self._raw = copy.deepcopy(value)
 
     def data2raw(self):
+        """
+        reset the self.data to the raw data.
+
+        :return:
+        """
         self.data = self.raw
 
     def cal_qc(self):
+        """
+        calculate three qc index including the number of genes expressed in the count matrix, the total counts per cell
+        and the percentage of counts in mitochondrial genes.
+
+        :return:
+        """
         cal_qc(self.data)
 
     def filter_cells(self, min_gene=None, max_gene=None, n_genes_by_counts=None, pct_counts_mt=None, cell_list=None,
                      inplace=True):
+        """
+        filter cells based on numbers of genes expressed.
+
+        :param min_gene: Minimum number of genes expressed for a cell pass filtering.
+        :param max_gene: Maximum number of genes expressed for a cell pass filtering.
+        :param n_genes_by_counts: Minimum number of  n_genes_by_counts for a cell pass filtering.
+        :param pct_counts_mt: Maximum number of  pct_counts_mt for a cell pass filtering.
+        :param cell_list: the list of cells which will be filtered.
+        :param inplace: whether inplace the original data or return a new data.
+        :return:
+        """
         return filter_cells(self.data, min_gene, max_gene, n_genes_by_counts, pct_counts_mt, cell_list, inplace)
 
     def filter_genes(self, min_cell=None, max_cell=None, gene_list=None, inplace=True):
+        """
+        filter genes based on the numbers of cells.
+
+        :param min_cell: Minimum number of cells for a gene pass filtering.
+        :param max_cell: Maximun number of cells for a gene pass filtering.
+        :param gene_list: the list of genes which will be filtered.
+        :param inplace: whether inplace the original data or return a new data.
+        :return:
+        """
         return filter_genes(self.data, min_cell, max_cell, gene_list, inplace)
 
     def filter_coordinates(self, min_x=None, max_x=None, min_y=None, max_y=None, inplace=True):
+        """
+        filter cells based on the coordinates of cells.
+
+        :param min_x: Minimum of x for a cell pass filtering.
+        :param max_x: Maximum of x for a cell pass filtering.
+        :param min_y: Minimum of y for a cell pass filtering.
+        :param max_y: Maximum of y for a cell pass filtering.
+        :param inplace: whether inplace the original data or return a new data.
+        :return:
+        """
         return filter_coordinates(self.data, min_x, max_x, min_y, max_y, inplace)
 
     def log1p(self, inplace=True, res_key='log1p'):
+        """
+        log1p for express matrix.
+
+        :param inplace: whether inplace the original data or get a new express matrix after log1p.
+        :param res_key: the key for getting the result from the self.result.
+        :return:
+        """
         if inplace:
             self.data.exp_matrix = np.log1p(self.data.exp_matrix)
         else:
             self.result[res_key] = np.log1p(self.data.exp_matrix)
 
     def normalize_total(self, target_sum=10000, inplace=True, res_key='normalize_total'):
+        """
+        total count normalize the data to `target_sum` reads per cell, so that counts become comparable among cells.
+
+        :param target_sum: the number of reads per cell after normalization.
+        :param inplace: whether inplace the original data or get a new express matrix after normalize_total.
+        :param res_key: the key for getting the result from the self.result.
+        :return:
+        """
         if inplace:
             self.data.exp_matrix = normalize_total(self.data.exp_matrix, target_sum=target_sum)
         else:
             self.result[res_key] = normalize_total(self.data.exp_matrix, target_sum=target_sum)
 
     def quantile(self, inplace=True, res_key='quantile'):
+        """
+        Normalize the columns of X to each have the same distribution. Given an expression matrix  of M genes by N
+        samples, quantile normalization ensures all samples have the same spread of data (by construction).
+
+        :param inplace: whether inplace the original data or get a new express matrix after quantile.
+        :param res_key: the key for getting the result from the self.result.
+        :return:
+        """
         if issparse(self.data.exp_matrix):
             self.data.exp_matrix = self.data.exp_matrix.toarray()
         if inplace:
@@ -77,6 +157,14 @@ class StPipeline(object):
             self.result[res_key] = quantile_norm(self.data.exp_matrix)
 
     def disksmooth_zscore(self, r, inplace=True, res_key='disksmooth_zscore'):
+        """
+        for each position, given a radius, calculate the z-score within this circle as final normalized value.
+
+        :param r: radius for normalization.
+        :param inplace: whether inplace the original data or get a new express matrix after disksmooth_zscore.
+        :param res_key: the key for getting the result from the self.result.
+        :return:
+        """
         if issparse(self.data.exp_matrix):
             self.data.exp_matrix = self.data.exp_matrix.toarray()
         if inplace:
@@ -93,6 +181,22 @@ class StPipeline(object):
                     var_features_n=3000,
                     inplace=True,
                     res_key='sctransform'):
+        """
+        scTransform reference Seruat.
+
+        :param method: offset, theta_ml, theta_lbfgs, alpha_lbfgs.
+        :param n_cells: Number of cells to use for estimating parameters in Step1: default is 5000.
+        :param n_genes: Number of genes to use for estimating parameters in Step1; default is 2000.
+        :param filter_hvgs: bool.
+        :param res_clip_range: string or list
+                    options: 1)"seurat": Clips residuals to -sqrt(ncells/30), sqrt(ncells/30)
+                             2)"default": Clips residuals to -sqrt(ncells), sqrt(ncells)
+                    only used when filter_hvgs is true.
+        :param var_features_n: Number of variable features to select (for calculating a subset of pearson residuals).
+        :param inplace: whether inplace the original data or get a new express matrix after sctransform.
+        :param res_key: the key for getting the result from the self.result.
+        :return:
+        """
         from ..preprocess.sc_transform import sc_transform
         if inplace:
             sc_transform(self.data, method, n_cells, n_genes, filter_hvgs, res_clip_range, var_features_n)
@@ -112,6 +216,36 @@ class StPipeline(object):
                          max_mean: Optional[float] = 3,
                          span: Optional[float] = 0.3,
                          n_bins: int = 20, res_key='highly_var_genes'):
+        """
+        Annotate highly variable genes. reference scanpy.
+
+        :param groups:  If specified, highly-variable genes are selected within each batch separately and merged.
+                        This simple process avoids the selection of batch-specific genes and acts as a
+                        lightweight batch correction method. For all flavors, genes are first sorted
+                        by how many batches they are a HVG. For dispersion-based flavors ties are broken
+                        by normalized dispersion. If `flavor = 'seurat_v3'`, ties are broken by the median
+                        (across batches) rank based on within-batch normalized variance.
+        :param method:  Choose the flavor for identifying highly variable genes. For the dispersion
+                        based methods in their default workflows, Seurat passes the cutoffs whereas
+                        Cell Ranger passes `n_top_genes`.
+        :param n_top_genes: Number of highly-variable genes to keep. Mandatory if `flavor='seurat_v3'`.
+        :param min_disp: If `n_top_genes` unequals `None`, this and all other cutoffs for the means and the
+                         normalized dispersions are ignored. Ignored if `flavor='seurat_v3'`.
+        :param max_disp: If `n_top_genes` unequals `None`, this and all other cutoffs for the means and the
+                         normalized dispersions are ignored. Ignored if `flavor='seurat_v3'`.
+        :param min_mean: If `n_top_genes` unequals `None`, this and all other cutoffs for the means and the
+                         normalized dispersions are ignored. Ignored if `flavor='seurat_v3'`.
+        :param max_mean: If `n_top_genes` unequals `None`, this and all other cutoffs for the means and the
+                         normalized dispersions are ignored. Ignored if `flavor='seurat_v3'`.
+        :param span: The fraction of the data (cells) used when estimating the variance in the loess
+                         model fit if `flavor='seurat_v3'`.
+        :param n_bins: Number of bins for binning the mean gene expression. Normalization is
+                       done with respect to each bin. If just a single gene falls into a bin,
+                       the normalized dispersion is artificially set to 1. You'll be informed
+                       about this if you set `settings.verbosity = 4`.
+        :param res_key: the key for getting the result from the self.result.
+        :return:
+        """
         from ..tools.highly_variable_genes import HighlyVariableGenes
         hvg = HighlyVariableGenes(self.data, groups=groups, method=method, n_top_genes=n_top_genes, min_disp=min_disp,
                                   max_disp=max_disp, min_mean=min_mean, max_mean=max_mean, span=span, n_bins=n_bins)
@@ -119,6 +253,14 @@ class StPipeline(object):
         self.result[res_key] = hvg.result
 
     def subset_by_hvg(self, hvg_res_key, inplace=True):
+        """
+        get the subset by the result of highly variable genes.
+
+        :param hvg_res_key: the key of highly varialbe genes to getting the result.
+        :param inplace: whether inplace the data or get a new data after highly variable genes, which only save the
+                        data info of highly variable genes.
+        :return: a StereoExpData object.
+        """
         data = self.data if inplace else copy.deepcopy(self.data)
         if hvg_res_key not in self.result:
             raise Exception(f'{hvg_res_key} is not in the result, please check and run the normalization func.')
@@ -127,7 +269,16 @@ class StPipeline(object):
         data.sub_by_index(gene_index=genes_index)
         return data
 
-    def pca(self, use_highly_genes, n_pcs, hvg_res_key=None, res_key='dim_reduce'):
+    def pca(self, use_highly_genes, n_pcs, hvg_res_key='highly_var_genes', res_key='dim_reduce'):
+        """
+        Principal component analysis.
+
+        :param use_highly_genes: Whether to use only the expression of hypervariable genes as input.
+        :param n_pcs: the number of features for a return array after reducing.
+        :param hvg_res_key: the key of highly varialbe genes to getting the result.
+        :param res_key: the key for getting the result from the self.result.
+        :return:
+        """
         if use_highly_genes and hvg_res_key not in self.result:
             raise Exception(f'{hvg_res_key} is not in the result, please check and run the highly_var_genes func.')
         data = self.subset_by_hvg(hvg_res_key, inplace=False) if use_highly_genes else self.data
@@ -135,25 +286,55 @@ class StPipeline(object):
         res = pca(x, n_pcs)
         self.result[res_key] = pd.DataFrame(res['x_pca'])
 
-    def umap(self, pca_res_key, n_pcs=None, n_neighbors=5, min_dist=0.3, res_key='dim_reduce'):
-        if pca_res_key not in self.result:
-            raise Exception(f'{pca_res_key} is not in the result, please check and run the pca func.')
-        x = self.result[pca_res_key][:, n_pcs] if n_pcs is not None else self.result[pca_res_key]
-        res = u_map(x, 2, n_neighbors, min_dist)
-        self.result[res_key] = pd.DataFrame(res)
+    # def umap(self, pca_res_key, n_pcs=None, n_neighbors=5, min_dist=0.3, res_key='dim_reduce'):
+    #     if pca_res_key not in self.result:
+    #         raise Exception(f'{pca_res_key} is not in the result, please check and run the pca func.')
+    #     x = self.result[pca_res_key][:, n_pcs] if n_pcs is not None else self.result[pca_res_key]
+    #     res = u_map(x, 2, n_neighbors, min_dist)
+    #     self.result[res_key] = pd.DataFrame(res)
 
-    def u_map(self,
-              pca_res_key,
-              neighbors_res_key,
-              res_key='dim_reduce',
-              min_dist: float = 0.5,
-              spread: float = 1.0,
-              n_components: int = 2,
-              maxiter: Optional[int] = None,
-              alpha: float = 1.0,
-              gamma: float = 1.0,
-              negative_sample_rate: int = 5,
-              init_pos: str = 'spectral', ):
+    def umap(self,
+             pca_res_key,
+             neighbors_res_key,
+             res_key='dim_reduce',
+             min_dist: float = 0.5,
+             spread: float = 1.0,
+             n_components: int = 2,
+             maxiter: Optional[int] = None,
+             alpha: float = 1.0,
+             gamma: float = 1.0,
+             negative_sample_rate: int = 5,
+             init_pos: str = 'spectral', ):
+        """
+        Embed the neighborhood graph using UMAP [McInnes18]_.
+
+        :param pca_res_key: the key of pca to getting the result. Usually, in spatial omics analysis, the results
+                            after using pca are used for umap.
+        :param neighbors_res_key: the key of neighbors to getting the connectivities of neighbors result for umap.
+        :param res_key: the key for getting the result from the self.result.
+        :param min_dist: The effective minimum distance between embedded points. Smaller values
+                         will result in a more clustered/clumped embedding where nearby points on
+                         the manifold are drawn closer together, while larger values will result
+                         on a more even dispersal of points. The value should be set relative to
+                         the ``spread`` value, which determines the scale at which embedded
+                         points will be spread out. The default of in the `umap-learn` package is
+                         0.1.
+        :param spread: The effective scale of embedded points. In combination with `min_dist`
+                       this determines how clustered/clumped the embedded points are.
+        :param n_components: The number of dimensions of the embedding.
+        :param maxiter: The number of iterations (epochs) of the optimization. Called `n_epochs`
+                        in the original UMAP.
+        :param alpha: The initial learning rate for the embedding optimization.
+        :param gamma: Weighting applied to negative samples in low dimensional embedding
+                      optimization. Values higher than one will result in greater weight
+                      being given to negative samples.
+        :param negative_sample_rate: The number of negative edge/1-simplex samples to use per positive
+                      edge/1-simplex sample in optimizing the low dimensional embedding.
+        :param init_pos: How to initialize the low dimensional embedding.Called `init` in the original UMAP.Options are:
+                        * 'spectral': use a spectral embedding of the graph.
+                        * 'random': assign initial embedding positions at random.
+        :return:
+        """
         from ..algorithm.umap import umap
         if pca_res_key not in self.result:
             raise Exception(f'{pca_res_key} is not in the result, please check and run the pca func.')
@@ -167,7 +348,17 @@ class StPipeline(object):
 
     def neighbors(self, pca_res_key, method='umap', metric='euclidean', n_pcs=40, n_neighbors=10, knn=True,
                   res_key='neighbors'):
+        """
 
+        :param pca_res_key:
+        :param method:
+        :param metric:
+        :param n_pcs:
+        :param n_neighbors:
+        :param knn:
+        :param res_key:
+        :return:
+        """
         if pca_res_key not in self.result:
             raise Exception(f'{pca_res_key} is not in the result, please check and run the pca func.')
         neighbor, dists, connectivities = find_neighbors(self.result[pca_res_key].values, method, n_pcs, n_neighbors,
@@ -176,6 +367,12 @@ class StPipeline(object):
         self.result[res_key] = res
 
     def get_neighbors_res(self, neighbors_res_key):
+        """
+        get the neighbor result by the key.
+
+        :param neighbors_res_key: the key of neighbor to getting the result.
+        :return: neighbor, connectivities, nn_dist.
+        """
         if neighbors_res_key not in self.result:
             raise Exception(f'{neighbors_res_key} is not in the result, please check and run the neighbors func.')
         neighbors_res = self.result[neighbors_res_key]
@@ -184,40 +381,70 @@ class StPipeline(object):
         nn_dist = neighbors_res['nn_dist']
         return neighbor, connectivities, nn_dist
 
-    def run_leiden(self,
-                   neighbors_res_key,
-                   res_key='cluster',
-                   directed: bool = True,
-                   resolution: float = 1,
-                   use_weights: bool = True,
-                   random_state: int = 0,
-                   n_iterations: int = -1
-                   ):
+    def leiden(self,
+               neighbors_res_key,
+               res_key='cluster',
+               directed: bool = True,
+               resolution: float = 1,
+               use_weights: bool = True,
+               random_state: int = 0,
+               n_iterations: int = -1
+               ):
+        """
+
+        :param neighbors_res_key:
+        :param res_key:
+        :param directed:
+        :param resolution:
+        :param use_weights:
+        :param random_state:
+        :param n_iterations:
+        :return:
+        """
         neighbor, connectivities, _ = self.get_neighbors_res(neighbors_res_key)
-        clusters = leiden(neighbor=neighbor, adjacency=connectivities, directed=directed, resolution=resolution,
-                          use_weights=use_weights, random_state=random_state, n_iterations=n_iterations)
+        clusters = le(neighbor=neighbor, adjacency=connectivities, directed=directed, resolution=resolution,
+                      use_weights=use_weights, random_state=random_state, n_iterations=n_iterations)
         df = pd.DataFrame({'bins': self.data.cell_names, 'group': clusters})
         self.result[res_key] = df
 
-    def run_louvain(self,
-                    neighbors_res_key,
-                    res_key='cluster',
-                    resolution: float = None,
-                    random_state: int = 0,
-                    flavor: Literal['vtraag', 'igraph', 'rapids'] = 'vtraag',
-                    directed: bool = True,
-                    use_weights: bool = False
-                    ):
+    def louvain(self,
+                neighbors_res_key,
+                res_key='cluster',
+                resolution: float = None,
+                random_state: int = 0,
+                flavor: Literal['vtraag', 'igraph', 'rapids'] = 'vtraag',
+                directed: bool = True,
+                use_weights: bool = False
+                ):
+        """
+
+        :param neighbors_res_key:
+        :param res_key:
+        :param resolution:
+        :param random_state:
+        :param flavor:
+        :param directed:
+        :param use_weights:
+        :return:
+        """
         neighbor, connectivities, _ = self.get_neighbors_res(neighbors_res_key)
-        clusters = louvain(neighbor=neighbor, resolution=resolution, random_state=random_state,
-                           adjacency=connectivities, flavor=flavor, directed=directed, use_weights=use_weights)
+        clusters = lo(neighbor=neighbor, resolution=resolution, random_state=random_state,
+                      adjacency=connectivities, flavor=flavor, directed=directed, use_weights=use_weights)
         df = pd.DataFrame({'bins': self.data.cell_names, 'group': clusters})
         self.result[res_key] = df
 
-    def run_phenograph(self, phenograph_k, pca_res_key, res_key='cluster'):
+    def phenograph(self, phenograph_k, pca_res_key, res_key='cluster'):
+        """
+        phenograph of cluster.
+
+        :param phenograph_k: the k value of phenograph.
+        :param pca_res_key: the key of pca to getting the result for running the phenograph.
+        :param res_key: the key for getting the result from the self.result.
+        :return:
+        """
         if pca_res_key not in self.result:
             raise Exception(f'{pca_res_key} is not in the result, please check and run the pca func.')
-        communities, _, _ = phenograph.cluster(self.result[pca_res_key], k=phenograph_k)
+        communities, _, _ = phe.cluster(self.result[pca_res_key], k=phenograph_k)
         clusters = communities.astype(str)
         df = pd.DataFrame({'bins': self.data.cell_names, 'group': clusters})
         self.result[res_key] = df
@@ -233,6 +460,21 @@ class StPipeline(object):
                           hvg_res_key: Optional[str] = None,
                           res_key: str = 'marker_genes'
                           ):
+        """
+        a tool of finding maker gene. for each group, find statistical test different genes between one group and
+        the rest groups using t_test or wilcoxon_test.
+
+        :param cluster_res_key: the key of cluster to getting the result for group info.
+        :param method: t_test or wilcoxon_test.
+        :param case_groups: case group info, default all clusters.
+        :param control_groups: control group info, default the rest of groups.
+        :param corr_method: correlation method.
+        :param use_raw: whether use the raw count express matrix for the analysis, default True.
+        :param use_highly_genes: Whether to use only the expression of hypervariable genes as input, default True.
+        :param hvg_res_key: the key of highly varialbe genes to getting the result.
+        :param res_key: the key for getting the result from the self.result.
+        :return:
+        """
         from ..tools.find_markers import FindMarker
 
         if use_highly_genes and hvg_res_key not in self.result:
@@ -254,6 +496,17 @@ class StPipeline(object):
                     drop_dummy=None,
                     n_neighbors=8,
                     res_key='spatial_lag'):
+        """
+        spatial lag model, calculate cell-bin's lag coefficient, lag z-stat and p-value.
+
+        :param cluster_res_key: the key of cluster to getting the result for group info.
+        :param genes: specify genes, default using all genes.
+        :param random_drop: randomly drop bin-cells if True.
+        :param drop_dummy: drop specify clusters.
+        :param n_neighbors: number of neighbors.
+        :param res_key: the key for getting the result from the self.result.
+        :return:
+        """
         from ..tools.spatial_lag import SpatialLag
         if cluster_res_key not in self.result:
             raise Exception(f'{cluster_res_key} is not in the result, please check and run the func of cluster.')
@@ -263,6 +516,12 @@ class StPipeline(object):
         self.result[res_key] = tool.result
 
     def spatial_pattern_score(self, use_raw=True, res_key='spatial_pattern'):
+        """
+
+        :param use_raw: whether use the raw count express matrix for the analysis, default True.
+        :param res_key: the key for getting the result from the self.result.
+        :return:
+        """
         from ..algorithm.spatial_pattern_score import spatial_pattern_score
 
         if use_raw and not self.raw:

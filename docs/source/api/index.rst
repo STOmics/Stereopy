@@ -15,9 +15,6 @@ Import stereopy as::
 IO
 -------------------
 
-.. module:: stereo.io
-.. currentmodule:: stereo
-
 io module, reading gem format file into StereoExoData object.
 
 .. autosummary::
@@ -28,23 +25,29 @@ io module, reading gem format file into StereoExoData object.
    io.write_h5ad
 
 
-data: `StereoExoData`
+StereoExoData
 -------------------
 
-.. module:: stereo
-.. currentmodule:: stereo
+.. autosummary::
+   :toctree: generated/classes
 
-.. autoclass:: stereo.core.stereo_exp_data.StereoExpData
-   :members:
-   :inherited-members:
+   core.stereo_exp_data.StereoExpData
 
 
-pipeline: `tl`
+
+StPipeline: `StereoExpData.tl`
 -------------------
 
 analysis tool module
 
 .. autoclass:: stereo.core.st_pipeline.StPipeline
+   :members:
+   :inherited-members:
+
+PlotCollection: `StereoExpData.plt`
+-------------
+
+.. autoclass:: stereo.plt.PlotCollection
    :members:
    :inherited-members:
 
@@ -54,8 +57,4 @@ plots: `plt`
 .. module:: stereo.plt
 .. currentmodule:: stereo
 
-visualization module
 
-.. autoclass:: stereo.plt.PlotCollection
-   :members:
-   :inherited-members:

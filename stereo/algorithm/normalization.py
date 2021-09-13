@@ -41,7 +41,8 @@ def _(x, target_sum):
 
 def quantile_norm(x):
     """
-    Normalize the columns of X to each have the same distribution. Given an expression matrix  of M genes by N samples, quantile normalization ensures all samples have the same spread of data (by construction).
+    Normalize the columns of X to each have the same distribution. Given an expression matrix  of M genes by N samples,
+    quantile normalization ensures all samples have the same spread of data (by construction).
 
     :param x: 2D array of float, shape (M, N)
     :return: The normalized data.

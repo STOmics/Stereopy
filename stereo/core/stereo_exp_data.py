@@ -249,58 +249,10 @@ class StereoExpData(Data):
 
     def sparse2array(self):
         """
-        transform expression matrix to array if it is parse matrix
+        transform expression matrix to array if it is parse matrix.
+
         :return:
         """
         if issparse(self.exp_matrix):
             self.exp_matrix = self.exp_matrix.toarray()
         return self.exp_matrix
-
-    def read_by_bulk(self):
-        pass
-
-    def read(self):
-        from ..io.reader import read_gem, read_ann_h5ad, read_stereo_h5ad
-
-        if self.file_format == 'gem':
-            return read_gem(file_path=self.file, sep='\t', bin_type=self.bin_type, bin_size=self.bin_size)
-        elif self.file_format == 'h5ad':
-            return read_stereo_h5ad(str(self.file))
-        elif self.file_format == 'scanpy_h5ad':
-            return read_ann_h5ad(str(self.file))
-        else:
-            logger.error('the file format is not supported.')
-            raise Exception
-
-    def cal_qc(self):
-        cal_qc(self)
-
-    def filter_cells(self, min_gene=None, max_gene=None, n_genes_by_counts=None, pct_counts_mt=None, cell_list=None,
-                     inplace=True):
-        return filter_cells(self, min_gene, max_gene, n_genes_by_counts, pct_counts_mt, cell_list, inplace)
-
-    def filter_genes(self, min_cell=None, max_cell=None, gene_list=None, inplace=True):
-        return filter_genes(self, min_cell, max_cell, gene_list, inplace)
-
-    def filter_coordinates(self, min_x=None, max_x=None, min_y=None, max_y=None, inplace=True):
-        return filter_coordinates(self, min_x, max_x, min_y, max_y, inplace)
-
-    def log1p(self, inplace=True):
-        if inplace:
-            self.exp_matrix = np.log1p(self.exp_matrix)
-        else:
-            return np.log1p(self.exp_matrix)
-
-    def normalize_total(self, target_sum=10000, inplace=True):
-        if inplace:
-            self.exp_matrix = normalize_total(self.exp_matrix, target_sum=target_sum)
-        else:
-            return normalize_total(self.exp_matrix, target_sum=target_sum)
-
-    def quantile(self, inplace=True):
-        if issparse(self.exp_matrix):
-            self.exp_matrix = self.exp_matrix.toarray()
-        if inplace:
-            self.exp_matrix = quantile_norm(self.exp_matrix)
-        else:
-            return quantile_norm(self.exp_matrix)
