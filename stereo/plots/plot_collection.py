@@ -202,7 +202,7 @@ class PlotCollection:
             x_label: Optional[Union[str, list]] = 'umap1',
             y_label: Optional[Union[str, list]] = 'umap2',
             dot_size: int = None,
-            colors: Optional[Union[str, list]] = 'glasbey',
+            colors: Optional[Union[str, list]] = 'glasbey_category10',
             **kwargs
     ):
         """
@@ -264,7 +264,7 @@ class PlotCollection:
             x_label: Optional[str] = None,
             y_label: Optional[str] = None,
             dot_size: int = None,
-            colors='glasbey',
+            colors='glasbey_category10',
             **kwargs
     ):
         """
