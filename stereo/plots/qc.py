@@ -63,8 +63,8 @@ def genes_count(
         # ax.set_title()
         # ax.set_yticks([])
         # ax.set_xticks([])
-        ax.set_xlabel(xi)
-        ax.set_ylabel(yi)
+        ax.set_xlabel(xi, fontsize=15)
+        ax.set_ylabel(yi, fontsize=15)
         scatter(
             draw_data[:, 0],
             draw_data[:, 1],
@@ -140,11 +140,11 @@ def spatial_distribution(
 
         # color_data 是图像中各个点的值，也对应了每个点的颜色。data_points则对应了各个点的坐标
         ax = fig.add_subplot(axs[i])  # ax = plt.subplot(axs[i]) || ax = fig.add_subplot(axs[1, 1]))
-        ax.set_title(key)
+        ax.set_title(key, fontsize=18)
         ax.set_yticks([])
         ax.set_xticks([])
-        ax.set_xlabel("spatial1")
-        ax.set_ylabel("spatial2")
+        ax.set_xlabel("spatial1", fontsize=15)
+        ax.set_ylabel("spatial2", fontsize=15)
         pathcollection = scatter(
             spatial_data[:, 0],
             spatial_data[:, 1],

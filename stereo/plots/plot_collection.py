@@ -211,9 +211,9 @@ class PlotCollection:
         :param gene_name list of gene names
         :param cluster_key: dot color set by cluster if given
         :param res_key: result key
-        :param title: title
-        :param x_label: x label
-        :param y_label: y label
+        :param title: title, it's list when plot multiple scatter
+        :param x_label: x label, it's list when plot multiple scatter
+        :param y_label: y label, it's list when plot multiple scatter
         :param dot_size: dot size
         :param colors: color list
 
@@ -227,16 +227,22 @@ class PlotCollection:
                 res.values[:, 1],
                 color_values=np.array(cluster_res['group']),
                 color_list=conf.get_colors(colors),
-                title=title, x_label=x_label, y_label=y_label, dot_size=dot_size,
+                title=cluster_key if title is None else title,
+                x_label=x_label, y_label=y_label, dot_size=dot_size,
                 **kwargs)
         else:
+            if gene_name is None:
+                raise ValueError(f'gene name must be set if cluster_key is None')
             if len(gene_name) > 1:
                 return multi_scatter(
                     res.values[:, 0],
                     res.values[:, 1],
                     color_values=np.array(self.data.sub_by_name(gene_name=gene_name).exp_matrix).T,
                     color_list=colors,
-                    title=title, x_label=x_label, y_label=y_label, dot_size=dot_size,
+                    title=gene_name if title is None else title,
+                    x_label=[x_label for i in range(len(gene_name))],
+                    y_label=[y_label for i in range(len(gene_name))],
+                    dot_size=dot_size,
                     color_bar=True,
                     **kwargs
                 )
