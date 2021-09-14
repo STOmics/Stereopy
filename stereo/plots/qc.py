@@ -84,7 +84,7 @@ def spatial_distribution(
         invert_y=False
 ):  # scatter plot, 表达矩阵空间分布
     """
-    spatial bin-cell distribution.
+    spatial distribution.
 
     :param data: StereoExpData object.
     :param cells_key: specified obs key list, for example: ["total_counts", "n_genes_by_counts"]

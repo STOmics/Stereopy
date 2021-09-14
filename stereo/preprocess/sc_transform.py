@@ -20,6 +20,7 @@ def sc_transform(
         var_features_n=3000,
 ):
     """
+    python version sc transform
 
     :param data: stereoExpData object
     :param method: offset, theta_ml, theta_lbfgs, alpha_lbfgs

@@ -174,7 +174,7 @@ class PlotCollection:
     def interact_spatial_distribution(
             self, inline=True,
             width: Optional[int] = 700, height: Optional[int] = 600,
-            bgcolor='#23238E'
+            bgcolor='#2F2F4F'
     ):
         """
         interactive spatial distribution
@@ -188,9 +188,9 @@ class PlotCollection:
         from .interact_plot.interactive_scatter import InteractiveScatter
 
         ins = InteractiveScatter(self.data, width=width, height=height, bgcolor=bgcolor)
-        fig = ins.interact_scatter()
+        # fig = ins.interact_scatter()
         if not inline:
-            fig.show()
+            ins.figure.show()
         return ins
 
     def dim_reduce(

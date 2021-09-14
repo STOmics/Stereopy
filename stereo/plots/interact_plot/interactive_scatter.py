@@ -35,7 +35,8 @@ class InteractiveScatter:
             self,
             data,
             width: Optional[int] = 680, height: Optional[int] = 500,
-            bgcolor='#23238E'
+            bgcolor='#2F2F4F',
+            # bgcolor='#333333'
     ):
         self.data = data
         self.width = width
@@ -70,7 +71,7 @@ class InteractiveScatter:
             width=100
         )
         self.download.on_click(self._download_callback)
-        self.figure = None
+        self.figure = self.interact_scatter()
 
     def generate_selected_expr_matrix(self, selected_pos, drop=False):
         if selected_pos is not None:

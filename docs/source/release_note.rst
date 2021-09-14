@@ -16,6 +16,7 @@ Version 0.1
 - add interactive plot
 - add sc transform method
 - add finding highly variable genes analysis
+- add volcano and highly variable genes scatter
 
 
 **Bugfixes**
