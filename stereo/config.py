@@ -41,6 +41,12 @@ class StereoConfig(object):
         from colorcet import palette
         colormaps = {n: palette[n] for n in ['glasbey', 'glasbey_bw', 'glasbey_cool', 'glasbey_warm', 'glasbey_dark',
                                              'glasbey_light', 'glasbey_category10', 'glasbey_hv']}
+        colormaps['st'] = ['violet', 'turquoise', 'tomato', 'teal', 'tan', 'silver', 'sienna', 'red', 'purple', 'plum', 'pink',
+              'orchid', 'orangered', 'orange', 'olive', 'navy', 'maroon', 'magenta', 'lime',
+              'lightgreen', 'lightblue', 'lavender', 'khaki', 'indigo', 'grey', 'green', 'gold', 'fuchsia',
+              'darkgreen', 'darkblue', 'cyan', 'crimson', 'coral', 'chocolate', 'chartreuse', 'brown', 'blue', 'black',
+              'beige', 'azure', 'aquamarine', 'aqua',
+              ]
         return colormaps
 
     def get_colors(self, colors):
