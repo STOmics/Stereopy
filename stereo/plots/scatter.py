@@ -264,7 +264,7 @@ def volcano(
         xmin = int(data['x'].min())
         xmax = int(np.percentile(np.array(data['x']), [90])[0])
         ymin = int(data['y'].min())
-        ymax = int(data['y'].max())
+        ymax = int(np.percentile(np.array(data['y']), [90])[0])
         ax.vlines(-cut_off_logFC, ymin, ymax, color='dimgrey', linestyle='dashed', linewidth=1)  # 画竖直线
         ax.vlines(cut_off_logFC, ymin, ymax, color='dimgrey', linestyle='dashed', linewidth=1)  # 画竖直线
         ax.hlines(-np.log10(cut_off_pvalue), xmin, xmax, color='dimgrey', linestyle='dashed', linewidth=1)  # 画竖水平线

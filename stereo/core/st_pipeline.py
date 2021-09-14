@@ -36,7 +36,7 @@ class StPipeline(object):
         self.data = data
         self.result = dict()
         self._raw = None
-        self.cal_qc()
+        # self.cal_qc()
 
     @property
     def raw(self):
