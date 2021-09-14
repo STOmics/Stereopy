@@ -19,7 +19,8 @@ def filter_cells(
         data,
         min_gene=None,
         max_gene=None,
-        n_genes_by_counts=None,
+        min_n_genes_by_counts=None,
+        max_n_genes_by_counts=None,
         pct_counts_mt=None,
         cell_list=None,
         inplace=True):
@@ -29,15 +30,16 @@ def filter_cells(
     :param data: StereoExpData object
     :param min_gene: Minimum number of genes expressed for a cell pass filtering.
     :param max_gene: Maximum number of genes expressed for a cell pass filtering.
-    :param n_genes_by_counts: Minimum number of  n_genes_by_counts for a cell pass filtering.
+    :param min_n_genes_by_counts: Minimum number of  n_genes_by_counts for a cell pass filtering.
+    :param max_n_genes_by_counts: Maximum number of  n_genes_by_counts for a cell pass filtering.
     :param pct_counts_mt: Maximum number of  pct_counts_mt for a cell pass filtering.
     :param cell_list: the list of cells which will be filtered.
     :param inplace: whether inplace the original data or return a new data.
     :return: StereoExpData object.
     """
     data = data if inplace else copy.deepcopy(data)
-    if min_gene is None and max_gene is None and cell_list is None and n_genes_by_counts is None \
-            and pct_counts_mt is None:
+    if min_gene is None and max_gene is None and cell_list is None and min_n_genes_by_counts is None \
+            and max_n_genes_by_counts is None and pct_counts_mt is None:
         raise ValueError('At least one filter must be set.')
     if data.cells.total_counts is None:
         total_counts = cal_total_counts(data.exp_matrix)
@@ -48,10 +50,15 @@ def filter_cells(
     if max_gene:
         cell_subset = data.cells.total_counts <= max_gene
         data.sub_by_index(cell_index=cell_subset)
-    if n_genes_by_counts:
+    if min_n_genes_by_counts:
         if data.cells.n_genes_by_counts is None:
             data.cells.n_genes_by_counts = cal_n_genes_by_counts(data.exp_matrix)
-        cell_subset = data.cells.n_genes_by_counts >= n_genes_by_counts
+        cell_subset = data.cells.n_genes_by_counts >= min_n_genes_by_counts
+        data.sub_by_index(cell_index=cell_subset)
+    if max_n_genes_by_counts:
+        if data.cells.n_genes_by_counts is None:
+            data.cells.n_genes_by_counts = cal_n_genes_by_counts(data.exp_matrix)
+        cell_subset = data.cells.n_genes_by_counts <= max_n_genes_by_counts
         data.sub_by_index(cell_index=cell_subset)
     if pct_counts_mt:
         if data.cells.pct_counts_mt is None:
