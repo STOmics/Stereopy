@@ -78,7 +78,7 @@ class StereoExpData(Data):
         """
         if cell_index is not None:
             self.exp_matrix = self.exp_matrix[cell_index, :]
-            self.position = self.position[cell_index, :]
+            self.position = self.position[cell_index, :] if self.position is not None else None
             self.cells = self.cells.sub_set(cell_index)
         if gene_index is not None:
             self.exp_matrix = self.exp_matrix[:, gene_index]
