@@ -13,36 +13,112 @@ from sklearn.utils import check_random_state
 from numpy import random
 import igraph as ig
 import numpy as np
-import pandas as pd
-from typing import Union, Any, Mapping, Optional
+from typing import Union, Any, Mapping, Optional, Callable
+from typing_extensions import Literal
 from types import MappingProxyType
 from sklearn.metrics import pairwise_distances
 AnyRandom = Union[None, int, random.RandomState]
-"""
-run:sc_neighbors
-run:compute_neighbors
-run:_get_indices_distances_from_dense_matrix
-run:_get_sparse_matrix_from_indices_distances_numpy
-run:_compute_connectivities_umap
-run:_get_sparse_matrix_from_indices_distances_umap
-run:get_igraph_from_adjacency
-"""
+
+_Method = Literal['umap', 'gauss']
+_MetricFn = Callable[[np.ndarray, np.ndarray], float]
+# from sklearn.metrics.pairwise_distances.__doc__:
+_MetricSparseCapable = Literal[
+    'cityblock', 'cosine', 'euclidean', 'l1', 'l2', 'manhattan'
+]
+_MetricScipySpatial = Literal[
+    'braycurtis',
+    'canberra',
+    'chebyshev',
+    'correlation',
+    'dice',
+    'hamming',
+    'jaccard',
+    'kulsinski',
+    'mahalanobis',
+    'minkowski',
+    'rogerstanimoto',
+    'russellrao',
+    'seuclidean',
+    'sokalmichener',
+    'sokalsneath',
+    'sqeuclidean',
+    'yule',
+]
+_Metric = Union[_MetricSparseCapable, _MetricScipySpatial]
+
 
 def find_neighbors(
-    x: Optional[np.ndarray] = None,
-    method: str = 'umap',
-    n_pcs: int = 40,
-    n_neighbors: int = 10,
-    metric: Optional[str] = 'euclidean',
+    x: np.ndarray,
+    n_neighbors: Optional[int] = 15,
+    n_pcs: Optional[int] = None,
+    method: Optional[_Method] = 'umap',
+    metric: Union[_Metric, _MetricFn] = 'euclidean',
+    metric_kwds: Mapping[str, Any] = MappingProxyType({}),
     knn: bool = True,
+    random_state: AnyRandom = 0,
 ):
-    neighbor = Neighbors(x, n_neighbors, n_pcs, metric, method, knn)
+    """
+
+    :param x:
+        class:`~numpy.ndarray`. PCA representation of data.
+    :param n_neighbors:
+        Use this number of nearest neighbors.
+    :param n_pcs:
+    :param method:
+        Use 'umap' or 'gauss'. for computing connectivities.
+    :param metric:
+        A known metric’s name or a callable that returns a distance.
+        include:
+            * euclidean
+            * manhattan
+            * chebyshev
+            * minkowski
+            * canberra
+            * braycurtis
+            * mahalanobis
+            * wminkowski
+            * seuclidean
+            * cosine
+            * correlation
+            * haversine
+            * hamming
+            * jaccard
+            * dice
+            * russelrao
+            * kulsinski
+            * rogerstanimoto
+            * sokalmichener
+            * sokalsneath
+            * yule
+    :param metric_kwds:
+        Arguments to pass on to the metric, such as the ``p`` value for Minkowski distance.
+    :param knn:
+        If `True`, use a hard threshold to restrict the number of neighbors to
+        `n_neighbors`, that is, consider a knn graph. Otherwise, use a Gaussian
+        Kernel to assign low weights to neighbors more distant than the
+        `n_neighbors` nearest neighbor.
+    :param random_state:
+        A state capable being used as a numpy random state.
+    :return:
+        neighbor: Neighbors object
+        dists: sparse
+        connectivities: sparse
+    """
+    neighbor = Neighbors(
+        x=x,
+        n_neighbors=n_neighbors,
+        n_pcs=n_pcs,
+        metric=metric,
+        method=method,
+        knn=knn,
+        random_state=random_state,
+    )
     neighbor.check_setting()
     neighbor.x = neighbor.choose_x()
     use_dense_distances = (neighbor.metric == 'euclidean' and neighbor.x.shape[0] < 8192) or not neighbor.knn
     dists = neighbor.x
     if use_dense_distances:
-        dists = pairwise_distances(neighbor.x, metric=neighbor.metric, )
+        dists = pairwise_distances(neighbor.x, metric=neighbor.metric, **metric_kwds)
         knn_indices, knn_distances = neighbor.get_indices_distances_from_dense_matrix(dists)
         if knn:
             dists = neighbor.get_parse_distances_numpy(
@@ -50,9 +126,10 @@ def find_neighbors(
             )
     else:
         if neighbor.x.shape[0] < 4096:
-            dists = pairwise_distances(neighbor.x, metric=neighbor.metric)
+            dists = pairwise_distances(neighbor.x, metric=neighbor.metric, **metric_kwds)
             neighbor.metric = 'precomputed'
-        knn_indices, knn_distances, forest = neighbor.compute_neighbors_umap(dists, )
+        knn_indices, knn_distances, forest = neighbor.compute_neighbors_umap(
+            dists, random_state=neighbor.random_state, metric_kwds=metric_kwds)
     if not use_dense_distances or neighbor.method in {'umap'}:
         connectivities = neighbor.compute_connectivities_umap(knn_indices, knn_distances)
         dists = neighbor.get_parse_distances_umap(knn_indices, knn_distances, )
@@ -62,19 +139,20 @@ def find_neighbors(
 
 
 class Neighbors(object):
-    def __init__(self, x, n_neighbors=10, n_pcs=40, metric='euclidean', method='umap', knn=True):
+    def __init__(self, x, n_neighbors, n_pcs, method, metric, knn, random_state):
         self.x = x
         self.n_neighbors = n_neighbors
         self.n_pcs = n_pcs
         self.metric = metric
         self.method = method
         self.knn = knn
+        self.random_state = random_state
 
     def check_setting(self):
         if self.method == 'umap' and not self.knn:
-            logger.error(f'method=umap only with knn=True')
+            logger.error(f'`method=\'umap\' only with knn=True`.')
         if self.method not in {'umap', 'gauss'}:
-            logger.error(f'method=umap/gauss')
+            logger.error(f'`method=\'umap\' or method=\'gauss\'`.')
 
     def choose_x(self):
         self.x = self.x[:, :self.n_pcs]

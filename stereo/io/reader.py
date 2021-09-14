@@ -26,7 +26,7 @@ from ..core.gene import Gene
 import numpy as np
 from anndata import AnnData
 from shapely.geometry import Point, MultiPoint
-
+from typing import Optional
 
 def read_gem(file_path, sep='\t', bin_type="bins", bin_size=100, is_sparse=True):
     """
@@ -140,10 +140,11 @@ def read_stereo_h5ad(file_path):
     return data
 
 
-def read_ann_h5ad(file_path):
+def read_ann_h5ad(file_path, spatial_key:Optional[str] = None):
     """
     read the h5ad file in Anndata format, and generate the object of StereoExpData.
     :param file_path: h5ad file path.
+    :param spatial_key: use .obsm[`'spatial_key'`] as position. If spatial data, must set.
     :return: StereoExpData obj.
     """
     data = StereoExpData(file_path=file_path)
@@ -167,16 +168,21 @@ def read_ann_h5ad(file_path):
                 assert False, "unexpected raw format"
             elif k == "obs":
                 cells_df = h5ad.read_dataframe(f[k])
-                data.position = np.array(list(cells_df.index.str.split('-', expand=True)), dtype=np.int)
                 data.cells.cell_name = cells_df.index.values
-                data.cells.total_counts = cells_df['total_counts']
-                data.cells.pct_counts_mt = cells_df['pct_counts_mt']
-                data.cells.n_genes_by_counts = cells_df['n_genes_by_counts']
+                data.cells.total_counts = cells_df['total_counts'] if 'total_counts' in cells_df.keys() else None
+                data.cells.pct_counts_mt = cells_df['pct_counts_mt'] if 'pct_counts_mt' in cells_df.keys() else None
+                data.cells.n_genes_by_counts = cells_df['n_genes_by_counts'] if 'n_genes_by_counts' in cells_df.keys() else None
             elif k == "var":
                 genes_df = h5ad.read_dataframe(f[k])
                 data.genes.gene_name = genes_df.index.values
                 # data.genes.n_cells = genes_df['n_cells']
                 # data.genes.n_counts = genes_df['n_counts']
+            elif k == 'obsm':
+                if spatial_key is not None:
+                    if isinstance(f[k], h5py.Group):
+                        data.position = h5ad.read_group(f[k])[spatial_key]
+                    else:
+                        data.position = h5ad.read_dataset(f[k])[spatial_key]
             else:  # Base case
                 pass
     return data
@@ -186,18 +192,17 @@ def read_ann_h5ad(file_path):
 #     pass
 
 
-def anndata_to_stereo(andata: AnnData, use_raw=False, pos_sep='-'):
+def anndata_to_stereo(andata: AnnData, use_raw=False, spatial_key: Optional[str] = None):
     """
     transform the Anndata object into StereoExpData object.
     :param andata: input Anndata object,
     :param use_raw: use andata.raw.X if True else andata.X. Default is False.
-    :param pos_sep: separator string of andata.obs.index. Default is '-'
+    :param spatial_key: use .obsm[`'spatial_key'`] as position.
     :return: StereoExpData obj.
     """
     # data matrix,including X,raw,layer
     data = StereoExpData()
     data.exp_matrix = andata.raw.X if use_raw else andata.X
-    data.position = np.array(list(andata.obs.index.str.split(pos_sep, expand=True)), dtype=np.int)
     # obs -> cell
     data.cells.cell_name = np.array(andata.obs_names)
     data.cells.n_genes_by_counts = andata.obs[
@@ -208,14 +213,25 @@ def anndata_to_stereo(andata: AnnData, use_raw=False, pos_sep='-'):
     data.genes.gene_name = np.array(andata.var_names)
     data.genes.n_cells = andata.var['n_cells'] if 'n_cells' in andata.var.columns.tolist() else None
     data.genes.n_counts = andata.var['n_counts'] if 'n_counts' in andata.var.columns.tolist() else None
+    #position
+    data.position = andata.obsm[spatial_key] if spatial_key is not None else None
     return data
 
 
-def stereo_to_anndata(stereo_data: StereoExpData):
+
+def stereo_to_anndata(stereo_data: StereoExpData,spatial_key:str='spatial'):
+    """
+
+    :param stereo_data: StereoExpData object.
+    :param spatial_key: add position information to obsm[spatial_key]. Default '`spatial`'.
+    :return: anndata object.
+    """
     andata = AnnData(X=stereo_data.exp_matrix,
                      obs=stereo_data.cells.to_df(),
                      var=stereo_data.genes.to_df(),
                      )
+    if stereo_data.position is not None:
+        andata.obsm[spatial_key] = stereo_data.position
     return andata
 
 
