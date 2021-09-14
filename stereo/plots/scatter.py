@@ -118,11 +118,11 @@ def base_scatter(
             color_data = color_data.fillna(to_hex(bad_color))
 
     # color_data 是图像中各个点的值，也对应了每个点的颜色。data_points则对应了各个点的坐标
-    ax.set_title(title)
+    ax.set_title(title, fontsize=18)
     ax.set_yticks([])
     ax.set_xticks([])
-    ax.set_xlabel(x_label)
-    ax.set_ylabel(y_label)
+    ax.set_xlabel(x_label, fontsize=15)
+    ax.set_ylabel(y_label, fontsize=15)
     path_collection = scatter(
         spatial_data[:, 0],
         spatial_data[:, 1],
