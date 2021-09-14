@@ -23,15 +23,32 @@ class Gene(object):
 
     @property
     def gene_name(self):
+        """
+        get the genes name.
+
+        :return: genes name.
+        """
         return self._gene_name
 
     @gene_name.setter
-    def gene_name(self, name):
+    def gene_name(self, name: np.ndarray):
+        """
+        set the name of gene.
+
+        :param name: a numpy array of names.
+        :return:
+        """
         if not isinstance(name, np.ndarray):
             raise TypeError('gene name must be a np.ndarray object.')
         self._gene_name = name.astype('U')
 
     def sub_set(self, index):
+        """
+        get the subset of Gene by the index info， the Gene object will be inplaced by the subset.
+
+        :param index: a numpy array of index info.
+        :return: the subset of Gene object.
+        """
         if self.gene_name is not None:
             self.gene_name = self.gene_name[index]
         if self.n_cells is not None:
@@ -41,6 +58,11 @@ class Gene(object):
         return self
 
     def to_df(self):
+        """
+        transform Gene object to pd.DataFrame.
+
+        :return: a dataframe of Gene.
+        """
         attributes = {
             'n_counts': self.n_counts,
             'n_cells': self.n_cells,

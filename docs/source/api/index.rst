@@ -5,8 +5,6 @@
 API
 ===
 
-Stereo-seq Analysis By Python
-
 Import stereopy as::
 
    import stereo as st
@@ -15,34 +13,34 @@ Import stereopy as::
 IO
 -------------------
 
-.. module:: stereo.io
-.. currentmodule:: stereo
-
-io module, reading gem format file into StereoExoData object.
+The io module supports reading files in multiple formats to generate StereoExpData object, such as gem, gef, h5ad and
+so on. In addition, we provide the conversion function between AnnData and StereoExpData. Finally, we support writting
+StereoExpData as h5ad file for storage.
 
 .. autosummary::
    :toctree: .
 
-   io.read_gem
-   io.read_stereo_h5ad
-   io.write_h5ad
+    io.read_gem
+    io.read_gef
+    io.read_ann_h5ad
+    io.read_stereo_h5ad
+    io.anndata_to_stereo
+    io.stereo_to_anndata
+    io.write_h5ad
 
 
-data: `StereoExoData`
+StereoExoData
 -------------------
 
-.. module:: stereo
-.. currentmodule:: stereo
+A data designed for express matrix of spatial omics.
 
-.. autoclass:: stereo.core.stereo_exp_data.StereoExpData
-   :members:
-   :inherited-members:
+.. autoclass:: stereo.core.st_pipeline.StPipeline
 
 
-pipeline: `tl`
+StPipeline
 -------------------
 
-analysis tool module
+A class for basic analysis of StereoExpData. It is the `StereoExpData.tl`.
 
 .. autoclass:: stereo.core.st_pipeline.StPipeline
    :members:
@@ -54,7 +52,7 @@ plots: `plt`
 .. module:: stereo.plt
 .. currentmodule:: stereo
 
-visualization module
+Visualization module
 
 .. autosummary::
    :toctree: .

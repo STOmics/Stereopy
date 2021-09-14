@@ -133,7 +133,7 @@ class PlotCollection:
             ncols=ncols
         )
 
-    def spatial_distribution(
+    def spatial_scatter(
             self,
             cells_key: list = ["total_counts", "n_genes_by_counts"],
             ncols=2,
@@ -162,7 +162,7 @@ class PlotCollection:
             invert_y=invert_y
         )
 
-    def violin_distribution(self):
+    def violin(self):
         """
         violin plot showing quality control index distribution
 
@@ -171,7 +171,7 @@ class PlotCollection:
         from .qc import violin_distribution
         violin_distribution(self.data)
 
-    def interact_spatial_distribution(
+    def interact_spatial_scatter(
             self, inline=True,
             width: Optional[int] = 700, height: Optional[int] = 600,
             bgcolor='#2F2F4F'
@@ -193,14 +193,14 @@ class PlotCollection:
             ins.figure.show()
         return ins
 
-    def dim_reduce(
+    def umap(
             self,
             gene_name: Optional[list] = None,
-            res_key='dim_reduce',
+            res_key='umap',
             cluster_key=None,
             title: Optional[Union[str, list]] = None,
-            x_label: Optional[Union[str, list]] = None,
-            y_label: Optional[Union[str, list]] = None,
+            x_label: Optional[Union[str, list]] = 'umap1',
+            y_label: Optional[Union[str, list]] = 'umap2',
             dot_size: int = None,
             colors: Optional[Union[str, list]] = 'glasbey',
             **kwargs

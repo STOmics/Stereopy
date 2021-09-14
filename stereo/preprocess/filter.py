@@ -101,7 +101,7 @@ def filter_coordinates(data, min_x=None, max_x=None, min_y=None, max_y=None, inp
     :param max_x: Maximum of x for a cell pass filtering.
     :param min_y: Minimum of y for a cell pass filtering.
     :param max_y: Maximum of y for a cell pass filtering.
-    :param inplace: whether inplace the original adata or return a new anndata.
+    :param inplace: whether inplace the original data or return a new data.
     :return: StereoExpData object
     """
     data = data if inplace else copy.deepcopy(data)

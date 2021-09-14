@@ -16,7 +16,10 @@ It provides a series of analysis of spatial omics, and will be added to the tiss
 StereoExpData
 -------------
 
-StereoExpData is designed for
+StereoExpData is designed for express matrix of spatial omics. It contains four important attributes, which record gene,
+cell, expression matrix and location information respectively. The express matrix. The expression matrix supports both
+sparse data and dense data.
+
 
 Highlights of stereopy
 ----------------------
