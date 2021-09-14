@@ -36,7 +36,6 @@ class StPipeline(object):
         self.data = data
         self.result = dict()
         self._raw = None
-        self.cal_qc()
 
     @property
     def raw(self):
@@ -57,13 +56,16 @@ class StPipeline(object):
         """
         self._raw = copy.deepcopy(value)
 
-    def data2raw(self):
+    def reset_raw_data(self):
         """
         reset the self.data to the raw data.
 
         :return:
         """
         self.data = self.raw
+
+    def raw_checkpoint(self):
+        self.raw = self.data
 
     def cal_qc(self):
         """
@@ -157,7 +159,7 @@ class StPipeline(object):
         else:
             self.result[res_key] = quantile_norm(self.data.exp_matrix)
 
-    def disksmooth_zscore(self, r, inplace=True, res_key='disksmooth_zscore'):
+    def disksmooth_zscore(self, r=20, inplace=True, res_key='disksmooth_zscore'):
         """
         for each position, given a radius, calculate the z-score within this circle as final normalized value.
 
@@ -169,9 +171,9 @@ class StPipeline(object):
         if issparse(self.data.exp_matrix):
             self.data.exp_matrix = self.data.exp_matrix.toarray()
         if inplace:
-            self.data.exp_matrix = zscore_disksmooth(self.data.exp_matrix, self.data.partitions, r)
+            self.data.exp_matrix = zscore_disksmooth(self.data.exp_matrix, self.data.position, r)
         else:
-            self.result[res_key] = zscore_disksmooth(self.data.exp_matrix, self.data.partitions, r)
+            self.result[res_key] = zscore_disksmooth(self.data.exp_matrix, self.data.position, r)
 
     def sctransform(self,
                     method="theta_ml",
