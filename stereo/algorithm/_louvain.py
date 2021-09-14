@@ -13,9 +13,11 @@ from types import MappingProxyType
 from typing import Optional, Type, Mapping, Any, Union
 from natsort import natsorted
 from packaging import version
+from typing_extensions import Literal
+from scipy import sparse
 from numpy import random
 AnyRandom = Union[None, int, random.RandomState]
-from typing_extensions import Literal
+
 
 try:
     from _louvain.VertexPartition import MutableVertexPartition
@@ -29,15 +31,43 @@ except ImportError:
 
 def louvain(
     neighbor,
+    adjacency: sparse.spmatrix,
     resolution: float = None,
     random_state: AnyRandom = 0,
-    adjacency=None,
-    flavor: Literal['vtraag', 'igraph', 'rapids'] = 'vtraag',
+    flavor: Literal['vtraag', 'igraph'] = 'vtraag',
     directed: bool = True,
     use_weights: bool = False,
     partition_type: Optional[Type[MutableVertexPartition]] = None,
     partition_kwargs: Mapping[str, Any] = MappingProxyType({}),
 ):
+    """
+    :param neighbor:
+        Neighbors object.
+    :param adjacency:
+        Sparse adjacency matrix of the graph.
+    :param resolution:
+        A parameter value controlling the coarseness of the clustering.
+        Higher values lead to more clusters.
+        Set to `None` if overriding `partition_type`
+        to one that doesn’t accept a `resolution_parameter`.
+    :param random_state:
+        Change the initialization of the optimization.
+    :param flavor:
+        Choose between to packages for computing the clustering.
+        Including: ``'vtraag'``, ``'igraph'``, ``'taynaud'``.
+        ``'vtraag'`` is much more powerful, and the default.
+    :param directed:
+        If True, treat the graph as directed. If False, undirected.
+    :param use_weights:
+        Use weights from knn graph.
+    :param partition_type:
+        Type of partition to use.
+        Only a valid argument if ``flavor`` is ``'vtraag'``.
+    :param partition_kwargs:
+        Key word arguments to pass to partitioning,
+        if ``vtraag`` method is being used.
+    :return: cluster: pandas.Categorical
+    """
 
     partition_kwargs = dict(partition_kwargs)
 
