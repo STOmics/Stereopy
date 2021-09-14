@@ -16,7 +16,7 @@ from holoviews import opts
 colormaps = {n: palette[n] for n in ['glasbey', 'glasbey_bw', 'glasbey_cool', 'glasbey_warm', 'glasbey_dark',
                                      'glasbey_light', 'glasbey_category10', 'glasbey_hv']}
 pn.param.ParamMethod.loading_indicator = True
-theme_default = 'glasbey'
+theme_default = 'glasbey_category10'
 color_key = {}
 
 
@@ -52,7 +52,7 @@ def interact_spatial_cluster(
     cluster_select = pn.widgets.Select(name='cluster', options=cs, value=cs[0], width=100, loading=False)
 
     global color_key
-    color_key = {k: c for k, c in zip(cs, cc.glasbey[0:len(cs)])}
+    color_key = {k: c for k, c in zip(cs, colormaps[theme_default][0:len(cs)])}
     # print(color_key)
     # print(cs)
     ct_colorpicker = pn.widgets.ColorPicker(name='node color', value=color_key[cs[0]], width=70)
