@@ -36,6 +36,7 @@ class StPipeline(object):
         self.data = data
         self.result = dict()
         self._raw = None
+        self.cal_qc()
 
     @property
     def raw(self):
@@ -206,7 +207,7 @@ class StPipeline(object):
             self.result[res_key] = sc_transform(data, method, n_cells, n_genes, filter_hvgs,
                                                 res_clip_range, var_features_n)
 
-    def highly_var_genes(self,
+    def highly_variable_genes(self,
                          groups=None,
                          method: Optional[str] = 'seurat',
                          n_top_genes: Optional[int] = 2000,
@@ -215,7 +216,7 @@ class StPipeline(object):
                          min_mean: Optional[float] = 0.0125,
                          max_mean: Optional[float] = 3,
                          span: Optional[float] = 0.3,
-                         n_bins: int = 20, res_key='highly_var_genes'):
+                         n_bins: int = 20, res_key='highly_variable_genes'):
         """
         Annotate highly variable genes. reference scanpy.
 
@@ -269,7 +270,7 @@ class StPipeline(object):
         data.sub_by_index(gene_index=genes_index)
         return data
 
-    def pca(self, use_highly_genes, n_pcs, hvg_res_key='highly_var_genes', res_key='dim_reduce'):
+    def pca(self, use_highly_genes, n_pcs, hvg_res_key='highly_variable_genes', res_key='pca'):
         """
         Principal component analysis.
 
@@ -296,7 +297,7 @@ class StPipeline(object):
     def umap(self,
              pca_res_key,
              neighbors_res_key,
-             res_key='dim_reduce',
+             res_key='umap',
              min_dist: float = 0.5,
              spread: float = 1.0,
              n_components: int = 2,

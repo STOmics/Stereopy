@@ -19,9 +19,6 @@ from .cell import Cell
 from .gene import Gene
 from ..log_manager import logger
 import copy
-from ..preprocess.qc import cal_qc
-from ..preprocess.filter import filter_cells, filter_genes, filter_coordinates
-from ..algorithm.normalization import normalize_total, quantile_norm, zscore_disksmooth
 from .st_pipeline import StPipeline
 
 
