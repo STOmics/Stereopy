@@ -76,20 +76,22 @@ class StPipeline(object):
         """
         cal_qc(self.data)
 
-    def filter_cells(self, min_gene=None, max_gene=None, n_genes_by_counts=None, pct_counts_mt=None, cell_list=None,
-                     inplace=True):
+    def filter_cells(self, min_gene=None, max_gene=None, min_n_genes_by_counts=None, max_n_genes_by_counts=None,
+                     pct_counts_mt=None, cell_list=None, inplace=True):
         """
         filter cells based on numbers of genes expressed.
 
         :param min_gene: Minimum number of genes expressed for a cell pass filtering.
         :param max_gene: Maximum number of genes expressed for a cell pass filtering.
-        :param n_genes_by_counts: Minimum number of  n_genes_by_counts for a cell pass filtering.
+        :param min_n_genes_by_counts: Minimum number of  n_genes_by_counts for a cell pass filtering.
+        :param max_n_genes_by_counts: Maximum number of  n_genes_by_counts for a cell pass filtering.
         :param pct_counts_mt: Maximum number of  pct_counts_mt for a cell pass filtering.
         :param cell_list: the list of cells which will be filtered.
         :param inplace: whether inplace the original data or return a new data.
         :return:
         """
-        return filter_cells(self.data, min_gene, max_gene, n_genes_by_counts, pct_counts_mt, cell_list, inplace)
+        return filter_cells(self.data, min_gene, max_gene, min_n_genes_by_counts, max_n_genes_by_counts, pct_counts_mt,
+                            cell_list, inplace)
 
     def filter_genes(self, min_cell=None, max_cell=None, gene_list=None, inplace=True):
         """
@@ -364,8 +366,8 @@ class StPipeline(object):
         """
         if pca_res_key not in self.result:
             raise Exception(f'{pca_res_key} is not in the result, please check and run the pca func.')
-        neighbor, dists, connectivities = find_neighbors(self.result[pca_res_key].values, method, n_pcs, n_neighbors,
-                                                         metric, knn)
+        neighbor, dists, connectivities = find_neighbors(x=self.result[pca_res_key].values, method=method, n_pcs=n_pcs,
+                                                         n_neighbors=n_neighbors, metric=metric, knn=knn)
         res = {'neighbor': neighbor, 'connectivities': connectivities, 'nn_dist': dists}
         self.result[res_key] = res
 
