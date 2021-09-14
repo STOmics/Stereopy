@@ -66,6 +66,7 @@ def base_scatter(
     >>> base_scatter(np.array([2, 4, 5, 7, 9]), np.array([3, 4, 5, 6, 7]), color_values=color_values)
 
     OR
+
     >>> base_scatter(np.array([2, 4, 5, 7, 9]), np.array([3, 4, 5, 6, 7]), color_values=np.array([0, 2, 3, 1, 1], color_bar=True)
 
     color_values must be int array or list when color_bar is True

@@ -40,10 +40,10 @@ def marker_genes_text(
     :param ascend: asc or dec.
     :param fontsize: font size.
     :param ncols: number of plot columns.
-    :param sharey:
-    :param ax:
+    :param sharey: share scale or not
+    :param ax: axes object
     :param kwargs: other args for plot.
-    :return:
+
     """
     # 调整图像 panel/grid 相关参数
     if 'n_panels_per_row' in kwargs:
@@ -183,7 +183,7 @@ def plot_heatmap(
     :param group_labels: the label of group, must to be set if show_group_txt is True.
     :param cluster_colors_array: he list of colors in the color block on the left of heatmap.
     :param kwargs: other args for plot.
-    :return:
+
     """
     kwargs.setdefault("figsize", (10, 10))
     kwargs.setdefault("colorbar_width", 0.2)

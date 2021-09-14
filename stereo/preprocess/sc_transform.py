@@ -36,7 +36,7 @@ def sc_transform(
     :param var_features_n: int
                     Number of variable features to select (for calculating a subset of pearson residuals)
 
-    :return:
+    :return: stereoExpData object
     """
     if not issparse(data.exp_matrix):
         data.exp_matrix = csr_matrix(data.exp_matrix)

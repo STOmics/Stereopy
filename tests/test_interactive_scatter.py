@@ -13,4 +13,3 @@ data = read_stereo(gem, 'bins', 20)
 inter_s = data.interact_scatter(inline=False)
 # inter_s.show(threaded=True)
 # pn.template.FastListTemplate(site="Panel", title="interactive scatter", main=[scatter]).servable()
-
