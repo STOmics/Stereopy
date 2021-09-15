@@ -354,14 +354,40 @@ class StPipeline(object):
     def neighbors(self, pca_res_key, method='umap', metric='euclidean', n_pcs=40, n_neighbors=10, knn=True,
                   res_key='neighbors'):
         """
+        run the neighbors.
 
-        :param pca_res_key:
-        :param method:
-        :param metric:
-        :param n_pcs:
-        :param n_neighbors:
-        :param knn:
-        :param res_key:
+        :param pca_res_key: the key of pca to getting the result.
+        :param method: Use 'umap' or 'gauss'. for computing connectivities.
+        :param metric: A known metric’s name or a callable that returns a distance.
+                        include:
+                            * euclidean
+                            * manhattan
+                            * chebyshev
+                            * minkowski
+                            * canberra
+                            * braycurtis
+                            * mahalanobis
+                            * wminkowski
+                            * seuclidean
+                            * cosine
+                            * correlation
+                            * haversine
+                            * hamming
+                            * jaccard
+                            * dice
+                            * russelrao
+                            * kulsinski
+                            * rogerstanimoto
+                            * sokalmichener
+                            * sokalsneath
+                            * yule
+        :param n_pcs: the number of pcs used to runing neighbor.
+        :param n_neighbors: Use this number of nearest neighbors.
+        :param knn: If `True`, use a hard threshold to restrict the number of neighbors to
+                    `n_neighbors`, that is, consider a knn graph. Otherwise, use a Gaussian
+                    Kernel to assign low weights to neighbors more distant than the
+                    `n_neighbors` nearest neighbor.
+        :param res_key: the key for getting the result from the self.result.
         :return:
         """
         if pca_res_key not in self.result:
@@ -375,7 +401,7 @@ class StPipeline(object):
         """
         get the neighbor result by the key.
 
-        :param neighbors_res_key: the key of neighbor to getting the result.
+        :param neighbors_res_key: the key of neighbors to getting the result.
         :return: neighbor, connectivities, nn_dist.
         """
         if neighbors_res_key not in self.result:
@@ -396,14 +422,21 @@ class StPipeline(object):
                n_iterations: int = -1
                ):
         """
+        leiden of cluster.
 
-        :param neighbors_res_key:
-        :param res_key:
-        :param directed:
-        :param resolution:
-        :param use_weights:
-        :param random_state:
-        :param n_iterations:
+        :param neighbors_res_key: the key of neighbors to getting the result.
+        :param res_key: the key for getting the result from the self.result.
+        :param directed: If True, treat the graph as directed. If False, undirected.
+        :param resolution: A parameter value controlling the coarseness of the clustering.
+                            Higher values lead to more clusters.
+                            Set to `None` if overriding `partition_type`
+                            to one that doesn’t accept a `resolution_parameter`.
+        :param use_weights: If `True`, edge weights from the graph are used in the computation(placing more emphasis
+                            on stronger edges).
+        :param random_state: Change the initialization of the optimization.
+        :param n_iterations: How many iterations of the Leiden clustering algorithm to perform.
+                             Positive values above 2 define the total number of iterations to perform,
+                             -1 has the algorithm run until it reaches its optimal clustering.
         :return:
         """
         neighbor, connectivities, _ = self.get_neighbors_res(neighbors_res_key)
@@ -422,14 +455,20 @@ class StPipeline(object):
                 use_weights: bool = False
                 ):
         """
+        louvain of cluster.
 
-        :param neighbors_res_key:
-        :param res_key:
-        :param resolution:
-        :param random_state:
-        :param flavor:
-        :param directed:
-        :param use_weights:
+        :param neighbors_res_key: the key of neighbors to getting the result.
+        :param res_key: the key for getting the result from the self.result.
+        :param resolution: A parameter value controlling the coarseness of the clustering.
+                            Higher values lead to more clusters.
+                            Set to `None` if overriding `partition_type`
+                            to one that doesn’t accept a `resolution_parameter`.
+        :param random_state: Change the initialization of the optimization.
+        :param flavor: Choose between to packages for computing the clustering.
+                        Including: ``'vtraag'``, ``'igraph'``, ``'taynaud'``.
+                        ``'vtraag'`` is much more powerful, and the default.
+        :param directed: If True, treat the graph as directed. If False, undirected.
+        :param use_weights: Use weights from knn graph.
         :return:
         """
         neighbor, connectivities, _ = self.get_neighbors_res(neighbors_res_key)
@@ -522,6 +561,7 @@ class StPipeline(object):
 
     def spatial_pattern_score(self, use_raw=True, res_key='spatial_pattern'):
         """
+        calculate the spatial pattern score.
 
         :param use_raw: whether use the raw count express matrix for the analysis, default True.
         :param res_key: the key for getting the result from the self.result.

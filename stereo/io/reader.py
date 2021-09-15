@@ -28,6 +28,7 @@ from anndata import AnnData
 from shapely.geometry import Point, MultiPoint
 from typing import Optional
 
+
 def read_gem(file_path, sep='\t', bin_type="bins", bin_size=100, is_sparse=True):
     """
     read the stereo-seq file, and generate the object of StereoExpData.
@@ -114,6 +115,8 @@ def get_bin_center(bin_coor: np.ndarray, coor_min: int, bin_size: int):
 def read_stereo_h5ad(file_path):
     """
     read the h5ad file, and generate the object of StereoExpData.
+
+    :param file_path: the path of input file.
     :return:
     """
     data = StereoExpData(file_path=file_path)
@@ -143,6 +146,7 @@ def read_stereo_h5ad(file_path):
 def read_ann_h5ad(file_path, spatial_key:Optional[str] = None):
     """
     read the h5ad file in Anndata format, and generate the object of StereoExpData.
+
     :param file_path: h5ad file path.
     :param spatial_key: use .obsm[`'spatial_key'`] as position. If spatial data, must set.
     :return: StereoExpData obj.
@@ -188,13 +192,10 @@ def read_ann_h5ad(file_path, spatial_key:Optional[str] = None):
     return data
 
 
-# def read_10x(path):
-#     pass
-
-
 def anndata_to_stereo(andata: AnnData, use_raw=False, spatial_key: Optional[str] = None):
     """
     transform the Anndata object into StereoExpData object.
+
     :param andata: input Anndata object,
     :param use_raw: use andata.raw.X if True else andata.X. Default is False.
     :param spatial_key: use .obsm[`'spatial_key'`] as position.
@@ -216,7 +217,6 @@ def anndata_to_stereo(andata: AnnData, use_raw=False, spatial_key: Optional[str]
     #position
     data.position = andata.obsm[spatial_key] if spatial_key is not None else None
     return data
-
 
 
 def stereo_to_anndata(stereo_data: StereoExpData,spatial_key:str='spatial'):
@@ -299,6 +299,18 @@ def stereo_to_anndata(stereo_data: StereoExpData,spatial_key:str='spatial'):
 
 
 def read_gef(file_path, bin_type='bins', bin_size=100, is_sparse=True, gene_lst=None, region=None):
+    """
+    read the stereo-seq gef file, and generate the object of StereoExpData.
+
+    :param file_path: input file
+    :param bin_type: the type of bin, if file format is stereo-seq file. `bins` or `cell_bins`.
+    :param bin_size: the size of bin to merge. The parameter only takes effect
+                     when the value of data.bin_type is 'bins'.
+    :param is_sparse: the matrix is sparse matrix if is_sparse is True else np.ndarray
+    :param gene_lst: the list of genes.
+    :param region: the region list.
+    :return: an object of StereoExpData.
+    """
     logger.info(f'read_gef begin')
     data = StereoExpData(file_path=file_path)
     with h5py.File(file_path, mode='r') as h5f:
