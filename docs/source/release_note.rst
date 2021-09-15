@@ -29,7 +29,6 @@ Version 0.1
 - fit the bug of louvain.
 - fit the bug of sub_by_index.
 - fit the bug of filter.
-- fix the bug of reading the gef file to restrict by gene list.
 0.1.0 :small:`2021-05-30`
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 - Initial release
