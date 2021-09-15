@@ -307,16 +307,11 @@ def read_gef(file_path, bin_size=100, is_sparse=True, gene_lst=None, region=None
                      when the value of data.bin_type is 'bins'.
     :param is_sparse: the matrix is sparse matrix if is_sparse is True else np.ndarray
     :param gene_lst: restrict to this gene list
-    :param region: restrict to this region， [minX, maxX, minY, maxY]
+    :param region: restrict to this region, [minX, maxX, minY, maxY]
 
     :return: an object of StereoExpData.
     """
     gef = GEF(file_path=file_path, bin_size=bin_size, is_sparse=is_sparse)
-    if gene_lst is not None:
-        gef.build(gene_lst=gene_lst)
-    if region is not None:
-        gef.build(region=region)
-    if gene_lst is None and region is None:
-        gef.build()
+    gef.build(gene_lst=gene_lst, region=region)
     data = gef.to_stereo_exp_data()
     return data
