@@ -13,7 +13,6 @@ from pathlib import Path
 if sys.version_info < (3, 7):
     sys.exit('stereopy requires Python >= 3.7')
 
-
 setup(
     name='stereopy',
     version='0.2',
