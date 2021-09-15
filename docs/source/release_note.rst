@@ -3,9 +3,9 @@ Release Notes
 
 .. role:: small
 
-Version 0.1
+Version 0.2.0
 -----------
-0.1.1 :small:`2021-09-15`
+0.2.0 :small:`2021-09-15`
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 
 **Features**

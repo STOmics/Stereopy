@@ -95,7 +95,7 @@ class PlotCollection:
         define as up genes, pvalues < cut_off and log2fc < -cut_off_logFC define as down genes
         :param cut_off_logFC: cut off of log2fc to define gene type
 
-        :return: (axes, df) a axes object and a DataFrame
+        :return: axes a axes object
         """
         res = self.check_res_key(res_key)[group_name]
         marker_gene_volcano(
