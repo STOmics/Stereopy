@@ -65,6 +65,8 @@ class GEF(object):
         self.df_exp['cell_index'] = rows
 
     def _restrict_to_region(self, region):
+        logger.info('restrict to region [{} <= x <= {} and {} <= y <= {}]'.format(
+            region[0], region[1], region[2], region[3]))
         gene_col = []
         for row in self.df_gene.itertuples():
             for i in range(getattr(row, 'count')):
@@ -83,6 +85,7 @@ class GEF(object):
         self.df_exp = self.df_exp.reset_index(drop=True)
 
     def _restrict_to_genes(self, gene_lst):
+        logger.info('restrict to gene_lst')
         cols = np.zeros((self.df_exp.shape[0],), dtype='uint32')
         offset_indexes = np.zeros((self.df_exp.shape[0],), dtype='uint32')
         self.df_gene = self.df_gene.set_index('gene').loc[gene_lst].reset_index()
