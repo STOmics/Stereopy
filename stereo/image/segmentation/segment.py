@@ -18,6 +18,10 @@ def cell_seg(model_path, img_path, out_path, flag, depp_cro_size=20000, overlap=
     :param gpu: the id of gpu, if None,use the cpu to predict.
     :return:
     """
+    try:
+        import tensorflow as tf
+    except Exception:
+        raise Exception('please install tensorflow first.')
     if gpu is not None:
         os.environ["CUDA_VISIBLE_DEVICES"] = str(gpu)
     cell_seg_pipeline = pipeline.CellSegPipe(img_path, out_path, flag, depp_cro_size, overlap, model_path)
