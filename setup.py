@@ -15,7 +15,7 @@ if sys.version_info < (3, 6):
 
 setup(
     name='stereopy',
-    version='0.1',
+    version='0.2',
     setup_requires=['setuptools_scm', 'numpy', 'panel', 'pytest', 'quilt3'],
     description='Spatial transcriptomic analysis in python.',
     long_description=Path('README.md').read_text('utf-8'),

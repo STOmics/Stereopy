@@ -91,7 +91,8 @@ class PlotCollection:
         :param x_label: x label
         :param y_label: y label
         :param vlines: plot cutoff line or not
-        :param cut_off_pvalue: cut off of pvalue to define gene type, pvalues < cut_off and log2fc > cut_off_logFC define as up genes, pvalues < cut_off and log2fc < -cut_off_logFC define as down genes
+        :param cut_off_pvalue: cut off of pvalue to define gene type, pvalues < cut_off and log2fc > cut_off_logFC
+        define as up genes, pvalues < cut_off and log2fc < -cut_off_logFC define as down genes
         :param cut_off_logFC: cut off of log2fc to define gene type
 
         :return: (axes, df) a axes object and a DataFrame
@@ -195,7 +196,7 @@ class PlotCollection:
 
     def umap(
             self,
-            gene_name: Optional[list] = None,
+            gene_names: Optional[list] = None,
             res_key='umap',
             cluster_key=None,
             title: Optional[Union[str, list]] = None,
@@ -208,7 +209,7 @@ class PlotCollection:
         """
         plot scatter after dimension reduce
 
-        :param gene_name list of gene names
+        :param gene_names: list of gene names
         :param cluster_key: dot color set by cluster if given
         :param res_key: result key
         :param title: title, it's list when plot multiple scatter
@@ -231,17 +232,17 @@ class PlotCollection:
                 x_label=x_label, y_label=y_label, dot_size=dot_size,
                 **kwargs)
         else:
-            if gene_name is None:
+            if gene_names is None:
                 raise ValueError(f'gene name must be set if cluster_key is None')
-            if len(gene_name) > 1:
+            if len(gene_names) > 1:
                 return multi_scatter(
                     res.values[:, 0],
                     res.values[:, 1],
-                    color_values=np.array(self.data.sub_by_name(gene_name=gene_name).exp_matrix).T,
+                    color_values=np.array(self.data.sub_by_name(gene_name=gene_names).exp_matrix).T,
                     color_list=colors,
-                    title=gene_name if title is None else title,
-                    x_label=[x_label for i in range(len(gene_name))],
-                    y_label=[y_label for i in range(len(gene_name))],
+                    title=gene_names if title is None else title,
+                    x_label=[x_label for i in range(len(gene_names))],
+                    y_label=[y_label for i in range(len(gene_names))],
                     dot_size=dot_size,
                     color_bar=True,
                     **kwargs
@@ -250,7 +251,7 @@ class PlotCollection:
                 return base_scatter(
                     res.values[:, 0],
                     res.values[:, 1],
-                    color_values=np.array(self.data.sub_by_name(gene_name=gene_name).exp_matrix[:, 0]),
+                    color_values=np.array(self.data.sub_by_name(gene_name=gene_names).exp_matrix[:, 0]),
                     color_list=colors,
                     title=title, x_label=x_label, y_label=y_label, dot_size=dot_size,
                     color_bar=True,

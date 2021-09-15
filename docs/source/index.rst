@@ -42,13 +42,9 @@ pending upgrade.
    :maxdepth: 2
 
 
-   Tutorials/quick_start
+   Tutorials/quick_start_v0.2
    Tutorials/Examples
-
-.. toctree::
-    :maxdepth: 2
-
-    release_note
+   release_note
 
 
 .. |Docs| image:: https://img.shields.io/static/v1?label=docs&message=streopy&color=green

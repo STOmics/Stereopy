@@ -29,13 +29,14 @@ StereoExpData as h5ad file for storage.
     io.write_h5ad
 
 
-StereoExoData
+StereoExpData
 -------------------
 
 A data designed for express matrix of spatial omics.
 
 .. autoclass:: stereo.core.st_pipeline.StPipeline
-
+   :members:
+   :inherited-members:
 
 StPipeline
 -------------------

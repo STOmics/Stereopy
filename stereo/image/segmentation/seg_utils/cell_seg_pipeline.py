@@ -15,7 +15,7 @@ import glog
 
 class CellSegPipe(object):
 
-    def __init__(self, img_path, out_path, is_water, DEEP_CROP_SIZE=20000, OVERLAP=100):
+    def __init__(self, img_path, out_path, is_water, DEEP_CROP_SIZE=20000, OVERLAP=100, model_path=None):
         self.deep_crop_size = DEEP_CROP_SIZE
         self.overlap = OVERLAP
         self.__img_path = img_path
@@ -52,6 +52,7 @@ class CellSegPipe(object):
         self.cell_mask = []
         self.post_mask_list = []
         self.score_mask_list = []
+        self.model_path= model_path
 
     def __imload_list(self, img_path):
 
@@ -143,7 +144,7 @@ class CellSegPipe(object):
             tissue_bbox = self.tissue_bbox[idx]
             tissue_img = [img[p[0]: p[2], p[1]: p[3]] for p in tissue_bbox]
 
-            label_list = cell_infer.cellInfer(tissue_img, self.deep_crop_size, self.overlap)
+            label_list = cell_infer.cellInfer(tissue_img, self.deep_crop_size, self.overlap, self.model_path)
             tissue_cell_label.append(label_list)
         return tissue_cell_label
 
