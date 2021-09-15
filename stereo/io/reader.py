@@ -20,6 +20,7 @@ from ..core.stereo_exp_data import StereoExpData
 from ..log_manager import logger
 import h5py
 from stereo.io import h5ad
+from stereo.io.gef import GEF
 from scipy.sparse import csr_matrix
 from ..core.cell import Cell
 from ..core.gene import Gene
@@ -297,94 +298,25 @@ def stereo_to_anndata(stereo_data: StereoExpData,spatial_key:str='spatial'):
 #     adata.obs_names = pd.read_csv(barcodesfile, header=None)[0].values
 #     return adata
 
-
-def read_gef(file_path, bin_type='bins', bin_size=100, is_sparse=True, gene_lst=None, region=None):
+def read_gef(file_path, bin_size=100, is_sparse=True, gene_lst=None, region=None):
     """
-    read the stereo-seq gef file, and generate the object of StereoExpData.
+    read the gef(.h5) file, and generate the object of StereoExpData.
 
     :param file_path: input file
-    :param bin_type: the type of bin, if file format is stereo-seq file. `bins` or `cell_bins`.
     :param bin_size: the size of bin to merge. The parameter only takes effect
                      when the value of data.bin_type is 'bins'.
     :param is_sparse: the matrix is sparse matrix if is_sparse is True else np.ndarray
-    :param gene_lst: the list of genes.
-    :param region: the region list.
+    :param gene_lst: restrict to this gene list
+    :param region: restrict to this region， [minX, maxX, minY, maxY]
+
     :return: an object of StereoExpData.
     """
-    logger.info(f'read_gef begin')
-    data = StereoExpData(file_path=file_path)
-    with h5py.File(file_path, mode='r') as h5f:
-        bin_tag = 'bin{}'.format(bin_size)
-        if bin_tag not in h5f['geneExp'].keys():
-            raise Exception('The bin size {} info is not in the GEF file'.format(bin_size))
-
-        h5exp = h5f['geneExp'][bin_tag]['expression']
-        h5gene = h5f['geneExp'][bin_tag]['gene']
-        cols = np.zeros(h5exp.shape[0], dtype='uint32')
-
-        if gene_lst is None:
-            genes = h5gene['gene']
-        else:
-            genes = np.array(len(gene_lst), dtype=str)
-
-        gene_index = 0
-        exp_index = 0
-        df_gene = pd.DataFrame(h5gene['gene', 'count'])
-        for gene, count in zip(df_gene['gene'], df_gene['count']):
-            if gene_lst is not None:
-                if gene not in genes:
-                    for i in range(count):
-                        cols[exp_index] = -1
-                        exp_index += 1
-                    continue
-                else:
-                    genes[gene_index] = gene
-
-            for i in range(count):
-                cols[exp_index] = gene_index
-                exp_index += 1
-            gene_index += 1
-
-        df_pos = pd.DataFrame(h5exp['x', 'y'])
-        if region is not None:
-            df_pos['gene_index'] = cols
-            df_pos = df_pos[(region[0] <= df_pos['x'] <= region[1]) & (region[2] <= df_pos['y'] <= region[3])]
-            cols = df_pos['gene_index'].values
-
-        if gene_lst is not None:
-            df_pos['gene_index'] = cols
-            df_pos = df_pos[df_pos['x'] != -1]
-            cols = df_pos['gene_index'].values
-
-        df_pos_uni = df_pos.loc[:, ['x', 'y']].drop_duplicates()
-        data.position = df_pos_uni.values
-
-        df_pos['cell_id'] = np.bitwise_or(np.left_shift(df_pos['x'].astype('uint64'), 32), df_pos['y'])
-        # df_pos_uni['cell_id'] = np.bitwise_or(np.left_shift(df_pos_uni['x'].astype('uint64'), 32), df_pos_uni['y'])
-        # cells_dict = dict(zip(df_pos_uni['cell_id'], range(0, df_pos_uni.shape[0])))
-
-        cells = df_pos['cell_id'].unique()
-        # cells_dict = dict(zip(cells, range(0, len(cells))))
-        # rows = df_pos['cell_id'].map(cells_dict)
-
-        grp = df_pos.groupby('cell_id').groups
-        rows = np.zeros(h5exp.shape[0], dtype='uint32')
-        i = 0
-        for cell_id in cells:
-            for j in grp[cell_id]:
-                rows[j] = i
-            i += 1
-
-        # exp_matrix = np.zeros((df_pos_uni.shape[0], genes.shape[0]), dtype='uint32')
-        # for row in df_pos.itertuples():
-        #     row_i = df_pos_uni.loc[(getattr(row, 'x'), getattr(row, 'y'))]['cell_id']
-        #     exp_matrix[row_i]
-
-        # logger.info(f'the martrix has {len(cells)} cells, and {len(genes)} genes.')
-        exp_matrix = csr_matrix((h5exp['count'], (rows, cols)), shape=(cells.shape[0], genes.shape[0]),
-                                dtype=np.int)
-        data.cells = Cell(cell_name=cells)
-        data.genes = Gene(gene_name=genes)
-        data.exp_matrix = exp_matrix if is_sparse else exp_matrix.toarray()
-    logger.info(f'read_gef end')
+    gef = GEF(file_path=file_path, bin_size=bin_size, is_sparse=is_sparse)
+    if gene_lst is not None:
+        gef.build(gene_lst=gene_lst)
+    if region is not None:
+        gef.build(region=region)
+    if gene_lst is None and region is None:
+        gef.build()
+    data = gef.to_stereo_exp_data()
     return data
