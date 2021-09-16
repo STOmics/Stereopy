@@ -298,7 +298,7 @@ def stereo_to_anndata(stereo_data: StereoExpData,spatial_key:str='spatial'):
 #     adata.obs_names = pd.read_csv(barcodesfile, header=None)[0].values
 #     return adata
 
-def read_gef(file_path, bin_size=100, is_sparse=True, gene_list=None, region=None):
+def read_gef(file_path, bin_size=100, is_sparse=True, gene_lst=None, region=None):
     """
     read the gef(.h5) file, and generate the object of StereoExpData.
 
@@ -306,12 +306,12 @@ def read_gef(file_path, bin_size=100, is_sparse=True, gene_list=None, region=Non
     :param bin_size: the size of bin to merge. The parameter only takes effect
                      when the value of data.bin_type is 'bins'.
     :param is_sparse: the matrix is sparse matrix if is_sparse is True else np.ndarray
-    :param gene_list: restrict to this gene list
+    :param gene_lst: restrict to this gene list
     :param region: restrict to this region, [minX, maxX, minY, maxY]
 
     :return: an object of StereoExpData.
     """
     gef = GEF(file_path=file_path, bin_size=bin_size, is_sparse=is_sparse)
-    gef.build(gene_list=gene_list, region=region)
+    gef.build(gene_lst=gene_lst, region=region)
     data = gef.to_stereo_exp_data()
     return data

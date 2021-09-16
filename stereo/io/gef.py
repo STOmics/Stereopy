@@ -33,12 +33,12 @@ class GEF(object):
             self.df_gene = pd.DataFrame(h5gene['gene', 'offset', 'count'])
             self.df_exp = pd.DataFrame(h5exp['x', 'y', 'count'])
 
-    def build(self, gene_list=None, region=None):
-        if gene_list is not None:
-            self._restrict_to_genes(gene_list)
+    def build(self, gene_lst=None, region=None):
+        if gene_lst is not None:
+            self._restrict_to_genes(gene_lst)
         if region is not None:
             self._restrict_to_region(region)
-        if gene_list is None and region is None:
+        if gene_lst is None and region is None:
             self.genes = self.df_gene['gene'].values
             self.gene_num = len(self.genes)
             cols = np.zeros((self.df_exp.shape[0],), dtype='uint32')
@@ -84,11 +84,11 @@ class GEF(object):
         self.df_exp.drop(columns=['gene'])
         self.df_exp = self.df_exp.reset_index(drop=True)
 
-    def _restrict_to_genes(self, gene_list):
-        logger.info('restrict to gene_list')
+    def _restrict_to_genes(self, gene_lst):
+        logger.info('restrict to gene_lst')
         cols = np.zeros((self.df_exp.shape[0],), dtype='uint32')
         offset_indexes = np.zeros((self.df_exp.shape[0],), dtype='uint32')
-        self.df_gene = self.df_gene.set_index('gene').loc[gene_list].reset_index()
+        self.df_gene = self.df_gene.set_index('gene').loc[gene_lst].reset_index()
         self.genes = self.df_gene['gene'].values
         self.gene_num = len(self.genes)
 
