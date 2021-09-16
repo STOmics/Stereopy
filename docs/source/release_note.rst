@@ -15,7 +15,7 @@ differential expression testing and visualization, etc. There are the updates we
 2. Support reading the gef file, which is faster than reading gem file.
 3. Support the conversion between StereoExpData and AnnData.
 4. Add the interactive visualization function for selecting data, you can dynamically select the area of interest,
-and then perform the next step of analysis
+and then perform the next step of analysis.
 5. Dynamically display clustering scatter plots, you can modify the color and point size.
 6. Updated clustering related methods, such as leiden, louvain, which are comparable to the original algorithms.
 7. Add some analysis, such as the method of logres for find marker genes, highly variable genes analysis, sctransform method of normalization like Seruat.
