@@ -15,6 +15,6 @@ import numpy as np
 
 
 def run_phenograph(x: np.ndarray, phenograph_k: int):
-    communities, _, _ = phenograph.cluster(x, k=phenograph_k)
+    communities, _, _ = phenograph.cluster(x, k=phenograph_k, clustering_algo='leiden')
     cluster = communities.astype(str)
     return cluster
