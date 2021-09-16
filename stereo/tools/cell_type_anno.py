@@ -5,6 +5,10 @@
 @last modified by: Ping Qiu
 @file:cell_type_anno.py
 @time:2021/03/09
+
+change log:
+    2021/05/20 rst supplement. by: qindanhua.
+    2021/07/08 adjust for restructure base class . by: qindanhua.
 """
 import pandas as pd
 import numpy as np
@@ -17,47 +21,83 @@ from ..preprocess.normalize import normalize_total
 from ..config import stereo_conf
 from ..utils import remove_file
 from ..core.tool_base import ToolBase
-from ..core.stereo_result import CellTypeResult
-from scipy.sparse import issparse
 
 
 class CellTypeAnno(ToolBase):
     """
     predict bin-cells's type
-    """
-    def __init__(self, adata, ref_dir=None, cores=1, keep_zeros=True, use_rf=True, sample_rate=0.8,
-                 n_estimators=20, strategy='1', method='spearmanr', split_num=1, out_dir=None, name='cell_type_anno'):
-        """
-        initialization
 
-        :param adata: anndata object
-        :param ref_dir: reference database directory
-        :param cores: set running core to fasten running speed
-        :param keep_zeros: if true, keeping the genes that in reference but not in input expression data
-        :param use_rf: if running random choosing genes or not
-        :param sample_rate: ratio of sampling data
-        :param n_estimators: prediction times
-        :param strategy:
-        :param method: calculate correlation's method
-        :param split_num:
-        :param out_dir: output directory
-        :param name: name of this tool and will be used as a key when adding tool result to andata object.
-        """
-        super(CellTypeAnno, self).__init__(data=adata, method=method, name=name)
-        self.param = self.get_params(locals())
-        self.data = adata
-        self.ref_dir = ref_dir if ref_dir else os.path.join(stereo_conf.data_dir, 'ref_db', 'FANTOM5')
+    :param data: StereoExpData object
+    :param ref_dir: reference database directory
+    :param cores: set running core to fasten running speed
+    :param keep_zeros: if true, keeping the genes that in reference but not in input expression data
+    :param use_rf: if running random choosing genes or not
+    :param sample_rate: ratio of sampling data
+    :param n_estimators: prediction times
+    :param strategy:
+    :param method: calculate correlation's method
+    :param split_num:
+
+    Example
+    -------
+    >>> from stereo.io.reader import read_stereo
+    >>>sed = read_stereo('test_gem', 'txt', 'bins')
+    >>>cta = CellTypeAnno(sed, ref_dir='/path/to/reference_exp_data_dir/')
+    >>>cta.fit()
+          cell                           cell type  ...  type_cnt_sum  type_rate
+    0      0_0  hereditary spherocytosis cell line  ...            20        1.0
+    1      0_1  hereditary spherocytosis cell line  ...            20        1.0
+    2     0_10  hereditary spherocytosis cell line  ...            20        1.0
+    """
+    def __init__(
+            self,
+            data,
+            method='spearmanr',
+            ref_dir: str = None,
+            cores: int = 1,
+            keep_zeros: bool = True,
+            use_rf: bool = True,
+            sample_rate: float = 0.8,
+            n_estimators: int = 20,
+            strategy='1',
+            split_num: int = 1,
+    ):
+        super(CellTypeAnno, self).__init__(data=data, method=method)
+        self.ref_dir = ref_dir
         self.n_jobs = cores
         self.keep_zeros = keep_zeros
         self.use_rf = use_rf
         self.sample_rate = sample_rate
         self.n_estimators = n_estimators
         self.strategy = strategy
-        self.method = method
         self.split_num = split_num
-        self.output = out_dir if out_dir else stereo_conf.out_dir
-        self.result = CellTypeResult(name=name, param=self.param)
-        self.check_param()
+        self.output = stereo_conf.out_dir
+
+    @property
+    def ref_dir(self):
+        return self._ref_dir
+
+    @ref_dir.setter
+    def ref_dir(self, ref_dir):
+        """
+        set reference directory which must exist two file ref_sample_epx.csv and cell_map.csv
+        """
+        git_ref = 'https://github.com/BGIResearch/stereopy/raw/data/FANTOM5/ref_sample_epx.csv'
+        if ref_dir is None:
+            logger.info(f'reference file not found, download from {git_ref}')
+            ref_dir = os.path.join(stereo_conf.data_dir, 'ref_db', 'FANTOM5')
+            self.download_ref(ref_dir)
+        if not os.path.exists(os.path.join(ref_dir, 'ref_sample_epx.csv')) and \
+                os.path.exists(os.path.join(ref_dir, 'cell_map.csv')):
+            raise ValueError(
+                f'reference file not found, ref_dir should exist two file ref_sample_epx.csv and cell_map.csv'
+            )
+        self._ref_dir = ref_dir
+
+    @ToolBase.method.setter
+    def method(self, method):
+        m_range = ['spearmanr', 'pearson']
+        self._method_check(method, m_range)
 
     def split_dataframe(self, df):
         """
@@ -69,7 +109,7 @@ class CellTypeAnno(ToolBase):
         datas = []
         logger.info(f'input data:  {df.shape[0]} genes, {df.shape[1]} cells.')
         if self.split_num > 1:
-            logger.info(f'split the anndata.X to {self.split_num} matrixs')
+            logger.info(f'split the exp matrix to {self.split_num} matrixs')
             step_size = int(df.shape[1]/self.split_num) + 1
             for i in range(self.split_num):
                 start = i * step_size
@@ -164,9 +204,9 @@ class CellTypeAnno(ToolBase):
         """
         run
         """
-        exp_matrix = self.data.X.toarray().T if issparse(self.data.X) else self.data.X.T
-        df = pd.DataFrame(exp_matrix, index=list(self.data.var_names),
-                          columns=list(self.data.obs_names))
+        exp_matrix = self.extract_exp_matrix().T
+        df = pd.DataFrame(exp_matrix, index=list(self.data.gene_names),
+                          columns=list(self.data.cell_names))
         datas = self.split_dataframe(df) if self.split_num > 1 else [df]
         tmp_output = os.path.join(self.output, 'tmp')
         logger.info('start to run annotation.')
@@ -189,10 +229,9 @@ class CellTypeAnno(ToolBase):
                 index = f'subsample_{i}'
                 self.concat_top_corr_files(files, tmp_output, index)
             if self.strategy == 1:
-                self.result.anno_data = self.merge_subsample_result(tmp_output, 'top_annotation.csv', self.output)
+                self.result.matrix = self.merge_subsample_result(tmp_output, 'top_annotation.csv', self.output)
             else:
-                self.result.anno_data = self.merge_subsample_result_filter(tmp_output, 'top_annotation.csv',
-                                                                           self.output)
+                self.result.matrix = self.merge_subsample_result_filter(tmp_output, 'top_annotation.csv', self.output)
         else:
             pool = Pool(self.n_jobs)
             for i in range(len(datas)):
@@ -204,10 +243,9 @@ class CellTypeAnno(ToolBase):
             pool.join()
             logger.info(f'start to merge top result ...')
             files = [os.path.join(tmp_output, f'sub_{i}.top_{self.method}_corr.csv') for i in range(len(datas))]
-            self.result.anno_data = self.concat_top_corr_files(files, self.output)
+            self.result.matrix = self.concat_top_corr_files(files, self.output)
         # clear tmp directory
         remove_file(tmp_output)
-        self.add_result(result=self.result, key_added=self.name)
 
 
 def parse_ref_data(ref_dir):
@@ -218,6 +256,8 @@ def parse_ref_data(ref_dir):
     """
     logger.info(f'loading ref data')
     ref_sample_path = os.path.join(ref_dir, 'ref_sample_epx.csv')
+    if not os.path.exists(ref_sample_path):
+        raise ValueError('can not load reference file, download from https://github.com/BGIResearch/stereopy')
     ref_db = pd.read_csv(ref_sample_path, index_col=0, header=0)
     ref_db = ref_db.fillna(0)
     # remove duplicate indices

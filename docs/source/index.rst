@@ -13,6 +13,20 @@ It provides a series of analysis of spatial omics, and will be added to the tiss
     :width: 400px
     :align: center
 
+StereoExpData
+-------------
+
+StereoExpData is designed for express matrix of spatial omics. It contains four important attributes, which record gene,
+cell, expression matrix and location information respectively. The express matrix. The expression matrix supports both
+sparse data and dense data.
+
+
+Highlights of stereopy
+----------------------
+
+pending upgrade.
+
+
 .. toctree::
    :caption: General
    :maxdepth: 2
@@ -30,7 +44,7 @@ It provides a series of analysis of spatial omics, and will be added to the tiss
 
    Tutorials/quick_start
    Tutorials/Examples
-
+   release_note
 
 
 .. |Docs| image:: https://img.shields.io/static/v1?label=docs&message=stereopy&color=green

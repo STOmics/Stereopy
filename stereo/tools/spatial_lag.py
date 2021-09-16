@@ -7,8 +7,6 @@
 @time:2021/04/19
 """
 from ..core.tool_base import ToolBase
-from ..utils.data_helper import get_cluster_res, get_position_array
-from anndata import AnnData
 from pysal.model import spreg
 from pysal.lib import weights
 import numpy as np
@@ -21,39 +19,38 @@ from ..log_manager import logger
 
 class SpatialLag(ToolBase):
     """
-    spatial lag model, calculate bin-cell's lag coefficient, lag z-stat and p-value
-    """
-    def __init__(self, data: AnnData, method='gm_lag', name='spatial_lag', cluster=None, genes=None,
-                 random_drop=True, drop_dummy=None, n_neighbors=8):
-        """
-        initialization
+    spatial lag model, calculate cell-bin's lag coefficient, lag z-stat and p-value
 
-        :param data: anndata object contenting cluster results
-        :param method: method
-        :param name: tool name, will be used as a key when adding tool result to andata object.
-        :param cluster: the 'Clustering' tool name, defined when running 'Clustering' tool
-        :param genes: specify genes, default using all genes
-        :param random_drop: randomly drop bin-cells if True
-        :param drop_dummy: drop specify clusters
-        :param n_neighbors: number of neighbors
-        """
-        super(SpatialLag, self).__init__(data=data, method=method, name=name)
-        self.param = self.get_params(locals())
-        self.cluster = self.data.uns[cluster].cluster
+    :param data: StereoExpData object contenting cluster results
+    :param groups: group information matrix
+    :param genes: specify genes, default using all genes
+    :param random_drop: randomly drop bin-cells if True
+    :param drop_dummy: drop specify clusters
+    :param n_neighbors: number of neighbors
+    """
+    def __init__(
+            self,
+            data,
+            groups=None,
+            genes=None,
+            random_drop=True,
+            drop_dummy=None,
+            n_neighbors=8
+    ):
+        super(SpatialLag, self).__init__(data=data, groups=groups, method='gm_lag')
         self.genes = genes
         self.random_drop = random_drop
         self.drop_dummy = drop_dummy
         self.n_neighbors = n_neighbors
-        self.position = get_position_array(self.data, obs_key='spatial')
 
     def fit(self):
         """
         run analysis
         """
+        self.data.sparse2array()
         x, uniq_group = self.get_data()
         res = self.gm_model(x, uniq_group)
-        result = SpatialLagResult(name=self.name, param=self.param, score=res)
-        self.add_result(result=result, key_added=self.name)
+        result = SpatialLagResult(res)
         return result
 
     def get_data(self):
@@ -62,12 +59,12 @@ class SpatialLag(ToolBase):
 
         :return: cluster dummy codes and cluster names
         """
-        group_num = self.cluster['cluster'].value_counts()
+        group_num = self.groups['group'].value_counts()
         max_group, min_group, min_group_ncells = group_num.index[0], group_num.index[-1], group_num[-1]
-        df = pd.DataFrame({'group': self.cluster['cluster']})
+        df = pd.DataFrame({'group': self.groups['group']})
         drop_columns = None
         if self.random_drop:
-            df.iloc[sample(np.arange(self.data.n_obs).tolist(), min_group_ncells), :] = 'others'
+            df.iloc[sample(np.arange(len(self.data.cell_names)).tolist(), min_group_ncells), :] = 'others'
             drop_columns = ['group_others']
         if self.drop_dummy:
             group_inds = np.where(df['group'] == self.drop_dummy)[0]
@@ -76,8 +73,8 @@ class SpatialLag(ToolBase):
         x = pd.get_dummies(data=df, drop_first=False)
         if drop_columns is not None:
             x.drop(columns=drop_columns, inplace=True)
-        uniq_group = set(self.cluster['cluster']).difference([self.drop_dummy]) if self.drop_dummy is not None \
-            else set(self.cluster['cluster'])
+        uniq_group = set(self.groups['group']).difference([self.drop_dummy]) if self.drop_dummy is not None \
+            else set(self.groups['group'])
         return x, list(uniq_group)
 
     def get_genes(self):
@@ -87,9 +84,9 @@ class SpatialLag(ToolBase):
         :return : gene names
         """
         if self.genes is None:
-            genes = self.data.var.index
+            genes = self.data.gene_names
         else:
-            genes = self.data.var.index.intersection(self.genes)
+            genes = self.data.gene_names.intersection(self.genes)
         return genes
 
     def gm_model(self, x, uniq_group):
@@ -100,7 +97,7 @@ class SpatialLag(ToolBase):
         :param uniq_group:
         :return:
         """
-        knn = weights.distance.KNN.from_array(self.position, k=self.n_neighbors)
+        knn = weights.distance.KNN.from_array(self.data.position, k=self.n_neighbors)
         knn.transform = 'R'
         genes = self.get_genes()
         result = pd.DataFrame(index=genes)
@@ -109,9 +106,10 @@ class SpatialLag(ToolBase):
             result[str(i) + '_lag_coeff'] = None
             result[str(i) + '_lag_zstat'] = None
             result[str(i) + '_lag_pval'] = None
+        data_pd = pd.DataFrame(self.data.exp_matrix, columns=self.data.gene_names, index=self.data.cell_names)
         for i, cur_g in tqdm(enumerate(genes),
                              desc="performing GM_lag_model and assign coefficient and p-val to cell type"):
-            x['log_exp'] = self.data[:, cur_g].X
+            x['log_exp'] = data_pd[cur_g].values
             try:
                 model = spreg.GM_Lag(x[['log_exp']].values, x.values,
                                      w=knn, name_y='log_exp')
@@ -128,4 +126,5 @@ class SpatialLag(ToolBase):
                     result.loc[cur_g, str(g) + '_lag_coeff'] = np.nan
                     result.loc[cur_g, str(g) + '_lag_zstat'] = np.nan
                     result.loc[cur_g, str(g) + '_lag_pval'] = np.nan
+        self.result.matrix = result
         return result

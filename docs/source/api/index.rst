@@ -5,163 +5,95 @@
 API
 ===
 
-Stereo-seq Analysis By Python
-
 Import stereopy as::
 
    import stereo as st
 
 
-io: `reader`
+IO
 -------------------
 
-.. module:: stereo.io
-.. currentmodule:: stereo
-
-io module, reading matrix and transform to annotation data.
-
-reader
-~~~~~~~~~~~~~~~~~~~
+The io module supports reading files in multiple formats to generate StereoExpData object, such as gem, gef, h5ad and
+so on. In addition, we provide the conversion function between AnnData and StereoExpData. Finally, we support writting
+StereoExpData as h5ad file for storage.
 
 .. autosummary::
    :toctree: .
 
-   io.read_stereo_data
-   io.read_10x_data
+    io.read_gem
+    io.read_gef
+    io.read_ann_h5ad
+    io.read_stereo_h5ad
+    io.anndata_to_stereo
+    io.stereo_to_anndata
+    io.write_h5ad
 
 
-preprocess: `pp`
+StereoExpData
 -------------------
 
-.. module:: stereo.pp
-.. currentmodule:: stereo
+A data designed for express matrix of spatial omics.
 
-preprocess module
+.. autoclass:: stereo.core.st_pipeline.StPipeline
+   :members:
+   :inherited-members:
 
-filter
-~~~~~~~~~~~~~~~~~~~
-
-.. autosummary::
-   :toctree: .
-
-   preprocess.filter_cells
-   preprocess.filter_genes
-   preprocess.filter_coordinates
-
-
-normalize
-~~~~~~~~~~~~~~~~~~~
-
-.. autosummary::
-   :toctree: .
-
-   preprocess.Normalizer
-   preprocess.normalize_total
-   preprocess.zscore_disksmooth
-   preprocess.quantile_norm
-
-
-qc
-~~~~~~~~~~~~~~~~~~~
-
-.. autosummary::
-   :toctree: .
-
-   preprocess.cal_qc
-
-
-tools: `tl`
+StPipeline
 -------------------
 
-.. module:: stereo.tl
-.. currentmodule:: stereo
+A class for basic analysis of StereoExpData. It is the `StereoExpData.tl`.
 
-analysis tool module
+.. autoclass:: stereo.core.st_pipeline.StPipeline
+   :members:
+   :inherited-members:
 
-Cell type annotation
-~~~~~~~~~~~~~~~~~~~
-
-.. autosummary::
-   :toctree: .
-
-   tools.CellTypeAnno
-
-
-clustering
-~~~~~~~~~~~~~~~~~~~
-
-.. autosummary::
-   :toctree: .
-
-   tools.Clustering
-
-dimensionality reduce
-~~~~~~~~~~~~~~~~~~~
-
-.. autosummary::
-   :toctree: .
-
-   tools.DimReduce
-   tools.pca
-   tools.u_map
-   tools.factor_analysis
-   tools.low_variance
-   tools.t_sne
-
-find marker
-~~~~~~~~~~~~~~~~~~~
-
-.. autosummary::
-   :toctree: .
-
-   tools.FindMarker
-
-
-Spatial pattern score
-~~~~~~~~~~~~~~~~~~~
-
-.. autosummary::
-   :toctree: .
-
-   tools.SpatialPatternScore
-
-
-Spatial lag
-~~~~~~~~~~~~~~~~~~~
-
-.. autosummary::
-   :toctree: .
-
-   tools.SpatialLag
-
-
-plots: `pt`
+plots: `plt`
 -------------------
 
-.. module:: stereo.pt
+.. module:: stereo.plt
 .. currentmodule:: stereo
 
-visualization module
+Visualization module
 
-quality control plots
+.. autosummary::
+   :toctree: .
+
+
+plot collection
 ~~~~~~~~~~~~~~~~~~~
 
 .. autosummary::
    :toctree: .
 
-   plots.plot_spatial_distribution
-   plots.plot_genes_count
-   plots.plot_violin_distribution
+   plots.PlotCollection
 
 
-analysis plots
-~~~~~~~~~~~~~~~~~~~
-
+scatter
+~~~~~~~~
 .. autosummary::
    :toctree: .
 
-   plots.plot_dim_reduce
-   plots.plot_spatial_cluster
-   plots.plot_scatter
-   plots.plot_marker_genes
-   plots.plot_heatmap_marker_genes
+   plots.scatter.base_scatter
+   plots.scatter.volcano
+   plots.scatter.highly_variable_genes
+   plots.genes_count
+   plots.spatial_distribution
+
+
+interactive plot
+~~~~~~~~~~~~~~~~~
+.. autosummary::
+   :toctree: .
+
+   plots.interact_spatial_cluster
+   plots.InteractiveScatter
+
+
+others
+~~~~~~~~
+.. autosummary::
+   :toctree: .
+
+   plots.violin_distribution
+   plots.marker_genes_text
+   plots.marker_genes_heatmap

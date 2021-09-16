@@ -5,84 +5,132 @@
 @last modified by: Ping Qiu
 @file: find_markers.py
 @time: 2021/3/14 14:52
+
+change log:
+    2021/05/20 rst supplement. by: qindanhua.
+    2021/06/20 adjust for restructure base class . by: qindanhua.
 """
-from ..utils.data_helper import select_group
-from scipy import stats
 import pandas as pd
-from statsmodels.stats.multitest import multipletests
-import numpy as np
+
+from ..utils.data_helper import select_group
 from ..core.tool_base import ToolBase
 from ..log_manager import logger
-from ..core.stereo_result import FindMarkerResult
 from tqdm import tqdm
+from typing import Union, Sequence
+import numpy as np
+from ..plots.marker_genes import marker_genes_text, marker_genes_heatmap
 
 
 class FindMarker(ToolBase):
     """
-    a tool for finding maker gene
-    define a cluster as group, find statistical test different genes between one group and the others using t-test or wilcoxon_test
+    a tool of finding maker gene
+    for each group, find statistical test different genes between one group and the rest groups using t-test or wilcoxon_test
+
+    :param data: expression matrix, StereoExpData object
+    :param groups: group information matrix, at least two columns, treat first column as sample name, and the second as
+    group name e.g pd.DataFrame({'bin_cell': ['cell_1', 'cell_2'], 'cluster': ['1', '2']})
+    :param case_groups: default all clusters
+    :param control_groups: rest of groups
+    :param method: t-test or wilcoxon_test
+    :param corr_method: correlation method
+
+    Examples
+    --------
+
+    >>> from stereo.tools.find_markers import FindMarker
+    >>> fm = FindMarker()
     """
-    def __init__(self, data, cluster, test_groups='all', control_groups='rest', method='t-test',
-                 corr_method=None, name=None):
-        """
-        initialization
 
-        :param data: anndata
-        :param cluster: the 'Clustering' tool name, defined when running 'Clustering' tool
-        :param test_groups: default all clusters
-        :param control_groups: rest of groups
-        :param method: t-test or wilcoxon_test
-        :param corr_method: correlation method
-        :param name: name of this tool and will be used as a key when adding tool result to andata object.
-        """
-        super(FindMarker, self).__init__(data, method, name)
-        self.params = self.get_params(locals())
+    def __init__(
+            self,
+            data=None,
+            groups=None,
+            method: str = 't_test',
+            case_groups: Union[str, np.ndarray] = 'all',
+            control_groups: str = 'rest',
+            corr_method: str = 'bonferroni',
+    ):
+        super(FindMarker, self).__init__(data=data, groups=groups, method=method)
         self.corr_method = corr_method.lower()
-        self.test_group = test_groups
+        self.case_groups = case_groups
         self.control_group = control_groups
-        self.cluster = cluster
-        self.check_param()
+        self.fit()
 
-    def check_param(self):
-        """
-        Check whether the parameters meet the requirements.
-        """
-        super(FindMarker, self).check_param()
-        if self.method not in ['t-test', 'wilcoxon']:
-            logger.error(f'{self.method} is out of range, please check.')
-            raise ValueError(f'{self.method} is out of range, please check.')
-        if self.corr_method not in ['bonferroni', 'benjamini-hochberg']:
+    @ToolBase.method.setter
+    def method(self, method):
+        m_range = ['t_test', 'wilcoxon_test']
+        self._method_check(method, m_range)
+
+    @property
+    def corr_method(self):
+        return self._corr_method
+
+    @corr_method.setter
+    def corr_method(self, corr_method):
+        if corr_method.lower() not in ['bonferroni', 'benjamini-hochberg']:
             logger.error(f'{self.corr_method} is out of range, please check.')
             raise ValueError(f'{self.corr_method} is out of range, please check.')
-        if self.cluster not in self.data.obs_keys():
-            logger.error(f" '{self.cluster}' is not in andata.")
-            raise ValueError(f" '{self.cluster}' is not in andata.")
+        else:
+            self._corr_method = corr_method
 
+    @ToolBase.fit_log
     def fit(self):
         """
         run
         """
-        all_groups = set(self.data.obs[self.cluster].values)
-        groups = all_groups if self.test_group == 'all' else [self.test_group]
-        result_info = {}
-        for g in tqdm(groups, desc='Find marker gene: '):
+        self.data.sparse2array()
+        if self.groups is None:
+            raise ValueError(f'group information must be set')
+        group_info = self.groups
+        all_groups = set(group_info['group'].values)
+        if isinstance(self.case_groups, np.ndarray):
+            case_groups = set(self.case_groups)
+        elif self.case_groups == 'all':
+            case_groups = all_groups
+        else:
+            case_groups = [self.case_groups]
+        control_str = self.control_group if isinstance(self.control_group, str) else \
+            '-'.join([str(i) for i in self.control_group])
+        self.result = {}
+        logres_score = self.logres_score() if self.method == 'logres' else None
+        for g in tqdm(case_groups, desc='Find marker gene: '):
             if self.control_group == 'rest':
                 other_g = all_groups.copy()
                 other_g.remove(g)
             else:
-                other_g = self.control_group
-            g_data = select_group(andata=self.data, groups=g, clust_key=self.cluster)
-            other_data = select_group(andata=self.data, groups=other_g, clust_key=self.cluster)
+                other_g = [self.control_group]
+            other_g = list(other_g)
+            g_data = select_group(st_data=self.data, groups=g, cluster=group_info)
+            other_data = select_group(st_data=self.data, groups=other_g, cluster=group_info)
             g_data, other_data = self.merge_groups_data(g_data, other_data)
-            if self.method == 't-test':
-                result = t_test(g_data, other_data, self.corr_method)
-            else:
-                result = wilcoxon_test(g_data, other_data, self.corr_method)
-            g_name = f"{g}.vs.{self.control_group}"
-            params = self.params.copy()
-            params['test_groups'] = g
-            result_info[g_name] = FindMarkerResult(name=self.name, param=params, degs_data=result)
-        self.add_result(result=result_info, key_added=self.name)
+            result = self.get_func_by_path('stereo.algorithm.statistics', self.method)(g_data, other_data,
+                                                                                       self.corr_method) \
+                if logres_score is None else self.run_logres(logres_score, g_data, other_data, g)
+            self.result[f"{g}.vs.{control_str}"] = result
+
+    def logres_score(self):
+        from ..algorithm.statistics import logreg
+        x = self.data.exp_matrix
+        y = self.groups['group'].values
+        if (isinstance(self.case_groups, str) and self.case_groups != 'all') or isinstance(self.case_groups, np.ndarray):
+            use_group = [self.case_groups] if isinstance(self.case_groups, str) else list(self.case_groups)
+            use_group.append(self.control_group)
+            group_index = self.groups['group'].isin(use_group)
+            x = x[group_index, :]
+            y = y[group_index]
+        score_df = logreg(x, y)
+        score_df.columns = self.data.gene_names
+        return score_df
+
+    def run_logres(self, score_df, g_data, other_data, group_name):
+        from ..algorithm.statistics import cal_log2fc
+        res = pd.DataFrame()
+        res['genes'] = g_data.columns
+        gene_index = score_df.columns.isin(g_data.columns)
+        scores = score_df.loc[group_name].values if score_df.shape[0] > 1 else score_df.values[0]
+        res['scores'] = scores[gene_index]
+        res['log2fc'] = cal_log2fc(g_data, other_data)
+        return res
 
     @staticmethod
     def merge_groups_data(g1, g2):
@@ -100,66 +148,28 @@ class FindMarker(ToolBase):
         g2.drop(zeros, axis=1, inplace=True)
         return g1, g2
 
+    def plot_marker_text(self,
+                         groups: Union[str, Sequence[str]] = 'all',
+                         markers_num: int = 20,
+                         sort_key: str = 'scores',
+                         ascend: bool = False,
+                         fontsize: int = 8,
+                         ncols: int = 4, ):
+        marker_genes_text(self.result, groups, markers_num, sort_key, ascend, fontsize, ncols)
 
-def t_test(group, other_group, corr_method=None):
-    """
-    student t test
-
-    :param group:
-    :param other_group:
-    :param corr_method:
-    :return:
-    """
-    scores, pvals = stats.ttest_ind(group.values, other_group.values, axis=0, equal_var=False)
-    result = {'genes': group.columns, 'scores': scores, 'pvalues': pvals}
-    n_genes = len(group.columns)
-    pvals_adj = corr_pvalues(pvals, corr_method, n_genes)
-    if pvals_adj is not None:
-        result['pvalues_adj'] = pvals_adj
-    result['log2fc'] = cal_log2fc(group, other_group)
-    return pd.DataFrame(result)
-
-
-def corr_pvalues(pvals, method, n_genes):
-    """
-    calculate correlation's p values
-
-    :param pvals:
-    :param method:
-    :param n_genes:
-    :return:
-    """
-    pvals_adj = None
-    if method == 'benjamini-hochberg':
-        pvals[np.isnan(pvals)] = 1
-        _, pvals_adj, _, _ = multipletests(pvals, alpha=0.05, method='fdr_bh')
-    elif method == 'bonferroni':
-        pvals_adj = np.minimum(pvals * n_genes, 1.0)
-    return pvals_adj
-
-
-def wilcoxon_test(group, other_group, corr_method=None):
-    """
-    wilcoxon_test
-
-    :param group:
-    :param other_group:
-    :param corr_method:
-    :return:
-    """
-    result = group.apply(lambda x: pd.Series(stats.mannwhitneyu(x, other_group[x.name])), axis=0).transpose()
-    result.columns = ['scores', 'pvalues']
-    result['genes'] = list(result.index)
-    n_genes = result.shape[0]
-    pvals_adj = corr_pvalues(result['pvalues'], corr_method, n_genes)
-    if pvals_adj is not None:
-        result['pvalues_adj'] = pvals_adj
-    result['log2fc'] = cal_log2fc(group, other_group)
-    return pd.DataFrame(result)
-
-
-def cal_log2fc(group, other_group):
-    g_mean = np.mean(group.values, axis=0)
-    other_mean = np.mean(other_group.values, axis=0)
-    log2fc = g_mean - np.log2(other_mean + 10e-5)
-    return log2fc
+    def plot_heatmap(self,
+                     markers_num: int = 5,
+                     sort_key: str = 'scores',
+                     ascend: bool = False,
+                     show_labels: bool = True,
+                     show_group: bool = True,
+                     show_group_txt: bool = True,
+                     cluster_colors_array=None,
+                     min_value=None,
+                     max_value=None,
+                     gene_list=None, do_log=True):
+        marker_genes_heatmap(data=self.data, cluster_res=self.groups, marker_res=self.result,
+                                  markers_num=markers_num, sort_key=sort_key, ascend=ascend, show_labels=show_labels,
+                                  show_group=show_group, show_group_txt=show_group_txt,
+                                  cluster_colors_array=cluster_colors_array, min_value=min_value, max_value=max_value,
+                                  gene_list=gene_list, do_log=do_log)

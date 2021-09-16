@@ -7,13 +7,9 @@
 @time:2021/03/15
 """
 
-from matplotlib.cm import get_cmap
 from matplotlib.axes import Axes
 import matplotlib.pyplot as plt
 from matplotlib.colors import Normalize
-from matplotlib import gridspec
-
-from anndata import AnnData
 import numpy as np
 import pandas as pd
 
@@ -45,7 +41,6 @@ def heatmap(df: pd.DataFrame = None, ax: Axes = None, cmap=None, norm=None, plot
         plot_colorbar = False
 
     kwargs.setdefault('interpolation', 'nearest')
-
     im = ax.imshow(df.values, aspect='auto', norm=norm, **kwargs)
 
     ax.set_ylim(df.shape[0] - 0.5, -0.5)

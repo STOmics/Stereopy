@@ -40,7 +40,8 @@ extensions = [
     'sphinx.ext.napoleon',
     'sphinx.ext.autosummary',
     'nbsphinx',
-    # 'scanpydoc',
+    "sphinx.ext.viewcode",
+    "sphinx_autodoc_typehints",
     *[p.stem for p in (HERE / 'extensions').glob('*.py')],
 ]
 
@@ -57,6 +58,13 @@ language = None
 html_theme = 'sphinx_rtd_theme'
 
 html_static_path = ['_static']
+
+html_css_files = [
+    'html.css',
+]
+# html_css_files = [
+#     '_static/html.css',
+# ]
 
 
 import nbclean, glob
