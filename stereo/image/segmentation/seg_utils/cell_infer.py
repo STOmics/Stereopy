@@ -335,7 +335,7 @@ class CellInfer(object):
         return label_image
 
 
-def cellInfer(file, size, overlap=100):
+def cellInfer(file, size, overlap=100, model_path=None):
 
     # split -> predict -> merge
     if isinstance(file, list):
@@ -351,7 +351,7 @@ def cellInfer(file, size, overlap=100):
         img_list, x_list, y_list = split(image, size, overlap)
 
         # load model
-        seg_app = CellInfer()
+        seg_app = CellInfer(model=model_path)
 
         label_list = []
         label_list_outline = []
