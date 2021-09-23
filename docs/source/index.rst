@@ -47,7 +47,7 @@ pending upgrade.
    release_note
 
 
-.. |Docs| image:: https://img.shields.io/static/v1?label=docs&message=streopy&color=green
+.. |Docs| image:: https://img.shields.io/static/v1?label=docs&message=stereopy&color=green
     :target: https://github.com/BGIResearch/stereopy
     :alt: Documentation
 
