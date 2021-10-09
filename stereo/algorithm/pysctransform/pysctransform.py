@@ -555,6 +555,7 @@ def vst(
 
     if n_cells is None and n_cells < umi.shape[1]:
         # downsample cells to speed up the first step
+        npy.random.seed(1448145)
         cells_step1_index = npy.random.choice(
             a=npy.arange(len(cell_names), dtype=int), size=n_cells, replace=False
         )
@@ -589,7 +590,7 @@ def vst(
     if (n_genes is not None) and (n_genes < len(genes_step1)):
         # density-sample genes to speed up the first step
         sampling_prob = dds(genes_log10_gmean_step1)
-
+        npy.random.seed(14)
         genes_step1_index = npy.random.choice(
             a=npy.arange(len(genes_step1)), size=n_genes, replace=False, p=sampling_prob
         )
