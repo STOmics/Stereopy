@@ -37,6 +37,8 @@ def get_position_array(data, obs_key='spatial'):
 
 
 def exp_matrix2df(data: StereoExpData, cell_name: Optional[np.ndarray] = None, gene_name: Optional[np.ndarray] = None):
+    if data.tl.raw:
+        data = data.tl.raw
     cell_index = [np.argwhere(data.cells.cell_name == i)[0][0] for i in cell_name] if cell_name is not None else None
     gene_index = [np.argwhere(data.genes.gene_name == i)[0][0] for i in gene_name] if gene_name is not None else None
     x = data.exp_matrix[cell_index, :] if cell_index is not None else data.exp_matrix
