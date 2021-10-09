@@ -47,6 +47,8 @@ def read_gem(file_path, sep='\t', bin_type="bins", bin_size=100, is_sparse=True)
     df = pd.read_csv(str(data.file), sep=sep, comment='#', header=0)
     if 'MIDCounts' in df.columns:
         df.rename(columns={'MIDCounts': 'UMICount'}, inplace=True)
+    elif 'MIDCount' in df.columns:
+        df.rename(columns={'MIDCount': 'UMICount'}, inplace=True)
     df.dropna(inplace=True)
     gdf = None
     if data.bin_type == 'cell_bins':
@@ -144,7 +146,7 @@ def read_stereo_h5ad(file_path):
     return data
 
 
-def read_ann_h5ad(file_path, spatial_key:Optional[str] = None):
+def read_ann_h5ad(file_path, spatial_key: Optional[str] = None):
     """
     read the h5ad file in Anndata format, and generate the object of StereoExpData.
 
@@ -298,7 +300,7 @@ def stereo_to_anndata(stereo_data: StereoExpData,spatial_key:str='spatial'):
 #     adata.obs_names = pd.read_csv(barcodesfile, header=None)[0].values
 #     return adata
 
-def read_gef(file_path, bin_size=100, is_sparse=True, gene_lst=None, region=None):
+def read_gef(file_path: str, bin_size=100, is_sparse=True, gene_lst: list = None, region: list = None):
     """
     read the gef(.h5) file, and generate the object of StereoExpData.
 
