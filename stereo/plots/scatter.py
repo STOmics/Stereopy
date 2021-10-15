@@ -41,10 +41,12 @@ def base_scatter(
         bad_color: str = "lightgrey",
         dot_size: int = None,
         color_list: Optional[Union[np.ndarray, list]] = None,
+        invert_y: bool = False
 ):  # scatter plot, 聚类后表达矩阵空间分布
     """
     scatter plotter
 
+    :param invert_y: whether to invert y-axis.
     :param x: x position values
     :param y: y position values
     :param color_values: each dot's values, use for color set, eg. ['1', '3', '1', '2']
@@ -77,7 +79,7 @@ def base_scatter(
     if dot_size is None:
         dot_size = 120000 / len(color_values)
     if ax is None:
-        fig, ax = plt.subplots()
+        fig, ax = plt.subplots(figsize=(10, 8))
     if color_list is None:
         cmap = get_cmap()
         color_list = cmap.colors
@@ -118,6 +120,7 @@ def base_scatter(
             color_data = color_data.fillna(to_hex(bad_color))
 
     # color_data 是图像中各个点的值，也对应了每个点的颜色。data_points则对应了各个点的坐标
+    ax.set_aspect('equal', adjustable='datalim')
     ax.set_title(title, fontsize=18)
     ax.set_yticks([])
     ax.set_xticks([])
@@ -153,6 +156,8 @@ def base_scatter(
     else:
         plt.colorbar(path_collection, ax=ax, pad=0.01, fraction=0.08, aspect=30)
     ax.autoscale_view()
+    if invert_y:
+        ax.invert_yaxis()
     return ax
     # plt.show()
 
