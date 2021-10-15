@@ -57,9 +57,12 @@ def wilcoxon_test(group, other_group, corr_method=None):
     :param corr_method:
     :return:
     """
-    result = group.apply(lambda x: pd.Series(stats.mannwhitneyu(x, other_group[x.name])), axis=0).transpose()
-    result.columns = ['scores', 'pvalues']
-    result['genes'] = list(result.index)
+    # result = group.apply(lambda x: pd.Series(stats.mannwhitneyu(x, other_group[x.name])), axis=0).transpose()
+    g_num = group.shape[0]
+    x_array = np.hstack((group.values.T, other_group.values.T))
+    result = np.apply_along_axis(lambda x: stats.mannwhitneyu(x[0: g_num], x[g_num:]), 1, x_array)
+    result = pd.DataFrame(result, columns=['scores', 'pvalues'])
+    result['genes'] = list(group.columns)
     n_genes = result.shape[0]
     pvals_adj = corr_pvalues(result['pvalues'], corr_method, n_genes)
     if pvals_adj is not None:
