@@ -351,7 +351,7 @@ class StPipeline(object):
                       gamma=gamma, negative_sample_rate=negative_sample_rate, init_pos=init_pos)
         self.result[res_key] = pd.DataFrame(x_umap)
 
-    def neighbors(self, pca_res_key, method='umap', metric='euclidean', n_pcs=40, n_neighbors=10, knn=True,
+    def neighbors(self, pca_res_key, method='umap', metric='euclidean', n_pcs=None, n_neighbors=10, knn=True,
                   res_key='neighbors'):
         """
         run the neighbors.
