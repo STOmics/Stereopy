@@ -107,5 +107,11 @@ def interact_spatial_cluster(
 #     return tuple(int(value[i:i + lv // 3], 16) for i in range(0, lv, lv // 3))
 #
 #
-# def rgb_to_hex(rgb):
-#     return '#%02x%02x%02x' % rgb
+def rgb_to_hex(rgb):
+    return '#%02x%02x%02x' % rgb
+
+
+if __name__ == '__main__':
+    a = [(12, 51, 131), (10,136,186), (242,211,56), (242,143,56), (217,30,30)]
+    print(rgb_to_hex((12, 51, 131)))
+

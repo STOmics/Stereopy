@@ -180,7 +180,7 @@ class PlotCollection:
         """
         interactive spatial distribution
 
-        :param inline: notebook out if true else open at a new window
+        :param inline: notebook out if true else open in a new window
         :param width: width
         :param height: height
         :param bgcolor: background color
