@@ -1,14 +1,14 @@
 #!/usr/bin/env python3
 # coding: utf-8
 """
-@file: hotspot.py
+@file: get_hotspot.py
 @description: 
 @author: Yiran Wu
 @email: wuyiran@genomics.cn
 @last modified by: Yiran Wu
 
 change log:
-    2021/8/19 create file.
+    2021/10/14 create file.
 """
 import copy
 
@@ -22,7 +22,7 @@ import pickle
 from ..preprocess.filter import filter_genes
 
 
-def get_hotspot(data,model='normal',n_neighbors=30,n_jobs=20):
+def get_hotspot(data,model='normal',n_neighbors=30,n_jobs=20, min_cell = 0, outdir=None):
     # Load the counts and positions
     #     counts_file = '/Users/wuyiran55/Documents/jupyter/test/slideseq_data/MappedDGEForR.csv'
     #     pos_file = '/Users/wuyiran55/Documents/jupyter/test/slideseq_data/BeadLocationsForR.csv'
@@ -48,10 +48,15 @@ def get_hotspot(data,model='normal',n_neighbors=30,n_jobs=20):
     #
     hit_data = copy.deepcopy(data)
     num_umi = hit_data.cells.total_counts
-    if min_cell:
+    if min_cell > 0:
         hit_data = filter_genes(hit_data, min_cell=min_cell)
     counts = hit_data.to_df()
     pos = hit_data.position
+
+    HS_RESULTS = ''.join([outdir, "_hs_results.p"])
+    LCZ = ''.join([outdir, "/", "_lcz.p"])
+    MODULES = ''.join([outdir, "/", "_modules.p"])
+    HOTSPOT = ''.join([outdir, "/", "_hotspot.p"])
 
     # Create the Hotspot object and the neighborhood graph
     hs = hotspot.Hotspot(counts, model=model, latent=pos, umi_counts=num_umi)
@@ -68,7 +73,7 @@ def get_hotspot(data,model='normal',n_neighbors=30,n_jobs=20):
     # select the genes with significant spatial autocorrelation
     hs_genes = hs_results.index[hs_results.FDR < 0.05]
     # Compute pair-wise local correlations between these genes
-    lcz = hs.compute_local_correlations(hs_genes, jobs=20)
+    lcz = hs.compute_local_correlations(hs_genes, jobs=n_jobs)
     with open(LCZ, "wb") as f:
         pickle.dump(lcz, f)
 
