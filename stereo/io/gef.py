@@ -36,7 +36,6 @@ class GEF(object):
             self.df_gene = pd.DataFrame(h5gene['gene', 'offset', 'count'])
             self.df_exp = pd.DataFrame(h5exp['x', 'y', 'count'])
 
-    # @profile(precision=2, stream=open('memory_profiler_build.log', 'w+'))
     def build(self, gene_lst: list = None, region: list = None):
         if gene_lst is not None:
             self._restrict_to_genes(gene_lst)

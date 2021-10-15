@@ -630,11 +630,11 @@ def vst(
         model_parameters["Intercept"] = npy.log(gene_mean) - npy.log(mean_cell_sum)
         model_parameters["log10_umi"] = [npy.log(10)] * len(genes)
     elif method == "glmgp":
-        model_parameters = get_model_params_allgene_glmgp(umi_step1, data_step1)
+        model_parameters = get_model_params_allgene_glmgp(umi_step1, data_step1, threads=4)
         model_parameters.index = genes_step1
     elif method == "fix-slope":
         model_parameters = get_model_params_allgene_glmgp(
-            umi_step1, data_step1, use_offset=True
+            umi_step1, data_step1, threads=4, use_offset=True
         )
         model_parameters.index = genes_step1
     elif method in ["theta_ml", "theta_lbfgs", "alpha_lbfgs"]:

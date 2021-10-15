@@ -18,6 +18,7 @@ def sc_transform(
         filter_hvgs=False,
         res_clip_range="seurat",
         var_features_n=3000,
+        threads=4
 ):
     """
     python version sc transform
@@ -48,6 +49,7 @@ def sc_transform(
         method=method,
         n_cells=n_cells,
         n_genes=n_genes,
+        threads=4,
         exclude_poisson=exclude_poisson,
     )
     residuals = vst_out['residuals'].T
