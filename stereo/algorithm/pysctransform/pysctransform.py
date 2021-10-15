@@ -555,6 +555,7 @@ def vst(
 
     if n_cells is None and n_cells < umi.shape[1]:
         # downsample cells to speed up the first step
+        npy.random.seed(1448145)
         cells_step1_index = npy.random.choice(
             a=npy.arange(len(cell_names), dtype=int), size=n_cells, replace=False
         )
@@ -589,7 +590,7 @@ def vst(
     if (n_genes is not None) and (n_genes < len(genes_step1)):
         # density-sample genes to speed up the first step
         sampling_prob = dds(genes_log10_gmean_step1)
-
+        npy.random.seed(14)
         genes_step1_index = npy.random.choice(
             a=npy.arange(len(genes_step1)), size=n_genes, replace=False, p=sampling_prob
         )
@@ -629,11 +630,11 @@ def vst(
         model_parameters["Intercept"] = npy.log(gene_mean) - npy.log(mean_cell_sum)
         model_parameters["log10_umi"] = [npy.log(10)] * len(genes)
     elif method == "glmgp":
-        model_parameters = get_model_params_allgene_glmgp(umi_step1, data_step1)
+        model_parameters = get_model_params_allgene_glmgp(umi_step1, data_step1, threads=4)
         model_parameters.index = genes_step1
     elif method == "fix-slope":
         model_parameters = get_model_params_allgene_glmgp(
-            umi_step1, data_step1, use_offset=True
+            umi_step1, data_step1, threads=4, use_offset=True
         )
         model_parameters.index = genes_step1
     elif method in ["theta_ml", "theta_lbfgs", "alpha_lbfgs"]:

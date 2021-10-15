@@ -81,7 +81,7 @@ def spatial_distribution(
         ncols=2,
         dot_size=None,
         color_list=None,
-        invert_y=False
+        invert_y=True
 ):  # scatter plot, 表达矩阵空间分布
     """
     spatial distribution.
@@ -140,6 +140,7 @@ def spatial_distribution(
 
         # color_data 是图像中各个点的值，也对应了每个点的颜色。data_points则对应了各个点的坐标
         ax = fig.add_subplot(axs[i])  # ax = plt.subplot(axs[i]) || ax = fig.add_subplot(axs[1, 1]))
+        ax.set_aspect('equal', adjustable='datalim')
         ax.set_title(key, fontsize=18)
         ax.set_yticks([])
         ax.set_xticks([])

@@ -78,6 +78,8 @@ def interact_spatial_cluster(
             height=height,
             padding=(0.1, 0.1)
         ).opts(bgcolor=bg_color,
+               invert_yaxis=True,
+               aspect='equal'
                # legend_muted=True,
                # legend_cols=2
                )

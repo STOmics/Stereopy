@@ -18,6 +18,7 @@ import holoviews.operation.datashader as hd
 from stereo.log_manager import logger
 import copy
 import matplotlib.colors as mcolors
+import matplotlib.colors as mcolors
 # import time
 # from holoviews.element.selection import spatial_select_columnar
 # from stereo.core.stereo_exp_data import StereoExpData

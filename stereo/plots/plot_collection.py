@@ -140,7 +140,7 @@ class PlotCollection:
             ncols=2,
             dot_size=None,
             color_list=None,
-            invert_y=False
+            invert_y=True
     ):
         """
         spatial distribution of total_counts and n_genes_by_counts
@@ -266,6 +266,7 @@ class PlotCollection:
             y_label: Optional[str] = None,
             dot_size: int = None,
             colors='glasbey_category10',
+            invert_y: bool = True,
             **kwargs
     ):
         """
@@ -277,6 +278,7 @@ class PlotCollection:
         :param y_label: y label
         :param dot_size: dot size
         :param colors: color list
+        :param invert_y: whether to invert y-axis.
 
         """
         res = self.check_res_key(res_key)
@@ -285,7 +287,7 @@ class PlotCollection:
             self.data.position[:, 1],
             color_values=np.array(res['group']),
             color_list=conf.get_colors(colors),
-            title=title, x_label=x_label, y_label=y_label, dot_size=dot_size,
+            title=title, x_label=x_label, y_label=y_label, dot_size=dot_size, invert_y=invert_y,
             **kwargs
         )
         return ax
