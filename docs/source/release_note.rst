@@ -3,6 +3,17 @@ Release Notes
 
 .. role:: small
 
+
+Version 0.2.1
+-----------
+0.2.1 :2021-10-15
+~~~~~~~~~~~~~~~~~~~~~~~
+1. fix the bug of marker_genes_heatmap IndexError and sort the text of heatmap plot.
+2. invert yaxis one the top for spatial_scatter and cluster_scatter plot funcs.
+3. solve the problem that multiple results of sctransform run are inconsistent.
+4. update requirements.txt.
+
+
 Version 0.2.0
 -----------
 0.2.0 :2021-09-16
