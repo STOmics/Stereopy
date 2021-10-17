@@ -1,12 +1,15 @@
 # coding: utf-8
-import pandas as pd
-from ..core.stereo_exp_data import StereoExpData
-from ..log_manager import logger
+import gc
+
 import h5py
+import pandas as pd
 from scipy.sparse import csr_matrix
+
+import numpy as np
 from ..core.cell import Cell
 from ..core.gene import Gene
-import numpy as np
+from ..core.stereo_exp_data import StereoExpData
+from ..log_manager import logger
 
 
 class GEF(object):
@@ -33,7 +36,7 @@ class GEF(object):
             self.df_gene = pd.DataFrame(h5gene['gene', 'offset', 'count'])
             self.df_exp = pd.DataFrame(h5exp['x', 'y', 'count'])
 
-    def build(self, gene_lst=None, region=None):
+    def build(self, gene_lst: list = None, region: list = None):
         if gene_lst is not None:
             self._restrict_to_genes(gene_lst)
         if region is not None:
@@ -63,18 +66,18 @@ class GEF(object):
                 rows[j] = i
             i += 1
         self.df_exp['cell_index'] = rows
+        del grp
+        gc.collect()
 
     def _restrict_to_region(self, region):
-        logger.info('restrict to region [{} <= x <= {} and {} <= y <= {}]'.format(
-            region[0], region[1], region[2], region[3]))
+        logger.info(f'restrict to region [{region[0]} <= x <= {region[1]}] and [{region[2]} <= y <= {region[3]}]')
         gene_col = []
         for row in self.df_gene.itertuples():
             for i in range(getattr(row, 'count')):
                 gene_col.append(getattr(row, 'gene'))
 
         self.df_exp['gene'] = gene_col
-        self.df_exp = self.df_exp.query('{} <= x <= {} and {} <= y <= {}'.format(
-            region[0], region[1], region[2], region[3]))
+        self.df_exp = self.df_exp.query(f'{region[0]} <= x <= {region[1]} and {region[2]} <= y <= {region[3]}')
 
         self.genes = self.df_exp['gene'].unique()
         self.df_gene = None
@@ -105,7 +108,7 @@ class GEF(object):
         self.df_exp['gene_index'] = cols[:exp_index]
         self.df_exp = self.df_exp.reset_index(drop=True)
 
-    def to_stereo_exp_data(self):
+    def to_stereo_exp_data(self) -> StereoExpData:
         data = StereoExpData(file_path=self.file_path)
         logger.info(f'the martrix has {self.cell_num} cells, and {self.gene_num} genes.')
         data.position = self.df_exp.loc[:, ['x', 'y']].drop_duplicates().values
