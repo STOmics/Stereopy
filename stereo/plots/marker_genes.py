@@ -16,6 +16,8 @@ from matplotlib.axes import Axes
 from ._plot_basic.heatmap_plt import heatmap, plot_categories_as_colorblocks, plot_gene_groups_brackets
 from ..core.stereo_exp_data import StereoExpData
 from ..utils import data_helper
+import natsort
+from collections import OrderedDict
 
 
 def marker_genes_text(
@@ -150,7 +152,8 @@ def make_draw_df(data: StereoExpData, group: pd.DataFrame, marker_res: dict, top
 def get_groups_marker(marker_res: dict, top_genes: int = 8, sort_key: str = 'scores',
                       ascend: bool = False, gene_list: Optional[list] = None):
     groups = marker_res.keys()
-    groups_genes = {}
+    groups = natsort.natsorted(groups)
+    groups_genes = OrderedDict()
     if gene_list is not None:
         for g in groups:
             groups_genes[g] = gene_list
