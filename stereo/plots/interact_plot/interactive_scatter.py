@@ -49,7 +49,7 @@ class InteractiveScatter:
         self.scatter_df = pd.DataFrame({
             # 'cell': self.data.cell_names,
             'x': self.data.position[:, 0],
-            'y': self.data.position[:, 1],
+            'y': self.data.position[:, 1] * -1,
             # 'count': np.array(self.data.exp_matrix.sum(axis=1))[:, 0],
             'count': np.array(self.data.exp_matrix.sum(axis=1))[:, 0] if self.data.cells.total_counts is None else self.data.cells.total_counts
         })
@@ -129,7 +129,8 @@ class InteractiveScatter:
 
             ).opts(
                 bgcolor=bgcolor,
-                invert_yaxis=True,
+                xaxis=None,
+                yaxis=None,
                 aspect='equal',
             ), selection_mode='union')
 
