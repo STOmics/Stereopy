@@ -10,6 +10,7 @@ from typing import Union, Optional
 from pathlib import Path
 import os
 from matplotlib import rcParams, rcParamsDefault
+import matplotlib.colors as mpl_colors
 
 
 class StereoConfig(object):
@@ -42,47 +43,24 @@ class StereoConfig(object):
         from colorcet import palette
         colormaps = {n: palette[n] for n in ['glasbey', 'glasbey_bw', 'glasbey_cool', 'glasbey_warm', 'glasbey_dark',
                                              'glasbey_light', 'glasbey_category10', 'glasbey_hv']}
-        colormaps['st'] = ['violet', 'turquoise', 'tomato', 'teal', 'tan', 'silver', 'sienna', 'red', 'purple', 'plum',
-                           'pink',
-                           'orchid', 'orangered', 'orange', 'olive', 'navy', 'maroon', 'magenta', 'lime',
-                           'lightgreen', 'lightblue', 'lavender', 'khaki', 'indigo', 'grey', 'green', 'gold', 'fuchsia',
-                           'darkgreen', 'darkblue', 'cyan', 'crimson', 'coral', 'chocolate', 'chartreuse', 'brown',
-                           'blue', 'black',
-                           'beige', 'azure', 'aquamarine', 'aqua',
-                           ]
         colormaps['stereo_30'] = ["#E41A1C", "#377EB8", "#4DAF4A", "#984EA3", "#FF7F00", "#A65628", "#FFFF33",
                                   "#F781BF", "#999999", "#E5D8BD", "#B3CDE3", "#CCEBC5", "#FED9A6", "#FBB4AE",
                                   "#8DD3C7", "#BEBADA", "#80B1D3", "#B3DE69", "#FCCDE5", "#BC80BD", "#FFED6F",
                                   "#8DA0CB", "#E78AC3", "#E5C494", "#CCCCCC", "#FB9A99", "#E31A1C", "#CAB2D6",
                                   "#6A3D9A", "#B15928"]
-        colormaps['stereo_150'] = ["#E41A1C", "#C22D3A", "#A04058", "#7E5477", "#5D6795", "#3B7BB3", "#3A86A5",
-                                   "#3E8F90", "#43997A", "#47A265", "#4BAC4F", "#57A156", "#668E67", "#747B79",
-                                   "#83688A", "#91559B", "#A35390", "#B75D70", "#CB6650", "#DF7031", "#F37911",
-                                   "#F77B03", "#E5730B", "#D46B13", "#C3631A", "#B15B22", "#AB6028", "#BC812A",
-                                   "#CEA12C", "#DFC22F", "#F0E331", "#FEFA37", "#FDE252", "#FBC96E", "#FAB189",
-                                   "#F898A4", "#F681BE", "#E485B7", "#D18AAF", "#BF8FA8", "#AD93A1", "#9A9899",
-                                   "#A6A39F", "#B5B0A6", "#C3BCAD", "#D2C8B4", "#E1D5BB", "#DDD6C2", "#D3D4CA",
-                                   "#CAD2D1", "#C0CFD8", "#B6CDE0", "#B6D0DF", "#BAD6D9", "#BFDCD3", "#C4E2CD",
-                                   "#C9E7C8", "#D0E9C2", "#DAE5BC", "#E4E2B6", "#EDDEAF", "#F7DBA9", "#FDD6A6",
-                                   "#FDCFA8", "#FCC8A9", "#FCC0AB", "#FBB9AC", "#F6B5AF", "#E1BBB3", "#CBC1B8",
-                                   "#B6C7BD", "#A0CDC2", "#8DD2C7", "#97CDCA", "#A0C8CE", "#AAC4D2", "#B3BFD6",
-                                   "#BDBAD9", "#B2B8D8", "#A6B6D7", "#9AB4D6", "#8EB3D4", "#82B1D3", "#87B7C2",
-                                   "#91C0AE", "#9BC999", "#A5D284", "#AFDA70", "#BCDB78", "#CAD890", "#D8D5A9",
-                                   "#E6D1C1", "#F5CED9", "#F5C5E0", "#E9B6D9", "#DCA7D1", "#D098C9", "#C389C1",
-                                   "#C088B7", "#CD9DA8", "#DBB298", "#E8C789", "#F5DC7A", "#F9E973", "#E3DA85",
-                                   "#CDCB97", "#B7BCA9", "#A0ADBA", "#8E9FCA", "#A09BC9", "#B196C7", "#C392C6",
-                                   "#D48EC4", "#E68AC3", "#E694BA", "#E6A0B1", "#E5ABA7", "#E5B69E", "#E5C295",
-                                   "#E0C59D", "#DCC6A7", "#D7C8B2", "#D2C9BD", "#CDCBC8", "#D2C5C5", "#DBBBBB",
-                                   "#E4B1B1", "#EDA8A7", "#F69E9D", "#F88C8B", "#F37373", "#EF5A5A", "#EA4142",
-                                   "#E5282A", "#E0262A", "#DC434F", "#D76173", "#D27E97", "#CD9CBB", "#C4ABD2",
-                                   "#B294C7", "#9F7EBB", "#8C67AF", "#7A50A4", "#6B3D96", "#794380", "#87486A",
-                                   "#954E54", "#A3533E", "#B15928"]
         return colormaps
 
-    def get_colors(self, colors):
+    def get_colors(self, colors, n=None):
         if isinstance(colors, str):
             if colors not in self.colormaps:
                 raise ValueError(f'{colors} not in colormaps, color value range in {self.colormaps.keys()}')
+            if n is not None:
+                if n > len(self.colormaps[colors]):
+                    mycmap = mpl_colors.LinearSegmentedColormap.from_list("mycmap", self.colormaps[colors], N=n)
+                    color_list = [mpl_colors.rgb2hex(mycmap(i)) for i in range(n)]
+                else:
+                    color_list = self.colormaps[colors][0: n]
+                return color_list
             else:
                 return self.colormaps[colors]
         else:
