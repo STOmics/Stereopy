@@ -37,7 +37,7 @@ class InteractiveScatter:
     def __init__(
             self,
             data,
-            width: Optional[int] = 680, height: Optional[int] = 500,
+            width: Optional[int] = 600, height: Optional[int] = 480,
             bgcolor='#2F2F4F',
             # bgcolor='#333333'
     ):
@@ -145,9 +145,9 @@ class InteractiveScatter:
                 _df_plot,
                 pn.Column(
                     # pn.panel(pn.bind(random_plot, button), loading_indicator=True),
-                    _selection_table,
+                    # _selection_table,
                     pn.Column(
-                        "above in the table is selected points, pick or drop them to generate a new StereoExpData",
+                        # "above in the table is selected points, pick or drop them to generate a new StereoExpData",
                         pn.Row(
                             self.drop_checkbox,
                             # self.bin_select
