@@ -55,7 +55,7 @@ def interact_spatial_cluster(
 
     ##
     if len(cs) > len(colormaps[theme_default]):
-        colormaps[theme_default] = conf.get_colors(theme_default, n=150)
+        colormaps[theme_default] = conf.get_colors(theme_default, n=len(cs))
 
     global color_key
     color_key = {k: c for k, c in zip(cs, colormaps[theme_default][0:len(cs)])}
