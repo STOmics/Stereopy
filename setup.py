@@ -9,9 +9,24 @@
 from setuptools import setup, find_packages
 import sys
 from pathlib import Path
+from distutils.core import setup
+from distutils.extension import Extension
+from Cython.Build import cythonize
+from numpy import get_include
 
 if sys.version_info < (3, 7):
     sys.exit('stereopy requires Python >= 3.7')
+
+ext_modules = cythonize({
+    Extension("gef_cy",
+              ["stereo/io/gef_cy.pyx", "stereo/io/H5Reader.cpp"],
+              include_dirs=[get_include(), '/usr/include',
+                            '/usr/local/include'],
+              libraries=["hdf5"],
+              language='c++',
+              extra_compile_args=["-std=c++11", "-Wno-sign-compare"]
+              )
+})
 
 setup(
     name='stereopy',
@@ -23,7 +38,7 @@ setup(
     url='https://github.com/BGIResearch/stereopy',
     author='BGIResearch',
     author_email='qiuping1@genomics.cn',
-    python_requires='>=3.6',
+    python_requires='>=3.7',
     install_requires=[
         l.strip() for l in Path('requirements.txt').read_text('utf-8').splitlines()
     ],
@@ -34,6 +49,7 @@ setup(
     ),
     packages=find_packages(),
     include_package_data=True,
+    ext_modules=ext_modules,
     classifiers=[
         'Natural Language :: English',
         'License :: OSI Approved :: MIT License',
