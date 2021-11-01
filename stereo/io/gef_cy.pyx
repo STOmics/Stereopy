@@ -32,8 +32,6 @@ cdef class GEF:
     cdef unsigned long long exp_len
     cdef unsigned int minX, minY, maxX, maxY, gene_num
 
-    h5py.h5d.DatasetID
-
     # def __cinit__(self, filepath):
     #     self.c_h5r = new H5Reader(filepath)
     #     self.exp_len = self.c_h5r.getExpLen()

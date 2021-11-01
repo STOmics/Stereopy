@@ -21,7 +21,7 @@ from ..log_manager import logger
 import h5py
 from stereo.io import h5ad
 # from stereo.io.gef import GEF
-from gef_cy import GEF
+from .gef_cy import GEF
 from scipy.sparse import csr_matrix
 from ..core.cell import Cell
 from ..core.gene import Gene
@@ -29,7 +29,6 @@ import numpy as np
 from anndata import AnnData
 from shapely.geometry import Point, MultiPoint
 from typing import Optional
-
 
 
 def read_gem(file_path, sep='\t', bin_type="bins", bin_size=100, is_sparse=True):
@@ -315,10 +314,12 @@ def read_gef(file_path: str, bin_size=100, is_sparse=True, gene_lst: list = None
 
     :return: an object of StereoExpData.
     """
+    # gef = GEF(file_path=file_path, bin_size=bin_size)
+    # print(gef.cols.size)
     # gef = GEF(file_path=file_path, bin_size=bin_size, is_sparse=is_sparse)
     # gef.build(gene_lst=gene_lst, region=region)
     # data = gef.to_stereo_exp_data()
-    logger.info(f'begin.')
+    # logger.info(f'begin.')
     gef = GEF(file_path, bin_size)
     gene_num = gef.get_gene_num()
     exp_len = gef.get_exp_len()
@@ -331,10 +332,10 @@ def read_gef(file_path: str, bin_size=100, is_sparse=True, gene_lst: list = None
 
     uniq_cells = gef.get_exp_data(rows, count)
     cell_num = len(uniq_cells)
-
-    gef.get_gene_data(cols, uniq_genes)
-    logger.info(f'the martrix has {cell_num} cells, and {gene_num} genes.')
-    uniq_cells
+    #
+    # gef.get_gene_data(cols, uniq_genes)
+    # logger.info(f'the martrix has {cell_num} cells, and {gene_num} genes.')
+    # uniq_cells
     # data.position = self.df_exp.loc[:, ['x', 'y']].drop_duplicates().values
     exp_matrix = csr_matrix((count, (rows, cols)),
                             shape=(cell_num, gene_num), dtype=np.uint32)
