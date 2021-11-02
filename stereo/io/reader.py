@@ -332,7 +332,7 @@ def read_gef(file_path: str, bin_size=100, is_sparse=True, gene_lst: list = None
 
         uniq_cells = gef.get_exp_data(rows, count)
         cell_num = len(uniq_cells)
-        
+
         gef.get_gene_data(cols, uniq_genes)
         # uniq_cells
         # TODO position  from uniq_cells

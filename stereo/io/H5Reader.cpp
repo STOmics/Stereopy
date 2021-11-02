@@ -1,6 +1,5 @@
 #include "H5Reader.h"
 #include "util.h"
-#include "gef_read.h"
 #include "khash.h"
 
 #include <iostream>
@@ -37,9 +36,9 @@ vector<unsigned long long> H5Reader::getExpData(vector<unsigned int> & cell_inde
     hid_t attr;
     unsigned long long uniq_cell_id;
 
-    now = time(nullptr);
-    dt = ctime(&now);
-    printf("exp_len end = %s\n", dt);
+//    now = time(nullptr);
+//    dt = ctime(&now);
+//    printf("exp_len end = %s\n", dt);
 
     memtype = H5Tcreate(H5T_COMPOUND, sizeof(Gene));
     m_status = H5Tinsert(memtype, "x", HOFFSET(Gene, x), H5T_NATIVE_UINT);
@@ -50,9 +49,9 @@ vector<unsigned long long> H5Reader::getExpData(vector<unsigned int> & cell_inde
     expData = (Gene*)malloc(exp_len * sizeof(Gene));
     m_status = H5Dread(exp_dataset_id, memtype, H5S_ALL, H5S_ALL, H5P_DEFAULT, expData);
 
-    now = time(nullptr);
-    dt = ctime(&now);
-    printf("* H5Dread end = %s\n", dt);
+//    now = time(nullptr);
+//    dt = ctime(&now);
+//    printf("* H5Dread end = %s\n", dt);
 
 //    map<unsigned long long, unsigned int> cells_map;
     unordered_map<unsigned long long, unsigned int> cells_map;
@@ -93,10 +92,10 @@ vector<unsigned long long> H5Reader::getExpData(vector<unsigned int> & cell_inde
         count.push_back(expData[i].cnt);
     }
 
-    now = time(nullptr);
-    dt = ctime(&now);
-    printf("index = %d\n", index);
-    printf("* cell_index end = %s\n", dt);
+//    now = time(nullptr);
+//    dt = ctime(&now);
+//    printf("index = %d\n", index);
+//    printf("* cell_index end = %s\n", dt);
 
     // Read attribute of raw data
     attr = H5Aopen(exp_dataset_id, "minX", H5P_DEFAULT);

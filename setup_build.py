@@ -10,6 +10,7 @@ try:
 except ImportError:
     from distutils.extension import Extension
 from distutils.command.build_ext import build_ext
+
 import sys
 import os
 import os.path as op
@@ -23,7 +24,7 @@ def localpath(*args):
 
 
 COMPILER_SETTINGS = {
-    'libraries': ['hdf5', 'hdf5_hl'],
+    'libraries': ['hdf5'],
     'include_dirs': [],
     'library_dirs': [],
     'define_macros': [('H5_USE_18_API', None),

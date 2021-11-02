@@ -134,7 +134,7 @@ class BuildConfig:
         except EnvironmentError:
             if os.name != 'nt':
                 print(
-                    "Building h5py requires pkg-config unless the HDF5 path "
+                    "Building stereopy requires pkg-config unless the HDF5 path "
                     "is explicitly specified", file=sys.stderr
                 )
                 raise
@@ -168,7 +168,7 @@ class BuildConfig:
             return '\n'.join((['['] + [f'  {d!r}' for d in l] + [']'])) if l else '[]'
 
         print('*' * 80)
-        print(' ' * 23 + "Summary of the h5py configuration")
+        print(' ' * 23 + "Summary of the stereopy configuration")
         print('')
         print("HDF5 include dirs:", fmt_dirs(self.hdf5_includedirs))
         print("HDF5 library dirs:", fmt_dirs(self.hdf5_libdirs))
