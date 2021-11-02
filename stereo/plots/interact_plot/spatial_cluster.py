@@ -12,11 +12,13 @@ import numpy as np
 import panel as pn
 from colorcet import palette
 from holoviews import opts
+from stereo.config import StereoConfig
 
-colormaps = {n: palette[n] for n in ['glasbey', 'glasbey_bw', 'glasbey_cool', 'glasbey_warm', 'glasbey_dark',
-                                     'glasbey_light', 'glasbey_category10', 'glasbey_hv']}
+conf = StereoConfig()
+
+colormaps = conf.colormaps
 pn.param.ParamMethod.loading_indicator = True
-theme_default = 'glasbey_category10'
+theme_default = 'stereo_30'
 color_key = {}
 
 
@@ -51,6 +53,10 @@ def interact_spatial_cluster(
     theme_select = pn.widgets.Select(name='color theme', options=list(colormaps.keys()), value=theme_default, width=200)
     cluster_select = pn.widgets.Select(name='cluster', options=cs, value=cs[0], width=100, loading=False)
 
+    ##
+    if len(cs) > len(colormaps[theme_default]):
+        colormaps[theme_default] = conf.get_colors(theme_default, n=len(cs))
+
     global color_key
     color_key = {k: c for k, c in zip(cs, colormaps[theme_default][0:len(cs)])}
     # print(color_key)
@@ -78,6 +84,8 @@ def interact_spatial_cluster(
             height=height,
             padding=(0.1, 0.1)
         ).opts(bgcolor=bg_color,
+               invert_yaxis=True,
+               aspect='equal'
                # legend_muted=True,
                # legend_cols=2
                )
@@ -107,5 +115,11 @@ def interact_spatial_cluster(
 #     return tuple(int(value[i:i + lv // 3], 16) for i in range(0, lv, lv // 3))
 #
 #
-# def rgb_to_hex(rgb):
-#     return '#%02x%02x%02x' % rgb
+def rgb_to_hex(rgb):
+    return '#%02x%02x%02x' % rgb
+
+
+if __name__ == '__main__':
+    a = [(12, 51, 131), (10, 136, 186), (242, 211, 56), (242, 143, 56), (217, 30, 30)]
+    print(rgb_to_hex((12, 51, 131)))
+

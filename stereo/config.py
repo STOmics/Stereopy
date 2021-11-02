@@ -10,14 +10,16 @@ from typing import Union, Optional
 from pathlib import Path
 import os
 from matplotlib import rcParams, rcParamsDefault
+import matplotlib.colors as mpl_colors
 
 
 class StereoConfig(object):
     """
     config of stereo.
     """
+
     def __init__(
-        self,
+            self,
             file_format: str = "h5ad",
             auto_show: bool = True,
             n_jobs=1,
@@ -41,18 +43,24 @@ class StereoConfig(object):
         from colorcet import palette
         colormaps = {n: palette[n] for n in ['glasbey', 'glasbey_bw', 'glasbey_cool', 'glasbey_warm', 'glasbey_dark',
                                              'glasbey_light', 'glasbey_category10', 'glasbey_hv']}
-        colormaps['st'] = ['violet', 'turquoise', 'tomato', 'teal', 'tan', 'silver', 'sienna', 'red', 'purple', 'plum', 'pink',
-              'orchid', 'orangered', 'orange', 'olive', 'navy', 'maroon', 'magenta', 'lime',
-              'lightgreen', 'lightblue', 'lavender', 'khaki', 'indigo', 'grey', 'green', 'gold', 'fuchsia',
-              'darkgreen', 'darkblue', 'cyan', 'crimson', 'coral', 'chocolate', 'chartreuse', 'brown', 'blue', 'black',
-              'beige', 'azure', 'aquamarine', 'aqua',
-              ]
+        colormaps['stereo_30'] = ["#E41A1C", "#377EB8", "#4DAF4A", "#984EA3", "#FF7F00", "#A65628", "#FFFF33",
+                                  "#F781BF", "#999999", "#E5D8BD", "#B3CDE3", "#CCEBC5", "#FED9A6", "#FBB4AE",
+                                  "#8DD3C7", "#BEBADA", "#80B1D3", "#B3DE69", "#FCCDE5", "#BC80BD", "#FFED6F",
+                                  "#8DA0CB", "#E78AC3", "#E5C494", "#CCCCCC", "#FB9A99", "#E31A1C", "#CAB2D6",
+                                  "#6A3D9A", "#B15928"]
         return colormaps
 
-    def get_colors(self, colors):
+    def get_colors(self, colors, n=None):
         if isinstance(colors, str):
             if colors not in self.colormaps:
                 raise ValueError(f'{colors} not in colormaps, color value range in {self.colormaps.keys()}')
+            if n is not None:
+                if n > len(self.colormaps[colors]):
+                    mycmap = mpl_colors.LinearSegmentedColormap.from_list("mycmap", self.colormaps[colors], N=n)
+                    color_list = [mpl_colors.rgb2hex(mycmap(i)) for i in range(n)]
+                else:
+                    color_list = self.colormaps[colors][0: n]
+                return color_list
             else:
                 return self.colormaps[colors]
         else:
@@ -160,7 +168,7 @@ class StereoConfig(object):
 
     @staticmethod
     def set_plot_param(fontsize: int = 14, figsize: Optional[int] = None, color_map: Optional[str] = None,
-                       facecolor: Optional[str] = None, transparent: bool = False,):
+                       facecolor: Optional[str] = None, transparent: bool = False, ):
         if fontsize is not None:
             rcParams['font.size'] = fontsize
         if color_map is not None:

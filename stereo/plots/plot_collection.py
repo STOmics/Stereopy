@@ -180,7 +180,7 @@ class PlotCollection:
         """
         interactive spatial distribution
 
-        :param inline: notebook out if true else open at a new window
+        :param inline: notebook out if true else open in a new window
         :param width: width
         :param height: height
         :param bgcolor: background color
@@ -203,7 +203,7 @@ class PlotCollection:
             x_label: Optional[Union[str, list]] = 'umap1',
             y_label: Optional[Union[str, list]] = 'umap2',
             dot_size: int = None,
-            colors: Optional[Union[str, list]] = 'glasbey_category10',
+            colors: Optional[Union[str, list]] = 'stereo_30',
             **kwargs
     ):
         """
@@ -223,11 +223,12 @@ class PlotCollection:
         self.data.sparse2array()
         if cluster_key:
             cluster_res = self.check_res_key(cluster_key)
+            n = len(set(cluster_res['group']))
             return base_scatter(
                 res.values[:, 0],
                 res.values[:, 1],
                 color_values=np.array(cluster_res['group']),
-                color_list=conf.get_colors(colors),
+                color_list=conf.get_colors(colors, n),
                 title=cluster_key if title is None else title,
                 x_label=x_label, y_label=y_label, dot_size=dot_size,
                 **kwargs)
@@ -265,7 +266,7 @@ class PlotCollection:
             x_label: Optional[str] = None,
             y_label: Optional[str] = None,
             dot_size: int = None,
-            colors='glasbey_category10',
+            colors='stereo_30',
             invert_y: bool = True,
             **kwargs
     ):
@@ -282,11 +283,12 @@ class PlotCollection:
 
         """
         res = self.check_res_key(res_key)
+        n = len(set(res['group']))
         ax = base_scatter(
             self.data.position[:, 0],
             self.data.position[:, 1],
             color_values=np.array(res['group']),
-            color_list=conf.get_colors(colors),
+            color_list=conf.get_colors(colors, n=n),
             title=title, x_label=x_label, y_label=y_label, dot_size=dot_size, invert_y=invert_y,
             **kwargs
         )

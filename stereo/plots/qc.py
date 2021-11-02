@@ -109,7 +109,7 @@ def spatial_distribution(
     ncols = min(ncols, len(cells_key))
     nrows = np.ceil(len(cells_key) / ncols).astype(int)
     # each panel will have the size of rcParams['figure.figsize']
-    fig = plt.figure(figsize=(ncols * 10, nrows * 8))
+    fig = plt.figure(figsize=(ncols * 8, nrows * 10))
     left = 0.2 / ncols
     bottom = 0.13 / nrows
     axs = gridspec.GridSpec(
