@@ -322,19 +322,14 @@ def read_gef(file_path: str, bin_size=100, is_sparse=True, gene_lst: list = None
         from .gef_cy import GEF
         gef = GEF(file_path, bin_size)
         gene_num = gef.get_gene_num()
-        exp_len = gef.get_exp_len()
-        rows = np.zeros((exp_len,), dtype='uint32')
-        cols = np.zeros((exp_len,), dtype='uint32')
-        count = np.zeros((exp_len,), dtype='uint32')
-        uniq_genes = np.array((gene_num,), dtype='str')
-
         data = StereoExpData(file_path=file_path)
 
-        uniq_cells = gef.get_exp_data(rows, count)
+        uniq_cells, rows, count = gef.get_exp_data()
         cell_num = len(uniq_cells)
 
-        gef.get_gene_data(cols, uniq_genes)
-        data.position = list(zip(np.right_shift(uniq_cells, 32), np.bitwise_and(uniq_cells, 0xffff)))
+        cols, uniq_genes = gef.get_gene_data()
+        data.position = np.array(list(
+            (zip(np.right_shift(uniq_cells, 32), np.bitwise_and(uniq_cells, 0xffff))))).astype('uint32')
         exp_matrix = csr_matrix((count, (rows, cols)), shape=(cell_num, gene_num), dtype=np.uint32)
         data.cells = Cell(cell_name=uniq_cells)
         data.genes = Gene(gene_name=uniq_genes)

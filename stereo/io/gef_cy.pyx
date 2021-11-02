@@ -3,11 +3,8 @@
 # cython: language_level=3, boundscheck=False
 # cython: c_string_type=unicode, c_string_encoding=utf8
 # Created by huangzhibo on 2021/10/22
-
 import numpy as np
 cimport numpy as np
-cimport cython
-import h5py
 
 from libcpp.vector cimport vector
 from libcpp.string cimport string
@@ -16,15 +13,13 @@ cdef extern from "H5Reader.h":
     cdef cppclass H5Reader:
         H5Reader(const string&, int bin_size) except +
         unsigned long long exp_len
-        unsigned int minX, minY, maxX, maxY, gene_num
+        unsigned int minX, minY, maxX, maxY, gene_num, cell_num
 
         unsigned long long getExpLen() const
         unsigned int getGeneNum() const
 
-        vector[unsigned long long] getExpData(vector[unsigned int] & cell_index,
-                        vector[unsigned int] & count)
-
-        void getGeneData(vector[int] & gene_index, vector[string] & uniq_genes)
+        vector[unsigned long long] getExpData(unsigned int * cell_index, unsigned int * count)
+        void getGeneData(unsigned int * gene_index, vector[string] & uniq_genes)
 
 
 cdef class GEF:
@@ -50,9 +45,11 @@ cdef class GEF:
         self.maxX = self.c_h5r.maxX
         self.maxY = self.c_h5r.maxY
 
-    def get_exp_data(self, cell_index, count):
-        cdef vector[unsigned long long] uniq_cell =  self.c_h5r.getExpData(cell_index, count)
-        return uniq_cell
+    def get_exp_data(self):
+        cdef unsigned int[::1] cell_index = np.empty(self.exp_len, dtype=np.uint32)
+        cdef unsigned int[::1] count = np.empty(self.exp_len, dtype=np.uint32)
+        cdef vector[unsigned long long] uniq_cell =  self.c_h5r.getExpData(&cell_index[0], &count[0])
+        return np.asarray(uniq_cell), np.asarray(cell_index), np.asarray(count)
 
     def get_exp_len(self):
         return self.c_h5r.getExpLen()
@@ -60,8 +57,12 @@ cdef class GEF:
     def get_gene_num(self):
         return self.c_h5r.getGeneNum()
 
-    def get_gene_data(self, gene_index, uniq_genes):
-        return self.c_h5r.getGeneData(gene_index, uniq_genes)
+    def get_gene_data(self):
+        cdef vector[string] uniq_genes
+        uniq_genes.reserve(self.gene_num)
+        cdef unsigned int[::1] gene_index = np.empty(self.exp_len, dtype=np.uint32)
+        self.c_h5r.getGeneData(&gene_index[0], uniq_genes)
+        return np.asarray(gene_index), np.asarray(uniq_genes)
 
     def __dealloc__(self):
         del self.c_h5r

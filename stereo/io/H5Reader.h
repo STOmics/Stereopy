@@ -16,15 +16,15 @@ public:
     ~H5Reader();
     //expressions number
     int bin_size = 0;
-    unsigned int minX{}, minY{}, maxX{}, maxY{}, gene_num{};
+    unsigned int minX{}, minY{}, maxX{}, maxY{}, gene_num{}, cell_num{};
     unsigned long long exp_len = 0;
 
     unsigned long long getExpLen() const;
     unsigned int getGeneNum() const;
 
-    vector<unsigned long long> getExpData(vector<unsigned int> &cell_index, vector<unsigned int> &count);
+    vector<unsigned long long> getExpData(unsigned int * cell_index, unsigned int * count);
 
-    void getGeneData(vector<int> &gene_index, vector<string> &uniq_genes);
+    void getGeneData(unsigned int * gene_index, vector<string> & uniq_genes);
 
 private:
     hid_t m_file_id;

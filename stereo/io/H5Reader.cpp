@@ -26,7 +26,7 @@ H5Reader::~H5Reader()
     H5Sclose(gene_dataspace_id);
 }
 
-vector<unsigned long long> H5Reader::getExpData(vector<unsigned int> & cell_index, vector<unsigned int> & count)
+vector<unsigned long long> H5Reader::getExpData(unsigned int * cell_index, unsigned int * count)
 {
 //    time_t now = time(nullptr);
 //    char* dt = ctime(&now);
@@ -57,7 +57,6 @@ vector<unsigned long long> H5Reader::getExpData(vector<unsigned int> & cell_inde
     int absent, is_missing;
     khint_t k;
     khash_t(m64) *h = kh_init(m64);  // allocate a hash table
-    k = kh_put(m64, h, 5, &absent);  // insert a key to the hash table
 
     for (int i = 0; i < exp_len; ++i) {
         uniq_cell_id = expData[i].x;
@@ -66,9 +65,9 @@ vector<unsigned long long> H5Reader::getExpData(vector<unsigned int> & cell_inde
         k = kh_get(m64, h, uniq_cell_id);
         is_missing = (k == kh_end(h));
         if (!is_missing){
-            cell_index.push_back(kh_value(h, k) );
+            cell_index[i] = kh_value(h, k);
         }else {
-            cell_index.push_back(index);
+            cell_index[i] = index;
             uniq_cells.push_back(uniq_cell_id);
             k = kh_put(m64, h, uniq_cell_id, &absent);  // insert a key to the hash table
             kh_value(h, k) = index;
@@ -85,9 +84,10 @@ vector<unsigned long long> H5Reader::getExpData(vector<unsigned int> & cell_inde
 //            ++index;
 //        }
 //
-        count.push_back(expData[i].cnt);
+        count[i] = expData[i].cnt;
     }
 
+    this->cell_num = index;
 //    now = time(nullptr);
 //    dt = ctime(&now);
 //    printf("index = %d\n", index);
@@ -114,7 +114,7 @@ vector<unsigned long long> H5Reader::getExpData(vector<unsigned int> & cell_inde
     return uniq_cells;
 }
 
-void H5Reader::getGeneData(vector<int> & gene_index, vector<string> & uniq_genes)
+void H5Reader::getGeneData(unsigned int * gene_index, vector<string> & uniq_genes)
 {
     hid_t memtype;
     hid_t strtype;
@@ -133,16 +133,19 @@ void H5Reader::getGeneData(vector<int> & gene_index, vector<string> & uniq_genes
     m_status = H5Dread(gene_dataset_id, memtype, H5S_ALL, H5S_ALL, H5P_DEFAULT, idxData);
 
     // Write data line by line
-    for (int i = 0; i < gene_num; ++i)
+    unsigned long long exp_len_index = 0;
+    for (unsigned int i = 0; i < gene_num; ++i)
     {
         const char* gene = idxData[i].gene;
         uniq_genes.emplace_back(gene);
         unsigned int c = idxData[i].count;
         for (int j = 0; j < c; ++j)
         {
-            gene_index.push_back(i);
+            gene_index[exp_len_index++] = i;
         }
     }
+
+    assert(exp_len_index == exp_len);
 
     if (idxData != nullptr)
         free(idxData);
