@@ -326,7 +326,7 @@ def read_gef(file_path: str, bin_size=100, is_sparse=True, gene_lst: list = None
 
         uniq_cells, rows, count = gef.get_exp_data()
         cell_num = len(uniq_cells)
-
+        logger.info(f'the martrix has {cell_num} cells, and {gene_num} genes.')
         cols, uniq_genes = gef.get_gene_data()
         data.position = np.array(list(
             (zip(np.right_shift(uniq_cells, 32), np.bitwise_and(uniq_cells, 0xffff))))).astype('uint32')
@@ -334,6 +334,6 @@ def read_gef(file_path: str, bin_size=100, is_sparse=True, gene_lst: list = None
         data.cells = Cell(cell_name=uniq_cells)
         data.genes = Gene(gene_name=uniq_genes)
         data.exp_matrix = exp_matrix if is_sparse else exp_matrix.toarray()
-        logger.info(f'read_gef end, the martrix has {cell_num} cells, and {gene_num} genes.')
+        logger.info(f'read_gef end.')
 
     return data
