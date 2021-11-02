@@ -28,17 +28,13 @@ H5Reader::~H5Reader()
 
 vector<unsigned long long> H5Reader::getExpData(vector<unsigned int> & cell_index, vector<unsigned int> & count)
 {
-    time_t now = time(nullptr);
-    char* dt = ctime(&now);
-    printf("cpp_uniq_cell_index start = %s\n", dt);
+//    time_t now = time(nullptr);
+//    char* dt = ctime(&now);
+//    printf("cpp_uniq_cell_index start = %s\n", dt);
 
     hid_t memtype;
     hid_t attr;
     unsigned long long uniq_cell_id;
-
-//    now = time(nullptr);
-//    dt = ctime(&now);
-//    printf("exp_len end = %s\n", dt);
 
     memtype = H5Tcreate(H5T_COMPOUND, sizeof(Gene));
     m_status = H5Tinsert(memtype, "x", HOFFSET(Gene, x), H5T_NATIVE_UINT);
@@ -54,7 +50,7 @@ vector<unsigned long long> H5Reader::getExpData(vector<unsigned int> & cell_inde
 //    printf("* H5Dread end = %s\n", dt);
 
 //    map<unsigned long long, unsigned int> cells_map;
-    unordered_map<unsigned long long, unsigned int> cells_map;
+//    unordered_map<unsigned long long, unsigned int> cells_map;
     vector<unsigned long long> uniq_cells;
     unsigned int index = 0;
 
