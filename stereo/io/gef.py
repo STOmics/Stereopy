@@ -11,21 +11,14 @@ from ..core.gene import Gene
 from ..core.stereo_exp_data import StereoExpData
 from ..log_manager import logger
 
-from gef_read_cy import *
-
 
 class GEF(object):
     def __init__(self, file_path: str, bin_size: int = 100, is_sparse: bool = True):
         self.file_path = file_path
         self.bin_size = bin_size
         self.is_sparse = is_sparse
-        self.df_gene = None
         self.df_exp = None
-        self.h5f = None
-        self.h5_exp = None
-        self.h5_gene = None
-        self.rows = None
-        self.cols = None
+        self.df_gene = None
         self.genes = None
         self.cells = None
         self.cell_num = 0
@@ -33,16 +26,15 @@ class GEF(object):
         self._init()
 
     def _init(self):
-        # with h5py.File(self.file_path, mode='r') as h5f:
-        self.h5f = h5py.File(self.file_path, mode='r')
-        bin_tag = 'bin{}'.format(self.bin_size)
-        if bin_tag not in self.h5f['geneExp'].keys():
-            raise Exception('The bin size {} info is not in the GEF file'.format(self.bin_size))
+        with h5py.File(self.file_path, mode='r') as h5f:
+            bin_tag = 'bin{}'.format(self.bin_size)
+            if bin_tag not in h5f['geneExp'].keys():
+                raise Exception('The bin size {} info is not in the GEF file'.format(self.bin_size))
 
-        self.h5_exp = self.h5f['geneExp'][bin_tag]['expression']
-        self.h5_gene = self.h5f['geneExp'][bin_tag]['gene']
-        # self.df_gene = pd.DataFrame(h5gene['gene', 'offset', 'count'])
-        # self.df_exp = pd.DataFrame(self.h5_exp['x', 'y', 'count'])
+            h5exp = h5f['geneExp'][bin_tag]['expression']
+            h5gene = h5f['geneExp'][bin_tag]['gene']
+            self.df_gene = pd.DataFrame(h5gene['gene', 'offset', 'count'])
+            self.df_exp = pd.DataFrame(h5exp['x', 'y', 'count'])
 
     def build(self, gene_lst: list = None, region: list = None):
         if gene_lst is not None:
@@ -50,19 +42,31 @@ class GEF(object):
         if region is not None:
             self._restrict_to_region(region)
         if gene_lst is None and region is None:
-            self.genes = self.h5_gene['gene']
+            self.genes = self.df_gene['gene'].values
             self.gene_num = len(self.genes)
-            self.cols = np.zeros((self.h5_exp.shape[0],), dtype='uint32')
-            logger.info("gene_count_index start")
-            gene_count_index(self.h5_gene['count'], self.cols)
-            logger.info("gene_count_index end")
+            cols = np.zeros((self.df_exp.shape[0],), dtype='uint32')
+            gene_index = 0
+            exp_index = 0
+            for count in self.df_gene['count']:
+                for i in range(count):
+                    cols[exp_index] = gene_index
+                    exp_index += 1
+                gene_index += 1
+            self.df_exp['gene_index'] = cols
 
-        logger.info("get_uniq_cell start0")
-        # self.rows = np.zeros((self.h5_exp.shape[0],), dtype='uint32')
-        logger.info("get_uniq_cell start")
-        self.cells = get_uniq_cell(self.h5_exp['x'], self.h5_exp['y'], self.rows)
-        logger.info("get_uniq_cell end")
+        self.df_exp['cell_id'] = np.bitwise_or(
+            np.left_shift(self.df_exp['x'].astype('uint64'), 32), self.df_exp['y'])
+        self.cells = self.df_exp['cell_id'].unique()
         self.cell_num = len(self.cells)
+        rows = np.zeros((self.df_exp.shape[0],), dtype='uint32')
+        grp = self.df_exp.groupby('cell_id').groups
+        i = 0
+        for cell_id in self.cells:
+            for j in grp[cell_id]:
+                rows[j] = i
+            i += 1
+        self.df_exp['cell_index'] = rows
+        del grp
         gc.collect()
 
     def _restrict_to_region(self, region):
@@ -107,13 +111,10 @@ class GEF(object):
     def to_stereo_exp_data(self) -> StereoExpData:
         data = StereoExpData(file_path=self.file_path)
         logger.info(f'the martrix has {self.cell_num} cells, and {self.gene_num} genes.')
-        # data.position = self.df_exp.loc[:, ['x', 'y']].drop_duplicates().values
-        exp_matrix = csr_matrix((self.h5_exp['count'], (self.rows, self.cols)),
+        data.position = self.df_exp.loc[:, ['x', 'y']].drop_duplicates().values
+        exp_matrix = csr_matrix((self.df_exp['count'], (self.df_exp['cell_index'], self.df_exp['gene_index'])),
                                 shape=(self.cell_num, self.gene_num), dtype=np.int)
-        # data.cells = Cell(cell_name=self.cells)
-        # data.genes = Gene(gene_name=self.genes)
+        data.cells = Cell(cell_name=self.cells)
+        data.genes = Gene(gene_name=self.genes)
         data.exp_matrix = exp_matrix if self.is_sparse else exp_matrix.toarray()
         return data
-
-    def close(self):
-        self.h5f.close()
