@@ -20,14 +20,14 @@ def violin_distribution(data):  # 小提琴统计图
     """
     _, axs = plt.subplots(1, 3, figsize=(18, 4))
     # plt.ylabel("total_counts")
-    seaborn.violinplot(y=data.cells.get_property('total_counts'), ax=axs[0])
+    seaborn.violinplot(y=data.cells.get_property('total counts'), ax=axs[0])
     # plt.ylabel("n_genes_by_counts")
-    seaborn.violinplot(y=data.cells.get_property('n_genes_by_counts'), ax=axs[1])
+    seaborn.violinplot(y=data.cells.get_property('n genes by counts'), ax=axs[1])
     # plt.ylabel("pct_counts_mt")
-    seaborn.violinplot(y=data.cells.get_property('pct_counts_mt'), ax=axs[2])
-    axs[0].set_ylabel('total_counts', fontsize=15)
-    axs[1].set_ylabel('n_genes_by_counts', fontsize=15)
-    axs[2].set_ylabel('pct_counts_mt', fontsize=15)
+    seaborn.violinplot(y=data.cells.get_property('pct counts mt'), ax=axs[2])
+    axs[0].set_ylabel('total counts', fontsize=15)
+    axs[1].set_ylabel('n genes by counts', fontsize=15)
+    axs[2].set_ylabel('pct counts mt', fontsize=15)
 
 
 def save_fig(output):
