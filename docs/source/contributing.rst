@@ -32,7 +32,7 @@ Code style
 
 3. Variable naming should be in lower case and should be as meaningful as possible, avoiding unintentional naming.
 4. The comment information should be perfect, and each file, function, and class should write its comment information.
-We recommend using restructured Text as the docstring format of comment information.
+   We recommend using restructured Text as the docstring format of comment information.
 
 Project structure
 -----------------
@@ -74,11 +74,13 @@ Make a doc directory, and start sphinx::
     sphinx-quickstart
 
 Modify the config file:
-    In doc/source directory is now a python file called conf.py. This is the file that controls the basics of how
-sphinx runs when you run a build. For more information about the file, see the official `Sphinx <https://www.sphinx-doc.org/en/master/usage/configuration.html>`_ document.
+    In doc/source directory is now a python file called conf.py. This is the file that controls the basics of how 
+    sphinx runs when you run a build. For more information about the file, see the official 
+    `Sphinx <https://www.sphinx-doc.org/en/master/usage/configuration.html>`_ document.
 
 Write the Tutorials/example what you need to update:
-    Tutorials and examples are hosted on a separate repository called `Tutorials <https://github.com/BGIResearch/stereopy/tree/main/docs/source/Tutorials>`_.
+    Tutorials and examples are hosted on a separate repository called 
+    `Tutorials <https://github.com/BGIResearch/stereopy/tree/main/docs/source/Tutorials>`_.
 
 Make and build html::
 
@@ -91,7 +93,7 @@ Make and build html::
 docstrings format
 `````````````````
 We use the reStructured text style for writing docstrings. If you’re unfamiliar with the reStructuredText (rst) format,
-See the `link <https://www.sphinx-doc.org/en/master/usage/restructuredtext/basics.html>`_.
+see the `link <https://www.sphinx-doc.org/en/master/usage/restructuredtext/basics.html>`_.
 
 Making a release
 ----------------
