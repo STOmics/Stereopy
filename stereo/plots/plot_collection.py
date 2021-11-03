@@ -156,6 +156,8 @@ class PlotCollection:
                 dot_size=dot_size,
                 color_bar=False,
                 show_legend=False,
+                invert_y=False,
+                show_ticks=True,
                 **kwargs
             )
         # return fig

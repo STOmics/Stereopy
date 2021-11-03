@@ -37,6 +37,7 @@ def base_scatter(
         invert_y: bool = True,
         legend_ncol=2,
         show_legend=True,
+        show_ticks=False,
 ):  # scatter plot, 聚类后表达矩阵空间分布
     """
     scatter plotter
@@ -54,6 +55,8 @@ def base_scatter(
     :param dot_size: marker size.
     :param palette: customized colors
     :param legend_ncol: number of legend columns
+    :param show_legend
+    :param show_ticks
 
     :return: matplotlib Axes object
 
@@ -94,12 +97,14 @@ def base_scatter(
     if not show_legend:
         ax.legend_.remove()
 
-    ax.set_aspect('equal', adjustable='datalim')
+    if not show_ticks:
+        ax.set_aspect('equal', adjustable='datalim')
     ax.set_title(title, fontsize=18, fontweight='bold')
     ax.set_ylabel(y_label, fontsize=15)  # 设置y轴标签
     ax.set_xlabel(x_label, fontsize=15)  # 设置x轴标签
-    ax.set_yticks([])
-    ax.set_xticks([])
+    if not show_ticks:
+        ax.set_yticks([])
+        ax.set_xticks([])
     return ax
 
 
