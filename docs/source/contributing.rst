@@ -13,6 +13,7 @@ Contents
 Contributing code
 -----------------
 1. Clone the Stereopy source from github::
+
     git clone https://github.com/BGIResearch/stereopy.git
 2. Create a new branch for your PR and checkout to the new branch::
 
