@@ -17,17 +17,14 @@ from typing import Optional
 import holoviews.operation.datashader as hd
 from stereo.log_manager import logger
 import copy
-import matplotlib.colors as mcolors
+from stereo.config import StereoConfig
 
-colormaps = {n: palette[n] for n in ['rainbow', 'fire', 'bgy', 'bgyw', 'bmy', 'gray', 'kbc', 'CET_D4']}
+conf = StereoConfig()
+
 link = link_selections.instance()
 pn.param.ParamMethod.loading_indicator = True
 
-stmap_colors = ['#0c3383', '#0a88ba', '#f2d338', '#f28f38', '#d91e1e']
-nodes = [0.0, 0.25, 0.50, 0.75, 1.0]
-mycmap = mcolors.LinearSegmentedColormap.from_list("mycmap", list(zip(nodes, stmap_colors)))
-color_list = [mcolors.rgb2hex(mycmap(i)) for i in range(mycmap.N)]
-colormaps['stereo'] = color_list
+colormaps = conf.linear_colormaps
 
 
 class InteractiveScatter:

@@ -195,10 +195,9 @@ class Cluster(ToolBase):
         """
         if plot_dim_reduce:
             base_scatter(self.pca_x.values[:, 0], self.pca_x.values[:, 1],
-                         color_values=np.array(self.result['cluster']), color_list=cc.glasbey)
+                         hue=np.array(self.result['cluster']))
         else:
             base_scatter(self.data.position[:, 0], self.data.position[:, 1],
-                         color_values=np.array(self.result['cluster']),
-                         color_list=cc.glasbey)
+                         hue=np.array(self.result['cluster']))
         if file_path:
             plt.savefig(file_path)
