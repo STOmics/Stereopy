@@ -11,7 +11,7 @@ Pre-built installation (recommended)
 Source installation
 --------------------------------------------
 
-To install h5py from source, you need:
+To install stereopy from source, you need:
 
 - HDF5 1.8.4 or newer with development headers
 - A C compiler
@@ -31,7 +31,7 @@ The supported build options are:
  - To specify where to find HDF5, use one of these options:
     - HDF5_LIBDIR and HDF5_INCLUDEDIR: the directory containing the compiled HDF5 libraries and the directory containing the C header files, respectively.
     - HDF5_DIR: a shortcut for common installations, a directory with lib and include subdirectories containing compiled libraries and C headers.
-    - HDF5_PKGCONFIG_NAME: A name to query pkg-config for. If none of these options are specified, h5py will query pkg-config by default for hdf5, or hdf5-openmpi if building with MPI support.
+    - HDF5_PKGCONFIG_NAME: A name to query pkg-config for. If none of these options are specified, stereopy will query pkg-config by default for hdf5, or hdf5-openmpi if building with MPI support.
 
 Source installation on OSX/MacOS
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
