@@ -1,4 +1,4 @@
-
+# coding: utf-8
 """
     Implements a new custom Distutils command for handling library
     configuration.

@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# coding: utf-8
 """
     Implements a custom Distutils build_ext replacement, which handles the
     full extension module build process, from cython code to C compilation and
