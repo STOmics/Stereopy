@@ -6,8 +6,6 @@
 @file: data_helper.py
 @time: 2021/3/14 16:11
 """
-import os.path
-
 from scipy.sparse import issparse
 import pandas as pd
 import numpy as np
@@ -39,20 +37,6 @@ def get_position_array(data, obs_key='spatial'):
 
 
 def exp_matrix2df(data: StereoExpData, cell_name: Optional[np.ndarray] = None, gene_name: Optional[np.ndarray] = None):
-    i = 1
-    while os.path.exists(f"genes_raw_{i}.txt"):
-        i += 1
-    with open(f"genes_raw_{i}.txt", 'w') as grw, open(f"genes_non_raw_{i}.txt", 'w') as gnw, open(f"genes_mark_{i}.list", 'w') as gmw:
-        for g in data.tl.raw.genes.gene_name:
-            grw.write(g)
-            grw.write('\n')
-        for g in data.genes.gene_name:
-            gnw.write(g)
-            gnw.write('\n')
-        for g in gene_name:
-            gmw.write(g)
-            gmw.write('\n')
-
     if data.tl.raw:
         data = data.tl.raw
     cell_index = [np.argwhere(data.cells.cell_name == i)[0][0] for i in cell_name] if cell_name is not None else None
