@@ -11,6 +11,7 @@ from pathlib import Path
 import os
 from matplotlib import rcParams, rcParamsDefault
 import matplotlib.colors as mpl_colors
+from colorcet import palette
 
 
 class StereoConfig(object):
@@ -40,7 +41,6 @@ class StereoConfig(object):
 
     @property
     def colormaps(self):
-        from colorcet import palette
         colormaps = {n: palette[n] for n in ['glasbey', 'glasbey_bw', 'glasbey_cool', 'glasbey_warm', 'glasbey_dark',
                                              'glasbey_light', 'glasbey_category10', 'glasbey_hv']}
         colormaps['stereo_30'] = ["#E41A1C", "#377EB8", "#4DAF4A", "#984EA3", "#FF7F00", "#A65628", "#FFFF33",
@@ -49,6 +49,27 @@ class StereoConfig(object):
                                   "#8DA0CB", "#E78AC3", "#E5C494", "#CCCCCC", "#FB9A99", "#E31A1C", "#CAB2D6",
                                   "#6A3D9A", "#B15928"]
         return colormaps
+
+    @property
+    def linear_colormaps(self):
+        colormaps = {n: palette[n] for n in ['rainbow', 'fire', 'bgy', 'bgyw', 'bmy', 'gray', 'kbc', 'CET_D4']}
+        stmap_colors = ['#0c3383', '#0a88ba', '#f2d338', '#f28f38', '#d91e1e']
+        nodes = [0.0, 0.25, 0.50, 0.75, 1.0]
+        mycmap = mpl_colors.LinearSegmentedColormap.from_list("mycmap", list(zip(nodes, stmap_colors)))
+        color_list = [mpl_colors.rgb2hex(mycmap(i)) for i in range(mycmap.N)]
+        colormaps['stereo'] = color_list
+        return colormaps
+
+    def linear_colors(self, colors):
+        if isinstance(colors, str):
+            if colors not in self.linear_colormaps:
+                raise ValueError(f'{colors} not in colormaps, color value range in {self.linear_colormaps.keys()}')
+            else:
+                return self.linear_colormaps[colors]
+        elif isinstance(colors, list):
+            return colors
+        else:
+            raise ValueError('colors should be str or list type')
 
     def get_colors(self, colors, n=None):
         if isinstance(colors, str):
