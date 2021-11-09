@@ -34,7 +34,7 @@ class InteractiveScatter:
     def __init__(
             self,
             data,
-            width: Optional[int] = 600, height: Optional[int] = 480,
+            width: Optional[int] = 500, height: Optional[int] = 500,
             bgcolor='#2F2F4F',
             # bgcolor='#333333'
     ):
