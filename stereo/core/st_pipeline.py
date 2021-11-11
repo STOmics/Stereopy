@@ -24,7 +24,8 @@ import pandas as pd
 from ..algorithm.leiden import leiden as le
 from ..algorithm._louvain import louvain as lo
 from typing_extensions import Literal
-
+from ..io.reader import stereo_to_anndata
+import squidpy as sq
 
 class StPipeline(object):
     def __init__(self, data):
@@ -397,7 +398,7 @@ class StPipeline(object):
         res = {'neighbor': neighbor, 'connectivities': connectivities, 'nn_dist': dists}
         self.result[res_key] = res
 
-    def get_neighbors_res(self, neighbors_res_key):
+    def get_neighbors_res(self, neighbors_res_key, res_key='neighbor'):
         """
         get the neighbor result by the key.
 
@@ -411,6 +412,22 @@ class StPipeline(object):
         connectivities = neighbors_res['connectivities']
         nn_dist = neighbors_res['nn_dist']
         return neighbor, connectivities, nn_dist
+
+    def bayes_neighbors(self, neighbors_res_key, n_neighbors=6,):
+        """
+        Create a graph from spatial coordinates.
+
+        :param neighbors_res_key:
+        :param n_neighbors:
+        :return:
+        """
+        _, connectivities, _ = self.get_neighbors_res(neighbors_res_key)
+        adata = stereo_to_anndata(self.data)
+        sq.gr.spatial_neighbors(adata, n_neighs=n_neighbors)
+        connectivities[connectivities > 0] = 1
+        adj = connectivities + adata.obsp['spatial_connectivities']
+        adj[adj > 0] = 1
+        self.result[neighbors_res_key]['connectivities'] = adj
 
     def leiden(self,
                neighbors_res_key,
@@ -576,3 +593,39 @@ class StPipeline(object):
         df = pd.DataFrame(x, columns=data.gene_names, index=data.cell_names)
         res = spatial_pattern_score(df)
         self.result[res_key] = res
+
+    def spatial_hotspot(self, use_highly_genes=True, hvg_res_key:Optional[str] = None, model='normal', n_neighbors=30,
+                        n_jobs=20, fdr_threshold=0.05, min_gene_threshold=50, outdir=None, prefix="output",
+                        res_key='spatial_hotspot'):
+        """
+        identifying informative genes (and gene modules)
+
+        :param use_highly_genes: Whether to use only the expression of hypervariable genes as input, default True.
+        :param hvg_res_key: the key of highly varialbe genes to getting the result.
+        :param model: Specifies the null model to use for gene expression.
+            Valid choices are:
+                - 'danb': Depth-Adjusted Negative Binomial
+                - 'bernoulli': Models probability of detection
+                - 'normal': Depth-Adjusted Normal
+                - 'none': Assumes data has been pre-standardized
+        :param n_neighbors: Neighborhood size.
+        :param n_jobs: Number of parallel jobs to run.
+        :param fdr_threshold: Correlation threshold at which to stop assigning genes to modules
+        :param min_gene_threshold: Controls how small modules can be.
+            Increase if there are too many modules being formed.
+            Decrease if substructre is not being captured
+        :param outdir: The results and figures will be store in this directory.
+            If None, the results and figures will not be stored as files.
+        :param prefix: prefix of output files.
+        :param res_key: the key for getting the result from the self.result.
+        :return:
+        """
+        from ..algorithm.spatial_hotspot import spatial_hotspot
+        if use_highly_genes and hvg_res_key not in self.result:
+            raise Exception(f'{hvg_res_key} is not in the result, please check and run the highly_var_genes func.')
+        data = self.subset_by_hvg(hvg_res_key, inplace=False) if use_highly_genes else self.data
+        hs = spatial_hotspot(data, model=model, n_neighbors=n_neighbors, n_jobs=n_jobs, fdr_threshold=fdr_threshold,
+                             min_gene_threshold=min_gene_threshold,)
+        # res = {"results":hs.results, "local_cor_z": hs.local_correlation_z, "modules": hs.modules,
+        #        "module_scores": hs.module_scores}
+        self.result[res_key] = hs

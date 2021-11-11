@@ -4,8 +4,10 @@
 @author: qindanhua@genomics.cn
 @time:2021/08/31
 """
+import os.path
 from typing import Optional, Union, Sequence
 # import colorcet as cc
+import matplotlib.pyplot as plt
 import numpy as np
 from .scatter import base_scatter, multi_scatter, marker_gene_volcano, highly_variable_genes
 from stereo.config import StereoConfig
@@ -27,6 +29,22 @@ class PlotCollection:
     ):
         self.data = data
         self.result = self.data.tl.result
+
+    @staticmethod
+    def savefig(output, dpi=300):
+        """
+        save figures.
+
+        :param output: output name of a file.
+        :param dpi:
+        :return:
+        """
+        outdir = os.path.dirname(os.path.abspath(output))
+        if not os.path.isdir(outdir):
+            os.makedirs(outdir)
+        else:
+            pass
+        plt.savefig(output, dpi=dpi)
 
     def interact_cluster(
             self,
@@ -439,3 +457,79 @@ class PlotCollection:
             return res
         else:
             raise ValueError(f'{res_key} result not found, please run tool before plot')
+
+    def hotspot_local_correlations(self, res_key='spatial_hotspot', output=None):
+        res = self.check_res_key(res_key)
+        plt.rcParams['figure.figsize'] = (15.0, 12.0)
+        res.plot_local_correlations()
+        if output is not None:
+            self.savefig(output=output,backup="Module_Correlations.png", dpi=500)
+
+    def hotspot_modules(self, res_key="spatial_hotspot", output=None):
+        res = self.check_res_key(res_key)
+        plt.rcParams['figure.figsize'] = (15.0, 12.0)
+
+        for module in range(1, res.modules.max() + 1):
+            scores = res.module_scores[module]
+
+            vmin = np.percentile(scores, 1)
+            vmax = np.percentile(scores, 99)
+
+            plt.scatter(x=res.latent.iloc[:, 0],
+                        y=res.latent.iloc[:, 1],
+                        s=8,
+                        c=scores,
+                        vmin=vmin,
+                        vmax=vmax,
+                        edgecolors='none'
+                        )
+            axes = plt.gca()
+            for sp in axes.spines.values():
+                sp.set_visible(False)
+            plt.xticks([])
+            plt.yticks([])
+            plt.title('Module {}'.format(module))
+
+            if output is not None:
+                self.savefig(output, f"Module{module}.png")
+            plt.show()
+
+    def hotspot_gene_modulescores(self, res_key="spatial_hotspot", output=None, n_top_genes=6, module=1):
+        # Plot the module scores on top of positions
+        res = self.check_res_key(res_key)
+        results = res.results.join(res.modules)
+        results = results.loc[results.Module == module]
+        genes = results.sort_values('Z', ascending=False).head(n_top_genes).index
+
+        fig, axs = plt.subplots(2, 3, figsize=(11, 7.5))
+
+        import matplotlib
+        cmap = matplotlib.colors.LinearSegmentedColormap.from_list(
+            'grays', ['#DDDDDD', '#000000'])
+
+        for ax, gene in zip(axs.ravel(), genes):
+
+            expression = np.log2(res.counts.loc[gene]/res.umi_counts*45 + 1)  # log-counts per 45 (median UMI/barcode)
+
+            vmin = 0
+            vmax = np.percentile(expression, 95)
+            vmax = 2
+
+            plt.sca(ax)
+            plt.scatter(x=res.latent.iloc[:, 0],
+                        y=res.latent.iloc[:, 1],
+                        s=2,
+                        c=expression,
+                        vmin=vmin,
+                        vmax=vmax,
+                        edgecolors='none',
+                        cmap=cmap
+                        )
+            for sp in ax.spines.values():
+                sp.set_visible(False)
+
+            plt.xticks([])
+            plt.yticks([])
+            plt.title(gene)
+            if output is not None:
+                self.savefig(output, f"top{n_top_genes}_genes_Module{module}.png", dpi=500)
