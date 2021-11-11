@@ -3,6 +3,13 @@ Release Notes
 
 .. role:: small
 
+Version (next version)
+-----------
+next version :2021-11-04
+~~~~~~~~~~~~~~~~~~~~~~~
+1. Optimize gef io performance
+2. Add Cython setup_build function
+
 
 Version 0.2.1
 -----------

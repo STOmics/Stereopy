@@ -10,19 +10,22 @@ import hvplot.pandas
 import colorcet as cc
 import numpy as np
 import panel as pn
-from colorcet import palette
+import collections
 from holoviews import opts
+from stereo.config import StereoConfig
+from natsort import natsorted
 
-colormaps = {n: palette[n] for n in ['glasbey', 'glasbey_bw', 'glasbey_cool', 'glasbey_warm', 'glasbey_dark',
-                                     'glasbey_light', 'glasbey_category10', 'glasbey_hv']}
+conf = StereoConfig()
+
+colormaps = conf.colormaps
 pn.param.ParamMethod.loading_indicator = True
-theme_default = 'glasbey_category10'
-color_key = {}
+theme_default = 'stereo_30'
+color_key = collections.OrderedDict()
 
 
 def interact_spatial_cluster(
         df,
-        width=700,
+        width=500,
         height=500,
 ):
     """
@@ -42,17 +45,21 @@ def interact_spatial_cluster(
     pn.extension()
     hv.extension('bokeh')
     # default setting
-    dot_size_default = int(120000 / len(df))
+    dot_size_default = 1 if len(df) > 20000 else int(100000 / len(df))
 
-    bg_colorpicker = pn.widgets.ColorPicker(name='background color', value='#000000', width=200)
+    bg_colorpicker = pn.widgets.ColorPicker(name='background color', value='#ffffff', width=200)
     dot_slider = pn.widgets.IntSlider(name='dot size', value=dot_size_default, start=1, end=200, step=1, width=200)
-    cs = list(sorted(np.array(list(s for s in set(df['group'])))))
+    cs = natsorted(set(df['group']))
 
     theme_select = pn.widgets.Select(name='color theme', options=list(colormaps.keys()), value=theme_default, width=200)
     cluster_select = pn.widgets.Select(name='cluster', options=cs, value=cs[0], width=100, loading=False)
 
+    ##
+    if len(cs) > len(colormaps[theme_default]):
+        colormaps[theme_default] = conf.get_colors(theme_default, n=len(cs))
+
     global color_key
-    color_key = {k: c for k, c in zip(cs, colormaps[theme_default][0:len(cs)])}
+    color_key = collections.OrderedDict({k: c for k, c in zip(cs, colormaps[theme_default][0:len(cs)])})
     # print(color_key)
     # print(cs)
     ct_colorpicker = pn.widgets.ColorPicker(name='node color', value=color_key[cs[0]], width=70)
@@ -63,7 +70,7 @@ def interact_spatial_cluster(
         global color_key
         cluster_name = cluster_select.value
         if color_theme != theme_default:
-            color_key = {k: c for k, c in zip(cs, colormaps[color_theme][0:len(cs)])}
+            color_key = collections.OrderedDict({k: c for k, c in zip(cs, colormaps[color_theme][0:len(cs)])})
             cluster_select.value = cs[0]
             ct_colorpicker.value = color_key[cs[0]]
         else:
@@ -86,8 +93,7 @@ def interact_spatial_cluster(
         return sfig.opts(
             hv.opts.Scatter(
                 color=hv.dim('group').categorize(color_key)
-            )
-        )
+            ))
     coms = pn.Row(
         _df_plot,
         pn.Column(
@@ -109,5 +115,11 @@ def interact_spatial_cluster(
 #     return tuple(int(value[i:i + lv // 3], 16) for i in range(0, lv, lv // 3))
 #
 #
-# def rgb_to_hex(rgb):
-#     return '#%02x%02x%02x' % rgb
+def rgb_to_hex(rgb):
+    return '#%02x%02x%02x' % rgb
+
+
+if __name__ == '__main__':
+    a = [(12, 51, 131), (10, 136, 186), (242, 211, 56), (242, 143, 56), (217, 30, 30)]
+    print(rgb_to_hex((12, 51, 131)))
+
