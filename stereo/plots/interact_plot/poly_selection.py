@@ -60,7 +60,13 @@ class PolySelection(object):
         # sio = io.StringIO()
         # selected_pos = hv.Dataset(self.scatter_df).select(link.selection_expr).data[['cell']].values
         # print(pa.selected.data)
-        selected_point = pa.selected.data[0]
+        if len(pa.selected.data):
+            selected_point = pa.selected.data[0]
+        else:
+            import collections
+            from stereo.log_manager import logger
+            selected_point = collections.OrderedDict({'x': [], 'y': []})
+            print('selections not found, please choose a selection area')
         selected_point_array = np.array([selected_point['x'], selected_point['y']])
         points = selected_point_array.T
         selection_expr = dim('x', spatial_select, dim('y'), geometry=points)
@@ -113,7 +119,7 @@ class PolySelection(object):
         self.figure = pn.Row(
             poly_scatter,
             pn.Column(
-                anno_table,
+                anno_table.Table.PolyAnnotator_Vertices,
                 '',
                 '',
                 self.download
