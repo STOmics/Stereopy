@@ -544,3 +544,48 @@ class PlotCollection:
         if output is not None:
             self.savefig(output, dpi=500)
         plt.show()
+
+    def scenic_regulons(
+            self,
+            res_key="scenic",
+            output=None,
+    ):
+        res = self.check_res_key(res_key)
+        regulons=res["regulons"]
+        auc_mtx=res["auc_mtx"]
+        for tf in range(0, len(regulons)):
+            scores = auc_mtx.iloc[:, tf]
+
+            vmin = np.percentile(scores, 1)
+            vmax = np.percentile(scores, 99)
+
+            plt.scatter(x=self.data.position[:, 0],
+                        y=self.data.position[:, 1],
+                        s=8,
+                        c=scores,
+                        vmin=vmin,
+                        vmax=vmax,
+                        edgecolors='none'
+                        )
+            axes = plt.gca()
+            for sp in axes.spines.values():
+                sp.set_visible(False)
+            plt.xticks([])
+            plt.yticks([])
+            plt.title('Regulon {}'.format(auc_mtx.columns[tf]))
+            if output is not None:
+                self.savefig(output, dpi=500)
+            plt.show()
+
+    def scenic_clustermap(
+            self,
+            res_key="scenic",
+            output=None,
+    ):
+        res = self.check_res_key(res_key)
+        auc_mtx = res["auc_mtx"]
+        import seaborn as sns
+        sns.clustermap(auc_mtx, figsize=(12, 12))
+        if output is not None:
+            self.savefig(output, dpi=500)
+        plt.show()

@@ -70,9 +70,3 @@ def spatial_hotspot(data, model='normal', n_neighbors=30, n_jobs=20, fdr_thresho
     return hs
 
 
-def save_pkl(obj, output):
-    with open(output, "wb") as f:
-        pickle.dump(obj, f)
-    f.close()
-
-

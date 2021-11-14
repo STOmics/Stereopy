@@ -631,3 +631,21 @@ class StPipeline(object):
         # res = {"results":hs.results, "local_cor_z": hs.local_correlation_z, "modules": hs.modules,
         #        "module_scores": hs.module_scores}
         self.result[res_key] = hs
+
+    def scenic(self, data, tfs, motif, database_dir, res_key='scenic', outdir=None,):
+        """
+
+        :param data: StereoExpData
+        :param tfs: tfs file in txt format
+        :param motif: motif file in tbl format
+        :param database_dir: directory containing reference database(.feather files), cisTarget
+        :param outdir: directory containing output files(including modules.pkl, regulons.csv, adjacencies.tsv, motifs.csv).
+        If None, results will not be output to files.
+        :return:
+        """
+        from ..algorithm.scenic import scenic
+        modules, regulons, adjacencies, motifs, auc_mtx, regulons_df = scenic(data, tfs, motif, database_dir,
+                                                                              outdir=None)
+        res = {"regulons": regulons, "adjacencies": adjacencies, "modules": modules, "motifs": motifs,
+               "auc_mtx":auc_mtx, "regulons_df": regulons_df}
+        self.result[res_key] = res
