@@ -24,8 +24,6 @@ import pandas as pd
 from ..algorithm.leiden import leiden as le
 from ..algorithm._louvain import louvain as lo
 from typing_extensions import Literal
-from ..io.reader import stereo_to_anndata
-import squidpy as sq
 
 class StPipeline(object):
     def __init__(self, data):
@@ -413,21 +411,25 @@ class StPipeline(object):
         nn_dist = neighbors_res['nn_dist']
         return neighbor, connectivities, nn_dist
 
-    def bayes_neighbors(self, neighbors_res_key, n_neighbors=6,):
+    def bayes_neighbors(self, neighbors_res_key, n_neighbors=6, res_key='connectivities',):
         """
         Create a graph from spatial coordinates.
 
         :param neighbors_res_key:
         :param n_neighbors:
+        :param res_key: the key for getting the result from the self.result.
+
         :return:
         """
+        from ..io.reader import stereo_to_anndata
+        import squidpy as sq
         _, connectivities, _ = self.get_neighbors_res(neighbors_res_key)
         adata = stereo_to_anndata(self.data)
         sq.gr.spatial_neighbors(adata, n_neighs=n_neighbors)
         connectivities[connectivities > 0] = 1
         adj = connectivities + adata.obsp['spatial_connectivities']
         adj[adj > 0] = 1
-        self.result[neighbors_res_key]['connectivities'] = adj
+        self.result[neighbors_res_key][res_key] = adj
 
     def leiden(self,
                neighbors_res_key,
@@ -595,7 +597,7 @@ class StPipeline(object):
         self.result[res_key] = res
 
     def spatial_hotspot(self, use_highly_genes=True, hvg_res_key:Optional[str] = None, model='normal', n_neighbors=30,
-                        n_jobs=20, fdr_threshold=0.05, min_gene_threshold=50, outdir=None, prefix="output",
+                        n_jobs=20, fdr_threshold=0.05, min_gene_threshold=50,
                         res_key='spatial_hotspot'):
         """
         identifying informative genes (and gene modules)

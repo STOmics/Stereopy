@@ -463,58 +463,68 @@ class PlotCollection:
         plt.rcParams['figure.figsize'] = (15.0, 12.0)
         res.plot_local_correlations()
         if output is not None:
-            self.savefig(output=output,backup="Module_Correlations.png", dpi=500)
+            self.savefig(output, dpi=500)
 
-    def hotspot_modules(self, res_key="spatial_hotspot", output=None):
+    def hotspot_modules(
+            self,
+            res_key="spatial_hotspot",
+            output=None,
+            ncols = 2,
+            dot_size = None,
+            palette = 'stereo',
+            ** kwargs
+    ):
         res = self.check_res_key(res_key)
-        plt.rcParams['figure.figsize'] = (15.0, 12.0)
+        scores = [res.module_scores[module] for module in range(1, res.modules.max() + 1)]
+        vmin = np.percentile(scores, 1)
+        vmax = np.percentile(scores, 99)
+        multi_scatter(
+            x=res.latent.iloc[:, 0],
+            y=res.latent.iloc[:, 1],
+            hue=scores,
+            # x_label=['spatial1', 'spatial1'],
+            # y_label=['spatial2', 'spatial2'],
+            title=[f"module {module}" for module in range(1, res.modules.max() + 1)],
+            ncols=ncols,
+            dot_size=dot_size,
+            palette=palette,
+            color_bar=True,
+            vmin=vmin,
+            vmax=vmax,
+            **kwargs
+        )
 
-        for module in range(1, res.modules.max() + 1):
-            scores = res.module_scores[module]
+        if output is not None:
+            self.savefig(output,dpi=500)
+        plt.show()
 
-            vmin = np.percentile(scores, 1)
-            vmax = np.percentile(scores, 99)
-
-            plt.scatter(x=res.latent.iloc[:, 0],
-                        y=res.latent.iloc[:, 1],
-                        s=8,
-                        c=scores,
-                        vmin=vmin,
-                        vmax=vmax,
-                        edgecolors='none'
-                        )
-            axes = plt.gca()
-            for sp in axes.spines.values():
-                sp.set_visible(False)
-            plt.xticks([])
-            plt.yticks([])
-            plt.title('Module {}'.format(module))
-
-            if output is not None:
-                self.savefig(output, f"Module{module}.png")
-            plt.show()
-
-    def hotspot_gene_modulescores(self, res_key="spatial_hotspot", output=None, n_top_genes=6, module=1):
+    def hotspot_gene_modulescores(
+            self,
+            res_key="spatial_hotspot",
+            output=None,
+            n_top_genes=6,
+            module=1,
+            ncols = 2,
+            dot_size = None,
+            palette = 'stereo',
+            ** kwargs):
         # Plot the module scores on top of positions
         res = self.check_res_key(res_key)
         results = res.results.join(res.modules)
         results = results.loc[results.Module == module]
         genes = results.sort_values('Z', ascending=False).head(n_top_genes).index
-
-        fig, axs = plt.subplots(2, 3, figsize=(11, 7.5))
+        #expression = [np.log2(res.counts.loc[gene] / res.umi_counts * 45 + 1) for gene in genes]
 
         import matplotlib
         cmap = matplotlib.colors.LinearSegmentedColormap.from_list(
-            'grays', ['#DDDDDD', '#000000'])
-
+            'grays', ['#DDDDDD', 'blue'])
+        fig, axs = plt.subplots(2, 3, figsize=(11, 7.5))
         for ax, gene in zip(axs.ravel(), genes):
-
-            expression = np.log2(res.counts.loc[gene]/res.umi_counts*45 + 1)  # log-counts per 45 (median UMI/barcode)
-
+            expression = np.log2(res.counts.loc[gene] / res.umi_counts * 45 + 1)  # log-counts per 45 (median UMI/barcode)
+            dot_size = 120000 / len(expression) if dot_size is None else dot_size
             vmin = 0
             vmax = np.percentile(expression, 95)
             vmax = 2
-
             plt.sca(ax)
             plt.scatter(x=res.latent.iloc[:, 0],
                         y=res.latent.iloc[:, 1],
@@ -531,5 +541,6 @@ class PlotCollection:
             plt.xticks([])
             plt.yticks([])
             plt.title(gene)
-            if output is not None:
-                self.savefig(output, f"top{n_top_genes}_genes_Module{module}.png", dpi=500)
+        if output is not None:
+            self.savefig(output, dpi=500)
+        plt.show()
