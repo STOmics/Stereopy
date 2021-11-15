@@ -49,7 +49,7 @@ class InteractiveScatter:
             'y': self.data.position[:, 1] * -1,
             # 'count': np.array(self.data.exp_matrix.sum(axis=1))[:, 0],
             'count': np.array(self.data.exp_matrix.sum(axis=1))[:, 0] if self.data.cells.total_counts is None else self.data.cells.total_counts
-        })
+        }).reset_index()
         self.selected_exp_data = None
         self.drop_checkbox = pn.widgets.Select(
             name='method',
