@@ -11,17 +11,12 @@ change log:
     2021/10/14 create file.
 """
 import copy
-import numpy as np
 import pandas as pd
 import hotspot
-import matplotlib.pyplot as plt
-import matplotlib.colors
-import pickle
-import os
 
 
 def spatial_hotspot(data, model='normal', n_neighbors=30, n_jobs=20, fdr_threshold=0.05,
-                    min_gene_threshold=50, ):
+                    min_gene_threshold=50, outdir=None):
     """
     identifying informative genes (and gene modules)
 
@@ -37,9 +32,9 @@ def spatial_hotspot(data, model='normal', n_neighbors=30, n_jobs=20, fdr_thresho
     :param fdr_threshold: Correlation threshold at which to stop assigning genes to modules
     :param min_gene_threshold: Controls how small modules can be.  Increase if there are too many modules being formed.
         Decrease if substructre is not being captured
-    :param outdir: The results and figures will be stored in this directory.
-        If None, the results and figures will not be stored as files.
-    :param prefix: prefix of output files.
+    :param outdir: directory containing output file(hotspot.pkl). Hotspot object will be totally output here.
+    If None, results will not be output to a file.
+
     :return:Hotspot object.
 
     """
@@ -62,11 +57,9 @@ def spatial_hotspot(data, model='normal', n_neighbors=30, n_jobs=20, fdr_thresho
         min_gene_threshold=min_gene_threshold, core_only=False, fdr_threshold=fdr_threshold,
     )
     module_scores = hs.calculate_module_scores()
-    # plot_local_correlations(hs, outdir,prefix)
-    # plot_modules(hs, outdir)
-    # plot_gene_modulescores(hs, outdir,)
-    # if output is not None:
-    #     save_pkl(hs, outdir + "/" + prefix + "_hotspot.pkl")
+    if outdir is not None:
+        from stereo.io.writer import save_pkl
+        save_pkl(hs, output=f"{outdir}/hotspot.pkl")
     return hs
 
 

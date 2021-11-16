@@ -5,7 +5,6 @@ from ctxcore.rnkdb import FeatherRankingDatabase as RankingDatabase
 from pyscenic.utils import modules_from_adjacencies
 from pyscenic.prune import prune2df, df2regulons
 from pyscenic.aucell import aucell
-import seaborn as sns
 import pandas as pd
 import warnings
 warnings.filterwarnings('ignore')
@@ -22,6 +21,7 @@ def scenic(data, tfs, motif, database_dir, outdir=None,):
     :param database_dir: directory containing reference database(.feather files), cisTarget
     :param outdir: directory containing output files(including modules.pkl, regulons.csv, adjacencies.tsv, motifs.csv).
     If None, results will not be output to files.
+
     :return:
     """
     ex_matrix = data.to_df()
@@ -44,14 +44,15 @@ def scenic(data, tfs, motif, database_dir, outdir=None,):
         regulons_df = pd.concat([regulons_df, temp])
     # Phase III: Cellular regulon enrichment matrix (aka AUCell)
     auc_mtx = aucell(ex_matrix, regulons, num_workers=1)
-    sns.clustermap(auc_mtx, figsize=(12, 12))
+    #sns.clustermap(auc_mtx, figsize=(12, 12))
     if outdir is not None:
         from stereo.io.writer import save_pkl
         save_pkl(modules,output=f"{outdir}/modules.pkl")
-        regulons_df.to_csv(f"{outdir}/regulons.csv")
+        regulons_df.to_csv(f"{outdir}/regulons_gene2weight.csv")
         save_pkl(regulons,output=f"{outdir}/regulons.pkl")
         adjacencies.to_csv(f"{outdir}/adjacencies.tsv")
         motifs.to_csv(f"{outdir}/motifs.csv")
+        auc_mtx.to_csv(f"{outdir}/aux.csv")
     return modules, regulons, adjacencies, motifs, auc_mtx, regulons_df
 
 

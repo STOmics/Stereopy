@@ -41,11 +41,8 @@ natsort~=7.1.1
 joblib~=1.0.1
 patsy~=0.5.1
 louvain>=0.7.0
-
 igraph~=0.9.8
-hotspot~=0.9.1
-scanpy~=1.8.2
 arboreto~=0.1.6
-loompy~=3.0.6
 ctxcore~=0.1.1
 pyscenic~=0.11.2
+squidpy

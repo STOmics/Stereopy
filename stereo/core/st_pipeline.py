@@ -25,6 +25,7 @@ from ..algorithm.leiden import leiden as le
 from ..algorithm._louvain import louvain as lo
 from typing_extensions import Literal
 
+
 class StPipeline(object):
     def __init__(self, data):
         """
@@ -411,7 +412,7 @@ class StPipeline(object):
         nn_dist = neighbors_res['nn_dist']
         return neighbor, connectivities, nn_dist
 
-    def bayes_neighbors(self, neighbors_res_key, n_neighbors=6, res_key='connectivities',):
+    def spatial_neighbors(self, neighbors_res_key, n_neighbors=6, res_key='connectivities',):
         """
         Create a graph from spatial coordinates.
 
@@ -597,8 +598,7 @@ class StPipeline(object):
         self.result[res_key] = res
 
     def spatial_hotspot(self, use_highly_genes=True, hvg_res_key:Optional[str] = None, model='normal', n_neighbors=30,
-                        n_jobs=20, fdr_threshold=0.05, min_gene_threshold=50,
-                        res_key='spatial_hotspot'):
+                        n_jobs=20, fdr_threshold=0.05, min_gene_threshold=50, outdir=None, res_key='spatial_hotspot'):
         """
         identifying informative genes (and gene modules)
 
@@ -616,9 +616,8 @@ class StPipeline(object):
         :param min_gene_threshold: Controls how small modules can be.
             Increase if there are too many modules being formed.
             Decrease if substructre is not being captured
-        :param outdir: The results and figures will be store in this directory.
-            If None, the results and figures will not be stored as files.
-        :param prefix: prefix of output files.
+        :param outdir: directory containing output file(hotspot.pkl). Hotspot object will be totally output here.
+            If None, results will not be output to a file.
         :param res_key: the key for getting the result from the self.result.
         :return:
         """
@@ -632,20 +631,25 @@ class StPipeline(object):
         #        "module_scores": hs.module_scores}
         self.result[res_key] = hs
 
-    def scenic(self, data, tfs, motif, database_dir, res_key='scenic', outdir=None,):
+    def scenic(self, tfs, motif, database_dir, res_key='scenic', use_raw=True, outdir=None,):
         """
 
-        :param data: StereoExpData
         :param tfs: tfs file in txt format
         :param motif: motif file in tbl format
-        :param database_dir: directory containing reference database(.feather files), cisTarget
-        :param outdir: directory containing output files(including modules.pkl, regulons.csv, adjacencies.tsv, motifs.csv).
-        If None, results will not be output to files.
+        :param database_dir: directory containing reference database(*.feather files) from cisTarget.
+        :param res_key: the key for getting the result from the self.result.
+        :param use_raw: whether use the raw count express matrix for the analysis, default True.
+        :param outdir: directory containing output files(including modules.pkl, regulons.csv, adjacencies.tsv,
+            motifs.csv). If None, results will not be output to files.
+
         :return:
         """
-        from ..algorithm.scenic import scenic
-        modules, regulons, adjacencies, motifs, auc_mtx, regulons_df = scenic(data, tfs, motif, database_dir,
-                                                                              outdir=None)
-        res = {"regulons": regulons, "adjacencies": adjacencies, "modules": modules, "motifs": motifs,
+        from ..algorithm.scenic import scenic as cal_sce
+        if use_raw and not self.raw:
+            raise Exception(f'self.raw must be set if use_raw is True.')
+        data = self.raw if use_raw else self.data
+        modules, regulons, adjacencies, motifs, auc_mtx, regulons_df = cal_sce(data, tfs, motif, database_dir, outdir)
+        res = {"modules": modules, "regulons": regulons, "adjacencies": adjacencies, "motifs": motifs,
                "auc_mtx":auc_mtx, "regulons_df": regulons_df}
         self.result[res_key] = res
+

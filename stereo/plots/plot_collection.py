@@ -469,9 +469,9 @@ class PlotCollection:
             self,
             res_key="spatial_hotspot",
             output=None,
-            ncols = 2,
-            dot_size = None,
-            palette = 'stereo',
+            ncols=2,
+            dot_size=None,
+            palette='stereo',
             ** kwargs
     ):
         res = self.check_res_key(res_key)
@@ -496,53 +496,6 @@ class PlotCollection:
 
         if output is not None:
             self.savefig(output,dpi=500)
-        plt.show()
-
-    def hotspot_gene_modulescores(
-            self,
-            res_key="spatial_hotspot",
-            output=None,
-            n_top_genes=6,
-            module=1,
-            ncols = 2,
-            dot_size = None,
-            palette = 'stereo',
-            ** kwargs):
-        # Plot the module scores on top of positions
-        res = self.check_res_key(res_key)
-        results = res.results.join(res.modules)
-        results = results.loc[results.Module == module]
-        genes = results.sort_values('Z', ascending=False).head(n_top_genes).index
-        #expression = [np.log2(res.counts.loc[gene] / res.umi_counts * 45 + 1) for gene in genes]
-
-        import matplotlib
-        cmap = matplotlib.colors.LinearSegmentedColormap.from_list(
-            'grays', ['#DDDDDD', 'blue'])
-        fig, axs = plt.subplots(2, 3, figsize=(11, 7.5))
-        for ax, gene in zip(axs.ravel(), genes):
-            expression = np.log2(res.counts.loc[gene] / res.umi_counts * 45 + 1)  # log-counts per 45 (median UMI/barcode)
-            dot_size = 120000 / len(expression) if dot_size is None else dot_size
-            vmin = 0
-            vmax = np.percentile(expression, 95)
-            vmax = 2
-            plt.sca(ax)
-            plt.scatter(x=res.latent.iloc[:, 0],
-                        y=res.latent.iloc[:, 1],
-                        s=2,
-                        c=expression,
-                        vmin=vmin,
-                        vmax=vmax,
-                        edgecolors='none',
-                        cmap=cmap
-                        )
-            for sp in ax.spines.values():
-                sp.set_visible(False)
-
-            plt.xticks([])
-            plt.yticks([])
-            plt.title(gene)
-        if output is not None:
-            self.savefig(output, dpi=500)
         plt.show()
 
     def scenic_regulons(
