@@ -226,8 +226,9 @@ class PlotCollection:
 
     def interact_spatial_scatter(
             self, inline=True,
-            width: Optional[int] = 700, height: Optional[int] = 600,
-            bgcolor='#2F2F4F'
+            width: Optional[int] = 600, height: Optional[int] = 600,
+            bgcolor='#2F2F4F',
+            poly_select=False
     ):
         """
         interactive spatial distribution
@@ -240,11 +241,14 @@ class PlotCollection:
         """
         from .interact_plot.interactive_scatter import InteractiveScatter
 
-        ins = InteractiveScatter(self.data, width=width, height=height, bgcolor=bgcolor)
+        fig = InteractiveScatter(self.data, width=width, height=height, bgcolor=bgcolor)
         # fig = ins.interact_scatter()
+        if poly_select:
+            from stereo.plots.interact_plot.poly_selection import PolySelection
+            fig = PolySelection(self.data, width=width, height=height, bgcolor=bgcolor)
         if not inline:
-            ins.figure.show()
-        return ins
+            fig.figure.show()
+        return fig
 
     def umap(
             self,
