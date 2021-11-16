@@ -11,7 +11,7 @@ change log:
 """
 from matplotlib.cm import get_cmap
 import matplotlib.pyplot as plt
-from matplotlib.colors import ListedColormap, to_hex, Normalize
+from matplotlib.colors import ListedColormap, to_hex, Normalize, LinearSegmentedColormap
 from matplotlib import gridspec
 import numpy as np
 import pandas as pd
@@ -38,6 +38,9 @@ def base_scatter(
         legend_ncol=2,
         show_legend=True,
         show_ticks=False,
+        vmin=None,
+        vmax=None,
+        SegmentedColormap = None,
 ):  # scatter plot, 聚类后表达矩阵空间分布
     """
     scatter plotter
@@ -57,6 +60,8 @@ def base_scatter(
     :param legend_ncol: number of legend columns
     :param show_legend
     :param show_ticks
+    :param vmin:
+    :param vmax:
 
     :return: matplotlib Axes object
 
@@ -71,12 +76,15 @@ def base_scatter(
         colors = conf.linear_colors(palette)
         cmap = ListedColormap(colors)
         cmap.set_bad(bad_color)
-        sns.scatterplot(x=x, y=y, hue=hue, ax=ax, palette=cmap, size=hue, sizes=(dot_size, dot_size))
+
+        sns.scatterplot(x=x, y=y, hue=hue, ax=ax, palette=cmap, size=hue, sizes=(dot_size, dot_size), vmin=vmin,
+                        vmax=vmax)
+        if vmin is None and vmax is None:
+            norm = plt.Normalize(hue.min(), hue.max())
+            sm = plt.cm.ScalarMappable(cmap=cmap, norm=norm)
+            sm.set_array([])
+            ax.figure.colorbar(sm)
         ax.legend_.remove()
-        norm = plt.Normalize(hue.min(), hue.max())
-        sm = plt.cm.ScalarMappable(cmap=cmap, norm=norm)
-        sm.set_array([])
-        ax.figure.colorbar(sm)
     else:
         from natsort import natsorted
         import collections
@@ -120,6 +128,8 @@ def multi_scatter(
         bad_color: str = "lightgrey",
         dot_size: int = None,
         palette: Optional[Union[np.ndarray, list, str]] = 'stereo',
+        vmin=None,
+        vmax=None,
 ):
     """
     plot multiple scatters
@@ -135,6 +145,8 @@ def multi_scatter(
     :param bad_color: the name list of clusters to show.
     :param dot_size: marker size.
     :param palette: customized colors
+    :param vmin:
+    :param vmax:
 
     :return: matplotlib Axes object
 
@@ -165,7 +177,9 @@ def multi_scatter(
                      color_bar=color_bar,
                      bad_color=bad_color,
                      dot_size=dot_size,
-                     palette=palette
+                     palette=palette,
+                     vmin=vmin,
+                     vmax=vmax,
                      )
     return fig
 
