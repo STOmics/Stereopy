@@ -53,3 +53,13 @@ setup(
     ],
     cmdclass = {'build_ext': setup_build.stereo_build_ext}
 )
+
+try:
+    import os
+    print('install hotspot from git, command: pip install git+https://github.com/yoseflab/Hotspot.git')
+    os.system('pip install git+https://github.com/yoseflab/Hotspot.git')
+    # os.system('pip install pyscenic~=0.11.2 --ignore-installed pyarrow')
+except Exception as e:
+    print('Hotspot is not install successly, please check.')
+    print(e)
+

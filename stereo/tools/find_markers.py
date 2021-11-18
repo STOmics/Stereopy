@@ -54,7 +54,6 @@ class FindMarker(ToolBase):
             tie_term: bool = False,
     ):
         super(FindMarker, self).__init__(data=data, groups=groups, method=method)
-        self.corr_method(method)
         self.corr_method = corr_method.lower()
         self.case_groups = case_groups
         self.control_group = control_groups
@@ -122,7 +121,6 @@ class FindMarker(ToolBase):
             g_data, g_index = select_group(st_data=self.data, groups=g, cluster=group_info)
             other_data, _ = select_group(st_data=self.data, groups=other_g, cluster=group_info)
             self.logger.info('end selelct group')
-            # g_data, other_data = self.merge_groups_data(g_data, other_data)
             if self.method == 't_test':
                 result = statistics.ttest(g_data, other_data, self.corr_method)
             elif self.method == 'logreg':
@@ -136,7 +134,6 @@ class FindMarker(ToolBase):
                     tie_term = mannwhitneyu.cal_tie_term(ranks)
                 result = statistics.wilcoxon(g_data, other_data, self.corr_method, ranks, tie_term, g_index)
             result['genes'] = self.data.gene_names
-            self.logger.info(g)
             self.result[f"{g}.vs.{control_str}"] = result
 
     def logres_score(self):
