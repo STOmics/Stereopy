@@ -85,12 +85,14 @@ class stereo_build_ext(build_ext):
         if os.name != 'nt':
             settings['runtime_library_dirs'] = settings['library_dirs']
 
-        def make_gef_cy_extension():
-            sources = [localpath('stereo', 'io', 'gef_cy.pyx'), localpath('stereo', 'io', 'H5Reader.cpp')]
+        # def make_gef_cy_extension():
+            # sources = [localpath('stereo', 'io', 'gef_cy.pyx'), localpath('stereo', 'io', 'H5Reader.cpp')]
             # return Extension('stereo.io.gef_cy', sources, **settings)
-            return Extension('stereo.io.gef_cy', sources, **settings)
+            # return Extension('stereo.io.gef_cy', sources, **settings)
 
-        return [make_gef_cy_extension()]
+        # return [make_gef_cy_extension()]
+        return None
+
 
     def run(self):
         """ Distutils calls this method to run the command """
