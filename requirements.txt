@@ -24,7 +24,7 @@ opencv-contrib-python
 opencv-python-headless
 Pillow==8.2.0
 slideio~=0.5.225
-panel~=0.12.1
+panel==0.12.1
 holoviews==1.14.5
 param==1.11.1
 hvplot==0.7.3
