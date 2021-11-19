@@ -19,6 +19,8 @@ from tqdm import tqdm
 from typing import Union, Sequence
 import numpy as np
 from ..plots.marker_genes import marker_genes_text, marker_genes_heatmap
+from scipy import stats
+from ..algorithm import mannwhitneyu, statistics
 
 
 class FindMarker(ToolBase):
@@ -49,16 +51,18 @@ class FindMarker(ToolBase):
             case_groups: Union[str, np.ndarray] = 'all',
             control_groups: str = 'rest',
             corr_method: str = 'bonferroni',
+            tie_term: bool = False,
     ):
         super(FindMarker, self).__init__(data=data, groups=groups, method=method)
         self.corr_method = corr_method.lower()
         self.case_groups = case_groups
         self.control_group = control_groups
+        self.tie_term = tie_term
         self.fit()
 
     @ToolBase.method.setter
     def method(self, method):
-        m_range = ['t_test', 'wilcoxon_test']
+        m_range = ['t_test', 'wilcoxon_test', 'logreg']
         self._method_check(method, m_range)
 
     @property
@@ -92,7 +96,20 @@ class FindMarker(ToolBase):
         control_str = self.control_group if isinstance(self.control_group, str) else \
             '-'.join([str(i) for i in self.control_group])
         self.result = {}
-        logres_score = self.logres_score() if self.method == 'logres' else None
+
+        # only used when method is wilcoxon
+        ranks = None
+        tie_term = None
+        if self.method == 'wilcoxon_test' and self.control_group == 'rest':
+            self.logger.info('cal rankdata')
+            ranks = stats.rankdata(self.data.exp_matrix.T, axis=-1)
+            self.logger.info('cal tie_term')
+            if self.tie_term:
+                tie_term = mannwhitneyu.cal_tie_term(ranks)
+            self.logger.info('cal tie_term end')
+        logres_score = None
+        if self.case_groups == 'all' and self.control_group == 'rest' and self.method == 'logreg':
+            logres_score = self.logres_score()
         for g in tqdm(case_groups, desc='Find marker gene: '):
             if self.control_group == 'rest':
                 other_g = all_groups.copy()
@@ -100,19 +117,31 @@ class FindMarker(ToolBase):
             else:
                 other_g = [self.control_group]
             other_g = list(other_g)
-            g_data = select_group(st_data=self.data, groups=g, cluster=group_info)
-            other_data = select_group(st_data=self.data, groups=other_g, cluster=group_info)
-            g_data, other_data = self.merge_groups_data(g_data, other_data)
-            result = self.get_func_by_path('stereo.algorithm.statistics', self.method)(g_data, other_data,
-                                                                                       self.corr_method) \
-                if logres_score is None else self.run_logres(logres_score, g_data, other_data, g)
+            self.logger.info('start to select group')
+            g_data, g_index = select_group(st_data=self.data, groups=g, cluster=group_info)
+            other_data, _ = select_group(st_data=self.data, groups=other_g, cluster=group_info)
+            self.logger.info('end selelct group')
+            if self.method == 't_test':
+                result = statistics.ttest(g_data, other_data, self.corr_method)
+            elif self.method == 'logreg':
+                if logres_score is None:
+                    logres_score = self.logres_score()
+                result = self.run_logres(logres_score, g_data, other_data, g)
+            else:
+                if self.control_group != 'rest' and self.tie_term:
+                    xy = np.concatenate((g_data.values, other_data.values), axis=-1)
+                    ranks = stats.rankdata(xy, axis=-1)
+                    tie_term = mannwhitneyu.cal_tie_term(ranks)
+                result = statistics.wilcoxon(g_data, other_data, self.corr_method, ranks, tie_term, g_index)
+            result['genes'] = self.data.gene_names
             self.result[f"{g}.vs.{control_str}"] = result
 
     def logres_score(self):
         from ..algorithm.statistics import logreg
         x = self.data.exp_matrix
         y = self.groups['group'].values
-        if (isinstance(self.case_groups, str) and self.case_groups != 'all') or isinstance(self.case_groups, np.ndarray):
+        if (isinstance(self.case_groups, str) and self.case_groups != 'all') or isinstance(self.case_groups,
+                                                                                           np.ndarray):
             use_group = [self.case_groups] if isinstance(self.case_groups, str) else list(self.case_groups)
             use_group.append(self.control_group)
             group_index = self.groups['group'].isin(use_group)
@@ -125,9 +154,9 @@ class FindMarker(ToolBase):
     def run_logres(self, score_df, g_data, other_data, group_name):
         from ..algorithm.statistics import cal_log2fc
         res = pd.DataFrame()
-        res['genes'] = g_data.columns
-        gene_index = score_df.columns.isin(g_data.columns)
-        scores = score_df.loc[group_name].values if score_df.shape[0] > 1 else score_df.values[0]
+        # res['genes'] = g_data.columns
+        gene_index = score_df.columns.isin(self.data.gene_names)
+        scores = score_df.loc[str(group_name)].values if score_df.shape[0] > 1 else score_df.values[0]
         res['scores'] = scores[gene_index]
         res['log2fc'] = cal_log2fc(g_data, other_data)
         return res
@@ -169,7 +198,7 @@ class FindMarker(ToolBase):
                      max_value=None,
                      gene_list=None, do_log=True):
         marker_genes_heatmap(data=self.data, cluster_res=self.groups, marker_res=self.result,
-                                  markers_num=markers_num, sort_key=sort_key, ascend=ascend, show_labels=show_labels,
-                                  show_group=show_group, show_group_txt=show_group_txt,
-                                  cluster_colors_array=cluster_colors_array, min_value=min_value, max_value=max_value,
-                                  gene_list=gene_list, do_log=do_log)
+                             markers_num=markers_num, sort_key=sort_key, ascend=ascend, show_labels=show_labels,
+                             show_group=show_group, show_group_txt=show_group_txt,
+                             cluster_colors_array=cluster_colors_array, min_value=min_value, max_value=max_value,
+                             gene_list=gene_list, do_log=do_log)

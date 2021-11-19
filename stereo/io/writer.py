@@ -15,7 +15,7 @@ from ..log_manager import logger
 from scipy.sparse import csr_matrix, issparse
 import h5py
 from stereo.io import h5ad
-
+import pickle
 
 def write_h5ad(data):
     """
@@ -51,3 +51,9 @@ def write(data, output=None, output_type='h5ad'):
         data.output = output
         if output_type == 'h5ad':
             write_h5ad(data)
+
+
+def save_pkl(obj, output):
+    with open(output, "wb") as f:
+        pickle.dump(obj, f)
+    f.close()

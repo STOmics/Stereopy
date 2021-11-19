@@ -12,8 +12,8 @@ from stereo.io.reader import read_gem
 from stereo.plots.marker_genes import marker_genes_text, marker_genes_heatmap
 import matplotlib.pyplot as plt
 import pickle
-import numpy as np
-
+import scanpy as sc
+from anndata import AnnData
 
 def get_data(path):
     data = read_gem(path, bin_type='bins', bin_size=100)
@@ -27,12 +27,32 @@ def run_cluster(data):
 
 
 def run_find_marker(data, group):
-    ft = FindMarker(data, group, method='wilcoxon_test', case_groups=np.array(['0', '1', '2']), control_groups='2')
+    ft = FindMarker(data, group, method='wilcoxon_test', case_groups='all', control_groups='rest')
     ft.plot_heatmap()
     plt.savefig('./heatmap.jpg')
     ft.plot_marker_text()
     plt.savefig('./text.jpg')
     return ft
+
+
+def run_scanpy(data, group):
+    import pandas as pd
+    import numpy as np
+    from natsort import natsorted
+
+    adata = AnnData(data.to_df())
+    groups = group['cluster'].values
+    cluster = pd.Categorical(
+        values=groups.astype('U'),
+        categories=natsorted(map(str, np.unique(groups))),
+    )
+    adata.obs['group'] = cluster
+    sc.tl.rank_genes_groups(adata, 'group', method='wilcoxon', use_raw=False)
+    result = adata.uns['rank_genes_groups']
+    groups = result['names'].dtype.names
+    dat = pd.DataFrame({group + '_' + key[:1]: result[key][group] for group in groups for key in
+                        ['names', 'logfoldchanges', 'scores', 'pvals']})
+    dat.to_csv('./scanpy_wilcoxon.csv')
 
 
 def test_heatmap(data, ct_res, ft_res):
@@ -59,10 +79,6 @@ def test_heatmap_gene_list(data, ct_res, ft_res, gene_list, min_value, max_value
 
 
 def test_logres():
-    import pickle
-    import scanpy as sc
-    from anndata import AnnData
-
     data = pickle.load(open('/home/qiuping/workspace/st/data/test_data.pickle', 'rb'))
 
     adata = AnnData(data.to_df())
@@ -89,11 +105,16 @@ def test_logres():
 
 
 if __name__ == '__main__':
+    from datetime import datetime
     in_path = '/home/qiuping/workspace/st/stereopy_data/mouse/DP8400013846TR_F5.gem'
     data = get_data(in_path)
     ct_result = pickle.load(open('./ct.pk', 'rb'))
     ft_result = pickle.load(open('./ft.pk', 'rb'))
-    ft = run_find_marker(data, ct_result.matrix)
+    print(datetime.now().strftime('%Y-%m-%d %H:%M:%S'), 'stereopy')
+    # ft = run_find_marker(data, ct_result.matrix)
+    print(datetime.now().strftime('%Y-%m-%d %H:%M:%S'), 'scanpy')
+    run_scanpy(data, ct_result.matrix)
+    print(datetime.now().strftime('%Y-%m-%d %H:%M:%S'), 'end')
     # test_heatmap_gene_list(data, ct_result, ft_result, None, 300, 800)
     # test_heatmap_gene_list(data, ct_result, ft_result, ['Fga', 'Apoe'], 1, 50)
     # test_heatmap(data, ct_result, ft_result)

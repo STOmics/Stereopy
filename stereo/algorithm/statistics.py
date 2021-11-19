@@ -9,25 +9,7 @@ import pandas as pd
 import numpy as np
 from scipy import stats
 from statsmodels.stats.multitest import multipletests
-
-
-def t_test(group, other_group, corr_method=None):
-    """
-    student t test
-
-    :param group:
-    :param other_group:
-    :param corr_method:
-    :return:
-    """
-    scores, pvals = stats.ttest_ind(group.values, other_group.values, axis=0, equal_var=False)
-    result = {'genes': group.columns, 'scores': scores, 'pvalues': pvals}
-    n_genes = len(group.columns)
-    pvals_adj = corr_pvalues(pvals, corr_method, n_genes)
-    if pvals_adj is not None:
-        result['pvalues_adj'] = pvals_adj
-    result['log2fc'] = cal_log2fc(group, other_group)
-    return pd.DataFrame(result)
+from .mannwhitneyu import mannwhitneyu
 
 
 def corr_pvalues(pvals, method, n_genes):
@@ -48,32 +30,9 @@ def corr_pvalues(pvals, method, n_genes):
     return pvals_adj
 
 
-def wilcoxon_test(group, other_group, corr_method=None):
-    """
-    wilcoxon_test
-
-    :param group:
-    :param other_group:
-    :param corr_method:
-    :return:
-    """
-    # result = group.apply(lambda x: pd.Series(stats.mannwhitneyu(x, other_group[x.name])), axis=0).transpose()
-    g_num = group.shape[0]
-    x_array = np.hstack((group.values.T, other_group.values.T))
-    result = np.apply_along_axis(lambda x: stats.mannwhitneyu(x[0: g_num], x[g_num:]), 1, x_array)
-    result = pd.DataFrame(result, columns=['scores', 'pvalues'])
-    result['genes'] = list(group.columns)
-    n_genes = result.shape[0]
-    pvals_adj = corr_pvalues(result['pvalues'], corr_method, n_genes)
-    if pvals_adj is not None:
-        result['pvalues_adj'] = pvals_adj
-    result['log2fc'] = cal_log2fc(group, other_group)
-    return pd.DataFrame(result)
-
-
 def cal_log2fc(group, other_group):
-    g_mean = np.mean(group.values, axis=0)
-    other_mean = np.mean(other_group.values, axis=0)
+    g_mean = np.mean(group, axis=0) + 1e-9
+    other_mean = np.mean(other_group, axis=0) + 1e-9
     log2fc = np.log2(g_mean/other_mean + 10e-5)
     return log2fc
 
@@ -88,24 +47,57 @@ def logreg(x, y, **kwds):
     return res
 
 
-# def t_test_overestim_var():
-#     if method == 't-test':
-#         ns_rest = ns_other
-#     elif method == 't-test_overestim_var':
-#         # hack for overestimating the variance for small groups
-#         ns_rest = ns_group
-#     else:
-#         raise ValueError('Method does not exist.')
-#
-#     # TODO: Come up with better solution. Mask unexpressed genes?
-#     # See https://github.com/scipy/scipy/issues/10269
-#     with np.errstate(invalid="ignore"):
-#         scores, pvals = stats.ttest_ind_from_stats(
-#             mean1=mean_group,
-#             std1=np.sqrt(var_group),
-#             nobs1=ns_group,
-#             mean2=mean_rest,
-#             std2=np.sqrt(var_rest),
-#             nobs2=ns_rest,
-#             equal_var=False,  # Welch's
-#         )
+def wilcoxon(group, other_group, corr_method=None, ranks=None, tie_term=None, x_mask=None):
+    """
+    wilcoxon_test
+
+    :param group:
+    :param other_group:
+    :param corr_method:
+    :param ranks:
+    :param tie_term:
+    :param x_mask:
+    :return:
+    """
+    s, p = mannwhitneyu(group, other_group, ranks=ranks, tie_term=tie_term, x_mask=x_mask)
+    result = pd.DataFrame({'scores': s, 'pvalues': p})
+    # result['genes'] = list(group.columns)
+    n_genes = result.shape[0]
+    pvals_adj = corr_pvalues(result['pvalues'], corr_method, n_genes)
+    if pvals_adj is not None:
+        result['pvalues_adj'] = pvals_adj
+    result['log2fc'] = cal_log2fc(group, other_group)
+    return pd.DataFrame(result)
+
+
+def ttest(group, other_group, corr_method=None):
+    mean_group, var_group = get_mean_var(group)
+    mean_rest, var_rest = get_mean_var(other_group)
+    with np.errstate(invalid="ignore"):
+        scores, pvals = stats.ttest_ind_from_stats(
+            mean1=mean_group,
+            std1=np.sqrt(var_group),
+            nobs1=group.shape[0],
+            mean2=mean_rest,
+            std2=np.sqrt(var_rest),
+            nobs2=other_group.shape[0],
+            equal_var=False,  # Welch's
+        )
+    scores[np.isnan(scores)] = 0
+    pvals[np.isnan(pvals)] = 1
+    n_genes = group.shape[1]
+    pvals_adj = corr_pvalues(pvals, corr_method, n_genes)
+    result = {'scores': scores, 'pvalues': pvals}
+    if pvals_adj is not None:
+        result['pvalues_adj'] = pvals_adj
+    result['log2fc'] = cal_log2fc(group, other_group)
+    return pd.DataFrame(result)
+
+
+def get_mean_var(x, *, axis=0):
+    mean = np.mean(x, axis=axis, dtype=np.float64)
+    mean_sq = np.multiply(x, x).mean(axis=axis, dtype=np.float64)
+    var = mean_sq - mean ** 2
+    # enforce R convention (unbiased estimator) for variance
+    var *= x.shape[axis] / (x.shape[axis] - 1)
+    return mean, var

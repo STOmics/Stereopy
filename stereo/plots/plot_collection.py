@@ -4,8 +4,10 @@
 @author: qindanhua@genomics.cn
 @time:2021/08/31
 """
+import os.path
 from typing import Optional, Union, Sequence
 # import colorcet as cc
+import matplotlib.pyplot as plt
 import numpy as np
 from .scatter import base_scatter, multi_scatter, marker_gene_volcano, highly_variable_genes
 from stereo.config import StereoConfig
@@ -27,6 +29,22 @@ class PlotCollection:
     ):
         self.data = data
         self.result = self.data.tl.result
+
+    @staticmethod
+    def savefig(output, dpi=300):
+        """
+        save figures.
+
+        :param output: output name of a file.
+        :param dpi:
+        :return:
+        """
+        outdir = os.path.dirname(os.path.abspath(output))
+        if not os.path.isdir(outdir):
+            os.makedirs(outdir)
+        else:
+            pass
+        plt.savefig(output, dpi=dpi)
 
     def interact_cluster(
             self,
@@ -208,8 +226,9 @@ class PlotCollection:
 
     def interact_spatial_scatter(
             self, inline=True,
-            width: Optional[int] = 700, height: Optional[int] = 600,
-            bgcolor='#2F2F4F'
+            width: Optional[int] = 600, height: Optional[int] = 600,
+            bgcolor='#2F2F4F',
+            poly_select=False
     ):
         """
         interactive spatial distribution
@@ -222,11 +241,14 @@ class PlotCollection:
         """
         from .interact_plot.interactive_scatter import InteractiveScatter
 
-        ins = InteractiveScatter(self.data, width=width, height=height, bgcolor=bgcolor)
+        fig = InteractiveScatter(self.data, width=width, height=height, bgcolor=bgcolor)
         # fig = ins.interact_scatter()
+        if poly_select:
+            from stereo.plots.interact_plot.poly_selection import PolySelection
+            fig = PolySelection(self.data, width=width, height=height, bgcolor=bgcolor)
         if not inline:
-            ins.figure.show()
-        return ins
+            fig.figure.show()
+        return fig
 
     def umap(
             self,
@@ -439,3 +461,88 @@ class PlotCollection:
             return res
         else:
             raise ValueError(f'{res_key} result not found, please run tool before plot')
+
+    def hotspot_local_correlations(self, res_key='spatial_hotspot', output=None):
+        res = self.check_res_key(res_key)
+        plt.rcParams['figure.figsize'] = (15.0, 12.0)
+        res.plot_local_correlations()
+        if output is not None:
+            self.savefig(output, dpi=500)
+
+    def hotspot_modules(
+            self,
+            res_key="spatial_hotspot",
+            output=None,
+            ncols=2,
+            dot_size=None,
+            palette='stereo',
+            ** kwargs
+    ):
+        res = self.check_res_key(res_key)
+        scores = [res.module_scores[module] for module in range(1, res.modules.max() + 1)]
+        vmin = np.percentile(scores, 1)
+        vmax = np.percentile(scores, 99)
+        multi_scatter(
+            x=res.latent.iloc[:, 0],
+            y=res.latent.iloc[:, 1],
+            hue=scores,
+            # x_label=['spatial1', 'spatial1'],
+            # y_label=['spatial2', 'spatial2'],
+            title=[f"module {module}" for module in range(1, res.modules.max() + 1)],
+            ncols=ncols,
+            dot_size=dot_size,
+            palette=palette,
+            color_bar=True,
+            vmin=vmin,
+            vmax=vmax,
+            **kwargs
+        )
+
+        if output is not None:
+            self.savefig(output,dpi=500)
+        plt.show()
+
+    def scenic_regulons(
+            self,
+            res_key="scenic",
+            output=None,
+    ):
+        res = self.check_res_key(res_key)
+        regulons=res["regulons"]
+        auc_mtx=res["auc_mtx"]
+        for tf in range(0, len(regulons)):
+            scores = auc_mtx.iloc[:, tf]
+
+            vmin = np.percentile(scores, 1)
+            vmax = np.percentile(scores, 99)
+
+            plt.scatter(x=self.data.position[:, 0],
+                        y=self.data.position[:, 1],
+                        s=8,
+                        c=scores,
+                        vmin=vmin,
+                        vmax=vmax,
+                        edgecolors='none'
+                        )
+            axes = plt.gca()
+            for sp in axes.spines.values():
+                sp.set_visible(False)
+            plt.xticks([])
+            plt.yticks([])
+            plt.title('Regulon {}'.format(auc_mtx.columns[tf]))
+            if output is not None:
+                self.savefig(output, dpi=500)
+            plt.show()
+
+    def scenic_clustermap(
+            self,
+            res_key="scenic",
+            output=None,
+    ):
+        res = self.check_res_key(res_key)
+        auc_mtx = res["auc_mtx"]
+        import seaborn as sns
+        sns.clustermap(auc_mtx, figsize=(12, 12))
+        if output is not None:
+            self.savefig(output, dpi=500)
+        plt.show()

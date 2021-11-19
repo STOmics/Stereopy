@@ -3,12 +3,14 @@ Release Notes
 
 .. role:: small
 
-Version (next version)
+Version 0.2.2
 -----------
-next version :2021-11-04
+0.2.2 :2021-11-17
 ~~~~~~~~~~~~~~~~~~~~~~~
-1. Optimize gef io performance
-2. Add Cython setup_build function
+1. Optimize the performance of find marker.
+2. Add Cython setup_build function and optimize gef io performance.
+3. Add hotspot pipeline for spatial data and squidpy for spatial_neighbor func.
+4. Add polygon selection for interactive scatter plot and simplify the visualization part of the code.
 
 
 Version 0.2.1
