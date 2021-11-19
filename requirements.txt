@@ -45,3 +45,4 @@ igraph~=0.9.8
 arboreto~=0.1.6
 squidpy
 Cython
+xarray==0.20.1
