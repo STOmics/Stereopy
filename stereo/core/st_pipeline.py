@@ -412,13 +412,12 @@ class StPipeline(object):
         nn_dist = neighbors_res['nn_dist']
         return neighbor, connectivities, nn_dist
 
-    def spatial_neighbors(self, neighbors_res_key, n_neighbors=6, res_key='connectivities',):
+    def spatial_neighbors(self, neighbors_res_key, n_neighbors=6, ):
         """
-        Create a graph from spatial coordinates.
+        Create a graph from spatial coordinates. And replace the connectivities in neighbors_res_key.
 
         :param neighbors_res_key:
         :param n_neighbors:
-        :param res_key: the key for getting the result from the self.result.
 
         :return:
         """
@@ -430,7 +429,8 @@ class StPipeline(object):
         connectivities[connectivities > 0] = 1
         adj = connectivities + adata.obsp['spatial_connectivities']
         adj[adj > 0] = 1
-        self.result[neighbors_res_key][res_key] = adj
+        self.result[neighbors_res_key]['connectivities'] = adj
+        return adj
 
     def leiden(self,
                neighbors_res_key,
@@ -597,12 +597,13 @@ class StPipeline(object):
         res = spatial_pattern_score(df)
         self.result[res_key] = res
 
-    def spatial_hotspot(self, use_highly_genes=True, hvg_res_key:Optional[str] = None, model='normal', n_neighbors=30,
+    def spatial_hotspot(self, use_highly_genes=True, use_raw=True, hvg_res_key:Optional[str] = None, model='normal', n_neighbors=30,
                         n_jobs=20, fdr_threshold=0.05, min_gene_threshold=50, outdir=None, res_key='spatial_hotspot'):
         """
         identifying informative genes (and gene modules)
 
         :param use_highly_genes: Whether to use only the expression of hypervariable genes as input, default True.
+        :param use_raw: whether use the raw count express matrix for the analysis, default True.
         :param hvg_res_key: the key of highly varialbe genes to getting the result.
         :param model: Specifies the null model to use for gene expression.
             Valid choices are:
@@ -624,9 +625,16 @@ class StPipeline(object):
         from ..algorithm.spatial_hotspot import spatial_hotspot
         if use_highly_genes and hvg_res_key not in self.result:
             raise Exception(f'{hvg_res_key} is not in the result, please check and run the highly_var_genes func.')
-        data = self.subset_by_hvg(hvg_res_key, inplace=False) if use_highly_genes else self.data
+        #data = self.subset_by_hvg(hvg_res_key, inplace=False) if use_highly_genes else self.data
+        if use_raw and not self.raw:
+            raise Exception(f'self.raw must be set if use_raw is True.')
+        data = copy.deepcopy(self.raw) if use_raw else copy.deepcopy(self.data)
+        if use_highly_genes:
+            df = self.result[hvg_res_key]
+            genes_index = df['highly_variable'].values
+            data.sub_by_index(gene_index=genes_index)
         hs = spatial_hotspot(data, model=model, n_neighbors=n_neighbors, n_jobs=n_jobs, fdr_threshold=fdr_threshold,
-                             min_gene_threshold=min_gene_threshold,)
+                             min_gene_threshold=min_gene_threshold, outdir=outdir)
         # res = {"results":hs.results, "local_cor_z": hs.local_correlation_z, "modules": hs.modules,
         #        "module_scores": hs.module_scores}
         self.result[res_key] = hs
