@@ -397,7 +397,7 @@ class StPipeline(object):
         res = {'neighbor': neighbor, 'connectivities': connectivities, 'nn_dist': dists}
         self.result[res_key] = res
 
-    def get_neighbors_res(self, neighbors_res_key, res_key='neighbor'):
+    def get_neighbors_res(self, neighbors_res_key,):
         """
         get the neighbor result by the key.
 
@@ -597,13 +597,13 @@ class StPipeline(object):
         res = spatial_pattern_score(df)
         self.result[res_key] = res
 
-    def spatial_hotspot(self, use_highly_genes=True, use_raw=True, hvg_res_key:Optional[str] = None, model='normal', n_neighbors=30,
-                        n_jobs=20, fdr_threshold=0.05, min_gene_threshold=50, outdir=None, res_key='spatial_hotspot'):
+    def spatial_hotspot(self, use_highly_genes=True, hvg_res_key:Optional[str] = None, model='normal', n_neighbors=30,
+                        n_jobs=20, fdr_threshold=0.05, min_gene_threshold=50, outdir=None, res_key='spatial_hotspot',
+                        use_raw=True, ):
         """
         identifying informative genes (and gene modules)
 
         :param use_highly_genes: Whether to use only the expression of hypervariable genes as input, default True.
-        :param use_raw: whether use the raw count express matrix for the analysis, default True.
         :param hvg_res_key: the key of highly varialbe genes to getting the result.
         :param model: Specifies the null model to use for gene expression.
             Valid choices are:
@@ -620,6 +620,8 @@ class StPipeline(object):
         :param outdir: directory containing output file(hotspot.pkl). Hotspot object will be totally output here.
             If None, results will not be output to a file.
         :param res_key: the key for getting the result from the self.result.
+        :param use_raw: whether use the raw count express matrix for the analysis, default True.
+
         :return:
         """
         from ..algorithm.spatial_hotspot import spatial_hotspot
