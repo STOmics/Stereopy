@@ -315,10 +315,12 @@ def read_gef(file_path: str, bin_type="bins", bin_size=100, is_sparse=True, gene
     """
     logger.info(f'read_gef begin ...')
     if bin_type == 'cell_bins':
-        from gefpy.cell_exp import CellExpReaderPy
+        from gefpy.cell_exp_reader import CellExpReader
         data = StereoExpData(file_path=file_path)
-        cell_bin_gef = CellExpReaderPy(file_path)
+        cell_bin_gef = CellExpReader(file_path)
         data.position = cell_bin_gef.positions
+        logger.info(f'the martrix has {cell_bin_gef.cell_num} cells, and {cell_bin_gef.gene_num} genes.')
+        print(cell_bin_gef.rows)
         exp_matrix = csr_matrix((cell_bin_gef.count, (cell_bin_gef.rows, cell_bin_gef.cols)), shape=(cell_bin_gef.cell_num, cell_bin_gef.gene_num), dtype=np.uint32)
         data.cells = Cell(cell_name=cell_bin_gef.cells)
         data.genes = Gene(gene_name=cell_bin_gef.genes)
