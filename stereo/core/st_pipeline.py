@@ -412,25 +412,25 @@ class StPipeline(object):
         nn_dist = neighbors_res['nn_dist']
         return neighbor, connectivities, nn_dist
 
-    def spatial_neighbors(self, neighbors_res_key, n_neighbors=6, ):
+    def spatial_neighbors(self, neighbors_res_key, n_neighbors=6, res_key='spatial_neighbors'):
         """
-        Create a graph from spatial coordinates. And replace the connectivities in neighbors_res_key.
+        Create a graph from spatial coordinates using squidpy.
 
-        :param neighbors_res_key:
-        :param n_neighbors:
-
+        :param neighbors_res_key: the key of neighbors to getting the result.
+        :param n_neighbors: Use this number of nearest neighbors.
+        :param res_key: the key for getting the result from the self.result.
         :return:
         """
         from ..io.reader import stereo_to_anndata
         import squidpy as sq
-        _, connectivities, _ = self.get_neighbors_res(neighbors_res_key)
+        neighbor, connectivities, dists =copy.deepcopy(self.get_neighbors_res(neighbors_res_key))
         adata = stereo_to_anndata(self.data)
         sq.gr.spatial_neighbors(adata, n_neighs=n_neighbors)
-        connectivities[connectivities > 0] = 1
+        connectivities.data[connectivities.data > 0] = 1
         adj = connectivities + adata.obsp['spatial_connectivities']
-        adj[adj > 0] = 1
-        self.result[neighbors_res_key]['connectivities'] = adj
-        return adj
+        adj.data[adj.data > 0] = 1
+        res = {'neighbor': neighbor, 'connectivities': adj, 'nn_dist': dists}
+        self.result[res_key] = res
 
     def leiden(self,
                neighbors_res_key,
@@ -515,7 +515,7 @@ class StPipeline(object):
 
     def find_marker_genes(self,
                           cluster_res_key,
-                          method: str = 't-test',
+                          method: str = 't_test',
                           case_groups: Union[str, np.ndarray] = 'all',
                           control_groups: Union[str, np.ndarray] = 'rest',
                           corr_method: str = 'bonferroni',
