@@ -30,22 +30,6 @@ class PlotCollection:
         self.data = data
         self.result = self.data.tl.result
 
-    @staticmethod
-    def savefig(output, dpi=300):
-        """
-        save figures.
-
-        :param output: output name of a file.
-        :param dpi:
-        :return:
-        """
-        outdir = os.path.dirname(os.path.abspath(output))
-        if not os.path.isdir(outdir):
-            os.makedirs(outdir)
-        else:
-            pass
-        plt.savefig(output, dpi=dpi)
-
     def interact_cluster(
             self,
             res_key='cluster', inline=True,
@@ -462,17 +446,14 @@ class PlotCollection:
         else:
             raise ValueError(f'{res_key} result not found, please run tool before plot')
 
-    def hotspot_local_correlations(self, res_key='spatial_hotspot', output=None):
+    def hotspot_local_correlations(self, res_key='spatial_hotspot', ):
         res = self.check_res_key(res_key)
         plt.rcParams['figure.figsize'] = (15.0, 12.0)
         res.plot_local_correlations()
-        if output is not None:
-            self.savefig(output, dpi=500)
 
     def hotspot_modules(
             self,
             res_key="spatial_hotspot",
-            output=None,
             ncols=2,
             dot_size=None,
             palette='stereo',
@@ -497,10 +478,6 @@ class PlotCollection:
             vmax=vmax,
             **kwargs
         )
-
-        if output is not None:
-            self.savefig(output,dpi=500)
-        plt.show()
 
     def scenic_regulons(
             self,
@@ -530,8 +507,6 @@ class PlotCollection:
             plt.xticks([])
             plt.yticks([])
             plt.title('Regulon {}'.format(auc_mtx.columns[tf]))
-            if output is not None:
-                self.savefig(output, dpi=500)
             plt.show()
 
     def scenic_clustermap(
@@ -543,6 +518,4 @@ class PlotCollection:
         auc_mtx = res["auc_mtx"]
         import seaborn as sns
         sns.clustermap(auc_mtx, figsize=(12, 12))
-        if output is not None:
-            self.savefig(output, dpi=500)
         plt.show()

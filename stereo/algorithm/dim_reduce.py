@@ -40,7 +40,7 @@ def factor_analysis(x, n_pcs):
     return tran_x
 
 
-def pca(x, n_pcs, random_state=1):
+def pca(x, n_pcs, random_state=0):
     """
     Principal component analysis.
 
