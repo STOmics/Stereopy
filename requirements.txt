@@ -12,7 +12,7 @@ scikit-learn>=0.24.2
 numba~=0.53.1
 statsmodels~=0.12.1
 leidenalg>=0.8.7
-umap-learn>=0.5.1
+umap-learn==0.5.1
 KDEpy>=1.1.0
 Jinja2
 tifffile~=2021.7.2

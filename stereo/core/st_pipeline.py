@@ -508,7 +508,7 @@ class StPipeline(object):
         """
         if pca_res_key not in self.result:
             raise Exception(f'{pca_res_key} is not in the result, please check and run the pca func.')
-        communities, _, _ = phe.cluster(self.result[pca_res_key], k=phenograph_k)
+        communities, _, _ = phe.cluster(self.result[pca_res_key], k=phenograph_k, clustering_algo='leiden')
         clusters = communities.astype(str)
         df = pd.DataFrame({'bins': self.data.cell_names, 'group': clusters})
         self.result[res_key] = df
