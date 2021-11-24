@@ -2,14 +2,10 @@ import pandas as pd
 import numpy as np
 import holoviews as hv
 import hvplot.pandas
-import colorcet as cc
-from holoviews.selection import _Cmap, _Styles, _SelectionExprLayers, _SelectionStreams
 import panel as pn
 import param
-from panel.layout import Row, Tabs, Column
 from holoviews.element.selection import spatial_select
 from holoviews.util.transform import dim
-# from collections import OrderedDict
 from stereo.config import StereoConfig
 from typing import Optional
 pn.extension()

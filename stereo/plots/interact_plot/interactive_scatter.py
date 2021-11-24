@@ -6,7 +6,7 @@
 """
 import pandas as pd
 import numpy as np
-from colorcet import palette
+# from colorcet import palette
 from holoviews.selection import link_selections
 import holoviews as hv
 import hvplot.pandas

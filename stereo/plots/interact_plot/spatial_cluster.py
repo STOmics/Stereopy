@@ -7,8 +7,6 @@
 
 import holoviews as hv
 import hvplot.pandas
-import colorcet as cc
-import numpy as np
 import panel as pn
 import collections
 from holoviews import opts
