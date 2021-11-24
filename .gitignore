@@ -6,6 +6,7 @@ __pycache__/
 
 # C extensions
 *.so
+*cy.cpp
 
 # Distribution / packaging
 .Python

@@ -6,15 +6,9 @@
 @file:setup.py
 @time:2021/03/02
 """
-from setuptools import Extension, setup, find_packages
+from setuptools import setup, find_packages
 import sys
 from pathlib import Path
-
-# Newer packaging standards may recommend removing the current dir from the
-# path, add it back if needed.
-if '' not in sys.path:
-    sys.path.insert(0, '')
-import setup_build
 
 if sys.version_info < (3, 7):
     sys.exit('stereopy requires Python >= 3.7')
@@ -22,7 +16,7 @@ if sys.version_info < (3, 7):
 setup(
     name='stereopy',
     version='0.2.1',
-    setup_requires=['pkgconfig', 'Cython', 'setuptools_scm', 'numpy', 'panel', 'pytest', 'quilt3', 'scipy', 'phenograph'],
+    setup_requires=['setuptools_scm', 'numpy', 'panel', 'pytest', 'quilt3', 'scipy', 'phenograph'],
     description='Spatial transcriptomic analysis in python.',
     long_description=Path('README.md').read_text('utf-8'),
     long_description_content_type="text/markdown",
@@ -40,7 +34,6 @@ setup(
     ),
     packages=find_packages(),
     include_package_data=True,
-    ext_modules=[Extension('stereo.x', ['x.cpp'])],
     classifiers=[
         'Natural Language :: English',
         'License :: OSI Approved :: MIT License',
@@ -51,5 +44,13 @@ setup(
         'Topic :: Scientific/Engineering :: Bio-Informatics',
         'Topic :: Scientific/Engineering :: Visualization',
     ],
-    cmdclass = {'build_ext': setup_build.stereo_build_ext}
 )
+
+try:
+    import os
+    print('install hotspot from git, command: pip install git+https://github.com/yoseflab/Hotspot.git')
+    os.system('pip install git+https://github.com/yoseflab/Hotspot.git')
+    # os.system('pip install pyscenic~=0.11.2 --ignore-installed pyarrow')
+except Exception as e:
+    print('Hotspot is not install successly, please check.')
+    print(e)

@@ -397,7 +397,7 @@ class StPipeline(object):
         res = {'neighbor': neighbor, 'connectivities': connectivities, 'nn_dist': dists}
         self.result[res_key] = res
 
-    def get_neighbors_res(self, neighbors_res_key, res_key='neighbor'):
+    def get_neighbors_res(self, neighbors_res_key,):
         """
         get the neighbor result by the key.
 
@@ -412,25 +412,25 @@ class StPipeline(object):
         nn_dist = neighbors_res['nn_dist']
         return neighbor, connectivities, nn_dist
 
-    def spatial_neighbors(self, neighbors_res_key, n_neighbors=6, res_key='connectivities',):
+    def spatial_neighbors(self, neighbors_res_key, n_neighbors=6, res_key='spatial_neighbors'):
         """
-        Create a graph from spatial coordinates.
+        Create a graph from spatial coordinates using squidpy.
 
-        :param neighbors_res_key:
-        :param n_neighbors:
+        :param neighbors_res_key: the key of neighbors to getting the result.
+        :param n_neighbors: Use this number of nearest neighbors.
         :param res_key: the key for getting the result from the self.result.
-
         :return:
         """
         from ..io.reader import stereo_to_anndata
         import squidpy as sq
-        _, connectivities, _ = self.get_neighbors_res(neighbors_res_key)
+        neighbor, connectivities, dists =copy.deepcopy(self.get_neighbors_res(neighbors_res_key))
         adata = stereo_to_anndata(self.data)
         sq.gr.spatial_neighbors(adata, n_neighs=n_neighbors)
-        connectivities[connectivities > 0] = 1
+        connectivities.data[connectivities.data > 0] = 1
         adj = connectivities + adata.obsp['spatial_connectivities']
-        adj[adj > 0] = 1
-        self.result[neighbors_res_key][res_key] = adj
+        adj.data[adj.data > 0] = 1
+        res = {'neighbor': neighbor, 'connectivities': adj, 'nn_dist': dists}
+        self.result[res_key] = res
 
     def leiden(self,
                neighbors_res_key,
@@ -508,14 +508,14 @@ class StPipeline(object):
         """
         if pca_res_key not in self.result:
             raise Exception(f'{pca_res_key} is not in the result, please check and run the pca func.')
-        communities, _, _ = phe.cluster(self.result[pca_res_key], k=phenograph_k)
+        communities, _, _ = phe.cluster(self.result[pca_res_key], k=phenograph_k, clustering_algo='leiden')
         clusters = communities.astype(str)
         df = pd.DataFrame({'bins': self.data.cell_names, 'group': clusters})
         self.result[res_key] = df
 
     def find_marker_genes(self,
                           cluster_res_key,
-                          method: str = 't-test',
+                          method: str = 't_test',
                           case_groups: Union[str, np.ndarray] = 'all',
                           control_groups: Union[str, np.ndarray] = 'rest',
                           corr_method: str = 'bonferroni',
@@ -598,7 +598,8 @@ class StPipeline(object):
         self.result[res_key] = res
 
     def spatial_hotspot(self, use_highly_genes=True, hvg_res_key:Optional[str] = None, model='normal', n_neighbors=30,
-                        n_jobs=20, fdr_threshold=0.05, min_gene_threshold=50, outdir=None, res_key='spatial_hotspot'):
+                        n_jobs=20, fdr_threshold=0.05, min_gene_threshold=50, outdir=None, res_key='spatial_hotspot',
+                        use_raw=True, ):
         """
         identifying informative genes (and gene modules)
 
@@ -619,14 +620,23 @@ class StPipeline(object):
         :param outdir: directory containing output file(hotspot.pkl). Hotspot object will be totally output here.
             If None, results will not be output to a file.
         :param res_key: the key for getting the result from the self.result.
+        :param use_raw: whether use the raw count express matrix for the analysis, default True.
+
         :return:
         """
         from ..algorithm.spatial_hotspot import spatial_hotspot
         if use_highly_genes and hvg_res_key not in self.result:
             raise Exception(f'{hvg_res_key} is not in the result, please check and run the highly_var_genes func.')
-        data = self.subset_by_hvg(hvg_res_key, inplace=False) if use_highly_genes else self.data
+        #data = self.subset_by_hvg(hvg_res_key, inplace=False) if use_highly_genes else self.data
+        if use_raw and not self.raw:
+            raise Exception(f'self.raw must be set if use_raw is True.')
+        data = copy.deepcopy(self.raw) if use_raw else copy.deepcopy(self.data)
+        if use_highly_genes:
+            df = self.result[hvg_res_key]
+            genes_index = df['highly_variable'].values
+            data.sub_by_index(gene_index=genes_index)
         hs = spatial_hotspot(data, model=model, n_neighbors=n_neighbors, n_jobs=n_jobs, fdr_threshold=fdr_threshold,
-                             min_gene_threshold=min_gene_threshold,)
+                             min_gene_threshold=min_gene_threshold, outdir=outdir)
         # res = {"results":hs.results, "local_cor_z": hs.local_correlation_z, "modules": hs.modules,
         #        "module_scores": hs.module_scores}
         self.result[res_key] = hs
