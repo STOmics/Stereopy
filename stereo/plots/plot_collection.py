@@ -440,8 +440,8 @@ class PlotCollection:
 
         :return: tool result
         """
-        if res_key in self.result:
-            res = self.result[res_key]
+        if res_key in self.data.tl.result:
+            res = self.data.tl.result[res_key]
             return res
         else:
             raise ValueError(f'{res_key} result not found, please run tool before plot')
