@@ -46,6 +46,11 @@ class PolySelection(object):
             button_type="primary",
             width=100
         )
+        self.drop_checkbox = pn.widgets.Select(
+            name='method',
+            options={'keep selected point': False, 'drop selected point': True},
+            width=150
+        )
         self.download.on_click(self._download_callback)
         self.selected_exp_data = None
         self.figure = self.show()
@@ -68,7 +73,7 @@ class PolySelection(object):
         selection_expr = dim('x', spatial_select, dim('y'), geometry=points)
         # print(selection_expr)
         selected_pos = hv.Dataset(self.scatter_df).select(selection_expr).data.index
-        self.generate_selected_expr_matrix(selected_pos)
+        self.generate_selected_expr_matrix(selected_pos, drop=self.drop_checkbox.value)
         # logger.info(f'generate a new StereoExpData')
 
         self.download.loading = False
@@ -118,7 +123,7 @@ class PolySelection(object):
                 anno_table.Table.PolyAnnotator_Vertices,
                 '',
                 '',
-                self.download
+                pn.Row(self.drop_checkbox, self.download)
             ))
         # return pn.Row(poly_scatter, pn.Column(anno_table, self.download))
         return self.figure
