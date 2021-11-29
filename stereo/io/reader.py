@@ -20,7 +20,6 @@ from ..core.stereo_exp_data import StereoExpData
 from ..log_manager import logger
 import h5py
 from stereo.io import h5ad
-from stereo.io.gef import GEF
 from scipy.sparse import csr_matrix
 from ..core.cell import Cell
 from ..core.gene import Gene
@@ -63,7 +62,7 @@ def read_gem(file_path, sep='\t', bin_type="bins", bin_size=100, is_sparse=True)
     rows = df['cell_id'].map(cells_dict)
     cols = df['geneID'].map(genes_dict)
     logger.info(f'the martrix has {len(cells)} cells, and {len(genes)} genes.')
-    exp_matrix = csr_matrix((df['UMICount'], (rows, cols)), shape=(cells.shape[0], genes.shape[0]), dtype=np.int)
+    exp_matrix = csr_matrix((df['UMICount'], (rows, cols)), shape=(cells.shape[0], genes.shape[0]), dtype=np.int32)
     data.cells = Cell(cell_name=cells)
     data.genes = Gene(gene_name=genes)
     data.exp_matrix = exp_matrix if is_sparse else exp_matrix.toarray()
@@ -300,20 +299,53 @@ def stereo_to_anndata(stereo_data: StereoExpData,spatial_key:str='spatial'):
 #     adata.obs_names = pd.read_csv(barcodesfile, header=None)[0].values
 #     return adata
 
-def read_gef(file_path: str, bin_size=100, is_sparse=True, gene_lst: list = None, region: list = None):
+def read_gef(file_path: str, bin_type="bins", bin_size=100, is_sparse=True, gene_list: list = None, region: list = None):
     """
     read the gef(.h5) file, and generate the object of StereoExpData.
 
     :param file_path: input file
+    :param bin_type: bin_type , bin or cell bin
     :param bin_size: the size of bin to merge. The parameter only takes effect
                      when the value of data.bin_type is 'bins'.
     :param is_sparse: the matrix is sparse matrix if is_sparse is True else np.ndarray
-    :param gene_lst: restrict to this gene list
+    :param gene_list: restrict to this gene list
     :param region: restrict to this region, [minX, maxX, minY, maxY]
 
     :return: an object of StereoExpData.
     """
-    gef = GEF(file_path=file_path, bin_size=bin_size, is_sparse=is_sparse)
-    gef.build(gene_lst=gene_lst, region=region)
-    data = gef.to_stereo_exp_data()
+    logger.info(f'read_gef begin ...')
+    if bin_type == 'cell_bins':
+        from gefpy.cell_exp_reader import CellExpReader
+        data = StereoExpData(file_path=file_path)
+        cell_bin_gef = CellExpReader(file_path)
+        data.position = cell_bin_gef.positions
+        logger.info(f'the martrix has {cell_bin_gef.cell_num} cells, and {cell_bin_gef.gene_num} genes.')
+        exp_matrix = csr_matrix((cell_bin_gef.count, (cell_bin_gef.rows, cell_bin_gef.cols)), shape=(cell_bin_gef.cell_num, cell_bin_gef.gene_num), dtype=np.uint32)
+        data.cells = Cell(cell_name=cell_bin_gef.cells)
+        data.genes = Gene(gene_name=cell_bin_gef.genes)
+        data.exp_matrix = exp_matrix if is_sparse else exp_matrix.toarray()
+    else:
+        if gene_list is not None or region is not None:
+            from stereo.io.gef import GEF
+            gef = GEF(file_path=file_path, bin_size=bin_size, is_sparse=is_sparse)
+            gef.build(gene_lst=gene_list, region=region)
+            data = gef.to_stereo_exp_data()
+        else:
+            from gefpy.gene_exp_cy import GEF
+            gef = GEF(file_path, bin_size)
+            gene_num = gef.get_gene_num()
+            data = StereoExpData(file_path=file_path)
+
+            uniq_cells, rows, count = gef.get_exp_data()
+            cell_num = len(uniq_cells)
+            logger.info(f'the martrix has {cell_num} cells, and {gene_num} genes.')
+            cols, uniq_genes = gef.get_gene_data()
+            data.position = np.array(list(
+                (zip(np.right_shift(uniq_cells, 32), np.bitwise_and(uniq_cells, 0xffff))))).astype('uint32')
+            exp_matrix = csr_matrix((count, (rows, cols)), shape=(cell_num, gene_num), dtype=np.uint32)
+            data.cells = Cell(cell_name=uniq_cells)
+            data.genes = Gene(gene_name=uniq_genes)
+            data.exp_matrix = exp_matrix if is_sparse else exp_matrix.toarray()
+    logger.info(f'read_gef end.')
+
     return data

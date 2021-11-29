@@ -75,7 +75,7 @@ class ToolBase(object):
         if method.lower() not in method_range:
             logger.error(f'method range in {method_range}')
             logger.error(f'{method} is out of range, please check.')
-            self._method = self.method
+            raise Exception('out of range')
         else:
             self._method = method
         return method.lower() in method_range

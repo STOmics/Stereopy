@@ -6,6 +6,7 @@ __pycache__/
 
 # C extensions
 *.so
+*cy.cpp
 
 # Distribution / packaging
 .Python
@@ -128,3 +129,6 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
+h5config.json
+test_data/

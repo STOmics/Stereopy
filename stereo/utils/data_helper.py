@@ -11,6 +11,7 @@ import pandas as pd
 import numpy as np
 from ..core.stereo_exp_data import StereoExpData
 from typing import Optional
+from datetime import datetime
 
 
 def select_group(st_data, groups, cluster):
@@ -21,9 +22,8 @@ def select_group(st_data, groups, cluster):
             raise ValueError(f"cluster {g} is not in all cluster.")
     group_index = cluster['group'].isin(groups)
     exp_matrix = st_data.exp_matrix.toarray() if issparse(st_data.exp_matrix) else st_data.exp_matrix
-    group_sub = exp_matrix[group_index, :]
-    obs = st_data.cell_names[group_index]
-    return pd.DataFrame(group_sub, index=obs, columns=list(st_data.gene_names))
+    group_sub = exp_matrix[group_index]
+    return group_sub, group_index
 
 
 def get_cluster_res(adata, data_key='clustering'):

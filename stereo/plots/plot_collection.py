@@ -4,8 +4,10 @@
 @author: qindanhua@genomics.cn
 @time:2021/08/31
 """
+import os.path
 from typing import Optional, Union, Sequence
 # import colorcet as cc
+import matplotlib.pyplot as plt
 import numpy as np
 from .scatter import base_scatter, multi_scatter, marker_gene_volcano, highly_variable_genes
 from stereo.config import StereoConfig
@@ -115,7 +117,9 @@ class PlotCollection:
             self,
             x=["total_counts", "total_counts"],
             y=["pct_counts_mt", "n_genes_by_counts"],
-            ncols=2
+            ncols=2,
+            dot_size=None,
+            **kwargs
     ):
         """
         quality control index distribution visualization
@@ -123,24 +127,51 @@ class PlotCollection:
         :param x: list of x label
         :param y: list of y label
         :param ncols: number of cols
+        :param dot_size
 
         """
-        from .qc import genes_count
+        import math
+        import matplotlib.pyplot as plt
+        from matplotlib import gridspec
+        x = [x] if isinstance(x, str) else x
+        y = [y] if isinstance(y, str) else y
 
-        genes_count(
-            data=self.data,
-            x=x,
-            y=y,
-            ncols=ncols
+        width = 20
+        height = 10
+        nrows = math.ceil(len(x) / ncols)
+        fig = plt.figure(figsize=(width, height))
+        axs = gridspec.GridSpec(
+            nrows=nrows,
+            ncols=ncols,
         )
+        for i, (xi, yi) in enumerate(zip(x, y)):
+            draw_data = np.c_[self.data.cells.get_property(xi), self.data.cells.get_property(yi)]
+            ax = fig.add_subplot(axs[i])
+            base_scatter(
+                draw_data[:, 0],
+                draw_data[:, 1],
+                hue=[0 for i in range(len(draw_data[:, 1]))],
+                ax=ax,
+                palette=['#808080'],
+                x_label=' '.join(xi.split('_')),
+                y_label=' '.join(yi.split('_')),
+                dot_size=dot_size,
+                color_bar=False,
+                show_legend=False,
+                invert_y=False,
+                show_ticks=True,
+                **kwargs
+            )
+        # return fig
 
     def spatial_scatter(
             self,
             cells_key: list = ["total_counts", "n_genes_by_counts"],
             ncols=2,
             dot_size=None,
-            color_list=None,
-            invert_y=True
+            palette='stereo',
+            # invert_y=True,
+            **kwargs
     ):
         """
         spatial distribution of total_counts and n_genes_by_counts
@@ -148,19 +179,24 @@ class PlotCollection:
         :param cells_key: specified obs key list, for example: ["total_counts", "n_genes_by_counts"]
         :param ncols: numbr of plot columns.
         :param dot_size: marker size.
-        :param color_list: Color list.
-        :param invert_y: whether to invert y-axis.
+        :param palette: Color theme.
+        # :param invert_y: whether to invert y-axis.
 
         """
-        from .qc import spatial_distribution
+        from .scatter import multi_scatter
 
-        spatial_distribution(
-            self.data,
-            cells_key=cells_key,
+        multi_scatter(
+            x=self.data.position[:, 0],
+            y=self.data.position[:, 1],
+            hue=[self.data.cells.get_property(key) for key in cells_key],
+            x_label=['spatial1', 'spatial1'],
+            y_label=['spatial2', 'spatial2'],
+            title=[' '.join(i.split('_')) for i in cells_key],
             ncols=ncols,
             dot_size=dot_size,
-            color_list=color_list,
-            invert_y=invert_y
+            palette=palette,
+            color_bar=True,
+            **kwargs
         )
 
     def violin(self):
@@ -169,18 +205,19 @@ class PlotCollection:
 
         :return:
         """
-        from .qc import violin_distribution
+        from .violin import violin_distribution
         violin_distribution(self.data)
 
     def interact_spatial_scatter(
             self, inline=True,
-            width: Optional[int] = 700, height: Optional[int] = 600,
-            bgcolor='#2F2F4F'
+            width: Optional[int] = 600, height: Optional[int] = 600,
+            bgcolor='#2F2F4F',
+            poly_select=False
     ):
         """
         interactive spatial distribution
 
-        :param inline: notebook out if true else open at a new window
+        :param inline: notebook out if true else open in a new window
         :param width: width
         :param height: height
         :param bgcolor: background color
@@ -188,11 +225,14 @@ class PlotCollection:
         """
         from .interact_plot.interactive_scatter import InteractiveScatter
 
-        ins = InteractiveScatter(self.data, width=width, height=height, bgcolor=bgcolor)
+        fig = InteractiveScatter(self.data, width=width, height=height, bgcolor=bgcolor)
         # fig = ins.interact_scatter()
+        if poly_select:
+            from stereo.plots.interact_plot.poly_selection import PolySelection
+            fig = PolySelection(self.data, width=width, height=height, bgcolor=bgcolor)
         if not inline:
-            ins.figure.show()
-        return ins
+            fig.figure.show()
+        return fig
 
     def umap(
             self,
@@ -203,7 +243,7 @@ class PlotCollection:
             x_label: Optional[Union[str, list]] = 'umap1',
             y_label: Optional[Union[str, list]] = 'umap2',
             dot_size: int = None,
-            colors: Optional[Union[str, list]] = 'glasbey_category10',
+            colors: Optional[Union[str, list]] = 'stereo',
             **kwargs
     ):
         """
@@ -223,13 +263,15 @@ class PlotCollection:
         self.data.sparse2array()
         if cluster_key:
             cluster_res = self.check_res_key(cluster_key)
+            n = len(set(cluster_res['group']))
             return base_scatter(
                 res.values[:, 0],
                 res.values[:, 1],
-                color_values=np.array(cluster_res['group']),
-                color_list=conf.get_colors(colors),
+                hue=np.array(cluster_res['group']),
+                palette=conf.get_colors('stereo_30' if colors == 'stereo' else colors, n),
                 title=cluster_key if title is None else title,
                 x_label=x_label, y_label=y_label, dot_size=dot_size,
+                color_bar=False,
                 **kwargs)
         else:
             if gene_names is None:
@@ -238,8 +280,8 @@ class PlotCollection:
                 return multi_scatter(
                     res.values[:, 0],
                     res.values[:, 1],
-                    color_values=np.array(self.data.sub_by_name(gene_name=gene_names).exp_matrix).T,
-                    color_list=colors,
+                    hue=np.array(self.data.sub_by_name(gene_name=gene_names).exp_matrix).T,
+                    palette=colors,
                     title=gene_names if title is None else title,
                     x_label=[x_label for i in range(len(gene_names))],
                     y_label=[y_label for i in range(len(gene_names))],
@@ -251,8 +293,8 @@ class PlotCollection:
                 return base_scatter(
                     res.values[:, 0],
                     res.values[:, 1],
-                    color_values=np.array(self.data.sub_by_name(gene_name=gene_names).exp_matrix[:, 0]),
-                    color_list=colors,
+                    hue=np.array(self.data.sub_by_name(gene_name=gene_names).exp_matrix[:, 0]),
+                    palette=colors,
                     title=title, x_label=x_label, y_label=y_label, dot_size=dot_size,
                     color_bar=True,
                     **kwargs
@@ -265,7 +307,7 @@ class PlotCollection:
             x_label: Optional[str] = None,
             y_label: Optional[str] = None,
             dot_size: int = None,
-            colors='glasbey_category10',
+            colors='stereo_30',
             invert_y: bool = True,
             **kwargs
     ):
@@ -282,11 +324,12 @@ class PlotCollection:
 
         """
         res = self.check_res_key(res_key)
+        n = len(set(res['group']))
         ax = base_scatter(
             self.data.position[:, 0],
             self.data.position[:, 1],
-            color_values=np.array(res['group']),
-            color_list=conf.get_colors(colors),
+            hue=np.array(res['group']),
+            palette=conf.get_colors(colors, n=n),
             title=title, x_label=x_label, y_label=y_label, dot_size=dot_size, invert_y=invert_y,
             **kwargs
         )
@@ -397,8 +440,82 @@ class PlotCollection:
 
         :return: tool result
         """
-        if res_key in self.result:
-            res = self.result[res_key]
+        if res_key in self.data.tl.result:
+            res = self.data.tl.result[res_key]
             return res
         else:
             raise ValueError(f'{res_key} result not found, please run tool before plot')
+
+    def hotspot_local_correlations(self, res_key='spatial_hotspot', ):
+        res = self.check_res_key(res_key)
+        plt.rcParams['figure.figsize'] = (15.0, 12.0)
+        res.plot_local_correlations()
+
+    def hotspot_modules(
+            self,
+            res_key="spatial_hotspot",
+            ncols=2,
+            dot_size=None,
+            palette='stereo',
+            ** kwargs
+    ):
+        res = self.check_res_key(res_key)
+        scores = [res.module_scores[module] for module in range(1, res.modules.max() + 1)]
+        vmin = np.percentile(scores, 1)
+        vmax = np.percentile(scores, 99)
+        multi_scatter(
+            x=res.latent.iloc[:, 0],
+            y=res.latent.iloc[:, 1],
+            hue=scores,
+            # x_label=['spatial1', 'spatial1'],
+            # y_label=['spatial2', 'spatial2'],
+            title=[f"module {module}" for module in range(1, res.modules.max() + 1)],
+            ncols=ncols,
+            dot_size=dot_size,
+            palette=palette,
+            color_bar=True,
+            vmin=vmin,
+            vmax=vmax,
+            **kwargs
+        )
+
+    def scenic_regulons(
+            self,
+            res_key="scenic",
+            output=None,
+    ):
+        res = self.check_res_key(res_key)
+        regulons=res["regulons"]
+        auc_mtx=res["auc_mtx"]
+        for tf in range(0, len(regulons)):
+            scores = auc_mtx.iloc[:, tf]
+
+            vmin = np.percentile(scores, 1)
+            vmax = np.percentile(scores, 99)
+
+            plt.scatter(x=self.data.position[:, 0],
+                        y=self.data.position[:, 1],
+                        s=8,
+                        c=scores,
+                        vmin=vmin,
+                        vmax=vmax,
+                        edgecolors='none'
+                        )
+            axes = plt.gca()
+            for sp in axes.spines.values():
+                sp.set_visible(False)
+            plt.xticks([])
+            plt.yticks([])
+            plt.title('Regulon {}'.format(auc_mtx.columns[tf]))
+            plt.show()
+
+    def scenic_clustermap(
+            self,
+            res_key="scenic",
+            output=None,
+    ):
+        res = self.check_res_key(res_key)
+        auc_mtx = res["auc_mtx"]
+        import seaborn as sns
+        sns.clustermap(auc_mtx, figsize=(12, 12))
+        plt.show()

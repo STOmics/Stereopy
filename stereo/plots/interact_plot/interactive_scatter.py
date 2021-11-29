@@ -6,7 +6,7 @@
 """
 import pandas as pd
 import numpy as np
-from colorcet import palette
+# from colorcet import palette
 from holoviews.selection import link_selections
 import holoviews as hv
 import hvplot.pandas
@@ -17,17 +17,14 @@ from typing import Optional
 import holoviews.operation.datashader as hd
 from stereo.log_manager import logger
 import copy
-import matplotlib.colors as mcolors
+from stereo.config import StereoConfig
 
-colormaps = {n: palette[n] for n in ['rainbow', 'fire', 'bgy', 'bgyw', 'bmy', 'gray', 'kbc', 'CET_D4']}
+conf = StereoConfig()
+
 link = link_selections.instance()
 pn.param.ParamMethod.loading_indicator = True
 
-stmap_colors = ['#0c3383', '#0a88ba', '#f2d338', '#f28f38', '#d91e1e']
-nodes = [0.0, 0.25, 0.50, 0.75, 1.0]
-mycmap = mcolors.LinearSegmentedColormap.from_list("mycmap", list(zip(nodes, stmap_colors)))
-color_list = [mcolors.rgb2hex(mycmap(i)) for i in range(mycmap.N)]
-colormaps['stereo'] = color_list
+colormaps = conf.linear_colormaps
 
 
 class InteractiveScatter:
@@ -37,7 +34,7 @@ class InteractiveScatter:
     def __init__(
             self,
             data,
-            width: Optional[int] = 680, height: Optional[int] = 500,
+            width: Optional[int] = 500, height: Optional[int] = 500,
             bgcolor='#2F2F4F',
             # bgcolor='#333333'
     ):
@@ -49,10 +46,10 @@ class InteractiveScatter:
         self.scatter_df = pd.DataFrame({
             # 'cell': self.data.cell_names,
             'x': self.data.position[:, 0],
-            'y': self.data.position[:, 1],
+            'y': self.data.position[:, 1] * -1,
             # 'count': np.array(self.data.exp_matrix.sum(axis=1))[:, 0],
             'count': np.array(self.data.exp_matrix.sum(axis=1))[:, 0] if self.data.cells.total_counts is None else self.data.cells.total_counts
-        })
+        }).reset_index()
         self.selected_exp_data = None
         self.drop_checkbox = pn.widgets.Select(
             name='method',
@@ -129,7 +126,8 @@ class InteractiveScatter:
 
             ).opts(
                 bgcolor=bgcolor,
-                invert_yaxis=True,
+                xaxis=None,
+                yaxis=None,
                 aspect='equal',
             ), selection_mode='union')
 
@@ -144,9 +142,9 @@ class InteractiveScatter:
                 _df_plot,
                 pn.Column(
                     # pn.panel(pn.bind(random_plot, button), loading_indicator=True),
-                    _selection_table,
+                    # _selection_table,
                     pn.Column(
-                        "above in the table is selected points, pick or drop them to generate a new StereoExpData",
+                        # "above in the table is selected points, pick or drop them to generate a new StereoExpData",
                         pn.Row(
                             self.drop_checkbox,
                             # self.bin_select
