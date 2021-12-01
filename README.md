@@ -1,8 +1,7 @@
 [![stars](https://img.shields.io/github/stars/BGIResearch/stereopy?logo=GitHub&color=yellow)](https://img.shields.io/github/stars/BGIResearch/stereopy) 
 [![pypi](https://img.shields.io/pypi/v/stereopy)](https://pypi.org/project/stereopy/)
-[![downloads](https://static.pepy.tech/personalized-badge/stereopy?period=total&units=international_system&left_color=grey&right_color=orange&left_text=downloads)](https://pepy.tech/project/stereopy)
+[![downloads](https://static.pepy.tech/personalized-badge/stereopy?period=total&units=international_system&left_color=grey&right_color=blue&left_text=downloads)](https://pepy.tech/project/stereopy)
 [![docs](https://img.shields.io/static/v1?label=docs&message=stereopy&color=green)](https://stereopy.readthedocs.io/en/latest/index.html)
-[![source](https://img.shields.io/static/v1?label=source&message=Github&color=blue)](https://stereopy.readthedocs.io/en/latest/General/Installation.html) 
 
 ## **Stereopy**: Spatial transcriptomics analysis in Python
 
