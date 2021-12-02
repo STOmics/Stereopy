@@ -423,7 +423,7 @@ class StPipeline(object):
         """
         from ..io.reader import stereo_to_anndata
         import squidpy as sq
-        neighbor, connectivities, dists =copy.deepcopy(self.get_neighbors_res(neighbors_res_key))
+        neighbor, connectivities, dists = copy.deepcopy(self.get_neighbors_res(neighbors_res_key))
         adata = stereo_to_anndata(self.data)
         sq.gr.spatial_neighbors(adata, n_neighs=n_neighbors)
         connectivities.data[connectivities.data > 0] = 1
@@ -634,7 +634,8 @@ class StPipeline(object):
         if use_highly_genes:
             df = self.result[hvg_res_key]
             genes_index = df['highly_variable'].values
-            data.sub_by_index(gene_index=genes_index)
+            gene_name = np.array(df.index)[genes_index]
+            data = data.sub_by_name(gene_name=gene_name)
         hs = spatial_hotspot(data, model=model, n_neighbors=n_neighbors, n_jobs=n_jobs, fdr_threshold=fdr_threshold,
                              min_gene_threshold=min_gene_threshold, outdir=outdir)
         # res = {"results":hs.results, "local_cor_z": hs.local_correlation_z, "modules": hs.modules,
