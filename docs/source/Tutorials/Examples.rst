@@ -8,3 +8,5 @@ This section contains various short examples.
     :maxdepth: 2
 
     interactive_cluster
+    hotspot_spatialneighbors
+
