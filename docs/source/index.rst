@@ -1,4 +1,4 @@
-|Downloads| |Docs| |Github|
+|stars| |pypi| |downloads| |docs|
 
 .. _topics-index:
 
@@ -8,7 +8,7 @@ Stereopy - Spatial transcriptomics analysis in Python
 **Stereopy** is a tool for the analysis and visualization of spatial transcriptomics data, such as stereo-seq data.
 It provides a series of analysis of spatial omics, and will be added to the tissue image related analysis later.
 
-.. image:: ./_static/stereopy.PNG
+.. image:: ./_static/workflow.png
     :alt: Title figure
     :width: 400px
     :align: center
@@ -47,14 +47,18 @@ pending upgrade.
    release_note
 
 
-.. |Docs| image:: https://img.shields.io/static/v1?label=docs&message=stereopy&color=green
-    :target: https://github.com/BGIResearch/stereopy
-    :alt: Documentation
+.. |docs| image:: https://img.shields.io/static/v1?label=docs&message=stereopy&color=green
+    :target: https://stereopy.readthedocs.io/en/latest/index.html
+    :alt: docs
 
-.. |Github| image:: https://img.shields.io/github/stars/BGIResearch/stereopy?logo=GitHub&color=yellow
+.. |stars| image:: https://img.shields.io/github/stars/BGIResearch/stereopy?logo=GitHub&color=yellow
     :target: https://github.com/BGIResearch/stereopy
-    :alt: Github
+    :alt: stars
 
-.. |Downloads| image:: https://img.shields.io/static/v1?label=download&message=github&color=blue
-    :target: https://github.com/BGIResearch/stereopy
+.. |downloads| image:: https://static.pepy.tech/personalized-badge/stereopy?period=total&units=international_system&left_color=grey&right_color=blue&left_text=downloads
+    :target: https://pepy.tech/project/stereopy
     :alt: Downloads
+
+.. |pypi| image:: https://img.shields.io/pypi/v/stereopy
+    :target: https://pypi.org/project/stereopy/
+    :alt: Pypi
