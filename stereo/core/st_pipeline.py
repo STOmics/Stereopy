@@ -598,7 +598,7 @@ class StPipeline(object):
         self.result[res_key] = res
 
     def spatial_hotspot(self, use_highly_genes=True, hvg_res_key:Optional[str] = None, model='normal', n_neighbors=30,
-                        n_jobs=20, fdr_threshold=0.05, min_gene_threshold=50, outdir=None, res_key='spatial_hotspot',
+                        n_jobs=20, fdr_threshold=0.05, min_gene_threshold=10, outdir=None, res_key='spatial_hotspot',
                         use_raw=True, ):
         """
         identifying informative genes (and gene modules)
