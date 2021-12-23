@@ -76,7 +76,7 @@ def water_score(input_list):
                 markers[ypts[i], xpts[i]] = i + 1
             seg_result = segmentation.watershed(-distance, markers, mask=intensity_image, compactness=10,
                                                 watershed_line=True)
-            seg_result = np.where(seg_result != 0, 255, 0).astype(np.uint8)  # binary image
+            seg_result = np.where(seg_result != 0, 255, 0).astype(np.uint8)  #binary image
             post_mask[bbox[0]: bbox[2], bbox[1]: bbox[3]] += seg_result
             label_seg = measure.label(seg_result, connectivity=1)
             props_seg = measure.regionprops(label_seg, intensity_image=intensity_image)

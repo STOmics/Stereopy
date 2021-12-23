@@ -1,32 +1,8 @@
 import numpy as np
 import os
 import logging
-import torch
-from seg_utils.utils import normalize, cell_watershed, resize, tile_image, untile_image, split, merge, outline, view_bar
-from .resnet_unet import EpsaResUnet
-from albumentations.pytorch import ToTensorV2
-from albumentations import (HorizontalFlip, Normalize, Compose, GaussNoise)
-from tqdm import tqdm
-import cv2
-import tifffile
-from .dataset import data_batch
-
-
-def get_transforms():
-    list_transforms = []
-
-    list_transforms.extend(
-        [
-            # HorizontalFlip(p=0.5),
-            # GaussNoise(p=0.7),
-        ])
-    list_transforms.extend(
-        [
-            # Normalize(mean=(0.485, 0.456, 0.406), std=(0.229, 0.224, 0.225), p=1),
-            ToTensorV2(),
-        ])
-    list_trfms = Compose(list_transforms)
-    return list_trfms
+import tensorflow as tf
+from .utils import normalize, cell_watershed, resize, tile_image, untile_image, split, merge, outline, view_bar
 
 
 class CellInfer(object):
@@ -44,11 +20,8 @@ class CellInfer(object):
                  format_model_output_fn=None,
                  dataset_metadata=None,
                  model_metadata=None):
-        if model is None:
-            model_path = os.path.join(os.path.split(__file__)[0], 'model')
-            model_loaded = tf.keras.models.load_model(model_path, compile=False)
-            self.model = model_loaded
-
+        model_path = os.path.join(os.path.split(__file__)[0], 'model') if model is None else model
+        self.model = tf.keras.models.load_model(model_path, compile=False)
         self.model_image_shape = self.model.input_shape[1:]
         # Require dimension 1 larger than model_input_shape due to addition of batch dimension
         self.required_rank = len(self.model_image_shape) + 1
@@ -232,8 +205,10 @@ class CellInfer(object):
 
         # Tile images, raises error if the image is not 4d
         tiles, tiles_info = self._tile_input(image, pad_mode=pad_mode)
+
         # Run images through model
         output_tiles = self.model.predict(tiles, batch_size=batch_size)
+
 
         # Untile images
         output_images = self._untile_output(output_tiles, tiles_info)
@@ -357,7 +332,7 @@ class CellInfer(object):
         return label_image
 
 
-def cellInfer(model_path, file, size, overlap=100):
+def cellInfer(file, size, overlap=100, model_path=None):
 
     # split -> predict -> merge
     if isinstance(file, list):
@@ -367,36 +342,39 @@ def cellInfer(model_path, file, size, overlap=100):
 
     result = []
 
-    model_dir = model_path
-    model = EpsaResUnet(out_channels=6)
-    model.load_state_dict(torch.load(model_dir, map_location=lambda storage, loc: storage), strict=True)
-    model.eval()
-    transform = get_transforms()
-    label_list = []
-    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-    model.to(device)
     for idx, image in enumerate(file_list):
-        h, w = image.shape
-        print(h, w)
-        image = cv2.cvtColor(image, cv2.COLOR_GRAY2RGB)
-        img_list, x_list, y_list = split(image, 256, 100)
+
+        # split
+        img_list, x_list, y_list = split(image, size, overlap)
+
+        # load model
+        seg_app = CellInfer(model=model_path)
+
+        label_list = []
+        label_list_outline = []
+        # deepcell predict
         total_num = len(img_list)
-        print('【image %d/%d】' % (idx + 1, len(file_list)))
+        for idy, img in enumerate(img_list):
 
-        dataset = data_batch(img_list)
-        test_dataloader = torch.utils.data.DataLoader(dataset, batch_size=32)
-        for batch in tqdm(test_dataloader, ncols=80):
-            img = batch
-            img = img.to(device, dtype=torch.float)
-            pred_mask = model(img)
-            pred_mask = torch.sigmoid(pred_mask).detach().cpu().numpy()
-            pred = pred_mask[:, 0, :, :]
-            pred[:] = (pred[:] < 0.55) * 255
-            for i in range(len(pred_mask)):
-                label_list.append(pred[i])
 
-        merge_label = merge(label_list, x_list, y_list, image[:, :, 0].shape)
-        result.append(merge_label)
+            img = np.expand_dims(img, axis=0)
+            img = np.expand_dims(img, axis=-1)
+            if len(img.shape) != 4:
+                print('input data shape wrong!!')
 
+            labeled_img = seg_app.predict_image(img)
+            label = np.squeeze(labeled_img)
+
+            label_list.append(label)
+            # label_list_outline.append(outline(label))
+            view_bar('【image %d/%d】 batch' % (idx + 1, len(file_list)), idy + 1, total_num, end='\n' if idy + 1 == total_num else '')
+
+
+        # merge mask and save
+        # merge_label_outline = merge(label_list_outline, x_list, y_list, image.shape)
+        merge_label = merge(label_list, x_list, y_list, image.shape)
+
+        merge_label = np.where(merge_label !=0, 1, 0).astype(np.uint8)
+        result.append(merge_label) #, merge_label_outline
 
     return result
