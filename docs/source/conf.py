@@ -41,6 +41,7 @@ extensions = [
     'sphinx.ext.autosummary',
     'nbsphinx',
     "sphinx.ext.viewcode",
+    "sphinx_gallery.load_style",
     "sphinx_autodoc_typehints",
     *[p.stem for p in (HERE / 'extensions').glob('*.py')],
 ]

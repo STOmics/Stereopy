@@ -8,3 +8,4 @@ from . import preprocess
 from . import tools
 from . import utils
 from . import plots as plt
+from . import image

@@ -12,6 +12,7 @@ import cv2
 import tissueCut_utils.tissue_seg_net as tissue_net
 from skimage import measure, exposure
 from tissueCut_utils.tissue_seg_utils import ToTensor
+import time
 
 torch.set_grad_enabled(False)
 np.random.seed(123)
@@ -20,6 +21,7 @@ np.random.seed(123)
 class tissueCut(object):
     def __init__(self, path, out_path, type, deep, model_path, backbone_path):
 
+        self.is_gpu = False
         self.path = path
         self.type = type  # image type
         self.deep = deep  # segmentation method
@@ -38,6 +40,7 @@ class tissueCut(object):
         self.file_name = []
         self.file_ext = []
 
+        self.is_gpu = torch.cuda.is_available()
         self._preprocess_file(path)
 
     # parse file name
@@ -71,6 +74,17 @@ class tissueCut(object):
 
         return img_bin
 
+    # def save_tissue_mask(self):
+    #
+    #     # for idx, tissue_thumb in enumerate(self.mask_thumb):
+    #     #     tifffile.imsave(os.path.join(self.out_path, self.file_name[idx] + r'_tissue_cut_thumb.tif'), tissue_thumb)
+    #
+    #     for idx, tissue in enumerate(self.mask):
+    #         tifffile.imsave(os.path.join(self.out_path, self.file_name[idx] + r'_tissue_cut.tif'),
+    #                         (tissue > 0).astype(np.uint8))
+    #     glog.info('seg results saved in %s' % self.out_path)
+
+    # 新函数
     def save_tissue_mask(self):
 
         # for idx, tissue_thumb in enumerate(self.mask_thumb):
@@ -86,6 +100,7 @@ class tissueCut(object):
         glog.info('seg results saved in %s' % self.out_path)
 
     # preprocess image for deep learning
+
     def get_thumb_img(self):
 
         glog.info('image loading and preprocessing...')
@@ -149,8 +164,14 @@ class tissueCut(object):
         #     model_path = os.path.join(os.path.split(__file__)[0], '../tissueCut_model/rna_seg.pth')
 
         net.load_state_dict(torch.load(self.model_path, map_location='cpu'), strict=False)
+        # net.load_state_dict(torch.load(self.model_path, map_location=lambda storage, loc: storage), strict=False)
         net.eval()
-        # net.cuda()
+        if self.is_gpu:
+            net.cuda()
+
+        # device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+        # print(device)
+        # net.to(device)
 
         # prepare data
         to_tensor = ToTensor(
@@ -162,11 +183,14 @@ class tissueCut(object):
         for shape, im, file, img_thumb in zip(self.shape, self.img_thumb, self.file, self.img_thumb):
             im = cv2.cvtColor(im, cv2.COLOR_GRAY2RGB)
             # im = to_tensor(dict(im=im, lb=None))['im'].unsqueeze(0)#.cuda()
-            #
             # # inference
             # out = np.array(net(im, )[0].argmax(dim=1).squeeze().detach().cpu().numpy(), dtype=np.uint8)
-            im = to_tensor(dict(im=im, lb=None))['im'].unsqueeze(0)
-            out = net(im).squeeze().detach().cpu().numpy()
+
+            if self.is_gpu:
+                im = to_tensor(dict(im=im, lb=None))['im'].unsqueeze(0).cuda()
+            else:
+                im = to_tensor(dict(im=im, lb=None))['im'].unsqueeze(0)
+            out = np.array(net(im, ).squeeze().detach().cpu().numpy(), dtype=np.uint8)
             out = util.hole_fill(out).astype(np.uint8)
             img_open = cv2.morphologyEx(out, cv2.MORPH_OPEN, kernel)
 

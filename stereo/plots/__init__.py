@@ -6,7 +6,7 @@
 @file:__init__.py.py
 @time:2021/03/05
 """
-# from .qc import spatial_distribution, genes_count, violin_distribution
+from .violin import violin_distribution
 from .scatter import base_scatter
 from .marker_genes import marker_genes_text, marker_genes_heatmap
 from .plot_collection import PlotCollection
