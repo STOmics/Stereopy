@@ -36,6 +36,7 @@ class StPipeline(object):
         self.data = data
         self.result = dict()
         self._raw = None
+        self.key_record = {'hvg': [], 'pca': [], 'neighbors': [], 'umap': [], 'cluster': [], 'marker_genes': []}
 
     @property
     def raw(self):
@@ -66,6 +67,20 @@ class StPipeline(object):
 
     def raw_checkpoint(self):
         self.raw = self.data
+
+    def reset_key_record(self, key, res_key):
+        """
+        reset key and coordinated res_key in key_record.
+        :param key:
+        :param res_key:
+        :return:
+        """
+        if key in self.key_record.keys():
+            if res_key in self.key_record[key]:
+                self.key_record[key].remove(res_key)
+            self.key_record[key].append(res_key)
+        else:
+            self.key_record[key] = [res_key]
 
     def cal_qc(self):
         """
@@ -204,12 +219,15 @@ class StPipeline(object):
         """
         from ..preprocess.sc_transform import sc_transform
         if inplace:
-            sc_transform(self.data, method, n_cells, n_genes, filter_hvgs, res_clip_range, var_features_n)
+            self.result[res_key] = sc_transform(self.data, method, n_cells, n_genes, filter_hvgs,
+                                                res_clip_range, var_features_n)
         else:
             import copy
             data = copy.deepcopy(self.data)
             self.result[res_key] = sc_transform(data, method, n_cells, n_genes, filter_hvgs,
                                                 res_clip_range, var_features_n)
+        key = 'sct'
+        self.reset_key_record(key, res_key)
 
     def highly_variable_genes(self,
                          groups=None,
@@ -256,6 +274,8 @@ class StPipeline(object):
                                   max_disp=max_disp, min_mean=min_mean, max_mean=max_mean, span=span, n_bins=n_bins)
         hvg.fit()
         self.result[res_key] = hvg.result
+        key = 'hvg'
+        self.reset_key_record(key, res_key)
 
     def subset_by_hvg(self, hvg_res_key, inplace=True):
         """
@@ -290,7 +310,8 @@ class StPipeline(object):
         x = data.exp_matrix.toarray() if issparse(data.exp_matrix) else data.exp_matrix
         res = pca(x, n_pcs)
         self.result[res_key] = pd.DataFrame(res['x_pca'])
-
+        key = 'pca'
+        self.reset_key_record(key, res_key)
     # def umap(self, pca_res_key, n_pcs=None, n_neighbors=5, min_dist=0.3, res_key='dim_reduce'):
     #     if pca_res_key not in self.result:
     #         raise Exception(f'{pca_res_key} is not in the result, please check and run the pca func.')
@@ -350,6 +371,8 @@ class StPipeline(object):
                       min_dist=min_dist, spread=spread, n_components=n_components, maxiter=maxiter, alpha=alpha,
                       gamma=gamma, negative_sample_rate=negative_sample_rate, init_pos=init_pos)
         self.result[res_key] = pd.DataFrame(x_umap)
+        key = 'umap'
+        self.reset_key_record(key, res_key)
 
     def neighbors(self, pca_res_key, method='umap', metric='euclidean', n_pcs=None, n_neighbors=10, knn=True,
                   res_key='neighbors'):
@@ -396,6 +419,8 @@ class StPipeline(object):
                                                          n_neighbors=n_neighbors, metric=metric, knn=knn)
         res = {'neighbor': neighbor, 'connectivities': connectivities, 'nn_dist': dists}
         self.result[res_key] = res
+        key = 'neighbors'
+        self.reset_key_record(key, res_key)
 
     def get_neighbors_res(self, neighbors_res_key,):
         """
@@ -431,6 +456,8 @@ class StPipeline(object):
         adj.data[adj.data > 0] = 1
         res = {'neighbor': neighbor, 'connectivities': adj, 'nn_dist': dists}
         self.result[res_key] = res
+        key = 'neighbors'
+        self.reset_key_record(key, res_key)
 
     def leiden(self,
                neighbors_res_key,
@@ -464,6 +491,8 @@ class StPipeline(object):
                       use_weights=use_weights, random_state=random_state, n_iterations=n_iterations)
         df = pd.DataFrame({'bins': self.data.cell_names, 'group': clusters})
         self.result[res_key] = df
+        key = 'cluster'
+        self.reset_key_record(key, res_key)
 
     def louvain(self,
                 neighbors_res_key,
@@ -496,6 +525,8 @@ class StPipeline(object):
                       adjacency=connectivities, flavor=flavor, directed=directed, use_weights=use_weights)
         df = pd.DataFrame({'bins': self.data.cell_names, 'group': clusters})
         self.result[res_key] = df
+        key = 'cluster'
+        self.reset_key_record(key, res_key)
 
     def phenograph(self, phenograph_k, pca_res_key, res_key='cluster'):
         """
@@ -512,6 +543,8 @@ class StPipeline(object):
         clusters = communities.astype(str)
         df = pd.DataFrame({'bins': self.data.cell_names, 'group': clusters})
         self.result[res_key] = df
+        key = 'cluster'
+        self.reset_key_record(key,res_key)
 
     def find_marker_genes(self,
                           cluster_res_key,
@@ -552,6 +585,8 @@ class StPipeline(object):
         tool = FindMarker(data=data, groups=self.result[cluster_res_key], method=method, case_groups=case_groups,
                           control_groups=control_groups, corr_method=corr_method)
         self.result[res_key] = tool.result
+        key = 'marker_genes'
+        self.reset_key_record(key, res_key)
 
     def spatial_lag(self,
                     cluster_res_key,
@@ -663,4 +698,6 @@ class StPipeline(object):
         res = {"modules": modules, "regulons": regulons, "adjacencies": adjacencies, "motifs": motifs,
                "auc_mtx":auc_mtx, "regulons_df": regulons_df}
         self.result[res_key] = res
+
+
 
