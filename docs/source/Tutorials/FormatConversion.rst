@@ -32,7 +32,8 @@ The new index looks like "{sample_id}:{position_x}_{position_y}" format.
 
 When flavor='scanpy', this parameter is useless.
 
-:param output: path of output_file
+:param output: Default is None
+If None, it will return a Anndata object, but not generate a h5ad file.
 
 :return: Anndata object
 
