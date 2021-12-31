@@ -219,12 +219,15 @@ class StPipeline(object):
         """
         from ..preprocess.sc_transform import sc_transform
         if inplace:
-            sc_transform(self.data, method, n_cells, n_genes, filter_hvgs, res_clip_range, var_features_n)
+            self.result[res_key] = sc_transform(self.data, method, n_cells, n_genes, filter_hvgs,
+                                                res_clip_range, var_features_n)
         else:
             import copy
             data = copy.deepcopy(self.data)
             self.result[res_key] = sc_transform(data, method, n_cells, n_genes, filter_hvgs,
                                                 res_clip_range, var_features_n)
+        key = 'sct'
+        self.reset_key_record(key, res_key)
 
     def highly_variable_genes(self,
                          groups=None,
