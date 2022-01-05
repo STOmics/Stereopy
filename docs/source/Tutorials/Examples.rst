@@ -18,3 +18,4 @@ This section contains various examples from the :mod:`stereo.im` module.
 .. nbgallery::
     cell_segmentation
     tissue_cut
+    

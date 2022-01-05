@@ -221,21 +221,118 @@ def anndata_to_stereo(andata: AnnData, use_raw=False, spatial_key: Optional[str]
     return data
 
 
-def stereo_to_anndata(stereo_data: StereoExpData,spatial_key:str='spatial'):
+def stereo_to_anndata(data: StereoExpData, flavor='scanpy', sample_id="sample", reindex=False, output=None):
     """
+    transform the StereoExpData object into Anndata object.
 
-    :param stereo_data: StereoExpData object.
-    :param spatial_key: add position information to obsm[spatial_key]. Default '`spatial`'.
-    :return: anndata object.
+    :param data: StereoExpData object
+    :param flavor: 'scanpy' or 'seurat'.
+    if you want to converted the output_h5ad into h5seurat for seurat, please set 'seurat'.
+    :param sample_id: when flavor == 'seurat', this will be set as 'orig.ident'
+    :param reindex: when flavor=='seurat', if True, the cell index will be reindex as
+    "{sample_id}:{position_x}_{position_y}" format.
+    :param output: path of output_file.
+    :return: Anndata object
     """
-    andata = AnnData(X=stereo_data.exp_matrix,
-                     obs=stereo_data.cells.to_df(),
-                     var=stereo_data.genes.to_df(),
-                     )
-    if stereo_data.position is not None:
-        andata.obsm[spatial_key] = stereo_data.position
-    return andata
+    from scipy.sparse import issparse
+    exp = data.exp_matrix
+    #exp = data.exp_matrix.toarray() if issparse(data.exp_matrix) else data.exp_matrix
+    cells = data.cells.to_df()
+    cells.dropna(axis=1, how='all', inplace=True)
+    genes = data.genes.to_df()
+    genes.dropna(axis=1, how='all', inplace=True)
 
+    adata = AnnData(X=exp,
+                    obs=cells,
+                    var=genes,
+                    )
+
+    if data.position is not None:
+        logger.info(f"Adding data.position as adata.obsm['spatial'] .")
+        adata.obsm['spatial'] = data.position
+        if flavor == 'seurat':
+            logger.info(f"Adding data.position as adata.obs['x'] and adata.obs['y'] .")
+            adata.obs['x'] = pd.DataFrame(data.position[:, 0], index=data.cell_names.astype('str'))
+            adata.obs['y'] = pd.DataFrame(data.position[:, 1], index=data.cell_names.astype('str'))
+
+    for key in data.tl.key_record.keys():
+        if len(data.tl.key_record[key]) > 0:
+            if key == 'hvg':
+                res_key = data.tl.key_record[key][-1]
+                logger.info(f"Adding data.tl.result['{res_key}'] in adata.var .")
+                for i in data.tl.result[res_key]:
+                    if i == 'mean_bin':
+                        continue
+                    adata.var[i] = data.tl.result[res_key][i]
+            elif key == 'sct':
+                res_key = data.tl.key_record[key][-1]
+                logger.info(f"Adding data.tl.result['{res_key}'] in adata.uns['sct_'] .")
+                adata.uns['sct_counts'] = csr_matrix(data.tl.result[res_key][1]['filtered_corrected_counts'])
+                adata.uns['sct_data'] = csr_matrix(data.tl.result[res_key][1]['filtered_normalized_counts'])
+
+            elif key in ['pca', 'umap', 'tsne']:
+                # pca :we do not keep variance and PCs(for varm which will be into feature.finding in pca of seurat.)
+                res_key = data.tl.key_record[key][-1]
+                sc_key = f'X_{key}'
+                logger.info(f"Adding data.tl.result['{res_key}'] in adata.obsm['{sc_key}']] .")
+                adata.obsm[sc_key] = data.tl.result[res_key].values
+            elif key == 'neighbors':
+                # neighbor :seurat use uns for convertion to @graph slot, but scanpy canceled neighbors of uns at present.
+                # so this part could not be converted into seurat straightly.
+                for res_key in data.tl.key_record[key]:
+                    sc_con = 'connectivities' if res_key == 'neighbors' else f'{res_key}_connectivities'
+                    sc_dis = 'distances' if res_key == 'neighbors' else f'{res_key}_distances'
+                    logger.info(f"Adding data.tl.result['{res_key}']['connectivities'] in adata.obsp['{sc_con}'] .")
+                    logger.info(f"Adding data.tl.result['{res_key}']['nn_dist'] in adata.obsp['{sc_dis}'] .")
+                    adata.obsp[sc_con] = data.tl.result[res_key]['connectivities']
+                    adata.obsp[sc_dis] = data.tl.result[res_key]['nn_dist']
+                    logger.info(f"Adding info in adata.uns['{res_key}'].")
+                    adata.uns[res_key] = {}
+                    adata.uns[res_key]['connectivities_key'] = sc_con
+                    adata.uns[res_key]['distance_key'] = sc_dis
+                    # adata.uns[res_key]['connectivities'] = data.tl.result[res_key]['connectivities']
+                    # adata.uns[res_key]['distances'] = data.tl.result[res_key]['nn_dist']
+            elif key == 'cluster':
+                for res_key in data.tl.key_record[key]:
+                    logger.info(f"Adding data.tl.result['{res_key}'] in adata.obs['{res_key}'] .")
+                    adata.obs[res_key] = pd.DataFrame(data.tl.result[res_key]['group'].values,
+                                                      index=data.cells.cell_name.astype('str'))
+            else:
+                continue
+        # normal and raw
+    if data.tl.raw is not None:
+        logger.info(f"Adding data.tl.raw.exp_matrix as adata.raw.X .")
+
+        ## keep same shape between @counts and @data for seurat
+        sub_data = data.tl.raw.sub_by_name(gene_name=data.gene_names, cell_name=data.cell_names)
+        raw_exp = sub_data.exp_matrix if flavor == 'seurat' else data.tl.raw.exp_matrix
+
+        raw_genes = adata.var if flavor == 'seurat' else data.tl.raw.genes.to_df()
+        raw_genes.dropna(axis=1, how='all', inplace=True)
+
+        raw_adata = AnnData(X=raw_exp,
+                            var=raw_genes,
+                            # var=raw_data.genes.to_df(),
+                            )
+        adata.raw = raw_adata
+
+    if flavor == 'seurat' and reindex:
+        ##sample id
+        logger.info(f"Adding {sample_id} in adata.obs['orig.ident'] and reindex.")
+        adata.obs['orig.ident'] = pd.Categorical([sample_id] * adata.obs.shape[0], categories=[sample_id])
+        new_ix = (adata.obs['orig.ident'].astype(str) + ":" + adata.obs['x'].astype(str) + "_" + adata.obs['y'].astype(
+            str)).to_list()
+        adata.obs.index = new_ix
+        adata.obs.rename(columns={'total_counts': "nCount_Spatial", "n_genes_by_counts": "nFeature_Spatial",
+                                  "pct_counts_mt": 'percent.mito'}, inplace=True)
+
+    logger.info(f"Finished conversion to anndata.")
+
+    if output is not None:
+        adata.write_h5ad(output)
+        logger.info(f"Finished output to {output}.")
+
+    return adata
 
 # def check_file(path, prefix, suffix):
 #     filename = f"{path}/{prefix}{suffix}"

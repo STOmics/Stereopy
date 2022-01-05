@@ -8,6 +8,7 @@ from stereo.algorithm.pysctransform import get_hvg_residuals, vst
 # from stereo.core.stereo_exp_data import StereoExpData
 from scipy.sparse import issparse, csr_matrix
 import numpy as np
+import pandas as pd
 
 
 def sc_transform(
@@ -51,8 +52,11 @@ def sc_transform(
         n_genes=n_genes,
         threads=4,
         exclude_poisson=exclude_poisson,
+        correct_counts=True,
     )
     residuals = vst_out['residuals'].T
+    corrected_counts = pd.DataFrame(vst_out['corrected_counts'].T.toarray(), index=residuals.index,
+                                    columns=residuals.columns)
     if filter_hvgs:
         residuals = get_hvg_residuals(vst_out, var_features_n, res_clip_range)
     # return_data = StereoExpData(
@@ -63,4 +67,6 @@ def sc_transform(
     data.exp_matrix = residuals.values
     gene_index = np.isin(data.gene_names, np.array(residuals.columns))
     data.genes = data.genes.sub_set(gene_index)
+    vst_out['filtered_corrected_counts'] = corrected_counts.loc[:, gene_index]
+    vst_out['filtered_normalized_counts'] = np.log1p(vst_out['filtered_corrected_counts'])
     return data, vst_out
