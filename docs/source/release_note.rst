@@ -3,6 +3,13 @@ Release Notes
 
 .. role:: small
 
+Version 0.3.0
+-----------
+0.2.2 :2021-12-31
+~~~~~~~~~~~~~~~~~~~~~~~
+1. Add cell segmentation and tissuecut segmentation function.
+
+
 Version 0.2.2
 -----------
 0.2.2 :2021-11-17

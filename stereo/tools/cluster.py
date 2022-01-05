@@ -16,12 +16,10 @@ from ..core.tool_base import ToolBase
 from ..log_manager import logger
 from stereo.algorithm.neighbors import Neighbors
 from ..preprocess.normalize import Normalizer
-from .dim_reduce import DimReduce
 import pandas as pd
 from typing import Optional
-from ..plots.scatter import base_scatter, plt
 import colorcet as cc
-# import phenograph
+import phenograph
 
 
 class Cluster(ToolBase):
@@ -91,6 +89,8 @@ class Cluster(ToolBase):
         return self.nor_x
 
     def run_dim_reduce(self):
+        from .dim_reduce import DimReduce
+
         dim_reduce = DimReduce(self.data, method=self.dim_reduce_method, n_pcs=self.n_pcs, n_iter=self.n_iter,
                                n_neighbors=self.neighbors, min_dist=self.min_dist)
         dim_reduce.fit(self.nor_x)
@@ -193,6 +193,8 @@ class Cluster(ToolBase):
         :param file_path:
         :return:
         """
+        from ..plots.scatter import base_scatter, plt
+
         if plot_dim_reduce:
             base_scatter(self.pca_x.values[:, 0], self.pca_x.values[:, 1],
                          hue=np.array(self.result['cluster']))

@@ -9,18 +9,16 @@ change log:
     2021/06/20 adjust for restructure base class . by: qindanhua.
     2021/06/29 last modified by qindanhua.
 """
-
+import time
 import numpy as np
 import leidenalg as la
 from ..core.tool_base import ToolBase
 from ..log_manager import logger
 from stereo.algorithm.neighbors import Neighbors
 from ..preprocess.normalize import Normalizer
-from .dim_reduce import DimReduce
+# from .dim_reduce import DimReduce
 import pandas as pd
 from typing import Optional
-from ..plots.scatter import base_scatter, plt
-import colorcet as cc
 
 
 class Clustering(ToolBase):
@@ -112,6 +110,8 @@ class Clustering(ToolBase):
         if self.pca_x.is_empty:
             # TODO normalize or not if set Clustering().normalization = True and self.pca_x.is_empty if False.
             nor_x = self.run_normalize() if self.normalization else self.data.exp_matrix
+            from .dim_reduce import DimReduce
+
             dim_reduce = DimReduce(self.data, method='pca', n_pcs=self.neighbors)
             dim_reduce.fit(nor_x)
             self.pca_x = dim_reduce.result
@@ -190,6 +190,8 @@ class Clustering(ToolBase):
         :param file_path:
         :return:
         """
+        from ..plots.scatter import base_scatter, plt
+
         if plot_dim_reduce:
             base_scatter(self.pca_x.matrix.values[:, 0], self.pca_x.matrix.values[:, 1],
                          hue=np.array(self.result.matrix['cluster']))

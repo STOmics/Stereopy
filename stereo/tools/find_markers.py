@@ -18,7 +18,6 @@ from ..log_manager import logger
 from tqdm import tqdm
 from typing import Union, Sequence
 import numpy as np
-from ..plots.marker_genes import marker_genes_text, marker_genes_heatmap
 from scipy import stats
 from ..algorithm import mannwhitneyu, statistics
 
@@ -184,6 +183,8 @@ class FindMarker(ToolBase):
                          ascend: bool = False,
                          fontsize: int = 8,
                          ncols: int = 4, ):
+        from ..plots.marker_genes import marker_genes_text
+
         marker_genes_text(self.result, groups, markers_num, sort_key, ascend, fontsize, ncols)
 
     def plot_heatmap(self,
@@ -197,6 +198,8 @@ class FindMarker(ToolBase):
                      min_value=None,
                      max_value=None,
                      gene_list=None, do_log=True):
+        from ..plots.marker_genes import marker_genes_heatmap
+
         marker_genes_heatmap(data=self.data, cluster_res=self.groups, marker_res=self.result,
                              markers_num=markers_num, sort_key=sort_key, ascend=ascend, show_labels=show_labels,
                              show_group=show_group, show_group_txt=show_group_txt,
