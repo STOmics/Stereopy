@@ -25,11 +25,11 @@ def cell_cluster(gef_file, bin_size):
     :return: StereoExpData.
     """
     data = st.io.read_gef(gef_file, bin_size)
-    if issparse(data.exp_matrix):
-        data.exp_matrix = data.exp_matrix.toarray()
     data.tl.cal_qc()
     data.tl.filter_cells(min_gene=0)
     data.tl.raw_checkpoint()
+    if issparse(data.exp_matrix):
+        data.exp_matrix = data.exp_matrix.toarray()
     data.tl.normalize_total()
     data.tl.log1p()
     data.tl.highly_variable_genes(min_mean=0.0125, max_mean=3, min_disp=0.5, res_key='raw_highly_variable_genes')

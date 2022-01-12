@@ -397,6 +397,4 @@ def cellInfer(model_path, file, size, overlap=100):
 
         merge_label = merge(label_list, x_list, y_list, image[:, :, 0].shape)
         result.append(merge_label)
-
-
     return result
