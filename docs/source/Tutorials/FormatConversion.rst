@@ -20,20 +20,13 @@ parameters
 If you want to converted the output_h5ad into the rds file, please set flavor='seurat'.
 
 :param sample_id: name of sample.
-Only when flavor == 'seurat', this will be set as 'orig.ident' in adata.obs.
-
-When flavor='scanpy', this parameter is useless.
+this will be set as 'orig.ident' in adata.obs.
 
 :param reindex: whether to reindex the cell.
-Only when flavor='seurat', if you set reindex=True, it will combine the sample_id and position information to build
-the new cell index automatically. Otherwise, index won't be changed in this step.
-
 The new index looks like "{sample_id}:{position_x}_{position_y}" format.
 
-When flavor='scanpy', this parameter is useless.
-
 :param output: Default is None
-If None, it will return a Anndata object, but not generate a h5ad file.
+If None, it will return an Anndata object, but not generate a h5ad file.
 
 :return: Anndata object
 

@@ -34,6 +34,7 @@ if(length(Stdata@misc$sct_data)>0){
 
 	Stdata@assays$SCT@counts=Stdata@misc$sct_counts
 	Stdata@assays$SCT@counts@Dimnames=Stdata@assays$Spatial@counts@Dimnames
+	DefaultAssay(Stdata)<-"SCT"
 }
 ##增加image
 ##

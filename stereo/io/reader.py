@@ -228,9 +228,8 @@ def stereo_to_anndata(data: StereoExpData, flavor='scanpy', sample_id="sample", 
     :param data: StereoExpData object
     :param flavor: 'scanpy' or 'seurat'.
     if you want to converted the output_h5ad into h5seurat for seurat, please set 'seurat'.
-    :param sample_id: when flavor == 'seurat', this will be set as 'orig.ident'
-    :param reindex: when flavor=='seurat', if True, the cell index will be reindex as
-    "{sample_id}:{position_x}_{position_y}" format.
+    :param sample_id: sample name, which will be set as 'orig.ident' in obs.
+    :param reindex: if True, the cell index will be reindex as "{sample_id}:{position_x}_{position_y}" format.
     :param output: path of output_file.
     :return: Anndata object
     """
@@ -250,10 +249,9 @@ def stereo_to_anndata(data: StereoExpData, flavor='scanpy', sample_id="sample", 
     if data.position is not None:
         logger.info(f"Adding data.position as adata.obsm['spatial'] .")
         adata.obsm['spatial'] = data.position
-        if flavor == 'seurat':
-            logger.info(f"Adding data.position as adata.obs['x'] and adata.obs['y'] .")
-            adata.obs['x'] = pd.DataFrame(data.position[:, 0], index=data.cell_names.astype('str'))
-            adata.obs['y'] = pd.DataFrame(data.position[:, 1], index=data.cell_names.astype('str'))
+        logger.info(f"Adding data.position as adata.obs['x'] and adata.obs['y'] .")
+        adata.obs['x'] = pd.DataFrame(data.position[:, 0], index=data.cell_names.astype('str'))
+        adata.obs['y'] = pd.DataFrame(data.position[:, 1], index=data.cell_names.astype('str'))
 
     for key in data.tl.key_record.keys():
         if len(data.tl.key_record[key]) > 0:
@@ -316,13 +314,14 @@ def stereo_to_anndata(data: StereoExpData, flavor='scanpy', sample_id="sample", 
                             )
         adata.raw = raw_adata
 
-    if flavor == 'seurat' and reindex:
-        ##sample id
-        logger.info(f"Adding {sample_id} in adata.obs['orig.ident'] and reindex.")
-        adata.obs['orig.ident'] = pd.Categorical([sample_id] * adata.obs.shape[0], categories=[sample_id])
-        new_ix = (adata.obs['orig.ident'].astype(str) + ":" + adata.obs['x'].astype(str) + "_" + adata.obs['y'].astype(
-            str)).to_list()
+    ##sample id
+    logger.info(f"Adding {sample_id} in adata.obs['orig.ident'] and reindex.")
+    adata.obs['orig.ident'] = pd.Categorical([sample_id] * adata.obs.shape[0], categories=[sample_id])
+    if reindex:
+        new_ix = (adata.obs['orig.ident'].astype(str) + ":" + adata.obs['x'].astype(str) + "_" +
+                  adata.obs['y'].astype(str)).to_list()
         adata.obs.index = new_ix
+    if flavor == 'seurat':
         adata.obs.rename(columns={'total_counts': "nCount_Spatial", "n_genes_by_counts": "nFeature_Spatial",
                                   "pct_counts_mt": 'percent.mito'}, inplace=True)
 
