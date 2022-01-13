@@ -15,8 +15,6 @@ change log:
 import pandas as pd
 # from stereo.log_manager import logger
 from stereo.core.tool_base import ToolBase
-from ..algorithm.dim_reduce import low_variance, factor_analysis, pca, t_sne, u_map
-from ..plots.scatter import plt, base_scatter, multi_scatter
 import numpy as np
 from typing import Optional
 
@@ -95,6 +93,9 @@ class DimReduce(ToolBase):
             raise ValueError(f'{self.n_iter} should be int type')
 
     def fit(self, exp_matrix=None):
+
+        from ..algorithm.dim_reduce import low_variance, factor_analysis, pca, t_sne, u_map
+
         self._check_params()
         exp_matrix = exp_matrix if exp_matrix is not None else self.data.exp_matrix
         if self.method == 'low_variance':
@@ -115,63 +116,6 @@ class DimReduce(ToolBase):
         return self.result
         # self.add_result(result=self.result, key_added=self.name)
 
-    @staticmethod
-    def low_variance(x, threshold):
-        """
-        filter the features which have low variance between the samples.
-        """
-        return low_variance(x=x, threshold=threshold)
-
-    @staticmethod
-    def factor_analysis(x, n_pcs):
-        """
-        used to describe variability among observed
-        """
-        return factor_analysis(x=x, n_pcs=n_pcs)
-
-    @staticmethod
-    def t_sne(x, n_pcs, n_iter: int = 200):
-        """
-        t sne: t-distributed stochastic neighbor embedding, is a statistical method for visualizing high-dimensional
-        data by giving each datapoint a location in a two or three-dimensional map.
-
-        :param x: ndarray, shape (M, N)
-        :param n_pcs: the number of principal component.
-        :param n_iter: the number of iterators.
-        :return:  ndarray of shape (n_samples, n_components) Embedding of the training data in low-dimensional space.
-        """
-        return t_sne(x=x, n_pcs=n_pcs, n_iter=n_iter)
-
-    @staticmethod
-    def u_map(x, n_pcs, n_neighbors=5, min_dist=0.3):
-        """
-        UMAP package: Uniform Manifold Approximation and Projection for Dimension Reduction.
-
-        :param x: ndarray
-        :param n_pcs: number of principal component
-        :param n_neighbors: number of neighbors
-        :param min_dist: the minus value of distance.
-        :return: ndarray of shape (n_samples, n_components) Embedding of the training data in low-dimensional space.
-        """
-        return u_map(x, n_pcs, n_neighbors=n_neighbors, min_dist=min_dist)
-
-    @staticmethod
-    def pca(x, n_pcs):
-        """
-        Principal component analysis.
-
-        Examples
-        --------
-
-        >>> import numpy as np
-        >>> DimReduce().pca(np.array([[1, 2], [1, 4], [1, 0], [10, 2], [10, 4], [10, 0]]), n_pcs=2)
-
-        :param x: ndarray
-        :param n_pcs: number of principal component
-        :return: {'x_pca': array([]), 'variance': array([]), 'variance_ratio': array([]), 'pcs': array([])}
-        """
-        return pca(x, n_pcs)
-
     def plot_scatter(self,
                      gene_name: Optional[list],
                      file_path=None):
@@ -184,6 +128,8 @@ class DimReduce(ToolBase):
         # from scipy.sparse import issparse
         # if issparse(self.data.exp_matrix):
         #     self.data.exp_matrix = self.data.exp_matrix.toarray()
+        from ..plots.scatter import plt, base_scatter, multi_scatter
+
         self.data.sparse2array()
         if len(gene_name) > 1:
             multi_scatter(self.result.matrix.values[:, 0], self.result.matrix.values[:, 1],

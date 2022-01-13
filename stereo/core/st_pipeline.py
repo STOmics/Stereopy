@@ -24,6 +24,16 @@ import pandas as pd
 from ..algorithm.leiden import leiden as le
 from ..algorithm._louvain import louvain as lo
 from typing_extensions import Literal
+from ..log_manager import logger
+
+
+def logit(func):
+    def wrapped(*args, **kwargs):
+        logger.info('start to run {}...'.format(func.__name__))
+        res = func(*args, **kwargs)
+        logger.info('{} end.'.format(func.__name__))
+        return res
+    return wrapped
 
 
 class StPipeline(object):
@@ -82,6 +92,7 @@ class StPipeline(object):
         else:
             self.key_record[key] = [res_key]
 
+    @logit
     def cal_qc(self):
         """
         calculate three qc index including the number of genes expressed in the count matrix, the total counts per cell
@@ -91,6 +102,7 @@ class StPipeline(object):
         """
         cal_qc(self.data)
 
+    @logit
     def filter_cells(self, min_gene=None, max_gene=None, min_n_genes_by_counts=None, max_n_genes_by_counts=None,
                      pct_counts_mt=None, cell_list=None, inplace=True):
         """
@@ -105,9 +117,11 @@ class StPipeline(object):
         :param inplace: whether inplace the original data or return a new data.
         :return:
         """
-        return filter_cells(self.data, min_gene, max_gene, min_n_genes_by_counts, max_n_genes_by_counts, pct_counts_mt,
+        data = filter_cells(self.data, min_gene, max_gene, min_n_genes_by_counts, max_n_genes_by_counts, pct_counts_mt,
                             cell_list, inplace)
+        return data
 
+    @logit
     def filter_genes(self, min_cell=None, max_cell=None, gene_list=None, inplace=True):
         """
         filter genes based on the numbers of cells.
@@ -118,8 +132,10 @@ class StPipeline(object):
         :param inplace: whether inplace the original data or return a new data.
         :return:
         """
-        return filter_genes(self.data, min_cell, max_cell, gene_list, inplace)
+        data = filter_genes(self.data, min_cell, max_cell, gene_list, inplace)
+        return data
 
+    @logit
     def filter_coordinates(self, min_x=None, max_x=None, min_y=None, max_y=None, inplace=True):
         """
         filter cells based on the coordinates of cells.
@@ -131,8 +147,10 @@ class StPipeline(object):
         :param inplace: whether inplace the original data or return a new data.
         :return:
         """
-        return filter_coordinates(self.data, min_x, max_x, min_y, max_y, inplace)
+        data = filter_coordinates(self.data, min_x, max_x, min_y, max_y, inplace)
+        return data
 
+    @logit
     def log1p(self, inplace=True, res_key='log1p'):
         """
         log1p for express matrix.
@@ -146,6 +164,7 @@ class StPipeline(object):
         else:
             self.result[res_key] = np.log1p(self.data.exp_matrix)
 
+    @logit
     def normalize_total(self, target_sum=10000, inplace=True, res_key='normalize_total'):
         """
         total count normalize the data to `target_sum` reads per cell, so that counts become comparable among cells.
@@ -160,6 +179,7 @@ class StPipeline(object):
         else:
             self.result[res_key] = normalize_total(self.data.exp_matrix, target_sum=target_sum)
 
+    @logit
     def quantile(self, inplace=True, res_key='quantile'):
         """
         Normalize the columns of X to each have the same distribution. Given an expression matrix  of M genes by N
@@ -176,6 +196,7 @@ class StPipeline(object):
         else:
             self.result[res_key] = quantile_norm(self.data.exp_matrix)
 
+    @logit
     def disksmooth_zscore(self, r=20, inplace=True, res_key='disksmooth_zscore'):
         """
         for each position, given a radius, calculate the z-score within this circle as final normalized value.
@@ -192,6 +213,7 @@ class StPipeline(object):
         else:
             self.result[res_key] = zscore_disksmooth(self.data.exp_matrix, self.data.position, r)
 
+    @logit
     def sctransform(self,
                     method="theta_ml",
                     n_cells=5000,
@@ -229,6 +251,7 @@ class StPipeline(object):
         key = 'sct'
         self.reset_key_record(key, res_key)
 
+    @logit
     def highly_variable_genes(self,
                          groups=None,
                          method: Optional[str] = 'seurat',
@@ -294,6 +317,7 @@ class StPipeline(object):
         data.sub_by_index(gene_index=genes_index)
         return data
 
+    @logit
     def pca(self, use_highly_genes, n_pcs, hvg_res_key='highly_variable_genes', res_key='pca'):
         """
         Principal component analysis.
@@ -319,6 +343,7 @@ class StPipeline(object):
     #     res = u_map(x, 2, n_neighbors, min_dist)
     #     self.result[res_key] = pd.DataFrame(res)
 
+    @logit
     def umap(self,
              pca_res_key,
              neighbors_res_key,
@@ -374,6 +399,7 @@ class StPipeline(object):
         key = 'umap'
         self.reset_key_record(key, res_key)
 
+    @logit
     def neighbors(self, pca_res_key, method='umap', metric='euclidean', n_pcs=None, n_neighbors=10, knn=True,
                   res_key='neighbors'):
         """
@@ -437,6 +463,7 @@ class StPipeline(object):
         nn_dist = neighbors_res['nn_dist']
         return neighbor, connectivities, nn_dist
 
+    @logit
     def spatial_neighbors(self, neighbors_res_key, n_neighbors=6, res_key='spatial_neighbors'):
         """
         Create a graph from spatial coordinates using squidpy.
@@ -459,6 +486,7 @@ class StPipeline(object):
         key = 'neighbors'
         self.reset_key_record(key, res_key)
 
+    @logit
     def leiden(self,
                neighbors_res_key,
                res_key='cluster',
@@ -494,6 +522,7 @@ class StPipeline(object):
         key = 'cluster'
         self.reset_key_record(key, res_key)
 
+    @logit
     def louvain(self,
                 neighbors_res_key,
                 res_key='cluster',
@@ -528,6 +557,7 @@ class StPipeline(object):
         key = 'cluster'
         self.reset_key_record(key, res_key)
 
+    @logit
     def phenograph(self, phenograph_k, pca_res_key, res_key='cluster'):
         """
         phenograph of cluster.
@@ -539,13 +569,14 @@ class StPipeline(object):
         """
         if pca_res_key not in self.result:
             raise Exception(f'{pca_res_key} is not in the result, please check and run the pca func.')
-        communities, _, _ = phe.cluster(self.result[pca_res_key], k=phenograph_k)
+        communities, _, _ = phe.cluster(self.result[pca_res_key], k=phenograph_k, clustering_algo='leiden')
         clusters = communities.astype(str)
         df = pd.DataFrame({'bins': self.data.cell_names, 'group': clusters})
         self.result[res_key] = df
         key = 'cluster'
         self.reset_key_record(key,res_key)
 
+    @logit
     def find_marker_genes(self,
                           cluster_res_key,
                           method: str = 't_test',
@@ -588,6 +619,7 @@ class StPipeline(object):
         key = 'marker_genes'
         self.reset_key_record(key, res_key)
 
+    @logit
     def spatial_lag(self,
                     cluster_res_key,
                     genes=None,
@@ -614,6 +646,7 @@ class StPipeline(object):
         tool.fit()
         self.result[res_key] = tool.result
 
+    @logit
     def spatial_pattern_score(self, use_raw=True, res_key='spatial_pattern'):
         """
         calculate the spatial pattern score.
@@ -632,6 +665,7 @@ class StPipeline(object):
         res = spatial_pattern_score(df)
         self.result[res_key] = res
 
+    @logit
     def spatial_hotspot(self, use_highly_genes=True, hvg_res_key:Optional[str] = None, model='normal', n_neighbors=30,
                         n_jobs=20, fdr_threshold=0.05, min_gene_threshold=10, outdir=None, res_key='spatial_hotspot',
                         use_raw=True, ):
@@ -677,27 +711,27 @@ class StPipeline(object):
         #        "module_scores": hs.module_scores}
         self.result[res_key] = hs
 
-    def scenic(self, tfs, motif, database_dir, res_key='scenic', use_raw=True, outdir=None,):
-        """
-
-        :param tfs: tfs file in txt format
-        :param motif: motif file in tbl format
-        :param database_dir: directory containing reference database(*.feather files) from cisTarget.
-        :param res_key: the key for getting the result from the self.result.
-        :param use_raw: whether use the raw count express matrix for the analysis, default True.
-        :param outdir: directory containing output files(including modules.pkl, regulons.csv, adjacencies.tsv,
-            motifs.csv). If None, results will not be output to files.
-
-        :return:
-        """
-        from ..algorithm.scenic import scenic as cal_sce
-        if use_raw and not self.raw:
-            raise Exception(f'self.raw must be set if use_raw is True.')
-        data = self.raw if use_raw else self.data
-        modules, regulons, adjacencies, motifs, auc_mtx, regulons_df = cal_sce(data, tfs, motif, database_dir, outdir)
-        res = {"modules": modules, "regulons": regulons, "adjacencies": adjacencies, "motifs": motifs,
-               "auc_mtx":auc_mtx, "regulons_df": regulons_df}
-        self.result[res_key] = res
+    # def scenic(self, tfs, motif, database_dir, res_key='scenic', use_raw=True, outdir=None,):
+    #     """
+    #
+    #     :param tfs: tfs file in txt format
+    #     :param motif: motif file in tbl format
+    #     :param database_dir: directory containing reference database(*.feather files) from cisTarget.
+    #     :param res_key: the key for getting the result from the self.result.
+    #     :param use_raw: whether use the raw count express matrix for the analysis, default True.
+    #     :param outdir: directory containing output files(including modules.pkl, regulons.csv, adjacencies.tsv,
+    #         motifs.csv). If None, results will not be output to files.
+    #
+    #     :return:
+    #     """
+    #     from ..algorithm.scenic import scenic as cal_sce
+    #     if use_raw and not self.raw:
+    #         raise Exception(f'self.raw must be set if use_raw is True.')
+    #     data = self.raw if use_raw else self.data
+    #     modules, regulons, adjacencies, motifs, auc_mtx, regulons_df = cal_sce(data, tfs, motif, database_dir, outdir)
+    #     res = {"modules": modules, "regulons": regulons, "adjacencies": adjacencies, "motifs": motifs,
+    #            "auc_mtx":auc_mtx, "regulons_df": regulons_df}
+    #     self.result[res_key] = res
 
 
 

@@ -76,8 +76,6 @@ scatter
    plots.scatter.base_scatter
    plots.scatter.volcano
    plots.scatter.highly_variable_genes
-   plots.genes_count
-   plots.spatial_distribution
 
 
 interactive plot
@@ -97,3 +95,21 @@ others
    plots.violin_distribution
    plots.marker_genes_text
    plots.marker_genes_heatmap
+
+
+
+
+image: `im`
+-------------------
+
+Image parse module.
+
+.. autosummary::
+   :toctree: .
+
+    image.merge_pyramid
+    image.create_pyramid
+    image.cell_seg
+    image.cell_seg_deepcell
+    image.tissue_seg
+

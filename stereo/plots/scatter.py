@@ -40,7 +40,7 @@ def base_scatter(
         show_ticks=False,
         vmin=None,
         vmax=None,
-        SegmentedColormap = None,
+        SegmentedColormap=None,
 ):  # scatter plot, 聚类后表达矩阵空间分布
     """
     scatter plotter
@@ -77,8 +77,8 @@ def base_scatter(
         cmap = ListedColormap(colors)
         cmap.set_bad(bad_color)
 
-        sns.scatterplot(x=x, y=y, hue=hue, ax=ax, palette=cmap, size=hue, sizes=(dot_size, dot_size), vmin=vmin,
-                        vmax=vmax)
+        sns.scatterplot(x=x, y=y, hue=hue, ax=ax, palette=cmap, size=hue, linewidth=0, marker="s",
+                        sizes=(dot_size, dot_size), vmin=vmin, vmax=vmax)
         if vmin is None and vmax is None:
             norm = plt.Normalize(hue.min(), hue.max())
             sm = plt.cm.ScalarMappable(cmap=cmap, norm=norm)
@@ -91,8 +91,8 @@ def base_scatter(
         g = natsorted(set(hue))
         colors = conf.get_colors(palette)
         color_dict = collections.OrderedDict(dict([(g[i], colors[i]) for i in range(len(g))]))
-        sns.scatterplot(x=x, y=y, hue=hue, hue_order=g,
-                        palette=color_dict, size=hue, sizes=(dot_size, dot_size),  ax=ax)
+        sns.scatterplot(x=x, y=y, hue=hue, hue_order=g, linewidth=0, marker="s",
+                        palette=color_dict, size=hue, sizes=(dot_size, dot_size), ax=ax)
         handles, labels = ax.get_legend_handles_labels()
         ax.legend_.remove()
         ax.legend(handles, labels, ncol=legend_ncol, bbox_to_anchor=(1.02, 1),
@@ -298,7 +298,7 @@ def highly_variable_genes(
     fig = plt.figure(figsize=(12, 6))
     ax1 = fig.add_subplot(121)
     ax2 = fig.add_subplot(122)
-    sns.scatterplot(x="means", y=y_label+'_norm',
+    sns.scatterplot(x="means", y=y_label + '_norm',
                     hue='gene type',
                     hue_order=('highly variable genes', 'other genes'),
                     palette=("black", "#ccc"),

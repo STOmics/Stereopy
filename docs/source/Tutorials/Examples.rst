@@ -2,11 +2,27 @@ Examples
 ============
 This section contains various short examples.
 
+Interactive
+-----------
+This section contains various examples for the interactive plots.
 
-.. toctree::
-    :caption: Examples
-    :maxdepth: 2
+.. nbgallery::
 
     interactive_cluster
-    quick_start_v0.22
 
+Image
+------
+This section contains various examples from the :mod:`stereo.im` module.
+
+.. nbgallery::
+
+    cell_segmentation
+    tissue_cut
+
+Format Conversion
+-----------------
+This section contains various short examples of format conversion.
+
+.. nbgallery::
+
+    FormatConversion

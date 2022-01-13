@@ -454,6 +454,7 @@ def view_bar(message, id, total, end=''):
 
 
 def split(image, cut_size, overlap=100):
+    image = np.array(image)
     shapes = image.shape
     x_nums = int(shapes[0] / (cut_size - overlap))
     y_nums = int(shapes[1] / (cut_size - overlap))
@@ -467,6 +468,8 @@ def split(image, cut_size, overlap=100):
             x_end = min(x_begin + cut_size, shapes[0])
             y_end = min(y_begin + cut_size, shapes[1])
             i = image[x_begin: x_end, y_begin: y_end]
+            if i.shape[0] < 255 or i.shape[1] < 255:
+                continue
             # tifffile.imsave(os.path.join(outpath, file + '_' + str(shapes[0]) + '_' + str(shapes[1]) + '_' + str(x_begin) + '_' + str(y_begin) + '.tif'), i)  #, r'white_5000'r'20210326_other_crop'
             x_list.append(x_begin)
             y_list.append(y_begin)
@@ -474,7 +477,7 @@ def split(image, cut_size, overlap=100):
     return img_list, x_list, y_list
 
 
-def merge(label_list, x_list, y_list, shapes,  overlap = 100):
+def merge(label_list, x_list, y_list, shapes,  overlap=100, type=np.uint8):
 
     if len(label_list) == 1:
         return label_list[0]
@@ -482,7 +485,7 @@ def merge(label_list, x_list, y_list, shapes,  overlap = 100):
     if not isinstance(label_list, list):
         return label_list
 
-    image = np.zeros((int(shapes[0]), int(shapes[1])), dtype=np.uint8)
+    image = np.zeros((int(shapes[0]), int(shapes[1])), dtype=type)
     for index, temp_img in enumerate(label_list):
         info = [x_list[index], y_list[index]]
         h, w = temp_img.shape

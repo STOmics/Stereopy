@@ -1,16 +1,11 @@
 Format Conversion
 ============
-This section contains various short examples.
+This section contains various short examples of format conversion.
 
 StereoExpData to Anndata
 -------------------
-The io module provides the function to convert the StereoExpData into anndata format and output the
+The io module provides the function :mod:`stereo.io.stereo_to_anndata` to convert the StereoExpData into anndata format and output the
 corresponding h5ad file(.h5ad).
-
-.. autosummary::
-   :toctree: .
-
-    io.stereo_to_anndata
 
 parameters
 ~~~~~~~~
@@ -32,15 +27,12 @@ If None, it will return an Anndata object, but not generate a h5ad file.
 
 h5ad to rds file
 ----------------------------------
-The output h5ad could be converted into rds file by annh5ad2rds.R.
+The output h5ad could be converted into rds file by `annh5ad2rds.R <https://github.com/BGIResearch/stereopy/blob/dev/docs/source/_static/annh5adrds.R>`_.
 
 It will generate a h5seurat file at first and then generate a rds file.
 
-You can run this script in your own R environment.
+You can run this script in your own R environment:
 
-.. autosummary::
-   :toctree: .
-
-    utils.annh5ad2rds.R
+.. code:: bash
 
     Rscript annh5ad2rds.R --infile <h5ad file> --outfile <rds file>

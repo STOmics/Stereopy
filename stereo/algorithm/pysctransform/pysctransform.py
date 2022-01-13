@@ -79,7 +79,7 @@ def robust_scale(x):
 
 def robust_scale_binned(y, x, breaks):
     bins = pd.cut(x=x, bins=breaks, ordered=True)
-
+    bins = pd.Series(data=[i for i in bins], dtype='category')
     # categories = bins.categories
     # bins = npy.digitize(x=x, bins=breaks)
     df = pd.DataFrame({"x": y, "bins": bins})
