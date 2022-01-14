@@ -3,12 +3,13 @@ Release Notes
 
 .. role:: small
 
-Version 0.3.0
+Version 0.2.3
 -----------
-0.2.2 :2021-12-31
+0.2.3 :2022-01-14
 ~~~~~~~~~~~~~~~~~~~~~~~
 1. Add cell segmentation and tissuecut segmentation function.
-
+2. Update stereo_to_anndata function and support output to h5ad file.
+3. Add the Rscript supporting h5ad file(with anndata object) to rds file.
 
 Version 0.2.2
 -----------
