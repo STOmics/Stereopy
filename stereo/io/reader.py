@@ -230,7 +230,7 @@ def stereo_to_anndata(data: StereoExpData, flavor='scanpy', sample_id="sample", 
     if you want to convert the output_h5ad into h5seurat for seurat, please set 'seurat'.
     :param sample_id: sample name, which will be set as 'orig.ident' in obs.
     :param reindex: if True, the cell index will be reindex as "{sample_id}:{position_x}_{position_y}" format.
-    :param output: path of output_file.
+    :param output: path of output_file(.h5ad).
     :return: Anndata object
     """
     from scipy.sparse import issparse

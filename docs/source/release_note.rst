@@ -10,6 +10,7 @@ Version 0.2.3
 1. Add cell segmentation and tissuecut segmentation function.
 2. Update stereo_to_anndata function and support output to h5ad file.
 3. Add the Rscript supporting h5ad file(with anndata object) to rds file.
+4. Support DEG output to the csv file.
 
 Version 0.2.2
 -----------
