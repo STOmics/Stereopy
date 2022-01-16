@@ -244,11 +244,16 @@ def stereo_to_anndata(data: StereoExpData, flavor='scanpy', sample_id="sample", 
     adata = AnnData(X=exp,
                     obs=cells,
                     var=genes,
+                    #uns={'neighbors': {'connectivities_key': 'None','distance_key': 'None'}},
                     )
+    ##sample id
+    logger.info(f"Adding {sample_id} in adata.obs['orig.ident'].")
+    adata.obs['orig.ident'] = pd.Categorical([sample_id] * adata.obs.shape[0], categories=[sample_id])
 
     if data.position is not None:
         logger.info(f"Adding data.position as adata.obsm['spatial'] .")
         adata.obsm['spatial'] = data.position
+        #adata.obsm['X_spatial'] = data.position
         logger.info(f"Adding data.position as adata.obs['x'] and adata.obs['y'] .")
         adata.obs['x'] = pd.DataFrame(data.position[:, 0], index=data.cell_names.astype('str'))
         adata.obs['y'] = pd.DataFrame(data.position[:, 1], index=data.cell_names.astype('str'))
@@ -264,9 +269,13 @@ def stereo_to_anndata(data: StereoExpData, flavor='scanpy', sample_id="sample", 
                     adata.var[i] = data.tl.result[res_key][i]
             elif key == 'sct':
                 res_key = data.tl.key_record[key][-1]
-                logger.info(f"Adding data.tl.result['{res_key}'] in adata.uns['sct_'] .")
-                adata.uns['sct_counts'] = csr_matrix(data.tl.result[res_key][1]['filtered_corrected_counts'])
-                adata.uns['sct_data'] = csr_matrix(data.tl.result[res_key][1]['filtered_normalized_counts'])
+                #adata.uns[res_key] = {}
+                if flavor == 'seurat' and len(data.tl.key_record['neighbors']) == 10:
+                    continue
+                else:
+                    logger.info(f"Adding data.tl.result['{res_key}'] in adata.uns['sct_'] .")
+                    adata.uns['sct_counts'] = csr_matrix(data.tl.result[res_key][1]['filtered_corrected_counts'])
+                    adata.uns['sct_data'] = csr_matrix(data.tl.result[res_key][1]['filtered_normalized_counts'])
 
             elif key in ['pca', 'umap', 'tsne']:
                 # pca :we do not keep variance and PCs(for varm which will be into feature.finding in pca of seurat.)
@@ -314,17 +323,18 @@ def stereo_to_anndata(data: StereoExpData, flavor='scanpy', sample_id="sample", 
                             )
         adata.raw = raw_adata
 
-    ##sample id
-    logger.info(f"Adding {sample_id} in adata.obs['orig.ident'] and reindex.")
-    adata.obs['orig.ident'] = pd.Categorical([sample_id] * adata.obs.shape[0], categories=[sample_id])
     if reindex:
+        logger.info(f"Reindex.")
         new_ix = (adata.obs['orig.ident'].astype(str) + ":" + adata.obs['x'].astype(str) + "_" +
                   adata.obs['y'].astype(str)).to_list()
         adata.obs.index = new_ix
     if flavor == 'seurat':
+        logger.info(f"Rename QC info.")
         adata.obs.rename(columns={'total_counts': "nCount_Spatial", "n_genes_by_counts": "nFeature_Spatial",
                                   "pct_counts_mt": 'percent.mito'}, inplace=True)
-
+        if 'X_pca' not in list(adata.obsm.keys()):
+            logger.info(f"Creating fake info. Please ignore X_ignore in your data.")
+            adata.obsm['X_ignore'] = np.zeros((adata.obs.shape[0], 2))
     logger.info(f"Finished conversion to anndata.")
 
     if output is not None:
