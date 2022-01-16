@@ -602,7 +602,7 @@ class StPipeline(object):
         :param use_highly_genes: Whether to use only the expression of hypervariable genes as input, default True.
         :param hvg_res_key: the key of highly varialbe genes to getting the result.
         :param res_key: the key for getting the result from the self.result.
-        :param output: file name for output.
+        :param output: file name for output. If None, do not generate the output file.
         :return:
         """
         from ..tools.find_markers import FindMarker
