@@ -5,7 +5,7 @@ Release Notes
 
 Version 0.2.3
 -----------
-0.2.3 :2022-01-14
+0.2.3 :2022-01-16
 ~~~~~~~~~~~~~~~~~~~~~~~
 1. Add cell segmentation and tissuecut segmentation function.
 2. Update stereo_to_anndata function and support output to h5ad file.

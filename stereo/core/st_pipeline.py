@@ -586,7 +586,8 @@ class StPipeline(object):
                           use_raw: bool = True,
                           use_highly_genes: bool = True,
                           hvg_res_key: Optional[str] = None,
-                          res_key: str = 'marker_genes'
+                          res_key: str = 'marker_genes',
+                          output: Optional[str] = None,
                           ):
         """
         a tool of finding maker gene. for each group, find statistical test different genes between one group and
@@ -601,6 +602,7 @@ class StPipeline(object):
         :param use_highly_genes: Whether to use only the expression of hypervariable genes as input, default True.
         :param hvg_res_key: the key of highly varialbe genes to getting the result.
         :param res_key: the key for getting the result from the self.result.
+        :param output: file name for output. If None, do not generate the output file.
         :return:
         """
         from ..tools.find_markers import FindMarker
@@ -616,6 +618,14 @@ class StPipeline(object):
         tool = FindMarker(data=data, groups=self.result[cluster_res_key], method=method, case_groups=case_groups,
                           control_groups=control_groups, corr_method=corr_method)
         self.result[res_key] = tool.result
+        if output is not None:
+            import natsort
+            result = self.result[res_key]
+            show_cols = ['scores', 'pvalues', 'pvalues_adj', 'log2fc', 'genes']
+            groups = natsort.natsorted(result.keys())
+            dat = pd.DataFrame(
+                {group.split(".")[0] + "_" + key: result[group][key] for group in groups for key in show_cols})
+            dat.to_csv(output)
         key = 'marker_genes'
         self.reset_key_record(key, res_key)
 
