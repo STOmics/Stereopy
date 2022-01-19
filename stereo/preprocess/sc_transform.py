@@ -67,6 +67,6 @@ def sc_transform(
     data.exp_matrix = residuals.values
     gene_index = np.isin(data.gene_names, np.array(residuals.columns))
     data.genes = data.genes.sub_set(gene_index)
-    vst_out['filtered_corrected_counts'] = corrected_counts.loc[:, gene_index]
+    vst_out['filtered_corrected_counts'] = corrected_counts.loc[:, residuals.columns]
     vst_out['filtered_normalized_counts'] = np.log1p(vst_out['filtered_corrected_counts'])
     return data, vst_out

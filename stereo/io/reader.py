@@ -270,12 +270,9 @@ def stereo_to_anndata(data: StereoExpData, flavor='scanpy', sample_id="sample", 
             elif key == 'sct':
                 res_key = data.tl.key_record[key][-1]
                 #adata.uns[res_key] = {}
-                if flavor == 'seurat' and len(data.tl.key_record['neighbors']) == 10:
-                    continue
-                else:
-                    logger.info(f"Adding data.tl.result['{res_key}'] in adata.uns['sct_'] .")
-                    adata.uns['sct_counts'] = csr_matrix(data.tl.result[res_key][1]['filtered_corrected_counts'])
-                    adata.uns['sct_data'] = csr_matrix(data.tl.result[res_key][1]['filtered_normalized_counts'])
+                logger.info(f"Adding data.tl.result['{res_key}'] in adata.uns['sct_'] .")
+                adata.uns['sct_counts'] = csr_matrix(data.tl.result[res_key][1]['filtered_corrected_counts'])
+                adata.uns['sct_data'] = csr_matrix(data.tl.result[res_key][1]['filtered_normalized_counts'])
 
             elif key in ['pca', 'umap', 'tsne']:
                 # pca :we do not keep variance and PCs(for varm which will be into feature.finding in pca of seurat.)

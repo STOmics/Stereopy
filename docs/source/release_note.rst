@@ -3,6 +3,12 @@ Release Notes
 
 .. role:: small
 
+Version 0.2.4
+------------------
+0.2.4 :2022-01-19
+~~~~~~~~~~~~~~~~~~~~~
+1.Fix bug of tar package
+
 Version 0.2.3
 -----------
 0.2.3 :2022-01-17
