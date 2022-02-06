@@ -217,8 +217,8 @@ class StPipeline(object):
     def sctransform(self,
                     method="theta_ml",
                     n_cells=5000,
-                    n_genes=2000,
-                    filter_hvgs=False,
+                    n_genes=None,
+                    filter_hvgs=True,
                     res_clip_range="seurat",
                     var_features_n=3000,
                     inplace=True,
@@ -228,7 +228,7 @@ class StPipeline(object):
 
         :param method: offset, theta_ml, theta_lbfgs, alpha_lbfgs.
         :param n_cells: Number of cells to use for estimating parameters in Step1: default is 5000.
-        :param n_genes: Number of genes to use for estimating parameters in Step1; default is 2000.
+        :param n_genes: Number of genes to use for estimating parameters in Step1; default is None, means all genes.
         :param filter_hvgs: bool.
         :param res_clip_range: string or list
                     options: 1)"seurat": Clips residuals to -sqrt(ncells/30), sqrt(ncells/30)

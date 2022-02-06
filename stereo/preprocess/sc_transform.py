@@ -15,8 +15,8 @@ def sc_transform(
         data,
         method="theta_ml",
         n_cells=5000,
-        n_genes=2000,
-        filter_hvgs=False,
+        n_genes=None,
+        filter_hvgs=True,
         res_clip_range="seurat",
         var_features_n=3000,
         threads=4
@@ -29,7 +29,7 @@ def sc_transform(
     :param n_cells: int
              Number of cells to use for estimating parameters in Step1: default is 5000
     :param n_genes: int
-             Number of genes to use for estimating parameters in Step1; default is 2000
+             Number of genes to use for estimating parameters in Step1; default is None, which means all genes.
     :param filter_hvgs: bool
     :param res_clip_range: string or list
                     options: 1)"seurat": Clips residuals to -sqrt(ncells/30), sqrt(ncells/30)
@@ -57,6 +57,8 @@ def sc_transform(
     residuals = vst_out['residuals'].T
     corrected_counts = pd.DataFrame(vst_out['corrected_counts'].T.toarray(), index=residuals.index,
                                     columns=residuals.columns)
+    vst_out['filtered_corrected_counts'] = corrected_counts.loc[:, residuals.columns]
+    vst_out['filtered_normalized_counts'] = np.log1p(vst_out['filtered_corrected_counts'])
     if filter_hvgs:
         residuals = get_hvg_residuals(vst_out, var_features_n, res_clip_range)
     # return_data = StereoExpData(
@@ -64,9 +66,9 @@ def sc_transform(
     #     position=data.partitions,
     #
     # )
+    new_ix = data.gene_names[(np.isin(data.gene_names, np.array(residuals.columns)))]
+    residuals = residuals.loc[:, new_ix]
     data.exp_matrix = residuals.values
     gene_index = np.isin(data.gene_names, np.array(residuals.columns))
     data.genes = data.genes.sub_set(gene_index)
-    vst_out['filtered_corrected_counts'] = corrected_counts.loc[:, residuals.columns]
-    vst_out['filtered_normalized_counts'] = np.log1p(vst_out['filtered_corrected_counts'])
     return data, vst_out

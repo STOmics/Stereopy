@@ -221,7 +221,7 @@ def anndata_to_stereo(andata: AnnData, use_raw=False, spatial_key: Optional[str]
     return data
 
 
-def stereo_to_anndata(data: StereoExpData, flavor='scanpy', sample_id="sample", reindex=False, output=None):
+def stereo_to_anndata(data, flavor='scanpy', sample_id="sample", reindex=False, output=None):
     """
     transform the StereoExpData object into Anndata object.
 
@@ -234,8 +234,9 @@ def stereo_to_anndata(data: StereoExpData, flavor='scanpy', sample_id="sample", 
     :return: Anndata object
     """
     from scipy.sparse import issparse
+
     exp = data.exp_matrix
-    #exp = data.exp_matrix.toarray() if issparse(data.exp_matrix) else data.exp_matrix
+    # exp = data.exp_matrix.toarray() if issparse(data.exp_matrix) else data.exp_matrix
     cells = data.cells.to_df()
     cells.dropna(axis=1, how='all', inplace=True)
     genes = data.genes.to_df()
@@ -244,7 +245,7 @@ def stereo_to_anndata(data: StereoExpData, flavor='scanpy', sample_id="sample", 
     adata = AnnData(X=exp,
                     obs=cells,
                     var=genes,
-                    #uns={'neighbors': {'connectivities_key': 'None','distance_key': 'None'}},
+                    # uns={'neighbors': {'connectivities_key': 'None','distance_key': 'None'}},
                     )
     ##sample id
     logger.info(f"Adding {sample_id} in adata.obs['orig.ident'].")
@@ -253,7 +254,7 @@ def stereo_to_anndata(data: StereoExpData, flavor='scanpy', sample_id="sample", 
     if data.position is not None:
         logger.info(f"Adding data.position as adata.obsm['spatial'] .")
         adata.obsm['spatial'] = data.position
-        #adata.obsm['X_spatial'] = data.position
+        # adata.obsm['X_spatial'] = data.position
         logger.info(f"Adding data.position as adata.obs['x'] and adata.obs['y'] .")
         adata.obs['x'] = pd.DataFrame(data.position[:, 0], index=data.cell_names.astype('str'))
         adata.obs['y'] = pd.DataFrame(data.position[:, 1], index=data.cell_names.astype('str'))
@@ -269,11 +270,13 @@ def stereo_to_anndata(data: StereoExpData, flavor='scanpy', sample_id="sample", 
                     adata.var[i] = data.tl.result[res_key][i]
             elif key == 'sct':
                 res_key = data.tl.key_record[key][-1]
-                #adata.uns[res_key] = {}
+                # adata.uns[res_key] = {}
                 logger.info(f"Adding data.tl.result['{res_key}'] in adata.uns['sct_'] .")
                 adata.uns['sct_counts'] = csr_matrix(data.tl.result[res_key][1]['filtered_corrected_counts'])
                 adata.uns['sct_data'] = csr_matrix(data.tl.result[res_key][1]['filtered_normalized_counts'])
-
+                adata.uns['sct_cellname'] = list(
+                    data.tl.result[res_key][1]['filtered_normalized_counts'].index.astype(str))
+                adata.uns['sct_genename'] = list(data.tl.result[res_key][1]['filtered_corrected_counts'].columns)
             elif key in ['pca', 'umap', 'tsne']:
                 # pca :we do not keep variance and PCs(for varm which will be into feature.finding in pca of seurat.)
                 res_key = data.tl.key_record[key][-1]
@@ -281,7 +284,7 @@ def stereo_to_anndata(data: StereoExpData, flavor='scanpy', sample_id="sample", 
                 logger.info(f"Adding data.tl.result['{res_key}'] in adata.obsm['{sc_key}']] .")
                 adata.obsm[sc_key] = data.tl.result[res_key].values
             elif key == 'neighbors':
-                # neighbor :seurat use uns for convertion to @graph slot, but scanpy canceled neighbors of uns at present.
+                # neighbor :seurat use uns for conversion to @graph slot, but scanpy canceled neighbors of uns at present.
                 # so this part could not be converted into seurat straightly.
                 for res_key in data.tl.key_record[key]:
                     sc_con = 'connectivities' if res_key == 'neighbors' else f'{res_key}_connectivities'
@@ -303,35 +306,48 @@ def stereo_to_anndata(data: StereoExpData, flavor='scanpy', sample_id="sample", 
                                                       index=data.cells.cell_name.astype('str'))
             else:
                 continue
-        # normal and raw
+
     if data.tl.raw is not None:
-        logger.info(f"Adding data.tl.raw.exp_matrix as adata.raw.X .")
-
-        ## keep same shape between @counts and @data for seurat
-        sub_data = data.tl.raw.sub_by_name(gene_name=data.gene_names, cell_name=data.cell_names)
-        raw_exp = sub_data.exp_matrix if flavor == 'seurat' else data.tl.raw.exp_matrix
-
-        raw_genes = adata.var if flavor == 'seurat' else data.tl.raw.genes.to_df()
-        raw_genes.dropna(axis=1, how='all', inplace=True)
-
-        raw_adata = AnnData(X=raw_exp,
-                            var=raw_genes,
-                            # var=raw_data.genes.to_df(),
-                            )
-        adata.raw = raw_adata
+        if flavor == 'seurat':
+            # keep same shape between @counts and @data for seurat,because somtimes dim of sct are not the same.
+            logger.info(f"Adding data.tl.raw.exp_matrix as adata.uns['raw_counts'] .")
+            adata.uns['raw_counts'] = data.tl.raw.exp_matrix if issparse(data.tl.raw.exp_matrix) \
+                else csr_matrix(data.tl.raw.exp_matrix)
+            adata.uns['raw_cellname'] = list(data.tl.raw.cell_names.astype(str))
+            adata.uns['raw_genename'] = list(data.tl.raw.gene_names)
+            if data.tl.raw.position is not None and reindex:
+                logger.info(f"Reindex as adata.uns['raw_cellname'] .")
+                raw_sample = pd.DataFrame(['sample'] * data.tl.raw.cell_names.shape[0],
+                                          index=data.tl.raw.cell_names.astype('str'))
+                raw_x = pd.DataFrame(data.tl.raw.position[:, 0].astype(str), index=data.tl.raw.cell_names.astype('str'))
+                raw_y = pd.DataFrame(data.tl.raw.position[:, 1].astype(str), index=data.tl.raw.cell_names.astype('str'))
+                new_ix = np.array(raw_sample + "_" + raw_x + "_" + raw_y).tolist()
+                adata.uns['raw_cellname'] = new_ix
+        else:
+            logger.info(f"Adding data.tl.raw.exp_matrix as adata.raw .")
+            raw_exp = data.tl.raw.exp_matrix
+            raw_genes = data.tl.raw.genes.to_df()
+            raw_genes.dropna(axis=1, how='all', inplace=True)
+            raw_adata = AnnData(X=raw_exp, var=raw_genes, )
+            adata.raw = raw_adata
 
     if reindex:
-        logger.info(f"Reindex.")
+        logger.info(f"Reindex adata.X .")
         new_ix = (adata.obs['orig.ident'].astype(str) + ":" + adata.obs['x'].astype(str) + "_" +
-                  adata.obs['y'].astype(str)).to_list()
+                  adata.obs['y'].astype(str)).tolist()
         adata.obs.index = new_ix
+        if 'sct_cellname' in adata.uns.keys():
+            logger.info(f"Reindex as adata.uns['sct_cellname'] .")
+            adata.uns['sct_cellname'] = new_ix
+
     if flavor == 'seurat':
         logger.info(f"Rename QC info.")
         adata.obs.rename(columns={'total_counts': "nCount_Spatial", "n_genes_by_counts": "nFeature_Spatial",
                                   "pct_counts_mt": 'percent.mito'}, inplace=True)
-        if 'X_pca' not in list(adata.obsm.keys()):
-            logger.info(f"Creating fake info. Please ignore X_ignore in your data.")
-            adata.obsm['X_ignore'] = np.zeros((adata.obs.shape[0], 2))
+        # if 'X_pca' not in list(adata.obsm.keys()):
+        # logger.info(f"Creating fake info. Please ignore X_ignore in your data.")
+        # adata.obsm['X_ignore'] = np.zeros((adata.obs.shape[0], 2))
+
     logger.info(f"Finished conversion to anndata.")
 
     if output is not None:
@@ -339,6 +355,7 @@ def stereo_to_anndata(data: StereoExpData, flavor='scanpy', sample_id="sample", 
         logger.info(f"Finished output to {output}.")
 
     return adata
+
 
 # def check_file(path, prefix, suffix):
 #     filename = f"{path}/{prefix}{suffix}"
