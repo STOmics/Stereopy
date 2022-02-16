@@ -102,12 +102,22 @@ def write_genes(f, k, v, dataset_kwargs=MappingProxyType({})):
     g = f.create_group(k)
     g.attrs['encoding-type'] = 'gene'
     write_array(g, 'gene_name', v.gene_name, dataset_kwargs)
+    if v.n_cells is not None:
+        write_array(g, 'n_cells', v.n_cells, dataset_kwargs)
+    if v.n_counts is not None:
+        write_array(g, 'n_counts', v.n_counts, dataset_kwargs)
 
 
 def write_cells(f, k, v, dataset_kwargs=MappingProxyType({})):
     g = f.create_group(k)
     g.attrs['encoding-type'] = 'cell'
     write_array(g, 'cell_name', v.cell_name, dataset_kwargs)
+    if v.total_counts is not None:
+        write_array(g, 'total_counts', v.total_counts, dataset_kwargs)
+    if v.pct_counts_mt is not None:
+        write_array(g, 'pct_counts_mt', v.pct_counts_mt, dataset_kwargs)
+    if v.n_genes_by_counts is not None:
+        write_array(g, 'n_genes_by_counts', v.n_genes_by_counts, dataset_kwargs)
 
 
 def write_spmatrix_as_dense(f, key, value, dataset_kwargs=MappingProxyType({})):
@@ -240,12 +250,22 @@ def read_spmatrix(group) -> sparse.spmatrix:
 def read_genes(group) -> Gene:
     gene_name = group['gene_name'][...]
     gene = Gene(gene_name=gene_name)
+    n_cells = group['n_cells'][...] if 'n_cells' in group.keys() else None
+    n_counts = group['n_counts'][...] if 'n_counts' in group.keys() else None
+    gene.n_cells = n_cells
+    gene.n_counts = n_counts
     return gene
 
 
 def read_cells(group) -> Cell:
     cell_name = group['cell_name'][...]
-    cell = Cell(cell_name=cell_name)
+    cell = Cell(cell_name=cell_name.astype('U'))
+    total_counts = group['total_counts'][...] if 'total_counts' in group.keys() else None
+    pct_counts_mt = group['pct_counts_mt'][...] if 'pct_counts_mt' in group.keys() else None
+    n_genes_by_counts = group['n_genes_by_counts'][...] if 'n_genes_by_counts' in group.keys() else None
+    cell.total_counts = total_counts
+    cell.pct_counts_mt = pct_counts_mt
+    cell.n_genes_by_counts = n_genes_by_counts
     return cell
 
 

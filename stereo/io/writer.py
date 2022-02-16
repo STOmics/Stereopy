@@ -41,7 +41,6 @@ def write_h5ad(data, result=True, raw=True):
         else:
             h5ad.write(data.exp_matrix, f, 'exp_matrix')
         h5ad.write(data.bin_type, f, 'bin_type')
-        print('After writing data:\n', f.keys())
 
         if raw is True:
             same_genes = np.array_equal(data.tl.raw.gene_names, data.gene_names)
@@ -61,7 +60,6 @@ def write_h5ad(data, result=True, raw=True):
                 h5ad.write(data.tl.raw.exp_matrix, f, 'exp_matrix@raw', sp_format)
             else:
                 h5ad.write(data.tl.raw.exp_matrix, f, 'exp_matrix@raw')
-            print('After writing raw data:\n', f.keys())
 
         if result is True:
             # write key_record
@@ -75,7 +73,6 @@ def write_h5ad(data, result=True, raw=True):
             for analysis_key, res_keys in key_record.items():
                 for res_key in res_keys:
                     # write result[res_key]
-                    print(f'{res_key}@{analysis_key}')
                     if analysis_key == 'hvg':
                         # interval to str
                         hvg_df = deepcopy(data.tl.result[res_key])
@@ -85,7 +82,6 @@ def write_h5ad(data, result=True, raw=True):
                         h5ad.write(data.tl.result[res_key].values, f, f'{res_key}@{analysis_key}')  # -> array
                     if analysis_key == 'neighbors':
                         for neighbor_key, value in data.tl.result[res_key].items():
-                            print(neighbor_key)
                             if issparse(value):
                                 sp_format = 'csr' if isinstance(value, csr_matrix) else 'csc'
                                 h5ad.write(value, f, f'{neighbor_key}@{res_key}@neighbors', sp_format)  # -> csr_matrix
@@ -97,7 +93,6 @@ def write_h5ad(data, result=True, raw=True):
                         clusters = list(data.tl.result[res_key].keys())
                         h5ad.write(clusters, f, f'clusters_record@{res_key}@marker_genes')  # -> list
                         for cluster, df in data.tl.result[res_key].items():
-                            print(cluster)
                             h5ad.write(df, f, f'{cluster}@{res_key}@marker_genes')  # -> dataframe
                     if analysis_key == 'sct':
                         # tuple: (StereoExpData, dict-17 keys with different type)
@@ -118,8 +113,6 @@ def write_h5ad(data, result=True, raw=True):
                     if analysis_key == 'spatial_hotspot':
                         # Hotspot object
                         pass
-
-            print('After writing result:\n', f.keys())
 
 
 def write(data, output=None, output_type='h5ad', *args, **kwargs):

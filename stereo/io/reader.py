@@ -136,7 +136,6 @@ def read_stereo_h5ad(file_path, raw=True, result=True):
         logger.error('the input file is not exists, please check!')
         raise FileExistsError('the input file is not exists, please check!')
     with h5py.File(data.file, mode='r') as f:
-        print(f.keys())
         # read data
         for k in f.keys():
             if k == 'cells':
