@@ -3,9 +3,15 @@ Release Notes
 
 .. role:: small
 
+Version 0.2.4
+------------------
+0.2.4 :2022-01-19
+~~~~~~~~~~~~~~~~~~~~~
+1.Fix bug of tar package
+
 Version 0.2.3
 -----------
-0.2.3 :2022-01-16
+0.2.3 :2022-01-17
 ~~~~~~~~~~~~~~~~~~~~~~~
 1. Add cell segmentation and tissuecut segmentation function.
 2. Update stereo_to_anndata function and support output to h5ad file.
