@@ -17,4 +17,6 @@ Stereopy is available for installation with pip:
 
     pip install stereopy
 
-Tips : Stereopy can not be installed on the machine with apple m1 cpu.
+.. note::
+
+    The machine with Apple m1 cpu is not supported.
