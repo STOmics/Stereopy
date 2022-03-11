@@ -23,6 +23,8 @@ class GEF(object):
         self.cells = None
         self.cell_num = 0
         self.gene_num = 0
+        self.offset_x = 0
+        self.offset_y = 0
         self._init()
 
     def _init(self):
@@ -35,6 +37,8 @@ class GEF(object):
             h5gene = h5f['geneExp'][bin_tag]['gene']
             self.df_gene = pd.DataFrame(h5gene['gene', 'offset', 'count'])
             self.df_exp = pd.DataFrame(h5exp['x', 'y', 'count'])
+            self.offset_x = h5exp.attrs['minX']
+            self.offset_y = h5exp.attrs['minY']
 
     def build(self, gene_lst: list = None, region: list = None):
         if gene_lst is not None:
@@ -117,4 +121,6 @@ class GEF(object):
         data.cells = Cell(cell_name=self.cells)
         data.genes = Gene(gene_name=self.genes)
         data.exp_matrix = exp_matrix if self.is_sparse else exp_matrix.toarray()
+        data.offset_x = self.offset_x
+        data.offset_y = self.offset_y
         return data

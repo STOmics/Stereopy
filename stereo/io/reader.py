@@ -71,6 +71,8 @@ def read_gem(file_path, sep='\t', bin_type="bins", bin_size=100, is_sparse=True)
     else:
         data.position = gdf.loc[cells][['x_center', 'y_center']].values
         data.cells.cell_point = gdf.loc[cells]['cell_point'].values
+    data.offset_x = df['x'].min()
+    data.offset_y = df['y'].min()
     return data
 
 
@@ -221,7 +223,7 @@ def anndata_to_stereo(andata: AnnData, use_raw=False, spatial_key: Optional[str]
     return data
 
 
-def stereo_to_anndata(data, flavor='scanpy', sample_id="sample", reindex=False, output=None):
+def stereo_to_anndata(data:StereoExpData, flavor='scanpy', sample_id="sample", reindex=False, output=None):
     """
     transform the StereoExpData object into Anndata object.
 
@@ -250,7 +252,10 @@ def stereo_to_anndata(data, flavor='scanpy', sample_id="sample", reindex=False, 
     ##sample id
     logger.info(f"Adding {sample_id} in adata.obs['orig.ident'].")
     adata.obs['orig.ident'] = pd.Categorical([sample_id] * adata.obs.shape[0], categories=[sample_id])
-
+    if data.offset_x is not None:
+        adata.uns['offset_x'] = data.offset_x
+    if data.offset_y is not None:
+        adata.uns['offset_y'] = data.offset_y
     if data.position is not None:
         logger.info(f"Adding data.position as adata.obsm['spatial'] .")
         adata.obsm['spatial'] = data.position
@@ -451,11 +456,11 @@ def read_gef(file_path: str, bin_type="bins", bin_size=100, is_sparse=True, gene
             gef.build(gene_lst=gene_list, region=region)
             data = gef.to_stereo_exp_data()
         else:
-            from gefpy.gene_exp_cy import GEF
-            gef = GEF(file_path, bin_size)
+            from gefpy.bgef_reader_cy import BgefR
+            gef = BgefR(file_path, bin_size, 4)
             gene_num = gef.get_gene_num()
             data = StereoExpData(file_path=file_path)
-
+            data.offset_x, data.offset_y = gef.get_offset()
             uniq_cells, rows, count = gef.get_exp_data()
             cell_num = len(uniq_cells)
             logger.info(f'the martrix has {cell_num} cells, and {gene_num} genes.')
