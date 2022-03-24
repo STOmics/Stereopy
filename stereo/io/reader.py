@@ -6,27 +6,30 @@
 @description:
 @author: Ping Qiu
 @email: qiuping1@genomics.cn
-@last modified by: Ping Qiu
+@last modified by: Nils Mechtel
 
 change log:
     2021/03/05  add read_stereo_data function , by Ping Qiu.
     2021/08/12  move read_txt functions from StereoExpData here. Add read_ann_h5ad,
     andata_to_stereo function by Yiran Wu.
     2021/08/20
+    2022/02/09  read raw data and result
+
 
 """
 import pandas as pd
-from ..core.stereo_exp_data import StereoExpData
-from ..log_manager import logger
+from stereo.core.stereo_exp_data import StereoExpData
+from stereo.log_manager import logger
 import h5py
 from stereo.io import h5ad
 from scipy.sparse import csr_matrix
-from ..core.cell import Cell
-from ..core.gene import Gene
+from stereo.core.cell import Cell
+from stereo.core.gene import Gene
 import numpy as np
 from anndata import AnnData
 from shapely.geometry import Point, MultiPoint
 from typing import Optional
+from copy import deepcopy
 
 
 def read_gem(file_path, sep='\t', bin_type="bins", bin_size=100, is_sparse=True):
@@ -116,10 +119,17 @@ def get_bin_center(bin_coor: np.ndarray, coor_min: int, bin_size: int):
     return bin_coor * bin_size + coor_min + int(bin_size / 2)
 
 
-def read_stereo_h5ad(file_path):
+def to_interval(interval_string):
+    [left, right] = interval_string[1:-1].split(', ')
+    interval = pd.Interval(float(left), float(right))
+    return interval
+
+
+def read_stereo_h5ad(file_path, raw=True, result=True):
     """
     read the h5ad file, and generate the object of StereoExpData.
-
+    :param result: whether to save result and res_key
+    :param raw: whether to save raw data
     :param file_path: the path of input file.
     :return:
     """
@@ -128,6 +138,7 @@ def read_stereo_h5ad(file_path):
         logger.error('the input file is not exists, please check!')
         raise FileExistsError('the input file is not exists, please check!')
     with h5py.File(data.file, mode='r') as f:
+        # read data
         for k in f.keys():
             if k == 'cells':
                 data.cells = h5ad.read_group(f[k])
@@ -142,8 +153,53 @@ def read_stereo_h5ad(file_path):
                     data.exp_matrix = h5ad.read_group(f[k])
                 else:
                     data.exp_matrix = h5ad.read_dataset(f[k])
+
+        # read raw
+        if raw is True and 'exp_matrix@raw' in f.keys():
+            data.tl.raw = StereoExpData()
+            if isinstance(f['exp_matrix@raw'], h5py.Group):
+                data.tl.raw.exp_matrix = h5ad.read_group(f['exp_matrix@raw'])
             else:
-                pass
+                data.tl.raw.exp_matrix = h5ad.read_dataset(f['exp_matrix@raw'])
+            if 'cells@raw' in f.keys():
+                data.tl.raw.cells = h5ad.read_group(f['cells@raw'])
+            else:
+                data.tl.raw.cells = deepcopy(data.cells)
+            if 'genes@raw' in f.keys():
+                data.tl.raw.genes = h5ad.read_group(f['genes@raw'])
+            else:
+                data.tl.raw.genes = deepcopy(data.genes)
+            if 'position@raw' in f.keys():
+                data.tl.raw.position = h5ad.read_dataset(f['position@raw'])
+            else:
+                data.tl.raw.position = deepcopy(data.position)
+
+        # read key_record and result
+        if result is True and 'key_record' in f.keys():
+            h5ad.read_key_record(f['key_record'], data.tl.key_record)
+            for analysis_key, res_keys in data.tl.key_record.items():
+                for res_key in res_keys:
+                    if analysis_key == 'hvg':
+                        hvg_df = h5ad.read_group(f[f'{res_key}@hvg'])
+                        # str to interval
+                        hvg_df['mean_bin'] = [to_interval(interval_string) for interval_string in hvg_df['mean_bin']]
+                        data.tl.result[res_key] = hvg_df
+                    if analysis_key in ['pca', 'umap']:
+                        data.tl.result[res_key] = pd.DataFrame(h5ad.read_dataset(f[f'{res_key}@{analysis_key}']))
+                    if analysis_key == 'neighbors':
+                        data.tl.result[res_key] = {
+                            'neighbor': h5ad.read_group(f[f'neighbor@{res_key}@neighbors']),
+                            'connectivities': h5ad.read_group(f[f'connectivities@{res_key}@neighbors']),
+                            'nn_dist': h5ad.read_group(f[f'nn_dist@{res_key}@neighbors'])
+                        }
+                    if analysis_key == 'cluster':
+                        data.tl.result[res_key] = h5ad.read_group(f[f'{res_key}@cluster'])
+                    if analysis_key == 'marker_genes':
+                        clusters = h5ad.read_dataset(f[f'clusters_record@{res_key}@marker_genes'])
+                        data.tl.result[res_key] = {}
+                        for cluster in clusters:
+                            cluster_key = f'{cluster}@{res_key}@marker_genes'
+                            data.tl.result[res_key][cluster] = h5ad.read_group(f[cluster_key])
     return data
 
 
