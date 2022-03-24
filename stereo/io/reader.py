@@ -505,12 +505,14 @@ def read_gef(file_path: str, bin_type="bins", bin_size=100, is_sparse=True, gene
         data.cells = Cell(cell_name=cell_bin_gef.cells)
         data.genes = Gene(gene_name=cell_bin_gef.genes)
         data.exp_matrix = exp_matrix if is_sparse else exp_matrix.toarray()
+        data.bin_type = bin_type
     else:
         if gene_list is not None or region is not None:
             from stereo.io.gef import GEF
             gef = GEF(file_path=file_path, bin_size=bin_size, is_sparse=is_sparse)
             gef.build(gene_lst=gene_list, region=region)
             data = gef.to_stereo_exp_data()
+            data.bin_type = bin_type
         else:
             from gefpy.bgef_reader_cy import BgefR
             gef = BgefR(file_path, bin_size, 4)
@@ -527,6 +529,7 @@ def read_gef(file_path: str, bin_type="bins", bin_size=100, is_sparse=True, gene
             data.cells = Cell(cell_name=uniq_cells)
             data.genes = Gene(gene_name=uniq_genes)
             data.exp_matrix = exp_matrix if is_sparse else exp_matrix.toarray()
+            data.bin_type = bin_type
     logger.info(f'read_gef end.')
 
     return data

@@ -137,3 +137,32 @@ def save_pkl(obj, output):
     with open(output, "wb") as f:
         pickle.dump(obj, f)
     f.close()
+
+
+def update_gef(data, gef_file, cluster_res_key):
+    """
+    add cluster result into gef file and update the gef file directly.
+
+    :param data: SetreoExpData.
+    :param gef_file: add cluster result into gef file.
+    :param cluster_res_key: the key of cluster to get the result for group info.
+    :return:
+    """
+    cluster = {}
+    if cluster_res_key not in data.tl.result:
+        raise Exception(f'{cluster_res_key} is not in the result, please check and run the func of cluster.')
+    clu_result = data.tl.result[cluster_res_key]
+    for i,v in clu_result.iterrows():
+        cluster[v['bins']] = int(v['group'])+1
+
+    h5f = h5py.File(gef_file, 'r+')
+    cell_names = np.bitwise_or(np.left_shift(h5f['cellBin']['cell']['x'].astype('uint64'), 32), h5f['cellBin']['cell']['y'])
+    celltid = np.zeros(h5f['cellBin']['cell'].shape, dtype='uint16')
+    n = 0
+    for cell_name in cell_names:
+        if cell_name in cluster:
+            celltid[n] = cluster[cell_name]
+        n += 1
+
+    # h5f['cellBin']['cell']['cellTypeID'] = celltid
+    h5f['cellBin']['cell']['clusterID'] = celltid
