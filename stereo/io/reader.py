@@ -125,12 +125,14 @@ def to_interval(interval_string):
     return interval
 
 
-def read_stereo_h5ad(file_path, raw=True, result=True):
+def read_stereo_h5ad(file_path, raw=True, result=True,):
     """
     read the h5ad file, and generate the object of StereoExpData.
+
+    :param file_path: the path of input file.
     :param result: whether to save result and res_key
     :param raw: whether to save raw data
-    :param file_path: the path of input file.
+
     :return:
     """
     data = StereoExpData(file_path=file_path)
@@ -342,7 +344,7 @@ def stereo_to_anndata(data:StereoExpData, flavor='scanpy', sample_id="sample", r
                 # pca :we do not keep variance and PCs(for varm which will be into feature.finding in pca of seurat.)
                 res_key = data.tl.key_record[key][-1]
                 sc_key = f'X_{key}'
-                logger.info(f"Adding data.tl.result['{res_key}'] in adata.obsm['{sc_key}']] .")
+                logger.info(f"Adding data.tl.result['{res_key}'] in adata.obsm['{sc_key}'] .")
                 adata.obsm[sc_key] = data.tl.result[res_key].values
             elif key == 'neighbors':
                 # neighbor :seurat use uns for conversion to @graph slot, but scanpy canceled neighbors of uns at present.
@@ -413,7 +415,7 @@ def stereo_to_anndata(data:StereoExpData, flavor='scanpy', sample_id="sample", r
 
     if output is not None:
         adata.write_h5ad(output)
-        logger.info(f"Finished output to {output}.")
+        logger.info(f"Finished output to {output}")
 
     return adata
 
@@ -497,7 +499,7 @@ def read_gef(file_path: str, bin_type="bins", bin_size=100, is_sparse=True, gene
     logger.info(f'read_gef begin ...')
     if bin_type == 'cell_bins':
         from gefpy.cell_exp_reader import CellExpReader
-        data = StereoExpData(file_path=file_path)
+        data = StereoExpData(file_path=file_path, bin_type=bin_type)
         cell_bin_gef = CellExpReader(file_path)
         data.position = cell_bin_gef.positions
         logger.info(f'the martrix has {cell_bin_gef.cell_num} cells, and {cell_bin_gef.gene_num} genes.')
@@ -505,7 +507,6 @@ def read_gef(file_path: str, bin_type="bins", bin_size=100, is_sparse=True, gene
         data.cells = Cell(cell_name=cell_bin_gef.cells)
         data.genes = Gene(gene_name=cell_bin_gef.genes)
         data.exp_matrix = exp_matrix if is_sparse else exp_matrix.toarray()
-        data.bin_type = bin_type
     else:
         if gene_list is not None or region is not None:
             from stereo.io.gef import GEF
@@ -517,7 +518,7 @@ def read_gef(file_path: str, bin_type="bins", bin_size=100, is_sparse=True, gene
             from gefpy.bgef_reader_cy import BgefR
             gef = BgefR(file_path, bin_size, 4)
             gene_num = gef.get_gene_num()
-            data = StereoExpData(file_path=file_path)
+            data = StereoExpData(file_path=file_path, bin_type=bin_type)
             data.offset_x, data.offset_y = gef.get_offset()
             uniq_cells, rows, count = gef.get_exp_data()
             cell_num = len(uniq_cells)
@@ -529,7 +530,6 @@ def read_gef(file_path: str, bin_type="bins", bin_size=100, is_sparse=True, gene
             data.cells = Cell(cell_name=uniq_cells)
             data.genes = Gene(gene_name=uniq_genes)
             data.exp_matrix = exp_matrix if is_sparse else exp_matrix.toarray()
-            data.bin_type = bin_type
     logger.info(f'read_gef end.')
 
     return data

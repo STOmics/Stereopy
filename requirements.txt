@@ -1,3 +1,4 @@
+dask==2022.2.0
 bokeh==2.3.3
 imageio==2.9.0
 numpy==1.21.4
@@ -13,7 +14,7 @@ statsmodels~=0.12.1
 leidenalg>=0.8.7
 umap-learn==0.5.1
 KDEpy>=1.1.0
-Jinja2
+Jinja2==3.0.3
 shapely~=1.7.1
 packaging~=20.9
 panel==0.12.1
