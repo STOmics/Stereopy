@@ -204,7 +204,7 @@ class CellTypeAnno(ToolBase):
         """
         run
         """
-        exp_matrix = self.extract_exp_matrix().T
+        exp_matrix = self.data.exp_matrix().T
         df = pd.DataFrame(exp_matrix, index=list(self.data.gene_names),
                           columns=list(self.data.cell_names))
         datas = self.split_dataframe(df) if self.split_num > 1 else [df]
