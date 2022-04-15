@@ -21,12 +21,15 @@ import numpy as np
 from copy import deepcopy
 
 
-def write_h5ad(data, result=True, raw=True):
+def write_h5ad(data, use_raw=True, use_result=True, key_record=None):
     """
     write the StereoExpData into h5ad file.
     :param data: the StereoExpData object.
-    :param result: whether to save result and res_key
-    :param raw: whether to save raw data
+    :param use_raw: bool, whether to save raw data
+    :param use_result: bool, whether to save result and res_key
+    :param key_record: Dict. if None, it will save the result and res_key of data.tl.key_record.
+    otherwise, it will save the result and res_key of this dict.
+
     :return:
     """
     if data.output is None:
@@ -42,7 +45,7 @@ def write_h5ad(data, result=True, raw=True):
             h5ad.write(data.exp_matrix, f, 'exp_matrix')
         h5ad.write(data.bin_type, f, 'bin_type')
 
-        if raw is True:
+        if use_raw is True:
             same_genes = np.array_equal(data.tl.raw.gene_names, data.gene_names)
             same_cells = np.array_equal(data.tl.raw.gene_names, data.gene_names)
             if not same_genes:
@@ -61,17 +64,21 @@ def write_h5ad(data, result=True, raw=True):
             else:
                 h5ad.write(data.tl.raw.exp_matrix, f, 'exp_matrix@raw')
 
-        if result is True:
+        if use_result is True:
             # write key_record
-            key_record = deepcopy(data.tl.key_record)
+            mykey_record = deepcopy(data.tl.key_record) if key_record is None else deepcopy(key_record)
             supported_keys = ['hvg', 'pca', 'neighbors', 'umap', 'cluster', 'marker_genes'] # 'sct', 'spatial_hotspot'
-            for analysis_key in data.tl.key_record.keys():
+            for analysis_key in mykey_record.keys():
                 if analysis_key not in supported_keys:
-                    key_record.pop(analysis_key)
-            h5ad.write_key_record(f, 'key_record', key_record)
+                    mykey_record.pop(analysis_key)
+            h5ad.write_key_record(f, 'key_record', mykey_record)
 
-            for analysis_key, res_keys in key_record.items():
+            for analysis_key, res_keys in mykey_record.items():
                 for res_key in res_keys:
+                    # check
+                    if res_key not in data.tl.result:
+                        raise Exception(
+                            f'{res_key} is not in the result, please check and run the coordinated func.')
                     # write result[res_key]
                     if analysis_key == 'hvg':
                         # interval to str
@@ -113,6 +120,9 @@ def write_h5ad(data, result=True, raw=True):
                     if analysis_key == 'spatial_hotspot':
                         # Hotspot object
                         pass
+
+def write_gem(data,use):
+    pass
 
 
 def write(data, output=None, output_type='h5ad', *args, **kwargs):

@@ -259,6 +259,9 @@ def read_genes(group) -> Gene:
 
 def read_cells(group) -> Cell:
     cell_name = group['cell_name'][...]
+    for i in range(cell_name.shape[0]) :
+        if type(cell_name[i]) is bytes:
+            cell_name[i] = cell_name[i].decode()
     cell = Cell(cell_name=cell_name)
     total_counts = group['total_counts'][...] if 'total_counts' in group.keys() else None
     pct_counts_mt = group['pct_counts_mt'][...] if 'pct_counts_mt' in group.keys() else None

@@ -125,13 +125,13 @@ def to_interval(interval_string):
     return interval
 
 
-def read_stereo_h5ad(file_path, raw=True, result=True,):
+def read_stereo_h5ad(file_path, use_raw=True, use_result=True,):
     """
     read the h5ad file, and generate the object of StereoExpData.
 
     :param file_path: the path of input file.
-    :param result: whether to save result and res_key
-    :param raw: whether to save raw data
+    :param use_raw: whether to save raw data
+    :param use_result: whether to save result and res_key
 
     :return:
     """
@@ -157,7 +157,7 @@ def read_stereo_h5ad(file_path, raw=True, result=True,):
                     data.exp_matrix = h5ad.read_dataset(f[k])
 
         # read raw
-        if raw is True and 'exp_matrix@raw' in f.keys():
+        if use_raw is True and 'exp_matrix@raw' in f.keys():
             data.tl.raw = StereoExpData()
             if isinstance(f['exp_matrix@raw'], h5py.Group):
                 data.tl.raw.exp_matrix = h5ad.read_group(f['exp_matrix@raw'])
@@ -177,7 +177,7 @@ def read_stereo_h5ad(file_path, raw=True, result=True,):
                 data.tl.raw.position = deepcopy(data.position)
 
         # read key_record and result
-        if result is True and 'key_record' in f.keys():
+        if use_result is True and 'key_record' in f.keys():
             h5ad.read_key_record(f['key_record'], data.tl.key_record)
             for analysis_key, res_keys in data.tl.key_record.items():
                 for res_key in res_keys:
