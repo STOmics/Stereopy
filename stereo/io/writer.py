@@ -121,8 +121,55 @@ def write_h5ad(data, use_raw=True, use_result=True, key_record=None):
                         # Hotspot object
                         pass
 
-def write_gem(data,use):
-    pass
+
+def write_rawdata_gef(data, output):
+    """
+    write the StereoExpData into a gef file.
+
+    :param data: StereoExpData object
+    :param output: h5ad file.
+    :return:
+    """
+    logger.info("The output standard gef file only contains one expression matrix with umi count."
+                "Please make sure the expression matrix of StereoExpData object is raw umi count without normaliztion.")
+    import numpy.lib.recfunctions as rfn
+    final_exp = []  # [(x_1,y_1,umi_1),(x_2,y_2,umi_2)]
+    final_gene = []  # [(A,offset,count)]
+    exp_np = data.exp_matrix.toarray()
+
+    for i in range(exp_np.shape[1]):
+        gene_exp = exp_np[:, i]
+        c_idx = np.nonzero(gene_exp)[0]  # 对于全部cell 的idx
+        zipped = np.concatenate((data.position[c_idx], gene_exp[c_idx].reshape(c_idx.shape[0], 1)), axis=1)
+        for k in zipped:
+            final_exp.append(k)
+
+        ## count
+        g_len = len(final_gene)
+        last_offset = 0 if g_len == 0 else final_gene[g_len - 1][1]
+        last_count = 0 if g_len == 0 else final_gene[g_len - 1][2]
+        g_name = data.gene_names[i]
+        offset = last_offset + last_count
+        count = c_idx.shape[0]
+        final_gene.append((g_name, offset, count))
+    final_exp_np = rfn.unstructured_to_structured(np.array(final_exp,dtype=int),
+                                                  np.dtype([('x', int), ('y', int), ('count', int)]))
+    final_gene_np = np.array(final_gene, dtype='S32,int,int')
+    h5f = h5py.File(output, "w")
+    geneExp = h5f.create_group("geneExp")
+    binsz = "bin" + str(data.bin_size)
+    bing = geneExp.create_group(binsz)
+    geneExp[binsz]["expression"] = final_exp_np  # np.arry([(10,20,2), (20,40,3)], dtype=exptype)
+    geneExp[binsz]["gene"] = final_gene_np  # np.arry([("gene1",0,21), ("gene2",21,3)], dtype=genetype)
+
+    bing["expression"].attrs.create("minX", data.attr['minX'])
+    bing["expression"].attrs.create("minY", data.attr['minY'])
+    bing["expression"].attrs.create("maxX", data.attr['maxX'])
+    bing["expression"].attrs.create("maxY", data.attr['maxY'])
+    bing["expression"].attrs.create("minExp", data.attr['minExp'])
+    bing["expression"].attrs.create("resolution", data.attr['resolution'])
+
+    h5f.close()
 
 
 def write(data, output=None, output_type='h5ad', *args, **kwargs):
