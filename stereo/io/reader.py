@@ -76,6 +76,15 @@ def read_gem(file_path, sep='\t', bin_type="bins", bin_size=100, is_sparse=True)
         data.cells.cell_point = gdf.loc[cells]['cell_point'].values
     data.offset_x = df['x'].min()
     data.offset_y = df['y'].min()
+    data.attr = {
+        'minX': df['x'].min(),
+        'minY': df['y'].min(),
+        'maxX': df['x'].max(),
+        'maxY': df['y'].max(),
+        'minExp': data.exp_matrix.toarray().min() if is_sparse else data.exp_matrix.min(),
+        'maxExp': data.exp_matrix.toarray().max() if is_sparse else data.exp_matrix.min(),
+        'resolution': 0,
+    }
     return data
 
 
@@ -529,6 +538,7 @@ def read_gef(file_path: str, bin_type="bins", bin_size=100, is_sparse=True, gene
                 'maxX': 0,
                 'maxY': 0,
                 'minExp': 0,
+                'maxExp': 0,
                 'resolution': 0,
             }
             uniq_cells, rows, count = gef.get_exp_data()

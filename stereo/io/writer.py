@@ -152,23 +152,20 @@ def write_rawdata_gef(data, output):
         offset = last_offset + last_count
         count = c_idx.shape[0]
         final_gene.append((g_name, offset, count))
-    final_exp_np = rfn.unstructured_to_structured(np.array(final_exp,dtype=int),
-                                                  np.dtype([('x', int), ('y', int), ('count', int)]))
-    final_gene_np = np.array(final_gene, dtype='S32,int,int')
+    final_exp_np = rfn.unstructured_to_structured(np.array(final_exp, dtype=int),
+                                                  np.dtype([('x', np.uint32), ('y', np.uint32), ('count', np.uint16)]))
+    genetyp = np.dtype({'names': ['gene', 'offset', 'count'], 'formats': ['S32', np.uint32, np.uint32]})
+    final_gene_np = np.array(final_gene, dtype=genetyp)
     h5f = h5py.File(output, "w")
     geneExp = h5f.create_group("geneExp")
     binsz = "bin" + str(data.bin_size)
     bing = geneExp.create_group(binsz)
     geneExp[binsz]["expression"] = final_exp_np  # np.arry([(10,20,2), (20,40,3)], dtype=exptype)
     geneExp[binsz]["gene"] = final_gene_np  # np.arry([("gene1",0,21), ("gene2",21,3)], dtype=genetype)
-
-    bing["expression"].attrs.create("minX", data.attr['minX'])
-    bing["expression"].attrs.create("minY", data.attr['minY'])
-    bing["expression"].attrs.create("maxX", data.attr['maxX'])
-    bing["expression"].attrs.create("maxY", data.attr['maxY'])
-    bing["expression"].attrs.create("minExp", data.attr['minExp'])
-    bing["expression"].attrs.create("resolution", data.attr['resolution'])
-
+    if data.attr is not None:
+        for key,value in data.attr.items():
+            bing["expression"].attrs.create(key,value)
+    h5f.attrs.create("version", 2)
     h5f.close()
 
 
