@@ -122,7 +122,7 @@ def write_h5ad(data, use_raw=True, use_result=True, key_record=None):
                         pass
 
 
-def write_umi_gef(data, output):
+def write_mid_gef(data, output):
     """
     write the StereoExpData into a gef file.
 
