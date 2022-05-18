@@ -130,8 +130,8 @@ def write_mid_gef(data, output):
     :param output: h5ad file.
     :return:
     """
-    logger.info("The output standard gef file only contains one expression matrix with umi count."
-                "Please make sure the expression matrix of StereoExpData object is raw umi count without normaliztion.")
+    logger.info("The output standard gef file only contains one expression matrix with mid count."
+                "Please make sure the expression matrix of StereoExpData object is mid count without normaliztion.")
     import numpy.lib.recfunctions as rfn
     final_exp = []  # [(x_1,y_1,umi_1),(x_2,y_2,umi_2)]
     final_gene = []  # [(A,offset,count)]
