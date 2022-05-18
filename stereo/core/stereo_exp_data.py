@@ -37,6 +37,7 @@ class StereoExpData(Data):
             partitions: int = 1,
             offset_x: Optional[str] = None,
             offset_y: Optional[str] = None,
+            attr: Optional[dict] = None,
     ):
 
         """
@@ -56,6 +57,7 @@ class StereoExpData(Data):
         :param partitions: the number of multi-process cores, used when processing files in parallel.
         :param offset_x: the x of the offset.
         :param offset_y: the y of the offset.
+        :param attr: attributions from gef file.
         """
         super(StereoExpData, self).__init__(file_path=file_path, file_format=file_format,
                                             partitions=partitions, output=output)
@@ -70,6 +72,7 @@ class StereoExpData(Data):
         self.raw = None
         self._offset_x = offset_x
         self._offset_y = offset_y
+        self._attr = attr
 
     def get_plot(self):
         from ..plots.plot_collection import PlotCollection
@@ -279,6 +282,24 @@ class StereoExpData(Data):
         :return:
         """
         self._offset_y = min_y
+
+    @property
+    def attr(self):
+        """
+        get the attr of self._attr.
+
+        :return:
+        """
+        return self._attr
+
+    @attr.setter
+    def attr(self, attr):
+        """
+
+        :param attr: dict of attr.
+        :return:
+        """
+        self._attr = attr
 
     def to_df(self):
         df = pd.DataFrame(

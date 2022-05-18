@@ -76,6 +76,15 @@ def read_gem(file_path, sep='\t', bin_type="bins", bin_size=100, is_sparse=True)
         data.cells.cell_point = gdf.loc[cells]['cell_point'].values
     data.offset_x = df['x'].min()
     data.offset_y = df['y'].min()
+    data.attr = {
+        'minX': df['x'].min(),
+        'minY': df['y'].min(),
+        'maxX': df['x'].max(),
+        'maxY': df['y'].max(),
+        'minExp': data.exp_matrix.toarray().min() if is_sparse else data.exp_matrix.min(),
+        'maxExp': data.exp_matrix.toarray().max() if is_sparse else data.exp_matrix.min(),
+        'resolution': 0,
+    }
     return data
 
 
@@ -314,6 +323,9 @@ def stereo_to_anndata(data:StereoExpData, flavor='scanpy', sample_id="sample", r
         adata.uns['offset_x'] = data.offset_x
     if data.offset_y is not None:
         adata.uns['offset_y'] = data.offset_y
+    if data.attr is not None:
+        for key, value in data.attr.items():
+            adata.uns[key] = value
     if data.position is not None:
         logger.info(f"Adding data.position as adata.obsm['spatial'] .")
         adata.obsm['spatial'] = data.position
@@ -520,6 +532,15 @@ def read_gef(file_path: str, bin_type="bins", bin_size=100, is_sparse=True, gene
             gene_num = gef.get_gene_num()
             data = StereoExpData(file_path=file_path, bin_type=bin_type)
             data.offset_x, data.offset_y = gef.get_offset()
+            data.attr = {
+                'minX': 0,
+                'minY': 0,
+                'maxX': 0,
+                'maxY': 0,
+                'minExp': 0,
+                'maxExp': 0,
+                'resolution': 0,
+            }
             uniq_cells, rows, count = gef.get_exp_data()
             cell_num = len(uniq_cells)
             logger.info(f'the martrix has {cell_num} cells, and {gene_num} genes.')
