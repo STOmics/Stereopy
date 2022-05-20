@@ -319,13 +319,6 @@ def stereo_to_anndata(data:StereoExpData, flavor='scanpy', sample_id="sample", r
     ##sample id
     logger.info(f"Adding {sample_id} in adata.obs['orig.ident'].")
     adata.obs['orig.ident'] = pd.Categorical([sample_id] * adata.obs.shape[0], categories=[sample_id])
-    if data.offset_x is not None:
-        adata.uns['offset_x'] = data.offset_x
-    if data.offset_y is not None:
-        adata.uns['offset_y'] = data.offset_y
-    if data.attr is not None:
-        for key, value in data.attr.items():
-            adata.uns[key] = value
     if data.position is not None:
         logger.info(f"Adding data.position as adata.obsm['spatial'] .")
         adata.obsm['spatial'] = data.position
@@ -422,6 +415,15 @@ def stereo_to_anndata(data:StereoExpData, flavor='scanpy', sample_id="sample", r
         # if 'X_pca' not in list(adata.obsm.keys()):
         # logger.info(f"Creating fake info. Please ignore X_ignore in your data.")
         # adata.obsm['X_ignore'] = np.zeros((adata.obs.shape[0], 2))
+
+    # logger.info(f"Adding data.attr in adata.uns.")
+    # if data.offset_x is not None:
+    #     adata.uns['offset_x'] = data.offset_x
+    # if data.offset_y is not None:
+    #     adata.uns['offset_y'] = data.offset_y
+    # if data.attr is not None:
+    #     for key, value in data.attr.items():
+    #         adata.uns[key] = value
 
     logger.info(f"Finished conversion to anndata.")
 

@@ -37,7 +37,7 @@ def sc_transform(
                     only used when filter_hvgs is true
     :param var_features_n: int
                     Number of variable features to select (for calculating a subset of pearson residuals)
-
+    :param threads: int
     :return: stereoExpData object
     """
     if not issparse(data.exp_matrix):
@@ -50,7 +50,7 @@ def sc_transform(
         method=method,
         n_cells=n_cells,
         n_genes=n_genes,
-        threads=4,
+        threads=threads,
         exclude_poisson=exclude_poisson,
         correct_counts=True,
     )
