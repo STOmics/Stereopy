@@ -513,7 +513,7 @@ def read_gef(file_path: str, bin_type="bins", bin_size=100, is_sparse=True, gene
     logger.info(f'read_gef begin ...')
     if bin_type == 'cell_bins':
         from gefpy.cell_exp_reader import CellExpReader
-        data = StereoExpData(file_path=file_path, bin_type=bin_type)
+        data = StereoExpData(file_path=file_path, bin_type=bin_type, bin_size=bin_size)
         cell_bin_gef = CellExpReader(file_path)
         data.position = cell_bin_gef.positions
         logger.info(f'the martrix has {cell_bin_gef.cell_num} cells, and {cell_bin_gef.gene_num} genes.')
@@ -528,11 +528,12 @@ def read_gef(file_path: str, bin_type="bins", bin_size=100, is_sparse=True, gene
             gef.build(gene_lst=gene_list, region=region)
             data = gef.to_stereo_exp_data()
             data.bin_type = bin_type
+            data.bin_size = bin_size
         else:
             from gefpy.bgef_reader_cy import BgefR
             gef = BgefR(file_path, bin_size, 4)
             gene_num = gef.get_gene_num()
-            data = StereoExpData(file_path=file_path, bin_type=bin_type)
+            data = StereoExpData(file_path=file_path, bin_type=bin_type, bin_size=bin_size)
             data.offset_x, data.offset_y = gef.get_offset()
             data.attr = {
                 'minX': 0,
