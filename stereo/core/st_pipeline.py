@@ -218,7 +218,7 @@ class StPipeline(object):
                     method="theta_ml",
                     n_cells=5000,
                     n_genes=None,
-                    filter_hvgs=False,
+                    filter_hvgs=True,
                     res_clip_range="seurat",
                     var_features_n=3000,
                     inplace=True,
