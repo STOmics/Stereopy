@@ -312,6 +312,7 @@ def stereo_to_anndata(data:StereoExpData, flavor='scanpy', sample_id="sample", r
     genes.dropna(axis=1, how='all', inplace=True)
 
     adata = AnnData(X=exp,
+                    dtype=np.float64,
                     obs=cells,
                     var=genes,
                     # uns={'neighbors': {'connectivities_key': 'None','distance_key': 'None'}},
@@ -396,7 +397,7 @@ def stereo_to_anndata(data:StereoExpData, flavor='scanpy', sample_id="sample", r
             raw_exp = data.tl.raw.exp_matrix
             raw_genes = data.tl.raw.genes.to_df()
             raw_genes.dropna(axis=1, how='all', inplace=True)
-            raw_adata = AnnData(X=raw_exp, var=raw_genes, )
+            raw_adata = AnnData(X=raw_exp, var=raw_genes, dtype=np.float64,)
             adata.raw = raw_adata
 
     if reindex:
