@@ -13,6 +13,7 @@ change log:
 from ..preprocess.qc import cal_qc
 from ..preprocess.filter import filter_cells, filter_genes, filter_coordinates
 from ..algorithm.normalization import normalize_total, quantile_norm, zscore_disksmooth
+from ..algorithm.scale import scale
 import numpy as np
 from scipy.sparse import issparse
 from ..algorithm.dim_reduce import pca, u_map
@@ -178,6 +179,22 @@ class StPipeline(object):
             self.data.exp_matrix = normalize_total(self.data.exp_matrix, target_sum=target_sum)
         else:
             self.result[res_key] = normalize_total(self.data.exp_matrix, target_sum=target_sum)
+
+    @logit
+    def scale(self, zero_center=True, max_value=None, inplace=True, res_key='scale'):
+        """
+        scale to unit variance and zero mean for express matrix.
+
+        :param zero_center: ignore zero variables if `False`
+        :param max_value: truncate to this value after scaling. If `None`, do not truncate.
+        :param inplace: whether inplace the original data or get a new express matrix after scale.
+        :param res_key: the key for getting the result from the self.result.
+        :return:
+        """
+        if inplace:
+            self.data.exp_matrix = scale(self.data.exp_matrix, zero_center, max_value)
+        else:
+            self.result[res_key] = scale(self.data.exp_matrix, zero_center, max_value)
 
     @logit
     def quantile(self, inplace=True, res_key='quantile'):
