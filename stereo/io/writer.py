@@ -127,7 +127,7 @@ def write_mid_gef(data, output):
     write the StereoExpData into a gef file.
 
     :param data: StereoExpData object
-    :param output: h5ad file.
+    :param output: gef file.
     :return:
     """
     logger.info("The output standard gef file only contains one expression matrix with mid count."

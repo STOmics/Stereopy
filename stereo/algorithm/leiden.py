@@ -87,6 +87,8 @@ def leiden(
     part = leidenalg.find_partition(g, partition_type, **partition_kwargs)
     # store output
     groups = np.array(part.membership)
+
+    groups = groups + 1
     cluster = pd.Categorical(
         values=groups.astype('U'),
         categories=natsorted(map(str, np.unique(groups))),

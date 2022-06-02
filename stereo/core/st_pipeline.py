@@ -13,6 +13,7 @@ change log:
 from ..preprocess.qc import cal_qc
 from ..preprocess.filter import filter_cells, filter_genes, filter_coordinates
 from ..algorithm.normalization import normalize_total, quantile_norm, zscore_disksmooth
+from ..algorithm.scale import scale
 import numpy as np
 from scipy.sparse import issparse
 from ..algorithm.dim_reduce import pca, u_map
@@ -180,6 +181,22 @@ class StPipeline(object):
             self.result[res_key] = normalize_total(self.data.exp_matrix, target_sum=target_sum)
 
     @logit
+    def scale(self, zero_center=True, max_value=None, inplace=True, res_key='scale'):
+        """
+        scale to unit variance and zero mean for express matrix.
+
+        :param zero_center: ignore zero variables if `False`
+        :param max_value: truncate to this value after scaling. If `None`, do not truncate.
+        :param inplace: whether inplace the original data or get a new express matrix after scale.
+        :param res_key: the key for getting the result from the self.result.
+        :return:
+        """
+        if inplace:
+            self.data.exp_matrix = scale(self.data.exp_matrix, zero_center, max_value)
+        else:
+            self.result[res_key] = scale(self.data.exp_matrix, zero_center, max_value)
+
+    @logit
     def quantile(self, inplace=True, res_key='quantile'):
         """
         Normalize the columns of X to each have the same distribution. Given an expression matrix  of M genes by N
@@ -218,7 +235,7 @@ class StPipeline(object):
                     method="theta_ml",
                     n_cells=5000,
                     n_genes=None,
-                    filter_hvgs=True,
+                    filter_hvgs=False,
                     res_clip_range="seurat",
                     var_features_n=3000,
                     inplace=True,
@@ -517,7 +534,7 @@ class StPipeline(object):
         neighbor, connectivities, _ = self.get_neighbors_res(neighbors_res_key)
         clusters = le(neighbor=neighbor, adjacency=connectivities, directed=directed, resolution=resolution,
                       use_weights=use_weights, random_state=random_state, n_iterations=n_iterations)
-        df = pd.DataFrame({'bins': self.data.cell_names, 'group': clusters})
+        df = pd.DataFrame({'bins': self.data.cell_names, 'group': clusters}) 
         self.result[res_key] = df
         key = 'cluster'
         self.reset_key_record(key, res_key)
@@ -570,6 +587,7 @@ class StPipeline(object):
         if pca_res_key not in self.result:
             raise Exception(f'{pca_res_key} is not in the result, please check and run the pca func.')
         communities, _, _ = phe.cluster(self.result[pca_res_key], k=phenograph_k, clustering_algo='leiden')
+        communities = communities + 1
         clusters = communities.astype(str)
         df = pd.DataFrame({'bins': self.data.cell_names, 'group': clusters})
         self.result[res_key] = df
