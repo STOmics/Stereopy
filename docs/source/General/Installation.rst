@@ -1,22 +1,71 @@
 Installation
 ============
+.. note::
+    Our tool could be installed on Linux, MacOS with python3.7 or python3.8.
+    The machine with Apple m1 cpu is not supported now.
 
-Installation (recommended)
+PyPI
 ------------------------------------
+**Step1**:
 
-Stereopy installation requires an isolated conda environment:
+Prepare an isolated conda environment
 
 .. code:: bash
 
-    conda create --name st
+    conda create --name st python=3.8
     conda activate st
 
-Stereopy is available for installation with pip:
+**Step2**:
+
+Install Stereopy using *pip*
 
 .. code:: bash
 
     pip install stereopy
 
-.. note::
+Anaconda
+------------------------------------
 
-    The machine with Apple m1 cpu is not supported.
+Not yet.
+
+Development Version
+------------------------------------
+**Step1**:
+
+Prepare an isolated conda environment
+
+.. code:: bash
+
+    conda create --name st python=3.8
+    conda activate st
+
+**Step2**:
+
+If you want to use the latest version of dev branch on GitHub, you need to clone the repository and enter the directory.
+
+.. code:: bash
+
+    git clone -b dev https://github.com/BGIResearch/stereopy.git
+
+    cd stereopy
+
+    python setup.py install
+
+Popular bugs
+------------------------------------
+
+Installation failed due to many factors:
+
+**Version of Python**
+
+    make sure you are using python3.7 or python3.8
+
+**Conficts of dependencies**
+
+    find out packages which lead to failures
+
+    create a new requirements.txt and run:
+
+.. code:: bash
+
+    pip install -r requirements.txt
