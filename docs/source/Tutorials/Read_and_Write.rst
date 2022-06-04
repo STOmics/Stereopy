@@ -32,8 +32,22 @@ GEM file
 
 `parameters <https://stereopy.readthedocs.io/en/latest/api/stereo.io.read_gem.html#stereo.io.read_gem>`_
 
+---------------------------------------------------------------------------------------------------------------------
+
 GEF file
 ~~~~~~~~~~~~~~~~~~~~~~~
+
+.. code:: python
+
+    import warnings
+    warnings.filterwarnings('ignore')
+    import stereo as st
+
+    # read the gef file
+    mouse_data_path = './DP8400013846TR_F5.gef'
+    gef_info = st.io.read_gef_info(file_path=mouse_data_path)
+
+You could get the info of gef info and use it to set the parameter of :mod:`st.io.read_gef`
 
 BGEF file
 ****************
@@ -67,6 +81,8 @@ CGEF file
 
 `parameters <https://stereopy.readthedocs.io/en/latest/api/stereo.io.read_gef.html#stereo.io.read_gef>`_
 
+---------------------------------------------------------------------------------------------------------------------
+
 stereo h5ad file
 ~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -82,6 +98,8 @@ stereo h5ad file
 
 `parameters <https://stereopy.readthedocs.io/en/latest/api/stereo.io.read_stereo_h5ad.html>`_
 
+---------------------------------------------------------------------------------------------------------------------
+
 anndata h5ad file
 ~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -96,3 +114,6 @@ anndata h5ad file
     data = st.io.read_ann_h5ad(file_path=mouse_data_path, spatial_key=None)
 
 `parameters <https://stereopy.readthedocs.io/en/latest/api/stereo.io.read_ann_h5ad.html>`_
+
+---------------------------------------------------------------------------------------------------------------------
+
