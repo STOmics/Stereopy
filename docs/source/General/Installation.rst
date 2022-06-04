@@ -6,6 +6,7 @@ Installation
 
 PyPI
 ------------------------------------
+
 **Step1**:
 
 Prepare an isolated conda environment
@@ -54,7 +55,7 @@ If you want to use the latest version of dev branch on GitHub, you need to clone
 Popular bugs
 ------------------------------------
 
-Installation failed due to many factors:
+Installation failed due to some factors:
 
 **Version of Python**
 
