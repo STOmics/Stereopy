@@ -558,3 +558,86 @@ def read_gef(file_path: str, bin_type="bins", bin_size=100, is_sparse=True, gene
     logger.info(f'read_gef end.')
 
     return data
+
+def read_gef_info(file_path: str):
+    """
+    read the infomation of gef(.h5) file.
+
+    :param file_path: input file
+    """
+    from gefpy.utils import gef_is_cell_bin
+
+    bin_type = gef_is_cell_bin(file_path)
+
+    h5_file = h5py.File(file_path, 'r')
+    info_dict = {}
+
+    if not bin_type:
+        logger.info('This is BGEF file which contains traditional bin infomation.')
+        logger.info('bin_type: bins')
+        
+        info_dict['bin_list'] = list(h5_file['geneExp'].keys())
+        logger.info('Bin size list: {0}'.format(info_dict['bin_list']))
+
+        info_dict['resolution'] = h5_file['geneExp']['bin1']['expression'].attrs['resolution'][0]
+        logger.info('Resolution: {0}'.format(info_dict['resolution']))
+
+        info_dict['gene_count'] = h5_file['geneExp']['bin1']['gene'].shape[0]
+        logger.info('Gene count: {0}'.format(info_dict['gene_count']))
+
+        maxX = h5_file['geneExp']['bin1']['expression'].attrs['maxX'][0]
+        minX = h5_file['geneExp']['bin1']['expression'].attrs['minX'][0]
+
+        maxY = h5_file['geneExp']['bin1']['expression'].attrs['maxY'][0]
+        minY = h5_file['geneExp']['bin1']['expression'].attrs['minY'][0]
+
+        info_dict['offsetX'] = minX
+        logger.info('offsetX: {0}'.format(info_dict['offsetX']))
+
+        info_dict['offsetY'] = minY
+        logger.info('offsetY: {0}'.format(info_dict['offsetY']))
+
+        info_dict['width'] = maxX - minX
+        logger.info('Width: {0}'.format(info_dict['width']))
+
+        info_dict['height'] = maxY - minY
+        logger.info('Height: {0}'.format(info_dict['height']))
+
+        info_dict['maxExp'] = h5_file['geneExp']['bin1']['expression'].attrs['maxExp'][0]
+        logger.info('Max Exp: {0}'.format(info_dict['maxExp']))
+
+    else:
+        logger.info('This is CGEF file which contains cell bin infomation.')
+        logger.info('bin_type: cell_bins')
+
+        from gefpy.cgef_reader_cy import CgefR
+        cgef = CgefR(file_path)
+
+        info_dict['cell_num'] = cgef.get_cell_num()
+        logger.info('Number of cells: {0}'.format(info_dict['cell_num']))
+
+        info_dict['gene_num'] = cgef.get_gene_num()
+        logger.info('Number of gene: {0}'.format(info_dict['gene_num']))
+
+        info_dict['resolution'] = h5_file.attrs['resolution'][0]
+        logger.info('Resolution: {0}'.format(info_dict['resolution']))
+
+        info_dict['offsetX'] = h5_file.attrs['offsetX'][0]
+        logger.info('offsetX: {0}'.format(info_dict['offsetX']))
+
+        info_dict['offsetY'] = h5_file.attrs['offsetY'][0]
+        logger.info('offsetY: {0}'.format(info_dict['offsetY']))
+
+        info_dict['averageGeneCount'] = h5_file['cellBin']['cell'].attrs['averageGeneCount'][0]
+        logger.info('Average number of genes: {0}'.format(info_dict['averageGeneCount']))
+
+        info_dict['maxGeneCount'] = h5_file['cellBin']['cell'].attrs['maxGeneCount'][0]
+        logger.info('Maximum number of genes: {0}'.format(info_dict['maxGeneCount']))
+
+        info_dict['averageExpCount'] = h5_file['cellBin']['cell'].attrs['averageExpCount'][0]
+        logger.info('Average expression: {0}'.format(info_dict['averageExpCount']))
+        
+        info_dict['maxExpCount'] = h5_file['cellBin']['cell'].attrs['maxExpCount'][0]
+        logger.info('Maximum expression: {0}'.format(info_dict['maxExpCount']))
+        
+    return info_dict
