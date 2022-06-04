@@ -47,7 +47,8 @@ GEF file
     mouse_data_path = './DP8400013846TR_F5.gef'
     gef_info = st.io.read_gef_info(file_path=mouse_data_path)
 
-You could get the info of gef info and use it to set the parameter of :mod:`st.io.read_gef`
+You could get the info of gef info and use it to set the parameter of .. py:function:: st.io.read_gef;
+
 
 BGEF file
 ****************
