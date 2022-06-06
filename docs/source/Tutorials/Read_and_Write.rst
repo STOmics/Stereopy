@@ -139,6 +139,7 @@ so you could save the new data into a new GEF file.
     import stereo as st
 
     st.io.write_mid_gef(data, output)
+`example <https://stereopy.readthedocs.io/en/latest/Tutorials/interactive_cluster.html>`_
 
 existing GEF file
 ****************
@@ -150,5 +151,19 @@ After you read an input gef and clustering, you could add the clustering result(
     warnings.filterwarnings('ignore')
     import stereo as st
 
-    st.io.update_gef(data, gef_file, cluster_res_key)
+    # read the gef file
+    mouse_data_path = './stereomics.h5'
+    data = st.io.read_gef(file_path=mouse_data_path, bin_size=50)
+
+    # preprocessing and clustering
+    data.tl.cal_qc()
+    data.tl.raw_checkpoint()
+    data.tl.sctransform(res_key='sctransform', inplace=True)
+    data.tl.pca(use_highly_genes=False, n_pcs=30, res_key='pca')
+    data.tl.neighbors(pca_res_key='pca', n_pcs=30, res_key='neighbors')
+    data.tl.umap(pca_res_key='pca', neighbors_res_key='neighbors', res_key='umap')
+    data.tl.leiden(neighbors_res_key='neighbors', res_key='leiden')
+
+    # add cluster group stored in cluster_res_key into GEF file.
+    st.io.update_gef(data, gef_file, cluster_res_key='leiden')
 
