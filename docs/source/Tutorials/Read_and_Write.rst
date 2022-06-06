@@ -122,10 +122,12 @@ anndata h5ad file
 
 ---------------------------------------------------------------------------------------------------------------------
 
-After preprocessiong and other steps, you could save results into an output file using commands.
-
 writing
 -------------------------
+After preprocessiong and other steps, you could save results into output files using commands.
+
+
+---------------------------------------------------------------------------------------------------------------------
 
 stereo h5ad file
 ~~~~~~~~~~~~~~~~~~~~~~~
@@ -136,6 +138,8 @@ stereo h5ad file
     import stereo as st
 
     st.io.write_h5ad(data, use_raw=True, use_result=True, key_record=None)
+
+---------------------------------------------------------------------------------------------------------------------
 
 GEF file
 ~~~~~~~~~~~~~~~~~~~~~~~
@@ -152,6 +156,8 @@ so you could save the new data into a new GEF file.
     import stereo as st
 
     st.io.write_mid_gef(data, output)
+
+---------------------------------------------------------------------------------------------------------------------
 
 existing GEF file
 ****************
