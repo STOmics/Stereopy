@@ -51,7 +51,7 @@ GEF file
     mouse_data_path = './DP8400013846TR_F5.gef'
     gef_info = st.io.read_gef_info(file_path=mouse_data_path)
 
-You could get the info of gef info and use it to set the parameter of :mod:`stereo.io.read_gef`
+You could get the info from input gef file and use the info to set the parameter of :mod:`stereo.io.read_gef`
 
 
 BGEF file
@@ -121,4 +121,47 @@ anndata h5ad file
 `parameters <https://stereopy.readthedocs.io/en/latest/api/stereo.io.read_ann_h5ad.html>`_
 
 ---------------------------------------------------------------------------------------------------------------------
+
+After preprocessiong and other steps, you could save results into an output file using commands.
+
+writing
+-------------------------
+
+stereo h5ad file
+~~~~~~~~~~~~~~~~~~~~~~~
+.. code:: python
+
+    import warnings
+    warnings.filterwarnings('ignore')
+    import stereo as st
+
+    st.io.write_h5ad(data, use_raw=True, use_result=True, key_record=None)
+
+GEF file
+~~~~~~~~~~~~~~~~~~~~~~~
+
+new GEF file
+****************
+You may use lasso tool or gene_list/region_list to cut off the data and these steps can generate new StereoExpObject,
+so you could save the new data into a new GEF file.
+
+.. code:: python
+
+    import warnings
+    warnings.filterwarnings('ignore')
+    import stereo as st
+
+    st.io.write_mid_gef(data, output)
+
+existing GEF file
+****************
+After you read an input gef and clustering, you could add the clustering result(leiden/louvain...) into the input GEF file.
+
+.. code:: python
+
+    import warnings
+    warnings.filterwarnings('ignore')
+    import stereo as st
+
+    st.io.update_gef(data, gef_file, cluster_res_key)
 
