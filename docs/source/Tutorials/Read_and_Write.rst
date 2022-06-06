@@ -42,7 +42,7 @@ GEF file
     import stereo as st
 
     # read the gef file
-    mouse_data_path = './DP8400013846TR_F5.gef'
+    mouse_data_path = './DP8400013846TR_F5.SN.tissue.gef'
     gef_info = st.io.read_gef_info(file_path=mouse_data_path)
 
 You could get the info from input gef file and use the info to set the parameter of :mod:`stereo.io.read_gef`
@@ -57,7 +57,7 @@ BGEF file
     import stereo as st
 
     # read the gef file
-    mouse_data_path = './DP8400013846TR_F5.gef'
+    mouse_data_path = './DP8400013846TR_F5.SN.tissue.gef'
     data = st.io.read_gef(
             file_path= mouse_data_path, sep='\t',
             bin_size=100, is_sparse=True,
@@ -112,7 +112,19 @@ anndata h5ad file
 
 writing
 -------------------------
-After preprocessiong and other steps, you could save results into output files using commands.
+After reading and other steps, you could save the data into output files.
+
+anndata h5ad file
+~~~~~~~~~~~~~~~~~~~~~~~
+.. code:: python
+
+    import warnings
+    warnings.filterwarnings('ignore')
+    import stereo as st
+
+    # read the gef file
+    mouse_data_path = './DP8400013846TR_F5.SN.tissue.gef'
+    data = st.io.read_gef(file_path=mouse_data_path, bin_size=50)
 
 stereo h5ad file
 ~~~~~~~~~~~~~~~~~~~~~~~
@@ -122,14 +134,35 @@ stereo h5ad file
     warnings.filterwarnings('ignore')
     import stereo as st
 
+    # read the gef file
+    mouse_data_path = './DP8400013846TR_F5.SN.tissue.gef'
+    data = st.io.read_gef(file_path=mouse_data_path, bin_size=50)
+
+    # clustering
+    data.tl.cal_qc()
+    data.tl.raw_checkpoint()
+    data.tl.sctransform(res_key='sctransform', inplace=True)
+    data.tl.pca(use_highly_genes=False, n_pcs=30, res_key='pca')
+    data.tl.neighbors(pca_res_key='pca', n_pcs=30, res_key='neighbors')
+    data.tl.umap(pca_res_key='pca', neighbors_res_key='neighbors', res_key='umap')
+    data.tl.leiden(neighbors_res_key='neighbors', res_key='leiden')
+    data.tl.louvain(neighbors_res_key='neighbors', res_key='louvain')
+
+    # writer a new h5ad with StereoExpObject
     st.io.write_h5ad(data, use_raw=True, use_result=True, key_record=None)
+
+    # you could create a dictionary similar to data.tl.key_record :
+    output_key = {'cluster':['leiden','louvain'],}
+    st.io.write_h5ad(data, use_raw=True, use_result=True, key_record=output_key)
+
+
 
 GEF file
 ~~~~~~~~~~~~~~~~~~~~~~~
 
 new GEF file
 ****************
-You may use lasso tool or gene_list/region_list to cut off the data and these steps can generate new StereoExpObject,
+You may use lasso tool or gene_list/region_list to filter the data and these steps can generate filtered StereoExpObject,
 so you could save the new data into a new GEF file.
 
 .. code:: python
@@ -138,12 +171,22 @@ so you could save the new data into a new GEF file.
     warnings.filterwarnings('ignore')
     import stereo as st
 
-    st.io.write_mid_gef(data, output)
-`example <https://stereopy.readthedocs.io/en/latest/Tutorials/interactive_cluster.html>`_
+    # read the gef file
+    mouse_data_path = './DP8400013846TR_F5.SN.tissue.gef'
+    data = st.io.read_gef(file_path=mouse_data_path, bin_size=50)
+
+    # use gene list for filtering
+    data.tl.filter_genes(gene_list=['H2al2a','Gm6135'], inplace=True)
+
+    # save filtered data and output file only contains the result after filtering
+    st.io.write_mid_gef(data=data, output='./DP8400013846TR_F5.filtered.gef')
+
+`example of lasso tool <https://stereopy.readthedocs.io/en/latest/Tutorials/interactive_cluster.html>`_
 
 existing GEF file
 ****************
-After you read an input gef and clustering, you could add the clustering result(leiden/louvain...) into the input GEF file.
+After you read an input GEF and clustering,
+you could add the cluster group(come from leiden/louvain...method) into the input GEF file.
 
 .. code:: python
 
@@ -152,10 +195,10 @@ After you read an input gef and clustering, you could add the clustering result(
     import stereo as st
 
     # read the gef file
-    mouse_data_path = './stereomics.h5'
+    mouse_data_path = './DP8400013846TR_F5.SN.tissue.gef'
     data = st.io.read_gef(file_path=mouse_data_path, bin_size=50)
 
-    # preprocessing and clustering
+    # clustering
     data.tl.cal_qc()
     data.tl.raw_checkpoint()
     data.tl.sctransform(res_key='sctransform', inplace=True)
@@ -164,6 +207,6 @@ After you read an input gef and clustering, you could add the clustering result(
     data.tl.umap(pca_res_key='pca', neighbors_res_key='neighbors', res_key='umap')
     data.tl.leiden(neighbors_res_key='neighbors', res_key='leiden')
 
-    # add cluster group stored in cluster_res_key into GEF file.
-    st.io.update_gef(data, gef_file, cluster_res_key='leiden')
+    # add cluster group stored in cluster_res_key into GEF file which is read before.
+    st.io.update_gef(data=data, gef_file=mouse_data_path, cluster_res_key='leiden')
 
