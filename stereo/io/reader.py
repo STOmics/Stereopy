@@ -219,7 +219,7 @@ def read_ann_h5ad(file_path, spatial_key: Optional[str] = None):
     read the h5ad file in Anndata format, and generate the object of StereoExpData.
 
     :param file_path: h5ad file path.
-    :param spatial_key: use .obsm[`'spatial_key'`] as position. If spatial data, must set.
+    :param spatial_key: use .obsm[`'spatial_key'`] as position.
     :return: StereoExpData obj.
     """
     data = StereoExpData(file_path=file_path)
