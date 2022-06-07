@@ -8,16 +8,22 @@ IO
 
     read_and_write
 
-Interactive Visualisation and additional functionalities:
-----------------------
+Additional functionalities
+--------------------------------------------
+.. nbgallery::
+
+
+
+Interactive Visualisation and
+--------------------------------------------
 This section contains various examples for the interactive plots.
 
 .. nbgallery::
 
     interactive_cluster
 
-Cell Image
------------------
+Image preprocessing
+---------------------------------------
 This section contains various examples from the :mod:`stereo.im` module.
 
 .. nbgallery::
@@ -26,7 +32,7 @@ This section contains various examples from the :mod:`stereo.im` module.
     tissue_cut
 
 Work with other spatial tools
-----------------------------
+--------------------------------------------------
 This section contains various short examples of format conversion for integration with scanpy，seurat:
 
 .. nbgallery::
