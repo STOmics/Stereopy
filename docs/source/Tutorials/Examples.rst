@@ -2,6 +2,12 @@ Examples
 ============
 This section contains various short examples.
 
+Clustering
+----------------------
+.. nbgallery::
+
+    quick_start
+
 IO
 ----------------------
 .. nbgallery::
@@ -14,7 +20,7 @@ Additional functionalities
 
 
 
-Interactive Visualisation and
+Interactive Visualisation
 --------------------------------------------
 This section contains various examples for the interactive plots.
 
