@@ -536,7 +536,15 @@ def read_gef(file_path: str, bin_type="bins", bin_size=100, is_sparse=True, gene
             gene_num = gef.get_gene_num()
             data = StereoExpData(file_path=file_path, bin_type=bin_type, bin_size=bin_size)
             data.offset_x, data.offset_y = gef.get_offset()
-            data.attr = gef.get_exp_attr()
+            gef_attr = gef.get_exp_attr()
+            data.attr={
+                'minX': gef_attr[0],
+                'minY': gef_attr[1],
+                'maxX': gef_attr[2],
+                'maxY': gef_attr[3],
+                'maxExp': gef_attr[4],
+                'resolution': gef_attr[5],
+            }
             uniq_cells, rows, count = gef.get_exp_data()
             cell_num = len(uniq_cells)
             logger.info(f'the martrix has {cell_num} cells, and {gene_num} genes.')
