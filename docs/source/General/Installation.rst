@@ -1,25 +1,31 @@
 Installation
 ============
+.. note::
+    Our tool could be installed on Linux, MacOS with python3.7 or python3.8.
+    The machine with Apple m1 cpu is not supported now.
 
-Installation (recommended)
+PyPI
 ------------------------------------
 
 **Step1**:
 
-Stereopy installation requires an isolated conda environment:
+Prepare an isolated conda environment
 
 .. code:: bash
 
-    conda create --name st
+    conda create --name st python=3.8
     conda activate st
 
-Stereopy is available for installation with pip:
+**Step2**:
+
+Install Stereopy using *pip*
 
 .. code:: bash
 
     pip install stereopy
 
-.. note::
+Anaconda
+------------------------------------
 
 Not yet.
 
