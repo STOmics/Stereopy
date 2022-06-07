@@ -24,7 +24,7 @@ class CellSegment(object):
     
     def get_mask_files(self):
         if self.mask_out_path is None:
-            raise Exception("no mask files, the mask generating is not yet be ran")
+            raise Exception("no mask files, please run the function generate_mask first")
         return [os.path.join(self.mask_out_path, file_name) for file_name in os.listdir(self.mask_out_path) if file_name.endswith('mask.tif')]
 
     def remove_all_mask_files(self):
