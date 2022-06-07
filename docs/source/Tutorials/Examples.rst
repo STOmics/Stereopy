@@ -6,7 +6,7 @@ Clustering
 ----------------------
 .. nbgallery::
 
-    quick_start
+    clustering
 
 IO
 ----------------------
@@ -18,7 +18,7 @@ Additional functionalities
 --------------------------------------------
 .. nbgallery::
 
-
+    hotspot
 
 Interactive Visualisation
 --------------------------------------------
@@ -37,7 +37,7 @@ This section contains various examples from the :mod:`stereo.im` module.
     cell_segmentation
     tissue_cut
 
-Work with other spatial tools
+Working with other spatial tools
 --------------------------------------------------
 This section contains various short examples of format conversion for integration with scanpy，seurat:
 
