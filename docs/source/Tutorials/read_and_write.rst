@@ -2,11 +2,6 @@ Read and Write
 ==================
 This section contains the introduction of reading and writing.
 
-.. image:: ./_static/data_structure.png
-    :alt: Title figure
-    :width: 400px
-    :align: center
-
 File Format
 -------------------------
 Here is the list of input file that Stereopy could read:
