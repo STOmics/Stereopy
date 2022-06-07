@@ -42,7 +42,6 @@ pending upgrade.
    :maxdepth: 2
 
 
-   Tutorials/quick_start
    Tutorials/Examples
    release_note
 
