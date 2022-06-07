@@ -46,11 +46,11 @@ GEF file
     warnings.filterwarnings('ignore')
     import stereo as st
 
-    # read the gef file
+    # read the GEF file
     mouse_data_path = './DP8400013846TR_F5.SN.tissue.gef'
     gef_info = st.io.read_gef_info(file_path=mouse_data_path)
 
-You could get the info from input gef file and use the info to set the parameter of :mod:`stereo.io.read_gef`
+You could get the info from input GEF file and use the info to set the parameter of :mod:`stereo.io.read_gef`
 
 
 BGEF file
@@ -61,7 +61,7 @@ BGEF file
     warnings.filterwarnings('ignore')
     import stereo as st
 
-    # read the gef file
+    # read the GEF file
     mouse_data_path = './DP8400013846TR_F5.SN.tissue.gef'
     data = st.io.read_gef(
             file_path= mouse_data_path, sep='\t',
@@ -76,7 +76,7 @@ CGEF file
     warnings.filterwarnings('ignore')
     import stereo as st
 
-    # read the gef file
+    # read the GEF file
     mouse_data_path = './DP8400013846TR_F5.gef'
     data = st.io.read_gef(
             file_path= mouse_data_path, sep='\t',
@@ -94,7 +94,7 @@ stereo h5ad file
     warnings.filterwarnings('ignore')
     import stereo as st
 
-    # read the gef file
+    # read the GEF file
     mouse_data_path = './DP8400013846TR_F5.st.h5ad'
     data = st.io.read_stereo_h5ad(file_path=mouse_data_path, use_raw=True, use_result=True,)
 
@@ -109,7 +109,7 @@ anndata h5ad file
     warnings.filterwarnings('ignore')
     import stereo as st
 
-    # read the gef file
+    # read the GEF file
     mouse_data_path = './DP8400013846TR_F5.anndata.h5ad'
     data = st.io.read_ann_h5ad(file_path=mouse_data_path, spatial_key=None)
 
@@ -133,7 +133,7 @@ so you could save the new data into a new GEF file.
     warnings.filterwarnings('ignore')
     import stereo as st
 
-    # read the gef file
+    # read the GEF file
     mouse_data_path = './DP8400013846TR_F5.SN.tissue.gef'
     data = st.io.read_gef(file_path=mouse_data_path, bin_size=50)
 
@@ -156,7 +156,7 @@ you could add the cluster group(come from leiden/louvain...method) into the inpu
     warnings.filterwarnings('ignore')
     import stereo as st
 
-    # read the gef file
+    # read the GEF file
     mouse_data_path = './DP8400013846TR_F5.SN.tissue.gef'
     data = st.io.read_gef(file_path=mouse_data_path, bin_size=50)
 
@@ -180,7 +180,7 @@ stereo h5ad file
     warnings.filterwarnings('ignore')
     import stereo as st
 
-    # read the gef file
+    # read the GEF file
     mouse_data_path = './DP8400013846TR_F5.SN.tissue.gef'
     data = st.io.read_gef(file_path=mouse_data_path, bin_size=50)
 
@@ -215,7 +215,7 @@ anndata h5ad file
     warnings.filterwarnings('ignore')
     import stereo as st
 
-    # read the gef file
+    # read the GEF file
     mouse_data_path = './DP8400013846TR_F5.SN.tissue.gef'
     data = st.io.read_gef(file_path=mouse_data_path, bin_size=50)
 
