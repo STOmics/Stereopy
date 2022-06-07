@@ -2,7 +2,7 @@ Examples
 ============
 This section contains various short examples.
 
-Read and Write
+IO
 ----------------------
 .. nbgallery::
 
@@ -25,9 +25,9 @@ This section contains various examples from the :mod:`stereo.im` module.
     cell_segmentation
     tissue_cut
 
-Format Conversion
+Work with other spatial tools
 ----------------------------
-This section contains various short examples of format conversion.
+This section contains various short examples of format conversion for integration with scanpy，seurat:
 
 .. nbgallery::
 
