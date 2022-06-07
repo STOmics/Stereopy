@@ -44,3 +44,11 @@ This section contains various short examples of format conversion for integratio
 .. nbgallery::
 
     FormatConversion
+
+Cell Correction
+---------------
+This section contains some examples of cell correction.
+
+.. nbgallery::
+
+    cell_correction

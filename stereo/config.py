@@ -26,7 +26,7 @@ class StereoConfig(object):
             n_jobs=1,
             log_file: Union[str, Path, None] = None,
             log_level: str = "info",
-            log_format: str = "%(asctime)s %(name)s %(levelname)s: %(message)s",
+            log_format: str = "%(asctime)s %(name)s %(process)d %(thread)d %(module)s %(lineno)d %(levelname)s: %(message)s",
             output: str = "./output",
             data_dir: str = None
     ):
