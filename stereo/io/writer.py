@@ -71,6 +71,7 @@ def write_h5ad(data, use_raw=True, use_result=True, key_record=None):
             for analysis_key in mykey_record.keys():
                 if analysis_key not in supported_keys:
                     mykey_record.pop(analysis_key)
+                    logger.info(f'key_name:{analysis_key} is not recongnized, try to select the name in {supported_keys} as your key_name.')
             h5ad.write_key_record(f, 'key_record', mykey_record)
 
             for analysis_key, res_keys in mykey_record.items():

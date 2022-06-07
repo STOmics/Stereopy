@@ -119,49 +119,6 @@ writing
 -------------------------
 After reading and other steps, you could save the data into output files.
 
-anndata h5ad file
-~~~~~~~~~~~~~~~~~~~~~~~
-.. code:: python
-
-    import warnings
-    warnings.filterwarnings('ignore')
-    import stereo as st
-
-    # read the gef file
-    mouse_data_path = './DP8400013846TR_F5.SN.tissue.gef'
-    data = st.io.read_gef(file_path=mouse_data_path, bin_size=50)
-
-stereo h5ad file
-~~~~~~~~~~~~~~~~~~~~~~~
-.. code:: python
-
-    import warnings
-    warnings.filterwarnings('ignore')
-    import stereo as st
-
-    # read the gef file
-    mouse_data_path = './DP8400013846TR_F5.SN.tissue.gef'
-    data = st.io.read_gef(file_path=mouse_data_path, bin_size=50)
-
-    # clustering
-    data.tl.cal_qc()
-    data.tl.raw_checkpoint()
-    data.tl.sctransform(res_key='sctransform', inplace=True)
-    data.tl.pca(use_highly_genes=False, n_pcs=30, res_key='pca')
-    data.tl.neighbors(pca_res_key='pca', n_pcs=30, res_key='neighbors')
-    data.tl.umap(pca_res_key='pca', neighbors_res_key='neighbors', res_key='umap')
-    data.tl.leiden(neighbors_res_key='neighbors', res_key='leiden')
-    data.tl.louvain(neighbors_res_key='neighbors', res_key='louvain')
-
-    # writer a new h5ad with StereoExpObject
-    st.io.write_h5ad(data, use_raw=True, use_result=True, key_record=None)
-
-    # you could create a dictionary similar to data.tl.key_record :
-    output_key = {'cluster':['leiden','louvain'],}
-    st.io.write_h5ad(data, use_raw=True, use_result=True, key_record=output_key)
-
-
-
 GEF file
 ~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -214,4 +171,56 @@ you could add the cluster group(come from leiden/louvain...method) into the inpu
 
     # add cluster group stored in cluster_res_key into GEF file which is read before.
     st.io.update_gef(data=data, gef_file=mouse_data_path, cluster_res_key='leiden')
+
+stereo h5ad file
+~~~~~~~~~~~~~~~~~~~~~~~
+.. code:: python
+
+    import warnings
+    warnings.filterwarnings('ignore')
+    import stereo as st
+
+    # read the gef file
+    mouse_data_path = './DP8400013846TR_F5.SN.tissue.gef'
+    data = st.io.read_gef(file_path=mouse_data_path, bin_size=50)
+
+    # clustering
+    data.tl.cal_qc()
+    data.tl.raw_checkpoint()
+    data.tl.sctransform(res_key='sctransform', inplace=True)
+    data.tl.pca(use_highly_genes=False, n_pcs=30, res_key='pca')
+    data.tl.neighbors(pca_res_key='pca', n_pcs=30, res_key='neighbors')
+    data.tl.umap(pca_res_key='pca', neighbors_res_key='neighbors', res_key='umap')
+    data.tl.leiden(neighbors_res_key='neighbors', res_key='leiden')
+    data.tl.louvain(neighbors_res_key='neighbors', res_key='louvain')
+
+    # data.tl.key_record is a dictionary created automatically by Stereopy while you are running coordinated commands of Stereopy.
+    # keys in data.tl.key_record is set by Stereopy, values is set according to the res_key in the commands above.
+    print(data.tl.key_record)
+
+    # write a new h5ad with StereoExpObject, if key_record = None, it will use the res_key stored in data.tl.key_record)
+    st.io.write_h5ad(data, use_raw=True, use_result=True, key_record=None)
+
+    # you could create a dictionary which is similar to data.tl.key_record:
+    outkey_record = {'cluster':['leiden','louvain'],}
+
+    st.io.write_h5ad(data, use_raw=True, use_result=True, key_record=outkey_record)
+
+
+anndata h5ad file
+~~~~~~~~~~~~~~~~~~~~~~~
+.. code:: python
+
+    import warnings
+    warnings.filterwarnings('ignore')
+    import stereo as st
+
+    # read the gef file
+    mouse_data_path = './DP8400013846TR_F5.SN.tissue.gef'
+    data = st.io.read_gef(file_path=mouse_data_path, bin_size=50)
+
+    # conversion
+    adata = st.io.stereo_to_anndata(data,flavor='seurat',output='out.h5ad')
+
+`work with scanpy/seurat <https://stereopy.readthedocs.io/en/latest/Tutorials/FormatConversion.html>`_
 

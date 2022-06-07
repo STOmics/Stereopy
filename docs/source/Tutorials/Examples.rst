@@ -6,9 +6,9 @@ IO
 ----------------------
 .. nbgallery::
 
-    Read_and_Write
+    read_and_write
 
-Interactive plot
+Interactive Visualisation and additional functionalities:
 ----------------------
 This section contains various examples for the interactive plots.
 
@@ -16,7 +16,7 @@ This section contains various examples for the interactive plots.
 
     interactive_cluster
 
-Image
+Cell Image
 -----------------
 This section contains various examples from the :mod:`stereo.im` module.
 
