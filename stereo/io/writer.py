@@ -164,8 +164,8 @@ def write_mid_gef(data, output):
     geneExp[binsz]["expression"] = final_exp_np  # np.arry([(10,20,2), (20,40,3)], dtype=exptype)
     geneExp[binsz]["gene"] = final_gene_np  # np.arry([("gene1",0,21), ("gene2",21,3)], dtype=genetype)
     if data.attr is not None:
-        for key,value in data.attr.items():
-            bing["expression"].attrs.create(key,value)
+        for key, value in data.attr.items():
+            bing["expression"].attrs.create(key, value)
     h5f.attrs.create("version", 2)
     h5f.close()
 
