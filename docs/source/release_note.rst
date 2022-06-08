@@ -3,11 +3,23 @@ Release Notes
 
 .. role:: small
 
+Version 0.3.0
+------------------
+0.3.0 :2022-06-10
+~~~~~~~~~~~~~~~~~~~~~
+1. Add cell bin correction function.
+2. Add scale function in normalization.
+3. Support write the StereoExpData into a gef file.
+4. Fix bug of sctransform, reading the gef/gem file and annh5ad2rds.R.
+5. Update default cluster groups to start at 1.
+6. Support write StereoExpData to stereo h5ad function.
+7. Update requirements.txt.
+
 Version 0.2.4
 ------------------
 0.2.4 :2022-01-19
 ~~~~~~~~~~~~~~~~~~~~~
-1.Fix bug of tar package
+1. Fix bug of tar package.
 
 Version 0.2.3
 -----------

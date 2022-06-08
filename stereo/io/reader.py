@@ -45,7 +45,7 @@ def read_gem(file_path, sep='\t', bin_type="bins", bin_size=100, is_sparse=True)
 
     :return: an object of StereoExpData.
     """
-    data = StereoExpData(file_path=file_path, bin_type=bin_type)
+    data = StereoExpData(file_path=file_path, bin_type=bin_type, bin_size=bin_size)
     df = pd.read_csv(str(data.file), sep=sep, comment='#', header=0)
     if 'MIDCounts' in df.columns:
         df.rename(columns={'MIDCounts': 'UMICount'}, inplace=True)
