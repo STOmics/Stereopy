@@ -118,6 +118,8 @@ BGI_spatial <- generate_BGI_spatial(image = tissue_lowres_image,
 
 #' import image into seurat object
 Stdata@images[['slice1']] <-BGI_spatial
+Stdata@images$slice1@key<-"slice1_"
+Stdata@images$slice1@assay<-"Spatial"
 ##转换完成，保持
 saveRDS(Stdata,outfile)
 print("Finished RDS.")
