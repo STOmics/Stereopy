@@ -35,6 +35,7 @@ This section contains various examples from the :mod:`stereo.im` module.
 .. nbgallery::
 
     cell_segmentation
+    cell_correction
     tissue_cut
 
 Working with other spatial tools
