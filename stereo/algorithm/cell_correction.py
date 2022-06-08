@@ -91,6 +91,7 @@ class CellCorrection(object):
         self.threshold = threshold
         self.process = process
         self.radius = 50
+        self.progress_update_interval = 10
         self.err_log_dir = err_log_dir
         if self.err_log_dir is not None and not os.path.exists(self.err_log_dir):
             os.makedirs(self.err_log_dir)
@@ -119,56 +120,6 @@ class CellCorrection(object):
         cell_coor = cell_data.groupby('label').mean()[['x', 'y']].reset_index()
 
         return data, cell_data, cell_coor
-    
-    # def gmm_score_func(self, args):
-    #     t0 = time.time()
-    #     data, data_idx, cell_coor, radius, p_num = args
-    #     logger.info(f"start the proc {p_num}")
-    #     p_data = []
-    #     count = len(data_idx)
-    #     for idx, i in enumerate(data_idx):
-    #         if ((idx + 1) % 10 == 0) or (idx + 1 == count):
-    #             t1 = time.time()
-    #             logger.info("proc {}: {}/{} done, {:.2f}s.".format(p_num, idx + 1, count, t1 - t0))
-    #             # print("proc {}: {}/{} done, {:.2f}s.".format(p_num, idx, len(data_idx), t1 - t0))
-    #         try:
-    #             clf = GaussianMixture(n_components=3, covariance_type='spherical')
-    #             # Gaussian Mixture Model GPU version
-    #             cell_test = data[(data.x < cell_coor.loc[i].x + radius) & (data.x > cell_coor.loc[i].x - radius) 
-    #                             & (data.y > cell_coor.loc[i].y - radius) & (data.y < cell_coor.loc[i].y + radius)]
-    #             # fit GaussianMixture Model
-    #             clf.fit(cell_test[cell_test.label == cell_coor.loc[i].label][['x', 'y', 'UMICount']].values)
-    #             cell_test_bg = cell_test[cell_test.label == 0]
-    #             # threshold 20
-    #             score = pd.Series(-clf.score_samples(cell_test_bg[['x', 'y', 'UMICount']].values))
-    #             cell_test_bg['score'] = score.values
-    #             threshold = self.threshold
-    #             cell_test_bg['label'] = np.where(score < threshold, cell_coor.loc[i].label, 0)
-    #             # used multiprocessing have to save result to file
-    #             p_data.append(cell_test_bg)
-    #         except Exception as e:
-    #             logger.error(f"proc {p_num}: cell id {cell_coor.loc[i].label} {e}")
-
-    #     out = pd.concat(p_data)
-    #     return out
-    
-    # def gmm_score(self, data, cell_coor):
-    #     executor = ProcessPoolExecutor(max_workers=self.process)
-    #     qs = math.ceil(len(cell_coor.index) / int(self.process))
-    #     params = []
-    #     for i in range(self.process):
-    #         idx = np.arange(i * qs, min((i + 1) * qs, len(cell_coor.index)))
-    #         if len(idx) == 0: continue
-    #         # def __gmm_score_func(self, data, data_idx, cell_coor, radius, p_num):
-    #         param = (data, idx, cell_coor, self.radius, i)
-    #         params.append(param)
-        
-    #     bg_adjust_label = []
-    #     logger.info(f"start {self.process} processes, params lenth is {len(params)}")
-    #     for result in executor.map(self.gmm_score_func, params):
-    #         bg_adjust_label.append(result)
-
-    #     return bg_adjust_label
 
     def gmm_score_func(self, data, data_idx, cell_coor, radius, threshold, p_num, queue, lock, err_log_fp=None):
         # t0 = time.time()
@@ -205,9 +156,9 @@ class CellCorrection(object):
                     lock.release()
                     err_logs.clear()
 
-            mod = (idx + 1) % 10
+            mod = (idx + 1) % self.progress_update_interval
             if (mod == 0) or (idx + 1 == count):
-                c = 10 if mod == 0 else mod
+                c = self.progress_update_interval if mod == 0 else mod
                 queue.put((False, p_num, c))
 
         out = pd.concat(p_data)
