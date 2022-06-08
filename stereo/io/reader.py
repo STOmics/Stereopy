@@ -537,7 +537,7 @@ def read_gef(file_path: str, bin_type="bins", bin_size=100, is_sparse=True, gene
             data = StereoExpData(file_path=file_path, bin_type=bin_type, bin_size=bin_size)
             data.offset_x, data.offset_y = gef.get_offset()
             gef_attr = gef.get_exp_attr()
-            data.attr={
+            data.attr = {
                 'minX': gef_attr[0],
                 'minY': gef_attr[1],
                 'maxX': gef_attr[2],
