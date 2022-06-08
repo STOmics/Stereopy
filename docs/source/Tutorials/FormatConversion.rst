@@ -1,14 +1,14 @@
 Format Conversion
 ==================
-This section contains the introduction of format conversion.
+This section contains the introduction of format conversion, so you can work with other spatial tools.
 
-StereoExpData to Anndata
--------------------------
-The io module provides the function :mod:`stereo.io.stereo_to_anndata` to convert the StereoExpData into anndata format and output the
+Working with scanpy package
+--------------------------------------------------
+The io module provides the function :mod:`stereo.io.stereo_to_anndata` to convert the StereoExpData into Anndata and output the
 corresponding h5ad file(.h5ad).
 
-parameters
-~~~~~~~~~~~~~~~
+StereoExpData to Anndata
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 :param data: StereoExpData object
 :param flavor: 'scanpy' or 'seurat'. If you want to convert the output_h5ad into the rds file, set flavor='seurat'.
@@ -47,11 +47,15 @@ Example like this:
     # Otherwise, it will raise errors during conversion.
     adata = st.io.stereo_to_anndata(data,flavor='seurat',output='out.h5ad')
 
+Working with seurat package
+-------------------------------------------------
+
 h5ad to rds file
-----------------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
 The output h5ad could be converted into rds file by `annh5ad2rds.R <https://github.com/BGIResearch/stereopy/blob/dev/docs/source/_static/annh5ad2rds.R>`_.
 
-It will generate a h5seurat file at first and then generate a rds file.
+It will generate a h5seurat file at first and then generate a rds file, so you can work with seurat package,
 
 You can run this script in your own R environment:
 

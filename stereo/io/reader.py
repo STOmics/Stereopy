@@ -219,7 +219,7 @@ def read_ann_h5ad(file_path, spatial_key: Optional[str] = None):
     read the h5ad file in Anndata format, and generate the object of StereoExpData.
 
     :param file_path: h5ad file path.
-    :param spatial_key: use .obsm[`'spatial_key'`] as position. If spatial data, must set.
+    :param spatial_key: use .obsm[`'spatial_key'`] as position.
     :return: StereoExpData obj.
     """
     data = StereoExpData(file_path=file_path)
@@ -536,14 +536,14 @@ def read_gef(file_path: str, bin_type="bins", bin_size=100, is_sparse=True, gene
             gene_num = gef.get_gene_num()
             data = StereoExpData(file_path=file_path, bin_type=bin_type, bin_size=bin_size)
             data.offset_x, data.offset_y = gef.get_offset()
-            data.attr = {
-                'minX': 0,
-                'minY': 0,
-                'maxX': 0,
-                'maxY': 0,
-                'minExp': 0,
-                'maxExp': 0,
-                'resolution': 0,
+            gef_attr = gef.get_exp_attr()
+            data.attr={
+                'minX': gef_attr[0],
+                'minY': gef_attr[1],
+                'maxX': gef_attr[2],
+                'maxY': gef_attr[3],
+                'maxExp': gef_attr[4],
+                'resolution': gef_attr[5],
             }
             uniq_cells, rows, count = gef.get_exp_data()
             cell_num = len(uniq_cells)
