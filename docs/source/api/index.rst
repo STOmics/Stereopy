@@ -20,6 +20,7 @@ StereoExpData as h5ad file for storage.
 .. autosummary::
    :toctree: .
 
+    io.read_gef_info
     io.read_gem
     io.read_gef
     io.read_ann_h5ad
@@ -27,6 +28,8 @@ StereoExpData as h5ad file for storage.
     io.anndata_to_stereo
     io.stereo_to_anndata
     io.write_h5ad
+    io.write_mid_gef
+    io.update_gef
 
 
 StereoExpData
@@ -34,7 +37,7 @@ StereoExpData
 
 A data designed for express matrix of spatial omics.
 
-.. autoclass:: stereo.core.st_pipeline.StPipeline
+.. autoclass:: stereo.core.stereo_exp_data.StereoExpData
    :members:
    :inherited-members:
 
@@ -113,3 +116,13 @@ Image parse module.
     image.cell_seg_deepcell
     image.tissue_seg
 
+
+tools: `tools`
+-------------------
+
+Tools module.
+
+.. autosummary::
+   :toctree: .
+
+    tools.cell_correct

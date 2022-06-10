@@ -10,6 +10,7 @@
 change log:
     2021/07/20  create file.
 """
+from functools import wraps
 from ..preprocess.qc import cal_qc
 from ..preprocess.filter import filter_cells, filter_genes, filter_coordinates
 from ..algorithm.normalization import normalize_total, quantile_norm, zscore_disksmooth
@@ -29,6 +30,7 @@ from ..log_manager import logger
 
 
 def logit(func):
+    @wraps(func)
     def wrapped(*args, **kwargs):
         logger.info('start to run {}...'.format(func.__name__))
         res = func(*args, **kwargs)

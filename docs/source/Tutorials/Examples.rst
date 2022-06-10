@@ -30,7 +30,7 @@ This section contains various examples for the interactive plots.
 
 Image preprocessing
 ---------------------------------------
-This section contains various examples from the :mod:`stereo.im` module.
+This section contains various examples from the :mod:`stereo.im` and :mod:`stereo.tools` module.
 
 .. nbgallery::
 
@@ -44,11 +44,3 @@ This section contains various short examples of format conversion for integratio
 .. nbgallery::
 
     FormatConversion
-
-Cell Correction
----------------
-This section contains some examples of cell correction.
-
-.. nbgallery::
-
-    cell_correction

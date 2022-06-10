@@ -27,20 +27,9 @@ Example like this:
     warnings.filterwarnings('ignore')
     import stereo as st
 
-    # read the gef file
-    mouse_data_path = './stereomics.h5'
+    # read the GEF file
+    mouse_data_path = './DP8400013846TR_F5.SN.tissue.gef'
     data = st.io.read_gef(file_path=mouse_data_path, bin_size=50)
-    data.tl.cal_qc()
-
-    # Must save raw data before normalization.
-    data.tl.raw_checkpoint()
-
-    # Be careful with normalization before the conversion.
-    # You could choose other normalization methods.
-    data.tl.sctransform(res_key='sctransform', inplace=True)
-
-    # You can use other functions as you want, like pca and so on.
-    data.tl.pca(use_highly_genes=False, n_pcs=30, res_key='pca')
 
     # Conversion.
     # If you want to convert the output_h5ad into the rds file, set flavor='seurat'.
