@@ -502,7 +502,7 @@ def read_gef(file_path: str, bin_type="bins", bin_size=100, is_sparse=True, gene
     read the gef(.h5) file, and generate the object of StereoExpData.
 
     :param file_path: input file
-    :param bin_type: bin_type , bin or cell bin
+    :param bin_type: bin_type , bins or cell_bins
     :param bin_size: the size of bin to merge. The parameter only takes effect
                      when the value of data.bin_type is 'bins'.
     :param is_sparse: the matrix is sparse matrix if is_sparse is True else np.ndarray

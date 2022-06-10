@@ -76,6 +76,7 @@ CGEF file
     data = st.io.read_gef(
             file_path= mouse_data_path, sep='\t',
             is_sparse=True,
+            bin_type='cell_bins',
             gene_list= None, region= None,)
 
 `parameters <https://stereopy.readthedocs.io/en/latest/api/stereo.io.read_gef.html#stereo.io.read_gef>`_

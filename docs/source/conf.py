@@ -75,5 +75,8 @@ for filename in glob.glob('**/*.ipynb', recursive=True):
     ntbk.clear('stderr')
     ntbk.save(filename)
 
-
+nbsphinx_thumbnails = {
+    "Tutorials/cell_correction": "_static/cell_bin_correction.png",
+    "Tutorials/tissue_cut": "_static/tissue_segmentation.png",
+}
 

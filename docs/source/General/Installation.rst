@@ -1,8 +1,7 @@
 Installation
 ============
 .. note::
-    Our tool could be installed on Linux, MacOS with python3.7 or python3.8.
-    The machine with Apple m1 cpu is not supported now.
+    Our tool could be installed on Linux with python3.7 or python3.8.
 
 PyPI
 ------------------------------------
