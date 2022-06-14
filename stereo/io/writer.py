@@ -21,19 +21,23 @@ import numpy as np
 from copy import deepcopy
 
 
-def write_h5ad(data, use_raw=True, use_result=True, key_record=None):
+def write_h5ad(data, use_raw=True, use_result=True, key_record=None, output=None):
     """
     write the StereoExpData into h5ad file.
     :param data: the StereoExpData object.
     :param use_raw: bool, whether to save raw data
     :param use_result: bool, whether to save result and res_key
     :param key_record: Dict. if None, it will save the result and res_key of data.tl.key_record.
+    :param: output: the output path. StereoExpData's output will be reset if the output is not None.
     otherwise, it will save the result and res_key of this dict.
 
     :return:
     """
-    if data.output is None:
-        logger.error("The output path must be set before writing.")
+    if output is not None:
+        data.output = output
+    else:
+        if data.output is None:
+            logger.error("The output path must be set before writing.")
     with h5py.File(data.output, mode='w') as f:
         h5ad.write(data.genes, f, 'genes')
         h5ad.write(data.cells, f, 'cells')
