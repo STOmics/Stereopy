@@ -44,7 +44,7 @@ The type of model only can be specified to deep-learning or deep-cell, more deai
 
 You can also predict on gpu, specify gpu id by parameter gpu, if -1, predict on cpu.
 
-In the out_dir directory, there is a new directory named deep-learning or deep-cell, it contains the generated mask whoes name ends with mask.tif.
+In the out_dir directory, there is a new directory named deep-learning or deep-cell, it contains the generated mask whoes name is ends with mask.tif.
 
 .. code:: python
 
