@@ -218,12 +218,12 @@ class CellCorrection(object):
         bg_data = []
         for tmp in bg_adjust_label:
             bg_data.append(tmp[tmp.label != 0])
-        adjust_data = pd.concat(bg_data)
+        adjust_data = pd.concat(bg_data).sort_values('score')
         adjust_data = adjust_data.drop_duplicates(subset=['geneID', 'x', 'y', 'UMICount'], keep='first').rename(columns={'score':'tag'})
         adjust_data['tag'] = 'adjust'
         cell_data['tag'] = 'raw'
-        adjust_data['label'] = adjust_data['label'].astype('int64')
-        cell_data['label'] = cell_data['label'].astype('int64')
+        adjust_data['label'] = adjust_data['label'].astype('uint32')
+        cell_data['label'] = cell_data['label'].astype('uint32')
         result = pd.concat([adjust_data, cell_data])
         return result
 
