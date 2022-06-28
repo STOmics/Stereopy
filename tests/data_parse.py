@@ -4,7 +4,7 @@
 @author:qiuping1
 @file:data_parse.py
 @time:2020/12/30
-change log: 2021/01/12   增加数据qc相关代码，并调式
+change log: 2021/01/12   Add data qc related code, and adjust the mode
 python ./data_parse.py --input_path ../data/01.LiverCancer/DP8400012941BR_E4/DP8400012941BR_E4.txt --out_dir ../data/E4/ --read_raw  --bin_size 200
 python ./data_parse.py --input_path ../data/E4/raw_andata.bin200.h5ad --out_dir ../data/E4/ --run_filter --normalize  --bin_size 200 --max_gene_cnt 7000 --min_genes 200 --min_cells 3 --max_mt 15
 """
@@ -19,10 +19,10 @@ import sys
 
 def read_raw_file_bak(inpath, step):
     """
-    读取原始bin1的数据，返回andata对象
-    :param inpath: 输入文件路径
-    :param step: 合并的bin大小
-    :param output: andata存储路径
+    Read the data of the original bin1 and return the andata object
+    :param inpath: input file path
+    :param step: merged bin size
+    :param output: andata storage path
     :return: andata
     """
     df = pd.read_csv(inpath, sep='\t')
@@ -33,10 +33,10 @@ def read_raw_file_bak(inpath, step):
     df['pos'] = df['x1'].astype(str) + "-" + df['y1'].astype(str)
     g = df.groupby(['geneID', 'pos'])['UMICount'].sum()
     g = g.to_frame().reset_index()
-    # 每个gene至少在3个bin里面捕获到
+    # Each gene is captured in at least 3 bins
     # g = g[g.groupby('geneID')['geneID'].transform('size') > 2]
     g = g.pivot(index='pos', columns='geneID', values='UMICount').fillna(0)
-    # 每个bin至少捕获到50个gene
+    # At least 50 genes are captured in each bin
     # g = g.loc[:, g.sum() >= 50]
     adata = sc.AnnData(g)
     pos = np.array(list(adata.obs.index.str.split('-', expand=True)), dtype=np.int)
@@ -73,13 +73,13 @@ def read_raw_file(inpath, step):
 
 def cal_data_distribution(adata):
     """
-    计算数据的分布，主要包含total count，n_gene_by_count, mt gene
-    :param adata: 经过基础过滤后的andata
+    Calculate the distribution of data, mainly including total count, n_gene_by_count, mt gene
+    :param adata: andata after basic filtering
     :return:
     """
-    sc.pp.calculate_qc_metrics(adata, inplace=True)  # 统计qc指标
+    sc.pp.calculate_qc_metrics(adata, inplace=True)  # Statistics qc indicators
     adata.var['mt'] = adata.var_names.str.startswith('MT-')  + adata.var_names.str.startswith('mt-')  # annotate the group of mitochondrial genes as 'mt'
-    sc.pp.calculate_qc_metrics(adata, qc_vars=['mt'], percent_top=None, log1p=False, inplace=True)  # 统计线粒体基因分布
+    sc.pp.calculate_qc_metrics(adata, qc_vars=['mt'], percent_top=None, log1p=False, inplace=True)  # Statistical mitochondrial gene distribution
     return adata
 
 
@@ -87,10 +87,10 @@ def data_filter(adata, max_gene_cnt, max_mt, min_genes=50, min_cells=3):
     """
     数据过滤
     :param adata:
-    :param max_gene_cnt: 单个bin至多包含的gene种类数量
-    :param max_mt: 单个bin至多包含的线粒体gene比例
-    :param min_genes: 每个bin至少包含的基因数
-    :param min_cells: 每个gene至少出现在的bin数量
+    :param max_gene_cnt: The maximum number of gene species a single bin contains
+    :param max_mt: The proportion of mitochondrial genes contained at most in a single bin
+    :param min_genes: The number of genes that each bin contains at least
+    :param min_cells: The number of bins that each gene appears at least in
     :return:
     """
     sc.pp.filter_cells(adata, min_genes=min_genes)
@@ -102,9 +102,9 @@ def data_filter(adata, max_gene_cnt, max_mt, min_genes=50, min_cells=3):
 
 def data_filter_with_cluster(adata, groups, method, action='save'):
     """
-    :param adata: andata对象
-    :param groups: 分组类别列表
-    :param action: save|move 选择保留还是移除groups
+    :param adata: anddata object
+    :param groups: Grouped Category List
+    :param action: save|move Choose to keep or remove groups
     :return:
     """
     if action == 'save':
@@ -129,7 +129,7 @@ def bin1_filter_with_cluster(raw_file, bin_size, cluster_andata, cluster_method,
 
 def data_normalize(adata, scale=False):
     """
-    数据标准化
+    data normalization
     :param adata:
     :param scale:
     :return:
@@ -148,9 +148,9 @@ def data_normalize(adata, scale=False):
 
 def save_adata(output, adata):
     """
-    保存数据
-    :param output: 输出路径
-    :param adata: andata对象
+    save data
+    :param output: output path
+    :param adata: andata object
     :return:
     """
     sc.write(output, adata)
@@ -158,8 +158,8 @@ def save_adata(output, adata):
 
 def read_h5ad_file(inpath):
     """
-    读取andata的h5ad文件
-    :param inpath: 输入路径
+    Read the h5ad file of anddata
+    :param inpath: input path
     :return: andata
     """
     return sc.read_h5ad(inpath)

@@ -117,7 +117,7 @@ def create_pyramid(img_path, h5_path, img_size, x_start, y_start, mag):
 
     # get height and width
     height, width = img.shape
-    # im = np.rot90(im, 1)  ## 旋转图片，配准后的图片应该不用旋转了
+    # im = np.rot90(im, 1)  ## Rotate the picture, the registered picture not need to be rotated
 
     # write image metadata
     with h5py.File(h5_path, 'a') as h5_out:
