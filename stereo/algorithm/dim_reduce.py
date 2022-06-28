@@ -40,7 +40,7 @@ def factor_analysis(x, n_pcs):
     return tran_x
 
 
-def pca(x, n_pcs, random_state=0):
+def pca(x, n_pcs, svd_solver='auto', random_state=0):
     """
     Principal component analysis.
 
@@ -49,7 +49,7 @@ def pca(x, n_pcs, random_state=0):
     :param random_state : int, RandomState instance
     :return:  ndarray of shape (n_samples, n_components) Embedding of the training data in low-dimensional space.
     """
-    pca_obj = PCA(n_components=n_pcs, random_state=random_state)
+    pca_obj = PCA(n_components=n_pcs, svd_solver=svd_solver, random_state=random_state)
     x_pca = pca_obj.fit_transform(x)
     variance = pca_obj.explained_variance_
     variance_ratio = pca_obj.explained_variance_ratio_

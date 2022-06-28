@@ -37,6 +37,7 @@ This section contains various examples from the :mod:`stereo.im` and :mod:`stere
     cell_segmentation
     cell_correction
     tissue_cut
+    gaussian_smooth
 
 Working with other spatial tools
 --------------------------------------------------

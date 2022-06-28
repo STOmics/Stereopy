@@ -31,6 +31,7 @@ def base_scatter(
         x_label: str = None,
         y_label: str = None,
         color_bar: bool = False,
+        color_bar_reverse: bool = False,
         bad_color: str = "lightgrey",
         dot_size: int = None,
         palette: Optional[Union[str, list]] = 'stereo',
@@ -73,7 +74,7 @@ def base_scatter(
     dot_size = 120000 / len(hue) if dot_size is None else dot_size
     # add a color bar
     if color_bar:
-        colors = conf.linear_colors(palette)
+        colors = conf.linear_colors(palette, reverse=color_bar_reverse)
         cmap = ListedColormap(colors)
         cmap.set_bad(bad_color)
 
@@ -125,6 +126,7 @@ def multi_scatter(
         x_label: Union[list, np.ndarray] = None,
         y_label: Union[list, np.ndarray] = None,
         color_bar: bool = False,
+        color_bar_reverse: bool = False,
         bad_color: str = "lightgrey",
         dot_size: int = None,
         palette: Optional[Union[np.ndarray, list, str]] = 'stereo',
@@ -175,6 +177,7 @@ def multi_scatter(
                      x_label=x_label[i] if x_label else None,
                      y_label=y_label[i] if y_label else None,
                      color_bar=color_bar,
+                     color_bar_reverse=color_bar_reverse,
                      bad_color=bad_color,
                      dot_size=dot_size,
                      palette=palette,
