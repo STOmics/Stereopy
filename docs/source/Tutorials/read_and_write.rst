@@ -200,7 +200,7 @@ stereo h5ad file
     # you could create a dictionary which is similar to data.tl.key_record:
     outkey_record = {'cluster':['leiden','louvain'],}
 
-    st.io.write_h5ad(data, use_raw=True, use_result=True, key_record=outkey_record)
+    st.io.write_h5ad(data, use_raw=True, use_result=True, key_record=outkey_record, output='./DP8400013846TR_F5.h5ad')
 
 
 anndata h5ad file

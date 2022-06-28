@@ -144,7 +144,7 @@ def write_mid_gef(data, output):
 
     for i in range(exp_np.shape[1]):
         gene_exp = exp_np[:, i]
-        c_idx = np.nonzero(gene_exp)[0]  # 对于全部cell 的idx
+        c_idx = np.nonzero(gene_exp)[0]  # idx for all cells
         zipped = np.concatenate((data.position[c_idx], gene_exp[c_idx].reshape(c_idx.shape[0], 1)), axis=1)
         for k in zipped:
             final_exp.append(k)

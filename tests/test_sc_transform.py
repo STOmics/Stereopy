@@ -6,7 +6,7 @@ import pickle
 with open('/ldfssz1/ST_BI/USER/qindanhua/projects/st/data/test_data.pickle', 'rb') as r:
     data = pickle.load(r)
 
-method_list = ['offset', "theta_ml", "theta_lbfgs", "alpha_lbfgs"]  # 'fix-slope', 'glmgp'需要用到R
+method_list = ['offset', "theta_ml", "theta_lbfgs", "alpha_lbfgs"]  # 'fix-slope', 'glmgp' need to be used R
 
 
 def sc_st():
