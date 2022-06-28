@@ -15,6 +15,7 @@ from ..preprocess.qc import cal_qc
 from ..preprocess.filter import filter_cells, filter_genes, filter_coordinates
 from ..algorithm.normalization import normalize_total, quantile_norm, zscore_disksmooth
 from ..algorithm.scale import scale
+from ..algorithm.gaussian_smooth import gaussian_smooth
 import numpy as np
 from scipy.sparse import issparse
 from ..algorithm.dim_reduce import pca, u_map
@@ -27,14 +28,17 @@ from ..algorithm.leiden import leiden as le
 from ..algorithm._louvain import louvain as lo
 from typing_extensions import Literal
 from ..log_manager import logger
+from ..utils.time_consume import TimeConsume
 
+tc = TimeConsume()
 
 def logit(func):
     @wraps(func)
     def wrapped(*args, **kwargs):
         logger.info('start to run {}...'.format(func.__name__))
+        tk = tc.start()
         res = func(*args, **kwargs)
-        logger.info('{} end.'.format(func.__name__))
+        logger.info('{} end, consume time {:.4f}s.'.format(func.__name__, tc.get_time_consumed(key=tk, restart=False)))
         return res
     return wrapped
 
@@ -337,7 +341,7 @@ class StPipeline(object):
         return data
 
     @logit
-    def pca(self, use_highly_genes, n_pcs, hvg_res_key='highly_variable_genes', res_key='pca'):
+    def pca(self, use_highly_genes, n_pcs, svd_solver='auto', hvg_res_key='highly_variable_genes', res_key='pca'):
         """
         Principal component analysis.
 
@@ -351,7 +355,7 @@ class StPipeline(object):
             raise Exception(f'{hvg_res_key} is not in the result, please check and run the highly_var_genes func.')
         data = self.subset_by_hvg(hvg_res_key, inplace=False) if use_highly_genes else self.data
         x = data.exp_matrix.toarray() if issparse(data.exp_matrix) else data.exp_matrix
-        res = pca(x, n_pcs)
+        res = pca(x, n_pcs, svd_solver=svd_solver)
         self.result[res_key] = pd.DataFrame(res['x_pca'])
         key = 'pca'
         self.reset_key_record(key, res_key)
@@ -559,7 +563,7 @@ class StPipeline(object):
         :param resolution: A parameter value controlling the coarseness of the clustering.
                             Higher values lead to more clusters.
                             Set to `None` if overriding `partition_type`
-                            to one that doesn’t accept a `resolution_parameter`.
+                            to one that doesn't accept a `resolution_parameter`.
         :param random_state: Change the initialization of the optimization.
         :param flavor: Choose between to packages for computing the clustering.
                         Including: ``'vtraag'``, ``'igraph'``, ``'taynaud'``.
@@ -740,6 +744,36 @@ class StPipeline(object):
         # res = {"results":hs.results, "local_cor_z": hs.local_correlation_z, "modules": hs.modules,
         #        "module_scores": hs.module_scores}
         self.result[res_key] = hs
+    
+    @logit
+    def gaussian_smooth(self, n_neighbors=10, smooth_threshold=90, pca_res_key='pca', res_key='gaussian_smooth', inplace=True):
+        """smooth the expression matrix
+
+        :param n_neighbors: number of the nearest points to serach, Too high value may cause overfitting, Too low value may cause poor smoothing effect.
+        :param smooth_threshold: indicates Gaussian variance with a value between 20 and 100, Too high value may cause overfitting, Too low value may cause poor smoothing effect。
+        :param pca_res_key: the key of pca to get from self.result, defaults to 'pca'.
+        :param res_key: the key for getting the result from the self.result, defaults to 'gaussian_smooth'.
+        :param inplace: whether inplace the express matrix or get a new express matrix, defaults to True.
+        """
+        assert pca_res_key in self.result, f'{pca_res_key} is not in the result, please check and run the pca func.'
+        assert self.raw is not None, 'no raw exp_matrix to be saved, please check and run the raw_checkpoint.'
+        assert n_neighbors > 0, 'n_neighbors must be greater than 0'
+        assert smooth_threshold >= 20 and smooth_threshold <= 100, 'smooth_threshold must be between 20 and 100'
+
+        pca_exp_matrix = self.result[pca_res_key].values
+        raw_exp_matrix = self.raw.exp_matrix.toarray() if issparse(self.raw.exp_matrix) else self.raw.exp_matrix
+
+        if pca_exp_matrix.shape[0] != raw_exp_matrix.shape[0]:
+            raise Exception(f"The first dimension of pca_exp_matrix not equals to raw_exp_matrix's, may be because of running raw_checkpoint before filter cells and genes.")
+        
+        # logger.info(f"raw exp matrix size: {raw_exp_matrix.shape}")
+        result = gaussian_smooth(pca_exp_matrix, raw_exp_matrix, self.data.position, n_neighbors=n_neighbors, smooth_threshold=smooth_threshold)
+        # logger.info(f"smoothed exp matrix size: {result.shape}")
+        if inplace:
+            self.data.exp_matrix = result
+            cal_qc(self.data)
+        else:
+            self.result[res_key] = result
 
     # def scenic(self, tfs, motif, database_dir, res_key='scenic', use_raw=True, outdir=None,):
     #     """
