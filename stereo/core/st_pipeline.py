@@ -347,6 +347,23 @@ class StPipeline(object):
 
         :param use_highly_genes: Whether to use only the expression of hypervariable genes as input.
         :param n_pcs: the number of features for a return array after reducing.
+        :param svd_solver: {'auto', 'full', 'arpack', 'randomized'}, default to 'auto'
+                    If auto :
+                        The solver is selected by a default policy based on `X.shape` and
+                        `n_pcs`: if the input data is larger than 500x500 and the
+                        number of components to extract is lower than 80% of the smallest
+                        dimension of the data, then the more efficient 'randomized'
+                        method is enabled. Otherwise the exact full SVD is computed and
+                        optionally truncated afterwards.
+                    If full :
+                        run exact full SVD calling the standard LAPACK solver via
+                        `scipy.linalg.svd` and select the components by postprocessing
+                    If arpack :
+                        run SVD truncated to n_pcs calling ARPACK solver via
+                        `scipy.sparse.linalg.svds`. It requires strictly
+                        0 < n_pcs < min(x.shape)
+                    If randomized :
+                        run randomized SVD by the method of Halko et al.
         :param hvg_res_key: the key of highly varialbe genes to getting the result.
         :param res_key: the key for getting the result from the self.result.
         :return:

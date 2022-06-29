@@ -55,6 +55,7 @@ def base_scatter(
     :param x_label: x label
     :param y_label: y label
     :param color_bar: show color bar or not, color_values must be int array or list when color_bar is True
+    :param color_bar_reverse: if True, reverse the color bar, defaults to False
     :param bad_color: the name list of clusters to show.
     :param dot_size: marker size.
     :param palette: customized colors
