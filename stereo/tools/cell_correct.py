@@ -60,7 +60,7 @@ class CellCorrect(object):
         logger.info(f"start to generate bgef({bgef_path})")
         if os.path.exists(bgef_path):
             os.remove(bgef_path)
-        bgef_writer_cy.generate_bgef(self.gem_path, bgef_path, threads, 1)
+        bgef_writer_cy.generate_bgef(self.gem_path, bgef_path, n_thread=threads, bin_sizes=1)
         t1 = time.time()
         logger.info(f"generate bgef finished : {t1 - t0}")
         return bgef_path
@@ -96,7 +96,6 @@ class CellCorrect(object):
         cell_count = data.groupby("cellid").count().reset_index()[["cellid", "geneID"]].rename(columns={"geneID": "count"})
         cell = pd.merge(cell_min_ids, cell_count, on=['cellid'])
         dnb = data.drop(['index', 'geneID', 'cellid'], axis=1)
-
         cell_data = list(map(tuple, cell.to_dict("split")['data']))
         dnb_data = list(map(tuple, dnb.to_dict("split")['data']))
         cell_type = np.dtype({'names':['cellid', 'offset', 'count'], 'formats':[np.uint32, np.uint32, np.uint32]})

@@ -46,8 +46,25 @@ def pca(x, n_pcs, svd_solver='auto', random_state=0):
 
     :param x: 2D array, shape (M, N)
     :param n_pcs: the number of features for a return array after reducing.
+    :param svd_solver: {'auto', 'full', 'arpack', 'randomized'}, default to 'auto'
+                If auto :
+                    The solver is selected by a default policy based on `X.shape` and
+                    `n_pcs`: if the input data is larger than 500x500 and the
+                    number of components to extract is lower than 80% of the smallest
+                    dimension of the data, then the more efficient 'randomized'
+                    method is enabled. Otherwise the exact full SVD is computed and
+                    optionally truncated afterwards.
+                If full :
+                    run exact full SVD calling the standard LAPACK solver via
+                    `scipy.linalg.svd` and select the components by postprocessing
+                If arpack :
+                    run SVD truncated to n_pcs calling ARPACK solver via
+                    `scipy.sparse.linalg.svds`. It requires strictly
+                    0 < n_pcs < min(x.shape)
+                If randomized :
+                    run randomized SVD by the method of Halko et al.
     :param random_state : int, RandomState instance
-    :return:  ndarray of shape (n_samples, n_components) Embedding of the training data in low-dimensional space.
+    :return:  ndarray of shape (n_samples, n_pcs) Embedding of the training data in low-dimensional space.
     """
     pca_obj = PCA(n_components=n_pcs, svd_solver=svd_solver, random_state=random_state)
     x_pca = pca_obj.fit_transform(x)

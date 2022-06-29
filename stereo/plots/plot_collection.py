@@ -206,11 +206,16 @@ class PlotCollection:
             gene_name=None,
             dot_size=None,
             palette='CET_L4',
-            # invert_y=True,
-            ignore_none_expression=True,
+            ignore_no_expression=False,
             **kwargs
     ):
-        # from .scatter import multi_scatter
+        """draw the spatial distribution of expression quantity of the gene specified by gene_name
+
+        :param gene_name: specify the gene you want to draw, defaults to None, if none, will select randomly.
+        :param dot_size: marker size, defaults to None
+        :param palette: Color theme, defaults to 'CET_L4'
+        :param ignore_no_expression: whether ignore the cells no expression, defaults to False
+        """
 
         self.data.sparse2array()
         if gene_name is None:
@@ -223,7 +228,7 @@ class PlotCollection:
             idx = gene_names.index(gene_name)
 
         exp_data = self.data.exp_matrix[:, idx]
-        if ignore_none_expression:
+        if ignore_no_expression:
             nonezero_idx = np.nonzero(exp_data)
             x = self.data.position[:, 0][nonezero_idx]
             y = self.data.position[:, 1][nonezero_idx]
@@ -257,10 +262,17 @@ class PlotCollection:
             gene_name=None,
             dot_size=None,
             palette='CET_L4',
-            # invert_y=True,
-            ignore_none_expression=False,
+            ignore_no_expression=False,
             **kwargs
     ):
+        """draw the spatial distribution of expression quantity of the gene specified by gene_name,
+        just only for gaussian smooth, inluding the raw and smoothed.
+
+        :param gene_name: specify the gene you want to draw, defaults to None, if none, will select randomly.
+        :param dot_size: marker sizemarker size, defaults to None
+        :param palette: Color theme, defaults to 'CET_L4'
+        :param ignore_no_expression: whether ignore the cells no expression, defaults to False
+        """
         self.data.tl.raw.sparse2array()
         self.data.sparse2array()
         if gene_name is None:
@@ -274,7 +286,7 @@ class PlotCollection:
 
         raw_exp_data = self.data.tl.raw.exp_matrix[:, idx]
         exp_data = self.data.exp_matrix[:, idx]
-        if ignore_none_expression:
+        if ignore_no_expression:
             nonezero_idx = np.nonzero(raw_exp_data)
             raw_x = self.data.tl.raw.position[:, 0][nonezero_idx]
             raw_y = self.data.tl.raw.position[:, 1][nonezero_idx]
