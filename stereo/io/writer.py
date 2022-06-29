@@ -167,6 +167,7 @@ def write_mid_gef(data, output):
         for key, value in data.attr.items():
             bing["expression"].attrs.create(key, value)
     h5f.attrs.create("version", 2)
+    h5f.attrs.create("omics", 'Transcriptomics')
     h5f.close()
 
 
