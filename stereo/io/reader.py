@@ -31,7 +31,6 @@ from shapely.geometry import Point, MultiPoint
 from typing import Optional
 from copy import deepcopy
 
-
 def read_gem(file_path, sep='\t', bin_type="bins", bin_size=100, is_sparse=True):
     """
     read the stereo-seq file, and generate the object of StereoExpData.

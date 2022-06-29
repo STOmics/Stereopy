@@ -10,7 +10,7 @@ import matplotlib.pyplot as plt
 import seaborn
 
 
-def violin_distribution(data):  # 小提琴统计图
+def violin_distribution(data):  # Violin Statistics Chart
     """
     violin plot showing quality control index distribution
 

@@ -42,7 +42,7 @@ def base_scatter(
         vmin=None,
         vmax=None,
         SegmentedColormap=None,
-):  # scatter plot, 聚类后表达矩阵空间分布
+):  # scatter plot, Expression matrix spatial distribution after clustering
     """
     scatter plotter
 
@@ -110,8 +110,8 @@ def base_scatter(
     if not show_ticks:
         ax.set_aspect('equal', adjustable='datalim')
     ax.set_title(title, fontsize=18, fontweight='bold')
-    ax.set_ylabel(y_label, fontsize=15)  # 设置y轴标签
-    ax.set_xlabel(x_label, fontsize=15)  # 设置x轴标签
+    ax.set_ylabel(y_label, fontsize=15)  # set y-axis labels
+    ax.set_xlabel(x_label, fontsize=15)  # set x-axis labels
     if not show_ticks:
         ax.set_yticks([])
         ax.set_xticks([])
@@ -224,21 +224,21 @@ def volcano(
         palette=palette,
         alpha=alpha, s=s,
     )
-    ax.spines['right'].set_visible(False)  # 去掉右边框
-    ax.spines['top'].set_visible(False)  # 去掉上边框
-    ax.set_ylabel(y_label, fontweight='bold')  # 设置y轴标签
-    ax.set_xlabel(x_label, fontweight='bold')  # 设置x轴标签
+    ax.spines['right'].set_visible(False)  # remove right border
+    ax.spines['top'].set_visible(False)  # remove top border
+    ax.set_ylabel(y_label, fontweight='bold')  # set y-axis labels
+    ax.set_xlabel(x_label, fontweight='bold')  # set x-axis labels
 
     if vlines:
         xmin = int(data['x'].min())
         xmax = int(np.percentile(np.array(data['x']), [90])[0])
         ymin = int(data['y'].min())
         ymax = int(np.percentile(np.array(data['y']), [90])[0])
-        ax.vlines(-cut_off_logFC, ymin, ymax, color='dimgrey', linestyle='dashed', linewidth=1)  # 画竖直线
-        ax.vlines(cut_off_logFC, ymin, ymax, color='dimgrey', linestyle='dashed', linewidth=1)  # 画竖直线
-        ax.hlines(-np.log10(cut_off_pvalue), xmin, xmax, color='dimgrey', linestyle='dashed', linewidth=1)  # 画竖水平线
-        # ax.set_xticks(range(xmin, xmax, 4))# 设置x轴刻度
-        # ax.set_yticks(range(ymin, ymax, 2))# 设置y轴刻度
+        ax.vlines(-cut_off_logFC, ymin, ymax, color='dimgrey', linestyle='dashed', linewidth=1)  # draw vertical lines
+        ax.vlines(cut_off_logFC, ymin, ymax, color='dimgrey', linestyle='dashed', linewidth=1)  # draw vertical lines
+        ax.hlines(-np.log10(cut_off_pvalue), xmin, xmax, color='dimgrey', linestyle='dashed', linewidth=1)  # draw vertical lines
+        # ax.set_xticks(range(xmin, xmax, 4))# set x-axis labels
+        # ax.set_yticks(range(ymin, ymax, 2))# set y-axis labels
     if label and text_visible:
         for line in range(0, data.shape[0]):
             if data[text_visible][line]:

@@ -374,7 +374,7 @@ def run_annotation(sub_df, ref_dir, method, keep_zero, output, sub_index, use_rf
 
 def subprocess_error(value):
     """
-    子进程打印错误信息
+    Print subprocess error info
     :param value:
     :return:
     """
