@@ -31,7 +31,7 @@ def marker_genes_text(
         sharey: bool = True,
         ax: Optional[Axes] = None,
         **kwargs,
-):  # scatter plot, 差异基因显著性图，类碎石图
+):  # scatter plot, marker gene significance map, gravel-like map
     """
     marker gene scatter visualization.
 
@@ -47,7 +47,7 @@ def marker_genes_text(
     :param kwargs: other args for plot.
 
     """
-    # 调整图像 panel/grid 相关参数
+    # Adjust image panel/grid related parameters
     if 'n_panels_per_row' in kwargs:
         n_panels_per_row = kwargs['n_panels_per_row']
     else:
@@ -60,7 +60,7 @@ def marker_genes_text(
     # set up the figure
     n_panels_x = min(n_panels_per_row, len(group_names))
     n_panels_y = np.ceil(len(group_names) / n_panels_x).astype(int)
-    # 初始化图像
+    # initialize image
     width = 10
     height = 10
     fig = plt.figure(
