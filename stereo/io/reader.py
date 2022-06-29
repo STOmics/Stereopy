@@ -572,7 +572,7 @@ def read_gef_info(file_path: str):
     info_dict = {}
 
     if not bin_type:
-        logger.info('This is BGEF file which contains traditional bin infomation.')
+        logger.info('This is GEF file which contains traditional bin infomation.')
         logger.info('bin_type: bins')
         
         info_dict['bin_list'] = list(h5_file['geneExp'].keys())
