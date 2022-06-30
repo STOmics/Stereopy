@@ -3,6 +3,15 @@ Release Notes
 
 .. role:: small
 
+Version 0.3.1
+------------------
+0.3.1 :2022-06-30
+~~~~~~~~~~~~~~~~~~~~~
+1. Add gaussian smooth function.
+2. The pca function increases the svd_solver parameter
+3. The write_h5ad function increases the output parameter
+4. Update requirements.txt.
+
 Version 0.3.0
 ------------------
 0.3.0 :2022-06-10
@@ -58,7 +67,7 @@ Version 0.2.0
 Stereopy provides the analysis process based on spatial omics, including reading, preprocessing, clustering,
 differential expression testing and visualization, etc. There are the updates we made in this version.
 
-1. We propose StereoExpData, which is  a data format specially adapted to spatial omics analysis.
+1. We propose StereoExpData, which is a data format specially adapted to spatial omics analysis.
 2. Support reading the gef file, which is faster than reading gem file.
 3. Support the conversion between StereoExpData and AnnData.
 4. Add the interactive visualization function for selecting data, you can dynamically select the area of interest, and then perform the next step of analysis.

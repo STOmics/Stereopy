@@ -52,6 +52,6 @@ torch==1.10.0
 opencv-python>=4.5.4.58,<=4.5.5.64
 tensorflow==2.7.0
 tensorflow-io-gcs-filesystem==0.24.0
-protobuf==4.0.0rc2
+protobuf==3.19.4
 hotspotsc==0.9.1
 distributed==2022.2.0
