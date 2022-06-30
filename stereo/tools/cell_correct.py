@@ -60,7 +60,7 @@ class CellCorrect(object):
         logger.info(f"start to generate bgef({bgef_path})")
         if os.path.exists(bgef_path):
             os.remove(bgef_path)
-        bgef_writer_cy.generate_bgef(self.gem_path, bgef_path, threads, 1)
+        bgef_writer_cy.generate_bgef(self.gem_path, bgef_path, n_thread=threads, bin_sizes=1)
         t1 = time.time()
         logger.info(f"generate bgef finished : {t1 - t0}")
         return bgef_path
@@ -96,16 +96,6 @@ class CellCorrect(object):
         cell_count = data.groupby("cellid").count().reset_index()[["cellid", "geneID"]].rename(columns={"geneID": "count"})
         cell = pd.merge(cell_min_ids, cell_count, on=['cellid'])
         dnb = data.drop(['index', 'geneID', 'cellid'], axis=1)
-
-        # 以下是测试用代码，发布是时要删掉
-        # cell_file_name = self.get_file_name("cell.adjusted.csv")
-        # dnb_file_name = self.get_file_name("dnb.adjusted.csv")
-        # cell_file_path = os.path.join(self.out_dir, cell_file_name)
-        # dnb_file_path = os.path.join(self.out_dir, dnb_file_name)
-        # cell.to_csv(cell_file_path, sep="\t", index=False)
-        # dnb.to_csv(dnb_file_path, sep="\t", index=False)
-        # 以上是测试用代码，发布是时要删掉
-
         cell_data = list(map(tuple, cell.to_dict("split")['data']))
         dnb_data = list(map(tuple, dnb.to_dict("split")['data']))
         cell_type = np.dtype({'names':['cellid', 'offset', 'count'], 'formats':[np.uint32, np.uint32, np.uint32]})

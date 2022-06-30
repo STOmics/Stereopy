@@ -26,7 +26,7 @@ class StereoConfig(object):
             n_jobs=1,
             log_file: Union[str, Path, None] = None,
             log_level: str = "info",
-            log_format: str = "%(asctime)s %(name)s %(process)d %(thread)d %(module)s %(lineno)d %(levelname)s: %(message)s",
+            log_format: str = "[%(asctime)s][%(name)s][%(process)d][%(thread)d][%(module)s][%(lineno)d][%(levelname)s]: %(message)s",
             output: str = "./output",
             data_dir: str = None
     ):
@@ -52,7 +52,7 @@ class StereoConfig(object):
 
     @property
     def linear_colormaps(self):
-        colormaps = {n: palette[n] for n in ['rainbow', 'fire', 'bgy', 'bgyw', 'bmy', 'gray', 'kbc', 'CET_D4']}
+        colormaps = {n: palette[n] for n in ['rainbow', 'fire', 'bgy', 'bgyw', 'bmy', 'gray', 'kbc', 'CET_D4', 'blues', 'CET_L4']}
         stmap_colors = ['#0c3383', '#0a88ba', '#f2d338', '#f28f38', '#d91e1e']
         nodes = [0.0, 0.25, 0.50, 0.75, 1.0]
         mycmap = mpl_colors.LinearSegmentedColormap.from_list("mycmap", list(zip(nodes, stmap_colors)))
@@ -60,12 +60,12 @@ class StereoConfig(object):
         colormaps['stereo'] = color_list
         return colormaps
 
-    def linear_colors(self, colors):
+    def linear_colors(self, colors, reverse=False):
         if isinstance(colors, str):
             if colors not in self.linear_colormaps:
                 raise ValueError(f'{colors} not in colormaps, color value range in {self.linear_colormaps.keys()}')
             else:
-                return self.linear_colormaps[colors]
+                return self.linear_colormaps[colors][::-1] if reverse else self.linear_colormaps[colors]
         elif isinstance(colors, list):
             return colors
         else:

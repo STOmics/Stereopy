@@ -19,6 +19,7 @@ Additional functionalities
 .. nbgallery::
 
     hotspot
+    gaussian_smooth
 
 Interactive Visualisation
 --------------------------------------------

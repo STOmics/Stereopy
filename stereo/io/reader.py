@@ -31,7 +31,6 @@ from shapely.geometry import Point, MultiPoint
 from typing import Optional
 from copy import deepcopy
 
-
 def read_gem(file_path, sep='\t', bin_type="bins", bin_size=100, is_sparse=True):
     """
     read the stereo-seq file, and generate the object of StereoExpData.
@@ -573,7 +572,7 @@ def read_gef_info(file_path: str):
     info_dict = {}
 
     if not bin_type:
-        logger.info('This is BGEF file which contains traditional bin infomation.')
+        logger.info('This is GEF file which contains traditional bin infomation.')
         logger.info('bin_type: bins')
         
         info_dict['bin_list'] = list(h5_file['geneExp'].keys())
@@ -607,7 +606,7 @@ def read_gef_info(file_path: str):
         logger.info('Max Exp: {0}'.format(info_dict['maxExp']))
 
     else:
-        logger.info('This is CGEF file which contains cell bin infomation.')
+        logger.info('This is GEF file which contains cell bin infomation.')
         logger.info('bin_type: cell_bins')
 
         from gefpy.cgef_reader_cy import CgefR

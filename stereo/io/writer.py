@@ -21,19 +21,23 @@ import numpy as np
 from copy import deepcopy
 
 
-def write_h5ad(data, use_raw=True, use_result=True, key_record=None):
+def write_h5ad(data, use_raw=True, use_result=True, key_record=None, output=None):
     """
     write the StereoExpData into h5ad file.
     :param data: the StereoExpData object.
     :param use_raw: bool, whether to save raw data
     :param use_result: bool, whether to save result and res_key
     :param key_record: Dict. if None, it will save the result and res_key of data.tl.key_record.
+    :param: output: the output path. StereoExpData's output will be reset if the output is not None.
     otherwise, it will save the result and res_key of this dict.
 
     :return:
     """
-    if data.output is None:
-        logger.error("The output path must be set before writing.")
+    if output is not None:
+        data.output = output
+    else:
+        if data.output is None:
+            logger.error("The output path must be set before writing.")
     with h5py.File(data.output, mode='w') as f:
         h5ad.write(data.genes, f, 'genes')
         h5ad.write(data.cells, f, 'cells')
@@ -140,7 +144,7 @@ def write_mid_gef(data, output):
 
     for i in range(exp_np.shape[1]):
         gene_exp = exp_np[:, i]
-        c_idx = np.nonzero(gene_exp)[0]  # 对于全部cell 的idx
+        c_idx = np.nonzero(gene_exp)[0]  # idx for all cells
         zipped = np.concatenate((data.position[c_idx], gene_exp[c_idx].reshape(c_idx.shape[0], 1)), axis=1)
         for k in zipped:
             final_exp.append(k)
@@ -167,6 +171,7 @@ def write_mid_gef(data, output):
         for key, value in data.attr.items():
             bing["expression"].attrs.create(key, value)
     h5f.attrs.create("version", 2)
+    h5f.attrs.create("omics", 'Transcriptomics')
     h5f.close()
 
 

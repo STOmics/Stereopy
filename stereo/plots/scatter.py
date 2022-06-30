@@ -31,6 +31,7 @@ def base_scatter(
         x_label: str = None,
         y_label: str = None,
         color_bar: bool = False,
+        color_bar_reverse: bool = False,
         bad_color: str = "lightgrey",
         dot_size: int = None,
         palette: Optional[Union[str, list]] = 'stereo',
@@ -41,7 +42,7 @@ def base_scatter(
         vmin=None,
         vmax=None,
         SegmentedColormap=None,
-):  # scatter plot, 聚类后表达矩阵空间分布
+):  # scatter plot, Expression matrix spatial distribution after clustering
     """
     scatter plotter
 
@@ -54,6 +55,7 @@ def base_scatter(
     :param x_label: x label
     :param y_label: y label
     :param color_bar: show color bar or not, color_values must be int array or list when color_bar is True
+    :param color_bar_reverse: if True, reverse the color bar, defaults to False
     :param bad_color: the name list of clusters to show.
     :param dot_size: marker size.
     :param palette: customized colors
@@ -73,7 +75,7 @@ def base_scatter(
     dot_size = 120000 / len(hue) if dot_size is None else dot_size
     # add a color bar
     if color_bar:
-        colors = conf.linear_colors(palette)
+        colors = conf.linear_colors(palette, reverse=color_bar_reverse)
         cmap = ListedColormap(colors)
         cmap.set_bad(bad_color)
 
@@ -108,8 +110,8 @@ def base_scatter(
     if not show_ticks:
         ax.set_aspect('equal', adjustable='datalim')
     ax.set_title(title, fontsize=18, fontweight='bold')
-    ax.set_ylabel(y_label, fontsize=15)  # 设置y轴标签
-    ax.set_xlabel(x_label, fontsize=15)  # 设置x轴标签
+    ax.set_ylabel(y_label, fontsize=15)  # set y-axis labels
+    ax.set_xlabel(x_label, fontsize=15)  # set x-axis labels
     if not show_ticks:
         ax.set_yticks([])
         ax.set_xticks([])
@@ -125,6 +127,7 @@ def multi_scatter(
         x_label: Union[list, np.ndarray] = None,
         y_label: Union[list, np.ndarray] = None,
         color_bar: bool = False,
+        color_bar_reverse: bool = False,
         bad_color: str = "lightgrey",
         dot_size: int = None,
         palette: Optional[Union[np.ndarray, list, str]] = 'stereo',
@@ -175,6 +178,7 @@ def multi_scatter(
                      x_label=x_label[i] if x_label else None,
                      y_label=y_label[i] if y_label else None,
                      color_bar=color_bar,
+                     color_bar_reverse=color_bar_reverse,
                      bad_color=bad_color,
                      dot_size=dot_size,
                      palette=palette,
@@ -220,21 +224,21 @@ def volcano(
         palette=palette,
         alpha=alpha, s=s,
     )
-    ax.spines['right'].set_visible(False)  # 去掉右边框
-    ax.spines['top'].set_visible(False)  # 去掉上边框
-    ax.set_ylabel(y_label, fontweight='bold')  # 设置y轴标签
-    ax.set_xlabel(x_label, fontweight='bold')  # 设置x轴标签
+    ax.spines['right'].set_visible(False)  # remove right border
+    ax.spines['top'].set_visible(False)  # remove top border
+    ax.set_ylabel(y_label, fontweight='bold')  # set y-axis labels
+    ax.set_xlabel(x_label, fontweight='bold')  # set x-axis labels
 
     if vlines:
         xmin = int(data['x'].min())
         xmax = int(np.percentile(np.array(data['x']), [90])[0])
         ymin = int(data['y'].min())
         ymax = int(np.percentile(np.array(data['y']), [90])[0])
-        ax.vlines(-cut_off_logFC, ymin, ymax, color='dimgrey', linestyle='dashed', linewidth=1)  # 画竖直线
-        ax.vlines(cut_off_logFC, ymin, ymax, color='dimgrey', linestyle='dashed', linewidth=1)  # 画竖直线
-        ax.hlines(-np.log10(cut_off_pvalue), xmin, xmax, color='dimgrey', linestyle='dashed', linewidth=1)  # 画竖水平线
-        # ax.set_xticks(range(xmin, xmax, 4))# 设置x轴刻度
-        # ax.set_yticks(range(ymin, ymax, 2))# 设置y轴刻度
+        ax.vlines(-cut_off_logFC, ymin, ymax, color='dimgrey', linestyle='dashed', linewidth=1)  # draw vertical lines
+        ax.vlines(cut_off_logFC, ymin, ymax, color='dimgrey', linestyle='dashed', linewidth=1)  # draw vertical lines
+        ax.hlines(-np.log10(cut_off_pvalue), xmin, xmax, color='dimgrey', linestyle='dashed', linewidth=1)  # draw vertical lines
+        # ax.set_xticks(range(xmin, xmax, 4))# set x-axis labels
+        # ax.set_yticks(range(ymin, ymax, 2))# set y-axis labels
     if label and text_visible:
         for line in range(0, data.shape[0]):
             if data[text_visible][line]:

@@ -8,7 +8,9 @@ import os.path
 from typing import Optional, Union, Sequence
 # import colorcet as cc
 import matplotlib.pyplot as plt
+from matplotlib import gridspec
 import numpy as np
+from random import randint
 from .scatter import base_scatter, multi_scatter, marker_gene_volcano, highly_variable_genes
 from stereo.config import StereoConfig
 
@@ -198,6 +200,149 @@ class PlotCollection:
             color_bar=True,
             **kwargs
         )
+    
+    def spatial_scatter_by_gene(
+            self,
+            gene_name=None,
+            dot_size=None,
+            palette='CET_L4',
+            ignore_no_expression=False,
+            **kwargs
+    ):
+        """draw the spatial distribution of expression quantity of the gene specified by gene_name
+
+        :param gene_name: specify the gene you want to draw, defaults to None, if none, will select randomly.
+        :param dot_size: marker size, defaults to None
+        :param palette: Color theme, defaults to 'CET_L4'
+        :param ignore_no_expression: whether ignore the cells no expression, defaults to False
+        """
+
+        self.data.sparse2array()
+        if gene_name is None:
+            idx = randint(0, len(self.data.gene_names))
+            gene_name = self.data.gene_names[idx]
+        else:
+            gene_names = self.data.gene_names.tolist()
+            if gene_name not in gene_names:
+                raise Exception(f'gene {gene_name} do not exist in expression matrix')
+            idx = gene_names.index(gene_name)
+
+        exp_data = self.data.exp_matrix[:, idx]
+        if ignore_no_expression:
+            nonezero_idx = np.nonzero(exp_data)
+            x = self.data.position[:, 0][nonezero_idx]
+            y = self.data.position[:, 1][nonezero_idx]
+            hue = exp_data[nonezero_idx]
+        else:
+            x = self.data.position[:, 0]
+            y = self.data.position[:, 1]
+            hue = exp_data
+        
+        if 'color_bar_reverse' in kwargs:
+            color_bar_reverse = kwargs['color_bar_reverse']
+            del kwargs['color_bar_reverse']
+        else:
+            color_bar_reverse = True
+        base_scatter(
+            x=x,
+            y=y,
+            hue=hue,
+            title=gene_name,
+            x_label='spatial1',
+            y_label='spatial2',
+            dot_size=dot_size,
+            palette=palette,
+            color_bar=True,
+            color_bar_reverse=color_bar_reverse,
+            **kwargs
+        )
+    
+    def gaussian_smooth_scatter_by_gene(
+            self,
+            gene_name=None,
+            dot_size=None,
+            palette='CET_L4',
+            ignore_no_expression=False,
+            **kwargs
+    ):
+        """draw the spatial distribution of expression quantity of the gene specified by gene_name,
+        just only for gaussian smooth, inluding the raw and smoothed.
+
+        :param gene_name: specify the gene you want to draw, defaults to None, if none, will select randomly.
+        :param dot_size: marker sizemarker size, defaults to None
+        :param palette: Color theme, defaults to 'CET_L4'
+        :param ignore_no_expression: whether ignore the cells no expression, defaults to False
+        """
+        self.data.tl.raw.sparse2array()
+        self.data.sparse2array()
+        if gene_name is None:
+            idx = randint(0, len(self.data.tl.raw.gene_names) - 1)
+            gene_name = self.data.gene_names[idx]
+        else:
+            gene_names = self.data.gene_names.tolist()
+            if gene_name not in gene_names:
+                raise Exception(f'gene {gene_name} do not exist in expression matrix')
+            idx = gene_names.index(gene_name)
+
+        raw_exp_data = self.data.tl.raw.exp_matrix[:, idx]
+        exp_data = self.data.exp_matrix[:, idx]
+        if ignore_no_expression:
+            nonezero_idx = np.nonzero(raw_exp_data)
+            raw_x = self.data.tl.raw.position[:, 0][nonezero_idx]
+            raw_y = self.data.tl.raw.position[:, 1][nonezero_idx]
+            raw_data_display = raw_exp_data[nonezero_idx]
+
+            nonezero_idx = np.nonzero(exp_data)
+            x = self.data.position[:, 0][nonezero_idx]
+            y = self.data.position[:, 1][nonezero_idx]
+            data_display = exp_data[nonezero_idx]
+
+            x_list = [raw_x, x]
+            y_list = [raw_y, y]
+            hue_list = [raw_data_display, data_display]
+        else:
+            x_list = [self.data.tl.raw.position[:, 0], self.data.position[:, 0]]
+            y_list = [self.data.tl.raw.position[:, 1], self.data.position[:, 1]]
+            hue_list = [raw_exp_data, exp_data]
+        
+        ncols = 2
+        nrows = 1
+        # each panel will have the size of rcParams['figure.figsize']
+        fig = plt.figure(figsize=(ncols * 10, nrows * 8))
+        left = 0.2 / ncols
+        bottom = 0.13 / nrows
+        axs = gridspec.GridSpec(
+            nrows=1,
+            ncols=2,
+            left=left,
+            right=1 - (ncols - 1) * left - 0.01 / ncols,
+            bottom=bottom,
+            top=1 - (nrows - 1) * bottom - 0.1 / nrows,
+        )
+        titles = [f'{gene_name}(raw)', f'{gene_name}(smoothed)']
+
+        if 'color_bar_reverse' in kwargs:
+            color_bar_reverse = kwargs['color_bar_reverse']
+            del kwargs['color_bar_reverse']
+        else:
+            color_bar_reverse = True
+        for ax, x, y, hue, title in zip(axs, x_list, y_list, hue_list, titles):
+            ax = fig.add_subplot(ax)
+            base_scatter(
+                x=x,
+                y=y,
+                hue=hue,
+                ax=ax,
+                title=title,
+                x_label='spatial1',
+                y_label='spatial2',
+                dot_size=dot_size,
+                palette=palette,
+                color_bar=True,
+                color_bar_reverse=color_bar_reverse,
+                **kwargs
+            )
+    
 
     def violin(self):
         """

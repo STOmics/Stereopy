@@ -78,5 +78,6 @@ for filename in glob.glob('**/*.ipynb', recursive=True):
 nbsphinx_thumbnails = {
     "Tutorials/cell_correction": "_static/cell_bin_correction.png",
     "Tutorials/tissue_cut": "_static/tissue_segmentation.png",
+    "Tutorials/gaussian_smooth": "_static/gaussian_smooth_1.png",
 }
 
