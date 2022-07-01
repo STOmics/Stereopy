@@ -598,18 +598,20 @@ class StPipeline(object):
         self.reset_key_record(key, res_key)
 
     @logit
-    def phenograph(self, phenograph_k, pca_res_key, res_key='cluster'):
+    def phenograph(self, phenograph_k, pca_res_key, n_jobs=10, res_key='cluster'):
         """
         phenograph of cluster.
 
         :param phenograph_k: the k value of phenograph.
         :param pca_res_key: the key of pca to getting the result for running the phenograph.
+        :param n_jobs: The number of parallel jobs to run for neighbors search, defaults to 10.
+                    if set to -1, means the all CPUs will be used, too high value may cause segment fault.
         :param res_key: the key for getting the result from the self.result.
         :return:
         """
         if pca_res_key not in self.result:
             raise Exception(f'{pca_res_key} is not in the result, please check and run the pca func.')
-        communities, _, _ = phe.cluster(self.result[pca_res_key], k=phenograph_k, clustering_algo='leiden')
+        communities, _, _ = phe.cluster(self.result[pca_res_key], k=phenograph_k, clustering_algo='leiden', n_jobs=n_jobs)
         communities = communities + 1
         clusters = communities.astype(str)
         df = pd.DataFrame({'bins': self.data.cell_names, 'group': clusters})
@@ -763,13 +765,14 @@ class StPipeline(object):
         self.result[res_key] = hs
     
     @logit
-    def gaussian_smooth(self, n_neighbors=10, smooth_threshold=90, pca_res_key='pca', res_key='gaussian_smooth', inplace=True):
+    def gaussian_smooth(self, n_neighbors=10, smooth_threshold=90, pca_res_key='pca', res_key='gaussian_smooth', n_jobs=-1, inplace=True):
         """smooth the expression matrix
 
         :param n_neighbors: number of the nearest points to serach, Too high value may cause overfitting, Too low value may cause poor smoothing effect.
         :param smooth_threshold: indicates Gaussian variance with a value between 20 and 100, Too high value may cause overfitting, Too low value may cause poor smoothing effect。
         :param pca_res_key: the key of pca to get from self.result, defaults to 'pca'.
         :param res_key: the key for getting the result from the self.result, defaults to 'gaussian_smooth'.
+        :param n_jobs: The number of parallel jobs to run for neighbors search, defaults to -1, means the all CPUs will be used.
         :param inplace: whether inplace the express matrix or get a new express matrix, defaults to True.
         """
         assert pca_res_key in self.result, f'{pca_res_key} is not in the result, please check and run the pca func.'
@@ -784,7 +787,7 @@ class StPipeline(object):
             raise Exception(f"The first dimension of pca_exp_matrix not equals to raw_exp_matrix's, may be because of running raw_checkpoint before filter cells and genes.")
         
         # logger.info(f"raw exp matrix size: {raw_exp_matrix.shape}")
-        result = gaussian_smooth(pca_exp_matrix, raw_exp_matrix, self.data.position, n_neighbors=n_neighbors, smooth_threshold=smooth_threshold)
+        result = gaussian_smooth(pca_exp_matrix, raw_exp_matrix, self.data.position, n_neighbors=n_neighbors, smooth_threshold=smooth_threshold, n_jobs=n_jobs)
         # logger.info(f"smoothed exp matrix size: {result.shape}")
         if inplace:
             self.data.exp_matrix = result

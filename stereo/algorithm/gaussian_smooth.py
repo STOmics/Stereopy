@@ -26,7 +26,8 @@ def gaussian_smooth(pca_exp_matrix: np.ndarray,
                     n_neighbors: int = 10,
                     smooth_threshold: float = 90,
                     a: float = 1,
-                    b: float = 0):
+                    b: float = 0,
+                    n_jobs: int = 10):
     if sp.issparse(pca_exp_matrix):
         pca_exp_matrix = pca_exp_matrix.toarray()
     if sp.issparse(raw_exp_matrix):
@@ -34,13 +35,13 @@ def gaussian_smooth(pca_exp_matrix: np.ndarray,
     tc = TimeConsume()
     tk = tc.start()
     Euc_distance = distance.cdist(cells_position, cells_position).astype(np.float32)
-    # logger.info(f'distance.cdist: {tc.get_time_consumed(tk)}')
+    logger.info(f'distance.cdist: {tc.get_time_consumed(tk)}')
 
-    nbrs = NearestNeighbors(n_neighbors=n_neighbors, algorithm='ball_tree').fit(pca_exp_matrix)
-    # logger.info(f'NearestNeighbors.fit: {tc.get_time_consumed(tk)}')
+    nbrs = NearestNeighbors(n_neighbors=n_neighbors, algorithm='ball_tree', n_jobs=n_jobs).fit(pca_exp_matrix)
+    logger.info(f'NearestNeighbors.fit: {tc.get_time_consumed(tk)}')
 
     adjecent_matrice = nbrs.kneighbors_graph(pca_exp_matrix).astype(np.float32).toarray()
-    # logger.info(f'kneighbors_graph: {tc.get_time_consumed(tk, restart=False)}')
+    logger.info(f'kneighbors_graph: {tc.get_time_consumed(tk, restart=False)}')
     aa = np.multiply(adjecent_matrice, Euc_distance)  ## 自己和自己的距离为0
     aa_nonzero = aa[np.nonzero(aa)]
     # aa = aa.tocsr()
