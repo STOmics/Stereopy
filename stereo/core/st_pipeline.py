@@ -440,14 +440,13 @@ class StPipeline(object):
         self.reset_key_record(key, res_key)
 
     @logit
-    def neighbors(self, pca_res_key, method='umap', metric='euclidean', n_pcs=None, n_neighbors=10, knn=True,
-                  res_key='neighbors'):
+    def neighbors(self, pca_res_key, method='umap', metric='euclidean', n_pcs=None, n_neighbors=10, knn=True, n_jobs=10, res_key='neighbors'):
         """
         run the neighbors.
 
         :param pca_res_key: the key of pca to getting the result.
         :param method: Use 'umap' or 'gauss'. for computing connectivities.
-        :param metric: A known metric’s name or a callable that returns a distance.
+        :param metric: A known metric's name or a callable that returns a distance.
                         include:
                             * euclidean
                             * manhattan
@@ -476,13 +475,15 @@ class StPipeline(object):
                     `n_neighbors`, that is, consider a knn graph. Otherwise, use a Gaussian
                     Kernel to assign low weights to neighbors more distant than the
                     `n_neighbors` nearest neighbor.
+        :param n_jobs: The number of parallel jobs to run for neighbors search, defaults to 10.
+                    if set to -1, means the all CPUs will be used, too high value may cause segment fault.
         :param res_key: the key for getting the result from the self.result.
         :return:
         """
         if pca_res_key not in self.result:
             raise Exception(f'{pca_res_key} is not in the result, please check and run the pca func.')
         neighbor, dists, connectivities = find_neighbors(x=self.result[pca_res_key].values, method=method, n_pcs=n_pcs,
-                                                         n_neighbors=n_neighbors, metric=metric, knn=knn)
+                                                         n_neighbors=n_neighbors, metric=metric, knn=knn, n_jobs=n_jobs)
         res = {'neighbor': neighbor, 'connectivities': connectivities, 'nn_dist': dists}
         self.result[res_key] = res
         key = 'neighbors'

@@ -56,6 +56,7 @@ def find_neighbors(
     metric_kwds: Mapping[str, Any] = MappingProxyType({}),
     knn: bool = True,
     random_state: AnyRandom = 0,
+    n_jobs: int = 10
 ):
     """
 
@@ -67,7 +68,7 @@ def find_neighbors(
     :param method:
         Use 'umap' or 'gauss'. for computing connectivities.
     :param metric:
-        A known metric’s name or a callable that returns a distance.
+        A known metric's name or a callable that returns a distance.
         include:
             * euclidean
             * manhattan
@@ -129,7 +130,7 @@ def find_neighbors(
             dists = pairwise_distances(neighbor.x, metric=neighbor.metric, **metric_kwds)
             neighbor.metric = 'precomputed'
         knn_indices, knn_distances, forest = neighbor.compute_neighbors_umap(
-            dists, random_state=neighbor.random_state, metric_kwds=metric_kwds)
+            dists, random_state=neighbor.random_state, metric_kwds=metric_kwds, n_jobs=n_jobs)
     if not use_dense_distances or neighbor.method in {'umap'}:
         connectivities = neighbor.compute_connectivities_umap(knn_indices, knn_distances)
         dists = neighbor.get_parse_distances_umap(knn_indices, knn_distances, )
@@ -231,6 +232,7 @@ class Neighbors(object):
             angular: bool = False,
             verbose: bool = False,
             metric_kwds: Mapping[str, Any] = MappingProxyType({}),
+            n_jobs: int = 10
     ):
         from umap.umap_ import nearest_neighbors
         random_state = check_random_state(random_state)
@@ -242,6 +244,7 @@ class Neighbors(object):
             metric_kwds=metric_kwds,
             angular=angular,
             verbose=verbose,
+            n_jobs=n_jobs
         )
 
         return knn_indices, knn_dists, forest
