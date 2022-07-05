@@ -168,11 +168,10 @@ def cell_correct(out_dir,
     if mask_path is None and image_path is not None:
         do_mask_generating = True
         cell_segment = CellSegment(image_path, gpu, out_dir)
-        if mask_path is None and image_path is not None:
-            logger.info(f"there is no mask file, generate it by model {model_path}")
-            cell_segment.generate_mask(model_path, model_type, depp_cro_size, overlap)
-            mask_path = cell_segment.get_mask_files()[0]
-            logger.info(f"the generated mask file {mask_path}")
+        logger.info(f"there is no mask file, generate it by model {model_path}")
+        cell_segment.generate_mask(model_path, model_type, depp_cro_size, overlap)
+        mask_path = cell_segment.get_mask_files()[0]
+        logger.info(f"the generated mask file {mask_path}")
         
     cc = CellCorrect(gem_path=gem_path, bgef_path=bgef_path, raw_cgef_path=raw_cgef_path, mask_path=mask_path, out_dir=out_dir)
     adjusted_data = cc.correcting(threshold=threshold, process_count=process_count, only_save_result=only_save_result, sample_n=sample_n)
