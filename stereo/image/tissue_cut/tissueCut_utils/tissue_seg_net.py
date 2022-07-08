@@ -1,3 +1,4 @@
+
 import torch
 import os
 import torch.nn as nn
@@ -9,9 +10,9 @@ class ConvBNReLU(nn.Module):
                  dilation=1, groups=1, bias=False):
         super(ConvBNReLU, self).__init__()
         self.conv = nn.Conv2d(
-            in_chan, out_chan, kernel_size=ks, stride=stride,
-            padding=padding, dilation=dilation,
-            groups=groups, bias=bias)
+                in_chan, out_chan, kernel_size=ks, stride=stride,
+                padding=padding, dilation=dilation,
+                groups=groups, bias=bias)
         self.bn = nn.BatchNorm2d(out_chan)
         self.relu = nn.ReLU(inplace=True)
 
@@ -38,6 +39,7 @@ class UpSample(nn.Module):
 
     def init_weight(self):
         nn.init.xavier_normal_(self.proj.weight, gain=1.)
+
 
 
 class DetailBranch(nn.Module):
@@ -94,7 +96,7 @@ class CEBlock(nn.Module):
         super(CEBlock, self).__init__()
         self.bn = nn.BatchNorm2d(128)
         self.conv_gap = ConvBNReLU(128, 128, 1, stride=1, padding=0)
-        # TODO: in paper here is naive conv2d, no bn-relu
+        #TODO: in paper here is naive conv2d, no bn-relu
         self.conv_last = ConvBNReLU(128, 128, 3, stride=1)
 
     def forward(self, x):
@@ -117,7 +119,7 @@ class GELayerS1(nn.Module):
                 in_chan, mid_chan, kernel_size=3, stride=1,
                 padding=1, groups=in_chan, bias=False),
             nn.BatchNorm2d(mid_chan),
-            nn.ReLU(inplace=True),  # not shown in paper
+            nn.ReLU(inplace=True), # not shown in paper
         )
         self.conv2 = nn.Sequential(
             nn.Conv2d(
@@ -154,7 +156,7 @@ class GELayerS2(nn.Module):
                 mid_chan, mid_chan, kernel_size=3, stride=1,
                 padding=1, groups=mid_chan, bias=False),
             nn.BatchNorm2d(mid_chan),
-            nn.ReLU(inplace=True),  # not shown in paper
+            nn.ReLU(inplace=True), # not shown in paper
         )
         self.conv2 = nn.Sequential(
             nn.Conv2d(
@@ -164,14 +166,14 @@ class GELayerS2(nn.Module):
         )
         self.conv2[1].last_bn = True
         self.shortcut = nn.Sequential(
-            nn.Conv2d(
-                in_chan, in_chan, kernel_size=3, stride=2,
-                padding=1, groups=in_chan, bias=False),
-            nn.BatchNorm2d(in_chan),
-            nn.Conv2d(
-                in_chan, out_chan, kernel_size=1, stride=1,
-                padding=0, bias=False),
-            nn.BatchNorm2d(out_chan),
+                nn.Conv2d(
+                    in_chan, in_chan, kernel_size=3, stride=2,
+                    padding=1, groups=in_chan, bias=False),
+                nn.BatchNorm2d(in_chan),
+                nn.Conv2d(
+                    in_chan, out_chan, kernel_size=1, stride=1,
+                    padding=0, bias=False),
+                nn.BatchNorm2d(out_chan),
         )
         self.relu = nn.ReLU(inplace=True)
 
@@ -259,7 +261,7 @@ class BGALayer(nn.Module):
                 128, 128, kernel_size=3, stride=1,
                 padding=1, bias=False),
             nn.BatchNorm2d(128),
-            nn.ReLU(inplace=True),  # not shown in paper
+            nn.ReLU(inplace=True), # not shown in paper
         )
 
     def forward(self, x_d, x_s):
@@ -276,6 +278,7 @@ class BGALayer(nn.Module):
         return out
 
 
+
 class SegmentHead(nn.Module):
 
     def __init__(self, in_chan, mid_chan, n_classes, up_factor=8, aux=True):
@@ -284,32 +287,17 @@ class SegmentHead(nn.Module):
         self.drop = nn.Dropout(0.1)
         self.up_factor = up_factor
 
-        # 新模型结构
-        # out_chan = n_classes
-        # mid_chan2 = up_factor * up_factor if aux else mid_chan
-        # up_factor = up_factor // 2 if aux else up_factor
-        # self.conv_out = nn.Sequential(
-        #     nn.Sequential(
-        #         nn.Upsample(scale_factor=2),
-        #         ConvBNReLU(mid_chan, mid_chan2, 3, stride=1)
-        #     ) if aux else nn.Identity(),
-        #     nn.Conv2d(mid_chan2, out_chan, 1, 1, 0, bias=True),
-        #     nn.Upsample(scale_factor=up_factor, mode='bilinear', align_corners=False)
-        # )
-
-        # 旧模型结构
-        out_chan = n_classes * up_factor * up_factor
-        if aux:
-            self.conv_out = nn.Sequential(
-                ConvBNReLU(mid_chan, up_factor * up_factor, 3, stride=1),
-                nn.Conv2d(up_factor * up_factor, out_chan, 1, 1, 0),
-                nn.PixelShuffle(up_factor)
-            )
-        else:
-            self.conv_out = nn.Sequential(
-                nn.Conv2d(mid_chan, out_chan, 1, 1, 0),
-                nn.PixelShuffle(up_factor)
-            )
+        out_chan = n_classes
+        mid_chan2 = up_factor * up_factor if aux else mid_chan
+        up_factor = up_factor // 2 if aux else up_factor
+        self.conv_out = nn.Sequential(
+            nn.Sequential(
+                nn.Upsample(scale_factor=2),
+                ConvBNReLU(mid_chan, mid_chan2, 3, stride=1)
+                ) if aux else nn.Identity(),
+            nn.Conv2d(mid_chan2, out_chan, 1, 1, 0, bias=True),
+            nn.Upsample(scale_factor=up_factor, mode='bilinear', align_corners=False)
+        )
 
     def forward(self, x):
         feat = self.conv(x)
@@ -320,16 +308,15 @@ class SegmentHead(nn.Module):
 
 class TissueSeg(nn.Module):
 
-    def __init__(self, n_classes, backbone_path, aux_mode='pred'):
+    def __init__(self, n_classes, aux_mode='pred'):
         super(TissueSeg, self).__init__()
         self.aux_mode = aux_mode
-        self.backbone_path = backbone_path
         self.detail = DetailBranch()
         self.segment = SegmentBranch()
         self.bga = BGALayer()
 
         self.head = SegmentHead(128, 1024, n_classes, up_factor=8, aux=False)
-        if self.aux_mode== 'train':
+        if self.aux_mode == 'train':
             self.aux2 = SegmentHead(16, 128, n_classes, up_factor=4)
             self.aux3 = SegmentHead(32, 128, n_classes, up_factor=8)
             self.aux4 = SegmentHead(64, 128, n_classes, up_factor=16)
@@ -372,47 +359,26 @@ class TissueSeg(nn.Module):
         self.load_pretrain()
 
     def load_pretrain(self):
-        # state = torch.load(os.path.join(os.path.split(__file__)[0], r'../tissueCut_model/backbone.pth'))
-        state = torch.load(self.backbone_path,map_location='cpu')
+        state = torch.load(os.path.join(os.path.split(__file__)[0], r'../tissueCut_model/backbone.pth'))
         for name, child in self.named_children():
             if name in state.keys():
                 child.load_state_dict(state[name], strict=True)
 
-    # 新模型
-    # def get_params(self):
-    #     def add_param_to_list(mod, wd_params, nowd_params):
-    #         for param in mod.parameters():
-    #             if param.dim() == 1:
-    #                 nowd_params.append(param)
-    #             elif param.dim() == 4:
-    #                 wd_params.append(param)
-    #             else:
-    #                 print(name)
-    #
-    #     wd_params, nowd_params, lr_mul_wd_params, lr_mul_nowd_params = [], [], [], []
-    #     for name, child in self.named_children():
-    #         if 'head' in name or 'aux' in name:
-    #             add_param_to_list(child, lr_mul_wd_params, lr_mul_nowd_params)
-    #         else:
-    #             add_param_to_list(child, wd_params, nowd_params)
-    #     return wd_params, nowd_params, lr_mul_wd_params, lr_mul_nowd_params
 
-    # 旧模型
     def get_params(self):
-        wd_params, nowd_params, lr_mul_wd_params, lr_mul_nowd_params = [], [], [], []
-        for name, param in self.named_parameters():
-            if 'head' in name or 'aux' in name:
-                if param.dim() == 1:
-                    lr_mul_nowd_params.append(param)
-                elif param.dim() == 4:
-                    lr_mul_wd_params.append(param)
-                else:
-                    print(name)
-            else:
+        def add_param_to_list(mod, wd_params, nowd_params):
+            for param in mod.parameters():
                 if param.dim() == 1:
                     nowd_params.append(param)
                 elif param.dim() == 4:
                     wd_params.append(param)
                 else:
                     print(name)
+
+        wd_params, nowd_params, lr_mul_wd_params, lr_mul_nowd_params = [], [], [], []
+        for name, child in self.named_children():
+            if 'head' in name or 'aux' in name:
+                add_param_to_list(child, lr_mul_wd_params, lr_mul_nowd_params)
+            else:
+                add_param_to_list(child, wd_params, nowd_params)
         return wd_params, nowd_params, lr_mul_wd_params, lr_mul_nowd_params
