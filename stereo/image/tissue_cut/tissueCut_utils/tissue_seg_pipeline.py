@@ -2,34 +2,31 @@
 # intensity seg
 # network infer
 #######################
-import numpy as np
-import os
-import tifffile
-import glog
-import torch
-import tissueCut_utils.tissue_seg_utils as util
-import cv2
-import tissueCut_utils.tissue_seg_net as tissue_net
-from skimage import measure, exposure
-from tissueCut_utils.tissue_seg_utils import ToTensor
-import time
 
-torch.set_grad_enabled(False)
+import os
+import copy
+
+import cv2
+import tifffile
+import numpy as np
+from skimage import measure
+
+from utils import stlog
+import tissueCut_utils.tissue_seg_bcdu as bcdu
+import tissueCut_utils.tissue_seg_utils as util
+
 np.random.seed(123)
 
-
 class tissueCut(object):
-    def __init__(self, path, out_path, type, deep, model_path, backbone_path):
+    def __init__(self, path, out_path, type, deep, conf):
 
-        self.is_gpu = False
         self.path = path
         self.type = type  # image type
         self.deep = deep  # segmentation method
         self.out_path = out_path
-        self.model_path = model_path
-        self.backbone_path = backbone_path
-        glog.info('image type: %s' % ('ssdna' if type else 'RNA'))
-        glog.info('using method: %s' % ('deep learning' if deep else 'intensity segmentation'))
+        self.conf = conf
+        stlog.info('image type: %s' % ('ssdna' if type else 'RNA'))
+        stlog.info('using method: %s' % ('deep learning' if deep else 'intensity segmentation'))
         # init property
         self.img = []
         self.shape = []
@@ -40,8 +37,10 @@ class tissueCut(object):
         self.file_name = []
         self.file_ext = []
 
-        self.is_gpu = torch.cuda.is_available()
         self._preprocess_file(path)
+
+        self.is_init_bcdu = False
+        self.oj_bcdu = None
 
     # parse file name
     def _preprocess_file(self, path):
@@ -74,17 +73,55 @@ class tissueCut(object):
 
         return img_bin
 
-    # def save_tissue_mask(self):
-    #
-    #     # for idx, tissue_thumb in enumerate(self.mask_thumb):
-    #     #     tifffile.imsave(os.path.join(self.out_path, self.file_name[idx] + r'_tissue_cut_thumb.tif'), tissue_thumb)
-    #
-    #     for idx, tissue in enumerate(self.mask):
-    #         tifffile.imsave(os.path.join(self.out_path, self.file_name[idx] + r'_tissue_cut.tif'),
-    #                         (tissue > 0).astype(np.uint8))
-    #     glog.info('seg results saved in %s' % self.out_path)
+    def transfer_16bit_to_8bit(self, image_16bit):
+        min_16bit = np.min(image_16bit)
+        max_16bit = np.max(image_16bit)
 
-    # 新函数
+        image_8bit = np.array(np.rint(255 * ((image_16bit - min_16bit) / (max_16bit - min_16bit))), dtype=np.uint8)
+
+        return image_8bit
+
+    def resize(self, img, l=512):
+        h, w = img.shape[:2]
+        ratio = l / max(h, w)
+        show_h = int(h * ratio)
+        show_w = int(w * ratio)
+        img_out = cv2.resize(img, (show_w, show_h))
+        return img_out
+
+    def ij_auto_contrast(self, img):
+        limit = img.size / 10
+        threshold = img.size / 5000
+        if img.dtype != 'uint8':
+            bit_max = 65536
+        else:
+            bit_max = 256
+        hist, _ = np.histogram(img.flatten(), 256, [0, bit_max])
+        hmin = 0
+        hmax = bit_max - 1
+        for i in range(1, len(hist) - 1):
+            count = hist[i]
+            if count > limit:
+                continue
+            if count > threshold:
+                hmin = i
+                break
+        for i in range(len(hist) - 2, 0, -1):
+            count = hist[i]
+            if count > limit:
+                continue
+            if count > threshold:
+                hmax = i
+                break
+        dst = copy.deepcopy(img)
+        if hmax > hmin:
+            hmax = int(hmax * bit_max / 256)
+            hmin = int(hmin * bit_max / 256)
+            dst[dst < hmin] = hmin
+            dst[dst > hmax] = hmax
+            cv2.normalize(dst, dst, 0, bit_max - 1, cv2.NORM_MINMAX)
+        return dst
+
     def save_tissue_mask(self):
 
         # for idx, tissue_thumb in enumerate(self.mask_thumb):
@@ -97,19 +134,18 @@ class tissueCut(object):
             else:
                 tifffile.imsave(os.path.join(self.out_path, self.file_name[idx] + r'_tissue_cut.tif'),
                                 (tissue > 0).astype(np.uint8))
-        glog.info('seg results saved in %s' % self.out_path)
+        stlog.info('seg results saved in %s' % self.out_path)
 
     # preprocess image for deep learning
-
     def get_thumb_img(self):
-
-        glog.info('image loading and preprocessing...')
+        stlog.info('image loading and preprocessing...')
 
         for ext, file in zip(self.file_ext, self.file):
             assert ext in ['.tif', '.tiff', '.png', '.jpg']
             if ext == '.tif' or ext == '.tiff':
 
                 img = tifffile.imread(os.path.join(self.path, file))
+                img = np.squeeze(img)
                 if len(img.shape) == 3:
                     img = img[:, :, 0]
             else:
@@ -121,82 +157,7 @@ class tissueCut(object):
             self.shape.append(img.shape)
 
             if self.deep:
-
-                if self.type:
-                    """ssdna: equalizeHist"""
-
-                    if img.dtype != 'uint8':
-                        img = util.transfer_16bit_to_8bit(img)
-
-                    if np.mean(img) > 50 and np.mean(img) > np.std(img) * 0.8:
-                        img = util.contrast_adjust(img)
-                        print(self.file_name)
-
-                    img_pre = img
-                    # img_pre = cv2.equalizeHist(img)
-
-                else:
-                    """rna: bin """
-
-                    img = self._bin(img)
-                    if img.dtype != 'uint8':
-                        img = util.transfer_16bit_to_8bit(img)
-
-                    img_pre = exposure.adjust_log(img)
-                # img_pre = img
-                # tifffile.imsave(os.path.join(self.out_path, file + '_contract.tif'), img_pre.astype(np.uint8))
-                img_thumb = util.down_sample(img_pre, shape=(1024, 2048))
-                # tifffile.imsave(os.path.join(self.out_path, file + '_contract_deep.tif'), img_thumb.astype(np.uint8))
-                self.img_thumb.append(img_thumb)
-
-    # infer tissue mask by network
-    def tissue_infer_deep(self):
-        # network infer
-
-        self.get_thumb_img()
-
-        # define tissueCut_model
-        net = tissue_net.TissueSeg(2, self.backbone_path)
-
-        # if self.type:
-        #     model_path = os.path.join(os.path.split(__file__)[0], '../tissueCut_model/ssdna_seg.pth')
-        # else:
-        #     model_path = os.path.join(os.path.split(__file__)[0], '../tissueCut_model/rna_seg.pth')
-
-        net.load_state_dict(torch.load(self.model_path, map_location='cpu'), strict=False)
-        # net.load_state_dict(torch.load(self.model_path, map_location=lambda storage, loc: storage), strict=False)
-        net.eval()
-        if self.is_gpu:
-            net.cuda()
-
-        # device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-        # print(device)
-        # net.to(device)
-
-        # prepare data
-        to_tensor = ToTensor(
-            mean=(0.3257, 0.3690, 0.3223),
-            std=(0.2112, 0.2148, 0.2115),
-        )
-        glog.info('tissueCut_model infer...')
-        kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (30, 30))
-        for shape, im, file, img_thumb in zip(self.shape, self.img_thumb, self.file, self.img_thumb):
-            im = cv2.cvtColor(im, cv2.COLOR_GRAY2RGB)
-            # im = to_tensor(dict(im=im, lb=None))['im'].unsqueeze(0)#.cuda()
-            # # inference
-            # out = np.array(net(im, )[0].argmax(dim=1).squeeze().detach().cpu().numpy(), dtype=np.uint8)
-
-            if self.is_gpu:
-                im = to_tensor(dict(im=im, lb=None))['im'].unsqueeze(0).cuda()
-            else:
-                im = to_tensor(dict(im=im, lb=None))['im'].unsqueeze(0)
-            out = np.array(net(im, ).squeeze().detach().cpu().numpy(), dtype=np.uint8)
-            out = util.hole_fill(out).astype(np.uint8)
-            img_open = cv2.morphologyEx(out, cv2.MORPH_OPEN, kernel)
-
-            self.mask_thumb.append(np.uint8(img_open > 0))
-
-        self.__get_roi()
+                self.img_thumb.append(img)
 
     # tissue segmentation by intensity filter
     def tissue_seg_intensity(self):
@@ -206,19 +167,13 @@ class tissueCut(object):
 
         self.get_thumb_img()
 
-        glog.info('segment by intensity...')
+        stlog.info('segment by intensity...')
         for idx, ori_image in enumerate(self.img):
             shapes = ori_image.shape
 
             # downsample ori_image
             if not self.type:
                 ori_image = self._bin(ori_image)
-
-            # else:
-            #     if np.mean(ori_image) < 50 and np.mean(ori_image) > np.std(ori_image) * 0.8:
-            #         ori_image = util.contrast_adjust(ori_image)
-
-            # tifffile.imsave(os.path.join(self.out_path, self.file[idx] + '_contract.tif'), ori_image)
 
             image_thumb = util.down_sample(ori_image, shape=(shapes[0] // 5, shapes[1] // 5))
 
@@ -287,32 +242,33 @@ class tissueCut(object):
                     bbox = tissue_tile['bbox']
                     tissue_mask_filter[bbox[0]: bbox[2], bbox[1]: bbox[3]] += tissue_tile['image']
                 self.mask_thumb[idx] = np.uint8(tissue_mask_filter > 0)
-
-            # if self.deep:
-            #
-            #     ratio = int(self.img[idx].shape[0] // self.mask_thumb[idx].shape[0] // 5)
-            #
-            #     if ratio == 0: ratio = 1
-            #
-            #     kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (20 // ratio, 20 // ratio))
-            #
-            #     self.mask_thumb[idx] = cv2.dilate(self.mask_thumb[idx], kernel, iterations=10)
-
             self.mask.append(util.up_sample(self.mask_thumb[idx], self.img[idx].shape))
+
+    def tissue_infer_bcud(self):
+        stlog.info('tissueCut_model infer...')
+        if not self.is_init_bcdu:
+            self.oj_bcdu = bcdu.cl_bcdu(os.path.join(
+                os.path.split(__file__)[0],
+                '../tissueCut_model/weight_tissue_cut_tool_220304.hdf5'))
+            self.is_init_bcdu = True
+        self.get_thumb_img()
+        if self.oj_bcdu is not None:
+            for img in self.img_thumb:
+                try:
+                    ret, pred, score = self.oj_bcdu.predict(img)
+                except:
+                    stlog.info("TissueCut predict error, Please check fov_stitched_transformed.tif")
+                    raise Exception('SAW-A40007', "TissueCut predict error")
+                if ret:
+                    self.mask.append(pred)
 
     def tissue_seg(self):
 
         # try:
         if self.deep:
-            self.tissue_infer_deep()
-
+            # self.tissue_infer_deep()
+            self.tissue_infer_bcud()
         else:
             self.tissue_seg_intensity()
 
         self.save_tissue_mask()
-
-        return 1
-
-        # except:
-        #     glog.info('Tissue seg throw exception!')
-        #     return 0
