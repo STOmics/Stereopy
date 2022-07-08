@@ -90,15 +90,3 @@ def contrast_adjust_by_max(img):
         image_c = np.rint(255 * ((img - min_img) / (max_img - min_img)))
     image_c[image_c > 255] = 255
     return image_c.astype(np.uint8)
-
-
-def contrast_adjust_by_max(img):
-    min_img = np.min(img)
-    max_img = np.max(img) - 150
-    mean = np.mean(img)
-    std = np.std(img)
-    if mean < 10 and std < 10:
-        
-        image_c = np.rint(255 * ((img - min_img) / (max_img - min_img)))
-    image_c[image_c > 255] = 255
-    return image_c.astype(np.uint8)
