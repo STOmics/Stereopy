@@ -5,28 +5,47 @@
 
 import os
 import copy
+from typing import Optional, Union
 
 import cv2
 import tifffile
 import numpy as np
 from skimage import measure
 
-from utils import stlog
-import tissueCut_utils.tissue_seg_bcdu as bcdu
-import tissueCut_utils.tissue_seg_utils as util
+from stereo.log_manager import logger
+from .tissueCut_utils import tissue_seg_utils as util
+from .tissueCut_utils import tissue_seg_bcdu as bcdu
 
 np.random.seed(123)
 
-class tissueCut(object):
-    def __init__(self, path, out_path, type, deep, conf):
+# source image type enum
+RNA = 0
+ssDNA = 1  # NOTE: ssDNA is stranded DNA
+SRC_IMG_TYPE_SET = {RNA, ssDNA}
 
-        self.path = path
-        self.type = type  # image type
-        self.deep = deep  # segmentation method
-        self.out_path = out_path
-        self.conf = conf
-        stlog.info('image type: %s' % ('ssdna' if type else 'RNA'))
-        stlog.info('using method: %s' % ('deep learning' if deep else 'intensity segmentation'))
+# segmentation method
+INTENSITY = 0
+DEEP = 1
+SEG_METHOD_SET = {INTENSITY, DEEP}
+
+class TissueCut(object):
+
+    def __init__(
+            self,
+            src_img_path : Optional[str],
+            model_path: Optional[str],
+            src_img_type: Optional[int] = ssDNA,
+            dst_img_path: Optional[str] = "",
+            seg_method: Optional[int] = DEEP,
+        ):
+        self.src_img_path = src_img_path
+        self.src_img_type = src_img_type
+        self.dst_img_path = dst_img_path
+        self.seg_method = seg_method
+        self.model_path = model_path
+
+        logger.info('source image type: %s' % ('ssdna' if self.src_img_type else 'RNA'))
+        logger.info('segmentation method: %s' % ('deep learning' if seg_method else 'intensity segmentation'))
         # init property
         self.img = []
         self.shape = []
@@ -37,7 +56,7 @@ class tissueCut(object):
         self.file_name = []
         self.file_ext = []
 
-        self._preprocess_file(path)
+        self._preprocess_file(self.src_img_path)
 
         self.is_init_bcdu = False
         self.oj_bcdu = None
@@ -59,19 +78,13 @@ class tissueCut(object):
 
     # RNA image bin
     def _bin(self, img):
-
+        logger.debug("RNA image dType=%s" % img.dtype)
         if img.dtype == 'uint8':
-            print(img.dtype)
             bin_size = 20
         else:
-            print('16', img.dtype)
             bin_size = 200
-
-        kernel = np.zeros((bin_size, bin_size), dtype=np.uint8)
-        kernel += 1
-        img_bin = cv2.filter2D(img, -1, kernel)
-
-        return img_bin
+        kernel = np.ones((bin_size, bin_size), dtype=np.uint8)
+        return cv2.filter2D(img, -1, kernel)
 
     def transfer_16bit_to_8bit(self, image_16bit):
         min_16bit = np.min(image_16bit)
@@ -125,23 +138,23 @@ class tissueCut(object):
     def save_tissue_mask(self):
 
         # for idx, tissue_thumb in enumerate(self.mask_thumb):
-        #     tifffile.imsave(os.path.join(self.out_path, self.file_name[idx] + r'_tissue_cut_thumb.tif'), tissue_thumb)
+        #     tifffile.imsave(os.path.join(self.dst_img_path, self.file_name[idx] + r'_tissue_cut_thumb.tif'), tissue_thumb)
         for idx, tissue in enumerate(self.mask):
             if np.sum(tissue) == 0:
                 h, w = tissue.shape[:2]
                 tissue = np.ones((h, w), dtype=np.uint8)
-                tifffile.imsave(os.path.join(self.out_path, self.file_name[idx] + r'_tissue_cut.tif'), tissue)
+                tifffile.imsave(os.path.join(self.dst_img_path, self.file_name[idx] + r'_tissue_cut.tif'), tissue)
             else:
-                tifffile.imsave(os.path.join(self.out_path, self.file_name[idx] + r'_tissue_cut.tif'),
+                tifffile.imsave(os.path.join(self.dst_img_path, self.file_name[idx] + r'_tissue_cut.tif'),
                                 (tissue > 0).astype(np.uint8))
-        stlog.info('seg results saved in %s' % self.out_path)
+        logger.info('seg results saved in %s' % self.dst_img_path)
 
     # preprocess image for deep learning
     def get_thumb_img(self):
-        stlog.info('image loading and preprocessing...')
+        logger.info('image loading and preprocessing...')
 
         for ext, file in zip(self.file_ext, self.file):
-            assert ext in ['.tif', '.tiff', '.png', '.jpg']
+            assert ext in {'.tif', '.tiff', '.png', '.jpg'}
             if ext == '.tif' or ext == '.tiff':
 
                 img = tifffile.imread(os.path.join(self.path, file))
@@ -156,7 +169,7 @@ class tissueCut(object):
 
             self.shape.append(img.shape)
 
-            if self.deep:
+            if self.seg_method:
                 self.img_thumb.append(img)
 
     # tissue segmentation by intensity filter
@@ -167,12 +180,12 @@ class tissueCut(object):
 
         self.get_thumb_img()
 
-        stlog.info('segment by intensity...')
+        logger.info('segment by intensity...')
         for idx, ori_image in enumerate(self.img):
             shapes = ori_image.shape
 
             # downsample ori_image
-            if not self.type:
+            if not self.src_img_type:
                 ori_image = self._bin(ori_image)
 
             image_thumb = util.down_sample(ori_image, shape=(shapes[0] // 5, shapes[1] // 5))
@@ -245,19 +258,21 @@ class tissueCut(object):
             self.mask.append(util.up_sample(self.mask_thumb[idx], self.img[idx].shape))
 
     def tissue_infer_bcud(self):
-        stlog.info('tissueCut_model infer...')
+        logger.info('tissueCut_model infer...')
         if not self.is_init_bcdu:
-            self.oj_bcdu = bcdu.cl_bcdu(os.path.join(
-                os.path.split(__file__)[0],
-                '../tissueCut_model/weight_tissue_cut_tool_220304.hdf5'))
-            self.is_init_bcdu = True
+            if self.model_path:
+                self.oj_bcdu = bcdu.cl_bcdu(self.model_path)
+                self.is_init_bcdu = True
+            else:
+                raise Exception("Found no `model path`, please assign `model_path` to your local h5df model path")
+
         self.get_thumb_img()
         if self.oj_bcdu is not None:
             for img in self.img_thumb:
                 try:
                     ret, pred, score = self.oj_bcdu.predict(img)
                 except:
-                    stlog.info("TissueCut predict error, Please check fov_stitched_transformed.tif")
+                    logger.info("TissueCut predict error, Please check fov_stitched_transformed.tif")
                     raise Exception('SAW-A40007', "TissueCut predict error")
                 if ret:
                     self.mask.append(pred)
@@ -265,7 +280,7 @@ class tissueCut(object):
     def tissue_seg(self):
 
         # try:
-        if self.deep:
+        if self.seg_method:
             # self.tissue_infer_deep()
             self.tissue_infer_bcud()
         else:

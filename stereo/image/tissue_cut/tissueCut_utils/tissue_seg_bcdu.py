@@ -1,17 +1,18 @@
-import copy
-import math
 import os
-import sys
-
 os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
 os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
-import tissueCut_utils.tissue_seg_bcdu_model as M
-import numpy as np
-import tissueCut_utils.tissue_seg_bcdu_uity as uity
-import cv2
+
+import sys
+import copy
+import math
 import traceback
+
+import cv2
+import numpy as np
 from skimage import filters
 
+from . import tissue_seg_bcdu_model as M
+from . import tissue_seg_bcdu_uity as uity
 
 class cl_bcdu(object):
     def __init__(self, model_path):
