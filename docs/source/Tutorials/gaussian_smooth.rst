@@ -2,7 +2,7 @@ Gaussian smooth
 ----------------
 This example show how to run the function of gaussian smooth on Stereopy.
 
-Gaussian smooth can make expression matrix closer, the detail of algorithm refer to https://www.biorxiv.org/content/10.1101/2022.05.26.493527v1.abstract.
+Gaussian smooth can make expression matrix closer reality, the detail of algorithm refer to https://www.biorxiv.org/content/10.1101/2022.05.26.493527v1.abstract.
 
 Generally, you should do some preprocessing such as filtering cells, filtering genes, normalization, pca before running gaussian smooth.
 
