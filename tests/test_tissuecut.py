@@ -14,6 +14,7 @@ from stereo import image as im
 import time
 
 
+# FIXME: this function can not use after merge the new version of TissueCut
 def test_rna(deep=0):
     print('start')
     t = time.time()
@@ -26,6 +27,7 @@ def test_rna(deep=0):
     print('end')
 
 
+# FIXME: this function can not use after merge the new version of TissueCut
 def test_ssdna(deep=0):
     print('start')
     t = time.time()
