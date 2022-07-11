@@ -5,7 +5,7 @@
 
 import os
 import copy
-from typing import Optional, Union
+from typing import Optional
 
 import cv2
 import tifffile
@@ -25,19 +25,27 @@ SRC_IMG_TYPE_SET = {RNA, ssDNA}
 
 # segmentation method
 INTENSITY = 0
-DEEP = 1
+DEEP = 1  # NOTE: deep learning
 SEG_METHOD_SET = {INTENSITY, DEEP}
+
 
 class TissueCut(object):
 
     def __init__(
             self,
-            src_img_path : Optional[str],
+            src_img_path: Optional[str],
             model_path: Optional[str],
             src_img_type: Optional[int] = ssDNA,
             dst_img_path: Optional[str] = "",
             seg_method: Optional[int] = DEEP,
-        ):
+    ):
+        """
+            :param src_img_path: source image path, specify one image to transforming
+            :param model_path: should specify when using `src_img_type` as `ssDNA`
+            :param src_img_type: choose one of `RNA`, `ssDNA`
+            :param dst_img_path: result image path, default to working path
+            :param seg_method: choose one of `INTENSITY`, `DEEP`
+        """
         self.src_img_path = src_img_path
         self.src_img_type = src_img_type
         self.dst_img_path = dst_img_path
