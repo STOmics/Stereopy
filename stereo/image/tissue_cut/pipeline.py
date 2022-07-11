@@ -42,10 +42,16 @@ class TissueCut(object):
         """
             :param src_img_path: source image path, specify one image to transforming
             :param model_path: should specify when using `src_img_type` as `ssDNA`
-            :param src_img_type: choose one of `RNA`, `ssDNA`
+            :param src_img_type: choose one of `RNA`, `ssDNA`,
             :param dst_img_path: result image path, default to working path
             :param seg_method: choose one of `INTENSITY`, `DEEP`
         """
+        # FIXME: `RNA` can not use seg_method `INTENSITY`
+        if src_img_type == RNA and seg_method == DEEP:
+            seg_method = INTENSITY
+            logger.warn("`RNA` type image can not use deep-learning segmentation method, auto change to `INTENSITY`")
+        elif seg_method == DEEP and not model_path:
+            raise Exception("Found no `model path`, please assign `model_path` to your local h5df model path")
         self.src_img_path = src_img_path
         self.src_img_type = src_img_type
         self.dst_img_path = dst_img_path
