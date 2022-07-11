@@ -55,3 +55,4 @@ tensorflow-io-gcs-filesystem==0.24.0
 protobuf==3.19.4
 hotspotsc==0.9.1
 distributed==2022.2.0
+keras==2.7.0
