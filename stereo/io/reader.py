@@ -31,59 +31,44 @@ from shapely.geometry import Point, MultiPoint
 from typing import Optional
 from copy import deepcopy
 
-def read_gem(file_path, sep='\t', bin_type="bins", bin_size=100, is_sparse=True):
+def read_gem(file_path: str, output: str, bin_type="bins", bin_size=100, is_sparse=True, gene_list: list = None, region: list = None):
     """
     read the stereo-seq file, and generate the object of StereoExpData.
 
     :param file_path: input file
-    :param sep: separator string
+    :param output: path of output_file(.gef)
     :param bin_type: the type of bin, if file format is stereo-seq file. `bins` or `cell_bins`.
     :param bin_size: the size of bin to merge. The parameter only takes effect
                      when the value of data.bin_type is 'bins'.
     :param is_sparse: the matrix is sparse matrix if is_sparse is True else np.ndarray
+    :param gene_list: restrict to this gene list
+    :param region: restrict to this region, [minX, maxX, minY, maxY]
 
     :return: an object of StereoExpData.
     """
-    data = StereoExpData(file_path=file_path, bin_type=bin_type, bin_size=bin_size)
-    df = pd.read_csv(str(data.file), sep=sep, comment='#', header=0)
-    if 'MIDCounts' in df.columns:
-        df.rename(columns={'MIDCounts': 'UMICount'}, inplace=True)
-    elif 'MIDCount' in df.columns:
-        df.rename(columns={'MIDCount': 'UMICount'}, inplace=True)
-    df.dropna(inplace=True)
-    gdf = None
-    if data.bin_type == 'cell_bins':
-        df.rename(columns={'label': 'cell_id'}, inplace=True)
-        gdf = parse_cell_bin_coor(df)
+
+    import os
+    from gefpy.bgef_writer_cy import generate_bgef
+
+    if bin_type == 'bins':
+        gem_file_name = os.path.basename(file_path)
+        if gem_file_name.endswith('gem') or gem_file_name.endswith('gem.gz'):
+            gef_file_name = gem_file_name.split('gem')[0] + '.gef'
+        else:
+            gef_file_name = gem_file_name + '.gef'
+
+        gef_file = os.path.join(output, gef_file_name)
+
+        try:
+            generate_bgef(file_path, gef_file)
+        except IOError:
+            logger.error(f'can not generate {gef_file}') 
+
+        data = read_gef(file_path=gef_file, bin_type=bin_type, bin_size=bin_size, is_sparse=is_sparse, gene_list=gene_list, region=region)
     else:
-        df = parse_bin_coor(df, bin_size)
-    cells = df['cell_id'].unique()
-    genes = df['geneID'].unique()
-    cells_dict = dict(zip(cells, range(0, len(cells))))
-    genes_dict = dict(zip(genes, range(0, len(genes))))
-    rows = df['cell_id'].map(cells_dict)
-    cols = df['geneID'].map(genes_dict)
-    logger.info(f'the martrix has {len(cells)} cells, and {len(genes)} genes.')
-    exp_matrix = csr_matrix((df['UMICount'], (rows, cols)), shape=(cells.shape[0], genes.shape[0]), dtype=np.int32)
-    data.cells = Cell(cell_name=cells)
-    data.genes = Gene(gene_name=genes)
-    data.exp_matrix = exp_matrix if is_sparse else exp_matrix.toarray()
-    if data.bin_type == 'bins':
-        data.position = df.loc[:, ['x_center', 'y_center']].drop_duplicates().values
-    else:
-        data.position = gdf.loc[cells][['x_center', 'y_center']].values
-        data.cells.cell_point = gdf.loc[cells]['cell_point'].values
-    data.offset_x = df['x'].min()
-    data.offset_y = df['y'].min()
-    data.attr = {
-        'minX': df['x'].min(),
-        'minY': df['y'].min(),
-        'maxX': df['x'].max(),
-        'maxY': df['y'].max(),
-        'minExp': data.exp_matrix.toarray().min() if is_sparse else data.exp_matrix.min(),
-        'maxExp': data.exp_matrix.toarray().max() if is_sparse else data.exp_matrix.min(),
-        'resolution': 0,
-    }
+        logger.error('the gem file bin_type is not bins, please check!')
+        raise Exception("the gem file bin_type is not bins, please check!")
+
     return data
 
 

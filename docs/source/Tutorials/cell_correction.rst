@@ -20,7 +20,7 @@ In the directory specified by out_dir, you can see some files, include:
   1. \*\*.raw.cellbin.gef - the cgef without correcting, generated from bgef and mask.
   2. \*\*.adjusted.gem - the gem after correcting.
   3. \*\*.adjusted.cellbin.gef - the cgef after correcting, generated from the \*\*.adjusted.gem.
-  4. err.log - record the cells can not be corrected, these cells are not contained in \*\*.adusted.gem and \*\*.adjusted.cellbin.gef.
+  4. err.log - record the cells can not be corrected, these cells are not contained in \*\*.adjusted.gem and \*\*.adjusted.cellbin.gef.
 
 .. code:: python
 

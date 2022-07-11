@@ -193,7 +193,7 @@ stereo h5ad file
     print(data.tl.key_record)
 
     # write a new h5ad with StereoExpObject, if key_record = None, it will use the res_key stored in data.tl.key_record)
-    st.io.write_h5ad(data, use_raw=True, use_result=True, key_record=None)
+    st.io.write_h5ad(data, use_raw=True, use_result=True, key_record=None, output='./DP8400013846TR_F5.h5ad')
 
     # you could create a dictionary which is similar to data.tl.key_record:
     outkey_record = {'cluster':['leiden','louvain'],}
