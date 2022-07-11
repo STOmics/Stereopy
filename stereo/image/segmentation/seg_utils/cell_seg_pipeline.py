@@ -13,6 +13,7 @@ import seg_utils.utils as utils
 from multiprocessing import Process
 from multiprocessing import Queue
 import matplotlib.pyplot as plt
+from . import tissue_seg
 
 
 class CellSegPipe(object):
@@ -46,6 +47,10 @@ class CellSegPipe(object):
         self.tissue_num = []  # tissue num in each image
         self.tissue_bbox = []  # tissue roi bbox in each image
         self.img_filter = []  # image filtered by tissue mask
+        self.__get_tissue_mask()
+        # self.__get_img_filter()
+        self.__get_roi()
+        self.save_tissue_mask()
         self.cell_mask = []
         self.post_mask_list = []
         self.score_mask_list = []
@@ -85,17 +90,96 @@ class CellSegPipe(object):
             if img.dtype != 'uint8':
                 glog.info('%s transfer to 8bit' % self.__file[idx])
                 self.img_list[idx] = utils.transfer_16bit_to_8bit(img)
+    
+    def __get_tissue_mask(self):
+
+        process = 10 if self.__is_list else 1
+        glog.info(f"get tissue mask, process {process}")
+
+        pre_tissue = tissue_seg.tissue_seg_multi(self.img_list, process)
+        self.tissue_mask = [label[0] for label in pre_tissue]
+        self.tissue_mask_thumb = [label[1] for label in pre_tissue]
+
+    def __get_img_filter(self):
+        """get tissue image by tissue mask"""
+        for idx, img in enumerate(self.img_list):
+
+            img_filter = np.multiply(img, self.tissue_mask[idx]).astype(np.uint8)
+            self.img_filter.append(img_filter)
+
+    def __filter_roi(self, props):
+        filtered_props = []
+        for id, p in enumerate(props):
+            black = np.sum(p['intensity_image'] == 0)
+            sum = p['bbox_area']
+            ratio_black = black / sum
+            pixel_light_sum = np.sum(np.unique(p['intensity_image']) > 128)
+            if ratio_black < 0.75 and pixel_light_sum > 10:
+                filtered_props.append(p)
+        return filtered_props
+
+    def __get_roi(self):
+
+        glog.info("get roi")
+        """get tissue area from ssdna"""
+        for idx, tissue_mask in enumerate(self.tissue_mask):
+
+            label_image = measure.label(tissue_mask, connectivity=2)
+            props = measure.regionprops(label_image, intensity_image=self.img_list[idx])
+
+            # remove noise tissue mask
+            filtered_props = self.__filter_roi(props)
+            if len(props) != len(filtered_props):
+                tissue_mask_filter = np.zeros((tissue_mask.shape), dtype=np.uint8)
+                for tissue_tile in filtered_props:
+                    bbox = tissue_tile['bbox']
+                    tissue_mask_filter[bbox[0]: bbox[2], bbox[1]: bbox[3]] += tissue_tile['image']
+                self.tissue_mask[idx] = np.uint8(tissue_mask_filter > 0)
+                self.tissue_mask_thumb[idx] = tissue_seg.down_sample(self.tissue_mask[idx])
+            self.tissue_num.append(len(filtered_props))
+            self.tissue_bbox.append([p['bbox'] for p in filtered_props])
 
 
-    def tissue_cell_infer(self, q):
+    def tissue_cell_infer(self, q=None):
         import seg_utils.cell_infer as cell_infer
 
         """cell segmentation in tissue area by neural network"""
         tissue_cell_label = []
         for idx, img in enumerate(self.img_list):
-            label_list = cell_infer.cellInfer(self.model_path, img, self.deep_crop_size, self.overlap)
+            tissue_bbox = self.tissue_bbox[idx]
+            tissue_img = [img[p[0]: p[2], p[1]: p[3]] for p in tissue_bbox]
+            label_list = cell_infer.cellInfer(self.model_path, tissue_img, self.deep_crop_size, self.overlap)
             tissue_cell_label.append(label_list)
-        q.put(tissue_cell_label)
+        if q is not None:
+            q.put(tissue_cell_label)
+        return tissue_cell_label
+    
+    def tissue_label_filter(self, tissue_cell_label):
+
+        """filter cell mask in tissue area"""
+        tissue_cell_label_filter = []
+        for idx, label in enumerate(tissue_cell_label):
+            tissue_bbox = self.tissue_bbox[idx]
+            label_filter_list = []
+            for i in range(self.tissue_num[idx]):
+                tissue_bbox_temp = tissue_bbox[i]
+                label_filter = np.multiply(label[i], self.tissue_mask[idx][tissue_bbox_temp[0]: tissue_bbox_temp[2], tissue_bbox_temp[1]: tissue_bbox_temp[3]]).astype(np.uint8)
+                label_filter_list.append(label_filter)
+            tissue_cell_label_filter.append(label_filter_list)
+        return tissue_cell_label_filter
+
+    def __mosaic(self, tissue_cell_label_filter):
+
+        """mosaic tissue into original mask"""
+        cell_masks = []
+        for idx, label_list in enumerate(tissue_cell_label_filter):
+            tissue_bbox = self.tissue_bbox[idx]
+            cell_mask = np.zeros((self.img_list[idx].shape), dtype=np.uint8)
+            for i in range(self.tissue_num[idx]):
+                tissue_bbox_temp = tissue_bbox[i]
+                cell_mask[tissue_bbox_temp[0]: tissue_bbox_temp[2], tissue_bbox_temp[1]: tissue_bbox_temp[3]] = label_list[i]
+            cell_masks.append(cell_mask)
+        return cell_masks
 
 
     def watershed_score(self, cell_mask):
@@ -118,6 +202,9 @@ class CellSegPipe(object):
             self.post_mask_list.append(post_mask)
             self.score_mask_list.append(score_mask)
 
+    def save_tissue_mask(self):
+        for idx, tissue_thumb in enumerate(self.tissue_mask_thumb):
+            tifffile.imsave(join(self.__out_path, self.__file_name[idx] + r'_tissue_cut.tif'), tissue_thumb)
 
     def __mkdir_subpkg(self):
 
@@ -191,20 +278,22 @@ class CellSegPipe(object):
 
         t1 = time.time()
 
-        q = Queue()
-        t = Process(target=self.tissue_cell_infer, args=(q,))
-        t.start()
+        # q = Queue()
+        # t = Process(target=self.tissue_cell_infer, args=(q,))
+        # t.start()
 
-        tissue_cell_label = q.get()
-        t.join()
-        # tissue_cell_label = self.tissue_cell_infer()
+        # tissue_cell_label = q.get()
+        # t.join()
+        tissue_cell_label = self.tissue_cell_infer()
         t2 = time.time()
         glog.info('Cell inference : %.2f' % (t2 - t1))
 
+        tissue_cell_label_filter = self.tissue_label_filter(tissue_cell_label)
+        cell_mask = self.__mosaic(tissue_cell_label_filter)
 
         ###post process###
-        # self.watershed_score(cell_mask)
-        self.watershed_score(tissue_cell_label)
+        self.watershed_score(cell_mask)
+        # self.watershed_score(tissue_cell_label)
         t5 = time.time()
         glog.info('Post-processing : %.2f' % (t5 - t2))
 
