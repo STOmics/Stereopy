@@ -13,8 +13,8 @@ import tifffile
 from skimage import measure
 
 from stereo.log_manager import logger
-from .tissueCut_utils import tissue_seg_bcdu as bcdu
-from .tissueCut_utils import tissue_seg_utils as util
+from .tissue_cut_utils import tissue_seg_bcdu as bcdu
+from .tissue_cut_utils import tissue_seg_utils as util
 
 np.random.seed(123)
 
@@ -198,7 +198,7 @@ class _TissueCut(object):
         for idx, ori_image in enumerate(self.img):
             shapes = ori_image.shape
 
-            # downsample ori_image
+            # down sample ori_image
             if not self.src_img_type:
                 ori_image = self._bin(ori_image)
 
@@ -212,7 +212,7 @@ class _TissueCut(object):
             # binary
             ret1, mask_thumb = cv2.threshold(image_thumb, 125, 255, cv2.THRESH_OTSU)
 
-            kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (20, 20))  # 椭圆结构
+            kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (20, 20))  # oval-shaped
             mask_thumb = cv2.morphologyEx(mask_thumb, cv2.MORPH_CLOSE, kernel, iterations=8)
 
             # choose tissue prop
