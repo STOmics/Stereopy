@@ -29,7 +29,7 @@ DEEP = 1  # NOTE: deep learning
 SEG_METHOD_SET = {INTENSITY, DEEP}
 
 
-class TissueCut(object):
+class _TissueCut(object):
 
     def __init__(
             self,
@@ -303,7 +303,7 @@ class TissueCut(object):
         self.save_tissue_mask()
 
 
-class RNAFileTissueCut(TissueCut):
+class RNATissueCut(_TissueCut):
 
     def __init__(self, dst_img_path: Optional[str] = "", gef_path: Optional[str] = "", gem_path: Optional[str] = ""):
         # Don't need source image type, this class will read data from gef/gem(txt)
@@ -345,3 +345,20 @@ class RNAFileTissueCut(TissueCut):
         self.img_from_x2tif = txt2image(gem_path)
         self.file = [os.path.split(gem_path)[-1]]
         self.file_name = [os.path.splitext(self.file[0])[0]]
+
+
+class StrandedDNATissueCut(_TissueCut):
+
+    def __init__(self,
+                 src_img_path: Optional[str],
+                 model_path: Optional[str] = "",
+                 dst_img_path: Optional[str] = "",
+                 seg_method: Optional[int] = DEEP
+                 ):
+        super().__init__(
+            src_img_type=ssDNA,
+            src_img_path=src_img_path,
+            seg_method=seg_method,
+            dst_img_path=dst_img_path,
+            model_path=model_path
+        )
