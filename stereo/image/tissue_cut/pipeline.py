@@ -3,18 +3,18 @@
 # network infer
 #######################
 
-import os
 import copy
+import os
 from typing import Optional
 
 import cv2
-import tifffile
 import numpy as np
+import tifffile
 from skimage import measure
 
 from stereo.log_manager import logger
-from .tissueCut_utils import tissue_seg_utils as util
 from .tissueCut_utils import tissue_seg_bcdu as bcdu
+from .tissueCut_utils import tissue_seg_utils as util
 
 np.random.seed(123)
 
@@ -34,7 +34,7 @@ class TissueCut(object):
     def __init__(
             self,
             src_img_path: Optional[str],
-            model_path: Optional[str],
+            model_path: Optional[str] = "",
             src_img_type: Optional[int] = ssDNA,
             dst_img_path: Optional[str] = "",
             seg_method: Optional[int] = DEEP,
@@ -301,3 +301,47 @@ class TissueCut(object):
             self.tissue_seg_intensity()
 
         self.save_tissue_mask()
+
+
+class RNAFileTissueCut(TissueCut):
+
+    def __init__(self, dst_img_path: Optional[str] = "", gef_path: Optional[str] = "", gem_path: Optional[str] = ""):
+        # Don't need source image type, this class will read data from gef/gem(txt)
+        super().__init__(src_img_path="", src_img_type=RNA, seg_method=INTENSITY, dst_img_path=dst_img_path)
+        if gef_path and gem_path:
+            raise Exception("Using only one image path")
+        elif gef_path:
+            self.get_img_from_x2tif_gef(gef_path)
+        elif gem_path:
+            self.get_img_from_x2tif_gem(gem_path)
+        else:
+            raise Exception("Got no image path to cut")
+
+    def _preprocess_file(self, path):
+        pass
+
+    def tissue_seg(self):
+        self.tissue_seg_intensity()
+        self.save_tissue_mask()
+
+    def get_thumb_img(self):
+        logger.info('image loading and preprocessing...')
+
+        self.img_from_x2tif = np.squeeze(self.img_from_x2tif)
+        if len(self.img_from_x2tif.shape) == 3:
+            self.img_from_x2tif = self.img_from_x2tif[:, :, 0]
+
+        self.img.append(self.img_from_x2tif)
+        self.shape.append(self.img_from_x2tif.shape)
+
+    def get_img_from_x2tif_gef(self, gef_path):
+        from stereo.image.x2tif.x2tif import gef2image
+        self.img_from_x2tif = gef2image(gef_path)
+        self.file = [os.path.split(gef_path)[-1]]
+        self.file_name = [os.path.splitext(self.file[0])[0]]
+
+    def get_img_from_x2tif_gem(self, gem_path):
+        from stereo.image.x2tif.x2tif import txt2image
+        self.img_from_x2tif = txt2image(gem_path)
+        self.file = [os.path.split(gem_path)[-1]]
+        self.file_name = [os.path.splitext(self.file[0])[0]]
