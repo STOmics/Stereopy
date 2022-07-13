@@ -56,3 +56,5 @@ protobuf==3.19.4
 hotspotsc==0.9.1
 distributed==2022.2.0
 keras==2.7.0
+pyarrow==8.0.0
+pytables==3.7.0

@@ -6,7 +6,6 @@ import sys
 import gzip
 from PIL import Image
 
-import h5py
 import numpy as np
 import pandas as pd
 
@@ -20,32 +19,23 @@ USING_CROP = False
 CROP_SIZE = 10000
 
 
-def gef2image(gef_file_path, dump_to_disk: bool = False, out_dir: str = "./"):
+def gef2image(gef_file_path, dump_to_disk: bool = False, out_dir: str = "./", bin_size=1):
     """
     Convert gef file to tif image.
 
     :param gef_file_path:
-    :param dump_to_disk: `True` for saving output to local disk
+    :param dump_to_disk: `True` for dumping tif to local disk
     :param out_dir: When `dump_to_disk` is `True`, the image will dump to this directory path
-    :return: x_record, y_record, x_start, y_start
+    :param bin_size: default is `bin100`, set 1 using `bin1` for high quality, which will cost more memory and CPU
+    :return: image_nd_array, a nd_array for describe (x, y) with `UMI_sum`
     """
-    with h5py.File(gef_file_path, 'r') as f:
-        data = f['/geneExp/bin1/expression'][:]
-
-    df = pd.DataFrame(data, columns=['x', 'y', 'count'], dtype=int)
-    logger.debug("min x: {} min y: {}".format(df['x'].min(), df['y'].min()))
-
-    max_x = df['x'].max() + 1
-    max_y = df['y'].max() + 1
-    logger.debug("image dimension: {} x {} (width x height)".format(max_x, max_y))
-
-    new_df = df.groupby(['x', 'y']).agg(UMI_sum=('count', 'sum')).reset_index()
-    image = np.zeros(shape=(max_y, max_x), dtype=np.uint8)
-    image[new_df['y'], new_df['x']] = new_df['UMI_sum']
-
+    df = pd.read_hdf(gef_file_path, f'/geneExp/bin{bin_size}/expression', columns=['x', 'y', 'count'])
+    new_df = df.groupby(['x', 'y'], as_index=False, sort=False).agg(UMI_sum=('count', 'sum'))
+    image_nd_array = np.zeros(shape=(df['y'].max() + 1, df['x'].max() + 1), dtype=np.uint8)
+    image_nd_array[new_df['y'], new_df['x']] = new_df['UMI_sum']
     if dump_to_disk:
-        _save_result(gef_file_path, out_dir, image)
-    return image
+        _save_result(gef_file_path, out_dir, image_nd_array)
+    return image_nd_array
 
 
 def txt2image(gem_file_path, dump_to_disk=False, out_dir: str = "./"):
@@ -53,36 +43,21 @@ def txt2image(gem_file_path, dump_to_disk=False, out_dir: str = "./"):
     Convert expression matrix data to image.
 
     :param gem_file_path:
-    :param dump_to_disk: `True` for saving output to local disk
+    :param dump_to_disk: `True` for dumping tif to local disk
     :param out_dir: When `dump_to_disk` is `True`, the image will dump to this directory path
-    :return: x_record, y_record, x_start, y_start
+    :return: image_nd_array, a nd_array for describe (x, y) with `UMI_sum`
     """
-    # Read from txt
     f, num_of_header_lines, header = _parse_head(gem_file_path)
-    df = pd.read_csv(f, sep='\t', header=0)
-    logger.info("min x: {} min y: {}".format(df['x'].min(), df['y'].min()))
-
+    df = pd.read_csv(f, sep='\t', header=0, usecols=['x', 'y', 'MIDCount'], engine='pyarrow', dtype=np.uint32)
     df['x'] = df['x'] - df['x'].min()
     df['y'] = df['y'] - df['y'].min()
-    max_x = df['x'].max() + 1
-    max_y = df['y'].max() + 1
-    logger.info("image dimension: {} x {} (width x height)".format(max_x, max_y))
-
-    try:
-        new_df = df.groupby(['x', 'y']).agg(UMI_sum=('UMICount', 'sum')).reset_index()
-    except Exception as e:
-        logger.debug("try group-by with `x-y` and agg with `UMICount` failed, exception=%s" % str(e))
-        new_df = df.groupby(['x', 'y']).agg(UMI_sum=('MIDCount', 'sum')).reset_index()
-
-    # Set image pixel to gene counts
-    # from uint16 to uint8
-    image = np.zeros(shape=(max_y, max_x), dtype=np.uint8)
-    image[new_df['y'], new_df['x']] = new_df['UMI_sum']
-
-    # Save image (thumbnail image & crop image) to file
+    df.rename(columns={'UMICount': 'MIDCount'}, inplace=True)
+    new_df = df.groupby(['x', 'y'], as_index=False, sort=False).agg(UMI_sum=('MIDCount', 'sum'))
+    image_nd_array = np.zeros(shape=(df['y'].max() + 1, df['x'].max() + 1), dtype=np.uint8)
+    image_nd_array[new_df['y'], new_df['x']] = new_df['UMI_sum']
     if dump_to_disk:
-        _save_result(gem_file_path, out_dir, image)
-    return image
+        _save_result(gem_file_path, out_dir, image_nd_array)
+    return image_nd_array
 
 
 def _save_result(source_file_path, out_dir, image):
@@ -105,7 +80,6 @@ def _parse_head(gem):
     """
     Parse additional header info
     """
-    logger.info("gem %s %d" % (gem, gem.endswith('.gz')))
     if gem.endswith('.gz'):
         f = gzip.open(gem, 'rb')
     else:
@@ -125,7 +99,6 @@ def _parse_head(gem):
 
     logger.debug("Number of header lines: %s" % str(num_of_header_lines))
     logger.debug("Header info: %s" % str(header))
-    logger.debug("%s" % str(eoh))
 
     # find start of expression matrix
     f.seek(eoh)

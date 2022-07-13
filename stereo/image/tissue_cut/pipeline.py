@@ -305,13 +305,19 @@ class _TissueCut(object):
 
 class RNATissueCut(_TissueCut):
 
-    def __init__(self, dst_img_path: Optional[str] = "", gef_path: Optional[str] = "", gem_path: Optional[str] = ""):
+    def __init__(self, dst_img_path: Optional[str] = "", gef_path: Optional[str] = "", gem_path: Optional[str] = "", bin_size=1):
+        """
+        :param dst_img_path:
+        :param gef_path: choose one of `gef_path` and `gem_path`
+        :param gem_path: just like `gef_path`
+        :param bin_size: set 1 mean `bin1` for high quality, or use `bin100` for efficiency
+        """
         # Don't need source image type, this class will read data from gef/gem(txt)
         super().__init__(src_img_path="", src_img_type=RNA, seg_method=INTENSITY, dst_img_path=dst_img_path)
         if gef_path and gem_path:
             raise Exception("Using only one image path")
         elif gef_path:
-            self.get_img_from_x2tif_gef(gef_path)
+            self.get_img_from_x2tif_gef(gef_path, bin_size)
         elif gem_path:
             self.get_img_from_x2tif_gem(gem_path)
         else:
@@ -334,9 +340,9 @@ class RNATissueCut(_TissueCut):
         self.img.append(self.img_from_x2tif)
         self.shape.append(self.img_from_x2tif.shape)
 
-    def get_img_from_x2tif_gef(self, gef_path):
+    def get_img_from_x2tif_gef(self, gef_path, bin_size=1):
         from stereo.image.x2tif.x2tif import gef2image
-        self.img_from_x2tif = gef2image(gef_path)
+        self.img_from_x2tif = gef2image(gef_path, bin_size=bin_size)
         self.file = [os.path.split(gef_path)[-1]]
         self.file_name = [os.path.splitext(self.file[0])[0]]
 
