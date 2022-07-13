@@ -305,7 +305,7 @@ class _TissueCut(object):
 
 class RNATissueCut(_TissueCut):
 
-    def __init__(self, dst_img_path: Optional[str] = "", gef_path: Optional[str] = "", gem_path: Optional[str] = "", bin_size=1):
+    def __init__(self, dst_img_path: Optional[str] = "", gef_path: Optional[str] = "", gem_path: Optional[str] = "", bin_size=20):
         """
         :param dst_img_path:
         :param gef_path: choose one of `gef_path` and `gem_path`
@@ -340,7 +340,7 @@ class RNATissueCut(_TissueCut):
         self.img.append(self.img_from_x2tif)
         self.shape.append(self.img_from_x2tif.shape)
 
-    def get_img_from_x2tif_gef(self, gef_path, bin_size=1):
+    def get_img_from_x2tif_gef(self, gef_path, bin_size=20):
         from stereo.image.x2tif.x2tif import gef2image
         self.img_from_x2tif = gef2image(gef_path, bin_size=bin_size)
         self.file = [os.path.split(gef_path)[-1]]
