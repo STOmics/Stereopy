@@ -48,10 +48,10 @@ def txt2image(gem_file_path, dump_to_disk=False, out_dir: str = "./"):
     :return: image_nd_array, a nd_array for describe (x, y) with `UMI_sum`
     """
     f, num_of_header_lines, header = _parse_head(gem_file_path)
+    # FIXME: in some cases may use old version gem, which has `UMICount` without `MIDCount`
     df = pd.read_csv(f, sep='\t', header=0, usecols=['x', 'y', 'MIDCount'], engine='pyarrow', dtype=np.uint32)
     df['x'] = df['x'] - df['x'].min()
     df['y'] = df['y'] - df['y'].min()
-    df.rename(columns={'UMICount': 'MIDCount'}, inplace=True)
     new_df = df.groupby(['x', 'y'], as_index=False, sort=False).agg(UMI_sum=('MIDCount', 'sum'))
     image_nd_array = np.zeros(shape=(df['y'].max() + 1, df['x'].max() + 1), dtype=np.uint8)
     image_nd_array[new_df['y'], new_df['x']] = new_df['UMI_sum']
