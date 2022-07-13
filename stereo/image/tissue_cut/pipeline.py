@@ -46,7 +46,7 @@ class _TissueCut(object):
             :param dst_img_path: result image path, default to working path
             :param seg_method: choose one of `INTENSITY`, `DEEP`
         """
-        # FIXME: `RNA` can not use seg_method `INTENSITY`
+        # FIXME: `RNA` can not use seg_method `DEEP`
         if src_img_type == RNA and seg_method == DEEP:
             seg_method = INTENSITY
             logger.warn("`RNA` type image can not use deep-learning segmentation method, auto change to `INTENSITY`")
