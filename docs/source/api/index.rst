@@ -32,23 +32,27 @@ StereoExpData as h5ad file for storage.
     io.update_gef
 
 
-StereoExpData
+StereoExpData: `data`
 -------------------
 
 A data designed for express matrix of spatial omics.
 
-.. autoclass:: stereo.core.stereo_exp_data.StereoExpData
-   :members:
-   :inherited-members:
+.. autosummary::
+   :toctree: .
 
-StPipeline
+    core.StereoExpData
+
+
+StPipeline: `tl`
 -------------------
 
 A class for basic analysis of StereoExpData. It is the `StereoExpData.tl`.
 
-.. autoclass:: stereo.core.st_pipeline.StPipeline
-   :members:
-   :inherited-members:
+.. autosummary::
+   :toctree: .
+
+    core.StPipeline
+
 
 plots: `plt`
 -------------------
