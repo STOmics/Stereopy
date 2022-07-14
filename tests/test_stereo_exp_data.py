@@ -27,7 +27,7 @@ def test_data():
 
 def test_read_bins():
     stereo_data = StereoExpData(file_path=filename, file_format='gem', bin_type='bins')
-    stereo_data.read()
+    #stereo_data.read()
     print(stereo_data.genes)
     print(stereo_data.cells)
     print(stereo_data.exp_matrix)
@@ -37,7 +37,7 @@ def test_read_bins():
 def test_read_cell_bins():
     path = '/home/qiuping//workspace/st/stereopy_data/cell_bin/ssdna_Cell_GetExp_gene.txt'
     stereo_data = StereoExpData(file_path=path, file_format='gem', bin_type='cell_bins')
-    stereo_data.read()
+    #stereo_data.read()
     print(stereo_data.genes)
     print(stereo_data.cells)
     print(stereo_data.exp_matrix)
@@ -82,7 +82,7 @@ def test_write_h5ad(data=None):
 def test_read_h5ad():
     file_path = '/home/qiuping//workspace/st/stereopy_data/test.h5ad'
     data = StereoExpData(file_path=file_path, file_format='h5ad')
-    data.read()
+    #data.read()
     print_data(data)
 
 

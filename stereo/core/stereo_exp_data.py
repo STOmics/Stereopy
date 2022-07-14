@@ -75,6 +75,11 @@ class StereoExpData(Data):
         self._attr = attr
 
     def get_plot(self):
+        """
+        import plot function
+
+        :return:
+        """
         from ..plots.plot_collection import PlotCollection
 
         return PlotCollection(self)
@@ -302,6 +307,11 @@ class StereoExpData(Data):
         self._attr = attr
 
     def to_df(self):
+        """
+        transform StereoExpData to pd.DataFrame.
+
+        :return:
+        """
         df = pd.DataFrame(
             self.exp_matrix.toarray() if issparse(self.exp_matrix) else self.exp_matrix,
             columns=self.gene_names,
