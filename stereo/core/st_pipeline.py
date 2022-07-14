@@ -10,6 +10,7 @@
 change log:
     2021/07/20  create file.
 """
+from dis import dis
 from functools import wraps
 from ..preprocess.qc import cal_qc
 from ..preprocess.filter import filter_cells, filter_genes, filter_coordinates
@@ -801,6 +802,72 @@ class StPipeline(object):
             cal_qc(self.data)
         else:
             self.result[res_key] = result
+                
+    def lr_score(
+        self, 
+        lr_pairs: Union[list, np.array],
+        distance: Union[int, float] = 5,
+        spot_comp: pd.DataFrame = None, 
+        verbose: bool = True, 
+        key_add: str = 'cci_score',
+        min_exp: Union[int, float] = 0, 
+        use_raw: bool = False,
+        min_spots: int = 20, 
+        n_pairs: int = 1000,
+        adj_method: str = "fdr_bh",
+        bin_scale: int = 1,
+        n_jobs=4,
+        res_key='lr_score'
+    ):
+        """calculate cci score for each LR pair and do permutation test
+
+        Parameters
+        ----------
+        lr_pairs : Union[list, np.array]
+            LR pairs
+        distance : Union[int, float], optional
+            the distance between spots which are considered as neighbors , by default 5
+        spot_comp : `pd.DataFrame`, optional
+            spot component of different cells, by default None
+        key_add : str, optional
+            key added in `result`, by default 'cci_score'
+        min_exp : Union[int, float], optional
+            the min expression of ligand or receptor gene when caculate reaction strength, by default 0
+        use_raw : bool, optional
+            whether to use counts in `adata.raw.X`, by default False
+        min_spots : int, optional
+            the min number of spots that score > 0, by default 20
+        n_pairs : int, optional
+            number of pairs to random sample, by default 1000
+        adj_method : str, optional
+            adjust method of p value, by default "fdr_bh"
+        n_wokers : int, optional
+            num of worker when calculate_score, by default 4
+
+        Raises
+        ------
+        ValueError
+            _description_
+        """
+        from ..tools.LR_interaction import LrInteraction
+        interaction = LrInteraction(self, 
+                                    verbose=verbose, 
+                                    bin_scale=bin_scale, 
+                                    distance=distance,
+                                    spot_comp=spot_comp,
+                                    n_jobs=n_jobs,
+                                    min_exp=min_exp,
+                                    min_spots=min_spots,
+                                    n_pairs=n_pairs,
+                                    )
+        
+        result = interaction.fit(lr_pairs=lr_pairs, 
+                                 adj_method=adj_method, 
+                                 use_raw=use_raw,
+                                 key_add=key_add)
+        
+        self.result[res_key] = result
+        
 
     # def scenic(self, tfs, motif, database_dir, res_key='scenic', use_raw=True, outdir=None,):
     #     """
