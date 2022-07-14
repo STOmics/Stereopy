@@ -44,11 +44,8 @@ StereoExpData as h5ad file for storage.
     io.update_gef
 
 
-Classes
-++++++++++++++++++++
-
 StPipeline: `tl`
--------------------
+++++++++++++++++++++
 
 A class for basic analysis of StereoExpData. It is the `StereoExpData.tl`.
 
@@ -76,7 +73,7 @@ A class for basic analysis of StereoExpData. It is the `StereoExpData.tl`.
 
 
 plots: `plt`
--------------------
+++++++++++++++++++++
 
 .. module:: stereo.plt
 .. currentmodule:: stereo
@@ -128,7 +125,7 @@ others
 
 
 image: `im`
--------------------
+++++++++++++++++++++
 
 Image parse module.
 
@@ -143,7 +140,7 @@ Image parse module.
 
 
 tools: `tools`
--------------------
+++++++++++++++++++++
 
 Tools module.
 
