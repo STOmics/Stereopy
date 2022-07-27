@@ -563,7 +563,10 @@ def read_gef_info(file_path: str):
         info_dict['bin_list'] = list(h5_file['geneExp'].keys())
         logger.info('Bin size list: {0}'.format(info_dict['bin_list']))
 
-        info_dict['resolution'] = h5_file['geneExp']['bin1']['expression'].attrs['resolution'][0]
+        if type(h5_file['geneExp']['bin1']['expression'].attrs['resolution']) is np.ndarray:
+            info_dict['resolution'] = h5_file['geneExp']['bin1']['expression'].attrs['resolution'][0]
+        else:
+            info_dict['resolution'] = h5_file['geneExp']['bin1']['expression'].attrs['resolution']
         logger.info('Resolution: {0}'.format(info_dict['resolution']))
 
         info_dict['gene_count'] = h5_file['geneExp']['bin1']['gene'].shape[0]
