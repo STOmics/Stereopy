@@ -13,12 +13,12 @@ change log:
 from .data import Data
 import pandas as pd
 import numpy as np
-from typing import Optional, Union
+from typing import Union, Sequence, Optional, Tuple
 from scipy.sparse import spmatrix, issparse
 from .cell import Cell
 from .gene import Gene
 from ..log_manager import logger
-import copy
+from copy import deepcopy
 from .st_pipeline import StPipeline
 
 
@@ -87,14 +87,15 @@ class StereoExpData(Data):
         :param gene_index: a list of gene index.
         :return:
         """
+        data = self.copy()
         if cell_index is not None:
-            self.exp_matrix = self.exp_matrix[cell_index, :]
-            self.position = self.position[cell_index, :] if self.position is not None else None
-            self.cells = self.cells.sub_set(cell_index)
+            data.exp_matrix = data.exp_matrix[cell_index, :]
+            data.position = data.position[cell_index, :] if data.position is not None else None
+            data.cells = data.cells.sub_set(cell_index)
         if gene_index is not None:
-            self.exp_matrix = self.exp_matrix[:, gene_index]
-            self.genes = self.genes.sub_set(gene_index)
-        return self
+            data.exp_matrix = data.exp_matrix[:, gene_index]
+            data.genes = data.genes.sub_set(gene_index)
+        return data
 
     def sub_by_name(self, cell_name: Optional[Union[np.ndarray, list]] = None,
                     gene_name: Optional[Union[np.ndarray, list]] = None):
@@ -105,12 +106,8 @@ class StereoExpData(Data):
         :param gene_name: a list of gene name.
         :return:
         """
-        data = copy.deepcopy(self)
-        cell_index = [np.argwhere(data.cells.cell_name == i)[0][0] for i in cell_name] \
-            if cell_name is not None else None
-        gene_index = [np.argwhere(data.genes.gene_name == i)[0][0] for i in
-                      gene_name] if gene_name is not None else None
-        return data.sub_by_index(cell_index, gene_index)
+        data = self.copy()
+        return data[cell_name, gene_name]
 
     def check(self):
         """
@@ -300,6 +297,170 @@ class StereoExpData(Data):
         :return:
         """
         self._attr = attr
+        
+    def __getitem__(self, index):
+        cell_index, gene_index = self.get_data_index(index)
+        return self.sub_by_index(cell_index=cell_index, gene_index=gene_index)
+        
+    def get_data_index(self, index):
+        if isinstance(index, tuple):
+            if len(index) == 1:
+                index_0, index_1 = index[0], slice(None)
+            
+            elif len(index) == 2:
+                index_0, index_1 = index
+            
+            else:
+                raise ValueError('data can only be sliced with 2 dimensions')
+            
+        else: 
+            index_0, index_1 = index, slice(None)
+
+        index_0 = self._normalize_index(index_0, self.cell_names)
+        index_1 = self._normalize_index(index_1, self.gene_names)
+        return index_0, index_1
+
+    @property
+    def shape(self):
+        """
+        get the shape of self._exp_matrix.
+
+        :return:
+        """
+        return self._exp_matrix.shape
+    
+    def __repr__(self):
+        """
+        pretty print.
+        """
+        from rich import print
+        from rich.tree import Tree
+        from rich.text import Text
+        from rich.padding import Padding
+        
+        tree = Tree(f"[bold #88cc00]StereoExpData "
+                    f"{self.shape[0]} cells ✖ {self.shape[1]} genes", 
+                    guide_style="#b1b300")
+
+        cell_description = 'cells'
+        gene_description = 'genes'
+        result_description = 'tl.result'
+
+        gene_tree = tree.add(gene_description)
+        cell_tree = tree.add(cell_description)
+        result_tree = tree.add(result_description)
+
+        cell_prop = ['total_counts', 
+                    'pct_counts_mt', 
+                    'n_genes_by_counts']
+        cell_prop = [cell_qc for cell_qc in cell_prop
+                    if self.cells.__dict__.get(cell_qc) is not None]
+        cell_tree.add(Text(' '.join(cell_prop)), style='dim #ff5050') #ff5050
+
+        gene_prop = ['n_cells', 'n_counts']
+        gene_prop = [gene_qc for gene_qc in gene_prop
+                    if self.genes.__dict__.get(gene_qc) is not None]
+        gene_tree.add(Text(' '.join(gene_prop)), style='dim #ff5050') #ff5050
+
+        result_prop = ['hvg', 'pca', 
+                    'neighbors', 'umap', 
+                    'cluster', 'marker_genes']
+        result_prop = [result for result in result_prop 
+                    if len(self.tl.__dict__['key_record'][result]) > 0]
+
+        result_tree.add(Text(' '.join(result_prop)), style='dim')
+        result_tree.add(' '.join(self.tl.result.keys()))
+        if self.position is not None:
+            tree.add("position")
+
+        print(Padding.indent(tree, 5), end='')
+        
+        return ' '
+    
+    def copy(self):
+       return deepcopy(self)
+    
+    @staticmethod    
+    def _normalize_index(
+        indexer: Union[
+            slice,
+            np.integer,
+            int,
+            str,
+            list,
+            Sequence[Union[int, np.integer]],
+            np.ndarray,
+            pd.Index,
+        ],
+        index: np.ndarray,
+    ) -> Union[slice, int, np.ndarray]:  # ndarray of int
+        # reference: anndata
+        """
+        normalize the index
+        """
+        if isinstance(indexer, list):
+            indexer = np.array(indexer)
+        
+        if not isinstance(index, pd.RangeIndex):
+            assert (
+                index.dtype != float and index.dtype != int
+            ), "Don't call _normalize_index with non-categorical/string names"
+
+        # the following is insanely slow for sequences,
+        def name_idx(i):
+            if isinstance(i, str):
+                i = np.where(index == i)
+            return i
+
+        if isinstance(indexer, slice):
+            start = name_idx(indexer.start)
+            stop = name_idx(indexer.stop)
+            # string slices can only be inclusive, so +1 in that case
+            if isinstance(indexer.stop, str):
+                stop = stop if stop is None else stop + 1
+            step = indexer.step
+            return slice(start, stop, step)
+        
+        elif isinstance(indexer, (np.integer, int)):
+            return indexer
+        
+        elif isinstance(indexer, str):
+            return np.where(index == indexer)  # int
+        
+        elif isinstance(indexer, (Sequence, np.ndarray, pd.Index, np.matrix)):
+            if hasattr(indexer, "shape") and (
+                (indexer.shape == (index.shape[0], 1))
+                or (indexer.shape == (1, index.shape[0]))
+            ):
+                indexer = np.ravel(indexer)
+
+            if issubclass(indexer.dtype.type, (np.integer, np.floating)):
+                return indexer  # Might not work for range indexes
+            
+            elif issubclass(indexer.dtype.type, np.bool_):
+                print(indexer.shape, index.shape)
+                if indexer.shape != index.shape:
+                    raise IndexError(
+                        f"Boolean index does not match Data’s shape along this "
+                        f"dimension. Boolean index has shape {indexer.shape} while "
+                        f"data index has shape {index.shape}."
+                    )
+                positions = np.where(indexer)[0]
+                return positions  # np.ndarray[int]
+            else:  # indexer should be string array
+                positions = np.where(np.in1d(index, indexer))[0]
+                inter = np.in1d(indexer, index)
+
+                if not np.all(inter):
+                    not_found = np.array(indexer)[~inter]
+                    raise KeyError(
+                        f"Values {list(not_found)}, from {list(indexer)}, "
+                        "are not valid cell/gene names or indices."
+                    )
+                return positions  # np.ndarray[int]
+        else:
+            raise IndexError(f"Unknown indexer {indexer!r} of type {type(indexer)}")
+        
 
     def to_df(self):
         df = pd.DataFrame(
