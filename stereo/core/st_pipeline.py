@@ -84,6 +84,12 @@ class StPipeline(object):
         self.data = self.raw
 
     def raw_checkpoint(self):
+        """
+        Save the current results to self.raw.
+        :param key:
+        :param res_key:
+        :return:
+        """
         self.raw = self.data
 
     def reset_key_record(self, key, res_key):
