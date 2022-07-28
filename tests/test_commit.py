@@ -7,6 +7,7 @@
 
 
 def first_commit():
-    print("this is my branch first commit")
+    ret = "this is my first commit to dev"
+    return ret
 
 
