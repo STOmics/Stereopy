@@ -7,6 +7,6 @@
 
 
 def first_commit():
-    pass
+    print("this is my branch first commit")
 
 
