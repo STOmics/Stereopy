@@ -3,13 +3,22 @@ Release Notes
 
 .. role:: small
 
+Version 0.4.0
+------------------
+0.4.0 :2022-07-30
+~~~~~~~~~~~~~~~~~~~~~
+1. Update tissue cut algorithm.
+2. Increase param(n_jobs) in neighbors and phenograph.
+3. Increase read_gef function filter by region of gene list.
+4. Update requirements.txt.
+
 Version 0.3.1
 ------------------
 0.3.1 :2022-06-30
 ~~~~~~~~~~~~~~~~~~~~~
 1. Add gaussian smooth function.
-2. The pca function increases the svd_solver parameter
-3. The write_h5ad function increases the output parameter
+2. The pca function increases the svd_solver parameter.
+3. The write_h5ad function increases the output parameter.
 4. Update requirements.txt.
 
 Version 0.3.0
