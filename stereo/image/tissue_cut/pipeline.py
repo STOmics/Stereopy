@@ -353,7 +353,7 @@ class RNATissueCut(_TissueCut):
         self.file_name = [os.path.splitext(self.file[0])[0]]
 
 
-class StrandedDNATissueCut(_TissueCut):
+class SingleStrandDNATissueCut(_TissueCut):
 
     def __init__(self,
                  src_img_path: Optional[str],
