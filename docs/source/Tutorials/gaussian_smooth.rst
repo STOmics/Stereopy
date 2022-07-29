@@ -1,8 +1,8 @@
-Gaussian smooth
+Gaussian smoothing
 ----------------
 This example show how to run the function of gaussian smooth on Stereopy.
 
-Gaussian smooth can make expression matrix closer reality, the detail of algorithm refer to https://www.biorxiv.org/content/10.1101/2022.05.26.493527v1.abstract.
+Gaussian smoothing can make expression matrix closer reality, the detail of algorithm refer to https://www.biorxiv.org/content/10.1101/2022.05.26.493527v1.abstract.
 
 Generally, you should do some preprocessing such as filtering cells, filtering genes, normalization, pca before running gaussian smooth.
 
@@ -65,7 +65,7 @@ Because of the preprocessing you did before just only for searching the nearest 
     data.tl.leiden(neighbors_res_key='neighbors', res_key='leiden')
     data.plt.cluster_scatter(res_key='leiden')
 
-Gaussian smooth can make clustering result to more subtypes.
+Gaussian smoothing can make clustering result to more subtypes.
 
 +---------------------------------------------------+---------------------------------------------------+
 |Before                                             |After                                              |
