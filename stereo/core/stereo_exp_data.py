@@ -406,10 +406,10 @@ class StereoExpData(Data):
         if isinstance(indexer, list):
             indexer = np.array(indexer)
         
-        if not isinstance(index, pd.RangeIndex):
-            assert (
-                index.dtype != float and index.dtype != int
-            ), "Don't call _normalize_index with non-categorical/string names"
+        # if not isinstance(index, pd.RangeIndex):
+        #     assert (
+        #         index.dtype != float and index.dtype != int
+        #     ), "Don't call _normalize_index with non-categorical/string names"
 
         # the following is insanely slow for sequences,
         def name_idx(i):
