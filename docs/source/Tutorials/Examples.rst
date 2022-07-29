@@ -21,7 +21,7 @@ Additional functionalities
     hotspot
     gaussian_smooth
 
-Interactive Visualisation
+Interactive Visualization
 --------------------------------------------
 This section contains various examples for the interactive plots.
 
