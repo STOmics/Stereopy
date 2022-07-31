@@ -43,13 +43,13 @@ flatbuffers==2.0
 fonttools==4.28.5
 fsspec==2022.1.0
 gast==0.4.0
-gefpy>=0.5.5
+gefpy>=0.5.6
 glog==0.3.1
 google-auth==2.3.3
 google-auth-oauthlib==0.4.6
 google-pasta==0.2.0
 grpcio==1.43.0
-h5py==3.6.0
+h5py==3.7.0
 HeapDict==1.0.1
 holoviews==1.14.5
 hotspot @ git+https://github.com/yoseflab/Hotspot.git@45555a0feb6cc46cb52aa09230f0ed801559bb87
@@ -112,7 +112,7 @@ oauthlib==3.1.1
 omnipath==1.0.5
 opencv-python==4.5.5.64
 opt-einsum==3.3.0
-packaging==20.9
+packaging==21.3
 pandas==1.3.4
 pandocfilters==1.5.0
 panel==0.12.1
@@ -123,7 +123,7 @@ patsy==0.5.2
 pexpect==4.8.0
 PhenoGraph==1.5.7
 pickleshare==0.7.5
-Pillow==8.4.0
+Pillow==9.2.0
 PIMS==0.5
 pkginfo==1.8.2
 prometheus-client==0.12.0
@@ -210,7 +210,7 @@ tornado==6.1
 tqdm==4.60.0
 traitlets==4.3.3
 twine==3.7.1
-typing-extensions==3.7.4.3
+typing-extensions==4.3.0
 umap-learn==0.5.1
 urllib3==1.26.9
 wcwidth==0.2.5
@@ -225,3 +225,6 @@ zict==2.0.0
 zipp==3.7.0
 setuptools>=41.0.0,<=61.2.0
 hotspotsc==0.9.1
+keras==2.7.0
+pyarrow==8.0.0
+tables==3.7.0
