@@ -31,6 +31,7 @@ from shapely.geometry import Point, MultiPoint
 from typing import Optional
 from copy import deepcopy
 
+
 def read_gem(file_path, sep='\t', bin_type="bins", bin_size=100, is_sparse=True):
     """
     read the stereo-seq file, and generate the object of StereoExpData.
@@ -133,7 +134,7 @@ def to_interval(interval_string):
     return interval
 
 
-def read_stereo_h5ad(file_path, use_raw=True, use_result=True,):
+def read_stereo_h5ad(file_path, use_raw=True, use_result=True, ):
     """
     read the h5ad file, and generate the object of StereoExpData.
 
@@ -245,7 +246,8 @@ def read_ann_h5ad(file_path, spatial_key: Optional[str] = None):
                 data.cells.cell_name = cells_df.index.values
                 data.cells.total_counts = cells_df['total_counts'] if 'total_counts' in cells_df.keys() else None
                 data.cells.pct_counts_mt = cells_df['pct_counts_mt'] if 'pct_counts_mt' in cells_df.keys() else None
-                data.cells.n_genes_by_counts = cells_df['n_genes_by_counts'] if 'n_genes_by_counts' in cells_df.keys() else None
+                data.cells.n_genes_by_counts = cells_df[
+                    'n_genes_by_counts'] if 'n_genes_by_counts' in cells_df.keys() else None
             elif k == "var":
                 genes_df = h5ad.read_dataframe(f[k])
                 data.genes.gene_name = genes_df.index.values
@@ -284,12 +286,12 @@ def anndata_to_stereo(andata: AnnData, use_raw=False, spatial_key: Optional[str]
     data.genes.gene_name = np.array(andata.var_names)
     data.genes.n_cells = andata.var['n_cells'] if 'n_cells' in andata.var.columns.tolist() else None
     data.genes.n_counts = andata.var['n_counts'] if 'n_counts' in andata.var.columns.tolist() else None
-    #position
+    # position
     data.position = andata.obsm[spatial_key] if spatial_key is not None else None
     return data
 
 
-def stereo_to_anndata(data:StereoExpData, flavor='scanpy', sample_id="sample", reindex=False, output=None):
+def stereo_to_anndata(data: StereoExpData, flavor='scanpy', sample_id="sample", reindex=False, output=None):
     """
     transform the StereoExpData object into Anndata object.
 
@@ -396,7 +398,7 @@ def stereo_to_anndata(data:StereoExpData, flavor='scanpy', sample_id="sample", r
             raw_exp = data.tl.raw.exp_matrix
             raw_genes = data.tl.raw.genes.to_df()
             raw_genes.dropna(axis=1, how='all', inplace=True)
-            raw_adata = AnnData(X=raw_exp, var=raw_genes, dtype=np.float64,)
+            raw_adata = AnnData(X=raw_exp, var=raw_genes, dtype=np.float64, )
             adata.raw = raw_adata
 
     if reindex:
@@ -496,7 +498,8 @@ def stereo_to_anndata(data:StereoExpData, flavor='scanpy', sample_id="sample", r
 #     adata.obs_names = pd.read_csv(barcodesfile, header=None)[0].values
 #     return adata
 
-def read_gef(file_path: str, bin_type="bins", bin_size=100, is_sparse=True, gene_list: list = None, region: list = None):
+def read_gef(file_path: str, bin_type="bins", bin_size=100, is_sparse=True, gene_list: list = None,
+             region: list = None):
     """
     read the gef(.h5) file, and generate the object of StereoExpData.
 
@@ -593,6 +596,7 @@ def read_gef(file_path: str, bin_type="bins", bin_size=100, is_sparse=True, gene
 
     return data
 
+
 def read_gef_info(file_path: str):
     """
     read the infomation of gef(.h5) file.
@@ -609,7 +613,7 @@ def read_gef_info(file_path: str):
     if not bin_type:
         logger.info('This is GEF file which contains traditional bin infomation.')
         logger.info('bin_type: bins')
-        
+
         info_dict['bin_list'] = list(h5_file['geneExp'].keys())
         logger.info('Bin size list: {0}'.format(info_dict['bin_list']))
 
@@ -673,8 +677,8 @@ def read_gef_info(file_path: str):
 
         info_dict['averageExpCount'] = h5_file['cellBin']['cell'].attrs['averageExpCount'][0]
         logger.info('Average expression: {0}'.format(info_dict['averageExpCount']))
-        
+
         info_dict['maxExpCount'] = h5_file['cellBin']['cell'].attrs['maxExpCount'][0]
         logger.info('Maximum expression: {0}'.format(info_dict['maxExpCount']))
-        
+
     return info_dict
