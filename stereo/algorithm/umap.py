@@ -72,6 +72,8 @@ def umap(
         original UMAP. Options are:
         * 'spectral': use a spectral embedding of the graph.
         * 'random': assign initial embedding positions at random.
+        NOTE: While test with 3cm x 4cm gef(bin50), we found `spectral` cost too much time to construct embeddings,
+            in the situation above, you can try `random` for better performance, but less accuracy.
     random_state
         If `int`, `random_state` is the seed used by the random number generator;
         If `RandomState` or `Generator`, `random_state` is the random number generator;
@@ -143,6 +145,7 @@ def umap(
         random_state,
         'euclidean',
         {},
+        parallel=True,
         verbose=True,
     )
     return x_umap
