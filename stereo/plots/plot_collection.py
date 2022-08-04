@@ -405,7 +405,6 @@ class PlotCollection:
 
         """
         res = self.check_res_key(res_key)
-        self.data.sparse2array()
         if cluster_key:
             cluster_res = self.check_res_key(cluster_key)
             n = len(set(cluster_res['group']))
@@ -419,6 +418,7 @@ class PlotCollection:
                 color_bar=False,
                 **kwargs)
         else:
+            self.data.sparse2array()
             if gene_names is None:
                 raise ValueError(f'gene name must be set if cluster_key is None')
             if len(gene_names) > 1:
