@@ -512,38 +512,73 @@ def read_gef(file_path: str, bin_type="bins", bin_size=100, is_sparse=True, gene
     """
     logger.info(f'read_gef begin ...')
     if bin_type == 'cell_bins':
-        from gefpy.cell_exp_reader import CellExpReader
         data = StereoExpData(file_path=file_path, bin_type=bin_type, bin_size=bin_size)
-        cell_bin_gef = CellExpReader(file_path)
-        data.position = cell_bin_gef.positions
-        logger.info(f'the martrix has {cell_bin_gef.cell_num} cells, and {cell_bin_gef.gene_num} genes.')
-        exp_matrix = csr_matrix((cell_bin_gef.count, (cell_bin_gef.rows, cell_bin_gef.cols)), shape=(cell_bin_gef.cell_num, cell_bin_gef.gene_num), dtype=np.uint32)
-        data.cells = Cell(cell_name=cell_bin_gef.cells)
-        data.genes = Gene(gene_name=cell_bin_gef.genes)
-        data.exp_matrix = exp_matrix if is_sparse else exp_matrix.toarray()
-    else:
         if gene_list is not None or region is not None:
-            from stereo.io.gef import GEF
-            gef = GEF(file_path=file_path, bin_size=bin_size, is_sparse=is_sparse)
-            gef.build(gene_lst=gene_list, region=region)
-            data = gef.to_stereo_exp_data()
-            data.bin_type = bin_type
-            data.bin_size = bin_size
+            from gefpy.cgef_reader_cy import CgefR
+            gef = CgefR(file_path)
+            if gene_list is None:
+                gene_list = []
+            if region is None:
+                region = []
+            uniq_cell, gene_names, count, cell_ind, gene_ind = gef.get_filtered_data(region,gene_list)
+            gene_num = gene_names.size
+            cell_num = uniq_cell.size
+            exp_matrix = csr_matrix((count, (cell_ind, gene_ind)), shape=(cell_num, gene_num), dtype=np.uint32)
+            position = np.array(list((zip(np.right_shift(uniq_cell, 32), np.bitwise_and(uniq_cell, 0xffff))))).astype('uint32')
+
+            data.position = position
+            logger.info(f'the martrix has {cell_num} cells, and {gene_num} genes.')
+
+            data.cells = Cell(cell_name=uniq_cell)
+            data.genes = Gene(gene_name=gene_names)
+
+            data.exp_matrix = exp_matrix if is_sparse else exp_matrix.toarray()
+
         else:
-            from gefpy.bgef_reader_cy import BgefR
-            gef = BgefR(file_path, bin_size, 4)
+            from gefpy.cell_exp_reader import CellExpReader
+            cell_bin_gef = CellExpReader(file_path)
+            data.position = cell_bin_gef.positions
+            logger.info(f'the martrix has {cell_bin_gef.cell_num} cells, and {cell_bin_gef.gene_num} genes.')
+            exp_matrix = csr_matrix((cell_bin_gef.count, (cell_bin_gef.rows, cell_bin_gef.cols)), shape=(cell_bin_gef.cell_num, cell_bin_gef.gene_num), dtype=np.uint32)
+            data.cells = Cell(cell_name=cell_bin_gef.cells)
+            data.genes = Gene(gene_name=cell_bin_gef.genes)
+            data.exp_matrix = exp_matrix if is_sparse else exp_matrix.toarray()
+    else:
+        from gefpy.bgef_reader_cy import BgefR
+        gef = BgefR(file_path, bin_size, 4)
+        
+        data = StereoExpData(file_path=file_path, bin_type=bin_type, bin_size=bin_size)
+        data.offset_x, data.offset_y = gef.get_offset()
+        gef_attr = gef.get_exp_attr()
+        data.attr={
+            'minX': gef_attr[0],
+            'minY': gef_attr[1],
+            'maxX': gef_attr[2],
+            'maxY': gef_attr[3],
+            'maxExp': gef_attr[4],
+            'resolution': gef_attr[5],
+        }
+
+        if gene_list is not None or region is not None:
+            if gene_list is None:
+                gene_list = []
+            if region is None:
+                region = []
+            uniq_cell, gene_names, count, cell_ind, gene_ind = gef.get_filtered_data(region, gene_list)
+            cell_num = uniq_cell.size
+            gene_num = gene_names.size
+            logger.info(f'the martrix has {cell_num} cells, and {gene_num} genes.')
+            exp_matrix = csr_matrix((count, (cell_ind, gene_ind)), shape=(cell_num, gene_num), dtype=np.uint32)
+            position = np.array(list((zip(np.right_shift(uniq_cell, 32), np.bitwise_and(uniq_cell, 0xffff))))).astype('uint32')
+
+            data.position = position
+            data.cells = Cell(cell_name=uniq_cell)
+            data.genes = Gene(gene_name=gene_names)
+
+            data.exp_matrix = exp_matrix if is_sparse else exp_matrix.toarray()
+
+        else:
             gene_num = gef.get_gene_num()
-            data = StereoExpData(file_path=file_path, bin_type=bin_type, bin_size=bin_size)
-            data.offset_x, data.offset_y = gef.get_offset()
-            gef_attr = gef.get_exp_attr()
-            data.attr = {
-                'minX': gef_attr[0],
-                'minY': gef_attr[1],
-                'maxX': gef_attr[2],
-                'maxY': gef_attr[3],
-                'maxExp': gef_attr[4],
-                'resolution': gef_attr[5],
-            }
             uniq_cells, rows, count = gef.get_exp_data()
             cell_num = len(uniq_cells)
             logger.info(f'the martrix has {cell_num} cells, and {gene_num} genes.')
@@ -578,7 +613,10 @@ def read_gef_info(file_path: str):
         info_dict['bin_list'] = list(h5_file['geneExp'].keys())
         logger.info('Bin size list: {0}'.format(info_dict['bin_list']))
 
-        info_dict['resolution'] = h5_file['geneExp']['bin1']['expression'].attrs['resolution'][0]
+        if type(h5_file['geneExp']['bin1']['expression'].attrs['resolution']) is np.ndarray:
+            info_dict['resolution'] = h5_file['geneExp']['bin1']['expression'].attrs['resolution'][0]
+        else:
+            info_dict['resolution'] = h5_file['geneExp']['bin1']['expression'].attrs['resolution']
         logger.info('Resolution: {0}'.format(info_dict['resolution']))
 
         info_dict['gene_count'] = h5_file['geneExp']['bin1']['gene'].shape[0]

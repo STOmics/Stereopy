@@ -42,6 +42,11 @@ class Data(object):
 
     @property
     def output(self):
+        """
+        the path of output.
+
+        :return:
+        """
         return self._output
 
     @output.setter
@@ -155,8 +160,8 @@ class Data(object):
         """
         self._partitions = partition
 
-    def read(self, *args, **kwargs):
-        raise NotImplementedError
+    # def read(self, *args, **kwargs):
+    #     raise NotImplementedError
 
-    def write(self, *args, **kwargs):
-        raise NotImplementedError
+    # def write(self, *args, **kwargs):
+    #     raise NotImplementedError

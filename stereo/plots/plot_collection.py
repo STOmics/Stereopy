@@ -592,6 +592,11 @@ class PlotCollection:
             raise ValueError(f'{res_key} result not found, please run tool before plot')
 
     def hotspot_local_correlations(self, res_key='spatial_hotspot', ):
+        """
+        visualize module scores with spatial position
+
+        :return:
+        """
         res = self.check_res_key(res_key)
         plt.rcParams['figure.figsize'] = (15.0, 12.0)
         res.plot_local_correlations()
@@ -604,6 +609,11 @@ class PlotCollection:
             palette='stereo',
             ** kwargs
     ):
+        """
+        plot hotspot modules
+
+        :return:
+        """
         res = self.check_res_key(res_key)
         scores = [res.module_scores[module] for module in range(1, res.modules.max() + 1)]
         vmin = np.percentile(scores, 1)
@@ -629,6 +639,11 @@ class PlotCollection:
             res_key="scenic",
             output=None,
     ):
+        """
+        plot scenic regulons
+
+        :return:
+        """
         res = self.check_res_key(res_key)
         regulons=res["regulons"]
         auc_mtx=res["auc_mtx"]
@@ -659,6 +674,11 @@ class PlotCollection:
             res_key="scenic",
             output=None,
     ):
+        """
+        plot scenic cluster
+
+        :return:
+        """
         res = self.check_res_key(res_key)
         auc_mtx = res["auc_mtx"]
         import seaborn as sns
