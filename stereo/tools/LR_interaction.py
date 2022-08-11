@@ -65,7 +65,7 @@ class LrInteraction(ToolBase):
         else:
             return False
     
-    def calculate_score(self, lr_pairs, neighbors_key, key_add, verbose):
+    def calculate_score(self,data, lr_pairs, neighbors_key, key_add, verbose):
         
         if isinstance(lr_pairs, str):
             lr_pairs = [lr_pairs]
@@ -84,7 +84,7 @@ class LrInteraction(ToolBase):
                         for item in lr_pairs]
         lr_genes_rev = '_'.join(lr_pairs_rev).split('_')
 
-        df = self.data[:, genes].copy().to_df()
+        df = data.sub_by_name(gene_name=genes).copy().to_df()
         df[neighbors_key] = self.result[neighbors_key]
         
         if verbose:
@@ -108,7 +108,7 @@ class LrInteraction(ToolBase):
                 from pandarallel import pandarallel
             except ImportError:
                 raise ImportError(
-                    'Please install the pandarallel, `pip3 install pandarallel')
+                    'Please install the pandarallel, `pip3 install pandarallel==1.6.1')
                 
             pandarallel.initialize(progress_bar=False, nb_workers=self.n_jobs, verbose=1)  
             nb_lr2 = spot_lr2.parallel_apply(mean_lr2, axis=1)
@@ -219,7 +219,8 @@ class LrInteraction(ToolBase):
             r_genes = gene_bg_genes[r_]
             
         rand_pairs = self.gene_rand_pairs(l_genes, r_genes, n_pairs)
-        background = self.calculate_score(lr_pairs=rand_pairs,
+        background = self.calculate_score(data=self.data,
+                                          lr_pairs=rand_pairs,
                                           neighbors_key=neighbors_key,
                                           key_add=None, 
                                           verbose=False)
@@ -315,7 +316,7 @@ class LrInteraction(ToolBase):
         lr_genes = np.unique([lr_.split("_") for lr_ in lr_pairs])
         genes = np.array([gene for gene in self.data.gene_names 
                           if gene not in lr_genes])
-        candidate_expr = self.data[:, genes].to_df().values
+        candidate_expr = self.data.sub_by_name(gene_name=genes).to_df().values
 
         n_genes = round(np.sqrt(n_pairs) * 2) 
         if len(genes) < n_genes:
@@ -331,7 +332,7 @@ class LrInteraction(ToolBase):
                 "get accurate backgrounds (e.g. 1000)."
             )
             return
-        lr_expr = self.data[:, lr_genes].copy().to_df()
+        lr_expr = self.data.sub_by_name(gene_name=lr_genes).copy().to_df()
         lr_feats = self.get_lr_features(lr_expr)
         l_quants = lr_feats.loc[lr_pairs, 
                                 [col for col in lr_feats.columns if "L_" in col]
@@ -449,7 +450,9 @@ class LrInteraction(ToolBase):
             self.data = self.data.raw
         
         # calulate lr scores
-        self.calculate_score(lr_pairs=lr_pairs,
+        self.calculate_score(
+                             data=self.data,
+                             lr_pairs=lr_pairs,
                              neighbors_key=neighbors_key,
                              key_add=key_add, 
                              verbose=self.verbose)
@@ -462,7 +465,7 @@ class LrInteraction(ToolBase):
                           lr_pairs=lr_pairs,
                           neighbors_key=neighbors_key,
                           adj_method=adj_method, 
-                          verbose=False)
+                          )
         
         return self.result
     
