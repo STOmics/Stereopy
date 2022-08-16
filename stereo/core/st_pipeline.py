@@ -378,8 +378,7 @@ class StPipeline(object):
         if use_highly_genes and hvg_res_key not in self.result:
             raise Exception(f'{hvg_res_key} is not in the result, please check and run the highly_var_genes func.')
         data = self.subset_by_hvg(hvg_res_key, inplace=False) if use_highly_genes else self.data
-        x = data.exp_matrix.toarray() if issparse(data.exp_matrix) else data.exp_matrix
-        res = pca(x, n_pcs, svd_solver=svd_solver)
+        res = pca(data.exp_matrix, n_pcs, svd_solver=svd_solver)
         self.result[res_key] = pd.DataFrame(res['x_pca'])
         key = 'pca'
         self.reset_key_record(key, res_key)
