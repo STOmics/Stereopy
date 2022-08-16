@@ -31,6 +31,9 @@ def highly_variable_genes_single_batch(
         #     X *= np.log(adata.uns['log1p']['base'])
         # data = np.expm1(data)
 
+    if method == 'seurat':
+        data = np.expm1(data)
+
     mean, var = materialize_as_ndarray(get_mean_var(data))
     # now actually compute the dispersion
     mean[mean == 0] = 1e-12  # set entries equal to zero to small value
