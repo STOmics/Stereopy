@@ -5,10 +5,14 @@
 """
 
 import numpy as np
-# import umap
+from scipy.sparse import issparse
+from scipy.sparse.linalg import LinearOperator, svds
+from sklearn.utils import check_array, check_random_state
+from sklearn.utils.extmath import svd_flip
 from sklearn.decomposition import FactorAnalysis
 from sklearn.manifold import TSNE
 from sklearn.decomposition import PCA
+from .scale import _get_mean_var
 
 
 def low_variance(x, threshold=0.01):
@@ -66,13 +70,82 @@ def pca(x, n_pcs, svd_solver='auto', random_state=0):
     :param random_state : int, RandomState instance
     :return:  ndarray of shape (n_samples, n_pcs) Embedding of the training data in low-dimensional space.
     """
-    pca_obj = PCA(n_components=n_pcs, svd_solver=svd_solver, random_state=random_state)
-    x_pca = pca_obj.fit_transform(x)
-    variance = pca_obj.explained_variance_
-    variance_ratio = pca_obj.explained_variance_ratio_
-    pcs = pca_obj.components_.T
-    return dict([('x_pca', x_pca), ('variance', variance), ('variance_ratio', variance_ratio), ('pcs', pcs)])
+    if issparse(x):
+        if svd_solver != 'arpack':
+            svd_solver = 'arpack'
+        output = _pca_with_sparse(x, n_pcs, solver=svd_solver, random_state=random_state)
+        # this is just a wrapper for the results
+        pca_ = PCA(n_components=n_pcs, svd_solver=svd_solver)
+        pca_.components_ = output['components']
+        pca_.explained_variance_ = output['variance']
+        pca_.explained_variance_ratio_ = output['variance_ratio']
+        return dict([('x_pca', output['X_pca']), ('variance', output['variance']), ('variance_ratio', output['variance_ratio']), ('pcs', pca_.components_.T)])
+    else:
+        pca_obj = PCA(n_components=n_pcs, svd_solver=svd_solver, random_state=random_state)
+        x_pca = pca_obj.fit_transform(x)
+        variance = pca_obj.explained_variance_
+        variance_ratio = pca_obj.explained_variance_ratio_
+        pcs = pca_obj.components_.T
+        return dict([('x_pca', x_pca), ('variance', variance), ('variance_ratio', variance_ratio), ('pcs', pcs)])
 
+
+def _pca_with_sparse(X, n_pcs, solver='arpack', mu=None, random_state=None):
+    random_state = check_random_state(random_state)
+    np.random.set_state(random_state.get_state())
+    random_init = np.random.rand(np.min(X.shape))
+    X = check_array(X, accept_sparse=['csr', 'csc'])
+
+    if mu is None:
+        mu = X.mean(0).A.flatten()[None, :]
+    mdot = mu.dot
+    mmat = mdot
+    mhdot = mu.T.dot
+    mhmat = mu.T.dot
+    Xdot = X.dot
+    Xmat = Xdot
+    XHdot = X.T.conj().dot
+    XHmat = XHdot
+    ones = np.ones(X.shape[0])[None, :].dot
+
+    def matvec(x):
+        return Xdot(x) - mdot(x)
+
+    def matmat(x):
+        return Xmat(x) - mmat(x)
+
+    def rmatvec(x):
+        return XHdot(x) - mhdot(ones(x))
+
+    def rmatmat(x):
+        return XHmat(x) - mhmat(ones(x))
+
+    XL = LinearOperator(
+        matvec=matvec,
+        dtype=X.dtype,
+        matmat=matmat,
+        shape=X.shape,
+        rmatvec=rmatvec,
+        rmatmat=rmatmat,
+    )
+
+    u, s, v = svds(XL, solver=solver, k=n_pcs, v0=random_init)
+    u, v = svd_flip(u, v)
+    idx = np.argsort(-s)
+    v = v[idx, :]
+
+    X_pca = (u * s)[:, idx]
+    ev = s[idx] ** 2 / (X.shape[0] - 1)
+
+    total_var = _get_mean_var(X)[1].sum()
+    ev_ratio = ev / total_var
+
+    output = {
+        'X_pca': X_pca,
+        'variance': ev,
+        'variance_ratio': ev_ratio,
+        'components': v,
+    }
+    return output
 
 def t_sne(x, n_pcs, n_iter=200):
     """
