@@ -114,7 +114,7 @@ class GEF(object):
 
     def to_stereo_exp_data(self) -> StereoExpData:
         data = StereoExpData(file_path=self.file_path)
-        logger.info(f'the martrix has {self.cell_num} cells, and {self.gene_num} genes.')
+        logger.info(f'the matrix has {self.cell_num} cells, and {self.gene_num} genes.')
         data.position = self.df_exp.loc[:, ['x', 'y']].drop_duplicates().values
         exp_matrix = csr_matrix((self.df_exp['count'], (self.df_exp['cell_index'], self.df_exp['gene_index'])),
                                 shape=(self.cell_num, self.gene_num), dtype=np.int32)
