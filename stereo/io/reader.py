@@ -509,7 +509,7 @@ def read_gef(file_path: str, bin_type="bins", bin_size=100, is_sparse=True, gene
             gene_num = gene_names.size
             cell_num = uniq_cell.size
             exp_matrix = csr_matrix((count, (cell_ind, gene_ind)), shape=(cell_num, gene_num), dtype=np.uint32)
-            position = np.array(list((zip(np.right_shift(uniq_cell, 32), np.bitwise_and(uniq_cell, 0xffff))))).astype('uint32')
+            position = np.array(list((zip(np.right_shift(uniq_cell, 32), np.bitwise_and(uniq_cell, 0xffffffff))))).astype('uint32')
 
             data.position = position
             logger.info(f'the martrix has {cell_num} cells, and {gene_num} genes.')
@@ -554,7 +554,7 @@ def read_gef(file_path: str, bin_type="bins", bin_size=100, is_sparse=True, gene
             gene_num = gene_names.size
             logger.info(f'the martrix has {cell_num} cells, and {gene_num} genes.')
             exp_matrix = csr_matrix((count, (cell_ind, gene_ind)), shape=(cell_num, gene_num), dtype=np.uint32)
-            position = np.array(list((zip(np.right_shift(uniq_cell, 32), np.bitwise_and(uniq_cell, 0xffff))))).astype('uint32')
+            position = np.array(list((zip(np.right_shift(uniq_cell, 32), np.bitwise_and(uniq_cell, 0xffffffff))))).astype('uint32')
 
             data.position = position
             data.cells = Cell(cell_name=uniq_cell)
@@ -569,7 +569,7 @@ def read_gef(file_path: str, bin_type="bins", bin_size=100, is_sparse=True, gene
             logger.info(f'the martrix has {cell_num} cells, and {gene_num} genes.')
             cols, uniq_genes = gef.get_gene_data()
             data.position = np.array(list(
-                (zip(np.right_shift(uniq_cells, 32), np.bitwise_and(uniq_cells, 0xffff))))).astype('uint32')
+                (zip(np.right_shift(uniq_cells, 32), np.bitwise_and(uniq_cells, 0xffffffff))))).astype('uint32')
             exp_matrix = csr_matrix((count, (rows, cols)), shape=(cell_num, gene_num), dtype=np.uint32)
             data.cells = Cell(cell_name=uniq_cells)
             data.genes = Gene(gene_name=uniq_genes)
