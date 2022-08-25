@@ -59,7 +59,7 @@ def read_raw_file(inpath, step):
     genesdic = dict(zip(genes, range(0, len(genes))))
     rows = [cellsdic[x[0]] for x in bindf.index]
     cols = [genesdic[x[1]] for x in bindf.index]
-    print(f'the martrix has {len(cells)} bins, and {len(genes)} genes.')
+    print(f'the matrix has {len(cells)} bins, and {len(genes)} genes.')
     expMtx = sparse.csr_matrix((bindf.values, (rows, cols))).toarray()
     print(f'the size of matrix is {sys.getsizeof(expMtx) / 1073741824} G.')
     obs = pd.DataFrame(index=cells)

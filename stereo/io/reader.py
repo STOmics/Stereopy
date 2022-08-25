@@ -527,7 +527,7 @@ def read_gef(file_path: str, bin_type="bins", bin_size=100, is_sparse=True, gene
             position = np.array(list((zip(np.right_shift(uniq_cell, 32), np.bitwise_and(uniq_cell, 0xffffffff))))).astype('uint32')
 
             data.position = position
-            logger.info(f'the martrix has {cell_num} cells, and {gene_num} genes.')
+            logger.info(f'the matrix has {cell_num} cells, and {gene_num} genes.')
 
             data.cells = Cell(cell_name=uniq_cell)
             data.genes = Gene(gene_name=gene_names)
@@ -538,7 +538,7 @@ def read_gef(file_path: str, bin_type="bins", bin_size=100, is_sparse=True, gene
             from gefpy.cell_exp_reader import CellExpReader
             cell_bin_gef = CellExpReader(file_path)
             data.position = cell_bin_gef.positions
-            logger.info(f'the martrix has {cell_bin_gef.cell_num} cells, and {cell_bin_gef.gene_num} genes.')
+            logger.info(f'the matrix has {cell_bin_gef.cell_num} cells, and {cell_bin_gef.gene_num} genes.')
             exp_matrix = csr_matrix((cell_bin_gef.count, (cell_bin_gef.rows, cell_bin_gef.cols)), shape=(cell_bin_gef.cell_num, cell_bin_gef.gene_num), dtype=np.uint32)
             data.cells = Cell(cell_name=cell_bin_gef.cells)
             data.genes = Gene(gene_name=cell_bin_gef.genes)
@@ -567,7 +567,7 @@ def read_gef(file_path: str, bin_type="bins", bin_size=100, is_sparse=True, gene
             uniq_cell, gene_names, count, cell_ind, gene_ind = gef.get_filtered_data(region, gene_list)
             cell_num = uniq_cell.size
             gene_num = gene_names.size
-            logger.info(f'the martrix has {cell_num} cells, and {gene_num} genes.')
+            logger.info(f'the matrix has {cell_num} cells, and {gene_num} genes.')
             exp_matrix = csr_matrix((count, (cell_ind, gene_ind)), shape=(cell_num, gene_num), dtype=np.uint32)
             position = np.array(list((zip(np.right_shift(uniq_cell, 32), np.bitwise_and(uniq_cell, 0xffffffff))))).astype('uint32')
 
@@ -581,7 +581,7 @@ def read_gef(file_path: str, bin_type="bins", bin_size=100, is_sparse=True, gene
             gene_num = gef.get_gene_num()
             uniq_cells, rows, count = gef.get_exp_data()
             cell_num = len(uniq_cells)
-            logger.info(f'the martrix has {cell_num} cells, and {gene_num} genes.')
+            logger.info(f'the matrix has {cell_num} cells, and {gene_num} genes.')
             cols, uniq_genes = gef.get_gene_data()
             data.position = np.array(list(
                 (zip(np.right_shift(uniq_cells, 32), np.bitwise_and(uniq_cells, 0xffffffff))))).astype('uint32')
