@@ -55,6 +55,7 @@ class _TissueCut(object):
         self.src_img_path = src_img_path
         self.src_img_type = src_img_type
         self.dst_img_path = dst_img_path
+        self.dst_img_file_path = []
         self.seg_method = seg_method
         self.model_path = model_path
 
@@ -154,13 +155,13 @@ class _TissueCut(object):
         # for idx, tissue_thumb in enumerate(self.mask_thumb):
         #     tifffile.imsave(os.path.join(self.dst_img_path, self.file_name[idx] + r'_tissue_cut_thumb.tif'), tissue_thumb)
         for idx, tissue in enumerate(self.mask):
+            self.dst_img_file_path.append(os.path.join(self.dst_img_path, self.file_name[idx] + r'_tissue_cut.tif'))
             if np.sum(tissue) == 0:
                 h, w = tissue.shape[:2]
                 tissue = np.ones((h, w), dtype=np.uint8)
-                tifffile.imsave(os.path.join(self.dst_img_path, self.file_name[idx] + r'_tissue_cut.tif'), tissue)
+                tifffile.imsave(self.dst_img_file_path[-1], tissue)
             else:
-                tifffile.imsave(os.path.join(self.dst_img_path, self.file_name[idx] + r'_tissue_cut.tif'),
-                                (tissue > 0).astype(np.uint8))
+                tifffile.imsave(self.dst_img_file_path[-1], (tissue > 0).astype(np.uint8))
         logger.info('seg results saved in %s' % self.dst_img_path)
 
     # preprocess image for deep learning
