@@ -7,6 +7,7 @@ Clustering
 .. nbgallery::
 
     clustering
+    cell_clustering
 
 IO
 ----------------------
