@@ -58,3 +58,5 @@ distributed==2022.2.0
 keras==2.7.0
 pyarrow==8.0.0
 tables==3.7.0
+spatialpandas>=0.4.4
+# selenium>=4.4.3
