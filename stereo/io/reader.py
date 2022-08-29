@@ -513,9 +513,9 @@ def read_gef(file_path: str, bin_type="bins", bin_size=100, is_sparse=True, gene
     logger.info(f'read_gef begin ...')
     if bin_type == 'cell_bins':
         data = StereoExpData(file_path=file_path, bin_type=bin_type, bin_size=bin_size)
+        from gefpy.cgef_reader_cy import CgefR
+        gef = CgefR(file_path)
         if gene_list is not None or region is not None:
-            from gefpy.cgef_reader_cy import CgefR
-            gef = CgefR(file_path)
             if gene_list is None:
                 gene_list = []
             if region is None:
@@ -529,7 +529,8 @@ def read_gef(file_path: str, bin_type="bins", bin_size=100, is_sparse=True, gene
             data.position = position
             logger.info(f'the martrix has {cell_num} cells, and {gene_num} genes.')
 
-            data.cells = Cell(cell_name=uniq_cell)
+            cellborders = gef.get_cellborders()[np.in1d(gef.get_cell_names(), uniq_cell)]
+            data.cells = Cell(cell_name=uniq_cell, cell_border=cellborders)
             data.genes = Gene(gene_name=gene_names)
 
             data.exp_matrix = exp_matrix if is_sparse else exp_matrix.toarray()
@@ -540,7 +541,7 @@ def read_gef(file_path: str, bin_type="bins", bin_size=100, is_sparse=True, gene
             data.position = cell_bin_gef.positions
             logger.info(f'the martrix has {cell_bin_gef.cell_num} cells, and {cell_bin_gef.gene_num} genes.')
             exp_matrix = csr_matrix((cell_bin_gef.count, (cell_bin_gef.rows, cell_bin_gef.cols)), shape=(cell_bin_gef.cell_num, cell_bin_gef.gene_num), dtype=np.uint32)
-            data.cells = Cell(cell_name=cell_bin_gef.cells)
+            data.cells = Cell(cell_name=cell_bin_gef.cells, cell_border=gef.get_cellborders())
             data.genes = Gene(gene_name=cell_bin_gef.genes)
             data.exp_matrix = exp_matrix if is_sparse else exp_matrix.toarray()
     else:
