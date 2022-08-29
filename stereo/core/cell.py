@@ -18,8 +18,9 @@ import pandas as pd
 
 
 class Cell(object):
-    def __init__(self, cell_name: Optional[np.ndarray] = None):
+    def __init__(self, cell_name: Optional[np.ndarray] = None, cell_border: Optional[np.ndarray] = None):
         self._cell_name = cell_name
+        self._cell_border = cell_border
         self.total_counts = None
         self.pct_counts_mt = None
         self.n_genes_by_counts = None
@@ -44,6 +45,16 @@ class Cell(object):
         if not isinstance(name, np.ndarray):
             raise TypeError('cell name must be a np.ndarray object.')
         self._cell_name = name
+    
+    @property
+    def cell_border(self):
+        return self._cell_border
+    
+    @cell_border.setter
+    def cell_boder(self, cell_border: np.ndarray):
+        if not isinstance(cell_border, np.ndarray):
+            raise TypeError('cell border must be a np.ndarray object.')
+        self._cell_border = cell_border
 
     def sub_set(self, index):
         """
@@ -54,6 +65,8 @@ class Cell(object):
         """
         if self.cell_name is not None:
             self.cell_name = self.cell_name[index]
+        if self.cell_boder is not None:
+            self.cell_boder = self.cell_boder[index]
         if self.total_counts is not None:
             self.total_counts = self.total_counts[index]
         if self.pct_counts_mt is not None:

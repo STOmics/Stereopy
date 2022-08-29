@@ -684,3 +684,19 @@ class PlotCollection:
         import seaborn as sns
         sns.clustermap(auc_mtx, figsize=(12, 12))
         plt.show()
+
+    def cells_plotting(self, cluster_res_key='cluster', figure_size=500, fg_alpha=0.8, base_image=None):
+        """plot the cells
+
+        :param cluster_res_key: result key of clustering, defaults to 'cluster'
+                color by cluster result if cluster result is not None, or by total_counts
+        :param figure_size: the figure size is figure_size * figure_size, defaults to 500
+        :param fg_alpha: the alpha of foreground image, between 0 and 1, defaults to 0.8
+                            this is the colored image of the cells
+        :param base_image: the path of the ssdna image after calibration, defaults to None
+                            it will be located behide the image of the cells
+        :return: figure to show
+        """
+        from .plot_cells import PlotCells
+        pc = PlotCells(self.data, cluster_res_key=cluster_res_key, figure_size=figure_size, fg_alpha=fg_alpha, base_image=base_image)
+        return pc.show()

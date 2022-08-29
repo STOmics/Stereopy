@@ -157,6 +157,10 @@ class StereoExpData(Data):
         return self.cells.cell_name
 
     @property
+    def cell_borders(self):
+        return self.cells.cell_boder
+
+    @property
     def genes(self):
         """
         get the value of self._genes.
