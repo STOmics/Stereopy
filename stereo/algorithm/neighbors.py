@@ -298,6 +298,12 @@ class Neighbors(object):
                                               set_op_mix_ratio=1.0, local_connectivity=1.0)
         if isinstance(connectivities, tuple):
             connectivities = connectivities[0]
+
+        import scipy.sparse
+        n_components, _ = scipy.sparse.csgraph.connected_components(connectivities)
+        if n_components > 1 and self.x.shape[0] * self.x.shape[1] > 680000 * 40000:
+            logger.warn(f"got n_components: {n_components} > 1, `spectral-init` umap will slow down when dealing large size data")
+
         return connectivities.tocsr()
 
     def compute_connectivities_diffmap(self, dists,):

@@ -33,9 +33,13 @@ def _(x, target_sum):
 
 @normalize_total.register(spmatrix)
 def _(x, target_sum):
-    x = x.astype(np.float64)
-    counts = target_sum / np.ravel(x.sum(1))
-    sparsefuncs.inplace_row_scale(x, counts)
+    x = x.astype(np.float32)
+    counts = np.ravel(x.sum(1))
+    counts_greater_than_zero = counts[counts > 0]
+    target_sum = np.median(counts_greater_than_zero, axis=0) if target_sum is None else target_sum
+    counts += counts == 0
+    counts = counts / target_sum
+    sparsefuncs.inplace_row_scale(x, 1 / counts)
     return x
 
 
