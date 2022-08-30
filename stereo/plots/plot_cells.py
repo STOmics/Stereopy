@@ -11,8 +11,8 @@ import numpy as np
 from natsort import natsorted
 import tifffile as tif
 from collections import OrderedDict
-from selenium import webdriver
-from chromedriver_py import binary_path
+# from selenium import webdriver
+# from chromedriver_py import binary_path
 from stereo.config import StereoConfig
 
 conf = StereoConfig()
