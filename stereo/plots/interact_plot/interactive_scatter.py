@@ -116,17 +116,14 @@ class InteractiveScatter:
         if not self.selected_exp_data:
             print("there is not a selected area, please check whether select an area")
             return []
-        print("create exp data")
         selected_pos = hv.Dataset(self.scatter_df).select(link.selection_expr).data.index
         self.generate_selected_expr_matrix(selected_pos, self.drop_checkbox.value)
         exp_matrix_data = self.selected_exp_data.position.tolist()
-        print("execute export ")
         init = ConcaveHull(exp_matrix_data, 3)
-        print("caculating......")
+        print("caculating......, please wait")
         concave_hull = init.calculate().tolist()
         concave_hull = [int(i) for k in concave_hull for i in k]
         self.list_poly_selection_exp_coors.append(concave_hull)
-        print("caculating done")
         return self.list_poly_selection_exp_coors
 
     def export_high_res_area(self, origin_file_path: str, output_path: str) -> str:
