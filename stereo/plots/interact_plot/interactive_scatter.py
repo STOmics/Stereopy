@@ -115,6 +115,7 @@ class InteractiveScatter:
 
         if not self.selected_exp_data:
             print("there is not a selected area, please check whether select an area")
+            return []
         print("create exp data")
         selected_pos = hv.Dataset(self.scatter_df).select(link.selection_expr).data.index
         self.generate_selected_expr_matrix(selected_pos, self.drop_checkbox.value)
