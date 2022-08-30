@@ -239,7 +239,7 @@ class PlotCells:
                     # tools=[hover_tool, 'lasso_select']
                     tools=[hover_tool]
                 )
-            if self.base_image is not None:
+            if self.base_image is not None and self.data.is_all_data:
                 base_image_points_detail = self._create_base_image_points()
                 self.figure_points = base_image_points_detail.hvplot.scatter(
                     x='x', y='y',
