@@ -29,6 +29,7 @@ This section contains various examples for the interactive plots.
 .. nbgallery::
 
     interactive_cluster
+    high_res_export_poly_select
 
 Image preprocessing
 ---------------------------------------
