@@ -503,7 +503,7 @@ def read_gef(file_path: str, bin_type="bins", bin_size=100, is_sparse=True, gene
     :param file_path: input file
     :param bin_type: bin_type , bins or cell_bins
     :param bin_size: the size of bin to merge. The parameter only takes effect
-                     when the value of data.bin_type is 'bins'.
+                  when the value of data.bin_type is 'bins'.
     :param is_sparse: the matrix is sparse matrix if is_sparse is True else np.ndarray
     :param gene_list: restrict to this gene list
     :param region: restrict to this region, [minX, maxX, minY, maxY]
@@ -515,6 +515,9 @@ def read_gef(file_path: str, bin_type="bins", bin_size=100, is_sparse=True, gene
         data = StereoExpData(file_path=file_path, bin_type=bin_type, bin_size=bin_size)
         from gefpy.cgef_reader_cy import CgefR
         gef = CgefR(file_path)
+        cellborders_coord_list, coord_count_per_cell = gef.get_cellborders([])
+        border_points_count_per_cell = int(coord_count_per_cell / 2)
+        cell_borders = cellborders_coord_list.reshape((-1, border_points_count_per_cell, 2))
         if gene_list is not None or region is not None:
             if gene_list is None:
                 gene_list = []
@@ -529,11 +532,12 @@ def read_gef(file_path: str, bin_type="bins", bin_size=100, is_sparse=True, gene
             data.position = position
             logger.info(f'the matrix has {cell_num} cells, and {gene_num} genes.')
 
-            cellborders = gef.get_cellborders()[np.in1d(gef.get_cell_names(), uniq_cell)]
-            data.cells = Cell(cell_name=uniq_cell, cell_border=cellborders)
+            uniq_cell_borders = cell_borders[np.in1d(gef.get_cell_names(), uniq_cell)]
+            data.cells = Cell(cell_name=uniq_cell, cell_border=uniq_cell_borders)
             data.genes = Gene(gene_name=gene_names)
 
             data.exp_matrix = exp_matrix if is_sparse else exp_matrix.toarray()
+            data.is_all_data = False
 
         else:
             from gefpy.cell_exp_reader import CellExpReader
@@ -541,7 +545,7 @@ def read_gef(file_path: str, bin_type="bins", bin_size=100, is_sparse=True, gene
             data.position = cell_bin_gef.positions
             logger.info(f'the matrix has {cell_bin_gef.cell_num} cells, and {cell_bin_gef.gene_num} genes.')
             exp_matrix = csr_matrix((cell_bin_gef.count, (cell_bin_gef.rows, cell_bin_gef.cols)), shape=(cell_bin_gef.cell_num, cell_bin_gef.gene_num), dtype=np.uint32)
-            data.cells = Cell(cell_name=cell_bin_gef.cells, cell_border=gef.get_cellborders())
+            data.cells = Cell(cell_name=cell_bin_gef.cells, cell_border=cell_borders)
             data.genes = Gene(gene_name=cell_bin_gef.genes)
             data.exp_matrix = exp_matrix if is_sparse else exp_matrix.toarray()
     else:
@@ -577,7 +581,7 @@ def read_gef(file_path: str, bin_type="bins", bin_size=100, is_sparse=True, gene
             data.genes = Gene(gene_name=gene_names)
 
             data.exp_matrix = exp_matrix if is_sparse else exp_matrix.toarray()
-
+            data.is_all_data = False
         else:
             gene_num = gef.get_gene_num()
             uniq_cells, rows, count = gef.get_exp_data()
