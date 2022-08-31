@@ -371,18 +371,18 @@ def cellInfer(model_path, file, size, overlap=100):
     model = EpsaResUnet(out_channels=6)
     model.load_state_dict(torch.load(model_dir, map_location=lambda storage, loc: storage), strict=True)
     model.eval()
-    transform = get_transforms()
-    label_list = []
+    # transform = get_transforms()
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     model.to(device)
     for idx, image in enumerate(file_list):
-        h, w = image.shape
-        print(h, w)
+        # h, w = image.shape
+        # print(h, w)
         image = cv2.cvtColor(image, cv2.COLOR_GRAY2RGB)
         img_list, x_list, y_list = split(image, 256, 100)
-        total_num = len(img_list)
+        # total_num = len(img_list)
         print('【image %d/%d】' % (idx + 1, len(file_list)))
 
+        label_list = []
         dataset = data_batch(img_list)
         test_dataloader = torch.utils.data.DataLoader(dataset, batch_size=32)
         for batch in tqdm(test_dataloader, ncols=80):
