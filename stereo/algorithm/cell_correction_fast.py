@@ -210,10 +210,7 @@ def load_data(gem_file, mask_file):
     else:
         data_np = creat_cell_gxp(mask_file, gem_file, transposition=False)
 
-    # data_np['x'] = data_np['x'] - data_np['x'].min()
-    # data_np['y'] = data_np['y'] - data_np['y'].min()
     data_np['label'] = data_np['label'].astype(int)
-    data_np = data_np.drop_duplicates(['x', 'y', 'label'], keep='last')
     data_np = data_np.to_numpy()
 
     cell_points = {}
