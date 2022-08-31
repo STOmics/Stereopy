@@ -134,7 +134,10 @@ class CellCorrection(object):
                                 & (data.y > cell_coor.loc[i].y - radius) & (data.y < cell_coor.loc[i].y + radius)]
                 # fit GaussianMixture Model
                 clf.fit(cell_test[cell_test.label == cell_coor.loc[i].label][['x', 'y', 'UMICount']].values)
-                cell_test_bg = cell_test[cell_test.label == 0]
+                # cell_test_bg = cell_test[cell_test.label == 0]
+                cell_test_bg_ori = cell_test[cell_test.label == 0]
+                bg_group = cell_test_bg_ori.groupby(['x', 'y']).agg(UMI_max=('UMICount', 'max')).reset_index()
+                cell_test_bg = pd.merge(cell_test_bg_ori, bg_group, on=['x', 'y'])	
                 # threshold 20
                 score = pd.Series(-clf.score_samples(cell_test_bg[['x', 'y', 'UMICount']].values))
                 cell_test_bg['score'] = score.values
@@ -162,6 +165,7 @@ class CellCorrection(object):
                 queue.put((False, p_num, c))
 
         out = pd.concat(p_data)
+        out.drop('UMI_max', axis=1, inplace=True)
         queue.put((True, p_num, out))
         # return out
 
