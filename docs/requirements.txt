@@ -2,7 +2,7 @@ absl-py==1.0.0
 alabaster==0.7.12
 albumentations==0.4.6
 alembic==1.7.5
-anndata==0.7.8
+anndata==0.7.5
 arboreto==0.1.6
 argcomplete==2.0.0
 argon2-cffi==21.3.0
@@ -104,7 +104,7 @@ nbsphinx==0.8.8
 nest-asyncio==1.5.4
 networkx==2.6.3
 notebook==6.4.7
-numba==0.53.1
+numba==0.54.0
 numcodecs==0.9.1
 numexpr==2.8.1
 numpy==1.21.4
