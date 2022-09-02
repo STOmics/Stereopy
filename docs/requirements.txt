@@ -173,7 +173,6 @@ slicerator==1.0.0
 slideio==0.5.225
 snowballstemmer==2.2.0
 sortedcontainers==2.4.0
-spatialpandas==0.4.2
 Sphinx==4.3.2
 sphinx-autodoc-typehints==1.15.2
 sphinx-gallery==0.10.1
