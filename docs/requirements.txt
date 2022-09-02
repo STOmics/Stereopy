@@ -104,7 +104,7 @@ nbsphinx==0.8.8
 nest-asyncio==1.5.4
 networkx==2.6.3
 notebook==6.4.7
-numba==0.54.0
+numba==0.56.0
 numcodecs==0.9.1
 numexpr==2.8.1
 numpy==1.21.4
