@@ -77,16 +77,15 @@ if(!is.null(Stdata@misc$sct_data)){
 	Stdata@misc$sct_genename<-NULL
 	Stdata@misc$sct_cellname<-NULL
 }
-##增加image
-##
+## add image
 cell_coords=unique(Stdata@meta.data[, c('x', 'y')])
 cell_coords['cell']=row.names(cell_coords)
 cell_coords$x <- cell_coords$x - min(cell_coords$x) + 1
 cell_coords$y <- cell_coords$y - min(cell_coords$y) + 1
-##images$slice1@image对象，没有实际图片，全为1代替
+# object of images$slice1@image, all illustrated as 1 since no concrete pic
 tissue_lowres_image <- matrix(1, max(cell_coords$y), max(cell_coords$x))
 
-##images$slice1@coordinates对象,实际X和Y坐标
+# object of images$slice1@coordinates, concrete coordinate of X and Y
 tissue_positions_list <- data.frame(row.names = cell_coords$cell,
                                     tissue = 1,
                                     row = cell_coords$y, col = cell_coords$x,
@@ -94,7 +93,7 @@ tissue_positions_list <- data.frame(row.names = cell_coords$cell,
 ##@images$slice1@scale.factors
 scalefactors_json <- toJSON(list(fiducial_diameter_fullres = 1,tissue_hires_scalef = 1,tissue_lowres_scalef = 1))
 
-##生成对象@images$slice1
+# generate object @images$slice1
 generate_BGI_spatial <- function(image, scale.factors, tissue.positions, filter.matrix = TRUE){
   if (filter.matrix) {
     tissue.positions <- tissue.positions[which(tissue.positions$tissue == 1), , drop = FALSE]
@@ -114,12 +113,11 @@ generate_BGI_spatial <- function(image, scale.factors, tissue.positions, filter.
 BGI_spatial <- generate_BGI_spatial(image = tissue_lowres_image,
                                     scale.factors = fromJSON(scalefactors_json),
                                     tissue.positions = tissue_positions_list)
-#可以理解为构建一个spatial背景
-
+# can be thought of as a background of spatial
 #' import image into seurat object
 Stdata@images[['slice1']] <-BGI_spatial
 Stdata@images$slice1@key<-"slice1_"
 Stdata@images$slice1@assay<-"Spatial"
-##转换完成，保持
+# conversion done, save
 saveRDS(Stdata,outfile)
 print("Finished RDS.")

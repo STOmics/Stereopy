@@ -13,11 +13,14 @@ import hvplot.pandas
 import panel as pn
 import param
 import io
+from holoviews.util.transform import dim
+from holoviews.element.selection import spatial_select
 from typing import Optional
 import holoviews.operation.datashader as hd
 from stereo.log_manager import logger
 import copy
 from stereo.config import StereoConfig
+from stereo.tools.boundary import ConcaveHull
 
 conf = StereoConfig()
 
@@ -72,6 +75,7 @@ class InteractiveScatter:
         )
         self.download.on_click(self._download_callback)
         self.figure = self.interact_scatter()
+        self.list_poly_selection_exp_coors = []
 
     def generate_selected_expr_matrix(self, selected_pos, drop=False):
         if selected_pos is not None:
@@ -100,6 +104,43 @@ class InteractiveScatter:
         # sio.seek(0)
         self.download.loading = False
         # return sio
+
+    @param.depends(link.param.selection_expr)
+    def get_selected_boundary_coors(self) -> list:
+        """
+        get selected area exp boundary coords, list contains each x,y
+        Returns:
+
+        """
+
+        if not self.selected_exp_data:
+            print("there is not a selected area, please check whether select an area")
+            return []
+        selected_pos = hv.Dataset(self.scatter_df).select(link.selection_expr).data.index
+        self.generate_selected_expr_matrix(selected_pos, self.drop_checkbox.value)
+        exp_matrix_data = self.selected_exp_data.position.tolist()
+        init = ConcaveHull(exp_matrix_data, 3)
+        print("caculating......, please wait")
+        concave_hull = init.calculate().tolist()
+        concave_hull = [int(i) for k in concave_hull for i in k]
+        self.list_poly_selection_exp_coors.append(concave_hull)
+        return self.list_poly_selection_exp_coors
+
+    def export_high_res_area(self, origin_file_path: str, output_path: str) -> str:
+        """
+        export selected area in high resolution
+        Args:
+            origin_file_path: origin file path which you read
+            output_path: location the high res file storaged
+
+        Returns:
+            output_path
+        """
+        coors = self.get_selected_boundary_coors()
+        from gefpy.cgef_adjust_cy import CgefAdjust
+        cg = CgefAdjust()
+        cg.create_Region_Bgef(origin_file_path, output_path, coors)
+        return output_path
 
     def interact_scatter(self):
         pn.extension()
