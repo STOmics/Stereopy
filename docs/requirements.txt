@@ -43,7 +43,7 @@ flatbuffers==2.0
 fonttools==4.28.5
 fsspec==2022.1.0
 gast==0.4.0
-gefpy>=0.6.0
+gefpy>=0.6.1
 glog==0.3.1
 google-auth==2.3.3
 google-auth-oauthlib==0.4.6
@@ -222,7 +222,7 @@ xlrd==1.2.0
 zarr==2.11.0a2
 zict==2.0.0
 zipp==3.7.0
-setuptools>=41.0.0,<=61.2.0
+setuptools>=41.0.0,<=63.4.1
 hotspotsc==0.9.1
 keras==2.7.0
 pyarrow==8.0.0
