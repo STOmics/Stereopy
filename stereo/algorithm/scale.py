@@ -72,8 +72,8 @@ def _get_mean_var(x, *, axis=0):
     if sparse.issparse(x):
         datam = x.data
         indices = x.indices
-        major_len, minor_len = x.shape[::-1]
-        mean, var = sparse_mean_variance(datam, indices, major_len, minor_len)
+        shape = x.shape
+        mean, var = sparse_mean_variance(datam, indices, *shape)
     else:
         mean = np.mean(x, axis=0, dtype=np.float64)
         mean_sq = np.multiply(x, x).mean(axis=0, dtype=np.float64)
@@ -103,6 +103,13 @@ def sparse_mean_variance(data, indices, major_len, minor_len):
     variances = np.zeros_like(means, dtype=dtype)
 
     counts = np.zeros(minor_len, dtype=np.int64)
+
+    for i in range(non_zero):
+        col_ind = indices[i]
+        means[col_ind] += data[i]
+
+    for i in range(minor_len):
+        means[i] /= major_len
 
     for i in range(non_zero):
         col_ind = indices[i]
