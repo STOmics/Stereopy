@@ -60,3 +60,4 @@ pyarrow==8.0.0
 tables==3.7.0
 spatialpandas>=0.4.4
 # selenium>=4.4.3
+harmonypy==0.0.6
