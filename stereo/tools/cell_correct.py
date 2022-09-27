@@ -80,7 +80,7 @@ class CellCorrect(object):
         genes, raw_data = self.cad.get_cell_data(self.bgef_path, self.raw_cgef_path)
         genes = pd.DataFrame(genes, columns=['geneID']).reset_index().rename(columns={'index': 'geneid'})
         raw_data = pd.DataFrame(raw_data.tolist(), dtype='int32').rename(columns={'midcnt': 'UMICount', 'cellid': 'label'})
-        raw_data = pd.merge(raw_data, genes, on=['geneid']).reset_index()[['geneID', 'x', 'y', 'UMICount', 'label']]
+        raw_data = pd.merge(raw_data, genes, on=['geneid'])[['geneID', 'x', 'y', 'UMICount', 'label', 'geneid']]
         if sample_n > 0:
             logger.info(f"sample {sample_n} from raw data")
             raw_data = raw_data.sample(sample_n, replace=False)
@@ -91,12 +91,11 @@ class CellCorrect(object):
     def generate_adjusted_cgef(self, adjusted_data, genes):
         t0 = time.time()
         logger.info("start to generate adjusted cgef")
-        data = adjusted_data.drop(labels='tag', axis=1).rename(columns={"label": "cellid", "UMICount": "count"})
-        data = pd.merge(data, genes, on=['geneID']).sort_values("cellid").reset_index().drop("index", axis=1).reset_index()
-        cell_min_ids = data.groupby("cellid").min().reset_index()[["cellid", "index"]].rename(columns={"index": "offset"})
-        cell_count = data.groupby("cellid").count().reset_index()[["cellid", "geneID"]].rename(columns={"geneID": "count"})
-        cell = pd.merge(cell_min_ids, cell_count, on=['cellid'])
-        dnb = data.drop(['index', 'geneID', 'cellid'], axis=1)
+        adjusted_data.rename(columns={"label": "cellid", "UMICount": "count"}, inplace=True)
+        adjusted_data.sort_values('cellid', ignore_index=True, inplace=True)
+        adjusted_data.reset_index(inplace=True)
+        cell = adjusted_data.groupby('cellid').agg(offset=('index', np.min), count=('index', np.size)).reset_index()
+        dnb = adjusted_data.drop(['index', 'geneID', 'cellid', 'tag'], axis=1)
         cell_data = list(map(tuple, cell.to_dict("split")['data']))
         dnb_data = list(map(tuple, dnb.to_dict("split")['data']))
         cell_type = np.dtype({'names':['cellid', 'offset', 'count'], 'formats':[np.uint32, np.uint32, np.uint32]})
@@ -115,7 +114,7 @@ class CellCorrect(object):
     def generate_adjusted_gem(self, adjusted_data):
         file_name = self.get_file_name("adjusted.gem")
         gem_file_adjusted = os.path.join(self.out_dir, file_name)
-        adjusted_data.to_csv(gem_file_adjusted, sep="\t", index=False)
+        adjusted_data.to_csv(gem_file_adjusted, sep="\t", index=False, columns=['geneID', 'x', 'y', 'UMICount', 'label', 'tag'])
         return gem_file_adjusted
 
     def correcting(self, threshold=20, process_count=10, only_save_result=False, sample_n=-1, fast=False):
