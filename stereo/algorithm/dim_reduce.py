@@ -75,11 +75,12 @@ def pca(x, n_pcs, svd_solver='auto', random_state=0):
             svd_solver = 'arpack'
         output = _pca_with_sparse(x, n_pcs, solver=svd_solver, random_state=random_state)
         # this is just a wrapper for the results
-        pca_ = PCA(n_components=n_pcs, svd_solver=svd_solver)
-        pca_.components_ = output['components']
-        pca_.explained_variance_ = output['variance']
-        pca_.explained_variance_ratio_ = output['variance_ratio']
-        return dict([('x_pca', output['X_pca']), ('variance', output['variance']), ('variance_ratio', output['variance_ratio']), ('pcs', pca_.components_.T)])
+        # pca_ = PCA(n_components=n_pcs, svd_solver=svd_solver)
+        # pca_.components_ = output['components']
+        # pca_.explained_variance_ = output['variance']
+        # pca_.explained_variance_ratio_ = output['variance_ratio']
+        # return dict([('x_pca', output['X_pca']), ('variance', output['variance']), ('variance_ratio', output['variance_ratio']), ('pcs', pca_.components_.T)])
+        return dict([('x_pca', output['X_pca']), ('variance', output['variance']), ('variance_ratio', output['variance_ratio']), ('pcs', output['components'].T)])
     else:
         pca_obj = PCA(n_components=n_pcs, svd_solver=svd_solver, random_state=random_state)
         x_pca = pca_obj.fit_transform(x)
