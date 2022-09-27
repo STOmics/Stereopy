@@ -2,24 +2,20 @@ import os
 import traceback
 import cv2
 import holoviews as hv
-from holoviews.selection import link_selections
 import hvplot.pandas
 import spatialpandas as spd
 import pandas as pd
 import panel as pn
-import param
 from bokeh.models import HoverTool
 import numpy as np
 from natsort import natsorted
 import tifffile as tif
 from collections import OrderedDict
-from selenium import webdriver
-from chromedriver_py import binary_path
+# from selenium import webdriver
+# from chromedriver_py import binary_path
 from stereo.config import StereoConfig
-from stereo.log_manager import file_logger
 
 conf = StereoConfig()
-ls_ins = link_selections.instance(selection_mode='union', cross_filter_mode='intersect')
 
 class PlotCells:
     def __init__(self, data, cluster_res_key='cluster', bgcolor='#2F2F4F', figure_size=500, fg_alpha=0.8, base_image=None):
@@ -144,33 +140,20 @@ class PlotCells:
         self.export = pn.widgets.Button(name='export', button_type="primary", width=100)
         self.export.on_click(self._export_callback)
     
-    @param.depends(ls_ins.param.selection_expr)
     def _export_callback(self, _):
-        self.export.loading = True
-        try:
-            file_logger.info(f"{ls_ins.selection_expr}")
-        except:
-            exception = traceback.format_exc()
-            file_logger.error(exception)            
-        finally:
-            self.export.loading = False
-
-    # def _download_callback(self, _):
+        pass
         # if self.figure_polygons is None:
         #     return
         # file_logger.info("start to export")
         # self.export.loading = True
         # try:
-        #     from bokeh.io import export_svg, export_png
+        #     from bokeh.io import export_svg
         #     plot = hv.render(self.figure_polygons)
         #     file_logger.info("aaaaaaaaaaaaaaaaaaa")
-        #     # plot.output_backend = 'svg'
-        #     # file_logger.info(binary_path)
-        #     # driver = webdriver.Chrome(executable_path=binary_path)
-        #     # export_svg(plot, filename='plot.svg', webdriver=driver)
-        #     plot.background_fill_color = None
-        #     plot.border_fill_color = None
-        #     export_png(plot, filename="plot.png")
+        #     plot.output_backend = 'svg'
+        #     file_logger.info(binary_path)
+        #     driver = webdriver.Chrome(executable_path=binary_path)
+        #     export_svg(plot, filename='plot.svg', webdriver=driver)
         #     file_logger.info("bbbbbbbbbbbbbbbbbbb")
         # except:
         #     exception = traceback.format_exc()
@@ -229,14 +212,14 @@ class PlotCells:
                 self.cluster_color_map[self.cluster.value] = cluster_colorpicker_value
                 cmap = list(self.cluster_color_map.values())
             
-            self.figure_polygons = ls_ins(polygons_detail.hvplot.polygons(
+            self.figure_polygons = polygons_detail.hvplot.polygons(
                 'polygons',
                 # c='color' if cluster_res is None or color_by_value != 'cluster' else hv.dim('color').categorize(cluster_color_map),
                 # datashade=True,
                 # dynspread=True,
                 # aggregator='mean',
                 hover_cols=vdims
-                )).opts(
+                ).opts(
                     bgcolor=self.bgcolor,
                     color='color' if self.cluster_res is None or color_by_value != 'cluster' else hv.dim('color').categorize(self.cluster_color_map),
                     cnorm='eq_hist',
@@ -253,8 +236,8 @@ class PlotCells:
                     fill_alpha=self.fg_alpha,
                     hover_fill_alpha=self.hover_fg_alpha,
                     active_tools=['wheel_zoom'],
-                    tools=[hover_tool, 'lasso_select']
-                    # tools=[hover_tool]
+                    # tools=[hover_tool, 'lasso_select']
+                    tools=[hover_tool]
                 )
             if self.base_image is not None:
                 base_image_points_detail = self._create_base_image_points()
@@ -280,6 +263,6 @@ class PlotCells:
             pn.Column(
                 self.color_map_key_continuous, self.color_map_key_discrete, self.color_by, self.reverse_colormap,
                 pn.Row(self.cluster, self.cluster_colorpicker),
-                self.export
+                # self.export
                 )
         )
