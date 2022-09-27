@@ -21,6 +21,7 @@ Additional functionalities
 
     hotspot
     gaussian_smooth
+    batches_integration
 
 Interactive Visualization
 --------------------------------------------

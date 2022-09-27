@@ -62,3 +62,4 @@ spatialpandas>=0.4.4
 # selenium>=4.4.3
 loompy==3.0.7
 gtfparse==1.2.1
+harmonypy==0.0.6
