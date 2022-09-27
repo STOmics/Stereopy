@@ -12,7 +12,9 @@ from sklearn.utils.extmath import svd_flip
 from sklearn.decomposition import FactorAnalysis
 from sklearn.manifold import TSNE
 from sklearn.decomposition import PCA
+
 from .scale import _get_mean_var
+from stereo.log_manager import logger
 
 
 def low_variance(x, threshold=0.01):
@@ -72,7 +74,14 @@ def pca(x, n_pcs, svd_solver='auto', random_state=0):
     """
     if issparse(x):
         if svd_solver != 'arpack':
+            logger.warn(
+                f'svd_solver: {svd_solver} can not be used with sparse input.\n'
+                'Use "arpack" (the default) instead.'
+            )
             svd_solver = 'arpack'
+        if x.dtype.char not in "fFdD":
+            x = x.astype(np.float32)
+            logger.info('exp_matrix dType is changed to float32')
         output = _pca_with_sparse(x, n_pcs, solver=svd_solver, random_state=random_state)
         # this is just a wrapper for the results
         # pca_ = PCA(n_components=n_pcs, svd_solver=svd_solver)

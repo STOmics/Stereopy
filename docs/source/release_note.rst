@@ -3,6 +3,12 @@ Release Notes
 
 .. role:: small
 
+Version 0.5.1
+------------------
+0.5.1 :2022-09-4
+~~~~~~~~~~~~~~~~~~~~~
+1. Fix bug when using gem file to run fast-cell-correction algorithm.
+
 Version 0.5.0
 ------------------
 0.5.0 :2022-09-2
