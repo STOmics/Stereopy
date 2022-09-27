@@ -12,6 +12,7 @@ change log:
 """
 from dis import dis
 from functools import wraps
+from multiprocessing import cpu_count
 from ..preprocess.qc import cal_qc
 from ..preprocess.filter import filter_cells, filter_genes, filter_coordinates
 from ..algorithm.normalization import normalize_total, quantile_norm, zscore_disksmooth
@@ -446,7 +447,7 @@ class StPipeline(object):
         self.reset_key_record(key, res_key)
 
     @logit
-    def neighbors(self, pca_res_key, method='umap', metric='euclidean', n_pcs=None, n_neighbors=10, knn=True, n_jobs=10, res_key='neighbors'):
+    def neighbors(self, pca_res_key, method='umap', metric='euclidean', n_pcs=-1, n_neighbors=10, knn=True, n_jobs=10, res_key='neighbors'):
         """
         run the neighbors.
 
@@ -488,6 +489,8 @@ class StPipeline(object):
         """
         if pca_res_key not in self.result:
             raise Exception(f'{pca_res_key} is not in the result, please check and run the pca func.')
+        if n_jobs > cpu_count():
+            n_jobs = -1
         neighbor, dists, connectivities = find_neighbors(x=self.result[pca_res_key].values, method=method, n_pcs=n_pcs,
                                                          n_neighbors=n_neighbors, metric=metric, knn=knn, n_jobs=n_jobs)
         res = {'neighbor': neighbor, 'connectivities': connectivities, 'nn_dist': dists}
@@ -866,6 +869,22 @@ class StPipeline(object):
                                  key_add=key_add)
         
         self.result[res_key] = result
+
+    
+    @logit
+    def batches_integrate(self, pca_res_key='pca', res_key='pca_integrated', **kwargs):
+        """integrate different experiments base on the pca result
+
+        :param pca_res_key: the key of original pca to get from self.result, defaults to 'pca'
+        :param res_key: the key for getting the result after integrating from the self.result, defaults to 'pca_integrated'
+        """
+        import harmonypy as hm
+        assert pca_res_key in self.result, f'{pca_res_key} is not in the result, please check and run the pca method.'
+        assert self.data.cells.batch is not None, f'this is not a data were merged from diffrent experiments'
+
+        out = hm.run_harmony(self.result[pca_res_key], self.data.cells.to_df(), 'batch', **kwargs)
+        self.result[res_key] = pd.DataFrame(out.Z_corr.T)
+
         
 
     # def scenic(self, tfs, motif, database_dir, res_key='scenic', use_raw=True, outdir=None,):

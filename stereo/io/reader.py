@@ -540,8 +540,6 @@ def read_gef(file_path: str, bin_type="bins", bin_size=100, is_sparse=True, gene
             data.genes = Gene(gene_name=gene_names)
 
             data.exp_matrix = exp_matrix if is_sparse else exp_matrix.toarray()
-            data.is_all_data = False
-
         else:
             from gefpy.cell_exp_reader import CellExpReader
             cell_bin_gef = CellExpReader(file_path)
@@ -584,7 +582,6 @@ def read_gef(file_path: str, bin_type="bins", bin_size=100, is_sparse=True, gene
             data.genes = Gene(gene_name=gene_names)
 
             data.exp_matrix = exp_matrix if is_sparse else exp_matrix.toarray()
-            data.is_all_data = False
         else:
             gene_num = gef.get_gene_num()
             uniq_cells, rows, count = gef.get_exp_data()
