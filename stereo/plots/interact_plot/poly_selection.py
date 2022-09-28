@@ -120,20 +120,24 @@ class PolySelection(object):
             self.list_poly_selection_exp_coors.append(concave_hull)
         return self.list_poly_selection_exp_coors
 
-    def export_high_res_area(self, origin_file_path: str, output_path: str) -> str:
+    def export_high_res_area(self, origin_file_path: str, output_path: str, cgef: bool = False) -> str:
         """
         export selected area in high resolution
         Args:
             origin_file_path: origin file path which you read
-            next: location the high res file storaged
-
+            output_path: location the high res file storaged
+            cgef: bool, default False, set True if read in cellbin
         Returns:
             output_path
         """
         coors = self.get_selected_boundary_coors()
+
         from gefpy.cgef_adjust_cy import CgefAdjust
         cg = CgefAdjust()
-        cg.create_Region_Bgef(origin_file_path, output_path, coors)
+        if cgef:
+            cg.create_Region_Cgef(origin_file_path, output_path, coors)
+        else:
+            cg.create_Region_Bgef(origin_file_path, output_path, coors)
         return output_path
 
     def generate_selected_expr_matrix(self, selected_pos, drop=False):
