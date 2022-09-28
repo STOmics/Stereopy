@@ -17,13 +17,12 @@ class ReadWriteUtils(object):
                 if kwargs.get('file_path'):
                     if not os.path.exists(kwargs.get('file_path')):
                         raise FileNotFoundError("Please ensure there is a file")
-            if args:
-                path = args[0]
-                if not os.path.exists(path):
-                    raise FileNotFoundError("Please ensure there is a file")
             else:
-                raise FileNotFoundError("Please ensure there is a file")
+                if args:
+                    path = args[0]
+                    if not os.path.exists(path):
+                        raise FileNotFoundError("Please ensure there is a file")
+                else:
+                    raise FileNotFoundError("Please ensure there is a file")
             return func(*args, **kwargs)
         return wrapped
-
-
