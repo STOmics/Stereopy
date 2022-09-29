@@ -221,7 +221,7 @@ xlrd==1.2.0
 zarr==2.11.0a2
 zict==2.0.0
 zipp==3.7.0
-setuptools>=41.0.0,<=63.4.1
+setuptools>=41.0.0,<60.0.0
 hotspotsc==0.9.1
 keras==2.7.0
 pyarrow==8.0.0
