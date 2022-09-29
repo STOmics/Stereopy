@@ -108,11 +108,11 @@ Similar to the way on bgef and ssdna image, you can correct cells from gem and s
     from stereo.tools import cell_correct
 
     out_dir = "cell_correct_result"
-    gem_path = "/ldfssz1/ST_BI/USER/stereopy/test/tanliwei/test/test_data/SS200000561BL_B3.gem"
-    image_path = "/ldfssz1/ST_BI/USER/stereopy/test/tanliwei/test/test_data/SS200000561BL_B3_regist.tif"
-    model_path = "/ldfssz1/ST_BI/USER/stereopy/test/tanliwei/test/seg_models/cell_segmentation/seg_model_20211210.pth"
+    gem_path = "./SS200000561BL_B3.gem"
+    image_path = "./SS200000561BL_B3_regist.tif"
+    model_path = "./seg_model_20211210.pth"
     model_type = "deep-learning"
-    #model_path = "/ldfssz1/ST_BI/USER/stereopy/test/tanliwei/test/seg_models/cell_segmentation_deepcell"
+    #model_path = "./cell_segmentation_deepcell"
     #model_type = "deep-cell"
     gpu = -1
     only_save_result = False
