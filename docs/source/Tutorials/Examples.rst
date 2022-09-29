@@ -22,6 +22,7 @@ Additional functionalities
     hotspot
     gaussian_smooth
     batches_integration
+    rna_velocity
 
 Interactive Visualization
 --------------------------------------------

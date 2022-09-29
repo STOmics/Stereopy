@@ -79,5 +79,7 @@ nbsphinx_thumbnails = {
     "Tutorials/cell_correction": "_static/cell_bin_correction.png",
     "Tutorials/tissue_cut": "_static/tissue_segmentation.png",
     "Tutorials/gaussian_smooth": "_static/gaussian_smooth_1.png",
+    "Tutorials/batches_integration": "_static/batches_integration.png",
+    "Tutorials/rna_velocity": "_static/rna_velocity.png"
 }
 
