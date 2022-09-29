@@ -16,7 +16,7 @@ Also, you need to run pca before running gaussian smooth.
 
     import stereo as st
 
-    input_file = "/jdfssz2/ST_BIOINTEL/P20Z10200N0039/06.user/liulin4/demo/jiace/raw/SS200000141TL_B5_raw.h5ad"
+    input_file = "./SS200000141TL_B5_raw.h5ad"
     data = st.io.read_ann_h5ad(input_file, spatial_key='spatial')
     data.tl.cal_qc()
     data.tl.filter_cells(min_gene=300, pct_counts_mt=10)
@@ -48,7 +48,7 @@ Because of the preprocessing you did before just only for searching the nearest 
     import os
     import stereo as st
 
-    input_file = "/jdfssz2/ST_BIOINTEL/P20Z10200N0039/06.user/liulin4/demo/jiace/raw/SS200000141TL_B5_raw.h5ad"
+    input_file = "./SS200000141TL_B5_raw.h5ad"
     data = st.io.read_ann_h5ad(input_file, spatial_key='spatial')
     data.tl.cal_qc()
     data.tl.filter_cells(min_gene=300, pct_counts_mt=10)
