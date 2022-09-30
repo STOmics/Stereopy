@@ -32,7 +32,7 @@ natsort~=7.1.1
 joblib~=1.0.1
 patsy~=0.5.1
 louvain==0.7.1
-igraph~=0.9.8
+igraph==0.9.10
 arboreto~=0.1.6
 squidpy==1.2.2
 xarray==0.20.1
