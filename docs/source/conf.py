@@ -76,10 +76,13 @@ for filename in glob.glob('**/*.ipynb', recursive=True):
     ntbk.save(filename)
 
 nbsphinx_thumbnails = {
+    "Tutorials/clustering": "_static/squareBin_clustering.png",
     "Tutorials/cell_correction": "_static/cell_bin_correction.png",
     "Tutorials/tissue_cut": "_static/tissue_segmentation.png",
     "Tutorials/gaussian_smooth": "_static/gaussian_smooth_1.png",
     "Tutorials/batches_integration": "_static/batches_integration.png",
-    "Tutorials/rna_velocity": "_static/rna_velocity.png"
+    "Tutorials/rna_velocity": "_static/rna_velocity.png",
+    "Tutorials/hotspot": "_static/hotspot.png",
+    "Tutorials/high_res_export": "_static/box_select.gif"
 }
 
