@@ -8,6 +8,7 @@ import time
 import pandas as pd
 import numpy as np
 from ..algorithm.cell_correction import CellCorrection
+from ..algorithm import cell_correction_fast
 from .cell_segment import CellSegment
 from ..io import read_gem, read_gef
 from ..log_manager import logger
@@ -60,7 +61,7 @@ class CellCorrect(object):
         logger.info(f"start to generate bgef({bgef_path})")
         if os.path.exists(bgef_path):
             os.remove(bgef_path)
-        bgef_writer_cy.generate_bgef(self.gem_path, bgef_path, n_thread=threads, bin_sizes=1)
+        bgef_writer_cy.generate_bgef(self.gem_path, bgef_path, n_thread=threads, bin_sizes=[1])
         t1 = time.time()
         logger.info(f"generate bgef finished : {t1 - t0}")
         return bgef_path
@@ -117,10 +118,13 @@ class CellCorrect(object):
         adjusted_data.to_csv(gem_file_adjusted, sep="\t", index=False)
         return gem_file_adjusted
 
-    def correcting(self, threshold=20, process_count=10, only_save_result=False, sample_n=-1):
+    def correcting(self, threshold=20, process_count=10, only_save_result=False, sample_n=-1, fast=False):
         genes, raw_data = self.generate_raw_data(sample_n)
-        correction = CellCorrection(self.mask_path, raw_data, threshold, process_count, err_log_dir=self.out_dir)
-        adjusted_data = correction.cell_correct()
+        if not fast:
+            correction = CellCorrection(self.mask_path, raw_data, threshold, process_count, err_log_dir=self.out_dir)
+            adjusted_data = correction.cell_correct()
+        else:
+            adjusted_data = cell_correction_fast.cell_correct(raw_data, self.mask_path)
         gem_file_adjusted = self.generate_adjusted_gem(adjusted_data)
         cgef_file_adjusted = self.generate_adjusted_cgef(adjusted_data, genes)
         if not only_save_result:
@@ -143,7 +147,8 @@ def cell_correct(out_dir,
                 gpu='-1', 
                 process_count=10,
                 only_save_result=False,
-                sample_n=-1):
+                sample_n=-1,
+                fast=True):
     """correct cells from gem and mask or gem and ssdna image or bgef and mask or bgef and raw cgef(the cgef without correcting)
 
     :param out_dir: the path of the directory to save some intermediate result like mask(if generate from ssdna image),
@@ -162,6 +167,7 @@ def cell_correct(out_dir,
     :param gpu: specify the gpu id to predict on gpu when generate mask, if -1, predict on cpu, defaults to '-1'
     :param process_count: the count of the process will be started when correct cells, defaults to 10
     :param only_save_result: if True, only save result to disk; if False, return an object of StereoExpData, defaults to False
+    :param fast: if True, it will run more faster and only run by single process, defaults to True
     :return: an object of StereoExpData if only_save_result was set to False or the path of the correct result if only_save_result was set to True
     """
     do_mask_generating = False
@@ -174,7 +180,7 @@ def cell_correct(out_dir,
         logger.info(f"the generated mask file {mask_path}")
         
     cc = CellCorrect(gem_path=gem_path, bgef_path=bgef_path, raw_cgef_path=raw_cgef_path, mask_path=mask_path, out_dir=out_dir)
-    adjusted_data = cc.correcting(threshold=threshold, process_count=process_count, only_save_result=only_save_result, sample_n=sample_n)
+    adjusted_data = cc.correcting(threshold=threshold, process_count=process_count, only_save_result=only_save_result, sample_n=sample_n, fast=fast)
     if do_mask_generating and not mask_save:
         cell_segment.remove_all_mask_files()
     return adjusted_data

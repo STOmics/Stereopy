@@ -3,6 +3,24 @@ Release Notes
 
 .. role:: small
 
+Version 0.5.1
+------------------
+0.5.1 :2022-09-4
+~~~~~~~~~~~~~~~~~~~~~
+1. Fix bug when using gem file to run fast-cell-correction algorithm.
+
+Version 0.5.0
+------------------
+0.5.0 :2022-09-2
+~~~~~~~~~~~~~~~~~~~~~
+1. Increase fast-cell-correction algorithm.
+2. Update gmm-cell-correction algorithm(slower version)，fix bug that genes in the same position(bin) were assigned to different cells.
+3. Increase data.plt.cells_plotting method to show the detail of the cells.
+4. Increase export_high_res_area method to export high resolution matrix file(gef) after lasso.
+5. Increase tissue_extraction_to_bgef method to extract the tissue area.
+6. Update algorithm of highly_variable_genes, umap and normalization.
+7. Update requirements.txt.
+
 Version 0.4.0
 ------------------
 0.4.0 :2022-07-30

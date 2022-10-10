@@ -38,6 +38,7 @@ class StereoExpData(Data):
             offset_x: Optional[str] = None,
             offset_y: Optional[str] = None,
             attr: Optional[dict] = None,
+            is_all_data: Optional[bool] = True
     ):
 
         """
@@ -73,6 +74,7 @@ class StereoExpData(Data):
         self._offset_x = offset_x
         self._offset_y = offset_y
         self._attr = attr
+        self._is_all_data = is_all_data
 
     def get_plot(self):
         """
@@ -155,6 +157,10 @@ class StereoExpData(Data):
         :return:
         """
         return self.cells.cell_name
+
+    @property
+    def cell_borders(self):
+        return self.cells.cell_boder
 
     @property
     def genes(self):
@@ -305,6 +311,14 @@ class StereoExpData(Data):
         :return:
         """
         self._attr = attr
+    
+    @property
+    def is_all_data(self):
+        return self._is_all_data
+    
+    @is_all_data.setter
+    def is_all_data(self, is_all_data):
+        self._is_all_data = is_all_data
 
     def to_df(self):
         """

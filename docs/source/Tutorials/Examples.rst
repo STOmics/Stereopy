@@ -7,6 +7,7 @@ Clustering
 .. nbgallery::
 
     clustering
+    cell_clustering
 
 IO
 ----------------------
@@ -28,6 +29,7 @@ This section contains various examples for the interactive plots.
 .. nbgallery::
 
     interactive_cluster
+    high_res_export
 
 Image preprocessing
 ---------------------------------------

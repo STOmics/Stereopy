@@ -31,6 +31,7 @@ from shapely.geometry import Point, MultiPoint
 from typing import Optional
 from copy import deepcopy
 
+
 def read_gem(file_path, sep='\t', bin_type="bins", bin_size=100, is_sparse=True):
     """
     read the stereo-seq file, and generate the object of StereoExpData.
@@ -133,7 +134,7 @@ def to_interval(interval_string):
     return interval
 
 
-def read_stereo_h5ad(file_path, use_raw=True, use_result=True,):
+def read_stereo_h5ad(file_path, use_raw=True, use_result=True, ):
     """
     read the h5ad file, and generate the object of StereoExpData.
 
@@ -245,7 +246,8 @@ def read_ann_h5ad(file_path, spatial_key: Optional[str] = None):
                 data.cells.cell_name = cells_df.index.values
                 data.cells.total_counts = cells_df['total_counts'] if 'total_counts' in cells_df.keys() else None
                 data.cells.pct_counts_mt = cells_df['pct_counts_mt'] if 'pct_counts_mt' in cells_df.keys() else None
-                data.cells.n_genes_by_counts = cells_df['n_genes_by_counts'] if 'n_genes_by_counts' in cells_df.keys() else None
+                data.cells.n_genes_by_counts = cells_df[
+                    'n_genes_by_counts'] if 'n_genes_by_counts' in cells_df.keys() else None
             elif k == "var":
                 genes_df = h5ad.read_dataframe(f[k])
                 data.genes.gene_name = genes_df.index.values
@@ -284,12 +286,12 @@ def anndata_to_stereo(andata: AnnData, use_raw=False, spatial_key: Optional[str]
     data.genes.gene_name = np.array(andata.var_names)
     data.genes.n_cells = andata.var['n_cells'] if 'n_cells' in andata.var.columns.tolist() else None
     data.genes.n_counts = andata.var['n_counts'] if 'n_counts' in andata.var.columns.tolist() else None
-    #position
+    # position
     data.position = andata.obsm[spatial_key] if spatial_key is not None else None
     return data
 
 
-def stereo_to_anndata(data:StereoExpData, flavor='scanpy', sample_id="sample", reindex=False, output=None):
+def stereo_to_anndata(data: StereoExpData, flavor='scanpy', sample_id="sample", reindex=False, output=None):
     """
     transform the StereoExpData object into Anndata object.
 
@@ -396,7 +398,7 @@ def stereo_to_anndata(data:StereoExpData, flavor='scanpy', sample_id="sample", r
             raw_exp = data.tl.raw.exp_matrix
             raw_genes = data.tl.raw.genes.to_df()
             raw_genes.dropna(axis=1, how='all', inplace=True)
-            raw_adata = AnnData(X=raw_exp, var=raw_genes, dtype=np.float64,)
+            raw_adata = AnnData(X=raw_exp, var=raw_genes, dtype=np.float64, )
             adata.raw = raw_adata
 
     if reindex:
@@ -496,14 +498,15 @@ def stereo_to_anndata(data:StereoExpData, flavor='scanpy', sample_id="sample", r
 #     adata.obs_names = pd.read_csv(barcodesfile, header=None)[0].values
 #     return adata
 
-def read_gef(file_path: str, bin_type="bins", bin_size=100, is_sparse=True, gene_list: list = None, region: list = None):
+def read_gef(file_path: str, bin_type="bins", bin_size=100, is_sparse=True, gene_list: list = None,
+             region: list = None):
     """
     read the gef(.h5) file, and generate the object of StereoExpData.
 
     :param file_path: input file
     :param bin_type: bin_type , bins or cell_bins
     :param bin_size: the size of bin to merge. The parameter only takes effect
-                     when the value of data.bin_type is 'bins'.
+                  when the value of data.bin_type is 'bins'.
     :param is_sparse: the matrix is sparse matrix if is_sparse is True else np.ndarray
     :param gene_list: restrict to this gene list
     :param region: restrict to this region, [minX, maxX, minY, maxY]
@@ -513,9 +516,12 @@ def read_gef(file_path: str, bin_type="bins", bin_size=100, is_sparse=True, gene
     logger.info(f'read_gef begin ...')
     if bin_type == 'cell_bins':
         data = StereoExpData(file_path=file_path, bin_type=bin_type, bin_size=bin_size)
+        from gefpy.cgef_reader_cy import CgefR
+        gef = CgefR(file_path)
+        cellborders_coord_list, coord_count_per_cell = gef.get_cellborders([])
+        border_points_count_per_cell = int(coord_count_per_cell / 2)
+        cell_borders = cellborders_coord_list.reshape((-1, border_points_count_per_cell, 2))
         if gene_list is not None or region is not None:
-            from gefpy.cgef_reader_cy import CgefR
-            gef = CgefR(file_path)
             if gene_list is None:
                 gene_list = []
             if region is None:
@@ -529,10 +535,12 @@ def read_gef(file_path: str, bin_type="bins", bin_size=100, is_sparse=True, gene
             data.position = position
             logger.info(f'the matrix has {cell_num} cells, and {gene_num} genes.')
 
-            data.cells = Cell(cell_name=uniq_cell)
+            uniq_cell_borders = cell_borders[np.in1d(gef.get_cell_names(), uniq_cell)]
+            data.cells = Cell(cell_name=uniq_cell, cell_border=uniq_cell_borders)
             data.genes = Gene(gene_name=gene_names)
 
             data.exp_matrix = exp_matrix if is_sparse else exp_matrix.toarray()
+            data.is_all_data = False
 
         else:
             from gefpy.cell_exp_reader import CellExpReader
@@ -540,7 +548,7 @@ def read_gef(file_path: str, bin_type="bins", bin_size=100, is_sparse=True, gene
             data.position = cell_bin_gef.positions
             logger.info(f'the matrix has {cell_bin_gef.cell_num} cells, and {cell_bin_gef.gene_num} genes.')
             exp_matrix = csr_matrix((cell_bin_gef.count, (cell_bin_gef.rows, cell_bin_gef.cols)), shape=(cell_bin_gef.cell_num, cell_bin_gef.gene_num), dtype=np.uint32)
-            data.cells = Cell(cell_name=cell_bin_gef.cells)
+            data.cells = Cell(cell_name=cell_bin_gef.cells, cell_border=cell_borders)
             data.genes = Gene(gene_name=cell_bin_gef.genes)
             data.exp_matrix = exp_matrix if is_sparse else exp_matrix.toarray()
     else:
@@ -576,7 +584,7 @@ def read_gef(file_path: str, bin_type="bins", bin_size=100, is_sparse=True, gene
             data.genes = Gene(gene_name=gene_names)
 
             data.exp_matrix = exp_matrix if is_sparse else exp_matrix.toarray()
-
+            data.is_all_data = False
         else:
             gene_num = gef.get_gene_num()
             uniq_cells, rows, count = gef.get_exp_data()
@@ -592,6 +600,7 @@ def read_gef(file_path: str, bin_type="bins", bin_size=100, is_sparse=True, gene
     logger.info(f'read_gef end.')
 
     return data
+
 
 def read_gef_info(file_path: str):
     """
@@ -609,7 +618,7 @@ def read_gef_info(file_path: str):
     if not bin_type:
         logger.info('This is GEF file which contains traditional bin infomation.')
         logger.info('bin_type: bins')
-        
+
         info_dict['bin_list'] = list(h5_file['geneExp'].keys())
         logger.info('Bin size list: {0}'.format(info_dict['bin_list']))
 
@@ -673,8 +682,8 @@ def read_gef_info(file_path: str):
 
         info_dict['averageExpCount'] = h5_file['cellBin']['cell'].attrs['averageExpCount'][0]
         logger.info('Average expression: {0}'.format(info_dict['averageExpCount']))
-        
+
         info_dict['maxExpCount'] = h5_file['cellBin']['cell'].attrs['maxExpCount'][0]
         logger.info('Maximum expression: {0}'.format(info_dict['maxExpCount']))
-        
+
     return info_dict
