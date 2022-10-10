@@ -18,19 +18,7 @@ from scipy.spatial import ConvexHull
 from tqdm import tqdm
 from collections import defaultdict
 from ..log_manager import logger
-from ..utils.time_consume import TimeConsume
-
-tc = TimeConsume()
-
-def logit(func):
-    @wraps(func)
-    def wrapped(*args, **kwargs):
-        logger.info('start to run {}...'.format(func.__name__))
-        tk = tc.start()
-        res = func(*args, **kwargs)
-        logger.info('{} end, consume time {:.4f}s.'.format(func.__name__, tc.get_time_consumed(key=tk, restart=False)))
-        return res
-    return wrapped
+from ..utils.time_consume import log_consumed_time
 
 def parse_head(gem):
     if gem.endswith('.gz'):
@@ -102,7 +90,7 @@ def calDis(p1, p2):
     return np.sqrt(np.sum((p1 - p2)**2, axis=1))
 
 
-@logit
+@log_consumed_time
 def allocate_free_pts(cell_list, cell_points, free_points_np, data_np):
     x_axis, _, idx_in_data = free_points_np.T
     for cell in tqdm(cell_list, desc='correcting cells'):
@@ -138,75 +126,17 @@ def allocate_free_pts(cell_list, cell_points, free_points_np, data_np):
         idx = np.where(dis_matrix < length)
         sub_idx_in_data_allocated = sub_idx_in_data[idx]
         data_np[sub_idx_in_data_allocated, 4] = cell
-        data_np[sub_idx_in_data_allocated, 5] = 'adjust'
+        data_np[sub_idx_in_data_allocated, 6] = 'adjust'
     return data_np
 
 
-def save_to_csv(allocation_dict, cell_points, data_np, out_path):
-    data = pd.DataFrame(data_np, columns=['geneID', 'x', 'y', 'UMICount', 'label'])
-    free_pts_allocation = {}
-    for label in allocation_dict:
-        for pt in allocation_dict[label]:
-            if pt not in cell_points[label]:
-                free_pts_allocation[tuple(pt)] = label
-
-    # data['tag'] = ['raw' for i in range(len(data['label']))]
-    data['tag'] = 'raw'
-    data_np = data.to_numpy()
-    for i in range(len(data_np)):
-        if (data_np[i][1], data_np[i][2]) in free_pts_allocation:
-            data_np[i][4] = free_pts_allocation[(data_np[i][1], data_np[i][2])]
-            data_np[i][5] = 'adjust'
-
-    data_np = [i for i in data_np if i[5] == 'adjust' or i[4] != 0]
-
-    test_df = pd.DataFrame(data_np, columns=['geneID', 'x', 'y', 'UMICount', 'label', 'tag'])
-    test_df.to_csv(os.path.join(out_path, 'data_adjust.txt'), sep='\t', index=False)
-
-    test_df = pd.DataFrame(
-        data_np, columns=['geneID', 'x', 'y', 'UMICount', 'label', 'tag'])
-    test_df.to_csv(os.path.join(out_path, 'data_adjust.csv'), sep=',', index=False)
-
+@log_consumed_time
 def save_to_result(data_np):
     data_np = data_np[data_np[:, 4] > 0]
-    return pd.DataFrame(data_np, columns=['geneID', 'x', 'y', 'UMICount', 'label', 'tag'])
+    return pd.DataFrame(data_np, columns=['geneID', 'x', 'y', 'UMICount', 'label', 'geneid', 'tag'])
 
 
-def draw_allocated_pts(allocation_dict, data_np):
-    img = np.zeros([max(data_np, key=lambda x: x[2])[2] + 1, max(data_np, key=lambda x: x[1])[1] + 1, 3], dtype=np.uint8)
-    for i in data_np:
-        if i[4] != 0:
-            img[i[2], i[1], 0] = 255
-        else:
-            img[i[2], i[1], 1] = 255
-    for cell_label in allocation_dict:
-        for pt in allocation_dict[cell_label]:
-            img[pt[1], pt[0], 1] = 0
-            img[pt[1], pt[0], 2] = 255
-    im = Image.fromarray(img)
-    return im
-    # im.save(os.path.join(out_path, 'all_quick.tif'))
-
-
-# def load_data(gem_file, mask_file):
-#     if isinstance(gem_file, pd.DataFrame):
-#         data_np = gem_file
-#     else:
-#         data_np = creat_cell_gxp(mask_file, gem_file, transposition=False)
-
-#     data_np['x'] = data_np['x'] - data_np['x'].min()
-#     data_np['y'] = data_np['y'] - data_np['y'].min()
-#     data_np['label'] = data_np['label'].astype(int)
-#     data_np = data_np.drop_duplicates(['x', 'y', 'label'], keep='last')
-#     data_np = data_np.to_numpy()
-#     free_points = data_np[data_np[:, 4] == 0][:, [1, 2]].tolist()
-#     free_points = sorted(free_points, key=lambda x: (x[0], x[1])) 
-#     free_points_np = np.array(free_points)
-#     cell_points = data_np[data_np[:, 4] == 0][:, [1, 2, 4]]
-#     cell_label_list = np.unique(data_np[:, 4])
-#     return data_np, cell_label_list, cell_points, free_points_np
-
-@logit
+@log_consumed_time
 def load_data(gem_file, mask_file):
     if isinstance(gem_file, pd.DataFrame):
         data = gem_file
@@ -218,7 +148,7 @@ def load_data(gem_file, mask_file):
     return data.to_numpy()
 
 
-@logit
+@log_consumed_time
 def preprocess(data_np):
     cell_points = {}
     free_points = []
@@ -236,6 +166,7 @@ def preprocess(data_np):
     return cell_label_list, cell_points, free_points_np
 
 
+@log_consumed_time
 def cell_correct(gem_file, mask_file):
     logger.info("start to correct cells!!!")
     data_np = load_data(gem_file, mask_file)

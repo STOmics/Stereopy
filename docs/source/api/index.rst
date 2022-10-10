@@ -55,6 +55,7 @@ A class for basic analysis of StereoExpData. It is the `StereoExpData.tl`.
     core.StPipeline
     core.StPipeline.cal_qc
     core.StPipeline.filter_cells
+    core.StPipeline.filter_genes
     core.StPipeline.raw_checkpoint
     core.StPipeline.sctransform
     core.StPipeline.normalize_total

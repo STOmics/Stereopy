@@ -14,7 +14,7 @@ from .data import Data
 import pandas as pd
 import numpy as np
 from typing import Optional, Union
-from scipy.sparse import spmatrix, issparse
+from scipy.sparse import spmatrix, issparse, csr_matrix
 from .cell import Cell
 from .gene import Gene
 from ..log_manager import logger
@@ -38,7 +38,6 @@ class StereoExpData(Data):
             offset_x: Optional[str] = None,
             offset_y: Optional[str] = None,
             attr: Optional[dict] = None,
-            is_all_data: Optional[bool] = True
     ):
 
         """
@@ -74,7 +73,6 @@ class StereoExpData(Data):
         self._offset_x = offset_x
         self._offset_y = offset_y
         self._attr = attr
-        self._is_all_data = is_all_data
 
     def get_plot(self):
         """
@@ -139,6 +137,10 @@ class StereoExpData(Data):
         if (bin_type is not None) and (bin_type not in ['bins', 'cell_bins']):
             logger.error(f"the bin type `{bin_type}` is not in the range, please check!")
             raise Exception
+
+    @property
+    def shape(self):
+        return self.exp_matrix.shape
 
     @property
     def gene_names(self):
@@ -311,14 +313,6 @@ class StereoExpData(Data):
         :return:
         """
         self._attr = attr
-    
-    @property
-    def is_all_data(self):
-        return self._is_all_data
-    
-    @is_all_data.setter
-    def is_all_data(self, is_all_data):
-        self._is_all_data = is_all_data
 
     def to_df(self):
         """
@@ -341,4 +335,14 @@ class StereoExpData(Data):
         """
         if issparse(self.exp_matrix):
             self.exp_matrix = self.exp_matrix.toarray()
+        return self.exp_matrix
+    
+    def array2sparse(self):
+        """
+        transform expression matrix to sparse matrix if it is ndarray
+
+        :return:
+        """
+        if not issparse(self.exp_matrix):
+            self.exp_matrix = csr_matrix(self.exp_matrix)
         return self.exp_matrix
