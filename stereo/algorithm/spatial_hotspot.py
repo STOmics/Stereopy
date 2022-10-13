@@ -70,6 +70,10 @@ def spatial_hotspot(data, model='normal', n_neighbors=30, n_jobs=20, fdr_thresho
     if outdir is not None:
         from stereo.io.writer import save_pkl
         save_pkl(hs, output=f"{outdir}/hotspot.pkl")
+
+        module_gene = pd.DataFrame(hs.modules).reset_index().sort_values(by='Module')
+        module_gene.to_csv(f"{outdir}/module_gene.csv", sep="\t", index=False)
+
     return hs
 
 
