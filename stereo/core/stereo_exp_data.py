@@ -19,7 +19,6 @@ from .cell import Cell
 from .gene import Gene
 from ..log_manager import logger
 import copy
-from .st_pipeline import StPipeline
 
 
 class StereoExpData(Data):
@@ -67,22 +66,26 @@ class StereoExpData(Data):
         self._position = position
         self._bin_type = bin_type
         self.bin_size = bin_size
-        self.tl = StPipeline(self)
-        self.plt = self.get_plot()
+        self._tl = None
+        self._plt = None
         self.raw = None
         self._offset_x = offset_x
         self._offset_y = offset_y
         self._attr = attr
 
-    def get_plot(self):
-        """
-        import plot function
+    @property
+    def plt(self):
+        if self._plt is None:
+            from ..plots.plot_collection import PlotCollection
+            self._plt = PlotCollection(self)
+        return self._plt
 
-        :return:
-        """
-        from ..plots.plot_collection import PlotCollection
-
-        return PlotCollection(self)
+    @property
+    def tl(self):
+        if self._tl is None:
+            from .st_pipeline import StPipeline
+            self._tl = StPipeline(self)
+        return self._tl
 
     def sub_by_index(self, cell_index=None, gene_index=None):
         """
