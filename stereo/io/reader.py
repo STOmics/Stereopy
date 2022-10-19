@@ -17,20 +17,23 @@ change log:
 
 
 """
-import pandas as pd
-from stereo.core.stereo_exp_data import StereoExpData
-from stereo.log_manager import logger
+
+from copy import deepcopy
+from typing import Optional
+
 import h5py
-from stereo.io import h5ad
+import numpy as np
+import pandas as pd
+from anndata import AnnData
 from scipy.sparse import csr_matrix
+from shapely.geometry import Point, MultiPoint
+
+from stereo.io import h5ad
 from stereo.core.cell import Cell
 from stereo.core.gene import Gene
+from stereo.core.stereo_exp_data import StereoExpData
 from stereo.utils.read_write_utils import ReadWriteUtils
-import numpy as np
-from anndata import AnnData
-from shapely.geometry import Point, MultiPoint
-from typing import Optional
-from copy import deepcopy
+from stereo.log_manager import logger
 
 
 @ReadWriteUtils.check_file_exists
