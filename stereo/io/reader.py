@@ -17,21 +17,26 @@ change log:
 
 
 """
-import pandas as pd
-from stereo.core.stereo_exp_data import StereoExpData
-from stereo.log_manager import logger
+
+from copy import deepcopy
+from typing import Optional
+
 import h5py
-from stereo.io import h5ad
+import numpy as np
+import pandas as pd
+from anndata import AnnData
 from scipy.sparse import csr_matrix
+from shapely.geometry import Point, MultiPoint
+
+from stereo.io import h5ad
 from stereo.core.cell import Cell
 from stereo.core.gene import Gene
-import numpy as np
-from anndata import AnnData
-from shapely.geometry import Point, MultiPoint
-from typing import Optional
-from copy import deepcopy
+from stereo.core.stereo_exp_data import StereoExpData
+from stereo.utils.read_write_utils import ReadWriteUtils
+from stereo.log_manager import logger
 
 
+@ReadWriteUtils.check_file_exists
 def read_gem(file_path, sep='\t', bin_type="bins", bin_size=100, is_sparse=True):
     """
     read the stereo-seq file, and generate the object of StereoExpData.
@@ -133,7 +138,7 @@ def to_interval(interval_string):
     interval = pd.Interval(float(left), float(right))
     return interval
 
-
+@ReadWriteUtils.check_file_exists
 def read_stereo_h5ad(file_path, use_raw=True, use_result=True, ):
     """
     read the h5ad file, and generate the object of StereoExpData.
@@ -213,7 +218,7 @@ def read_stereo_h5ad(file_path, use_raw=True, use_result=True, ):
                             data.tl.result[res_key][cluster] = h5ad.read_group(f[cluster_key])
     return data
 
-
+@ReadWriteUtils.check_file_exists
 def read_ann_h5ad(file_path, spatial_key: Optional[str] = None):
     """
     read the h5ad file in Anndata format, and generate the object of StereoExpData.
@@ -523,7 +528,7 @@ def stereo_to_anndata(data: StereoExpData, flavor='scanpy', sample_id="sample", 
 #
 #     adata.obs_names = pd.read_csv(barcodesfile, header=None)[0].values
 #     return adata
-
+@ReadWriteUtils.check_file_exists
 def read_gef(file_path: str, bin_type="bins", bin_size=100, is_sparse=True, gene_list: list = None,
              region: list = None):
     """
@@ -578,7 +583,7 @@ def read_gef(file_path: str, bin_type="bins", bin_size=100, is_sparse=True, gene
     else:
         from gefpy.bgef_reader_cy import BgefR
         gef = BgefR(file_path, bin_size, 4)
-        
+
         data = StereoExpData(file_path=file_path, bin_type=bin_type, bin_size=bin_size)
         data.offset_x, data.offset_y = gef.get_offset()
         gef_attr = gef.get_exp_attr()
@@ -624,7 +629,7 @@ def read_gef(file_path: str, bin_type="bins", bin_size=100, is_sparse=True, gene
 
     return data
 
-
+@ReadWriteUtils.check_file_exists
 def read_gef_info(file_path: str):
     """
     read the infomation of gef(.h5) file.

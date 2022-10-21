@@ -10,25 +10,16 @@
 change log:
     2021/07/20  create file.
 """
-from dis import dis
-from functools import wraps
-from multiprocessing import cpu_count
-from ..preprocess.qc import cal_qc
-from ..preprocess.filter import filter_cells, filter_genes, filter_coordinates
-from ..algorithm.normalization import normalize_total, quantile_norm, zscore_disksmooth
-from ..algorithm.scale import scale
-from ..algorithm.gaussian_smooth import gaussian_smooth
-import numpy as np
-from scipy.sparse import issparse
-from ..algorithm.dim_reduce import pca, u_map
-from typing import Optional, Union
 import copy
-from ..algorithm.neighbors import find_neighbors
-import phenograph as phe
-import pandas as pd
-from ..algorithm.leiden import leiden as le
-from ..algorithm._louvain import louvain as lo
+from functools import wraps
+from typing import Optional, Union
+from multiprocessing import cpu_count
 from typing_extensions import Literal
+
+import numpy as np
+import pandas as pd
+from scipy.sparse import issparse
+
 from ..log_manager import logger
 from ..utils.time_consume import TimeConsume
 
@@ -115,6 +106,7 @@ class StPipeline(object):
 
         :return:
         """
+        from ..preprocess.qc import cal_qc
         cal_qc(self.data)
 
     @logit
@@ -132,6 +124,7 @@ class StPipeline(object):
         :param inplace: whether inplace the original data or return a new data.
         :return:
         """
+        from ..preprocess.filter import filter_cells
         data = filter_cells(self.data, min_gene, max_gene, min_n_genes_by_counts, max_n_genes_by_counts, pct_counts_mt,
                             cell_list, inplace)
         return data
@@ -147,6 +140,7 @@ class StPipeline(object):
         :param inplace: whether inplace the original data or return a new data.
         :return:
         """
+        from ..preprocess.filter import filter_genes
         data = filter_genes(self.data, min_cell, max_cell, gene_list, inplace)
         return data
 
@@ -162,6 +156,7 @@ class StPipeline(object):
         :param inplace: whether inplace the original data or return a new data.
         :return:
         """
+        from ..preprocess.filter import filter_coordinates
         data = filter_coordinates(self.data, min_x, max_x, min_y, max_y, inplace)
         return data
 
@@ -189,6 +184,7 @@ class StPipeline(object):
         :param res_key: the key for getting the result from the self.result.
         :return:
         """
+        from ..algorithm.normalization import normalize_total
         if inplace:
             self.data.exp_matrix = normalize_total(self.data.exp_matrix, target_sum=target_sum)
         else:
@@ -205,6 +201,7 @@ class StPipeline(object):
         :param res_key: the key for getting the result from the self.result.
         :return:
         """
+        from ..algorithm.scale import scale
         if inplace:
             self.data.exp_matrix = scale(self.data.exp_matrix, zero_center, max_value)
         else:
@@ -220,6 +217,7 @@ class StPipeline(object):
         :param res_key: the key for getting the result from the self.result.
         :return:
         """
+        from ..algorithm.normalization import quantile_norm
         if issparse(self.data.exp_matrix):
             self.data.exp_matrix = self.data.exp_matrix.toarray()
         if inplace:
@@ -237,6 +235,7 @@ class StPipeline(object):
         :param res_key: the key for getting the result from the self.result.
         :return:
         """
+        from ..algorithm.normalization import zscore_disksmooth
         if issparse(self.data.exp_matrix):
             self.data.exp_matrix = self.data.exp_matrix.toarray()
         if inplace:
@@ -379,6 +378,7 @@ class StPipeline(object):
         if use_highly_genes and hvg_res_key not in self.result:
             raise Exception(f'{hvg_res_key} is not in the result, please check and run the highly_var_genes func.')
         data = self.subset_by_hvg(hvg_res_key, inplace=False) if use_highly_genes else self.data
+        from ..algorithm.dim_reduce import pca
         res = pca(data.exp_matrix, n_pcs, svd_solver=svd_solver)
         self.result[res_key] = pd.DataFrame(res['x_pca'])
         key = 'pca'
@@ -491,6 +491,7 @@ class StPipeline(object):
             raise Exception(f'{pca_res_key} is not in the result, please check and run the pca func.')
         if n_jobs > cpu_count():
             n_jobs = -1
+        from ..algorithm.neighbors import find_neighbors
         neighbor, dists, connectivities = find_neighbors(x=self.result[pca_res_key].values, method=method, n_pcs=n_pcs,
                                                          n_neighbors=n_neighbors, metric=metric, knn=knn, n_jobs=n_jobs)
         res = {'neighbor': neighbor, 'connectivities': connectivities, 'nn_dist': dists}
@@ -564,6 +565,7 @@ class StPipeline(object):
                              -1 has the algorithm run until it reaches its optimal clustering.
         :return:
         """
+        from ..algorithm.leiden import leiden as le
         neighbor, connectivities, _ = self.get_neighbors_res(neighbors_res_key)
         clusters = le(neighbor=neighbor, adjacency=connectivities, directed=directed, resolution=resolution,
                       use_weights=use_weights, random_state=random_state, n_iterations=n_iterations)
@@ -600,6 +602,7 @@ class StPipeline(object):
         :return:
         """
         neighbor, connectivities, _ = self.get_neighbors_res(neighbors_res_key)
+        from ..algorithm._louvain import louvain as lo
         clusters = lo(neighbor=neighbor, resolution=resolution, random_state=random_state,
                       adjacency=connectivities, flavor=flavor, directed=directed, use_weights=use_weights)
         df = pd.DataFrame({'bins': self.data.cell_names, 'group': clusters})
@@ -621,6 +624,7 @@ class StPipeline(object):
         """
         if pca_res_key not in self.result:
             raise Exception(f'{pca_res_key} is not in the result, please check and run the pca func.')
+        import phenograph as phe
         communities, _, _ = phe.cluster(self.result[pca_res_key], k=phenograph_k, clustering_algo='leiden', n_jobs=n_jobs)
         communities = communities + 1
         clusters = communities.astype(str)
@@ -797,10 +801,12 @@ class StPipeline(object):
             raise Exception(f"The first dimension of pca_exp_matrix not equals to raw_exp_matrix's, may be because of running raw_checkpoint before filter cells and genes.")
         
         # logger.info(f"raw exp matrix size: {raw_exp_matrix.shape}")
+        from ..algorithm.gaussian_smooth import gaussian_smooth
         result = gaussian_smooth(pca_exp_matrix, raw_exp_matrix, self.data.position, n_neighbors=n_neighbors, smooth_threshold=smooth_threshold, n_jobs=n_jobs)
         # logger.info(f"smoothed exp matrix size: {result.shape}")
         if inplace:
             self.data.exp_matrix = result
+            from ..preprocess.qc import cal_qc
             cal_qc(self.data)
         else:
             self.result[res_key] = result

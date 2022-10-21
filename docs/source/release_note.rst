@@ -3,6 +3,18 @@ Release Notes
 
 .. role:: small
 
+Version 0.6.0
+------------------
+0.6.0 :2022-09-30
+~~~~~~~~~~~~~~~~~~~~~
+1. Increase 'Remove Batch Effect' algorithm.
+2. Increase RNA velocity analysis function.
+3. Increase export_high_res_area method to export high resolution matrix file(cell bin gef) after lasso.
+4. Update algorithm of scale.
+5. Optimize the efficiency of cell correction.
+6. Increase multi-chip fusion analysis.
+7. Update requirements.txt.
+
 Version 0.5.1
 ------------------
 0.5.1 :2022-09-4
