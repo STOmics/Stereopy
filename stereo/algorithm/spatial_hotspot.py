@@ -46,7 +46,7 @@ def spatial_hotspot(data, model='normal', n_neighbors=30, n_jobs=20, fdr_thresho
     num_umi = counts.sum(axis=0)  # total counts per cell
     # Create the Hotspot object and the neighborhood graph
     logger.info(f'create the Hotspot object with {counts.shape[0]} genes and {counts.shape[1]} cells, model={model}.')
-    hs = hotspot.Hotspot(counts, model=model, latent=pos, umi_counts=num_umi)
+    hs = hotspot.Hotspot.legacy_init(counts, model=model, latent=pos, umi_counts=num_umi)
     logger.info(f'create_knn_graph with n_neighbors={n_neighbors}.')
     hs.create_knn_graph(
         weighted_graph=False, n_neighbors=n_neighbors,
