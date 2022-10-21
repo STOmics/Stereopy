@@ -133,10 +133,10 @@ Image parse module.
 .. autosummary::
    :toctree: .
 
-    image.merge_pyramid
-    image.create_pyramid
-    image.cell_seg
-    image.cell_seg_deepcell
+    image.pyramid.merge_pyramid
+    image.pyramid.create_pyramid
+    image.segmentation.segment.cell_seg
+    image.segmentation_deepcell.segment.cell_seg_deepcell
     image.tissue_seg
 
 
@@ -148,4 +148,17 @@ Tools module.
 .. autosummary::
    :toctree: .
 
-    tools.cell_correct
+    tools.cell_correct.cell_correct
+    tools.cell_cut.CellCut.cell_cut
+
+
+utils: `utils`
++++++++++++++++++++
+
+Utils Module.
+
+.. autosummary::
+   :toctree: .
+
+    utils.data_helper.merge
+    utils.data_helper.split
