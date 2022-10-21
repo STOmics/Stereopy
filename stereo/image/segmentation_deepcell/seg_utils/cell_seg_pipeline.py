@@ -10,7 +10,7 @@ from . import tissue_seg as tissue_seg
 from . import cell_infer as cell_infer
 from . import grade as grade
 from . import utils as utils
-import glog
+from stereo.log_manager import logger
 
 
 class CellSegPipe(object):
@@ -32,12 +32,12 @@ class CellSegPipe(object):
         self.__out_path = out_path
         if not exists(out_path):
             os.mkdir(out_path)
-            glog.info('Create new dir : %s'%out_path)
+            logger.info('Create new dir : %s'%out_path)
         self.__is_water = is_water
         t0 = time.time()
         self.__trans16to8()
         t1 = time.time()
-        glog.info('Transform 16bit to 8bit : %.2f'%(t1 - t0))
+        logger.info('Transform 16bit to 8bit : %.2f'%(t1 - t0))
         self.tissue_mask = []
         self.tissue_mask_thumb = []
         self.tissue_num = []  # tissue num in each image
@@ -45,7 +45,7 @@ class CellSegPipe(object):
         self.img_filter = []  # image filtered by tissue mask
         self.__get_tissue_mask()
         t2 = time.time()
-        glog.info('Get tissue mask : %.2f' % (t2 - t1))
+        logger.info('Get tissue mask : %.2f' % (t2 - t1))
         self.__get_img_filter()
         self.__get_roi()
         self.save_tissue_mask()
@@ -79,14 +79,14 @@ class CellSegPipe(object):
 
         for idx, img in enumerate(self.img_list):
             if len(img.shape) == 3:
-                glog.info('Image %s convert to gray!'%self.__file[idx])
+                logger.info('Image %s convert to gray!'%self.__file[idx])
                 self.img_list[idx] = img[:, :, 0]
 
     def __trans16to8(self):
         for idx, img in enumerate(self.img_list):
             assert img.dtype in ['uint16', 'uint8']
             if img.dtype != 'uint8':
-                glog.info('%s transfer to 8bit'%self.__file[idx])
+                logger.info('%s transfer to 8bit'%self.__file[idx])
                 self.img_list[idx] = utils.transfer_16bit_to_8bit(img)
 
     def __get_tissue_mask(self):
@@ -270,22 +270,22 @@ class CellSegPipe(object):
         ### cell segmentation in roi###
         tissue_cell_label = self.tissue_cell_infer()
         t1 = time.time()
-        glog.info('Cell inference : %.2f'%(t1 - t0))
+        logger.info('Cell inference : %.2f'%(t1 - t0))
 
         ### filter by tissue mask###
         tissue_cell_label_filter = self.tissue_label_filter(tissue_cell_label)
         t2 = time.time()
-        glog.info('Filter by tissue mask : %.2f'%(t2 - t1))
+        logger.info('Filter by tissue mask : %.2f'%(t2 - t1))
 
         ###mosaic tissue roi ###
         cell_mask = self.__mosaic(tissue_cell_label_filter)
         t3 = time.time()
-        glog.info('Mosaic tissue roi : %.2f' % (t3 - t2))
+        logger.info('Mosaic tissue roi : %.2f' % (t3 - t2))
 
         ###post process###
         self.watershed_score(cell_mask)
         t4 = time.time()
-        glog.info('Post-processing : %.2f' % (t4 - t3))
+        logger.info('Post-processing : %.2f' % (t4 - t3))
 
         self.save_result()
-        glog.info('Result saved : %s '%(self.__out_path))
+        logger.info('Result saved : %s '%(self.__out_path))
