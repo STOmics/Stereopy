@@ -1,6 +1,5 @@
 import os
 from gefpy import cgef_writer_cy, bgef_writer_cy
-from .cell_segment import CellSegment
 from ..log_manager import logger
 
 class CellCut(object):
@@ -69,6 +68,7 @@ class CellCut(object):
         
         do_mask_generating = False
         if mask_path is None:
+            from .cell_segment import CellSegment
             logger.info(f"there is no mask file, generate it by model {model_path}")
             cell_segment = CellSegment(image_path, gen_mask_on_gpu, self.cgef_out_dir)
             cell_segment.generate_mask(model_path, model_type, depp_cro_size, overlap)
