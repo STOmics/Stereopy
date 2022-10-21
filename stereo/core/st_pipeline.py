@@ -884,6 +884,8 @@ class StPipeline(object):
 
         out = hm.run_harmony(self.result[pca_res_key], self.data.cells.to_df(), 'batch', **kwargs)
         self.result[res_key] = pd.DataFrame(out.Z_corr.T)
+        key = 'pca'
+        self.reset_key_record(key, res_key)
 
         
 

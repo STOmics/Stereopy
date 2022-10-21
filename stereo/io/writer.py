@@ -18,10 +18,11 @@ import h5py
 from stereo.io import h5ad
 import pickle
 import numpy as np
+import pandas as pd
 from copy import deepcopy
 
 
-def write_h5ad(data, use_raw=True, use_result=True, key_record=None, output=None):
+def write_h5ad(data: StereoExpData, use_raw=True, use_result=True, key_record=None, output=None, split_batches=True):
     """
     write the StereoExpData into h5ad file.
     :param data: the StereoExpData object.
@@ -33,12 +34,36 @@ def write_h5ad(data, use_raw=True, use_result=True, key_record=None, output=None
 
     :return:
     """
+    if data.merged and split_batches:
+        from os import path
+        from ..utils.data_helper import split
+        data_list = split(data)
+        batch = np.unique(data.cells.batch)
+        if output is not None:
+            name, ext = path.splitext(output)
+        for bno, d in zip(batch, data_list):
+            if output is not None:            
+                boutput = f"{name}-{d.sn}{ext}"
+            else:
+                boutput = None
+            write_h5ad(d, use_raw=use_raw, use_result=use_result, key_record=key_record, output=boutput, split_batches=False)
+        return
+    
     if output is not None:
         data.output = output
     else:
         if data.output is None:
             logger.error("The output path must be set before writing.")
     with h5py.File(data.output, mode='w') as f:
+        if data.sn is not None:
+            if isinstance(data.sn, str):
+                sn_list = [['-1', data.sn]]
+            else:
+                sn_list = []
+                for bno, sn in data.sn.items():
+                    sn_list.append([bno, sn])
+            sn_data = pd.DataFrame(sn_list, columns=['batch', 'sn'])
+            h5ad.write(sn_data, f, 'sn')
         h5ad.write(data.genes, f, 'genes')
         h5ad.write(data.cells, f, 'cells')
         h5ad.write(data.position, f, 'position')
@@ -71,8 +96,9 @@ def write_h5ad(data, use_raw=True, use_result=True, key_record=None, output=None
         if use_result is True:
             # write key_record
             mykey_record = deepcopy(data.tl.key_record) if key_record is None else deepcopy(key_record)
+            mykey_record_keys = list(mykey_record.keys())
             supported_keys = ['hvg', 'pca', 'neighbors', 'umap', 'cluster', 'marker_genes'] # 'sct', 'spatial_hotspot'
-            for analysis_key in mykey_record.keys():
+            for analysis_key in mykey_record_keys:
                 if analysis_key not in supported_keys:
                     mykey_record.pop(analysis_key)
                     logger.info(f'key_name:{analysis_key} is not recongnized, try to select the name in {supported_keys} as your key_name.')

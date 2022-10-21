@@ -291,7 +291,7 @@ def anndata_to_stereo(andata: AnnData, use_raw=False, spatial_key: Optional[str]
     return data
 
 
-def stereo_to_anndata(data: StereoExpData, flavor='scanpy', sample_id="sample", reindex=False, output=None):
+def stereo_to_anndata(data: StereoExpData, flavor='scanpy', sample_id="sample", reindex=False, output=None, split_batches=True):
     """
     transform the StereoExpData object into Anndata object.
 
@@ -303,6 +303,23 @@ def stereo_to_anndata(data: StereoExpData, flavor='scanpy', sample_id="sample", 
     :param output: path of output_file(.h5ad).
     :return: Anndata object
     """
+    if data.merged and split_batches:
+        from os import path
+        from ..utils.data_helper import split
+        data_list = split(data)
+        batch = np.unique(data.cells.batch)
+        adata_list = []
+        if output is not None:
+            name, ext = path.splitext(output)
+        for bno, d in zip(batch, data_list):
+            if output is not None:
+                boutput = f"{name}-{d.sn}{ext}"
+            else:
+                boutput = None
+            adata = stereo_to_anndata(d, flavor=flavor, sample_id=sample_id, reindex=reindex, output=boutput, split_batches=False)
+            adata_list.append(adata)
+        return adata_list
+
     from scipy.sparse import issparse
 
     exp = data.exp_matrix
@@ -328,6 +345,15 @@ def stereo_to_anndata(data: StereoExpData, flavor='scanpy', sample_id="sample", 
         logger.info(f"Adding data.position as adata.obs['x'] and adata.obs['y'] .")
         adata.obs['x'] = pd.DataFrame(data.position[:, 0], index=data.cell_names.astype('str'))
         adata.obs['y'] = pd.DataFrame(data.position[:, 1], index=data.cell_names.astype('str'))
+    
+    if data.sn is not None:
+        if isinstance(data.sn, str):
+            sn_list = [['-1', data.sn]]
+        else:
+            sn_list = []
+            for bno, sn in data.sn.items():
+                sn_list.append([bno, sn])
+        adata.uns['sn'] = pd.DataFrame(sn_list, columns=['batch', 'sn'])
 
     for key in data.tl.key_record.keys():
         if len(data.tl.key_record[key]) > 0:
