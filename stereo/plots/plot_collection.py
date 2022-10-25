@@ -444,7 +444,8 @@ class PlotCollection:
                 colorbar=False,
             )
             bfig = hv.render(fig)
-            bfig.title = Title(text=f'batch {bn}', align='center')
+            bn = str(bn)
+            bfig.title = Title(text=f'sn: {self.data.sn[bn]}', align='center')
             bfig_batches.append(bfig)
             if ((i + 1) % 2) == 0 or i == (batch_count - 1):
                 pn_rows.append(pn.Row(*bfig_batches))
