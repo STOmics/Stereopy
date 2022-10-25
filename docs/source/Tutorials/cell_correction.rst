@@ -8,7 +8,8 @@ Generally, there are two ways to do it.
 
 Note
 --------
-We have two versions of the algorithm, one is more slower but more accurate, another one is more faster but less accurate.
+1. If you need to generate mask file from ssdna image, you have to install some necessary modules, please refer to `Prepare <https://stereopy.readthedocs.io/en/latest/Tutorials/prepare.html>`_.
+2. We have two versions of the algorithm, one is more slower but more accurate, another one is more faster but less accurate.
 You can set the parameter `fast` to True to run the faster version, default to True.
 
 
@@ -29,7 +30,7 @@ In the directory specified by out_dir, you can see some files, include:
 
 .. code:: python
 
-    from stereo.tools import cell_correct
+    from stereo.tools.cell_correct import cell_correct
 
     bgef_path = "FP200000443TL_E2.bgef"
     mask_path = "FP200000443TL_E2_mask.tif"
@@ -47,7 +48,7 @@ Sometimes, you may not have corresponding mask but a ssdna image, you can genera
 
 Now, you should specify the path of ssdna image by parameter `image_path`, the path of model for predicting by parameter `model_path` and the type of model by parameter `model_type`.
 
-The type of model only can be specified to deep-learning or deep-cell, more deails on `cell segmentation <https://stereopy.readthedocs.io/en/latest/Tutorials/cell_segmentation.html>`_.
+The type of model only can be specified to deep-learning or deep-cell, more deails on `Cell Segmentation <https://stereopy.readthedocs.io/en/latest/Tutorials/cell_segmentation.html>`_.
 
 You can also predict on gpu, specify gpu id by parameter `gpu`, if -1, predict on cpu.
 
@@ -55,7 +56,7 @@ In the `out_dir` directory, there is a new directory named deep-learning or deep
 
 .. code:: python
 
-    from stereo.tools import cell_correct
+    from stereo.tools.cell_correct import cell_correct
 
     out_dir = "cell_correct_result"
     bgef_path = "SS200000561BL_B3.bgef"
@@ -87,7 +88,7 @@ In the `out_dir` directory, you can also see a file named \*\*.bgef, this is the
 
 .. code:: python
 
-    from stereo.tools import cell_correct
+    from stereo.tools.cell_correct import cell_correct
 
     gem_path = "FP200000443TL_E2.gem"
     mask_path = "FP200000443TL_E2_mask.tif"
@@ -105,7 +106,7 @@ Similar to the way on bgef and ssdna image, you can correct cells from gem and s
 
 .. code:: python
 
-    from stereo.tools import cell_correct
+    from stereo.tools.cell_correct import cell_correct
 
     out_dir = "cell_correct_result"
     gem_path = "./SS200000561BL_B3.gem"
@@ -140,7 +141,7 @@ After running the example below, you should see a file named temp.py in current 
 .. code:: python
 
     %%writefile temp.py
-    from stereo.tools import cell_correct
+    from stereo.tools.cell_correct import cell_correct
 
     bgef_path = "FP200000443TL_E2.bgef"
     mask_path = "FP200000443TL_E2_mask.tif"
