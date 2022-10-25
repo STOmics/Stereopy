@@ -1,9 +1,9 @@
 import numpy as np
 import tifffile
 import cv2
-import glog
 from os.path import join, splitext, split
 from . import utils as utils
+from stereo.log_manager import logger
 
 
 SPLIT_SIZE = 20000
@@ -45,7 +45,7 @@ class Image(object):
     def __convert_gray(self):
 
         if len(self.__img.shape) == 3:
-            glog.info('Image %s convert to gray!'%self.__file)
+            logger.info('Image %s convert to gray!'%self.__file)
             self.__img = self.__img[:, :, 0]
 
 
@@ -53,5 +53,5 @@ class Image(object):
 
         assert self.__dtype in ['uint16', 'uint8']
         if self.__dtype != 'uint8':
-            glog.info('%s transfer to 8bit'%self.__file)
+            logger.info('%s transfer to 8bit'%self.__file)
             self.__img = utils.transfer_16bit_to_8bit(self.__img)

@@ -39,6 +39,7 @@ This section contains various examples from the :mod:`stereo.im` and :mod:`stere
 
 .. nbgallery::
 
+    prepare
     cell_segmentation
     cell_correction
     tissue_cut
