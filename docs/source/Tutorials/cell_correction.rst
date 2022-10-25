@@ -1,4 +1,4 @@
-Cell correction 
+Cell Correction
 ===============
 These examples show how to use Stereopy to correct cells.
 
@@ -12,7 +12,7 @@ We have two versions of the algorithm, one is more slower but more accurate, ano
 You can set the parameter `fast` to True to run the faster version, default to True.
 
 
-Correcting from bgef and mask
+Correcting from BGEF and Mask
 ------------------------------
 
 On this way, you should specify the path of bgef by parameter `bgef_path`, the path of mask by parameter `mask_path` and the path of directory to save corrected result by parameter `out_dir`.
@@ -31,7 +31,7 @@ In the directory specified by out_dir, you can see some files, include:
 
     from stereo.tools import cell_correct
 
-    bgef_path = "FP200000443TL_E2.bgef"
+    bgef_path = "SS200000135TL_D1.raw.gef"
     mask_path = "FP200000443TL_E2_mask.tif"
     out_dir = "cell_correct_result"
     only_save_result = False
@@ -58,7 +58,7 @@ In the `out_dir` directory, there is a new directory named deep-learning or deep
     from stereo.tools import cell_correct
 
     out_dir = "cell_correct_result"
-    bgef_path = "SS200000561BL_B3.bgef"
+    bgef_path = "SS200000135TL_D1.raw.gef"
     image_path = "SS200000561BL_B3_regist.tif"
     model_path = "cell_segmentation/seg_model_20211210.pth"
     model_type = "deep-learning"
@@ -78,7 +78,7 @@ In the `out_dir` directory, there is a new directory named deep-learning or deep
                         fast=fast)
 
 
-Correcting from gem and mask
+Correcting from GEM and Mask
 -----------------------------
 
 On this way, you should specify the path of gem by parameter `gem_path`, the path of mask by parameter `mask_path` and the path of directory to save corrected result by parameter `out_dir`.
@@ -128,7 +128,7 @@ Similar to the way on bgef and ssdna image, you can correct cells from gem and s
                         fast=fast)
 
 
-Runing on jupyter notebook
+Runing on Jupyter Notebook
 ---------------------------
 
 Jupyter notebook can not support multiprocess directly, if you want to run on notebook, refer to the following two steps.

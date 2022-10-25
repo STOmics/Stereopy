@@ -12,7 +12,7 @@ import numpy as np
 
 def cal_qc(data):
     """
-    calculate three qc index including the number of genes expressed in the count matrix, the total counts per cell
+    calculate three QC index including the number of genes expressed in the count matrix, the total counts per cell
     and the percentage of counts in mitochondrial genes.
 
     :param data: the StereoExpData object.

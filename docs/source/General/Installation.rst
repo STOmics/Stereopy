@@ -51,7 +51,7 @@ If you want to use the latest version of dev branch on GitHub, you need to clone
 
     python setup.py install
 
-Popular bugs
+Popular Bugs
 ------------------------------------
 
 Installation failed due to some factors:

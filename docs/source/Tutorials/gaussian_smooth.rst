@@ -1,4 +1,4 @@
-Gaussian smoothing
+Gaussian Smoothing
 ----------------
 This example show how to run the function of gaussian smooth on Stereopy.
 

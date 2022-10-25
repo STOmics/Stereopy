@@ -2,7 +2,7 @@
 
 .. _topics-index:
 
-Stereopy - Spatial transcriptomics analysis in Python
+Stereopy - Spatial Transcriptomics Analysis in Python
 =====================================================
 
 **Stereopy** is a tool for the analysis and visualization of spatial transcriptomics data, such as stereo-seq data.
@@ -21,7 +21,7 @@ cell, expression matrix and location information respectively. The express matri
 sparse data and dense data.
 
 
-Highlights of stereopy
+Highlights of Stereopy
 ----------------------
 
 pending upgrade.
