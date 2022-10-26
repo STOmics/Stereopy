@@ -31,8 +31,8 @@ In the directory specified by out_dir, you can see some files, include:
 
     from stereo.tools import cell_correct
 
-    bgef_path = "FP200000443TL_E2.bgef"
-    mask_path = "FP200000443TL_E2_mask.tif"
+    bgef_path = "SS200000135TL_D1.raw.gef"
+    mask_path = "SS200000135TL_D1_regist.tif"
     out_dir = "cell_correct_result"
     only_save_result = False
     fast = True
@@ -58,8 +58,8 @@ In the `out_dir` directory, there is a new directory named deep-learning or deep
     from stereo.tools import cell_correct
 
     out_dir = "cell_correct_result"
-    bgef_path = "SS200000561BL_B3.bgef"
-    image_path = "SS200000561BL_B3_regist.tif"
+    bgef_path = "SS200000135TL_D1.raw.gef"
+    image_path = "SS200000135TL_D1_regist.tif"
     model_path = "cell_segmentation/seg_model_20211210.pth"
     model_type = "deep-learning"
     #model_path = "cell_segmentation_deepcell"
@@ -90,7 +90,7 @@ In the `out_dir` directory, you can also see a file named \*\*.bgef, this is the
     from stereo.tools import cell_correct
 
     gem_path = "SS200000135TL_D1.raw.gef"
-    mask_path = "SS200000135TL_D1.raw.mask.tif"
+    mask_path = "SS200000135TL_D1_regist.tif"
     out_dir = "cell_correct_result"
     only_save_result = False
     fast = True
@@ -109,7 +109,7 @@ Similar to the way on bgef and ssdna image, you can correct cells from gem and s
 
     out_dir = "cell_correct_result"
     gem_path = "./SS200000135TL_D1.raw.gef"
-    image_path = "./SS200000135TL_D1.raw.tif"
+    image_path = "./SS200000135TL_D1_regist.tif"
     model_path = "./seg_model_20211210.pth"
     model_type = "deep-learning"
     #model_path = "./cell_segmentation_deepcell"
@@ -143,7 +143,7 @@ After running the example below, you should see a file named temp.py in current 
     from stereo.tools import cell_correct
 
     bgef_path = "SS200000135TL_D1.raw.gef"
-    mask_path = "SS200000135TL_D1.raw.mask.tif"
+    mask_path = "SS200000135TL_D1_regist.tif"
     out_dir = "cell_correct_result"
     only_save_result = False
     fast = True

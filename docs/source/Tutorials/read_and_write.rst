@@ -24,7 +24,7 @@ GEM File
     import stereo as st
 
     # read the gem file
-    mouse_data_path = './DP8400013846TR_F5.gem'
+    mouse_data_path = './SS200000135TL_D1.cellbin.gem'
     data = st.io.read_gem(
             file_path= mouse_data_path,
             sep='\t', bin_type="bins",
@@ -57,7 +57,7 @@ GEF File (Square Bin)
     import stereo as st
 
     # read the GEF file
-    mouse_data_path = './DP8400013846TR_F5.SN.tissue.gef'
+    mouse_data_path = './SS200000135TL_D1.tissue.gef'
     data = st.io.read_gef(
             file_path= mouse_data_path,
             bin_size=100, is_sparse=True,)
@@ -89,7 +89,7 @@ Stereo H5ad File
     import stereo as st
 
     # read the GEF file
-    mouse_data_path = './DP8400013846TR_F5.st.h5ad'
+    mouse_data_path = './SS200000141TL_B5_raw.h5ad'
     data = st.io.read_stereo_h5ad(file_path=mouse_data_path, use_raw=True, use_result=True,)
 
 `parameters <https://stereopy.readthedocs.io/en/latest/api/stereo.io.read_stereo_h5ad.html>`_
@@ -128,7 +128,7 @@ so you could save the new data into a new GEF file.
     import stereo as st
 
     # read the GEF file
-    mouse_data_path = './DP8400013846TR_F5.SN.tissue.gef'
+    mouse_data_path = './SS200000135TL_D1.tissue.gef'
     data = st.io.read_gef(file_path=mouse_data_path, bin_size=50)
 
     # use gene list for filtering
@@ -151,7 +151,7 @@ you could add the cluster group(come from leiden/louvain...method) into the inpu
     import stereo as st
 
     # read the GEF file
-    mouse_data_path = './DP8400013846TR_F5.SN.tissue.gef'
+    mouse_data_path = './SS200000135TL_D1.tissue.gef'
     data = st.io.read_gef(file_path=mouse_data_path, bin_size=50)
 
     # clustering
@@ -175,7 +175,7 @@ Stereo H5ad File
     import stereo as st
 
     # read the GEF file
-    mouse_data_path = './DP8400013846TR_F5.SN.tissue.gef'
+    mouse_data_path = './SS200000135TL_D1.tissue.gef'
     data = st.io.read_gef(file_path=mouse_data_path, bin_size=50)
 
     # clustering
@@ -210,7 +210,7 @@ Anndata H5ad File
     import stereo as st
 
     # read the GEF file
-    mouse_data_path = './DP8400013846TR_F5.SN.tissue.gef'
+    mouse_data_path = './SS200000135TL_D1.tissue.gef'
     data = st.io.read_gef(file_path=mouse_data_path, bin_size=50)
 
     # conversion
