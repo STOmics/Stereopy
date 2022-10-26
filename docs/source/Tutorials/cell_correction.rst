@@ -180,6 +180,7 @@ machine configuration
 performance
 -------------------------------------------
 `fast=False`
+
 +---------+------------+-------+-------+
 |process  |memory(max) |cpu    |time   |
 +=========+============+=======+=======+
@@ -187,6 +188,7 @@ performance
 +---------+------------+-------+-------+
 
 `fast=True` (only support single process)
+
 +---------+------------+-------+-------+
 |process  |memory(max) |cpu    |time   |
 +=========+============+=======+=======+
