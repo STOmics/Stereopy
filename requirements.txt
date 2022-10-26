@@ -38,22 +38,22 @@ squidpy==1.2.2
 xarray==0.20.1
 
 # segmentation
-albumentations==0.4.6
-glog==0.3.1
+# albumentations==0.4.6
+# glog==0.3.1
 slideio==0.5.225
-torchvision==0.11.1
+# torchvision==0.11.1
 tqdm==4.60.0
 scikit-learn==1.0.1
 pillow==9.2.0
 #opencv-python==4.5.1.48
 scikit-image==0.19.0
 tifffile==2021.11.2
-torch==1.10.0
+# torch==1.10.0
 opencv-python>=4.5.4.58,<=4.5.5.64
-tensorflow==2.7.0
-tensorflow-io-gcs-filesystem==0.24.0
+# tensorflow==2.7.0
+# tensorflow-io-gcs-filesystem==0.24.0
 protobuf==3.19.4
-hotspotsc==0.9.1
+hotspotsc==1.1.1
 distributed==2022.2.0
 keras==2.7.0
 pyarrow==8.0.0

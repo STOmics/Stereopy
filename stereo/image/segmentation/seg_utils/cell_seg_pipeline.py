@@ -1,4 +1,3 @@
-import glog
 # import image
 import os
 import time
@@ -14,6 +13,8 @@ from multiprocessing import Process
 from multiprocessing import Queue
 import matplotlib.pyplot as plt
 from . import tissue_seg
+import seg_utils.cell_infer as cell_infer
+from stereo.log_manager import logger
 
 
 class CellSegPipe(object):
@@ -36,12 +37,12 @@ class CellSegPipe(object):
         self.__out_path = out_path
         if not exists(out_path):
             os.mkdir(out_path)
-            glog.info('Create new dir : %s' % out_path)
+            logger.info('Create new dir : %s' % out_path)
         self.__is_water = is_water
         t0 = time.time()
         self.__trans16to8()
         t1 = time.time()
-        glog.info('Transform 16bit to 8bit : %.2f' % (t1 - t0))
+        logger.info('Transform 16bit to 8bit : %.2f' % (t1 - t0))
         self.tissue_mask = []
         self.tissue_mask_thumb = []
         self.tissue_num = []  # tissue num in each image
@@ -80,7 +81,7 @@ class CellSegPipe(object):
 
         for idx, img in enumerate(self.img_list):
             if len(img.shape) == 3:
-                glog.info('Image %s convert to gray!' % self.__file[idx])
+                logger.info('Image %s convert to gray!' % self.__file[idx])
                 self.img_list[idx] = img[:, :, 0]
 
     def __trans16to8(self):
@@ -88,13 +89,15 @@ class CellSegPipe(object):
         for idx, img in enumerate(self.img_list):
             assert img.dtype in ['uint16', 'uint8']
             if img.dtype != 'uint8':
-                glog.info('%s transfer to 8bit' % self.__file[idx])
+                logger.info('%s transfer to 8bit' % self.__file[idx])
                 self.img_list[idx] = utils.transfer_16bit_to_8bit(img)
     
     def __get_tissue_mask(self):
 
-        process = 10 if self.__is_list else 1
-        glog.info(f"get tissue mask, process {process}")
+        process = len(self.img_list) if self.__is_list else 1
+        if process > 10:
+            process = 10
+        logger.info(f"get tissue mask, process {process}")
 
         pre_tissue = tissue_seg.tissue_seg_multi(self.img_list, process)
         self.tissue_mask = [label[0] for label in pre_tissue]
@@ -120,7 +123,7 @@ class CellSegPipe(object):
 
     def __get_roi(self):
 
-        glog.info("get roi")
+        logger.info("get roi")
         """get tissue area from ssdna"""
         for idx, tissue_mask in enumerate(self.tissue_mask):
 
@@ -141,7 +144,7 @@ class CellSegPipe(object):
 
 
     def tissue_cell_infer(self, q=None):
-        import seg_utils.cell_infer as cell_infer
+        # import seg_utils.cell_infer as cell_infer
 
         """cell segmentation in tissue area by neural network"""
         tissue_cell_label = []
@@ -286,7 +289,7 @@ class CellSegPipe(object):
         # t.join()
         tissue_cell_label = self.tissue_cell_infer()
         t2 = time.time()
-        glog.info('Cell inference : %.2f' % (t2 - t1))
+        logger.info('Cell inference : %.2f' % (t2 - t1))
 
         tissue_cell_label_filter = self.tissue_label_filter(tissue_cell_label)
         cell_mask = self.__mosaic(tissue_cell_label_filter)
@@ -295,7 +298,7 @@ class CellSegPipe(object):
         self.watershed_score(cell_mask)
         # self.watershed_score(tissue_cell_label)
         t5 = time.time()
-        glog.info('Post-processing : %.2f' % (t5 - t2))
+        logger.info('Post-processing : %.2f' % (t5 - t2))
 
         self.save_result()
-        glog.info('Result saved : %s ' % (self.__out_path))
+        logger.info('Result saved : %s ' % (self.__out_path))

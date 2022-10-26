@@ -1,28 +1,23 @@
-import sys
-from unittest import result
 from warnings import filterwarnings
-from cv2 import log
 filterwarnings('ignore')
-import tifffile as tifi
-import cv2
 import os
-import math
+from math import ceil
 import time
 import pandas as pd
 import numpy as np
-import argparse
 from tqdm import tqdm
 from sklearn.mixture import GaussianMixture
-from multiprocessing import Process, Manager, Queue, Lock
-from concurrent.futures import ProcessPoolExecutor
-import gzip
+from multiprocessing import Process, Queue, Lock
 from ..log_manager import logger
+from ..utils.time_consume import log_consumed_time
 
 def parse_head(gem):
     """
     %prog <stereomics-seq data>
     return number of header lines
     """
+    import gzip
+
     if gem.endswith('.gz'):
         f = gzip.open(gem, 'rb')
     else:
@@ -44,6 +39,8 @@ def creat_cell_gxp(maskFile, geneFile ,transposition=False):
 
     return gene expression matrix under each cell
     """
+    import tifffile as tifi
+    import cv2
 
     logger.info("Loading mask file...")
     mask = tifi.imread(maskFile)
@@ -96,6 +93,7 @@ class CellCorrection(object):
         if self.err_log_dir is not None and not os.path.exists(self.err_log_dir):
             os.makedirs(self.err_log_dir)
 
+    @log_consumed_time
     def __creat_gxp_data(self):
         if isinstance(self.gem_file, pd.DataFrame):
             data = self.gem_file
@@ -171,6 +169,7 @@ class CellCorrection(object):
         queue.put((True, p_num, out))
         # return out
 
+    @log_consumed_time
     def gmm_score(self, data, cell_coor):
         # queues = []
         queue = Queue()
@@ -178,7 +177,7 @@ class CellCorrection(object):
         processes = []
         finished = [False for i in range(self.process)]
         bg_adjust_label = [None for i in range(self.process)]
-        qs = math.ceil(len(cell_coor.index) / int(self.process))
+        qs = ceil(len(cell_coor.index) / int(self.process))
         lock = Lock()
         err_log_fp = None
         if self.err_log_dir is not None:
@@ -220,6 +219,7 @@ class CellCorrection(object):
             err_log_fp.close()
         return bg_adjust_label
     
+    @log_consumed_time
     def gmm_correction(self, cell_data, bg_adjust_label):
         bg_data = []
         for tmp in bg_adjust_label:
@@ -233,17 +233,9 @@ class CellCorrection(object):
         result = pd.concat([adjust_data, cell_data])
         return result
 
+    @log_consumed_time
     def cell_correct(self):
-        logger.info("start to correct cells!!!")
-        t0 = time.time()
         data, cell_data, cell_coor = self.__creat_gxp_data()
-        t1 = time.time()
-        logger.info(f'Load data :{t1 - t0}')
         bg_adjust_label = self.gmm_score(data, cell_coor)
-        t2 = time.time()
-        logger.info(f'Calc score :{t2 - t1}')
         result = self.gmm_correction(cell_data, bg_adjust_label)
-        t3 = time.time()
-        logger.info(f'Correct :{t3 - t2}')
-        logger.info(f'Total :{t3 - t0}')
         return result
