@@ -8,9 +8,8 @@ Generally, there are two ways to do it.
 
 Note
 --------
-1. If you need to generate mask file from ssdna image, you have to install some necessary modules, please refer to `Prepare <https://stereopy.readthedocs.io/en/latest/Tutorials/prepare.html>`_.
-2. We have two versions of the algorithm, one is more slower but more accurate, another one is more faster but less accurate.
-You can set the parameter `fast` to True to run the faster version, default to True.
+  1. If you need to generate mask file from ssdna image, you have to install some necessary modules, please refer to `Prepare <https://stereopy.readthedocs.io/en/latest/Tutorials/prepare.html>`_.
+  2. We have two versions of the algorithm, one is more slower but more accurate, another one is more faster but less accurate.You can set the parameter `fast` to True to run the faster version, default to True.
 
 
 Correcting from bgef and mask
