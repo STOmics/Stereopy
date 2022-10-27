@@ -75,21 +75,19 @@ Gaussian smoothing can make clustering result to more subtypes.
 
 
 Performance
-------------
+^^^^^^^^^^^^
 The data in example contains 61857 cells and 24562 genes.
 
----------------------
-machine configuration
----------------------
+Machine Configuration
+"""""""""""""""""""""""
 +---------------+------------+---------+
 |physical cores |logic cores |memory   |
 +===============+============+=========+
 |12             |48          |250G     |
 +---------------+------------+---------+
 
--------------------------------------------
-performance
--------------------------------------------
+Performance
+"""""""""""""
 only support single process
 
 +---------+------------+---------+-------+
