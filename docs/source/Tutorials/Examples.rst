@@ -8,6 +8,7 @@ Clustering
 
     clustering
     cell_clustering
+    performance
 
 IO
 ----------------------
