@@ -140,12 +140,11 @@ def cell_correct(out_dir,
                 model_path=None,
                 mask_save=True,
                 model_type='deep-learning',
-                depp_cro_size=20000,
+                deep_cro_size=20000,
                 overlap=100, 
                 gpu='-1', 
                 process_count=10,
                 only_save_result=False,
-                sample_n=-1,
                 fast=True):
     """correct cells from gem and mask or gem and ssdna image or bgef and mask or bgef and raw cgef(the cgef without correcting)
 
@@ -160,7 +159,7 @@ def cell_correct(out_dir,
     :param model_path: the path of the model used to generate mask, defaults to None
     :param mask_save: if generated mask from ssdna image, set it to True to save mask file after correcting, defaults to True
     :param model_type: the type of model used to generate mask, only can be set to deep-learning or deep-cell, defaults to 'deep-learning'
-    :param depp_cro_size: deep crop size, defaults to 20000
+    :param deep_cro_size: deep crop size, defaults to 20000
     :param overlap: the size of overlap, defaults to 100
     :param gpu: specify the gpu id to predict on gpu when generate mask, if -1, predict on cpu, defaults to '-1'
     :param process_count: the count of the process will be started when correct cells, defaults to 10
@@ -174,12 +173,12 @@ def cell_correct(out_dir,
         do_mask_generating = True
         cell_segment = CellSegment(image_path, gpu, out_dir)
         logger.info(f"there is no mask file, generate it by model {model_path}")
-        cell_segment.generate_mask(model_path, model_type, depp_cro_size, overlap)
+        cell_segment.generate_mask(model_path, model_type, deep_cro_size, overlap)
         mask_path = cell_segment.get_mask_files()[0]
         logger.info(f"the generated mask file {mask_path}")
         
     cc = CellCorrect(gem_path=gem_path, bgef_path=bgef_path, raw_cgef_path=raw_cgef_path, mask_path=mask_path, out_dir=out_dir)
-    adjusted_data = cc.correcting(threshold=threshold, process_count=process_count, only_save_result=only_save_result, sample_n=sample_n, fast=fast)
+    adjusted_data = cc.correcting(threshold=threshold, process_count=process_count, only_save_result=only_save_result, fast=fast)
     if do_mask_generating and not mask_save:
         cell_segment.remove_all_mask_files()
     return adjusted_data
