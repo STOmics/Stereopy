@@ -24,16 +24,17 @@ from typing import Optional
 import h5py
 import numpy as np
 import pandas as pd
-from anndata import AnnData
 from scipy.sparse import csr_matrix
-from shapely.geometry import Point, MultiPoint
-
 from stereo.io import h5ad
 from stereo.core.cell import Cell
 from stereo.core.gene import Gene
 from stereo.core.stereo_exp_data import StereoExpData
-from stereo.utils.read_write_utils import ReadWriteUtils
 from stereo.log_manager import logger
+from stereo.utils.read_write_utils import ReadWriteUtils
+from anndata import AnnData
+from shapely.geometry import Point, MultiPoint
+from typing import Optional
+from copy import deepcopy
 
 
 @ReadWriteUtils.check_file_exists
