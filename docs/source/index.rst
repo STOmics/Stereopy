@@ -33,6 +33,7 @@ pending upgrade.
 
 
    General/Installation
+   General/FAQs
    api/index
 
 

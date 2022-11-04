@@ -1,4 +1,4 @@
-Cell correction 
+Cell Correction
 ===============
 These examples show how to use Stereopy to correct cells.
 
@@ -8,9 +8,8 @@ Generally, there are two ways to do it.
 
 Note
 --------
-1. If you need to generate mask file from ssdna image, you have to install some necessary modules, please refer to `Prepare <https://stereopy.readthedocs.io/en/latest/Tutorials/prepare.html>`_.
-2. We have two versions of the algorithm, one is more slower but more accurate, another one is more faster but less accurate.
-You can set the parameter `fast` to True to run the faster version, default to True.
+  1. If you need to generate mask file from ssdna image, you have to install some necessary modules, please refer to `Prepare <https://stereopy.readthedocs.io/en/latest/Tutorials/prepare.html>`_.
+  2. We have two versions of the algorithm, one is more slower but more accurate, another one is more faster but less accurate.You can set the parameter `fast` to True to run the faster version, default to True.
 
 
 Correcting from BGEF and Mask
@@ -79,7 +78,7 @@ In the `out_dir` directory, there is a new directory named deep-learning or deep
                         fast=fast)
 
 
-Correcting from gem and mask
+Correcting from GEM and Mask
 -----------------------------
 
 On this way, you should specify the path of gem by parameter `gem_path`, the path of mask by parameter `mask_path` and the path of directory to save corrected result by parameter `out_dir`.
@@ -129,7 +128,7 @@ Similar to the way on bgef and ssdna image, you can correct cells from gem and s
                         fast=fast)
 
 
-Runing on jupyter notebook
+Runing on Jupyter Notebook
 ---------------------------
 
 Jupyter notebook can not support multiprocess directly, if you want to run on notebook, refer to the following two steps.
@@ -168,7 +167,7 @@ Performance
 Take a gef contains 55460 cells and 25546 genes as an example.
 
 ---------------------
-machine configuration
+Machine Configuration
 ---------------------
 +---------------+------------+---------+
 |physical cores |logic cores |memory   |
@@ -177,7 +176,7 @@ machine configuration
 +---------------+------------+---------+
 
 -------------------------------------------
-performance
+Performance
 -------------------------------------------
 `fast=False`
 
