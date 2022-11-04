@@ -1,4 +1,4 @@
-Gaussian smoothing
+Gaussian Smoothing
 ----------------
 This example show how to run the function of gaussian smooth on Stereopy.
 
@@ -79,7 +79,7 @@ Performance
 The data in example contains 61857 cells and 24562 genes.
 
 ---------------------
-machine configuration
+Machine Configuration
 ---------------------
 +---------------+------------+---------+
 |physical cores |logic cores |memory   |
@@ -88,7 +88,7 @@ machine configuration
 +---------------+------------+---------+
 
 -------------------------------------------
-performance
+Performance
 -------------------------------------------
 only support single process
 

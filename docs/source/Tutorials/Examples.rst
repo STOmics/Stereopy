@@ -8,6 +8,7 @@ Clustering
 
     clustering
     cell_clustering
+    performance
 
 IO
 ----------------------
@@ -15,7 +16,7 @@ IO
 
     read_and_write
 
-Additional functionalities
+Additional Functionalities
 --------------------------------------------
 .. nbgallery::
 
@@ -31,20 +32,19 @@ This section contains various examples for the interactive plots.
 .. nbgallery::
 
     interactive_cluster
-    high_res_export
+    high_resolution_export
 
-Image preprocessing
+Image Preprocessing
 ---------------------------------------
 This section contains various examples from the :mod:`stereo.im` and :mod:`stereo.tools` module.
 
 .. nbgallery::
 
-    prepare
     cell_segmentation
     cell_correction
     tissue_cut
 
-Working with other spatial tools
+Working with Other Spatial Tools
 --------------------------------------------------
 This section contains various short examples of format conversion for integration with scanpy，seurat:
 
