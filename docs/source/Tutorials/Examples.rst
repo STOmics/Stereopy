@@ -38,8 +38,8 @@ Image Preprocessing
 ---------------------------------------
 This section contains various examples from the :mod:`stereo.im` and :mod:`stereo.tools` module.
 
-.. nbgallery::
-
+.. nbgallery:::q:
+    prepare
     cell_segmentation
     cell_correction
     tissue_cut
