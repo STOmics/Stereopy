@@ -4,7 +4,7 @@
 @author:qiuping1
 @file:data_parse.py
 @time:2020/12/30
-change log: 2021/01/12   Add data qc related code, and adjust the mode
+change log: 2021/01/12   Add data QC related code, and adjust the mode
 python ./data_parse.py --input_path ../data/01.LiverCancer/DP8400012941BR_E4/DP8400012941BR_E4.txt --out_dir ../data/E4/ --read_raw  --bin_size 200
 python ./data_parse.py --input_path ../data/E4/raw_andata.bin200.h5ad --out_dir ../data/E4/ --run_filter --normalize  --bin_size 200 --max_gene_cnt 7000 --min_genes 200 --min_cells 3 --max_mt 15
 """
@@ -77,7 +77,7 @@ def cal_data_distribution(adata):
     :param adata: andata after basic filtering
     :return:
     """
-    sc.pp.calculate_qc_metrics(adata, inplace=True)  # Statistics qc indicators
+    sc.pp.calculate_qc_metrics(adata, inplace=True)  # Statistics QC indicators
     adata.var['mt'] = adata.var_names.str.startswith('MT-')  + adata.var_names.str.startswith('mt-')  # annotate the group of mitochondrial genes as 'mt'
     sc.pp.calculate_qc_metrics(adata, qc_vars=['mt'], percent_top=None, log1p=False, inplace=True)  # Statistical mitochondrial gene distribution
     return adata

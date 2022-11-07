@@ -19,7 +19,6 @@ from .cell import Cell
 from .gene import Gene
 from ..log_manager import logger
 import copy
-from .st_pipeline import StPipeline
 
 
 class StereoExpData(Data):
@@ -38,6 +37,7 @@ class StereoExpData(Data):
             offset_x: Optional[str] = None,
             offset_y: Optional[str] = None,
             attr: Optional[dict] = None,
+            merged: bool = False
     ):
 
         """
@@ -65,24 +65,38 @@ class StereoExpData(Data):
         self._genes = genes if isinstance(genes, Gene) else Gene(gene_name=genes)
         self._cells = cells if isinstance(cells, Cell) else Cell(cell_name=cells)
         self._position = position
+        self._position_offset = None
         self._bin_type = bin_type
         self.bin_size = bin_size
-        self.tl = StPipeline(self)
-        self.plt = self.get_plot()
+        self._tl = None
+        self._plt = None
         self.raw = None
         self._offset_x = offset_x
         self._offset_y = offset_y
         self._attr = attr
+        self._merged = merged
+        self._sn = self.get_sn_from_path(file_path)
 
-    def get_plot(self):
-        """
-        import plot function
+    def get_sn_from_path(self, file_path):
+        if file_path is None:
+            return None
+        
+        from os import path
+        return path.basename(file_path).split('.')[0].strip()
 
-        :return:
-        """
-        from ..plots.plot_collection import PlotCollection
+    @property
+    def plt(self):
+        if self._plt is None:
+            from ..plots.plot_collection import PlotCollection
+            self._plt = PlotCollection(self)
+        return self._plt
 
-        return PlotCollection(self)
+    @property
+    def tl(self):
+        if self._tl is None:
+            from .st_pipeline import StPipeline
+            self._tl = StPipeline(self)
+        return self._tl
 
     def sub_by_index(self, cell_index=None, gene_index=None):
         """
@@ -259,6 +273,14 @@ class StereoExpData(Data):
         :return:
         """
         self._position = pos
+    
+    @property
+    def position_offset(self):
+        return self._position_offset
+    
+    @position_offset.setter
+    def position_offset(self, position_offset):
+        self._position_offset = position_offset
 
     @property
     def offset_x(self):
@@ -313,6 +335,22 @@ class StereoExpData(Data):
         :return:
         """
         self._attr = attr
+    
+    @property
+    def merged(self):
+        return self._merged
+    
+    @merged.setter
+    def merged(self, merged):
+        self._merged = merged
+    
+    @property
+    def sn(self):
+        return self._sn
+    
+    @sn.setter
+    def sn(self, sn):
+        self._sn = sn
 
     def to_df(self):
         """

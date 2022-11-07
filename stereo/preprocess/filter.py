@@ -65,7 +65,7 @@ def filter_cells(
             data.cells.pct_counts_mt = cal_pct_counts_mt(data, data.exp_matrix, data.cells.total_counts)
         cell_subset = data.cells.pct_counts_mt <= pct_counts_mt
         data.sub_by_index(cell_index=cell_subset)
-    if cell_list:
+    if cell_list is not None:
         cell_subset = np.isin(data.cells.cell_name, cell_list)
         data.sub_by_index(cell_index=cell_subset)
     return data
