@@ -73,7 +73,7 @@ A class for basic analysis of StereoExpData. It is the `StereoExpData.tl`.
     core.StPipeline.gaussian_smooth
 
 
-plots: `plt`
+Plots: `plt`
 ++++++++++++++++++++
 
 .. module:: stereo.plt
@@ -85,7 +85,7 @@ Visualization module
    :toctree: .
 
 
-plot collection
+Plot Collection
 ~~~~~~~~~~~~~~~~~~~
 
 .. autosummary::
@@ -94,7 +94,7 @@ plot collection
    plots.PlotCollection
 
 
-scatter
+Scatter
 ~~~~~~~~
 .. autosummary::
    :toctree: .
@@ -104,7 +104,7 @@ scatter
    plots.scatter.highly_variable_genes
 
 
-interactive plot
+Interactive Plot
 ~~~~~~~~~~~~~~~~~
 .. autosummary::
    :toctree: .
@@ -113,7 +113,7 @@ interactive plot
    plots.InteractiveScatter
 
 
-others
+Others
 ~~~~~~~~
 .. autosummary::
    :toctree: .
@@ -125,7 +125,7 @@ others
 
 
 
-image: `im`
+Image: `im`
 ++++++++++++++++++++
 
 Image parse module.
@@ -140,7 +140,7 @@ Image parse module.
     image.tissue_seg
 
 
-tools: `tools`
+Tools: `tools`
 ++++++++++++++++++++
 
 Tools module.
