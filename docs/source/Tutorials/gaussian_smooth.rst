@@ -1,4 +1,4 @@
-Gaussian smoothing
+Gaussian Smoothing
 ----------------
 This example show how to run the function of gaussian smooth on Stereopy.
 
@@ -75,19 +75,21 @@ Gaussian smoothing can make clustering result to more subtypes.
 
 
 Performance
-^^^^^^^^^^^^
+------------
 The data in example contains 61857 cells and 24562 genes.
 
+---------------------
 Machine Configuration
-"""""""""""""""""""""""
+---------------------
 +---------------+------------+---------+
 |physical cores |logic cores |memory   |
 +===============+============+=========+
 |12             |48          |250G     |
 +---------------+------------+---------+
 
+-------------------------------------------
 Performance
-"""""""""""""
+-------------------------------------------
 only support single process
 
 +---------+------------+---------+-------+

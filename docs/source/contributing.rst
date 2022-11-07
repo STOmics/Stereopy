@@ -1,16 +1,16 @@
-Contributing guide
+Contributing Guide
 ~~~~~~~~~~~~~~~~~~
 
 Contents
 ========
-- `Contributing code`_
-- `Code style`_
-- `Project structure`_
-- `Writing documentation`_
-- `Making a release`_
+- `Contributing Code`_
+- `Code Style`_
+- `Project Structure`_
+- `Writing Documentation`_
+- `Making A Release`_
 - `Testing`_
 
-Contributing code
+Contributing Code
 -----------------
 1. Clone the Stereopy source from github::
 
@@ -23,7 +23,7 @@ Contributing code
 4. After all tests passing, update the related documentation, such as release note, example and so on.
 5. Make a Pull Requests back to the dev branch, We will review the submitted code, and the merge to the main branch after there is no problem.
 
-Code style
+Code Style
 ----------
 1. Coding requirements comply with pep8 specification.
 2. The file naming adopts lowercase and underscore uniformly; the name of the class adopts the camel case naming method.
@@ -34,7 +34,7 @@ Code style
 4. The comment information should be perfect, and each file, function, and class should write its comment information.
    We recommend using restructured Text as the docstring format of comment information.
 
-Project structure
+Project Structure
 -----------------
 The stereopy project:
 
@@ -51,7 +51,7 @@ The stereopy project:
   - `stereo/utils <stereo/utils>`_: Some common processing scripts.
   - `stereo/tests <stereo/tests>`_: the Tests module, which contains all the test scripts.
 
-Writing documentation
+Writing Documentation
 ---------------------
 We use Sphinx to auto-generate documentation in multiple formats. Sphinx is built of reStructured text and, when using
 sphinx most of what you type is reStructured text.
@@ -90,12 +90,12 @@ Make and build html::
 
     open index.html
 
-docstrings format
+Docstrings Format
 `````````````````
 We use the reStructured text style for writing docstrings. If you’re unfamiliar with the reStructuredText (rst) format,
 see the `link <https://www.sphinx-doc.org/en/master/usage/restructuredtext/basics.html>`_.
 
-Making a release
+Making A Release
 ----------------
 This part is to tell developers how to publish stereopy to PyPi.
 
