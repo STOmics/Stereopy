@@ -2,7 +2,7 @@ Format Conversion
 ==================
 This section contains the introduction of format conversion, so you can work with other spatial tools.
 
-Working with scanpy package
+Working with Scanpy Package
 --------------------------------------------------
 The io module provides the function :mod:`stereo.io.stereo_to_anndata` to convert the StereoExpData into Anndata and output the
 corresponding h5ad file(.h5ad).
@@ -28,7 +28,7 @@ Example like this:
     import stereo as st
 
     # read the GEF file
-    mouse_data_path = './DP8400013846TR_F5.SN.tissue.gef'
+    mouse_data_path = './SS200000135TL_D1.tissue.gef'
     data = st.io.read_gef(file_path=mouse_data_path, bin_size=50)
 
     # Conversion.
@@ -36,10 +36,10 @@ Example like this:
     # Otherwise, it will raise errors during conversion.
     adata = st.io.stereo_to_anndata(data,flavor='seurat',output='out.h5ad')
 
-Working with seurat package
+Working with Seurat Package
 -------------------------------------------------
 
-h5ad to rds file
+H5ad to RDS File
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 The output h5ad could be converted into rds file by `annh5ad2rds.R <https://github.com/BGIResearch/stereopy/blob/dev/docs/source/_static/annh5ad2rds.R>`_.

@@ -217,7 +217,8 @@ class PlotCollection:
         :param ignore_no_expression: whether ignore the cells no expression, defaults to False
         """
 
-        self.data.sparse2array()
+        # self.data.sparse2array()
+        self.data.array2sparse()
         if gene_name is None:
             idx = randint(0, len(self.data.gene_names))
             gene_name = self.data.gene_names[idx]
@@ -237,6 +238,8 @@ class PlotCollection:
             x = self.data.position[:, 0]
             y = self.data.position[:, 1]
             hue = exp_data
+        
+        hue = np.squeeze(hue.toarray())
         
         if 'color_bar_reverse' in kwargs:
             color_bar_reverse = kwargs['color_bar_reverse']
@@ -378,6 +381,84 @@ class PlotCollection:
         if not inline:
             fig.figure.show()
         return fig
+    
+    def batches_umap(
+            self,
+            res_key='umap',
+            title: str = 'umap between batches',
+            x_label: str = 'umap1',
+            y_label: str = 'umap2',
+            dot_size: int = 1,
+            colors: Optional[Union[str, list]] = 'stereo_30'            
+        ):
+        import holoviews as hv
+        import hvplot.pandas
+        import panel as pn
+        from bokeh.models import Title
+        pn.extension()
+        hv.extension('bokeh')
+        
+        assert self.data.cells.batch is not None, "there is no batches number list"
+        umap_res = self.check_res_key(res_key)
+        umap_res = umap_res.rename(columns={0: 'x', 1: 'y'})
+        umap_res['batch'] = self.data.cells.batch.astype(np.uint16)
+        batch_number_unique = np.unique(umap_res['batch'])
+        batch_count = len(batch_number_unique)
+        cmap = conf.get_colors(colors, batch_count)
+        fig_all = umap_res.hvplot.scatter(
+            x='x', y='y',
+            c='batch', cmap=cmap, cnorm='eq_hist',
+            # datashade=True, dynspread=True
+        ).opts(
+            width=500,
+            height=500,
+            invert_yaxis=True,
+            xlabel=x_label,
+            ylabel=y_label, 
+            size=dot_size,
+            toolbar='disable',
+            colorbar=False,
+        )
+        bfig_all = hv.render(fig_all)
+        bfig_all.axis.major_tick_line_alpha = 0
+        bfig_all.axis.minor_tick_line_alpha = 0
+        bfig_all.axis.major_label_text_alpha = 0
+        bfig_all.axis.axis_line_alpha = 0
+        bfig_all.title = Title(text='all batches', align='center')
+        bfig_batches = []
+        pn_rows = []
+        for i, bn, c in zip(range(batch_count), batch_number_unique, cmap):
+            sub_umap_res = umap_res[umap_res.batch == bn]
+            fig = sub_umap_res.hvplot.scatter(
+                x='x', y='y',
+                c='batch', color=c, cnorm='eq_hist',
+                # datashade=True, dynspread=True
+            ).opts(
+                width=200,
+                height=200,
+                xaxis=None,
+                yaxis=None,
+                invert_yaxis=True,
+                size=(dot_size / 3),
+                toolbar='disable',
+                colorbar=False,
+            )
+            bfig = hv.render(fig)
+            bn = str(bn)
+            bfig.title = Title(text=f'sn: {self.data.sn[bn]}', align='center')
+            bfig_batches.append(bfig)
+            if ((i + 1) % 2) == 0 or i == (batch_count - 1):
+                pn_rows.append(pn.Row(*bfig_batches))
+                bfig_batches.clear()
+
+        return pn.Column(
+            f"\n# {title}",
+            pn.Row(
+                pn.Column(bfig_all),
+                pn.Column(*pn_rows)
+            )
+        )
+
 
     def umap(
             self,

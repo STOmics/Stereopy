@@ -17,20 +17,23 @@ change log:
 
 
 """
-import pandas as pd
-from stereo.core.stereo_exp_data import StereoExpData
-from stereo.log_manager import logger
+
+from copy import deepcopy
+from typing import Optional
+
 import h5py
-from stereo.io import h5ad
+import numpy as np
+import pandas as pd
+from anndata import AnnData
 from scipy.sparse import csr_matrix
+from shapely.geometry import Point, MultiPoint
+
+from stereo.io import h5ad
 from stereo.core.cell import Cell
 from stereo.core.gene import Gene
+from stereo.core.stereo_exp_data import StereoExpData
 from stereo.utils.read_write_utils import ReadWriteUtils
-import numpy as np
-from anndata import AnnData
-from shapely.geometry import Point, MultiPoint
-from typing import Optional
-from copy import deepcopy
+from stereo.log_manager import logger
 
 
 @ReadWriteUtils.check_file_exists
@@ -293,7 +296,7 @@ def anndata_to_stereo(andata: AnnData, use_raw=False, spatial_key: Optional[str]
     return data
 
 
-def stereo_to_anndata(data: StereoExpData, flavor='scanpy', sample_id="sample", reindex=False, output=None):
+def stereo_to_anndata(data: StereoExpData, flavor='scanpy', sample_id="sample", reindex=False, output=None, split_batches=True):
     """
     transform the StereoExpData object into Anndata object.
 
@@ -305,6 +308,23 @@ def stereo_to_anndata(data: StereoExpData, flavor='scanpy', sample_id="sample", 
     :param output: path of output_file(.h5ad).
     :return: Anndata object
     """
+    if data.merged and split_batches:
+        from os import path
+        from ..utils.data_helper import split
+        data_list = split(data)
+        batch = np.unique(data.cells.batch)
+        adata_list = []
+        if output is not None:
+            name, ext = path.splitext(output)
+        for bno, d in zip(batch, data_list):
+            if output is not None:
+                boutput = f"{name}-{d.sn}{ext}"
+            else:
+                boutput = None
+            adata = stereo_to_anndata(d, flavor=flavor, sample_id=sample_id, reindex=reindex, output=boutput, split_batches=False)
+            adata_list.append(adata)
+        return adata_list
+
     from scipy.sparse import issparse
 
     exp = data.exp_matrix
@@ -330,6 +350,15 @@ def stereo_to_anndata(data: StereoExpData, flavor='scanpy', sample_id="sample", 
         logger.info(f"Adding data.position as adata.obs['x'] and adata.obs['y'] .")
         adata.obs['x'] = pd.DataFrame(data.position[:, 0], index=data.cell_names.astype('str'))
         adata.obs['y'] = pd.DataFrame(data.position[:, 1], index=data.cell_names.astype('str'))
+    
+    if data.sn is not None:
+        if isinstance(data.sn, str):
+            sn_list = [['-1', data.sn]]
+        else:
+            sn_list = []
+            for bno, sn in data.sn.items():
+                sn_list.append([bno, sn])
+        adata.uns['sn'] = pd.DataFrame(sn_list, columns=['batch', 'sn'])
 
     for key in data.tl.key_record.keys():
         if len(data.tl.key_record[key]) > 0:
@@ -542,8 +571,6 @@ def read_gef(file_path: str, bin_type="bins", bin_size=100, is_sparse=True, gene
             data.genes = Gene(gene_name=gene_names)
 
             data.exp_matrix = exp_matrix if is_sparse else exp_matrix.toarray()
-            data.is_all_data = False
-
         else:
             from gefpy.cell_exp_reader import CellExpReader
             cell_bin_gef = CellExpReader(file_path)
@@ -586,7 +613,6 @@ def read_gef(file_path: str, bin_type="bins", bin_size=100, is_sparse=True, gene
             data.genes = Gene(gene_name=gene_names)
 
             data.exp_matrix = exp_matrix if is_sparse else exp_matrix.toarray()
-            data.is_all_data = False
         else:
             gene_num = gef.get_gene_num()
             uniq_cells, rows, count = gef.get_exp_data()

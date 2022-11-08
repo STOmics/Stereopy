@@ -13,7 +13,8 @@ from .dim_reduce import DimReduce
 from .find_markers import FindMarker
 from .spatial_pattern_score import SpatialPatternScore
 from .cluster import Cluster
-from .cell_correct import cell_correct
-from .cell_cut import CellCut
-from .cell_segment import CellSegment
+# from .cell_correct import cell_correct
+# from .cell_cut import CellCut
+# from .cell_segment import CellSegment
+from .rna_velocity import generate_loom
 # from .spatial_lag import SpatialLag
