@@ -3,6 +3,16 @@ Release Notes
 
 .. role:: small
 
+Version 0.7.0
+------------------
+0.7.0 :2022-11-08
+~~~~~~~~~~~~~~~~~~~~~
+1. Acquire the cell expression matrix (cellbin) from the GEM file.
+2. Update hotspot to the latest version. Allow to output gene lists for every module.
+3. Allow to merge and arrange more than two matrices in a row.
+4. Speed up Stereopy installation. Allow installing heavy frameworks such as TensorFlow and PyTorch later before using.
+5. Update requirements.txt.
+
 Version 0.6.0
 ------------------
 0.6.0 :2022-09-30
