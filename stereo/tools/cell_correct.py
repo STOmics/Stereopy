@@ -95,7 +95,7 @@ class CellCorrect(object):
         cell_data = list(map(tuple, cell.to_dict("split")['data']))
         dnb_data = list(map(tuple, dnb.to_dict("split")['data']))
         cell_type = np.dtype({'names':['cellid', 'offset', 'count'], 'formats':[np.uint32, np.uint32, np.uint32]})
-        dnb_type = np.dtype({'names':['x', 'y', 'count', 'gene_id'], 'formats':[np.int32, np.int32, np.uint16, np.uint16]})
+        dnb_type = np.dtype({'names':['x', 'y', 'count', 'gene_id'], 'formats':[np.int32, np.int32, np.uint16, np.uint32]})
         cell = np.array(cell_data, dtype=cell_type)
         dnb = np.array(dnb_data, dtype=dnb_type)
         file_name = self.get_file_name('adjusted.cellbin.gef')
