@@ -5,7 +5,7 @@ Release Notes
 
 Version 0.7.0
 ------------------
-0.7.0 :2022-11-08
+0.7.0 :2022-11-15
 ~~~~~~~~~~~~~~~~~~~~~
 1. Acquire the cell expression matrix (cellbin) from the GEM file.
 2. Update hotspot to the latest version. Allow to output gene lists for every module.
