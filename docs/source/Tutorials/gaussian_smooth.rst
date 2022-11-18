@@ -33,10 +33,13 @@ Also, you need to run pca before running gaussian smooth.
 
 +--------------------------------------------+--------------------------------+
 |.. image:: ../_static/gaussian_smooth_1.png |.. image:: ../_static/C1ql2.jpg |
+|                                            |   :width: 500px                |
 +--------------------------------------------+--------------------------------+
 |.. image:: ../_static/gaussian_smooth_2.png |.. image:: ../_static/Inx2.jpg  |
+|                                            |   :width: 500px                |
 +--------------------------------------------+--------------------------------+
 |.. image:: ../_static/gaussian_smooth_3.png |.. image:: ../_static/cabl1.jpg |
+|                                            |   :width: 500px                |
 +--------------------------------------------+--------------------------------+
 
 After, if you want to do other operations such as clustering, you need to do the same preprocessing you did before.
