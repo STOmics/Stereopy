@@ -1,4 +1,4 @@
-Gaussian smoothing
+Gaussian Smoothing
 ----------------
 This example show how to run the function of gaussian smooth on Stereopy.
 
@@ -33,10 +33,13 @@ Also, you need to run pca before running gaussian smooth.
 
 +--------------------------------------------+--------------------------------+
 |.. image:: ../_static/gaussian_smooth_1.png |.. image:: ../_static/C1ql2.jpg |
+|                                            |   :width: 500px                |
 +--------------------------------------------+--------------------------------+
 |.. image:: ../_static/gaussian_smooth_2.png |.. image:: ../_static/Inx2.jpg  |
+|                                            |   :width: 500px                |
 +--------------------------------------------+--------------------------------+
 |.. image:: ../_static/gaussian_smooth_3.png |.. image:: ../_static/cabl1.jpg |
+|                                            |   :width: 500px                |
 +--------------------------------------------+--------------------------------+
 
 After, if you want to do other operations such as clustering, you need to do the same preprocessing you did before.
@@ -72,3 +75,28 @@ Gaussian smoothing can make clustering result to more subtypes.
 +===================================================+===================================================+
 |.. image:: ../_static/clustering_before_smooth.png |.. image:: ../_static/clustering_after_smooth.png  |
 +---------------------------------------------------+---------------------------------------------------+
+
+
+Performance
+------------
+The data in example contains 61857 cells and 24562 genes.
+
+---------------------
+Machine Configuration
+---------------------
++---------------+------------+---------+
+|physical cores |logic cores |memory   |
++===============+============+=========+
+|12             |48          |250G     |
++---------------+------------+---------+
+
+-------------------------------------------
+Performance
+-------------------------------------------
+only support single process
+
++---------+------------+---------+-------+
+|process  |memory(max) |cpu      |time   |
++=========+============+=========+=======+
+|1        |44G         |2736%    |4m45s  |
++---------+------------+---------+-------+

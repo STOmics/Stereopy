@@ -143,7 +143,8 @@ def merge(data1: StereoExpData = None, data2: StereoExpData = None, *args, reorg
                 max_ys[position_row_number + 1] = max_y
     if reorganize_coordinate:
         coordinate_offset_additional = 0 if coordinate_offset_additional < 0 else coordinate_offset_additional
-        batches = np.unique(new_data.cells.batch)
+        batches = np.unique(new_data.cells.batch).tolist()
+        batches.sort(key=lambda x: int(x))
         for i, bno in enumerate(batches):
             idx = np.where(new_data.cells.batch == bno)[0]
             position_row_number = i // reorganize_coordinate
@@ -151,9 +152,9 @@ def merge(data1: StereoExpData = None, data2: StereoExpData = None, *args, reorg
             x_add = max_xs[position_column_number]
             y_add = max_ys[position_row_number]
             if position_column_number > 0:
-                x_add += max_xs[position_column_number - 1] + coordinate_offset_additional * position_column_number
+                x_add += sum(max_xs[0:position_column_number]) + coordinate_offset_additional * position_column_number
             if position_row_number > 0:
-                y_add += max_ys[position_row_number - 1] + coordinate_offset_additional * position_row_number
+                y_add += sum(max_ys[0:position_row_number]) + coordinate_offset_additional * position_row_number
             # position_offset = np.repeat([[x_add, y_add]], repeats=len(idx), axis=0).astype(np.uint32)
             position_offset = np.array([x_add, y_add], dtype=np.uint32)
             new_data.position[idx] += position_offset
