@@ -58,7 +58,9 @@ def get_top_marker(g_name: str, marker_res: dict, sort_key: str, ascend: bool = 
     top_res = result.sort_values(by=sort_key, ascending=ascend).head(top_n)
     return top_res
 
-def merge(data1: StereoExpData = None, data2: StereoExpData = None, *args, reorganize_coordinate=2, coordinate_offset_additional=0):
+
+def merge(data1: StereoExpData = None, data2: StereoExpData = None, *args, reorganize_coordinate=2,
+          coordinate_offset_additional=0):
     """merge two or more datas to one
 
     :param data1: the first data to be merged, an object of StereoExpData, defaults to None
@@ -116,7 +118,8 @@ def merge(data1: StereoExpData = None, data2: StereoExpData = None, *args, reorg
             if new_data.cell_borders is not None and data.cell_borders is not None:
                 new_data.cells.cell_boder = np.concatenate([new_data.cells.cell_boder, data.cells.cell_boder])
             new_data.position = np.concatenate([new_data.position, data.position])
-            new_data.genes.gene_name, ind1, ind2 = np.intersect1d(new_data.genes.gene_name, data.genes.gene_name, return_indices=True)
+            new_data.genes.gene_name, ind1, ind2 = np.intersect1d(new_data.genes.gene_name, data.genes.gene_name,
+                                                                  return_indices=True)
             new_data.exp_matrix = sp.vstack([new_data.exp_matrix[:, ind1], data.exp_matrix[:, ind2]])
             if new_data.offset_x is not None and data.offset_x is not None:
                 new_data.offset_x = min(new_data.offset_x, data.offset_x)
@@ -133,7 +136,7 @@ def merge(data1: StereoExpData = None, data2: StereoExpData = None, *args, reorg
                     'resolution': 0,
                 }
         if reorganize_coordinate:
-            position_row_number =  i // reorganize_coordinate
+            position_row_number = i // reorganize_coordinate
             position_column_number = i % reorganize_coordinate
             max_x = data.position[:, 0].max()
             max_y = data.position[:, 1].max()
@@ -166,16 +169,18 @@ def merge(data1: StereoExpData = None, data2: StereoExpData = None, *args, reorg
 
     return new_data
 
-def split(data: StereoExpData = None):
-    """splitting a data which is merged from defferent batches by batch number
 
-    :param data: a merged data, defaults to None
-    :return: _description_
+def split(data: StereoExpData = None):
     """
+    splitting a data which is merged from different batches base on batch number
+
+    :param data: a merged data, defaults to None
+    :return: a split data list
+    """
 
     if data is None:
         return None
-    
+
     from copy import deepcopy
 
     all_data = []
@@ -185,7 +190,8 @@ def split(data: StereoExpData = None):
     for bno in batch:
         cell_idx = np.where(data.cells.batch == bno)[0]
         cell_names = data.cell_names[cell_idx]
-        new_data = StereoExpData(bin_type=data.bin_type, bin_size=data.bin_size, cells=deepcopy(data.cells), genes=deepcopy(data.genes))
+        new_data = StereoExpData(bin_type=data.bin_type, bin_size=data.bin_size, cells=deepcopy(data.cells),
+                                 genes=deepcopy(data.genes))
         new_data.cells = new_data.cells.sub_set(cell_idx)
         new_data.position = data.position[cell_idx] - data.position_offset[bno]
         new_data.exp_matrix = data.exp_matrix[cell_idx]
@@ -217,11 +223,15 @@ def split(data: StereoExpData = None):
                     new_data.tl.result[res_key] = result[res_key]
             elif key == 'sct':
                 for res_key in all_res_key:
+                    cells_bool_list = np.isin(result[res_key][0]['umi_cells'], cell_names)
+                    # sct `counts` and `data` should have same shape
                     new_data.tl.result[res_key] = (
                         new_data,
                         {
-                            'filtered_corrected_counts': result[res_key][1]['filtered_corrected_counts'].loc[cell_names],
-                            'filtered_normalized_counts': result[res_key][1]['filtered_normalized_counts'].loc[cell_names]
+                            'cells': cell_names,
+                            'genes': result[res_key][0]['umi_genes'],
+                            'filtered_corrected_counts': result[res_key][0]['counts'][cells_bool_list, :],
+                            'filtered_normalized_counts': result[res_key][0]['data'][cells_bool_list, :]
                         }
                     )
             elif key == 'tsne':
@@ -233,5 +243,5 @@ def split(data: StereoExpData = None):
         if data.tl.raw is not None:
             new_data.tl.raw = data.tl.raw.tl.filter_cells(cell_list=cell_names, inplace=False)
         all_data.append(new_data)
-    
+
     return all_data

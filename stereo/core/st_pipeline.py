@@ -25,6 +25,7 @@ from ..utils.time_consume import TimeConsume
 
 tc = TimeConsume()
 
+
 def logit(func):
     @wraps(func)
     def wrapped(*args, **kwargs):
@@ -33,6 +34,7 @@ def logit(func):
         res = func(*args, **kwargs)
         logger.info('{} end, consume time {:.4f}s.'.format(func.__name__, tc.get_time_consumed(key=tk, restart=False)))
         return res
+
     return wrapped
 
 
@@ -244,15 +246,18 @@ class StPipeline(object):
             self.result[res_key] = zscore_disksmooth(self.data.exp_matrix, self.data.position, r)
 
     @logit
-    def sctransform(self,
-                    method="theta_ml",
-                    n_cells=5000,
-                    n_genes=None,
-                    filter_hvgs=False,
-                    res_clip_range="seurat",
-                    var_features_n=3000,
-                    inplace=True,
-                    res_key='sctransform'):
+    def sctransform(
+            self,
+            n_cells=5000,
+            n_genes=2000,
+            filter_hvgs=True,
+            var_features_n=3000,
+            inplace=True,
+            res_key='sctransform',
+            exp_matrix_key="scale.data",
+            seed_use=1448145,
+            **kwargs
+    ):
         """
         scTransform reference Seruat.
 
@@ -267,31 +272,35 @@ class StPipeline(object):
         :param var_features_n: Number of variable features to select (for calculating a subset of pearson residuals).
         :param inplace: whether inplace the original data or get a new express matrix after sctransform.
         :param res_key: the key for getting the result from the self.result.
+        :param seed_use: random seed
         :return:
         """
         from ..preprocess.sc_transform import sc_transform
         if inplace:
-            self.result[res_key] = sc_transform(self.data, method, n_cells, n_genes, filter_hvgs,
-                                                res_clip_range, var_features_n)
+            self.result[res_key] = sc_transform(self.data, n_cells, n_genes, filter_hvgs, exp_matrix_key=exp_matrix_key,
+                                                seed_use=seed_use, **kwargs)
         else:
             import copy
             data = copy.deepcopy(self.data)
-            self.result[res_key] = sc_transform(data, method, n_cells, n_genes, filter_hvgs,
-                                                res_clip_range, var_features_n)
+            self.result[res_key] = sc_transform(data, n_cells, n_genes, filter_hvgs, var_features_n,
+                                                exp_matrix_key=exp_matrix_key, seed_use=seed_use, **kwargs)
         key = 'sct'
         self.reset_key_record(key, res_key)
 
     @logit
-    def highly_variable_genes(self,
-                         groups=None,
-                         method: Optional[str] = 'seurat',
-                         n_top_genes: Optional[int] = 2000,
-                         min_disp: Optional[float] = 0.5,
-                         max_disp: Optional[float] = np.inf,
-                         min_mean: Optional[float] = 0.0125,
-                         max_mean: Optional[float] = 3,
-                         span: Optional[float] = 0.3,
-                         n_bins: int = 20, res_key='highly_variable_genes'):
+    def highly_variable_genes(
+            self,
+            groups=None,
+            method: Optional[str] = 'seurat',
+            n_top_genes: Optional[int] = 2000,
+            min_disp: Optional[float] = 0.5,
+            max_disp: Optional[float] = np.inf,
+            min_mean: Optional[float] = 0.0125,
+            max_mean: Optional[float] = 3,
+            span: Optional[float] = 0.3,
+            n_bins: int = 20,
+            res_key='highly_variable_genes'
+    ):
         """
         Annotate highly variable genes. reference scanpy.
 
@@ -383,6 +392,7 @@ class StPipeline(object):
         self.result[res_key] = pd.DataFrame(res['x_pca'])
         key = 'pca'
         self.reset_key_record(key, res_key)
+
     # def umap(self, pca_res_key, n_pcs=None, n_neighbors=5, min_dist=0.3, res_key='dim_reduce'):
     #     if pca_res_key not in self.result:
     #         raise Exception(f'{pca_res_key} is not in the result, please check and run the pca func.')
@@ -447,7 +457,8 @@ class StPipeline(object):
         self.reset_key_record(key, res_key)
 
     @logit
-    def neighbors(self, pca_res_key, method='umap', metric='euclidean', n_pcs=-1, n_neighbors=10, knn=True, n_jobs=10, res_key='neighbors'):
+    def neighbors(self, pca_res_key, method='umap', metric='euclidean', n_pcs=-1, n_neighbors=10, knn=True, n_jobs=10,
+                  res_key='neighbors'):
         """
         run the neighbors.
 
@@ -499,7 +510,7 @@ class StPipeline(object):
         key = 'neighbors'
         self.reset_key_record(key, res_key)
 
-    def get_neighbors_res(self, neighbors_res_key,):
+    def get_neighbors_res(self, neighbors_res_key, ):
         """
         get the neighbor result by the key.
 
@@ -569,7 +580,7 @@ class StPipeline(object):
         neighbor, connectivities, _ = self.get_neighbors_res(neighbors_res_key)
         clusters = le(neighbor=neighbor, adjacency=connectivities, directed=directed, resolution=resolution,
                       use_weights=use_weights, random_state=random_state, n_iterations=n_iterations)
-        df = pd.DataFrame({'bins': self.data.cell_names, 'group': clusters}) 
+        df = pd.DataFrame({'bins': self.data.cell_names, 'group': clusters})
         self.result[res_key] = df
         key = 'cluster'
         self.reset_key_record(key, res_key)
@@ -625,13 +636,14 @@ class StPipeline(object):
         if pca_res_key not in self.result:
             raise Exception(f'{pca_res_key} is not in the result, please check and run the pca func.')
         import phenograph as phe
-        communities, _, _ = phe.cluster(self.result[pca_res_key], k=phenograph_k, clustering_algo='leiden', n_jobs=n_jobs)
+        communities, _, _ = phe.cluster(self.result[pca_res_key], k=phenograph_k, clustering_algo='leiden',
+                                        n_jobs=n_jobs)
         communities = communities + 1
         clusters = communities.astype(str)
         df = pd.DataFrame({'bins': self.data.cell_names, 'group': clusters})
         self.result[res_key] = df
         key = 'cluster'
-        self.reset_key_record(key,res_key)
+        self.reset_key_record(key, res_key)
 
     @logit
     def find_marker_genes(self,
@@ -733,7 +745,7 @@ class StPipeline(object):
         self.result[res_key] = res
 
     @logit
-    def spatial_hotspot(self, use_highly_genes=True, hvg_res_key:Optional[str] = None, model='normal', n_neighbors=30,
+    def spatial_hotspot(self, use_highly_genes=True, hvg_res_key: Optional[str] = None, model='normal', n_neighbors=30,
                         n_jobs=20, fdr_threshold=0.05, min_gene_threshold=10, outdir=None, res_key='spatial_hotspot',
                         use_raw=True, ):
         """
@@ -763,7 +775,7 @@ class StPipeline(object):
         from ..algorithm.spatial_hotspot import spatial_hotspot
         if use_highly_genes and hvg_res_key not in self.result:
             raise Exception(f'{hvg_res_key} is not in the result, please check and run the highly_var_genes func.')
-        #data = self.subset_by_hvg(hvg_res_key, inplace=False) if use_highly_genes else self.data
+        # data = self.subset_by_hvg(hvg_res_key, inplace=False) if use_highly_genes else self.data
         if use_raw and not self.raw:
             raise Exception(f'self.raw must be set if use_raw is True.')
         data = copy.deepcopy(self.raw) if use_raw else copy.deepcopy(self.data)
@@ -777,9 +789,10 @@ class StPipeline(object):
         # res = {"results":hs.results, "local_cor_z": hs.local_correlation_z, "modules": hs.modules,
         #        "module_scores": hs.module_scores}
         self.result[res_key] = hs
-    
+
     @logit
-    def gaussian_smooth(self, n_neighbors=10, smooth_threshold=90, pca_res_key='pca', res_key='gaussian_smooth', n_jobs=-1, inplace=True):
+    def gaussian_smooth(self, n_neighbors=10, smooth_threshold=90, pca_res_key='pca', res_key='gaussian_smooth',
+                        n_jobs=-1, inplace=True):
         """smooth the expression matrix
 
         :param n_neighbors: number of the nearest points to serach, Too high value may cause overfitting, Too low value may cause poor smoothing effect.
@@ -798,11 +811,13 @@ class StPipeline(object):
         raw_exp_matrix = self.raw.exp_matrix.toarray() if issparse(self.raw.exp_matrix) else self.raw.exp_matrix
 
         if pca_exp_matrix.shape[0] != raw_exp_matrix.shape[0]:
-            raise Exception(f"The first dimension of pca_exp_matrix not equals to raw_exp_matrix's, may be because of running raw_checkpoint before filter cells and genes.")
-        
+            raise Exception(
+                f"The first dimension of pca_exp_matrix not equals to raw_exp_matrix's, may be because of running raw_checkpoint before filter cells and genes.")
+
         # logger.info(f"raw exp matrix size: {raw_exp_matrix.shape}")
         from ..algorithm.gaussian_smooth import gaussian_smooth
-        result = gaussian_smooth(pca_exp_matrix, raw_exp_matrix, self.data.position, n_neighbors=n_neighbors, smooth_threshold=smooth_threshold, n_jobs=n_jobs)
+        result = gaussian_smooth(pca_exp_matrix, raw_exp_matrix, self.data.position, n_neighbors=n_neighbors,
+                                 smooth_threshold=smooth_threshold, n_jobs=n_jobs)
         # logger.info(f"smoothed exp matrix size: {result.shape}")
         if inplace:
             self.data.exp_matrix = result
@@ -810,22 +825,22 @@ class StPipeline(object):
             cal_qc(self.data)
         else:
             self.result[res_key] = result
-                
+
     def lr_score(
-        self, 
-        lr_pairs: Union[list, np.array],
-        distance: Union[int, float] = 5,
-        spot_comp: pd.DataFrame = None, 
-        verbose: bool = True, 
-        key_add: str = 'cci_score',
-        min_exp: Union[int, float] = 0, 
-        use_raw: bool = False,
-        min_spots: int = 20, 
-        n_pairs: int = 1000,
-        adj_method: str = "fdr_bh",
-        bin_scale: int = 1,
-        n_jobs=4,
-        res_key='lr_score'
+            self,
+            lr_pairs: Union[list, np.array],
+            distance: Union[int, float] = 5,
+            spot_comp: pd.DataFrame = None,
+            verbose: bool = True,
+            key_add: str = 'cci_score',
+            min_exp: Union[int, float] = 0,
+            use_raw: bool = False,
+            min_spots: int = 20,
+            n_pairs: int = 1000,
+            adj_method: str = "fdr_bh",
+            bin_scale: int = 1,
+            n_jobs=4,
+            res_key='lr_score'
     ):
         """calculate cci score for each LR pair and do permutation test
 
@@ -858,9 +873,9 @@ class StPipeline(object):
             _description_
         """
         from ..tools.LR_interaction import LrInteraction
-        interaction = LrInteraction(self, 
-                                    verbose=verbose, 
-                                    bin_scale=bin_scale, 
+        interaction = LrInteraction(self,
+                                    verbose=verbose,
+                                    bin_scale=bin_scale,
                                     distance=distance,
                                     spot_comp=spot_comp,
                                     n_jobs=n_jobs,
@@ -868,15 +883,14 @@ class StPipeline(object):
                                     min_spots=min_spots,
                                     n_pairs=n_pairs,
                                     )
-        
-        result = interaction.fit(lr_pairs=lr_pairs, 
-                                 adj_method=adj_method, 
+
+        result = interaction.fit(lr_pairs=lr_pairs,
+                                 adj_method=adj_method,
                                  use_raw=use_raw,
                                  key_add=key_add)
-        
+
         self.result[res_key] = result
 
-    
     @logit
     def batches_integrate(self, pca_res_key='pca', res_key='pca_integrated', **kwargs):
         """integrate different experiments base on the pca result
@@ -892,8 +906,6 @@ class StPipeline(object):
         self.result[res_key] = pd.DataFrame(out.Z_corr.T)
         key = 'pca'
         self.reset_key_record(key, res_key)
-
-        
 
     # def scenic(self, tfs, motif, database_dir, res_key='scenic', use_raw=True, outdir=None,):
     #     """
@@ -916,6 +928,3 @@ class StPipeline(object):
     #     res = {"modules": modules, "regulons": regulons, "adjacencies": adjacencies, "motifs": motifs,
     #            "auc_mtx":auc_mtx, "regulons_df": regulons_df}
     #     self.result[res_key] = res
-
-
-
