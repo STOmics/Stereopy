@@ -6,12 +6,39 @@ import os
 import time
 import pandas as pd
 import numpy as np
+import numba
 from ..algorithm.cell_correction import CellCorrection
 from ..algorithm import cell_correction_fast
 from ..io import read_gem, read_gef
 from ..log_manager import logger
 from gefpy import cgef_writer_cy, bgef_writer_cy, cgef_adjust_cy
 from ..utils.time_consume import TimeConsume, log_consumed_time
+
+@log_consumed_time
+@numba.njit(cache=True, parallel=True, nogil=True)
+def generate_cell_and_dnb(adjusted_data: np.ndarray):
+    # ['x', 'y', 'UMICount', 'label', 'geneid']
+    cells_list = adjusted_data[:, 3]
+    cells_idx_sorted = np.argsort(cells_list)
+    adjusted_data = adjusted_data[cells_idx_sorted]
+    cell_data = []
+    dnb_data = []
+    last_cell = -1
+    cellid = -1
+    offset = -1
+    count = -1
+    for i, row in enumerate(adjusted_data):
+        current_cell = row[3]
+        if current_cell != last_cell:
+            if last_cell >= 0:
+                cell_data.append((cellid, offset, count))
+            cellid, offset, count = current_cell, i, 1
+            last_cell = current_cell
+        else:
+            count += 1
+        dnb_data.append((row[0], row[1], row[2], row[4]))
+    cell_data.append((cellid, offset, count))
+    return cell_data, dnb_data
 
 class CellCorrect(object):
 
@@ -86,14 +113,9 @@ class CellCorrect(object):
         return genes, raw_data
     
     @log_consumed_time
-    def generate_adjusted_cgef(self, adjusted_data, genes):
-        adjusted_data.rename(columns={"label": "cellid", "UMICount": "count"}, inplace=True)
-        adjusted_data.sort_values('cellid', ignore_index=True, inplace=True)
-        adjusted_data.reset_index(inplace=True)
-        cell = adjusted_data.groupby('cellid').agg(offset=('index', np.min), count=('index', np.size)).reset_index()
-        dnb = adjusted_data.drop(['index', 'geneID', 'cellid', 'tag'], axis=1)
-        cell_data = list(map(tuple, cell.to_dict("split")['data']))
-        dnb_data = list(map(tuple, dnb.to_dict("split")['data']))
+    def generate_adjusted_cgef(self, adjusted_data: pd.DataFrame, genes):
+        adjusted_data_np = adjusted_data[['x', 'y', 'UMICount', 'label', 'geneid']].to_numpy(dtype=np.uint32)
+        cell_data, dnb_data = generate_cell_and_dnb(adjusted_data_np)
         cell_type = np.dtype({'names':['cellid', 'offset', 'count'], 'formats':[np.uint32, np.uint32, np.uint32]}, align=True)
         dnb_type = np.dtype({'names':['x', 'y', 'count', 'gene_id'], 'formats':[np.int32, np.int32, np.uint16, np.uint32]}, align=True)
         cell = np.array(cell_data, dtype=cell_type)
