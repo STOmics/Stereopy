@@ -4,24 +4,19 @@ Created on Fri Jul 22 10:13:48 2022
 
 @author: ywu28328
 """
-import os
-import gc
-import datetime
-from functools import wraps
 import pandas as pd
 import numpy as np
-import cv2
-from PIL import Image
-import tifffile as tifi
-import gzip
+import numba
 from scipy.spatial import ConvexHull
 from tqdm import tqdm
-from collections import defaultdict
 from ..log_manager import logger
-from ..utils.time_consume import log_consumed_time
+from ..utils.time_consume import log_consumed_time, TimeConsume
+
+tc = TimeConsume()
 
 def parse_head(gem):
     if gem.endswith('.gz'):
+        import gzip
         f = gzip.open(gem, 'rb')
     else:
         f = open(gem, 'rb')
@@ -44,6 +39,8 @@ def parse_head(gem):
 
 
 def creat_cell_gxp(maskFile, geneFile, transposition=False):
+    import cv2
+    import tifffile as tifi
     print("Loading mask file...")
     mask = tifi.imread(maskFile)
 
@@ -81,39 +78,35 @@ def creat_cell_gxp(maskFile, geneFile, transposition=False):
     res = pd.merge(genedf, tissuedf, on=['x', 'y'], how='left').fillna(0)  # keep background data
     return res
 
-
+@numba.njit(cache=True, nogil=True)
 def find_nearest(array, value):
     return np.searchsorted(array, value, side="left")
 
-
+@numba.njit(cache=True, nogil=True)
 def calDis(p1, p2):
     return np.sqrt(np.sum((p1 - p2)**2, axis=1))
 
 
 @log_consumed_time
-def allocate_free_pts(cell_list, cell_points, free_points_np, data_np):
-    x_axis, _, idx_in_data = free_points_np.T
-    for cell in tqdm(cell_list, desc='correcting cells'):
-        min_x = min(cell_points[cell], key=lambda x: x[0])[0] - 30
-        max_x = max(cell_points[cell], key=lambda x: x[0])[0] + 30
-        # pts_np = cell_points[cell_points[:, 2] == cell][:, [0, 1]]
-        # min_x = np.min(pts_np, axis=0)[0]
-        # max_x = np.max(pts_np, axis=0)[0]
+def allocate_free_pts(data: np.ndarray, cell_points, cells_index, free_points, free_points_index):
+    x_axis, _ = free_points.T
+    for cell in tqdm(cells_index, desc='correcting cells'):
+        cell_id, cell_start, cell_end = cell
+        current_cell_points = cell_points[cell_start:cell_end]
+        min_x = np.min(current_cell_points, axis=0)[0] - 30
+        max_x = np.max(current_cell_points, axis=0)[0] + 30
 
         idx_x_low, idx_x_upper = find_nearest(x_axis, min_x), find_nearest(x_axis, max_x)
-        sub_free_pts_np = free_points_np[idx_x_low:idx_x_upper, [0, 1]]
-        sub_idx_in_data = idx_in_data[idx_x_low:idx_x_upper]
+        sub_free_pts_np = free_points[idx_x_low:idx_x_upper]
+        sub_idx_in_data = free_points_index[idx_x_low:idx_x_upper]
 
-        pts_np = np.array(cell_points[cell])
-        x, y = np.sum(pts_np, axis=0)
-        centroid = [int(x / len(pts_np)), int(y / len(pts_np))]
+        x, y = np.sum(current_cell_points, axis=0)
+        centroid = np.array([int(x / len(current_cell_points)), int(y / len(current_cell_points))])
         length = 5
         try:
-            # hull = ConvexHull(cell_points[cell])
-            # pts_in_hull = np.array(cell_points[cell])[hull.vertices]
-            hull = ConvexHull(pts_np)
-            pts_in_hull = pts_np[hull.vertices]
-            hull_dis_matrix = calDis(pts_in_hull, np.array(centroid))
+            hull = ConvexHull(current_cell_points)
+            pts_in_hull = current_cell_points[hull.vertices]
+            hull_dis_matrix = calDis(pts_in_hull, centroid)
             hull_min_dis = np.min(hull_dis_matrix)
             hull_max_dis = np.max(hull_dis_matrix)
             if hull_max_dis - hull_min_dis > 5:
@@ -122,12 +115,12 @@ def allocate_free_pts(cell_list, cell_points, free_points_np, data_np):
                 length = hull_max_dis + 5
         except:
             length = 5
-        dis_matrix = calDis(sub_free_pts_np, np.array(centroid))
+        dis_matrix = calDis(sub_free_pts_np, centroid)
         idx = np.where(dis_matrix < length)
         sub_idx_in_data_allocated = sub_idx_in_data[idx]
-        data_np[sub_idx_in_data_allocated, 4] = cell
-        data_np[sub_idx_in_data_allocated, 6] = 'adjust'
-    return data_np
+        data[sub_idx_in_data_allocated, 4] = cell_id
+        data[sub_idx_in_data_allocated, 6] = 'adjust'
+    return data
 
 
 @log_consumed_time
@@ -142,36 +135,52 @@ def load_data(gem_file, mask_file):
         data = gem_file
     else:
         data = creat_cell_gxp(mask_file, gem_file, transposition=False)
-
-    data['label'] = data['label'].astype(int)
+    
+    data.sort_values(by='label', ignore_index=True, inplace=True)
     data['tag'] = 'raw'
-    return data.to_numpy()
+    positions = data[['x', 'y']].to_numpy(dtype=np.uint32)
+    labels = data['label'].values.astype(dtype=np.uint32)
 
+    return data.to_numpy(), positions, labels
 
 @log_consumed_time
-def preprocess(data_np):
-    cell_points = {}
-    free_points = []
-    for i, row in enumerate(data_np):
-        if row[4] != 0:
-            if row[4] not in cell_points:
-                cell_points[row[4]] = [[row[1], row[2]]]
-            else:
-                cell_points[row[4]].append([row[1], row[2]])
-        else:
-            free_points.append([row[1], row[2], i])
-    free_points = sorted(free_points, key=lambda x: (x[0], x[1])) 
-    free_points_np = np.array(free_points)
-    cell_label_list = sorted(list(cell_points.keys()))
-    return cell_label_list, cell_points, free_points_np
+@numba.njit(cache=True, parallel=True, nogil=True)
+def preprocess(positions, labels):
+    free_points_count = (labels == 0).sum()
+    cell_points_count = labels.shape[0] - free_points_count
+    cell_points = np.zeros(shape=(cell_points_count, 2), dtype=np.int32)
+    free_points = np.zeros(shape=(free_points_count, 2), dtype=np.uint32)
+    free_points_x_axis = positions[0:free_points_count, 0]
+    free_points_index = np.argsort(free_points_x_axis)
+    free_points[:] = positions[0:free_points_count][free_points_index]
+    cell_points[:] = positions[free_points_count:]
+    cell_ids = np.unique(labels)[1:]
+    cells_count = cell_ids.shape[0]
+    cells_index = np.zeros(shape=(cells_count, 3), dtype=np.uint32)
+    last_cell_id = 0
+    cells_index_idx = 0
+    for i in range(cell_points.shape[0]):
+        j = i + free_points_count
+        current_cell_id = labels[j]
+        if current_cell_id != last_cell_id:
+            cells_index[cells_index_idx][0] = current_cell_id
+            cells_index[cells_index_idx][1] = i
+            if cells_index_idx > 0:
+                cells_index[cells_index_idx - 1][2] = i
+            cells_index_idx += 1
+            last_cell_id = current_cell_id
+    cells_index[-1, 2] = cell_points.shape[0]
+
+    return cell_points, cells_index, free_points, free_points_index
 
 
 @log_consumed_time
 def cell_correct(gem_file, mask_file):
     logger.info("start to correct cells!!!")
-    data_np = load_data(gem_file, mask_file)
-    cell_label_list, cell_points, free_points_np = preprocess(data_np)
+    data, positions, labels = load_data(gem_file, mask_file)
+    cell_points, cells_index, free_points, free_points_index = preprocess(positions, labels)
+    del positions, labels
     logger.info("load data end, start to allocate free RNA")
-    data_np = allocate_free_pts(cell_label_list, cell_points, free_points_np, data_np)
-    logger.info(f'allocate free RNA end, type of allocated RNA is {len(cell_label_list)}')
-    return save_to_result(data_np)
+    data = allocate_free_pts(data, cell_points, cells_index, free_points, free_points_index)
+    logger.info(f'allocate free RNA end, type of allocated RNA is {len(cells_index)}')
+    return save_to_result(data)
