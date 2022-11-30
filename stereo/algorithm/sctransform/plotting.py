@@ -122,7 +122,7 @@ opacity = 0.5
 error_config = {'ecolor': '0.3'}
 
 
-def plot_genes_var_contribution(stereo_exp_data):
+def plot_genes_var_contribution(stereo_exp_data, gene_names=None):
     exp_matrix_df = stereo_exp_data.to_df()
 
     # SCTransform
@@ -130,8 +130,12 @@ def plot_genes_var_contribution(stereo_exp_data):
 
     genes_var_series = stereo_exp_data.tl.result['sctransform'][0]['scale.data'].var(1)
 
-    genes_var_series = genes_var_series.sample(6)
-    gene_names = genes_var_series.index.values
+    if gene_names:
+        genes_var_series = genes_var_series.loc[gene_names]
+        gene_names = genes_var_series.index.values
+    else:
+        genes_var_series = genes_var_series.sample(6)
+        gene_names = genes_var_series.index.values
 
     genes_var_series_sum = genes_var_series.sum()
     genes_var_contribution = genes_var_series / genes_var_series_sum * 100
@@ -141,8 +145,8 @@ def plot_genes_var_contribution(stereo_exp_data):
     bottom = 0
     for di in range(len(genes_var_contribution.values)):
         _ = axes.bar(0, genes_var_contribution.values[di], bar_width, bottom=bottom, alpha=opacity,
-                        color=colors[di],
-                        error_kw=error_config, label=gene_names[di])
+                     color=colors[di],
+                     error_kw=error_config, label=gene_names[di])
         bottom += genes_var_contribution.values[di]
 
     # Log1p-Normalization
@@ -154,8 +158,8 @@ def plot_genes_var_contribution(stereo_exp_data):
     bottom = 0
     for di in range(len(genes_var_contribution.values)):
         _ = axes.bar(1, genes_var_contribution.values[di], bar_width, bottom=bottom, alpha=opacity,
-                        color=colors[di],
-                        error_kw=error_config)
+                     color=colors[di],
+                     error_kw=error_config)
         bottom += genes_var_contribution.values[di]
 
     axes.set_xticks([0, 1])
