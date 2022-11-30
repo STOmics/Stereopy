@@ -37,6 +37,7 @@ StereoExpData as h5ad file for storage.
     io.read_gef
     io.read_ann_h5ad
     io.read_stereo_h5ad
+    io.read_seurat_h5ad
     io.anndata_to_stereo
     io.stereo_to_anndata
     io.write_h5ad
