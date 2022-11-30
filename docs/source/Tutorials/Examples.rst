@@ -24,6 +24,7 @@ Additional Functionalities
     gaussian_smooth
     batches_integration
     rna_velocity
+    sctransform
 
 Interactive Visualization
 --------------------------------------------

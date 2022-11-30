@@ -15,7 +15,7 @@ if sys.version_info < (3, 7):
 
 setup(
     name='stereopy',
-    version='0.7.0',
+    version='0.8.0',
     setup_requires=['setuptools_scm', 'numpy', 'panel', 'pytest', 'quilt3', 'scipy', 'phenograph'],
     description='Spatial transcriptomic analysis in python.',
     long_description=Path('README.md').read_text('utf-8'),
@@ -23,7 +23,7 @@ setup(
     url='https://github.com/BGIResearch/stereopy',
     author='BGIResearch',
     author_email='qiuping1@genomics.cn',
-    python_requires='>=3.7',
+    python_requires='>=3.7 <3.9',
     install_requires=[
         l.strip() for l in Path('requirements.txt').read_text('utf-8').splitlines()
     ],
@@ -37,8 +37,6 @@ setup(
     classifiers=[
         'Natural Language :: English',
         'License :: OSI Approved :: MIT License',
-        'Operating System :: MacOS :: MacOS X',
-        'Operating System :: Microsoft :: Windows',
         'Operating System :: POSIX :: Linux',
         'Programming Language :: Python :: 3',
         'Topic :: Scientific/Engineering :: Bio-Informatics',
