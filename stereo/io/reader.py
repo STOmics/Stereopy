@@ -25,7 +25,7 @@ import h5py
 import numpy as np
 import pandas as pd
 from anndata import AnnData
-from scipy.sparse import csr_matrix
+from scipy.sparse import csr_matrix, vstack as sp_vstack
 from shapely.geometry import Point, MultiPoint
 
 from stereo.io import h5ad
@@ -219,6 +219,86 @@ def read_stereo_h5ad(file_path, use_raw=True, use_result=True, ):
     return data
 
 @ReadWriteUtils.check_file_exists
+def read_seurat_h5ad(file_path, use_raw=False):
+    """
+    read the h5ad file in Anndata format of seurat, and generate the object of StereoExpData.
+
+    :param file_path: h5ad file path.
+    :return: StereoExpData obj.
+    """
+    data = StereoExpData(file_path=file_path)
+
+    # basic
+    # attributes = ["obsm", "varm", "obsp", "varp", "uns", "layers"]
+    # df_attributes = ["obs", "var"]
+
+    with h5py.File(data.file, mode='r') as f:
+
+        if 'raw' not in f.keys():
+            use_raw = False
+
+        for k in f.keys():
+            if k == "raw" or k.startswith("raw."):
+                continue
+            if k == "X":
+                data.exp_matrix = read_dense_as_csr_matrix(f[k])
+            elif k == "obs":
+                cells_df = h5ad.read_dataframe(f[k])
+                data.cells.cell_name = cells_df.index.values
+                data.cells.total_counts = cells_df['total_counts'] if 'total_counts' in cells_df.keys() else None
+                data.cells.pct_counts_mt = cells_df['pct_counts_mt'] if 'pct_counts_mt' in cells_df.keys() else None
+                data.cells.n_genes_by_counts = cells_df['n_genes_by_counts'] if 'n_genes_by_counts' in cells_df.keys() else None
+                data.position = cells_df[['x', 'y']].to_numpy(dtype=np.uint32)
+                for cluster_key in f['obs']['__categories'].keys():
+                    if cluster_key == 'orig.ident':
+                        continue
+                    data.tl.result[cluster_key] = pd.DataFrame({'bins': data.cells.cell_name, 'group': cells_df[cluster_key].values}) 
+                    data.tl.key_record['cluster'].append(cluster_key)
+            elif k == "var":
+                genes_df = h5ad.read_dataframe(f[k])
+                data.genes.gene_name = genes_df.index.values
+                # data.genes.n_cells = genes_df['n_cells']
+                # data.genes.n_counts = genes_df['n_counts']
+            elif k == 'obsm':
+                key: str
+                for key in f['obsm'].keys():
+                    if key == 'X_pca':
+                        data.tl.result['pca'] = pd.DataFrame(h5ad.read_dataset(f['obsm']['X_pca']))
+                        data.tl.key_record['pca'].append('pca')
+                    elif key == 'X_umap':
+                        data.tl.result['umap'] = pd.DataFrame(h5ad.read_dataset(f['obsm']['X_umap']))
+                        data.tl.key_record['umap'].append('umap')
+            else:  # Base case
+                pass
+        if use_raw:
+            data.tl.raw = StereoExpData()
+            data.tl.raw.exp_matrix = read_dense_as_csr_matrix(f['raw']['X'])
+            data.tl.raw.cells.cell_name = data.cells.cell_name.copy()
+            data.tl.raw.position = data.position.copy()
+            genes_df = h5ad.read_dataframe(f['raw']['var'])
+            data.tl.raw.genes.gene_name = genes_df.index.values
+    return data
+
+def read_dense_as_csr_matrix(dataset: h5py.Dataset, axis_chunk: int = 10000):
+    sub_matrices = []
+    for idx_row in idx_chunks_along_axis(dataset.shape, axis_chunk):
+        dense_chunk = dataset[idx_row, :]
+        sub_matrix = csr_matrix(dense_chunk)
+        sub_matrices.append(sub_matrix)
+    return sp_vstack(sub_matrices, format="csr")
+
+def idx_chunks_along_axis(shape: tuple, chunk_size: int):
+    total = shape[0]
+    cur = 0
+    idx_row = slice(None)
+    while cur + chunk_size < total:
+        idx_row = slice(cur, cur + chunk_size)
+        yield idx_row
+        cur += chunk_size
+    idx_row = slice(cur, None)
+    yield idx_row
+
+@ReadWriteUtils.check_file_exists
 def read_ann_h5ad(file_path, spatial_key: Optional[str] = None):
     """
     read the h5ad file in Anndata format, and generate the object of StereoExpData.
@@ -251,8 +331,7 @@ def read_ann_h5ad(file_path, spatial_key: Optional[str] = None):
                 data.cells.cell_name = cells_df.index.values
                 data.cells.total_counts = cells_df['total_counts'] if 'total_counts' in cells_df.keys() else None
                 data.cells.pct_counts_mt = cells_df['pct_counts_mt'] if 'pct_counts_mt' in cells_df.keys() else None
-                data.cells.n_genes_by_counts = cells_df[
-                    'n_genes_by_counts'] if 'n_genes_by_counts' in cells_df.keys() else None
+                data.cells.n_genes_by_counts = cells_df['n_genes_by_counts'] if 'n_genes_by_counts' in cells_df.keys() else None
             elif k == "var":
                 genes_df = h5ad.read_dataframe(f[k])
                 data.genes.gene_name = genes_df.index.values
