@@ -3,6 +3,14 @@ Release Notes
 
 .. role:: small
 
+Version 0.8.0
+------------------
+0.8.0 :2022-12-02
+~~~~~~~~~~~~~~~~~~~~~
+1. Reconstruct SCTransform normalization in python.
+2. Optimize the efficiency of FAST cell correction.
+3. Enable to read Seurat output H5AD file for further analysis in Stereopy.
+
 Version 0.7.0
 ------------------
 0.7.0 :2022-11-15
