@@ -52,6 +52,15 @@ class StPipeline(object):
         self.result = dict()
         self._raw = None
         self.key_record = {'hvg': [], 'pca': [], 'neighbors': [], 'umap': [], 'cluster': [], 'marker_genes': []}
+        protected_name_set = set(dir(self))
+        from ..algorithm.algorithm_base import AlgorithmBase
+        for snake_cls_name, cls in AlgorithmBase._get_all_subclass():
+            obj_alg = cls(self.data)
+            # protect original func in `StPipeline`
+            if snake_cls_name in protected_name_set:
+                raise AttributeError(f'should not register func {snake_cls_name} existed in `StPipeline`')
+            # snake_cls_name as function name in pipeline
+            self.__setattr__(snake_cls_name, obj_alg.main)
 
     @property
     def raw(self):
