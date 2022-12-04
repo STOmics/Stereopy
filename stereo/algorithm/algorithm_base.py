@@ -80,11 +80,28 @@ class AlgorithmBase(metaclass=ABCMeta):
         main_mem_check_func(**kwargs)
         return ErrorCode.Success
 
+    @staticmethod
+    def get_attribute_helper(item, stereo_exp_data: StereoExpData, res: dict):
+        try:
+            __import__(f"stereo.algorithm.{item}")
+        except:
+            raise AttributeError(f"No attribute named 'StPipeline.{item}'")
+
+        # TODO: this may be not the best way to get sub-class
+        # num of subclasses may be like 100-200 at most
+        for sub_cls in AlgorithmBase.__subclasses__():
+            sub_cls_name = _camel_to_snake(sub_cls.__name__.split(".")[-1])
+            if sub_cls_name == item:
+                # snake_cls_name as method name in pipeline
+                sub_obj = sub_cls(stereo_exp_data, res)
+                return sub_obj.main
+        return None
+
 
 __CAMEL_TO_SNAKE = re.compile(r"((?<=[a-z0-9])[A-Z]|(?!^)[A-Z](?=[a-z]))")
 
 
-def camel_to_snake(value):
+def _camel_to_snake(value):
     return __CAMEL_TO_SNAKE.sub(r"_\1", value).lower()
 
 
