@@ -25,6 +25,7 @@ from scipy.sparse import issparse
 
 from ..log_manager import logger
 from ..utils.time_consume import TimeConsume
+from ..algorithm.algorithm_base import AlgorithmBase, camel_to_snake
 
 tc = TimeConsume()
 
@@ -42,6 +43,7 @@ def logit(func):
 
 
 class StPipeline(object):
+
     def __init__(self, data):
         """
         A analysis tool sets for StereoExpData. include preprocess, filter, cluster, plot and so on.
@@ -52,15 +54,29 @@ class StPipeline(object):
         self.result = dict()
         self._raw = None
         self.key_record = {'hvg': [], 'pca': [], 'neighbors': [], 'umap': [], 'cluster': [], 'marker_genes': []}
-        protected_name_set = set(dir(self))
-        from ..algorithm.algorithm_base import AlgorithmBase
-        for snake_cls_name, cls in AlgorithmBase._get_all_subclass():
-            obj_alg = cls(self.data)
-            # protect original func in `StPipeline`
-            if snake_cls_name in protected_name_set:
-                raise AttributeError(f'should not register func {snake_cls_name} existed in `StPipeline`')
-            # snake_cls_name as function name in pipeline
-            self.__setattr__(snake_cls_name, obj_alg.main)
+
+    def __getattr__(self, item):
+        dict_attr = self.__dict__.get(item, None)
+        if dict_attr:
+            return dict_attr
+        try:
+            __import__(f"stereo.algorithm.{item}")
+        except:
+            raise AttributeError(f"No attribute named 'StPipeline.{item}'")
+
+        # TODO: this may be not the best way to get sub-class
+        # num of subclasses may be like 100-200 at most
+        for sub_cls in AlgorithmBase.__subclasses__():
+            sub_cls_name = camel_to_snake(sub_cls.__name__.split(".")[-1])
+            if sub_cls_name == item:
+                # snake_cls_name as method name in pipeline
+                sub_obj = sub_cls(self.data, self.result)
+                self.__setattr__(item, sub_obj.main)
+                logger.info(f'register algorithm {sub_obj} to {self}')
+                return sub_obj.main
+        raise AttributeError(
+            f'this would happen when someone get module with {item} existed, but it`s not a class inherit AlgorithmBase'
+        )
 
     @property
     def raw(self):
