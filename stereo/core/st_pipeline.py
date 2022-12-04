@@ -22,7 +22,7 @@ from scipy.sparse import issparse
 
 from ..log_manager import logger
 from ..utils.time_consume import TimeConsume
-from ..algorithm.algorithm_base import AlgorithmBase, camel_to_snake
+from ..algorithm.algorithm_base import AlgorithmBase
 
 tc = TimeConsume()
 
@@ -56,21 +56,13 @@ class StPipeline(object):
         dict_attr = self.__dict__.get(item, None)
         if dict_attr:
             return dict_attr
-        try:
-            __import__(f"stereo.algorithm.{item}")
-        except:
-            raise AttributeError(f"No attribute named 'StPipeline.{item}'")
 
-        # TODO: this may be not the best way to get sub-class
-        # num of subclasses may be like 100-200 at most
-        for sub_cls in AlgorithmBase.__subclasses__():
-            sub_cls_name = camel_to_snake(sub_cls.__name__.split(".")[-1])
-            if sub_cls_name == item:
-                # snake_cls_name as method name in pipeline
-                sub_obj = sub_cls(self.data, self.result)
-                self.__setattr__(item, sub_obj.main)
-                logger.info(f'register algorithm {sub_obj} to {self}')
-                return sub_obj.main
+        new_attr = AlgorithmBase.get_attribute_helper(item, self.data, self.result)
+        if new_attr:
+            self.__setattr__(item, new_attr)
+            logger.info(f'register algorithm {new_attr} to {self}')
+            return new_attr
+
         raise AttributeError(
             f'this would happen when someone get module with {item} existed, but it`s not a class inherit AlgorithmBase'
         )

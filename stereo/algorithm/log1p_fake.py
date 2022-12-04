@@ -6,12 +6,11 @@ from copy import deepcopy
 import numpy as np
 
 # module in self project
-from stereo.log_manager import logger
-from stereo.algorithm.algorithm_base import AlgorithmBase, ErrorCode
+from ..log_manager import logger
+from .algorithm_base import AlgorithmBase, ErrorCode
 
 
 class Log1pFake(AlgorithmBase):
-    log_base: int
 
     def main(self, log_fast=True, inplace=True, verbose=False):
         """
