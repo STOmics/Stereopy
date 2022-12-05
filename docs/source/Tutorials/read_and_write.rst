@@ -109,6 +109,21 @@ Anndata H5ad File
 
 `parameters <https://stereopy.readthedocs.io/en/latest/api/stereo.io.read_ann_h5ad.html>`_
 
+Seurat H5ad File
+~~~~~~~~~~~~~~~~~~~~~~~
+
+.. code:: python
+
+    import warnings
+    warnings.filterwarnings('ignore')
+    import stereo as st
+
+    # read the GEF file
+    seurat_h5ad = './SS200000003BR_B3.annotation.h5ad'
+    data = st.io.read_seurat_h5ad(file_path=seurat_h5ad, use_raw=True,)
+
+`parameters <https://stereopy.readthedocs.io/en/latest/api/stereo.io.read_seurat_h5ad.html>`_
+
 Writing
 -------------------------
 After reading and other steps, you could save the data into output files.

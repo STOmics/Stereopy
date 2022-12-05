@@ -6,7 +6,7 @@
 ## **Stereopy**: Spatial transcriptomics analysis in Python
 
 [Installation](https://stereopy.readthedocs.io/en/latest/General/Installation.html) - 
-[Quick start](https://stereopy.readthedocs.io/en/latest/Tutorials/quick_start.html) - 
+[Quick start](https://stereopy.readthedocs.io/en/latest/Tutorials/clustering.html) - 
 [Documentation](https://stereopy.readthedocs.io/en/latest/index.html) - 
 [API](https://stereopy.readthedocs.io/en/latest/api/index.html)
 
