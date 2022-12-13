@@ -107,7 +107,8 @@ class FindMarker(ToolBase):
                 tie_term = mannwhitneyu.cal_tie_term(ranks)
             self.logger.info('cal tie_term end')
         logres_score = None
-        if self.case_groups == 'all' and self.control_group == 'rest' and self.method == 'logreg':
+        if isinstance(self.case_groups, str) and self.case_groups == 'all' and isinstance(self.case_groups, str) and \
+                self.control_group == 'rest' and self.method == 'logreg':
             logres_score = self.logres_score()
         for g in tqdm(case_groups, desc='Find marker gene: '):
             if self.control_group == 'rest':
@@ -139,9 +140,11 @@ class FindMarker(ToolBase):
         from ..algorithm.statistics import logreg
         x = self.data.exp_matrix
         y = self.groups['group'].values
-        if (isinstance(self.case_groups, str) and self.case_groups != 'all') or isinstance(self.case_groups,
-                                                                                           np.ndarray):
-            use_group = [self.case_groups] if isinstance(self.case_groups, str) else list(self.case_groups)
+        if isinstance(self.case_groups, np.ndarray) or self.case_groups != 'all':
+            if isinstance(self.case_groups, str):
+                use_group = [self.case_groups]
+            else:
+                use_group = list(self.case_groups)
             use_group.append(self.control_group)
             group_index = self.groups['group'].isin(use_group)
             x = x[group_index, :]
