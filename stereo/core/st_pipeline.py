@@ -401,18 +401,21 @@ class StPipeline(object):
     #     self.result[res_key] = pd.DataFrame(res)
 
     @logit
-    def umap(self,
-             pca_res_key,
-             neighbors_res_key,
-             res_key='umap',
-             min_dist: float = 0.5,
-             spread: float = 1.0,
-             n_components: int = 2,
-             maxiter: Optional[int] = None,
-             alpha: float = 1.0,
-             gamma: float = 1.0,
-             negative_sample_rate: int = 5,
-             init_pos: str = 'spectral', ):
+    def umap(
+            self,
+            pca_res_key,
+            neighbors_res_key,
+            res_key='umap',
+            min_dist: float = 0.5,
+            spread: float = 1.0,
+            n_components: int = 2,
+            maxiter: Optional[int] = None,
+            alpha: float = 1.0,
+            gamma: float = 1.0,
+            negative_sample_rate: int = 5,
+            init_pos: str = 'spectral',
+            method: str = 'umap'
+    ):
         """
         Embed the neighborhood graph using UMAP [McInnes18]_.
 
@@ -451,7 +454,7 @@ class StPipeline(object):
         _, connectivities, _ = self.get_neighbors_res(neighbors_res_key)
         x_umap = umap(x=self.result[pca_res_key], neighbors_connectivities=connectivities,
                       min_dist=min_dist, spread=spread, n_components=n_components, maxiter=maxiter, alpha=alpha,
-                      gamma=gamma, negative_sample_rate=negative_sample_rate, init_pos=init_pos)
+                      gamma=gamma, negative_sample_rate=negative_sample_rate, init_pos=init_pos, method=method)
         self.result[res_key] = pd.DataFrame(x_umap)
         key = 'umap'
         self.reset_key_record(key, res_key)
@@ -556,7 +559,8 @@ class StPipeline(object):
                resolution: float = 1,
                use_weights: bool = True,
                random_state: int = 0,
-               n_iterations: int = -1
+               n_iterations: int = -1,
+               method='normal'
                ):
         """
         leiden of cluster.
@@ -576,9 +580,14 @@ class StPipeline(object):
                              -1 has the algorithm run until it reaches its optimal clustering.
         :return:
         """
-        from ..algorithm.leiden import leiden as le
+
         neighbor, connectivities, _ = self.get_neighbors_res(neighbors_res_key)
-        clusters = le(neighbor=neighbor, adjacency=connectivities, directed=directed, resolution=resolution,
+        if method == 'rapids':
+            from ..algorithm.leiden import leiden_rapids
+            clusters = leiden_rapids(adjacency=connectivities, resolution=resolution)
+        else:
+            from ..algorithm.leiden import leiden as le
+            clusters = le(neighbor=neighbor, adjacency=connectivities, directed=directed, resolution=resolution,
                       use_weights=use_weights, random_state=random_state, n_iterations=n_iterations)
         df = pd.DataFrame({'bins': self.data.cell_names, 'group': clusters})
         self.result[res_key] = df
