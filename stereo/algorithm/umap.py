@@ -10,11 +10,12 @@
 change log:
     2021/09/07  create file.
 """
-from typing import Optional
+
 import warnings
+from typing import Optional, Literal
+from packaging import version
 
 import numpy as np
-from packaging import version
 from sklearn.utils import check_random_state
 
 
@@ -32,6 +33,7 @@ def umap(
         random_state: int = 0,
         a: Optional[float] = None,
         b: Optional[float] = None,
+        method: Literal['umap', 'rapids'] = 'umap',
 ):
     """\
     Embed the neighborhood graph using UMAP [McInnes18]_.
@@ -87,6 +89,8 @@ def umap(
         More specific parameters controlling the embedding. If `None` these
         values are set automatically as determined by `min_dist` and
         `spread`.
+    method
+        Use the original 'umap' implementation, or 'rapids' (experimental, GPU only)
 
     Returns
     -------
@@ -128,24 +132,50 @@ def umap(
     init_coords = init_pos  # Let umap handle it
     random_state = check_random_state(random_state)
 
-    # the data matrix X is really only used for determining the number of connected components
-    # for the init condition in the UMAP embedding
-    n_epochs = 0 if maxiter is None else maxiter
-    x_umap = simplicial_set_embedding(
-        x,
-        neighbors_connectivities.tocoo(),
-        n_components,
-        alpha,
-        a,
-        b,
-        gamma,
-        negative_sample_rate,
-        n_epochs,
-        init_coords,
-        random_state,
-        'euclidean',
-        {},
-        parallel=True,
-        verbose=True,
-    )
+    if method == 'umap':
+        # the data matrix X is really only used for determining the number of connected components
+        # for the init condition in the UMAP embedding
+        n_epochs = 0 if maxiter is None else maxiter
+        x_umap = simplicial_set_embedding(
+            x,
+            neighbors_connectivities.tocoo(),
+            n_components,
+            alpha,
+            a,
+            b,
+            gamma,
+            negative_sample_rate,
+            n_epochs,
+            init_coords,
+            random_state,
+            'euclidean',
+            {},
+            parallel=True,
+            verbose=True,
+        )
+    elif method == 'rapids':
+
+        from cuml import UMAP
+
+        n_epochs = (
+            500 if maxiter is None else maxiter
+        )  # 0 is not a valid value for rapids, unlike original umap
+        X_contiguous = np.ascontiguousarray(x, dtype=np.float32)
+        umap = UMAP(
+            n_neighbors=10,  # TODO 和neighbor的默认参数保持一致
+            n_components=n_components,
+            n_epochs=n_epochs,
+            learning_rate=alpha,
+            init=init_pos,
+            min_dist=min_dist,
+            spread=spread,
+            negative_sample_rate=negative_sample_rate,
+            a=a,
+            b=b,
+            verbose=True,  # TODO debug-log临时全部打开
+            random_state=random_state,
+        )
+        x_umap = umap.fit_transform(X_contiguous)
+    else:
+        raise NotImplementedError
     return x_umap
