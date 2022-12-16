@@ -18,6 +18,7 @@ import pandas as pd
 from typing import Optional, Type, Union
 from natsort import natsorted
 from numpy import random
+
 AnyRandom = Union[None, int, random.RandomState]
 
 try:
@@ -26,19 +27,20 @@ except ImportError:
     class MutableVertexPartition:
         pass
 
+
     MutableVertexPartition.__module__ = 'leidenalg.VertexPartition'
 
 
 def leiden(
-    neighbor,
-    adjacency: sparse.spmatrix,
-    directed: bool = True,
-    resolution: float = 1,
-    use_weights: bool = True,
-    random_state: AnyRandom = 0,
-    n_iterations: int = -1,
-    partition_type: Optional[Type[MutableVertexPartition]] = None,
-    **partition_kwargs,
+        neighbor,
+        adjacency: sparse.spmatrix,
+        directed: bool = True,
+        resolution: float = 1,
+        use_weights: bool = True,
+        random_state: AnyRandom = 0,
+        n_iterations: int = -1,
+        partition_type: Optional[Type[MutableVertexPartition]] = None,
+        **partition_kwargs,
 ):
     """
 
@@ -94,3 +96,38 @@ def leiden(
         categories=natsorted(map(str, np.unique(groups))),
     )
     return cluster
+
+
+def leiden_rapids(adjacency, resolution=1.0):
+    """
+    Performs Leiden Clustering using cuGraph
+
+    Parameters
+    ----------
+
+    adjacency : Sparse adjacency matrix of the graph.
+
+    resolution : float, optional (default: 1)
+        A parameter value controlling the coarseness of the clustering.
+        Higher values lead to more clusters.
+
+    """
+    # Adjacency graph
+    import cudf
+    import cugraph
+    offsets = cudf.Series(adjacency.indptr)
+    indices = cudf.Series(adjacency.indices)
+    g = cugraph.Graph()
+    if hasattr(g, 'add_adj_list'):
+        g.add_adj_list(offsets, indices, None)
+    else:
+        g.from_cudf_adjlist(offsets, indices, None)
+
+    # Cluster
+    leiden_parts, _ = cugraph.leiden(g, resolution=resolution)
+
+    # Format output
+    clusters = leiden_parts.to_pandas().sort_values('vertex')[['partition']].to_numpy().ravel()
+    clusters = pd.Categorical(clusters)
+
+    return clusters
