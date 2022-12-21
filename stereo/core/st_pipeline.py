@@ -907,6 +907,39 @@ class StPipeline(object):
         key = 'pca'
         self.reset_key_record(key, res_key)
 
+    @logit
+    def annotation(
+        self, 
+        annotation_information: Union[list, dict],
+        cluster_res_key = 'cluster',
+        res_key='annotation'
+    ):
+        """
+        annotation of cluster.
+
+        :param annotation_information: Union[list, dict] 
+            Annotation information for clustering results.
+        :param cluster_res_key: The key of cluster result in the self.result.
+        :param res_key: The key for getting the result from the self.result.
+        :return:
+        """
+
+        assert cluster_res_key in self.result, f'{cluster_res_key} is not in the result, please check and run the cluster func.'
+
+        df = self.result[cluster_res_key]
+        if isinstance(annotation_information,list):
+            df.group.cat.categories = annotation_information
+        elif isinstance(annotation_information,dict):
+            new_annotation_list = []
+            for i in df.group.cat.categories:
+                new_annotation_list.append(annotation_information[i])
+            df.group.cat.categories = new_annotation_list
+
+        self.result[res_key] = df
+        
+        key = 'cluster'
+        self.reset_key_record(key, res_key)
+
     # def scenic(self, tfs, motif, database_dir, res_key='scenic', use_raw=True, outdir=None,):
     #     """
     #
