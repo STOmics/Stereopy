@@ -67,7 +67,11 @@ def compute_neighbors_rapids(
     -------
     **knn_indices**, **knn_dists** : np.arrays of shape (n_observations, n_neighbors)
     """
-    from cuml.neighbors.nearest_neighbors import NearestNeighbors
+    try:
+        from cuml.neighbors.nearest_neighbors import NearestNeighbors
+    except ImportError:
+        raise ImportError("Your env don't have GPU related RAPIDS packages, if you want to run this option, follow the "
+                          "guide at https://stereopy.readthedocs.io/en/latest/Tutorials/clustering_by_gpu.html")
 
     nn = NearestNeighbors(n_neighbors=n_neighbors, metric=metric)
     X_contiguous = np.ascontiguousarray(X, dtype=np.float32)
