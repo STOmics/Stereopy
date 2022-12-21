@@ -8,6 +8,7 @@ Clustering
 
     clustering
     cell_clustering
+    clustering_by_gpu
     performance
 
 IO

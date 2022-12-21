@@ -1,4 +1,4 @@
-dask==2022.2.0
+dask==2022.11.1
 bokeh==2.3.3
 imageio==2.9.0
 numpy==1.21.4
@@ -52,9 +52,9 @@ tifffile==2021.11.2
 opencv-python>=4.5.4.58,<=4.5.5.64
 # tensorflow==2.7.0
 # tensorflow-io-gcs-filesystem==0.24.0
-protobuf==3.19.4
+protobuf<3.21.0a0,>=3.20.1
 hotspotsc==1.1.1
-distributed==2022.2.0
+distributed==2022.11.1
 keras==2.7.0
 pyarrow==8.0.0
 tables==3.7.0
