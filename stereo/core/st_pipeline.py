@@ -926,7 +926,7 @@ class StPipeline(object):
 
         assert cluster_res_key in self.result, f'{cluster_res_key} is not in the result, please check and run the cluster func.'
 
-        df = self.result[cluster_res_key]
+        df = copy.deepcopy(self.result[cluster_res_key])
         if isinstance(annotation_information,list):
             df.group.cat.categories = annotation_information
         elif isinstance(annotation_information,dict):
@@ -936,7 +936,7 @@ class StPipeline(object):
             df.group.cat.categories = new_annotation_list
 
         self.result[res_key] = df
-        
+
         key = 'cluster'
         self.reset_key_record(key, res_key)
 
