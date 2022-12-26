@@ -24,7 +24,7 @@ GEM File
     import stereo as st
 
     # read the gem file
-    mouse_data_path = './SS200000135TL_D1.cellbin.gem'
+    mouse_data_path = './SS200000135TL_D1.gem'
     data = st.io.read_gem(
             file_path= mouse_data_path,
             sep='\t', bin_type="bins",
