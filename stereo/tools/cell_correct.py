@@ -9,6 +9,7 @@ import numpy as np
 import numba
 from ..algorithm.cell_correction import CellCorrection
 from ..algorithm import cell_correction_fast
+from ..algorithm.draw_contours import DrawContours
 from ..io import read_gem, read_gef
 from ..log_manager import logger
 from gefpy import cgef_writer_cy, bgef_writer_cy, cgef_adjust_cy
@@ -113,7 +114,7 @@ class CellCorrect(object):
         return genes, raw_data
     
     @log_consumed_time
-    def generate_adjusted_cgef(self, adjusted_data: pd.DataFrame, genes):
+    def generate_adjusted_cgef(self, adjusted_data: pd.DataFrame, outline_path):
         adjusted_data_np = adjusted_data[['x', 'y', 'UMICount', 'label', 'geneid']].to_numpy(dtype=np.uint32)
         cell_data, dnb_data = generate_cell_and_dnb(adjusted_data_np)
         cell_type = np.dtype({'names':['cellid', 'offset', 'count'], 'formats':[np.uint32, np.uint32, np.uint32]}, align=True)
@@ -124,7 +125,7 @@ class CellCorrect(object):
         adjust_cgef_file = os.path.join(self.out_dir, file_name)
         if os.path.exists(adjust_cgef_file):
             os.remove(adjust_cgef_file)
-        self.cad.write_cgef_adjustdata(adjust_cgef_file, cell, dnb)
+        self.cad.write_cgef_adjustdata(adjust_cgef_file, cell, dnb, outline_path)
         logger.info(f"generate adjusted cellbin gef finished ({adjust_cgef_file})")
         return adjust_cgef_file
     
@@ -144,8 +145,10 @@ class CellCorrect(object):
             adjusted_data = correction.cell_correct()
         else:
             adjusted_data = cell_correction_fast.cell_correct(raw_data, self.mask_path)
+        dc = DrawContours(adjusted_data, self.out_dir)
+        outline_path = dc.get_contours()
         gem_file_adjusted = self.generate_adjusted_gem(adjusted_data)
-        cgef_file_adjusted = self.generate_adjusted_cgef(adjusted_data, genes)
+        cgef_file_adjusted = self.generate_adjusted_cgef(adjusted_data, outline_path)
         if not only_save_result:
             return read_gef(cgef_file_adjusted, bin_type='cell_bins')
         else:
