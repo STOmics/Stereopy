@@ -59,6 +59,41 @@ class PlotCollection:
             fig.show()
         return fig
 
+    def interact_annotation_cluster(
+            self,
+            res_cluster_key='cluster',
+            res_marker_gene_key='marker_genes', 
+            res_key = 'annotation',
+            inline=True,
+            width=700, height=500
+    ):
+        """
+        interactive spatial scatter after clustering
+
+        :param res_cluster_key: cluster result key
+        :param res_marker_gene_key: marker gene result key
+        :param res_key: The key for getting the result from the self.result.
+        :param inline: show in notebook
+        :param width: figure width
+        :param height: figure height
+
+        """
+        res = self.check_res_key(res_cluster_key)
+        res_marker_gene = self.check_res_key(res_marker_gene_key)
+        from .interact_plot.annotation_cluster import interact_spatial_cluster_annotation
+        import pandas as pd
+        df = pd.DataFrame({
+            'x': self.data.position[:, 0],
+            'y': self.data.position[:, 1],
+            'bins': self.data.cell_names,
+            'group': np.array(res['group'])
+        })
+        
+        fig = interact_spatial_cluster_annotation(self.data, df, res_marker_gene, res_key, width=width, height=height)
+        if not inline:
+            fig.show()
+        return fig
+
     def highly_variable_genes(self, res_key='highly_var_genes'):
         """
         scatter of highly variable genes
