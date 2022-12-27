@@ -24,8 +24,8 @@ color_key = collections.OrderedDict()
 def interact_spatial_cluster_annotation(
         data,
         df,
-        res_key,
         res_marker_gene,
+        res_key,
         width=500,
         height=500,
 ):
