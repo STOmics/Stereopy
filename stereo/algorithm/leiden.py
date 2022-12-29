@@ -75,7 +75,8 @@ def leiden(
     """
     partition_kwargs = dict(partition_kwargs)
     # convert it to igraph
-    g = neighbor.get_igraph_from_adjacency(adjacency, directed=directed)
+    from .neighbors import Neighbors
+    g = Neighbors.get_igraph_from_adjacency(adjacency, directed=directed)
     # filp to the default partition type if not overriden by the user
     if partition_type is None:
         partition_type = leidenalg.RBConfigurationVertexPartition
