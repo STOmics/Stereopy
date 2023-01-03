@@ -182,7 +182,7 @@ class CoOccurrence(AlgorithmBase):
             for ep in out:
                 tmp[ep] = out[ep].T[x]
             ret[x] = pd.DataFrame(tmp).T
-        data.uns['co-occur'] = ret
+        data.tl.result['co-occur'] = ret
         return ret   
 
 
