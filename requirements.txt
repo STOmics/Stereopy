@@ -1,5 +1,5 @@
 dask==2022.11.1
-bokeh==2.3.3
+bokeh==2.4.3
 imageio==2.9.0
 numpy==1.21.4
 matplotlib>=3.4.2,<=3.5.2
@@ -17,9 +17,9 @@ KDEpy==1.1.0
 Jinja2==3.0.3
 shapely~=1.7.1
 packaging==21.3
-panel==0.12.1
+panel==0.13.1
 holoviews==1.14.5
-param==1.11.1
+param==1.12.2
 hvplot==0.7.3
 colorcet==2.0.6
 datashader>=0.13.0,<=0.14.1rc1
