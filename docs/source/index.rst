@@ -45,6 +45,7 @@ pending upgrade.
 
    Tutorials/Examples
    release_note
+   contributing
 
 
 .. |docs| image:: https://img.shields.io/static/v1?label=docs&message=stereopy&color=green
