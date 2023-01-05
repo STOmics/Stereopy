@@ -83,7 +83,6 @@ def write_to_file(df: pd.DataFrame, filename: str, output_path: str, output_form
             separator = get_separator(selected_extension)
 
     df.to_csv('{}/{}'.format(output_path, filename), sep=separator, index=index)
-    return '{}/{}'.format(output_path, filename)
 
 
 def get_separator(mime_type_or_extension: str) -> str:

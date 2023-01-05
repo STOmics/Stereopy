@@ -36,19 +36,3 @@ class NoInteractionsFound(Exception):
         super(NoInteractionsFound, self).__init__('No CellPhoneDB interacions found in this input.')
         self.description = description
         self.hint = hint
-
-
-class MissingR(Exception):
-    def __init__(self):
-        super().__init__('Missing R setup in current system')
-
-
-class RRuntimeException(Exception):
-    def __init__(self, msg):
-        super().__init__('R Runtime Exception: {}'.format(msg))
-
-
-class MissingPlotterFunctionException(Exception):
-    def __init__(self):
-        super().__init__('Selected plotter function not available')
-

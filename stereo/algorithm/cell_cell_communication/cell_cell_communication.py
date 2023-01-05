@@ -13,33 +13,31 @@ from typing import Tuple
 # third part module
 import numpy as np
 import pandas as pd
+import seaborn as sns
 import numpy_groupies as npg
 from functools import partial
+import matplotlib.pyplot as plt
 from sqlalchemy import create_engine
 from multiprocessing.pool import Pool
 
 # module in self project
 from stereo.log_manager import logger
 from stereo.algorithm.algorithm_base import AlgorithmBase
-from stereo.algorithm.cell_cell_communication.plotters import r_plotter
 from stereo.algorithm.cell_cell_communication.ref_database.sqlalchemy_model import Base
-from stereo.algorithm.cell_cell_communication.exceptions import MissingR, RRuntimeException
-from stereo.algorithm.cell_cell_communication.analysis_helper import Subsampler, write_to_file
+from stereo.algorithm.cell_cell_communication.analysis_helper import Subsampler, write_to_file, get_separator
 from stereo.algorithm.cell_cell_communication.ref_database.database_utils import Database, DatabaseManager
 from stereo.algorithm.cell_cell_communication.ref_database.sqlalchemy_repository import ComplexRepository, \
     GeneRepository, InteractionRepository, MultidataRepository, ProteinRepository
 from stereo.algorithm.cell_cell_communication.exceptions import ProcessMetaException, ParseCountsException, \
     ThresholdValueException, AllCountsFilteredException, NoInteractionsFound
 
-# TODO: this is added because of error importing rprojects from rpy2 (windows). Linux does not need this.
-os.environ['R_HOME'] = r'D:\Anaconda3\envs\st\Lib\R'
-
 
 class CellCellCommunication(AlgorithmBase):
-    # TODO: change the default database path
+    # FIXME: change the default database path
     def __init__(self, db_path: str = r'E:\Stereopy\CPDBRewrite\Database\cellphone.db'):
         self.db_path = db_path
 
+    # FIXME: change the default output_path in linux
     def main(self,
              analysis_type: str,
              meta: pd.DataFrame,
@@ -51,20 +49,19 @@ class CellCellCommunication(AlgorithmBase):
              subsampling_log: bool = False,
              subsampling_num_pc: int = 1000,
              subsampling_num_cells: int = None,
-             separator: str = "|",
+             separator_cluster: str = "|",
+             separator_interaction: str = "_",
              iterations: int = 100,
              threshold: float = 0.1,
              threads: int = 4,
              pvalue: float = 0.05,
              result_precision: int = 3,
-             output_path: str = './out',
+             output_path: str = r'E:\Stereopy\out',
              means_filename: str = 'means',
              pvalues_filename: str = 'pvalues',
              significant_means_filename: str = 'significant_means',
              deconvoluted_filename: str ='deconvoluted',
-             dotplot_filename: str = 'dotplot.pdf',
-             heatmap_filename: str = 'heatmap.pdf',
-             output_format: str = None
+             output_format: str = 'txt'
              ):
         """
         Cell-cell communication main functon.
@@ -80,7 +77,8 @@ class CellCellCommunication(AlgorithmBase):
         :param subsampling_log: flag of doing log1p transformation before subsampling.
         :param subsampling_num_pc: number of pcs used when doing subsampling, <= min(m,n).
         :param subsampling_num_cells: size of the subsample.
-        :param separator:
+        :param separator_cluster: separator of clusters.
+        :param separator_interaction: separator of interactions.
         :param iterations: number of samples used for the null distribution
         :param threshold: threshold of percentage
         :param threads:
@@ -92,8 +90,6 @@ class CellCellCommunication(AlgorithmBase):
         :param significant_means_filename:
         :param deconvoluted_filename:
         :param output_format:
-        :param dotplot_filename:
-        :param heatmap_filename:
         :return:
         """
         # 0. prepare the reference database
@@ -109,7 +105,7 @@ class CellCellCommunication(AlgorithmBase):
         counts = self._counts_validations(counts, meta)
 
         # 1.3. preprocess and validate micro_env data
-        if not micro_envs:
+        if micro_envs is None:
             micro_envs = pd.DataFrame()
         else:
             micro_envs = self._check_microenvs_data(micro_envs, meta)
@@ -161,14 +157,15 @@ class CellCellCommunication(AlgorithmBase):
         logger.info('Running Real Analysis')
         cluster_interactions = self.get_cluster_combinations(clusters['names'], micro_envs)  # arrays
 
-        base_result = self.build_result_matrix(interactions_filtered, cluster_interactions, separator)
+        base_result = self.build_result_matrix(interactions_filtered, cluster_interactions, separator_cluster)
 
         # (x > 0) * (y > 0) * (x + y) / 2
-        real_mean_analysis = self.mean_analysis(interactions_filtered, clusters, cluster_interactions, separator)
+        real_mean_analysis = self.mean_analysis(interactions_filtered, clusters, cluster_interactions,
+                                                separator_cluster)
 
         # ((x > threshold) * (y > threshold)).astype(int)
         real_percents_analysis = self.percent_analysis(clusters, threshold, interactions_filtered, cluster_interactions,
-                                                       separator)
+                                                       separator_cluster)
 
         if analysis_type == 'statistical':
             logger.info('Running Statistical Analysis')
@@ -180,7 +177,7 @@ class CellCellCommunication(AlgorithmBase):
                                                                complex_composition_filtered,
                                                                real_mean_analysis,
                                                                threads,
-                                                               separator)
+                                                               separator_cluster)
             result_pvalues = self.build_pvalue_result(real_mean_analysis,
                                                       real_percents_analysis,
                                                       statistical_mean_analysis,
@@ -209,7 +206,8 @@ class CellCellCommunication(AlgorithmBase):
                 genes,
                 result_precision,
                 pvalue,
-                counts_identifiers
+                counts_identifiers,
+                separator_interaction
             )
         if analysis_type == 'statistical':
             pvalues_result, means_result, significant_means, deconvoluted_result = self.build_results(
@@ -225,7 +223,8 @@ class CellCellCommunication(AlgorithmBase):
                 genes,
                 result_precision,
                 pvalue,
-                counts_identifiers
+                counts_identifiers,
+                separator_interaction
             )
         max_rank = significant_means['rank'].max()
         significant_means['rank'] = significant_means['rank'].apply(
@@ -235,19 +234,160 @@ class CellCellCommunication(AlgorithmBase):
         logger.info('Writing results to files')
 
         # Todo: Test output_path in linux
-        means_path = write_to_file(means_result, means_filename, output_path=r'E:\Stereopy\out', output_format='csv', index=True)
-        significant_means_path = write_to_file(significant_means, significant_means_filename, output_path=r'E:\Stereopy\out', output_format='csv')
-        deconvoluted_result_path = write_to_file(deconvoluted_result, deconvoluted_filename, output_path=r'E:\Stereopy\out', output_format='csv')
+        write_to_file(means_result, means_filename, output_path=output_path, output_format=output_format)
+        write_to_file(significant_means, significant_means_filename, output_path=output_path, output_format=output_format)
+        write_to_file(deconvoluted_result, deconvoluted_filename, output_path=output_path, output_format=output_format)
         if analysis_type == "statistical":
-            pvalues_path = write_to_file(pvalues_result, pvalues_filename, output_path=r'E:\Stereopy\out',
-                                         output_format='csv', index=True)
-        # 4. generate plots
-        # logger.info('Generating dot plot')
-        # self.dot_plot(r'E:\Stereopy\out\means.csv', r'E:\Stereopy\out\pvalues.csv', output_path=r'E:\Stereopy\out', output_name=dotplot_filename,
-        #               rows=r'E:\Stereopy\out\rows.txt', columns=r'E:\Stereopy\out\columns.txt')
-        # logger.info('Generating heatmap plot')
-        # self.heatmap_plot(meta_path, pvalues_path, output_path, counts_identifiers, log_name, count_network_name,
-        #                   interaction_count_name, pvalue)
+            write_to_file(pvalues_result, pvalues_filename, output_path=output_path, output_format=output_format)
+
+    # TODO: change default paths
+    def dot_plot(self,
+                 means_path: str = r'E:\Stereopy\out\means.csv',
+                 pvalues_path: str = r'E:\Stereopy\out\pvalues.csv',
+                 output_path: str = r'E:\Stereopy\out',
+                 output_name: str = r'dotplot.pdf',
+                 rows_path: str = r'E:\Stereopy\out\rows.txt',
+                 columns_path: str = r'E:\Stereopy\out\columns.txt',
+                 palette: str = 'magma'):
+        """
+        Generate dot plot/heatmap.
+        """
+        logger.info('Generating dot plot')
+        self._ensure_path_exists(output_path)
+        pvalues_separator = get_separator(os.path.splitext(pvalues_path)[-1])
+        means_separator = get_separator(os.path.splitext(means_path)[-1])
+        # output_extension = os.path.splitext(output_name)[-1].lower()
+        filename = os.path.join(output_path, output_name)
+
+        means_df = pd.read_csv(means_path, sep=means_separator)
+        pvalues_df = pd.read_csv(pvalues_path, sep=pvalues_separator)
+
+        if not rows_path:
+            rows = means_df['interacting_pair'].tolist()
+        else:
+            rows = pd.read_csv(rows_path, header=None)[0].tolist()
+
+        if not columns_path:
+            columns = ['interacting_pair'] + means_df.columns.tolist()[11:]
+        else:
+            columns = pd.read_csv(columns_path, header=None)[0].tolist()
+
+        columns = [x for x in columns if x in means_df.columns]
+
+        means_selected = means_df[means_df['interacting_pair'].isin(rows)][['interacting_pair'] + columns]
+        pvalues_selected = pvalues_df[pvalues_df['interacting_pair'].isin(rows)][['interacting_pair'] + columns]
+
+        nrows, ncols = means_selected.shape
+
+        means = means_selected.melt(id_vars='interacting_pair', value_vars=columns, value_name='mean')
+        means['log2_mean'] = means['mean'].apply(lambda x: 0 if x == 0 else np.log2(x))
+
+        pvalues = pvalues_selected.melt(id_vars='interacting_pair', value_vars=columns, value_name='pvalue')
+        pvalues['n_log10_p'] = pvalues['pvalue'].apply(lambda x: -np.log10(0.0009) if x == 0 else -np.log10(x))
+
+        result = pd.merge(means, pvalues, on=["interacting_pair", "variable"])
+        result = result.rename(columns={'variable': 'cluster_pair'})
+
+        # plotting
+        plt.figure(figsize=(int(5 + max(3, ncols * 0.8)), int(3 + max(5, nrows * 0.5))))
+        plt.gcf().subplots_adjust(bottom=0.2, left=0.18, right=0.85)
+        plt.box(True)
+        dot_plot = sns.scatterplot(data=result, x="cluster_pair", y="interacting_pair", palette=palette,
+                                   hue='log2_mean', size='n_log10_p', sizes=(50, 250), legend='auto')
+        plt.legend(fontsize=12, frameon=False, ncols=1, loc=8, bbox_to_anchor=(1.1, 0))
+        plt.xticks(fontsize=12, rotation=90)
+        plt.yticks(fontsize=12)
+        plt.xlabel('')
+        plt.ylabel('')
+
+        fig = dot_plot.get_figure()
+        fig.savefig(filename)
+        plt.close(fig)
+
+    def heatmap(self,
+                meta_path: str = r'E:\Stereopy\CellphoneDB\in\example_data\test_meta.txt',
+                pvalues_path: str = r'E:\Stereopy\out\pvalues.csv',
+                separator_cluster: str = '|',
+                count_network_path: str = None,
+                pvalue: float = 0.05,
+                output_path: str = r'E:\Stereopy\out',
+                count_name: str = r'heatmap_count.pdf',
+                log_count_name: str = r'heatmap_log.pdf'
+                ):
+        """
+        Heatmap of number of interactions in each cluster pairs.
+        Each off-diagonal cell value equals =
+                the number of interactions from A to B + the number of interactions from B to A
+        """
+        logger.info('Generating heatmap plot')
+        self._ensure_path_exists(output_path)
+        filename_count = os.path.join(output_path, count_name)
+        filename_log = os.path.join(output_path, log_count_name)
+
+        meta_separator = get_separator(os.path.splitext(meta_path)[-1])
+        meta_df = pd.read_csv(meta_path, sep=meta_separator)
+        clusters_all = meta_df.iloc[:, 1].drop_duplicates().tolist()
+        n_cluster: int = len(clusters_all)
+
+        if count_network_path is None:
+            pvalues_separator = get_separator(os.path.splitext(pvalues_path)[-1])
+            pvalues_df = pd.read_csv(pvalues_path, sep=pvalues_separator)
+
+            cluster_pairs = np.array(np.meshgrid(clusters_all, clusters_all)).T.reshape(-1, 2)
+            network = pd.DataFrame(cluster_pairs, columns=['source', 'target'])
+
+            for index, row in network.iterrows():
+                col1 = row['source'] + separator_cluster + row['target']
+                col2 = row['target'] + separator_cluster + row['source']
+                if col1 in pvalues_df.columns.tolist() and col2 in pvalues_df.columns.tolist():
+                    if col1 == col2:
+                        network.loc[index, 'number'] = pvalues_df.apply(lambda x: True if x[col1] <= pvalue else False,
+                                                                        axis=1).sum()
+                    else:
+                        network.loc[index, 'number'] = pvalues_df.apply(lambda x: True if x[col1] <= pvalue else False,
+                                                                        axis=1).sum() + pvalues_df.apply(
+                            lambda x: True if x[col2] <= pvalue else False, axis=1).sum()
+                else:
+                    network.loc[index, 'number'] = 0
+
+            write_to_file(network, 'network', output_path=output_path, output_format='txt')
+        else:
+            network_separator = get_separator(os.path.splitext(meta_path)[-1])
+            network = pd.read_csv(count_network_path, sep=network_separator)
+
+        network = network.pivot("source", "target", "number")
+        rows = network.index.tolist()
+        rows.reverse()
+        network = network[rows]
+        log_network = network.applymap(lambda x: np.log(x + 1))
+
+        # count plot
+        plt.figure(figsize=(int(3 + max(3, n_cluster * 0.8)), int(3 + max(3, n_cluster * 0.5))))
+        plt.gcf().subplots_adjust(bottom=0.2, left=0.18, right=0.85)
+        plt.box(True)
+        heatmap_plot = sns.heatmap(data=network, square=True)
+        plt.xticks(fontsize=12, rotation=90)
+        plt.yticks(fontsize=12, rotation=0)
+        plt.xlabel('')
+        plt.ylabel('')
+
+        fig = heatmap_plot.get_figure()
+        fig.savefig(filename_count)
+        plt.close(fig)
+
+        # log plot
+        plt.figure(figsize=(int(3 + max(3, n_cluster * 0.8)), int(3 + max(3, n_cluster * 0.5))))
+        plt.gcf().subplots_adjust(bottom=0.2, left=0.18, right=0.85)
+        plt.box(True)
+        heatmap_plot = sns.heatmap(data=log_network, square=True)
+        plt.xticks(fontsize=12, rotation=90)
+        plt.yticks(fontsize=12, rotation=0)
+        plt.xlabel('')
+        plt.ylabel('')
+
+        fig = heatmap_plot.get_figure()
+        fig.savefig(filename_log)
+        plt.close(fig)
 
     def _get_ref_database(self):
         """
@@ -931,7 +1071,8 @@ class CellCellCommunication(AlgorithmBase):
                       genes: pd.DataFrame,
                       result_precision: int,
                       pvalue: float = None,
-                      counts_data: str = None
+                      counts_data: str = None,
+                      separator: str = '|'
                       ):
         """
         Sets the results data structure from method generated data. Results documents are defined by specs.
@@ -947,7 +1088,7 @@ class CellCellCommunication(AlgorithmBase):
                                           suffixes=('_1', '_2'))
         interactions.set_index('interaction_index', inplace=True, drop=True)
 
-        interacting_pair = self._interacting_pair_build(interactions)
+        interacting_pair = self._interacting_pair_build(interactions, separator)
 
         def simple_complex_indicator(interaction: pd.Series, suffix: str) -> str:
             """
@@ -1030,7 +1171,7 @@ class CellCellCommunication(AlgorithmBase):
         return pvalues_result, means_result, significant_means_result, deconvoluted_result
 
     @staticmethod
-    def _interacting_pair_build(interactions: pd.DataFrame) -> pd.Series:
+    def _interacting_pair_build(interactions: pd.DataFrame, separator) -> pd.Series:
         """
         Returns the interaction result formated with name1_name2
         """
@@ -1045,8 +1186,8 @@ class CellCellCommunication(AlgorithmBase):
             return interaction['gene_name{}'.format(suffix)]
 
         interacting_pair = interactions.apply(
-            lambda interaction: '{}_{}'.format(get_interactor_name(interaction, '_1'),
-                                               get_interactor_name(interaction, '_2')), axis=1)
+            lambda interaction: '{}{}{}'.format(get_interactor_name(interaction, '_1'), separator,
+                                                get_interactor_name(interaction, '_2')), axis=1)
 
         interacting_pair.rename('interacting_pair', inplace=True)
 
@@ -1217,52 +1358,44 @@ class CellCellCommunication(AlgorithmBase):
         return deconvoluted_result
 
     @staticmethod
-    def dot_plot(means_path, pvalues_path, output_path, output_name, rows, columns):
-        try:
-            r_plotter.dot_plot(means_path=means_path,
-                               pvalues_path=pvalues_path,
-                               output_path=output_path,
-                               output_name=output_name,
-                               rows=rows,
-                               columns=columns)
-        except MissingR:
-            print(
-                'You cannot perform this plot command unless there is a working R setup according to CellPhoneDB specs')
-        except RRuntimeException as e:
-            logger.error(str(e))
-        except:
-            logger.error('Unexpected error')
+    def _ensure_path_exists(path: str) -> None:
+        expanded_path = os.path.expanduser(path)
 
-    @staticmethod
-    def heatmap_plot(meta_path: str, pvalues_path: str, output_path: str, count_name: str, log_name: str,
-                     count_network_name, interaction_count_name, pvalue: float):
-        try:
-            r_plotter.heatmaps_plot(meta_file=meta_path,
-                                    pvalues_file=pvalues_path,
-                                    output_path=output_path,
-                                    count_name=count_name,
-                                    log_name=log_name,
-                                    count_network_filename=count_network_name,
-                                    interaction_count_filename=interaction_count_name,
-                                    pvalue=pvalue)
-        except MissingR:
-            print(
-                'You cannot perform this plot command unless there is a working R setup according to CellPhoneDB specs')
-        except RRuntimeException as e:
-            logger.error(str(e))
-        except:
-            logger.error('Unexpected error')
+        if not os.path.exists(expanded_path):
+            os.makedirs(expanded_path)
 
 
 if __name__ == "__main__":
     counts = pd.read_csv(r'E:\Stereopy\CellphoneDB\in\example_data\test_counts.txt', sep='\t', index_col=0)
     meta = pd.read_csv(r'E:\Stereopy\CellphoneDB\in\example_data\test_meta.txt', sep='\t')
+    micro_envs = pd.read_csv(r'E:\Stereopy\CellphoneDB\in\example_data\test_microenviroments.txt', sep='\t')
     db_path: str = r'E:\Stereopy\CPDBRewrite\Database\cellphone.db'
     ccc = CellCellCommunication()
-    ccc.main('statistical', meta, counts)
-    # means_path = r'E:\Stereopy\out\means.csv'
-    # pvalues_path = r'E:\Stereopy\out\pvalues.csv'
-    # output_path = r'E:\Stereopy\out'
-    # output_name = 'dotplot.pdf'
-    # rows = r'E:\Stereopy\out\rows.txt'
-    # columns = r'E:\Stereopy\out\columns.txt'
+    # ccc.main('simple', meta, counts, means_filename='means_simple',
+    #          significant_means_filename='significant_means_simple', deconvoluted_filename='deconvoluted_statistical',
+    #          output_format='csv')
+    # ccc.main('statistical', meta, counts, means_filename='means_statistical',
+    #          significant_means_filename='significant_means_statistical',
+    #          deconvoluted_filename='deconvoluted_statistical', output_format='csv')
+    # ccc.main('simple', meta, counts, micro_envs=micro_envs, means_filename='means_simple_env',
+    #          significant_means_filename='significant_means_simple_env',
+    #          deconvoluted_filename='deconvoluted_simple_env', output_format='csv')
+    # ccc.main('statistical', meta, counts, means_filename='means_statistical_sub',
+    #          significant_means_filename='significant_means_statistical_sub',
+    #          deconvoluted_filename='deconvoluted_statistical_sub',
+    #          pvalues_filename='pvalues_sub', subsampling=True, subsampling_log=True,
+    #          subsampling_num_pc=5, subsampling_num_cells=6, output_format='csv')
+    # ccc.dot_plot(means_path=r'E:\Stereopy\out\means_statistical.csv',
+    #              pvalues_path=r'E:\Stereopy\out\pvalues.csv',
+    #              output_path=r'E:\Stereopy\out',
+    #              output_name=r'dotplot.pdf',
+    #              rows_path=r'E:\Stereopy\小试答辩\测试\rows.txt',
+    #              columns_path=r'E:\Stereopy\小试答辩\测试\columns.txt', palette='magma')
+    ccc.heatmap(meta_path=r'E:\Stereopy\CellphoneDB\in\example_data\test_meta.txt',
+                pvalues_path=r'E:\Stereopy\out\pvalues.csv',
+                separator_cluster='|',
+                count_network_path=r'E:\Stereopy\out\network.txt',
+                pvalue=0.05,
+                output_path=r'E:\Stereopy\out',
+                count_name=r'heatmap_count.pdf',
+                log_count_name=r'heatmap_log.pdf')
