@@ -13,7 +13,7 @@ argv <- parse_args(args)
 
 if ( is.null(argv$infile) || is.null(argv$outfile) ) {
   print('positional argument `infile` or `outfile` is null')
-  return(-1)
+  quit('no', -1)
 }
 
 infile <- argv$infile
@@ -70,7 +70,7 @@ if (
 }
 
 # TODO follow with old code, don't touch
-
+print("Start add image...This may take some minutes...(~.~)")
 # add image
 cell_coords <- unique(object@meta.data[, c('x', 'y')])
 cell_coords['cell'] <- row.names(cell_coords)
@@ -129,6 +129,7 @@ object@images$slice1@assay <- assay.used
 #print('Test finished')
 
 # conversion done, save
+print("Finished add image...Start to saveRDS...")
 saveRDS(object, outfile)
 print("Finished RDS.")
-return(0)
+quit('yes', 0)
