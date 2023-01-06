@@ -19,10 +19,6 @@ if ( is.null(argv$infile) || is.null(argv$outfile) ) {
 infile <- argv$infile
 outfile <- argv$outfile
 
-# test
-infile <- '/mnt/d/projects/stereopy_dev/demo_data/SS200000135TL_D1/SS200000135TL_D1.tissue.h5ad'
-outfile <- '/mnt/d/projects/stereopy_dev/demo_data/SS200000135TL_D1/SS200000135TL_D1.tissue.rds'
-
 # convert h5ad as h5seurat, which means a seurat-object format stored in h5
 Convert(infile, dest = "h5seurat", assay = "Spatial", overwrite = TRUE)
 
