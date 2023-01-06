@@ -64,10 +64,12 @@ if (
   # TODO: tag the reductions as SCT, this will influence the find_cluster choice of data
   object@reductions$pca@assay.used = 'SCT'
   object@reductions$umap@assay.used = 'SCT'
+  assay.used <- 'SCT'
   print("Finished! Got SCTransform result in object, create a new SCTAssay and set it as default assay.")
 } else {
   # TODO: we now only save raw counts, try not to add raw counts to .data, do NormalizeData to fit this
   object <- NormalizeData(object)
+  assay.used <- 'Spatial'
   print("Finished! Got raw counts only, auto create log-normalize data.")
 }
 
@@ -115,9 +117,14 @@ BGI_spatial <- generate_BGI_spatial(image = tissue_lowres_image,
 # import image into seurat object
 object@images[['slice1']] <- BGI_spatial
 object@images$slice1@key <- "slice1_"
-object@images$slice1@assay <- "SCT"
+object@images$slice1@assay <- assay.used
 
 # do not use these code if you know what you wanna do
+# ---log-normalize
+#object <- FindVariableFeatures(object, selection.method = "vst", nfeatures = 2000)
+#all.genes <- rownames(object)
+#object <- ScaleData(object, features = all.genes)
+# ---log-normalize rest part / sctransform
 #object <- RunPCA(object, verbose = FALSE)
 #object <- RunUMAP(object, dims = 1:20, verbose = FALSE)
 #object <- FindNeighbors(object, dims = 1:20, verbose = FALSE)
