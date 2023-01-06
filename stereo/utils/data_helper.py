@@ -182,6 +182,7 @@ def split(data: StereoExpData = None):
         return None
 
     from copy import deepcopy
+    from .pipeline_utils import cell_cluster_to_gene_exp_cluster
 
     all_data = []
     data.array2sparse()
@@ -190,8 +191,7 @@ def split(data: StereoExpData = None):
     for bno in batch:
         cell_idx = np.where(data.cells.batch == bno)[0]
         cell_names = data.cell_names[cell_idx]
-        new_data = StereoExpData(bin_type=data.bin_type, bin_size=data.bin_size, cells=deepcopy(data.cells),
-                                 genes=deepcopy(data.genes))
+        new_data = StereoExpData(bin_type=data.bin_type, bin_size=data.bin_size, cells=deepcopy(data.cells), genes=deepcopy(data.genes))
         new_data.cells = new_data.cells.sub_set(cell_idx)
         new_data.position = data.position[cell_idx] - data.position_offset[bno]
         new_data.exp_matrix = data.exp_matrix[cell_idx]
@@ -237,11 +237,16 @@ def split(data: StereoExpData = None):
             elif key == 'tsne':
                 for res_key in all_res_key:
                     new_data.tl.result[res_key] = result[res_key]
+            elif key == 'gene_exp_cluster':
+                continue
             else:
                 for res_key in all_res_key:
                     new_data.tl.result[res_key] = result[res_key]
         if data.tl.raw is not None:
             new_data.tl.raw = data.tl.raw.tl.filter_cells(cell_list=cell_names, inplace=False)
+        if 'gene_exp_cluster' in data.tl.key_record:
+            for cluster_res_key in data.tl.key_record['cluster']:
+                new_data.tl.result[f"gene_exp_{cluster_res_key}"] = cell_cluster_to_gene_exp_cluster(new_data.tl, cluster_res_key)
         all_data.append(new_data)
 
     return all_data
