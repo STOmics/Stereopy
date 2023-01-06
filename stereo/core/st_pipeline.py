@@ -577,6 +577,7 @@ class StPipeline(object):
         :return:
         """
         from ..algorithm.leiden import leiden as le
+        from ..utils.pipeline_utils import cell_cluster_to_gene_exp_cluster
         neighbor, connectivities, _ = self.get_neighbors_res(neighbors_res_key)
         clusters = le(neighbor=neighbor, adjacency=connectivities, directed=directed, resolution=resolution,
                       use_weights=use_weights, random_state=random_state, n_iterations=n_iterations)
@@ -584,6 +585,9 @@ class StPipeline(object):
         self.result[res_key] = df
         key = 'cluster'
         self.reset_key_record(key, res_key)
+        gene_cluster_res_key = f'gene_exp_{res_key}'
+        self.result[gene_cluster_res_key] = cell_cluster_to_gene_exp_cluster(self, res_key)
+        self.reset_key_record('gene_exp_cluster', gene_cluster_res_key)
 
     @logit
     def louvain(self,
@@ -614,12 +618,17 @@ class StPipeline(object):
         """
         neighbor, connectivities, _ = self.get_neighbors_res(neighbors_res_key)
         from ..algorithm._louvain import louvain as lo
+        from ..utils.pipeline_utils import cell_cluster_to_gene_exp_cluster
         clusters = lo(neighbor=neighbor, resolution=resolution, random_state=random_state,
                       adjacency=connectivities, flavor=flavor, directed=directed, use_weights=use_weights)
         df = pd.DataFrame({'bins': self.data.cell_names, 'group': clusters})
         self.result[res_key] = df
         key = 'cluster'
         self.reset_key_record(key, res_key)
+        gene_cluster_res_key = f'gene_exp_{res_key}'
+        self.result[gene_cluster_res_key] = cell_cluster_to_gene_exp_cluster(self, res_key)
+        self.reset_key_record('gene_exp_cluster', gene_cluster_res_key)
+
 
     @logit
     def phenograph(self, phenograph_k, pca_res_key, n_jobs=10, res_key='cluster'):
@@ -636,14 +645,23 @@ class StPipeline(object):
         if pca_res_key not in self.result:
             raise Exception(f'{pca_res_key} is not in the result, please check and run the pca func.')
         import phenograph as phe
+        from natsort import natsorted
+        from ..utils.pipeline_utils import cell_cluster_to_gene_exp_cluster
         communities, _, _ = phe.cluster(self.result[pca_res_key], k=phenograph_k, clustering_algo='leiden',
                                         n_jobs=n_jobs)
         communities = communities + 1
-        clusters = communities.astype(str)
+        clusters = pd.Categorical(
+            values=communities.astype('U'),
+            categories=natsorted(map(str, np.unique(communities))),
+        )
+        # clusters = communities.astype(str)
         df = pd.DataFrame({'bins': self.data.cell_names, 'group': clusters})
         self.result[res_key] = df
         key = 'cluster'
         self.reset_key_record(key, res_key)
+        gene_cluster_res_key = f'gene_exp_{res_key}'
+        self.result[gene_cluster_res_key] = cell_cluster_to_gene_exp_cluster(self, res_key)
+        self.reset_key_record('gene_exp_cluster', gene_cluster_res_key)
 
     @logit
     def find_marker_genes(self,

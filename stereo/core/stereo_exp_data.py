@@ -384,3 +384,6 @@ class StereoExpData(Data):
         if not issparse(self.exp_matrix):
             self.exp_matrix = csr_matrix(self.exp_matrix)
         return self.exp_matrix
+    
+    def issparse(self):
+        return issparse(self.exp_matrix)
