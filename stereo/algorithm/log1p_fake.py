@@ -7,7 +7,19 @@ import numpy as np
 
 # module in self project
 from ..log_manager import logger
+from ..plots.plot_base import PlotBase
 from .algorithm_base import AlgorithmBase, ErrorCode
+
+
+# plot example
+class PlotLog1pFake(PlotBase):
+
+    # all methods will be auto-registered to plot_collection when method name is called
+    def log1p_plot_1(self, test=123):
+        logger.info(f'test_log1p_plot_1 {test}')
+
+    def log1p_plot_2(self, **kwargs):
+        logger.info(f'test_log1p_plot_2 {kwargs}')
 
 
 class Log1pFake(AlgorithmBase):
@@ -60,3 +72,5 @@ if __name__ == "__main__":
     log1p_fake_obj.test_memory_profile(log_fast=True, inplace=True)
 
     data.tl.log1p_fake(log_fast=True, inplace=True)
+
+    data.plt.log1p_plot_1()
