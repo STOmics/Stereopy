@@ -67,7 +67,7 @@ class StPipeline(object):
             return new_attr
 
         raise AttributeError(
-            f'this would happen when someone get module with {item} existed, but it`s not a class inherit AlgorithmBase'
+            f'{item} not existed, please check the function name you called!'
         )
 
     @property
