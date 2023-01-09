@@ -15,8 +15,9 @@ import pandas as pd
 import numpy as np
 from typing import Optional, Union
 from scipy.sparse import spmatrix, issparse, csr_matrix
-from .cell import Cell
-from .gene import Gene
+from .cell import Cell, AnnBasedCell
+from .gene import Gene, AnnBasedGene
+from .st_pipeline import AnnBasedStPipeline
 from ..log_manager import logger
 import copy
 
@@ -80,7 +81,7 @@ class StereoExpData(Data):
     def get_sn_from_path(self, file_path):
         if file_path is None:
             return None
-        
+
         from os import path
         return path.basename(file_path).split('.')[0].strip()
 
@@ -273,11 +274,11 @@ class StereoExpData(Data):
         :return:
         """
         self._position = pos
-    
+
     @property
     def position_offset(self):
         return self._position_offset
-    
+
     @position_offset.setter
     def position_offset(self, position_offset):
         self._position_offset = position_offset
@@ -335,19 +336,19 @@ class StereoExpData(Data):
         :return:
         """
         self._attr = attr
-    
+
     @property
     def merged(self):
         return self._merged
-    
+
     @merged.setter
     def merged(self, merged):
         self._merged = merged
-    
+
     @property
     def sn(self):
         return self._sn
-    
+
     @sn.setter
     def sn(self, sn):
         self._sn = sn
@@ -374,7 +375,7 @@ class StereoExpData(Data):
         if issparse(self.exp_matrix):
             self.exp_matrix = self.exp_matrix.toarray()
         return self.exp_matrix
-    
+
     def array2sparse(self):
         """
         transform expression matrix to sparse matrix if it is ndarray
@@ -384,3 +385,85 @@ class StereoExpData(Data):
         if not issparse(self.exp_matrix):
             self.exp_matrix = csr_matrix(self.exp_matrix)
         return self.exp_matrix
+
+    def __str__(self):
+        format_str = f"StereoExpData object with n_cells X n_genes = {self.shape[0]} X {self.shape[1]}"
+        format_str += f"\nbin_type: {self.bin_type}"
+        if self.bin_type == 'bins':
+            format_str += f"\n{'bin_size: %d' % self.bin_size}"
+        format_str += f"\noffset_x = {self.offset_x}"
+        format_str += f"\noffset_y = {self.offset_y}"
+        format_cells = []
+        for attr_name in ['cell_name', 'total_counts', 'n_genes_by_counts', 'pct_counts_mt']:
+            # `is not None` is ugly but object in __dict__ may be a pandas.DataFrame
+            if self.cells.__dict__.get(attr_name, None) is not None:
+                format_cells.append(attr_name)
+        if format_cells:
+            format_str += f"\ncells: {format_cells}"
+        format_genes = []
+        for attr_name in ['gene_name', 'n_counts', 'n_cells']:
+            if self.genes.__dict__.get(attr_name, None) is not None:
+                format_genes.append(attr_name)
+        if format_genes:
+            format_str += f"\ngenes: {format_genes}"
+        format_str += "\nposition: T"
+        format_key_record = {key: value for key, value in self.tl.key_record.items() if value}
+        if format_key_record:
+            format_str += f"\nkey_record: {format_key_record}"
+        return format_str
+
+
+class AnnBasedStereoExpData(StereoExpData):
+
+    def __init__(self, h5ad_file_path: str, *args, **kwargs):
+        super(AnnBasedStereoExpData, self).__init__(*args, **kwargs)
+        import anndata
+        self._ann_data = anndata.read_h5ad(h5ad_file_path)
+        self._genes = AnnBasedGene(self._ann_data, self._genes._gene_name)
+        self._cells = AnnBasedCell(self._ann_data, self._cells._cell_name)
+        self._tl = AnnBasedStPipeline(self._ann_data, self)
+
+    @property
+    def exp_matrix(self):
+        return self._ann_data.X
+
+    @exp_matrix.setter
+    def exp_matrix(self, pos_array: spmatrix):
+        self._ann_data.X = pos_array
+
+    @property
+    def genes(self):
+        return self._genes
+
+    @genes.setter
+    def genes(self, gene: AnnBasedGene):
+        self._genes = gene
+
+    @property
+    def cells(self):
+        return self._cells
+
+    @cells.setter
+    def cells(self, cell: AnnBasedCell):
+        self._cells = cell
+
+    @property
+    def plt(self):
+        if self._plt is None:
+            from ..plots.plot_collection import PlotCollection
+            self._plt = PlotCollection(self)
+        return self._plt
+
+    @property
+    def tl(self):
+        if self._tl is None:
+            from .st_pipeline import StPipeline
+            self._tl = StPipeline(self)
+        return self._tl
+
+    @property
+    def position(self):
+        if {'x', 'y'} - set(self._ann_data.obs.columns.values):
+            self._ann_data.obs.loc[:, ['x', 'y']] = \
+                np.array(list(self._ann_data.obs.index.str.split('-', expand=True)), dtype=np.uint32)
+        return self._ann_data.obs.loc[:, ['x', 'y']].values
