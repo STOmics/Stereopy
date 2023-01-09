@@ -17,7 +17,6 @@ from typing import Optional, Union
 from scipy.sparse import spmatrix, issparse, csr_matrix
 from .cell import Cell, AnnBasedCell
 from .gene import Gene, AnnBasedGene
-from .st_pipeline import AnnBasedStPipeline
 from ..log_manager import logger
 import copy
 
@@ -430,6 +429,7 @@ class AnnBasedStereoExpData(StereoExpData):
         self._ann_data = anndata.read_h5ad(h5ad_file_path)
         self._genes = AnnBasedGene(self._ann_data, self._genes._gene_name)
         self._cells = AnnBasedCell(self._ann_data, self._cells._cell_name)
+        from .st_pipeline import AnnBasedStPipeline
         self._tl = AnnBasedStPipeline(self._ann_data, self)
 
     @property
@@ -465,9 +465,6 @@ class AnnBasedStereoExpData(StereoExpData):
 
     @property
     def tl(self):
-        if self._tl is None:
-            from .st_pipeline import StPipeline
-            self._tl = StPipeline(self)
         return self._tl
 
     @property
