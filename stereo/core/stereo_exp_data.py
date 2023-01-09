@@ -394,19 +394,28 @@ class StereoExpData(Data):
         format_str += f"\noffset_x = {self.offset_x}"
         format_str += f"\noffset_y = {self.offset_y}"
         format_cells = []
-        for attr_name in ['cell_name', 'total_counts', 'n_genes_by_counts', 'pct_counts_mt']:
+        for attr_name in [('_cell_name', 'cell_name'), 'total_counts', 'n_genes_by_counts', 'pct_counts_mt']:
+            if type(attr_name) is tuple:
+                real_name, show_name = attr_name[0], attr_name[1]
+            else:
+                real_name = show_name = attr_name[0]
             # `is not None` is ugly but object in __dict__ may be a pandas.DataFrame
-            if self.cells.__dict__.get(attr_name, None) is not None:
-                format_cells.append(attr_name)
+            if self.cells.__dict__.get(real_name, None) is not None:
+                format_cells.append(show_name)
         if format_cells:
             format_str += f"\ncells: {format_cells}"
         format_genes = []
-        for attr_name in ['gene_name', 'n_counts', 'n_cells']:
-            if self.genes.__dict__.get(attr_name, None) is not None:
-                format_genes.append(attr_name)
+        for attr_name in [('_gene_name', 'gene_name'), 'n_counts', 'n_cells']:
+            if type(attr_name) is tuple:
+                real_name, show_name = attr_name[0], attr_name[1]
+            else:
+                real_name = show_name = attr_name[0]
+            if self.genes.__dict__.get(real_name, None) is not None:
+                format_genes.append(show_name)
         if format_genes:
             format_str += f"\ngenes: {format_genes}"
-        format_str += "\nposition: T"
+        # TODO: no decide yet
+        # format_str += "\nposition: T"
         format_key_record = {key: value for key, value in self.tl.key_record.items() if value}
         if format_key_record:
             format_str += f"\nkey_record: {format_key_record}"
