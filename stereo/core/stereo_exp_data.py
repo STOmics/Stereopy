@@ -420,6 +420,9 @@ class StereoExpData(Data):
             format_str += f"\nkey_record: {format_key_record}"
         return format_str
 
+    def __repr__(self):
+        return self.__str__()
+
 
 class AnnBasedStereoExpData(StereoExpData):
 
