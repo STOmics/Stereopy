@@ -3,6 +3,15 @@ Release Notes
 
 .. role:: small
 
+Version 0.9.0
+------------------
+0.9.0 :2023-01-10
+~~~~~~~~~~~~~~~~~~~~~
+1. Solve the issue of cell overlapping after cell correction on visualization result.
+2. Add the annotation of clustering through both command lines and interactive action.
+3. Add gpu acceleration on analysis process , including umap, neighbors, leiden, louvain.
+4. Update requirements.txt.
+
 Version 0.8.0
 ------------------
 0.8.0 :2022-12-02
