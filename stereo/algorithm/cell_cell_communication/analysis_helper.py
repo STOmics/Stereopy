@@ -97,3 +97,22 @@ def get_separator(mime_type_or_extension: str) -> str:
     default_separator = ','
 
     return extensions.get(mime_type_or_extension.lower(), default_separator)
+
+
+def mouse2human(genes, ref_path):
+    """
+    Transfer mouse genes to their human homologous genes.
+    If one-to-many, use the first. If mouse gene not in the reference data, use its upper case.
+
+    :param genes: list of mouse genes (hgnc symbols)
+    :param ref_path
+    :return: list of human homologous
+    """
+
+    ref_separator = get_separator(os.path.splitext(ref_path)[-1])
+    ref_df = pd.read_csv(ref_path, sep=ref_separator)
+
+    ref_df = ref_df.drop_duplicates(subset='genesymbol_source', keep='first')
+    ref_dict = dict(ref_df.loc[:, ['genesymbol_source', 'genesymbol_target']].values)
+    genes_human = [ref_dict[x] if x in ref_dict.keys() else str(x).upper() for x in genes]
+    return genes_human

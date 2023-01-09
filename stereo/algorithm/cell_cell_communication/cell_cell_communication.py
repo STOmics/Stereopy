@@ -24,7 +24,8 @@ from multiprocessing.pool import Pool
 from stereo.log_manager import logger
 from stereo.algorithm.algorithm_base import AlgorithmBase
 from stereo.algorithm.cell_cell_communication.ref_database.sqlalchemy_model import Base
-from stereo.algorithm.cell_cell_communication.analysis_helper import Subsampler, write_to_file, get_separator
+from stereo.algorithm.cell_cell_communication.analysis_helper import Subsampler, write_to_file, get_separator, \
+    mouse2human
 from stereo.algorithm.cell_cell_communication.ref_database.database_utils import Database, DatabaseManager
 from stereo.algorithm.cell_cell_communication.ref_database.sqlalchemy_repository import ComplexRepository, \
     GeneRepository, InteractionRepository, MultidataRepository, ProteinRepository
@@ -37,13 +38,15 @@ class CellCellCommunication(AlgorithmBase):
     def __init__(self, db_path: str = r'E:\Stereopy\CPDBRewrite\Database\cellphone.db'):
         self.db_path = db_path
 
-    # FIXME: change the default output_path in linux
+    # FIXME: change the default output_path in linux, change default homogene_path
     def main(self,
              analysis_type: str,
              meta: pd.DataFrame,
              counts: pd.DataFrame,
              micro_envs: pd.DataFrame = None,
-             counts_identifiers: str = "ensembl",
+             species: str = "HUMAN",
+             homogene_path: str = r'E:\Stereopy\database\mouse2human.csv',
+             counts_identifiers: str = "hgnc_symbol",
              p_value: float = None,
              subsampling: bool = False,
              subsampling_log: bool = False,
@@ -71,6 +74,8 @@ class CellCellCommunication(AlgorithmBase):
         cell names or the cell names as the indexes.
         :param counts: genes as indexes, cell as columns.
         :param micro_envs: two columns, column names should be "cell_type" and "microenvironment".
+        :param species: 'HUMAN' or 'MOUSE'
+        :param homogene_path:
         :param counts_identifiers: type of gene identifiers in the Counts data: "ensembl", "gene_name", "hgnc_symbol"
         :param p_value:
         :param subsampling: flag of subsampling
@@ -104,13 +109,20 @@ class CellCellCommunication(AlgorithmBase):
         self._check_counts_data(counts, counts_identifiers)
         counts = self._counts_validations(counts, meta)
 
-        # 1.3. preprocess and validate micro_env data
+        # 1.3. if species is mouse, get the homologous genes.
+        if species.upper() == 'MOUSE':
+            genes_mouse = counts.index.tolist()
+            genes_human = mouse2human(genes_mouse, homogene_path)
+            counts.index = genes_human
+            counts = counts.groupby(counts.index, as_index=True).sum()
+
+        # 1.4. preprocess and validate micro_env data
         if micro_envs is None:
             micro_envs = pd.DataFrame()
         else:
             micro_envs = self._check_microenvs_data(micro_envs, meta)
 
-        # 1.4. preprocess and validate other parameters
+        # 1.5. preprocess and validate other parameters
         threshold = float(threshold)
         if threshold < 0 or threshold > 1:
             raise ThresholdValueException(threshold)
@@ -1366,10 +1378,10 @@ class CellCellCommunication(AlgorithmBase):
 
 
 if __name__ == "__main__":
-    counts = pd.read_csv(r'E:\Stereopy\CellphoneDB\in\example_data\test_counts.txt', sep='\t', index_col=0)
-    meta = pd.read_csv(r'E:\Stereopy\CellphoneDB\in\example_data\test_meta.txt', sep='\t')
-    micro_envs = pd.read_csv(r'E:\Stereopy\CellphoneDB\in\example_data\test_microenviroments.txt', sep='\t')
-    db_path: str = r'E:\Stereopy\CPDBRewrite\Database\cellphone.db'
+    counts = pd.read_csv(r'E:\Stereopy\小试答辩\测试\test_counts_symbol.txt', sep='\t', index_col=0)
+    meta = pd.read_csv(r'E:\Stereopy\小试答辩\测试\test_meta.txt', sep='\t')
+    micro_envs = pd.read_csv(r'E:\Stereopy\小试答辩\测试\test_microenviroments.txt', sep='\t')
+    db_path: str = r'E:\Stereopy\database\cellphone.db'
     ccc = CellCellCommunication()
     # ccc.main('simple', meta, counts, means_filename='means_simple',
     #          significant_means_filename='significant_means_simple', deconvoluted_filename='deconvoluted_statistical',
