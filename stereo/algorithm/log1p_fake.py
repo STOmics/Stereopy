@@ -24,6 +24,10 @@ class PlotLog1pFake(PlotBase):
 
 class Log1pFake(AlgorithmBase):
 
+    DEMO_DATA_URL = 'https://pan.genomics.cn/ucdisk/api/2.0/share/link/download?' \
+                    'shareEventId=share_2022928142945896_010df2aa7d344d97a610557de7bad81b&' \
+                    'nodeId=8a80804a837dc46f018382c40ca51af0&code='
+
     def main(self, log_fast=True, inplace=True, verbose=False):
         """
             This is a fake log1p method.
@@ -61,6 +65,16 @@ class Log1pFake(AlgorithmBase):
         assert id(stereo_exp_data.plt) != id(self.stereo_exp_data.plt)
         assert id(stereo_exp_data.exp_matrix) != id(self.stereo_exp_data.exp_matrix)
 
+    @staticmethod
+    def read_135_tissue_gef():
+        '''
+        :return: stereo.core.stereo_exp_data.StereoExpData
+        '''
+        from ..utils._download import _download
+        from ..io.reader import read_gef
+        # without dir_path, will download to default path `./stereopy_data/`
+        file_path = _download(Log1pFake.DEMO_DATA_URL)
+        return read_gef(file_path)
 
 if __name__ == "__main__":
     from stereo.io.reader import read_gef
