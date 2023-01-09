@@ -25,6 +25,7 @@ from scipy.sparse import issparse
 
 from ..log_manager import logger
 from ..utils.time_consume import TimeConsume
+from ..algorithm.algorithm_base import AlgorithmBase
 
 tc = TimeConsume()
 
@@ -58,7 +59,11 @@ class StPipeline(object):
         dict_attr = self.__dict__.get(item, None)
         if dict_attr:
             return dict_attr
-        from ..algorithm.algorithm_base import AlgorithmBase
+
+        # start with __ may not be our algorithm function, and will cause import problem
+        if item.startswith('__'):
+            raise AttributeError
+
         new_attr = AlgorithmBase.get_attribute_helper(item, self.data, self.result)
         if new_attr:
             self.__setattr__(item, new_attr)
@@ -1032,7 +1037,8 @@ class AnnBasedResult(dict):
         if obs_obj is not None:
             return True
         uns_obj = self.__based_ann_data.uns.get(item, None)
-        if uns_obj and 'params' in uns_obj and 'connectivities_key' in uns_obj['params'] and 'distances_key' in uns_obj['params']:
+        if uns_obj and 'params' in uns_obj and 'connectivities_key' in uns_obj['params'] and 'distances_key' in uns_obj[
+            'params']:
             return True
         return False
 
@@ -1057,7 +1063,8 @@ class AnnBasedResult(dict):
         if obs_obj is not None:
             return pd.DataFrame(self.__based_ann_data.obs[name].values, columns=['group'])
         uns_obj = self.__based_ann_data.uns.get(name, None)
-        if uns_obj and 'params' in uns_obj and 'connectivities_key' in uns_obj['params'] and 'distances_key' in uns_obj['params']:
+        if uns_obj and 'params' in uns_obj and 'connectivities_key' in uns_obj['params'] and 'distances_key' in uns_obj[
+            'params']:
             return {
                 'neighbor': None,  # TODO really needed?
                 'connectivities': self.__based_ann_data.obsp[uns_obj['params']['connectivities_key']],
