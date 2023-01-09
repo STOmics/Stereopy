@@ -25,7 +25,6 @@ from scipy.sparse import issparse
 
 from ..log_manager import logger
 from ..utils.time_consume import TimeConsume
-from ..algorithm.algorithm_base import AlgorithmBase
 
 tc = TimeConsume()
 
@@ -59,7 +58,7 @@ class StPipeline(object):
         dict_attr = self.__dict__.get(item, None)
         if dict_attr:
             return dict_attr
-
+        from ..algorithm.algorithm_base import AlgorithmBase
         new_attr = AlgorithmBase.get_attribute_helper(item, self.data, self.result)
         if new_attr:
             self.__setattr__(item, new_attr)
