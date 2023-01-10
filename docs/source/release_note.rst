@@ -7,9 +7,9 @@ Version 0.9.0
 ------------------
 0.9.0 :2023-01-10
 ~~~~~~~~~~~~~~~~~~~~~
-1. Solve the issue of cell overlapping after cell correction on visualization result.
-2. Add the annotation of clustering through both command lines and interactive action.
-3. Add gpu acceleration on analysis process , including umap, neighbors, leiden, louvain.
+1. Resolve cell boundary overlapping issues during cell correction visualization.
+2. Addition of manually annotating cells and clusters via command lines or interactive visualization features.
+3. Addition of GPU version of UMAP, Neighbors, Leiden, and Louvian.
 4. Update requirements.txt.
 
 Version 0.8.0
