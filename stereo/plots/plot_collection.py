@@ -39,6 +39,10 @@ class PlotCollection:
         if dict_attr:
             return dict_attr
 
+        # start with __ may not be our algorithm function, and will cause import problem
+        if item.startswith('__'):
+            raise AttributeError
+
         new_attr = PlotBase.get_attribute_helper(item, self.data, self.result)
         if new_attr:
             self.__setattr__(item, new_attr)
