@@ -11,5 +11,6 @@ from .scatter import base_scatter
 from .marker_genes import marker_genes_text, marker_genes_heatmap
 from .plot_collection import PlotCollection
 from .interact_plot.spatial_cluster import interact_spatial_cluster
+from .interact_plot.annotation_cluster import interact_spatial_cluster_annotation
 from .interact_plot.interactive_scatter import InteractiveScatter
 from .interact_plot.poly_selection import PolySelection
