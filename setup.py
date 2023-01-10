@@ -23,7 +23,7 @@ setup(
     url='https://github.com/BGIResearch/stereopy',
     author='BGIResearch',
     author_email='qiuping1@genomics.cn',
-    python_requires='>=3.7,<3.9',
+    python_requires='>=3.8,<3.9',
     install_requires=[
         l.strip() for l in Path('requirements.txt').read_text('utf-8').splitlines()
     ],
