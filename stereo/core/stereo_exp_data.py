@@ -397,7 +397,7 @@ class StereoExpData(Data):
             if type(attr_name) is tuple:
                 real_name, show_name = attr_name[0], attr_name[1]
             else:
-                real_name = show_name = attr_name[0]
+                real_name = show_name = attr_name
             # `is not None` is ugly but object in __dict__ may be a pandas.DataFrame
             if self.cells.__dict__.get(real_name, None) is not None:
                 format_cells.append(show_name)
@@ -408,7 +408,7 @@ class StereoExpData(Data):
             if type(attr_name) is tuple:
                 real_name, show_name = attr_name[0], attr_name[1]
             else:
-                real_name = show_name = attr_name[0]
+                real_name = show_name = attr_name
             if self.genes.__dict__.get(real_name, None) is not None:
                 format_genes.append(show_name)
         if format_genes:
