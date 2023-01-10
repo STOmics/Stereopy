@@ -10,8 +10,8 @@ from setuptools import setup, find_packages
 import sys
 from pathlib import Path
 
-if sys.version_info < (3, 7):
-    sys.exit('stereopy requires Python >= 3.7')
+if sys.version_info < (3, 8):
+    sys.exit('stereopy requires Python >= 3.8')
 
 setup(
     name='stereopy',
