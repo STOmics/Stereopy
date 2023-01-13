@@ -14,10 +14,7 @@ change log:
     andata_to_stereo function by Yiran Wu.
     2021/08/20
     2022/02/09  read raw data and result
-
-
 """
-
 from copy import deepcopy
 from typing import Optional
 
