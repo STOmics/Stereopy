@@ -17,7 +17,6 @@ change log:
 
 
 """
-
 from copy import deepcopy
 from typing import Optional
 
