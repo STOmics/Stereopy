@@ -10,7 +10,6 @@
 change log:
     2021/07/20  create file.
 """
-
 import copy
 from functools import wraps
 from typing import Optional, Union
@@ -942,7 +941,7 @@ class StPipeline(object):
 
     @logit
     def annotation(
-        self, 
+        self,
         annotation_information: Union[list, dict],
         cluster_res_key = 'cluster',
         res_key='annotation'
@@ -950,7 +949,7 @@ class StPipeline(object):
         """
         annotation of cluster.
 
-        :param annotation_information: Union[list, dict] 
+        :param annotation_information: Union[list, dict]
             Annotation information for clustering results.
         :param cluster_res_key: The key of cluster result in the self.result.
         :param res_key: The key for getting the result from the self.result.
