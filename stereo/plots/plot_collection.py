@@ -4,15 +4,17 @@
 @author: qindanhua@genomics.cn
 @time:2021/08/31
 """
-import os.path
+from random import randint
 from typing import Optional, Union, Sequence
-# import colorcet as cc
+
+import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib import gridspec
-import numpy as np
-from random import randint
-from .scatter import base_scatter, multi_scatter, marker_gene_volcano, highly_variable_genes
+
+from .plot_base import PlotBase
+from ..log_manager import logger
 from stereo.config import StereoConfig
+from .scatter import base_scatter, multi_scatter, marker_gene_volcano, highly_variable_genes
 
 conf = StereoConfig()
 
