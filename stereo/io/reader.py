@@ -25,7 +25,7 @@ import h5py
 import numpy as np
 import pandas as pd
 from anndata import AnnData
-from scipy.sparse import csr_matrix
+from scipy.sparse import csr_matrix, vstack as sp_vstack
 from shapely.geometry import Point, MultiPoint
 
 from stereo.io import h5ad
@@ -243,10 +243,7 @@ def read_seurat_h5ad(file_path, use_raw=False):
             if k == "raw" or k.startswith("raw."):
                 continue
             if k == "X":
-                if isinstance(f[k], h5py.Dataset):
-                    data.exp_matrix = h5ad.read_dense_as_sparse(f[k], csr_matrix, 10000)
-                else:
-                    data.exp_matrix = h5ad.read_group(f[k])
+                data.exp_matrix = read_dense_as_csr_matrix(f[k])
             elif k == "obs":
                 cells_df = h5ad.read_dataframe(f[k])
                 data.cells.cell_name = cells_df.index.values
@@ -264,18 +261,11 @@ def read_seurat_h5ad(file_path, use_raw=False):
             elif k == "var":
                 genes_df = h5ad.read_dataframe(f[k])
                 data.genes.gene_name = genes_df.index.values
-                if 'highly_variable' in genes_df:
-                    data.tl.result['highly_variable_genes'] = pd.DataFrame({
-                        'means': genes_df.means.values,
-                        'dispersions': genes_df.dispersions.values,
-                        'dispersions_norm': genes_df.dispersions_norm.values,
-                        'highly_variable': genes_df.highly_variable.values == 1
-                    }, index=genes_df.index.values)
-                    data.tl.key_record['hvg'].append('highly_variable_genes')
+                # data.genes.n_cells = genes_df['n_cells']
+                # data.genes.n_counts = genes_df['n_counts']
             elif k == 'obsm':
+                key: str
                 for key in f['obsm'].keys():
-                    if key == 'X_spatial':
-                        continue
                     if key == 'X_pca':
                         data.tl.result['pca'] = pd.DataFrame(h5ad.read_dataset(f['obsm']['X_pca']))
                         data.tl.key_record['pca'].append('pca')
@@ -286,22 +276,11 @@ def read_seurat_h5ad(file_path, use_raw=False):
                 pass
         if use_raw:
             data.tl.raw = StereoExpData()
-            if isinstance(f['raw']['X'], h5py.Dataset):
-                data.tl.raw.exp_matrix = h5ad.read_dense_as_sparse(f['raw']['X'], csr_matrix, 10000)
-            else:
-                data.tl.raw.exp_matrix = h5ad.read_group(f['raw']['X'])
-            if 'obs' in f['raw']:
-                cells_df = h5ad.read_dataframe(f[k])
-                data.tl.raw.cells.cell_name = cells_df.index.values
-                data.position = cells_df[['x', 'y']].to_numpy(dtype=np.uint32)
-            else:
-                data.tl.raw.cells.cell_name = data.cells.cell_name.copy()
-                data.tl.raw.position = data.position.copy()
-            if 'var' in f['raw']:
-                genes_df = h5ad.read_dataframe(f['raw']['var'])
-                data.tl.raw.genes.gene_name = genes_df.index.values
-            else:
-                data.tl.raw.genes.gene_name = data.genes.gene_name.copy()
+            data.tl.raw.exp_matrix = read_dense_as_csr_matrix(f['raw']['X'])
+            data.tl.raw.cells.cell_name = data.cells.cell_name.copy()
+            data.tl.raw.position = data.position.copy()
+            genes_df = h5ad.read_dataframe(f['raw']['var'])
+            data.tl.raw.genes.gene_name = genes_df.index.values
     return data
 
 
