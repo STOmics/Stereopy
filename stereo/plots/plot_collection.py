@@ -109,7 +109,7 @@ class PlotCollection:
             'bins': self.data.cell_names,
             'group': np.array(res['group'])
         })
-        
+
         fig = interact_spatial_cluster_annotation(self.data, df, res_marker_gene, res_key, width=width, height=height)
         if not inline:
             fig.show()
@@ -445,7 +445,7 @@ class PlotCollection:
             x_label: str = 'umap1',
             y_label: str = 'umap2',
             dot_size: int = 1,
-            colors: Optional[Union[str, list]] = 'stereo_30'            
+            colors: Optional[Union[str, list]] = 'stereo_30'
         ):
         import holoviews as hv
         import hvplot.pandas
@@ -837,4 +837,3 @@ class PlotCollection:
         from .plot_cells import PlotCells
         pc = PlotCells(self.data, cluster_res_key=cluster_res_key, figure_size=figure_size, fg_alpha=fg_alpha, base_image=base_image)
         return pc.show()
-
