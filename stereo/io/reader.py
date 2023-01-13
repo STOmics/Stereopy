@@ -405,14 +405,11 @@ def stereo_to_anndata(data: StereoExpData, flavor='scanpy', sample_id="sample", 
 
     from scipy.sparse import issparse
 
-    if data.tl.raw is None:
-        logger.error('convert to AnnData should have raw data')
-        raise Exception
-
-    exp = data.tl.raw.exp_matrix if issparse(data.tl.raw.exp_matrix) else csr_matrix(data.tl.raw.exp_matrix)
-    cells = data.tl.raw.cells.to_df()
+    exp = data.exp_matrix
+    # exp = data.exp_matrix.toarray() if issparse(data.exp_matrix) else data.exp_matrix
+    cells = data.cells.to_df()
     cells.dropna(axis=1, how='all', inplace=True)
-    genes = data.tl.raw.genes.to_df()
+    genes = data.genes.to_df()
     genes.dropna(axis=1, how='all', inplace=True)
 
     adata = AnnData(X=exp,
