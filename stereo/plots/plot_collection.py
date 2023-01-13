@@ -4,17 +4,15 @@
 @author: qindanhua@genomics.cn
 @time:2021/08/31
 """
-from random import randint
+import os.path
 from typing import Optional, Union, Sequence
-
-import numpy as np
+# import colorcet as cc
 import matplotlib.pyplot as plt
 from matplotlib import gridspec
-
-from .plot_base import PlotBase
-from ..log_manager import logger
-from stereo.config import StereoConfig
+import numpy as np
+from random import randint
 from .scatter import base_scatter, multi_scatter, marker_gene_volcano, highly_variable_genes
+from stereo.config import StereoConfig
 
 conf = StereoConfig()
 
@@ -76,6 +74,41 @@ class PlotCollection:
             'group': np.array(res['group'])
         })
         fig = interact_spatial_cluster(df, width=width, height=height)
+        if not inline:
+            fig.show()
+        return fig
+
+    def interact_annotation_cluster(
+            self,
+            res_cluster_key='cluster',
+            res_marker_gene_key='marker_genes',
+            res_key = 'annotation',
+            inline=True,
+            width=700, height=500
+    ):
+        """
+        interactive spatial scatter after clustering
+
+        :param res_cluster_key: cluster result key
+        :param res_marker_gene_key: marker gene result key
+        :param res_key: The key for getting the result from the self.result.
+        :param inline: show in notebook
+        :param width: figure width
+        :param height: figure height
+
+        """
+        res = self.check_res_key(res_cluster_key)
+        res_marker_gene = self.check_res_key(res_marker_gene_key)
+        from .interact_plot.annotation_cluster import interact_spatial_cluster_annotation
+        import pandas as pd
+        df = pd.DataFrame({
+            'x': self.data.position[:, 0],
+            'y': self.data.position[:, 1],
+            'bins': self.data.cell_names,
+            'group': np.array(res['group'])
+        })
+
+        fig = interact_spatial_cluster_annotation(self.data, df, res_marker_gene, res_key, width=width, height=height)
         if not inline:
             fig.show()
         return fig
@@ -221,7 +254,7 @@ class PlotCollection:
             color_bar=True,
             **kwargs
         )
-
+    
     def spatial_scatter_by_gene(
             self,
             gene_name=None,
@@ -259,9 +292,9 @@ class PlotCollection:
             x = self.data.position[:, 0]
             y = self.data.position[:, 1]
             hue = exp_data
-
+        
         hue = np.squeeze(hue.toarray())
-
+        
         if 'color_bar_reverse' in kwargs:
             color_bar_reverse = kwargs['color_bar_reverse']
             del kwargs['color_bar_reverse']
@@ -280,7 +313,7 @@ class PlotCollection:
             color_bar_reverse=color_bar_reverse,
             **kwargs
         )
-
+    
     def gaussian_smooth_scatter_by_gene(
             self,
             gene_name=None,
@@ -328,7 +361,7 @@ class PlotCollection:
             x_list = [self.data.tl.raw.position[:, 0], self.data.position[:, 0]]
             y_list = [self.data.tl.raw.position[:, 1], self.data.position[:, 1]]
             hue_list = [raw_exp_data, exp_data]
-
+        
         ncols = 2
         nrows = 1
         # each panel will have the size of rcParams['figure.figsize']
@@ -366,6 +399,7 @@ class PlotCollection:
                 color_bar_reverse=color_bar_reverse,
                 **kwargs
             )
+    
 
     def violin(self):
         """
@@ -401,7 +435,7 @@ class PlotCollection:
         if not inline:
             fig.figure.show()
         return fig
-
+    
     def batches_umap(
             self,
             res_key='umap',
@@ -409,15 +443,15 @@ class PlotCollection:
             x_label: str = 'umap1',
             y_label: str = 'umap2',
             dot_size: int = 1,
-            colors: Optional[Union[str, list]] = 'stereo_30'
-    ):
+            colors: Optional[Union[str, list]] = 'stereo_30'            
+        ):
         import holoviews as hv
         import hvplot.pandas
         import panel as pn
         from bokeh.models import Title
         pn.extension()
         hv.extension('bokeh')
-
+        
         assert self.data.cells.batch is not None, "there is no batches number list"
         umap_res = self.check_res_key(res_key)
         umap_res = umap_res.rename(columns={0: 'x', 1: 'y'})
@@ -434,7 +468,7 @@ class PlotCollection:
             height=500,
             invert_yaxis=True,
             xlabel=x_label,
-            ylabel=y_label,
+            ylabel=y_label, 
             size=dot_size,
             toolbar='disable',
             colorbar=False,
@@ -478,6 +512,7 @@ class PlotCollection:
                 pn.Column(*pn_rows)
             )
         )
+
 
     def umap(
             self,
@@ -707,7 +742,7 @@ class PlotCollection:
             ncols=2,
             dot_size=None,
             palette='stereo',
-            **kwargs
+            ** kwargs
     ):
         """
         plot hotspot modules
@@ -745,8 +780,8 @@ class PlotCollection:
         :return:
         """
         res = self.check_res_key(res_key)
-        regulons = res["regulons"]
-        auc_mtx = res["auc_mtx"]
+        regulons=res["regulons"]
+        auc_mtx=res["auc_mtx"]
         for tf in range(0, len(regulons)):
             scores = auc_mtx.iloc[:, tf]
 
@@ -798,6 +833,5 @@ class PlotCollection:
         :return: figure to show
         """
         from .plot_cells import PlotCells
-        pc = PlotCells(self.data, cluster_res_key=cluster_res_key, figure_size=figure_size, fg_alpha=fg_alpha,
-                       base_image=base_image)
+        pc = PlotCells(self.data, cluster_res_key=cluster_res_key, figure_size=figure_size, fg_alpha=fg_alpha, base_image=base_image)
         return pc.show()
