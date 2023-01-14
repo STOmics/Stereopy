@@ -105,7 +105,7 @@ def mouse2human(genes, ref_path):
     If one-to-many, use the first. If mouse gene not in the reference data, use its upper case.
 
     :param genes: list of mouse genes (hgnc symbols)
-    :param ref_path
+    :param ref_path: path of the reference homologous gene relationship file.
     :return: list of human homologous
     """
 

@@ -30,13 +30,12 @@ from stereo.algorithm.cell_cell_communication.ref_database.database_utils import
 from stereo.algorithm.cell_cell_communication.ref_database.sqlalchemy_repository import ComplexRepository, \
     GeneRepository, InteractionRepository, MultidataRepository, ProteinRepository
 from stereo.algorithm.cell_cell_communication.exceptions import ProcessMetaException, ParseCountsException, \
-    ThresholdValueException, AllCountsFilteredException, NoInteractionsFound
+    ThresholdValueException, AllCountsFilteredException, NoInteractionsFound, InvalidDatabase
 
 
 class CellCellCommunication(AlgorithmBase):
-    # FIXME: change the default database path
-    def __init__(self, db_path: str = r'E:\Stereopy\CPDBRewrite\Database\cellphone.db'):
-        self.db_path = db_path
+    def __init__(self):
+        self.db_path = None
 
     # FIXME: change the default output_path in linux, change default homogene_path
     def main(self,
@@ -45,9 +44,9 @@ class CellCellCommunication(AlgorithmBase):
              counts: pd.DataFrame,
              micro_envs: pd.DataFrame = None,
              species: str = "HUMAN",
+             database: str = 'cellphonedb',
              homogene_path: str = r'E:\Stereopy\database\mouse2human.csv',
              counts_identifiers: str = "hgnc_symbol",
-             p_value: float = None,
              subsampling: bool = False,
              subsampling_log: bool = False,
              subsampling_num_pc: int = 1000,
@@ -67,42 +66,55 @@ class CellCellCommunication(AlgorithmBase):
              output_format: str = 'txt'
              ):
         """
-        Cell-cell communication main functon.
+        Cell-cell communication analysis main functon.
 
         :param analysis_type: type of analysis: "simple", "statistical".
         :param meta: This dataframe must have a column named "cell_type" and, either a column named "cell" storing the
         cell names or the cell names as the indexes.
-        :param counts: genes as indexes, cell as columns.
+        :param counts: dataframe with genes as indexes, cells as columns.
         :param micro_envs: two columns, column names should be "cell_type" and "microenvironment".
         :param species: 'HUMAN' or 'MOUSE'
-        :param homogene_path:
-        :param counts_identifiers: type of gene identifiers in the Counts data: "ensembl", "gene_name", "hgnc_symbol"
-        :param p_value:
-        :param subsampling: flag of subsampling
+        :param database: if species is HUMAN, choose from 'cellphonedb' or 'liana';
+         if MOUSE, use 'cellphonedb' or 'liana' or 'celltalkdb'
+        :param homogene_path: path to the file storing mouse-human homologous genes ralations.
+        If species is MOUSE but database is 'cellphonedb' or 'liana', we need to use the human
+        homologous genes for the input mouse genes.
+        :param counts_identifiers: type of gene identifiers in the Counts data: "ensembl", "gene_name" or "hgnc_symbol".
+        :param subsampling: flag of subsampling.
         :param subsampling_log: flag of doing log1p transformation before subsampling.
         :param subsampling_num_pc: number of pcs used when doing subsampling, <= min(m,n).
         :param subsampling_num_cells: size of the subsample.
-        :param separator_cluster: separator of clusters.
-        :param separator_interaction: separator of interactions.
-        :param iterations: number of samples used for the null distribution
-        :param threshold: threshold of percentage
-        :param threads:
-        :param pvalue: significance cutoff
-        :param result_precision:
-        :param output_path:
-        :param means_filename:
-        :param pvalues_filename:
-        :param significant_means_filename:
-        :param deconvoluted_filename:
-        :param output_format:
+        :param separator_cluster: separator of cluster names used in the result and plots, e.g. '|'.
+        :param separator_interaction: separator of interactions used in the result and plots, e.g. '_'.
+        :param iterations: number of samples used for generating the null distribution.
+        :param threshold: threshold of percentage of gene expression, above which being considered as significant.
+        :param threads: number of threads usd for doing the statistical analysis.
+        :param pvalue: the cut-point of p-value, below which being considered significant.
+        :param result_precision: result precision for the results, default=3.
+        :param output_path: path of result files.
+        :param means_filename: name of the means result.
+        :param pvalues_filename: name of the pvalues result.
+        :param significant_means_filename: name of the significant mean result.
+        :param deconvoluted_filename: name of the convoluted result.
+        :param output_format: format of result, 'txt', 'csv', 'tsv', 'tab'.
         :return:
         """
         # 0. prepare the reference database
+        # FIXME: change the default database path
+        if database == 'cellphonedb':
+            self.db_path = r'E:\Stereopy\database\CellPhoneDB_curated\cellphonedb_user_2023-01-10-16_45.db'
+        elif database == 'liana':
+            self.db_path = r'E:\Stereopy\database\Liana\cellphonedb_user_2023-01-14-15_52.db'
+        elif database == 'celltalkdb':
+            self.db_path = r'E:\Stereopy\database\CellTalkDB\cellphonedb_user_2023-01-11-15_51.db'
+        else:
+            raise InvalidDatabase()
+
         interactions, genes, complex_composition, complex_expanded = self._get_ref_database()
 
         # 1. preprocess and validate input data
 
-        # 1.1. preprocess and validate meta data
+        # 1.1. preprocess and validate meta data (cell name as index, cell type as the only column).
         meta = self._check_meta_data(meta)
 
         # 1.2. preprocess and validate counts data
@@ -110,7 +122,7 @@ class CellCellCommunication(AlgorithmBase):
         counts = self._counts_validations(counts, meta)
 
         # 1.3. if species is mouse, get the homologous genes.
-        if species.upper() == 'MOUSE':
+        if species.upper() == 'MOUSE' and (database == 'cellphonedb' or database == 'liana'):
             genes_mouse = counts.index.tolist()
             genes_human = mouse2human(genes_mouse, homogene_path)
             counts.index = genes_human
@@ -484,9 +496,10 @@ class CellCellCommunication(AlgorithmBase):
         counts_data: str
             Gene format expected in counts data
         """
-        if ~np.all(counts.index.str.startswith("ENSG0")) and counts_data == "ensembl":
+        if ~np.all(counts.index.str.startswith(("ENSG0", "ENSMUSG0"))) and counts_data == "ensembl":
             logger.warning(f"Gene format missmatch. Using gene type '{counts_data}' "
-                           f"expects gene names to start with 'ENSG' but some genes seem to be in another format. "
+                           f"expects gene names to start with 'ENSG' (human) or 'ENSMUSG0' (mouse) but "
+                           f"some genes seem to be in another format. "
                            f"Try using hgnc_symbol if all counts are filtered.")
 
     @staticmethod

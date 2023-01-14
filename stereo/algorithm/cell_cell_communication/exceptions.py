@@ -36,3 +36,8 @@ class NoInteractionsFound(Exception):
         super(NoInteractionsFound, self).__init__('No CellPhoneDB interacions found in this input.')
         self.description = description
         self.hint = hint
+
+
+class InvalidDatabase(Exception):
+    def __init__(self):
+        super(InvalidDatabase, self).__init__('Invalid database. Please choose from cellphonedb, liana and celltalkdb.')
