@@ -672,7 +672,7 @@ class StPipeline(object):
                           corr_method: str = 'bonferroni',
                           use_raw: bool = True,
                           use_highly_genes: bool = True,
-                          hvg_res_key: Optional[str] = None,
+                          hvg_res_key: Optional[str] = 'highly_variable_genes',
                           res_key: str = 'marker_genes',
                           output: Optional[str] = None,
                           ):
@@ -830,7 +830,7 @@ class StPipeline(object):
 
         if pca_exp_matrix.shape[0] != raw_exp_matrix.shape[0]:
             raise Exception(
-                f"The first dimension of pca_exp_matrix not equals to raw_exp_matrix's, may be because of running raw_checkpoint before filter cells and genes.")
+                f"The first dimension of pca_exp_matrix not equals to raw_exp_matrix's, may be because of running raw_checkpoint before filter cells and/or genes.")
 
         # logger.info(f"raw exp matrix size: {raw_exp_matrix.shape}")
         from ..algorithm.gaussian_smooth import gaussian_smooth
