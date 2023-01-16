@@ -148,6 +148,7 @@ def read_stereo_h5ad(file_path, use_raw=True, use_result=True, ):
 
     :return:
     """
+    from ..utils.pipeline_utils import cell_cluster_to_gene_exp_cluster
     data = StereoExpData(file_path=file_path)
     if not data.file.exists():
         logger.error('the input file is not exists, please check!')
@@ -220,6 +221,10 @@ def read_stereo_h5ad(file_path, use_raw=True, use_result=True, ):
                         }
                     if analysis_key == 'cluster':
                         data.tl.result[res_key] = h5ad.read_group(f[f'{res_key}@cluster'])
+                        gene_cluster_res_key = f'gene_exp_{res_key}'
+                        if ('gene_exp_cluster' not in data.tl.key_record) or (gene_cluster_res_key not in data.tl.key_record['gene_exp_cluster']):
+                            data.tl.result[gene_cluster_res_key] = cell_cluster_to_gene_exp_cluster(data.tl, res_key)
+                            data.tl.reset_key_record('gene_exp_cluster', gene_cluster_res_key)
                     if analysis_key == 'gene_exp_cluster':
                         data.tl.result[res_key] = h5ad.read_group(f[f'{res_key}@gene_exp_cluster'])
                     if analysis_key == 'marker_genes':
