@@ -122,6 +122,7 @@ def marker_genes_text(
     if sharey is True:
         ymax += 0.3 * (ymax - ymin)
         ax.set_ylim(ymin, ymax)
+    return fig
 
 
 def make_draw_df(data: StereoExpData, group: pd.DataFrame, marker_res: dict, top_genes: int = 8,
@@ -254,6 +255,7 @@ def plot_heatmap(
             left_adjustment=-0.3,
             right_adjustment=0.3,
         )
+    return fig
 
 
 def marker_genes_heatmap(
@@ -295,5 +297,5 @@ def marker_genes_heatmap(
                                                          gene_list=gene_list, min_value=min_value, max_value=max_value)
     if do_log:
         draw_df = np.log1p(draw_df)
-    plot_heatmap(df=draw_df, show_labels=show_labels, show_group=show_group, show_group_txt=show_group_txt,
-                 group_position=group_position, group_labels=group_labels, cluster_colors_array=cluster_colors_array)
+    return plot_heatmap(df=draw_df, show_labels=show_labels, show_group=show_group, show_group_txt=show_group_txt, 
+                        group_position=group_position, group_labels=group_labels, cluster_colors_array=cluster_colors_array)

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # coding: utf-8
 
-from .config import StereoConfig
+from .stereo_config import StereoConfig, stereo_conf
 from .log_manager import logger
 from . import io
 # from . import preprocess
