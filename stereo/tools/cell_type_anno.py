@@ -18,7 +18,7 @@ import traceback
 from ..log_manager import logger
 from ..utils.correlation import spearmanr_corr, pearson_corr
 from ..preprocess.normalize import normalize_total
-from ..config import stereo_conf
+from ..stereo_config import stereo_conf
 from ..utils import remove_file
 from ..core.tool_base import ToolBase
 
