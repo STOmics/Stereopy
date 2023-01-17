@@ -25,6 +25,7 @@ from scipy.sparse import issparse
 
 from ..log_manager import logger
 from ..utils.time_consume import TimeConsume
+from ..algorithm.algorithm_base import AlgorithmBase
 
 tc = TimeConsume()
 
@@ -58,7 +59,11 @@ class StPipeline(object):
         dict_attr = self.__dict__.get(item, None)
         if dict_attr:
             return dict_attr
-        from ..algorithm.algorithm_base import AlgorithmBase
+
+        # start with __ may not be our algorithm function, and will cause import problem
+        if item.startswith('__'):
+            raise AttributeError
+
         new_attr = AlgorithmBase.get_attribute_helper(item, self.data, self.result)
         if new_attr:
             self.__setattr__(item, new_attr)
@@ -935,6 +940,39 @@ class StPipeline(object):
         key = 'pca'
         self.reset_key_record(key, res_key)
 
+    @logit
+    def annotation(
+        self,
+        annotation_information: Union[list, dict],
+        cluster_res_key = 'cluster',
+        res_key='annotation'
+    ):
+        """
+        annotation of cluster.
+
+        :param annotation_information: Union[list, dict]
+            Annotation information for clustering results.
+        :param cluster_res_key: The key of cluster result in the self.result.
+        :param res_key: The key for getting the result from the self.result.
+        :return:
+        """
+
+        assert cluster_res_key in self.result, f'{cluster_res_key} is not in the result, please check and run the cluster func.'
+
+        df = copy.deepcopy(self.result[cluster_res_key])
+        if isinstance(annotation_information,list):
+            df.group.cat.categories = annotation_information
+        elif isinstance(annotation_information,dict):
+            new_annotation_list = []
+            for i in df.group.cat.categories:
+                new_annotation_list.append(annotation_information[i])
+            df.group.cat.categories = new_annotation_list
+
+        self.result[res_key] = df
+
+        key = 'cluster'
+        self.reset_key_record(key, res_key)
+
     # def scenic(self, tfs, motif, database_dir, res_key='scenic', use_raw=True, outdir=None,):
     #     """
     #
@@ -999,7 +1037,8 @@ class AnnBasedResult(dict):
         if obs_obj is not None:
             return True
         uns_obj = self.__based_ann_data.uns.get(item, None)
-        if uns_obj and 'params' in uns_obj and 'connectivities_key' in uns_obj['params'] and 'distances_key' in uns_obj['params']:
+        if uns_obj and 'params' in uns_obj and 'connectivities_key' in uns_obj['params'] and 'distances_key' in uns_obj[
+            'params']:
             return True
         return False
 
@@ -1024,7 +1063,8 @@ class AnnBasedResult(dict):
         if obs_obj is not None:
             return pd.DataFrame(self.__based_ann_data.obs[name].values, columns=['group'])
         uns_obj = self.__based_ann_data.uns.get(name, None)
-        if uns_obj and 'params' in uns_obj and 'connectivities_key' in uns_obj['params'] and 'distances_key' in uns_obj['params']:
+        if uns_obj and 'params' in uns_obj and 'connectivities_key' in uns_obj['params'] and 'distances_key' in uns_obj[
+            'params']:
             return {
                 'neighbor': None,  # TODO really needed?
                 'connectivities': self.__based_ann_data.obsp[uns_obj['params']['connectivities_key']],
