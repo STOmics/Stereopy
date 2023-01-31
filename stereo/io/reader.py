@@ -53,6 +53,8 @@ def read_gem(file_path, sep='\t', bin_type="bins", bin_size=100, is_sparse=True)
         df.rename(columns={'MIDCounts': 'UMICount'}, inplace=True)
     elif 'MIDCount' in df.columns:
         df.rename(columns={'MIDCount': 'UMICount'}, inplace=True)
+    if 'CellID' in df.columns:
+        df.rename(columns={'CellID': 'cell_id'}, inplace=True)
     df.dropna(inplace=True)
     gdf = None
     if data.bin_type == 'cell_bins':
