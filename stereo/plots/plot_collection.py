@@ -136,7 +136,6 @@ class PlotCollection:
             'bins': self.data.cell_names,
             'group': np.array(res['group'])
         })
-
         fig = interact_spatial_cluster_annotation(self.data, df, res_marker_gene, res_key, width=width, height=height)
         if not inline:
             fig.show()
