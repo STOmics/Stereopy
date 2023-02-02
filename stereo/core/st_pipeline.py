@@ -401,18 +401,21 @@ class StPipeline(object):
     #     self.result[res_key] = pd.DataFrame(res)
 
     @logit
-    def umap(self,
-             pca_res_key,
-             neighbors_res_key,
-             res_key='umap',
-             min_dist: float = 0.5,
-             spread: float = 1.0,
-             n_components: int = 2,
-             maxiter: Optional[int] = None,
-             alpha: float = 1.0,
-             gamma: float = 1.0,
-             negative_sample_rate: int = 5,
-             init_pos: str = 'spectral', ):
+    def umap(
+            self,
+            pca_res_key,
+            neighbors_res_key,
+            res_key='umap',
+            min_dist: float = 0.5,
+            spread: float = 1.0,
+            n_components: int = 2,
+            maxiter: Optional[int] = None,
+            alpha: float = 1.0,
+            gamma: float = 1.0,
+            negative_sample_rate: int = 5,
+            init_pos: str = 'spectral',
+            method: str = 'umap'
+    ):
         """
         Embed the neighborhood graph using UMAP [McInnes18]_.
 
@@ -451,7 +454,7 @@ class StPipeline(object):
         _, connectivities, _ = self.get_neighbors_res(neighbors_res_key)
         x_umap = umap(x=self.result[pca_res_key], neighbors_connectivities=connectivities,
                       min_dist=min_dist, spread=spread, n_components=n_components, maxiter=maxiter, alpha=alpha,
-                      gamma=gamma, negative_sample_rate=negative_sample_rate, init_pos=init_pos)
+                      gamma=gamma, negative_sample_rate=negative_sample_rate, init_pos=init_pos, method=method)
         self.result[res_key] = pd.DataFrame(x_umap)
         key = 'umap'
         self.reset_key_record(key, res_key)
@@ -556,7 +559,8 @@ class StPipeline(object):
                resolution: float = 1,
                use_weights: bool = True,
                random_state: int = 0,
-               n_iterations: int = -1
+               n_iterations: int = -1,
+               method='normal'
                ):
         """
         leiden of cluster.
@@ -576,16 +580,20 @@ class StPipeline(object):
                              -1 has the algorithm run until it reaches its optimal clustering.
         :return:
         """
-        from ..algorithm.leiden import leiden as le
-        from ..utils.pipeline_utils import cell_cluster_to_gene_exp_cluster
         neighbor, connectivities, _ = self.get_neighbors_res(neighbors_res_key)
-        clusters = le(neighbor=neighbor, adjacency=connectivities, directed=directed, resolution=resolution,
+        if method == 'rapids':
+            from ..algorithm.leiden import leiden_rapids
+            clusters = leiden_rapids(adjacency=connectivities, resolution=resolution)
+        else:
+            from ..algorithm.leiden import leiden as le
+            clusters = le(neighbor=neighbor, adjacency=connectivities, directed=directed, resolution=resolution,
                       use_weights=use_weights, random_state=random_state, n_iterations=n_iterations)
         df = pd.DataFrame({'bins': self.data.cell_names, 'group': clusters})
         self.result[res_key] = df
         key = 'cluster'
         self.reset_key_record(key, res_key)
         gene_cluster_res_key = f'gene_exp_{res_key}'
+        from ..utils.pipeline_utils import cell_cluster_to_gene_exp_cluster
         self.result[gene_cluster_res_key] = cell_cluster_to_gene_exp_cluster(self, res_key)
         self.reset_key_record('gene_exp_cluster', gene_cluster_res_key)
 
@@ -923,6 +931,39 @@ class StPipeline(object):
         out = hm.run_harmony(self.result[pca_res_key], self.data.cells.to_df(), 'batch', **kwargs)
         self.result[res_key] = pd.DataFrame(out.Z_corr.T)
         key = 'pca'
+        self.reset_key_record(key, res_key)
+
+    @logit
+    def annotation(
+        self, 
+        annotation_information: Union[list, dict],
+        cluster_res_key = 'cluster',
+        res_key='annotation'
+    ):
+        """
+        annotation of cluster.
+
+        :param annotation_information: Union[list, dict] 
+            Annotation information for clustering results.
+        :param cluster_res_key: The key of cluster result in the self.result.
+        :param res_key: The key for getting the result from the self.result.
+        :return:
+        """
+
+        assert cluster_res_key in self.result, f'{cluster_res_key} is not in the result, please check and run the cluster func.'
+
+        df = copy.deepcopy(self.result[cluster_res_key])
+        if isinstance(annotation_information,list):
+            df.group.cat.categories = annotation_information
+        elif isinstance(annotation_information,dict):
+            new_annotation_list = []
+            for i in df.group.cat.categories:
+                new_annotation_list.append(annotation_information[i])
+            df.group.cat.categories = new_annotation_list
+
+        self.result[res_key] = df
+
+        key = 'cluster'
         self.reset_key_record(key, res_key)
 
     # def scenic(self, tfs, motif, database_dir, res_key='scenic', use_raw=True, outdir=None,):
