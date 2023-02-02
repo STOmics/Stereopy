@@ -14,8 +14,6 @@ change log:
     andata_to_stereo function by Yiran Wu.
     2021/08/20
     2022/02/09  read raw data and result
-
-
 """
 from copy import deepcopy
 from typing import Optional
@@ -407,11 +405,14 @@ def stereo_to_anndata(data: StereoExpData, flavor='scanpy', sample_id="sample", 
 
     from scipy.sparse import issparse
 
-    exp = data.exp_matrix
-    # exp = data.exp_matrix.toarray() if issparse(data.exp_matrix) else data.exp_matrix
-    cells = data.cells.to_df()
+    if data.tl.raw is None:
+        logger.error('convert to AnnData should have raw data')
+        raise Exception
+
+    exp = data.tl.raw.exp_matrix if issparse(data.tl.raw.exp_matrix) else csr_matrix(data.tl.raw.exp_matrix)
+    cells = data.tl.raw.cells.to_df()
     cells.dropna(axis=1, how='all', inplace=True)
-    genes = data.genes.to_df()
+    genes = data.tl.raw.genes.to_df()
     genes.dropna(axis=1, how='all', inplace=True)
 
     adata = AnnData(X=exp,

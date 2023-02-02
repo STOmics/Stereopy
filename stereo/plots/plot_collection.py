@@ -83,7 +83,7 @@ class PlotCollection:
     def interact_annotation_cluster(
             self,
             res_cluster_key='cluster',
-            res_marker_gene_key='marker_genes', 
+            res_marker_gene_key='marker_genes',
             res_key = 'annotation',
             inline=True,
             width=700, height=500
@@ -109,7 +109,7 @@ class PlotCollection:
             'bins': self.data.cell_names,
             'group': np.array(res['group'])
         })
-        
+
         fig = interact_spatial_cluster_annotation(self.data, df, res_marker_gene, res_key, width=width, height=height)
         if not inline:
             fig.show()
@@ -296,7 +296,6 @@ class PlotCollection:
             hue = exp_data
 
         hue = np.squeeze(hue.toarray())
-
         if 'color_bar_reverse' in kwargs:
             color_bar_reverse = kwargs['color_bar_reverse']
             del kwargs['color_bar_reverse']
@@ -445,7 +444,7 @@ class PlotCollection:
             y_label: str = 'umap2',
             dot_size: int = 1,
             colors: Optional[Union[str, list]] = 'stereo_30'
-    ):
+        ):
         import holoviews as hv
         import hvplot.pandas
         import panel as pn
@@ -513,6 +512,7 @@ class PlotCollection:
                 pn.Column(*pn_rows)
             )
         )
+
 
     def umap(
             self,
@@ -833,7 +833,5 @@ class PlotCollection:
         :return: figure to show
         """
         from .plot_cells import PlotCells
-        pc = PlotCells(self.data, cluster_res_key=cluster_res_key, figure_size=figure_size, fg_alpha=fg_alpha,
-                       base_image=base_image)
+        pc = PlotCells(self.data, cluster_res_key=cluster_res_key, figure_size=figure_size, fg_alpha=fg_alpha, base_image=base_image)
         return pc.show()
-
