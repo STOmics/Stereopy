@@ -603,8 +603,6 @@ class StPipeline(object):
                              -1 has the algorithm run until it reaches its optimal clustering.
         :return:
         """
-        from ..algorithm.leiden import leiden as le
-        from ..utils.pipeline_utils import cell_cluster_to_gene_exp_cluster
         neighbor, connectivities, _ = self.get_neighbors_res(neighbors_res_key)
         if method == 'rapids':
             from ..algorithm.leiden import leiden_rapids
@@ -618,6 +616,7 @@ class StPipeline(object):
         key = 'cluster'
         self.reset_key_record(key, res_key)
         gene_cluster_res_key = f'gene_exp_{res_key}'
+        from ..utils.pipeline_utils import cell_cluster_to_gene_exp_cluster
         self.result[gene_cluster_res_key] = cell_cluster_to_gene_exp_cluster(self, res_key)
         self.reset_key_record('gene_exp_cluster', gene_cluster_res_key)
 
