@@ -16,8 +16,8 @@ from packaging import version
 from typing_extensions import Literal
 from scipy import sparse
 from numpy import random
-AnyRandom = Union[None, int, random.RandomState]
 
+AnyRandom = Union[None, int, random.RandomState]
 
 try:
     from _louvain.VertexPartition import MutableVertexPartition
@@ -26,19 +26,20 @@ except ImportError:
     class MutableVertexPartition:
         pass
 
+
     MutableVertexPartition.__module__ = 'louvain.VertexPartition'
 
 
 def louvain(
-    neighbor,
-    adjacency: sparse.spmatrix,
-    resolution: float = None,
-    random_state: AnyRandom = 0,
-    flavor: Literal['vtraag', 'igraph'] = 'vtraag',
-    directed: bool = True,
-    use_weights: bool = False,
-    partition_type: Optional[Type[MutableVertexPartition]] = None,
-    partition_kwargs: Mapping[str, Any] = MappingProxyType({}),
+        neighbor,
+        adjacency: sparse.spmatrix,
+        resolution: float = None,
+        random_state: AnyRandom = 0,
+        flavor: Literal['vtraag', 'igraph', 'rapids'] = 'vtraag',
+        directed: bool = True,
+        use_weights: bool = False,
+        partition_type: Optional[Type[MutableVertexPartition]] = None,
+        partition_kwargs: Mapping[str, Any] = MappingProxyType({}),
 ):
     """
     :param neighbor:
@@ -106,19 +107,26 @@ def louvain(
             part = g.community_multilevel(weights=weights)
         groups = np.array(part.membership)
     elif flavor == 'rapids':
-        # nvLouvain only works with undirected graphs,
+        # nv louvain only works with undirected graphs,
         # and `adjacency` must have a directed edge in both directions
-        import cudf
-        import cugraph
+        try:
+            import cudf
+            import cugraph
+        except ImportError:
+            raise ImportError(
+                "Your env don't have GPU related RAPIDS packages, if you want to run this option, follow the "
+                "guide at https://stereopy.readthedocs.io/en/latest/Tutorials/clustering_by_gpu.html")
 
         offsets = cudf.Series(adjacency.indptr)
         indices = cudf.Series(adjacency.indices)
+        params = {"source": "src", "destination": "dst", "renumber": False}
         if use_weights:
             sources, targets = adjacency.nonzero()
             weights = adjacency[sources, targets]
             if isinstance(weights, np.matrix):
                 weights = weights.A1
             weights = cudf.Series(weights)
+            params["edge_attr"] = "weights"
         else:
             weights = None
         g = cugraph.Graph()
@@ -128,13 +136,20 @@ def louvain(
         else:
             g.from_cudf_adjlist(offsets, indices, weights)
 
+        original_edge_list = g.view_edge_list()
+
+        # FIXME: according to the bug issue: https://github.com/rapidsai/cugraph/issues/3016 with the `cugraph`
+        #  version 22.10.1+0.g9cf07eb6.dirty
+        g = cugraph.Graph()
+        g.from_cudf_edgelist(original_edge_list, **params)
+
         # logg.info('    using the "louvain" package of rapids')
         louvain_parts, _ = cugraph.louvain(g)
         groups = (
             louvain_parts.to_pandas()
-            .sort_values('vertex')[['partition']]
-            .to_numpy()
-            .ravel()
+                .sort_values('vertex')[['partition']]
+                .to_numpy()
+                .ravel()
         )
     elif flavor == 'taynaud':
         # this is deprecated
@@ -149,7 +164,7 @@ def louvain(
     else:
         raise ValueError('`flavor` needs to be "vtraag" or "igraph" or "taynaud".')
 
-    groups =  groups + 1
+    groups = groups + 1
     cluster = pd.Categorical(
         values=groups.astype('U'),
         categories=natsorted(map(str, np.unique(groups))),
