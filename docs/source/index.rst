@@ -1,51 +1,96 @@
-|stars| |pypi| |downloads| |docs|
+.. Stereopy manual documentation master file, created by
+   sphinx-quickstart on Mon Nov 21 18:07:00 2022.
+   You can adapt this file completely to your liking, but it should at least
+   contain the root `toctree` directive.
 
-.. _topics-index:
+.. =====================
+.. Document Title
+.. =====================
 
-Stereopy - Spatial Transcriptomics Analysis in Python
-=====================================================
+.. First level
+.. -----------
 
-**Stereopy** is a tool for the analysis and visualization of spatial transcriptomics data, such as stereo-seq data.
-It provides a series of analysis of spatial omics, and will be added to the tissue image related analysis later.
+.. Second level
+.. ++++++++++++
 
-.. image:: ./_static/workflow.png
+.. Third level
+.. ************
+
+.. Fourth level
+.. ~~~~~~~~~~~~
+
+
+|stars| |pypi| |downloads| |docs| 
+
+
+Stereopy -  Spatial Transcriptomics Analysis in Python
+========================================================
+
+**Stereopy** is a fundamental and comprehensive tool for mining and visualization \
+based on spatial transcriptomics data, such as Stereo-seq(spatial enhanced resolution omics sequencing) data. \
+More analysis will be added here, either from other popular tools or developed by ourselves, to meet diverse requirements. \
+Meanwhile we are still working on the improvement of performance and calculation efficiency.
+
+
+* Get quickly started by browsing **Usage Principles**, **Tutorials** or **API**.
+* Open to discuss and provide feedback on **Github**.
+* Follow changes in **Release Notes**.
+
+.. 加粗信息需要设置页面跳转和链接跳转（例如usage principles和Github）
+
+Highlights
+-----------
+
+* More suitable for performing downstream analysis of Stereo-seq data.
+* Support efficient reading and writing(IO), pre-processing, and standardization of multiple spatial transcriptomics data formats.
+* Self-developed Gaussian smoothing model, tissue and cell segmentation algorithm models, and cell correction algorithm.
+* Integrate various functions of dimensionality reduction, spatiotemporal clustering, cell clustering, spatial expression pattern analysis, etc.
+* Develop interactive visualization functions based on features of Stereo-seq workflow.
+
+
+Workflow
+---------
+
+.. image:: ./_static/Stereopy_workflow_v10.png
     :alt: Title figure
-    :width: 400px
+    :width: 700px
     :align: center
 
-StereoExpData
--------------
+Latest Additions
+------------------
 
-StereoExpData is designed for express matrix of spatial omics. It contains four important attributes, which record gene,
-cell, expression matrix and location information respectively. The express matrix. The expression matrix supports both
-sparse data and dense data.
+Version 0.9.0
+~~~~~~~~~~~~~~
+0.9.0 : 2023-01-10
 
+1. Resolved cell boundary overlapping issues during cell correction visualization.
+2. Addition of manually annotating cells and clusters via command lines or interactive visualization features.
+3. Addition of GPU version of UMAP, Neighbors, Leiden, and Louvian.
+4. Updated requirements.txt.
 
-Highlights of Stereopy
-----------------------
+Version 0.8.0
+~~~~~~~~~~~~~~
+0.8.0 : 2022-12-02
 
-pending upgrade.
+1. Reconstructed SCTransform normalization in python.
+2. Optimized the efficiency of FAST cell correction.
+3. Enabled to read Seurat output H5AD file for further analysis in Stereopy.
 
-
-.. toctree::
-   :caption: General
-   :maxdepth: 2
-
-
-   General/Installation
-   General/FAQs
-   api/index
 
 
 
 .. toctree::
-   :caption: Tutorials
-   :maxdepth: 2
+    :maxdepth: 3
+    :hidden: 
 
-
-   Tutorials/Examples
-   release_note
-   contributing
+    content/00_Installation
+    content/01_Usage_principles
+    Tutorial/Cases
+    content/03_API
+    content/04_Community
+    content/05_Contributing
+    content/06_Release_notes
+    content/07_References
 
 
 .. |docs| image:: https://img.shields.io/static/v1?label=docs&message=stereopy&color=green
@@ -62,4 +107,5 @@ pending upgrade.
 
 .. |pypi| image:: https://img.shields.io/pypi/v/stereopy
     :target: https://pypi.org/project/stereopy/
-    :alt: Pypi
+    :alt: PyPI
+

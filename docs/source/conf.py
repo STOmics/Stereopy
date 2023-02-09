@@ -18,10 +18,10 @@ suppress_warnings = ['ref.citation']
 
 # General information
 project = 'stereopy'
-copyright = '2021, Ping Qiu'
+copyright = '2023, Ping Qiu'
 author = 'Ping Qiu'
-version = 'v0.1'
-release = 'v0.1'
+version = 'v0.10.0'
+release = 'v0.10.0'
 
 # default settings
 templates_path = ['_templates']
@@ -32,6 +32,7 @@ exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
 pygments_style = 'sphinx'
 
 extensions = [
+    'sphinx.ext.todo',
     'sphinx.ext.autodoc',
     'sphinx.ext.intersphinx',
     'sphinx.ext.doctest',
@@ -56,7 +57,20 @@ api_dir = HERE / 'api'  # function_images
 # The master toctree document.
 language = None
 
-html_theme = 'sphinx_rtd_theme'
+html_theme = 'furo'
+
+html_title = "Stereopy"
+
+html_theme_options = {
+    # "sidebar_hide_name": True,
+        "light_css_variables": {
+        "color-brand-primary": "#003262",
+        "color-brand-content": "#003262",
+        "admonition-font-size": "var(--font-size-normal)",
+        "admonition-title-font-size": "var(--font-size-normal)",
+        "code-font-size": "var(--font-size--small)",
+    },
+}
 
 html_static_path = ['_static']
 
