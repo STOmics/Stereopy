@@ -1,42 +1,48 @@
 Contributing Guide
-~~~~~~~~~~~~~~~~~~
-
-Contents
-========
-- `Contributing Workflow`_
-- `Creating Development Environment`_
-- `Project Structure`_
-- `Code Style`_
-- `Testing`_
-- `Algorithm Method Class`_
+===================
 
 
-Contributing Workflow
+Project Structure
+-----------------
+
+- `stereo <stereo>`_: the root of the package.
+- `stereo/core <stereo/core>`_: the core code of stereo which contains the base classes and data structure of Stereopy.
+- `stereo/algorithm <stereo/algorithm>`_: the algorithm module, containing main analysis and implementation algorithms which deals with methodology realization.
+- `stereo/image <stereo/image>`_: the image module which deals with the tissue image related analysis, such as cell segmentation, etc.
+- `stereo/io <stereo/io>`_: the io module which deals with reading, writing and format conversion of different data structures, between StereoExpData and AnnData, etc.
+- `stereo/plots <stereo/plots>`_: the plotting module which contains all plotting functions for visualization.
+- `stereo/utils <stereo/utils>`_: the common processing scripts.
+- `stereo/tests <stereo/tests>`_: the test module which contains all test scripts.
+
+
+Contributing Guide
 ---------------------
-1. Fork the Stereopy repository to your own GitHub account, learn more in `GitHub Fork <https://docs.github.com/en/get-started/quickstart/fork-a-repo>`_.
+1. **Fork** the Stereopy repository to your own GitHub account, learn more in `GitHub Fork <https://docs.github.com/en/get-started/quickstart/fork-a-repo>`_.
 
-2. Clone your fork of the repository, and create a new branch based on dev branch for your `Pull Requests`, create a virtual environment such as conda, see details at `Creating Development Environment`_.
+2. **Clone** your fork of the repository, create a new branch based on dev branch for your `Pull Requests`, and create a virtual environment to install Stereopy of Development Version.
 
-3. Add new functionality or fix bugs in your codebase, don't forget to follow the rules in `Code Style`_.
+3. **Add new functions** or **fix bugs** in your codebase, don't forget to follow the rules of `Code Style`_.
 
-4. After finishing an important work, we strongly recommend contributor to add `{your_work_tutorial}.ipynb`, whose style like `HotSpot Tutorial <https://stereopy.readthedocs.io/en/latest/Tutorials/hotspot.html>`_, into `stereopy/docs/source/Tutorials/`.
+4. After completing the **code work**, we strongly recommend contributors to add `{your_work_tutorial}.ipynb`, whose style like `HotSpot Tutorial <https://stereopy.readthedocs.io/en/latest/Tutorials/hotspot.html>`_, into `stereopy/docs/source/Tutorials/`.
 
-5. Run all tests, reading `Testing`_ for more details.
+5. **Run all tests**, and read `Testing`_ for more details.
 
-6. After testing, update the relevant documentation, such as release notes, examples, etc.
+6. After testing, update the relevant **documentation**, such as release notes, examples, etc.
 
-7. Open a `Pull Requests` to the dev branch. We will review your work and merge it with the main branch if there are no performance or logical issues.
+7. **Pull Requests** to the dev branch. We will review your work and merge it with the main branch if there are no issues of performance or logic.
 
 
-Creating Development Environment
+Creating Environment
 --------------------------------
-1 Clone your repository.
+
+Clone your repository.
 
 .. code:: bash
 
     git clone https://github.com/{your_github_name}/stereopy.git
 
-2 Checkout the dev branch, you can directly start your work at dev branch, or create a new branch.
+
+Check out the dev branch, you can directly start your work at dev branch, or create a new branch.
 
 .. code:: bash
 
@@ -45,7 +51,8 @@ Creating Development Environment
     # Create a new branch for pulling requests
     git branch -c dev dev_my_pr
 
-3 Install Stereopy for development.
+
+Install Stereopy of development version.
 
 .. code:: bash
 
@@ -58,22 +65,6 @@ Creating Development Environment
     python setup.py develop
 
 
-Project Structure
------------------
-The Stereopy project:
-
-- `stereo <stereo>`_: the root of the package.
-- `stereo/core <stereo/core>`_: the core code of stereo, which contains the base class and data structure of Stereopy.
-- `stereo/algorithm <stereo/algorithm>`_: the algorithm module, main analysis and implementation algorithms, which
-  deals with methodology realization.
-- `stereo/image <stereo/image>`_: the image module, which deals with the tissue image related analysis, such as cell
-  segmentation, etc.
-- `stereo/io <stereo/io>`_: the io module, which deals with the reading, writing and format conversion of different
-  data structure, between our StereoExpData and AnnData, etc.
-- `stereo/plots <stereo/plots>`_: the plotting module, which contains all the plotting functions for visualization.
-- `stereo/utils <stereo/utils>`_: Some common processing scripts.
-- `stereo/tests <stereo/tests>`_: the Tests module, which contains all the test scripts.
-
 Code Style
 ----------
 1. Coding requirements comply with `PEP8 <https://legacy.python.org/dev/peps/pep-0008/#a-foolish-consistency-is-the-hobgoblin-of-little-minds>`_ specification.
@@ -82,7 +73,7 @@ Code Style
 
 3. A variable should be used in a lenient snake case and should be as meaningful as possible, avoiding unintentional naming.
 
-4. Comments should be perfect. Each file, function and class should write its comments. We recommend using ReStructured Text as the docstring format for commenting on information.
+4. Comments should be perfect. Each file, function and class should be given comments. We recommend using ReStructured Text as the docstring format for marking information.
 
 .. code:: python
 
@@ -97,7 +88,7 @@ Code Style
         '''
         pass
 
-5. Imports should be grouped in the following order, You should put a blank line between each group of imports.
+5. Imports should be grouped in the following order and a blank line should be put between each pair of imports.
 
 .. code:: python
 
@@ -112,7 +103,7 @@ Code Style
     from ..log_manager import logger
     from .algorithm_base import AlgorithmBase, ErrorCode
 
-6. Functions and logic that are not implemented in the requirements but have been planned shall be marked with TODO. Confirm that a certain situation is faulty, and mark FIXME.
+6. Functions and logic that are not implemented in the requirements but have been planned should be marked with TODO. Confirm that a certain situation is faulty, and mark FIXME.
 
 7. Use the logger in `log_manager` instead of your custom logger or print.
 
@@ -121,20 +112,21 @@ Code Style
 
 Testing
 -------
-For each functional module, a corresponding test script should be created to ensure that the developed function is normal.
+For each function module, a corresponding test script should be created to ensure that the developed function is normal.
 
-All our test files are unified in the `tests <stereo/tests>`_ directory.
+All test files are unified in the `tests <stereo/tests>`_ directory.
 
 .. code:: bash
 
     cd stereo/tests/
     pytest
 
+
 Algorithm Method Class
 ----------------------
-1 Add a new py file named `example_method` used in a lenient snake case. Within the file, a new algorithm method named by camel case.
+1. Add a new py file named `example_method` using snake-case naming. In the file, use camel-case naming for the algorithm method.
 
-2 And then, implement your own `main` function in the child class, you can also define the function name start with `test_`, and we will auto-test while we build new version.
+2. Then implement your own `main` function in the child class, you can also define the function name start with `test_`, and we will auto-test while we build new version.
 
 .. code:: python
 
