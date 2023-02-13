@@ -1033,6 +1033,9 @@ class AnnBasedResult(dict):
         obsm_obj = self.__based_ann_data.obsm.get(f'X_{item}', None)
         if obsm_obj is not None:
             return True
+        obsm_obj = self.__based_ann_data.obsm.get(f'{item}', None)
+        if obsm_obj is not None:
+            return True
         obs_obj = self.__based_ann_data.obs.get(item, None)
         if obs_obj is not None:
             return True
@@ -1057,6 +1060,9 @@ class AnnBasedResult(dict):
             # TODO ignore `mean_bin`, really need?
             return self.__based_ann_data.var.loc[:, ["means", "dispersions", "dispersions_norm", "highly_variable"]]
         obsm_obj = self.__based_ann_data.obsm.get(f'X_{name}', None)
+        if obsm_obj is not None:
+            return pd.DataFrame(obsm_obj)
+        obsm_obj = self.__based_ann_data.obsm.get(f'{name}', None)
         if obsm_obj is not None:
             return pd.DataFrame(obsm_obj)
         obs_obj = self.__based_ann_data.obs.get(name, None)
