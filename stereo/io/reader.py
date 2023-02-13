@@ -448,6 +448,7 @@ def stereo_to_anndata(data: StereoExpData, flavor='scanpy', sample_id="sample", 
             if key == 'hvg':
                 res_key = data.tl.key_record[key][-1]
                 logger.info(f"Adding data.tl.result['{res_key}'] in adata.var .")
+                adata.uns[key] = {'params': {}, 'source': 'stereopy', 'method': key}
                 for i in data.tl.result[res_key]:
                     if i == 'mean_bin':
                         continue
@@ -799,3 +800,18 @@ def read_gef_info(file_path: str):
         logger.info('Maximum expression: {0}'.format(info_dict['maxExpCount']))
 
     return info_dict
+
+
+# @ReadWriteUtils.check_file_exists
+# def read_h5ad(file_path: str, flavor: str = 'scanpy'):
+#     '''
+#     :param file_path: h5ad file path.
+#     :return: `StereoExpData`-like `AnnBasedStereoExpData` obj
+#     '''
+#     if flavor == 'scanpy':
+#         from stereo.core.stereo_exp_data import AnnBasedStereoExpData
+#         return AnnBasedStereoExpData(file_path)
+#     elif flavor == 'seurat':
+#         raise NotImplementedError
+#     else:
+#         raise Exception

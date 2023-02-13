@@ -435,6 +435,12 @@ class AnnBasedStereoExpData(StereoExpData):
         from .st_pipeline import AnnBasedStPipeline
         self._tl = AnnBasedStPipeline(self._ann_data, self)
 
+    def __str__(self):
+        return str(self._ann_data)
+
+    def __repr__(self):
+        return self.__str__()
+
     @property
     def exp_matrix(self):
         return self._ann_data.X

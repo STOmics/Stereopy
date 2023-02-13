@@ -143,6 +143,12 @@ class AnnBasedCell(Cell):
         self.__based_ann_data = based_ann_data
         super(AnnBasedCell, self).__init__(cell_name, cell_border, batch)
 
+    def __str__(self):
+        return str(self.__based_ann_data.obs)
+
+    def __repr__(self):
+        return self.__str__()
+
     @property
     def cell_name(self) -> np.ndarray:
         """
