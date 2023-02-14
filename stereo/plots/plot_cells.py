@@ -100,7 +100,7 @@ class PlotCells:
             'total_counts': self.data.cells.total_counts.astype(np.uint32),
             'pct_counts_mt': self.data.cells.pct_counts_mt,
             'n_genes_by_counts': self.data.cells.n_genes_by_counts.astype(np.uint32),
-            'cluster_id': np.zeros_like(self.data.cell_names) if self.cluster_res is None else self.cluster_res.astype(np.int16)
+            'cluster_id': np.zeros_like(self.data.cell_names) if self.cluster_res is None else self.cluster_res
         })
 
         tooltips = [
