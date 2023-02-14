@@ -237,7 +237,7 @@ class GeneRepository(Repository):
 
     def get_all_expanded(self):
         """
-        关联gene, protein, multidata得到完整的基因信息
+        Join gene, protein, multidata to get full gene information
         :return:
         """
         protein_multidata_join = Protein.protein_multidata_id == Multidata.id_multidata
@@ -281,7 +281,7 @@ class InteractionRepository(Repository):
 
     def get_all(self):
         """
-        获取表中的全部数据
+        Get all data in the table
         :return: pd.DataFrame
         """
         query = self.database_manager.database.session.query(Interaction)
@@ -291,7 +291,7 @@ class InteractionRepository(Repository):
 
     def get_interactions_by_multidata_id(self, id):
         """
-        筛选出包含给定multidata ID的interactions
+        Filter out the interactions containing given multidata ID
         :type id: int
         :rtype: pd.DataFrame
         """
@@ -424,7 +424,7 @@ class ProteinRepository(Repository):
 
     def get_all_expanded(self) -> pd.DataFrame:
         """
-        从multidata中补齐protein的信息（inner join）
+        Expand protein information from multidata（inner join）
         :return:
         """
         protein_multidata_join = Protein.protein_multidata_id == Multidata.id_multidata

@@ -1,11 +1,3 @@
-# -*- coding: utf-8 -*-
-# @Time    : 2022/12/20 16:43
-# @Author  : liuxiaobin
-# @File    : cell_cell_communication.py
-# @Version：V 0.1
-# @desc :
-
-
 # python core module
 import os
 from typing import Tuple
@@ -22,6 +14,7 @@ from multiprocessing.pool import Pool
 
 # module in self project
 from stereo.log_manager import logger
+from stereo.plots.plot_base import PlotBase
 from stereo.algorithm.algorithm_base import AlgorithmBase
 from stereo.algorithm.cell_cell_communication.ref_database.sqlalchemy_model import Base
 from stereo.algorithm.cell_cell_communication.analysis_helper import Subsampler, write_to_file, get_separator, \
@@ -32,6 +25,8 @@ from stereo.algorithm.cell_cell_communication.ref_database.sqlalchemy_repository
 from stereo.algorithm.cell_cell_communication.exceptions import ProcessMetaException, ParseCountsException, \
     ThresholdValueException, AllCountsFilteredException, NoInteractionsFound, InvalidDatabase
 
+
+class PlotCellCellCommunication(PlotBase):
 
 class CellCellCommunication(AlgorithmBase):
     def __init__(self):
@@ -53,7 +48,7 @@ class CellCellCommunication(AlgorithmBase):
              subsampling_num_cells: int = None,
              separator_cluster: str = "|",
              separator_interaction: str = "_",
-             iterations: int = 100,
+             iterations: int = 1000,
              threshold: float = 0.1,
              threads: int = 4,
              pvalue: float = 0.05,
@@ -62,7 +57,7 @@ class CellCellCommunication(AlgorithmBase):
              means_filename: str = 'means',
              pvalues_filename: str = 'pvalues',
              significant_means_filename: str = 'significant_means',
-             deconvoluted_filename: str ='deconvoluted',
+             deconvoluted_filename: str = 'deconvoluted',
              output_format: str = 'txt'
              ):
         """
@@ -126,6 +121,7 @@ class CellCellCommunication(AlgorithmBase):
             genes_mouse = counts.index.tolist()
             genes_human = mouse2human(genes_mouse, homogene_path)
             counts.index = genes_human
+            counts = counts.drop('NotAvailable')
             counts = counts.groupby(counts.index, as_index=True).sum()
 
         # 1.4. preprocess and validate micro_env data
@@ -151,12 +147,16 @@ class CellCellCommunication(AlgorithmBase):
 
         # 3. do the analysis
         # 3.1. filter input and database data
-        logger.info(
-            '[{} analysis] Threshold:{} Precision:{} Iterations:{} Threads:{}'.format(analysis_type,
-                                                                                      threshold,
-                                                                                      result_precision,
-                                                                                      iterations,
-                                                                                      threads))
+        if analysis_type == 'statistical':
+            logger.info(
+                '[{} analysis] Threshold:{} Precision:{} Iterations:{} Threads:{}'.format(analysis_type,
+                                                                                          threshold,
+                                                                                          result_precision,
+                                                                                          iterations,
+                                                                                          threads))
+        if analysis_type == 'simple':
+            logger.info(
+                '[{} analysis] Threshold:{} Precision:{}'.format(analysis_type, threshold, result_precision))
 
         interactions_reduced = interactions[['multidata_1_id', 'multidata_2_id']].drop_duplicates()
 
@@ -272,7 +272,7 @@ class CellCellCommunication(AlgorithmBase):
                  output_name: str = r'dotplot.pdf',
                  rows_path: str = r'E:\Stereopy\out\rows.txt',
                  columns_path: str = r'E:\Stereopy\out\columns.txt',
-                 palette: str = 'magma'):
+                 palette: str = 'RdYlBu_r'):
         """
         Generate dot plot/heatmap.
         """
@@ -389,7 +389,11 @@ class CellCellCommunication(AlgorithmBase):
         plt.figure(figsize=(int(3 + max(3, n_cluster * 0.8)), int(3 + max(3, n_cluster * 0.5))))
         plt.gcf().subplots_adjust(bottom=0.2, left=0.18, right=0.85)
         plt.box(True)
-        heatmap_plot = sns.heatmap(data=network, square=True)
+
+        heatmap_plot = sns.heatmap(data=network, square=True, cmap='coolwarm', cbar_kws={'pad': 0.25, 'shrink': 0.5})
+        heatmap_plot.yaxis.set_ticks_position('right')
+        heatmap_plot.invert_yaxis()
+
         plt.xticks(fontsize=12, rotation=90)
         plt.yticks(fontsize=12, rotation=0)
         plt.xlabel('')
@@ -400,10 +404,13 @@ class CellCellCommunication(AlgorithmBase):
         plt.close(fig)
 
         # log plot
-        plt.figure(figsize=(int(3 + max(3, n_cluster * 0.8)), int(3 + max(3, n_cluster * 0.5))))
-        plt.gcf().subplots_adjust(bottom=0.2, left=0.18, right=0.85)
+        fig = plt.figure(figsize=(int(3 + max(3, n_cluster * 0.8)), int(3 + max(3, n_cluster * 0.5))))
+        plt.gcf().subplots_adjust(bottom=0.2, left=0.18, right=0.8)
         plt.box(True)
-        heatmap_plot = sns.heatmap(data=log_network, square=True)
+        heatmap_plot = sns.heatmap(data=log_network, square=True, cmap='coolwarm', cbar_kws={'pad': 0.25, 'shrink': 0.5})
+        heatmap_plot.yaxis.set_ticks_position('right')
+        heatmap_plot.invert_yaxis()
+
         plt.xticks(fontsize=12, rotation=90)
         plt.yticks(fontsize=12, rotation=0)
         plt.xlabel('')
@@ -435,7 +442,7 @@ class CellCellCommunication(AlgorithmBase):
         complex_composition = database_manager.get_repository('complex').get_all_compositions()
         complex_expanded = database_manager.get_repository('complex').get_all_expanded()
 
-        # index interactions and complex data frames
+        # index interactions and complex dataframes
         interactions.set_index('id_interaction', drop=True, inplace=True)
         complex_composition.set_index('id_complex_composition', inplace=True, drop=True)
 
@@ -494,7 +501,7 @@ class CellCellCommunication(AlgorithmBase):
         counts: pd.DataFrame
             Counts data
         counts_data: str
-            Gene format expected in counts data
+            Gene identifier expected in counts data
         """
         if ~np.all(counts.index.str.startswith(("ENSG0", "ENSMUSG0"))) and counts_data == "ensembl":
             logger.warning(f"Gene format missmatch. Using gene type '{counts_data}' "
@@ -575,7 +582,7 @@ class CellCellCommunication(AlgorithmBase):
 
         counts_relations = counts[['id_multidata', 'ensembl', 'gene_name', 'hgnc_symbol']].copy()
 
-        counts.set_index('id_multidata', inplace=True, drop=True)
+        counts.set_index('id_multidata', inplace=True, drop=True)  # id_multidata not unique
         counts = counts[cells_names]
         if np.any(counts.dtypes.values != np.dtype('float32')):
             counts = counts.astype(np.float32)
@@ -1025,7 +1032,9 @@ class CellCellCommunication(AlgorithmBase):
             Get a randomly shuffled copy of the input meta.
             """
             meta_copy = meta.copy()
-            np.random.shuffle(meta_copy['cell_type'].values)
+            labels = list(meta_copy['cell_type'].values)
+            np.random.shuffle(labels)
+            meta_copy['cell_type'] = labels
             return meta_copy
 
         shuffled_meta = shuffle_meta(meta)
@@ -1175,15 +1184,20 @@ class CellCellCommunication(AlgorithmBase):
         # Document 1
         pvalues_result = pd.DataFrame()
         if analysis_type == 'statistical':
-            pvalues_result = pd.concat([interactions_data_result, result_percent], axis=1, join='inner', sort=False)
+            pvalues_result = pd.merge(interactions_data_result, result_percent, left_index=True, right_index=True,
+                                      how='inner')
 
         # Document 2
-        means_result = pd.concat([interactions_data_result, real_mean_analysis], axis=1, join='inner', sort=False)
+        means_result = pd.merge(interactions_data_result, real_mean_analysis, left_index=True, right_index=True,
+                                how='inner')
 
         # Document 3
-        significant_means_result = pd.concat([interactions_data_result, significant_mean_rank, significant_means],
-                                             axis=1,
-                                             join='inner', sort=False)
+        significant_means_result = pd.merge(interactions_data_result, significant_mean_rank, left_index=True,
+                                            right_index=True,
+                                            how='inner')
+        significant_means_result = pd.merge(significant_means_result, significant_means, left_index=True,
+                                            right_index=True,
+                                            how='inner')
 
         # Document 4
         deconvoluted_result = self.deconvoluted_complex_result_build(clusters_means,
@@ -1391,14 +1405,24 @@ class CellCellCommunication(AlgorithmBase):
 
 
 if __name__ == "__main__":
-    counts = pd.read_csv(r'E:\Stereopy\小试答辩\测试\test_counts_symbol.txt', sep='\t', index_col=0)
+    counts = pd.read_csv(r'E:\Stereopy\小试答辩\测试\test_counts_mouse.txt', sep='\t', index_col=0)
     meta = pd.read_csv(r'E:\Stereopy\小试答辩\测试\test_meta.txt', sep='\t')
     micro_envs = pd.read_csv(r'E:\Stereopy\小试答辩\测试\test_microenviroments.txt', sep='\t')
-    db_path: str = r'E:\Stereopy\database\cellphone.db'
+    # from stereo.io.reader import read_ann_h5ad
+    # data_mousebrain = read_ann_h5ad(r'C:\Users\liuxiaobin\Desktop\Cellbin_deversion.h5ad')
+    # cell_names = [str(x) for x in data_mousebrain.cell_names]
+    # mousebrain = data_mousebrain.exp_matrix.log1p()
+    # mousebrain = pd.DataFrame(mousebrain.T.toarray())
+    # mousebrain.columns = cell_names
+    # mousebrain.index = data_mousebrain.gene_names
+
+    # meta = pd.read_csv(r'C:\Users\liuxiaobin\Desktop\meta_mousebrain.csv')
+    #
     ccc = CellCellCommunication()
-    # ccc.main('simple', meta, counts, means_filename='means_simple',
-    #          significant_means_filename='significant_means_simple', deconvoluted_filename='deconvoluted_statistical',
-    #          output_format='csv')
+    # ccc.main('simple', meta, counts=mousebrain, means_filename='means', threads=8,
+    #          significant_means_filename='significant_means', deconvoluted_filename='deconvoluted',
+    #          output_format='csv', species='MOUSE', database='cellphonedb', output_path=r'E:\Stereopy\小试答辩\小试答辩2',
+    #          counts_identifiers='hgnc_symbol')
     # ccc.main('statistical', meta, counts, means_filename='means_statistical',
     #          significant_means_filename='significant_means_statistical',
     #          deconvoluted_filename='deconvoluted_statistical', output_format='csv')
@@ -1415,7 +1439,7 @@ if __name__ == "__main__":
     #              output_path=r'E:\Stereopy\out',
     #              output_name=r'dotplot.pdf',
     #              rows_path=r'E:\Stereopy\小试答辩\测试\rows.txt',
-    #              columns_path=r'E:\Stereopy\小试答辩\测试\columns.txt', palette='magma')
+    #              columns_path=r'E:\Stereopy\小试答辩\测试\columns.txt', palette='coolwarm')
     ccc.heatmap(meta_path=r'E:\Stereopy\CellphoneDB\in\example_data\test_meta.txt',
                 pvalues_path=r'E:\Stereopy\out\pvalues.csv',
                 separator_cluster='|',
@@ -1424,3 +1448,7 @@ if __name__ == "__main__":
                 output_path=r'E:\Stereopy\out',
                 count_name=r'heatmap_count.pdf',
                 log_count_name=r'heatmap_log.pdf')
+
+    # import h5py
+    # test = h5py.File(r'C:\Users\liuxiaobin\Desktop\MouseBrainCellbin.h5ad')
+    # # test.keys() ['X', 'layers', 'obs', 'obsm', 'obsp', 'uns', 'var', 'varm', 'varp']
