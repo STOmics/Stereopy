@@ -13,6 +13,7 @@ change log:
 import pandas as pd
 
 from ..utils.data_helper import select_group
+from ..utils.time_consume import log_consumed_time
 from ..core.tool_base import ToolBase
 from ..log_manager import logger
 from tqdm import tqdm
@@ -47,16 +48,18 @@ class FindMarker(ToolBase):
             data=None,
             groups=None,
             method: str = 't_test',
-            case_groups: Union[str, np.ndarray] = 'all',
+            case_groups: Union[str, np.ndarray, list, tuple] = 'all',
             control_groups: str = 'rest',
             corr_method: str = 'bonferroni',
             tie_term: bool = False,
+            raw_data=None
     ):
         super(FindMarker, self).__init__(data=data, groups=groups, method=method)
         self.corr_method = corr_method.lower()
         self.case_groups = case_groups
-        self.control_group = control_groups
+        self.control_groups = control_groups
         self.tie_term = tie_term
+        self.raw_data = raw_data
         self.fit()
 
     @ToolBase.method.setter
@@ -75,48 +78,79 @@ class FindMarker(ToolBase):
             raise ValueError(f'{self.corr_method} is out of range, please check.')
         else:
             self._corr_method = corr_method
+    
+    @property
+    def control_groups(self):
+        return self._control_groups
+    
+    @control_groups.setter
+    def control_groups(self, control_groups):
+        if isinstance(control_groups, str):
+            self._control_groups = [control_groups] if control_groups != 'rest' else 'rest'
+        elif isinstance(control_groups, int):
+            self._control_groups = [str(control_groups)]
+        elif isinstance(control_groups, (np.ndarray, list, tuple)):
+            control_groups = list(set(control_groups))
+            self._control_groups = [str(g) if isinstance(g, int) else g for g in control_groups]
+        else:
+            raise TypeError("The type of control_groups must be one of str, int, numpy.ndarray, list or tuple")
+    
+    @property
+    def case_groups(self):
+        return self._case_groups
+    
+    @case_groups.setter
+    def case_groups(self, case_groups):
+        if isinstance(case_groups, str):
+            self._case_groups = [case_groups] if case_groups != 'all' else 'all'
+        elif isinstance(case_groups, int):
+            self._case_groups = [str(case_groups)]
+        elif isinstance(case_groups, (np.ndarray, list, tuple)):
+            case_groups = list(set(case_groups))
+            self._case_groups = [str(g) if isinstance(g, int) else g for g in case_groups]
+        else:
+            raise TypeError("The type of case_groups must be one of str, int, numpy.ndarray, list or tuple")
 
     @ToolBase.fit_log
     def fit(self):
         """
         run
         """
-        self.data.sparse2array()
+        if self.method == 'wilcoxon_test':
+            self.data.sparse2array()
         if self.groups is None:
             raise ValueError(f'group information must be set')
         group_info = self.groups
         all_groups = set(group_info['group'].values)
-        if isinstance(self.case_groups, np.ndarray):
-            case_groups = set(self.case_groups)
-        elif self.case_groups == 'all':
-            case_groups = all_groups
+        if self.case_groups == 'all':
+            case_groups = list(all_groups)
         else:
-            case_groups = [self.case_groups]
-        control_str = self.control_group if isinstance(self.control_group, str) else \
-            '-'.join([str(i) for i in self.control_group])
+            case_groups = self.case_groups
+        control_str = self.control_groups if isinstance(self.control_groups, str) else '-'.join(self.control_groups)
         self.result = {}
 
         # only used when method is wilcoxon
         ranks = None
         tie_term = None
-        if self.method == 'wilcoxon_test' and self.control_group == 'rest':
+        if self.method == 'wilcoxon_test' and self.control_groups == 'rest':
             self.logger.info('cal rankdata')
             ranks = stats.rankdata(self.data.exp_matrix.T, axis=-1)
             self.logger.info('cal tie_term')
             if self.tie_term:
                 tie_term = mannwhitneyu.cal_tie_term(ranks)
             self.logger.info('cal tie_term end')
+        
         logres_score = None
-        if isinstance(self.case_groups, str) and self.case_groups == 'all' and isinstance(self.case_groups, str) and \
-                self.control_group == 'rest' and self.method == 'logreg':
+        if self.case_groups == 'all' and self.control_groups == 'rest' and self.method == 'logreg':
             logres_score = self.logres_score()
+        
         for g in tqdm(case_groups, desc='Find marker gene: '):
-            if self.control_group == 'rest':
+            if self.control_groups == 'rest':
                 other_g = all_groups.copy()
                 other_g.remove(g)
+                other_g = list(other_g)
             else:
-                other_g = [self.control_group]
-            other_g = list(other_g)
+                other_g = self.control_groups
             self.logger.info('start to select group')
             g_data, g_index = select_group(st_data=self.data, groups=g, cluster=group_info)
             other_data, _ = select_group(st_data=self.data, groups=other_g, cluster=group_info)
@@ -128,25 +162,61 @@ class FindMarker(ToolBase):
                     logres_score = self.logres_score()
                 result = self.run_logres(logres_score, g_data, other_data, g)
             else:
-                if self.control_group != 'rest' and self.tie_term:
+                if self.control_groups != 'rest' and self.tie_term:
                     xy = np.concatenate((g_data.values, other_data.values), axis=-1)
                     ranks = stats.rankdata(xy, axis=-1)
                     tie_term = mannwhitneyu.cal_tie_term(ranks)
                 result = statistics.wilcoxon(g_data, other_data, self.corr_method, ranks, tie_term, g_index)
             result['genes'] = self.data.gene_names
             self.result[f"{g}.vs.{control_str}"] = result
+        self.result['pct'], self.result['pct_rest'] = self.calc_pct_and_pct_rest()
+    
+    @log_consumed_time
+    def calc_pct_and_pct_rest(self):
+        self.raw_data.array2sparse()
+        raw_cells_isin_data = np.isin(self.raw_data.cell_names, self.data.cell_names)
+        raw_genes_isin_data = np.isin(self.raw_data.gene_names, self.data.gene_names)
+        raw_exp_matrix = self.raw_data.exp_matrix[raw_cells_isin_data][:, raw_genes_isin_data]
+        exp_matrix_one_hot = (raw_exp_matrix > 0).astype(np.uint8)
+        cluster_result: pd.DataFrame = self.groups.copy()
+        cluster_result.reset_index(drop=True, inplace=True)
+        cluster_result.reset_index(inplace=True)
+        cluster_result.sort_values(by=['group', 'index'], inplace=True)
+        group_index = cluster_result.groupby('group').agg(cell_index=('index', list))
+        def _calc(a, exp_matrix_one_hot):
+            cell_index = a[0]
+            sub_exp = exp_matrix_one_hot[cell_index].sum(axis=0).A[0]
+            sub_exp_rest = exp_matrix_one_hot.sum(axis=0).A[0] - sub_exp
+            sub_pct = sub_exp / len(cell_index)
+            sub_pct_rest = sub_exp_rest / (self.data.cell_names.size - len(cell_index))
+            return sub_pct, sub_pct_rest
+        pct_all = np.apply_along_axis(_calc, 1, group_index.values, exp_matrix_one_hot)
+        pct = pd.DataFrame(pct_all[:, 0], columns=self.data.gene_names, index=group_index.index).T
+        pct_rest = pd.DataFrame(pct_all[:, 1], columns=self.data.gene_names, index=group_index.index).T
+        pct.columns.name = None
+        pct.reset_index(inplace=True)
+        pct.rename(columns={'index': 'genes'}, inplace=True)
+        pct_rest.columns.name = None
+        pct_rest.reset_index(inplace=True)
+        pct_rest.rename(columns={'index': 'genes'}, inplace=True)
+        return pct, pct_rest
 
     def logres_score(self):
         from ..algorithm.statistics import logreg
         x = self.data.exp_matrix
         y = self.groups['group'].values
-        if isinstance(self.case_groups, np.ndarray) or self.case_groups != 'all':
-            if isinstance(self.case_groups, str):
-                use_group = [self.case_groups]
-            else:
-                use_group = list(self.case_groups)
-            use_group.append(self.control_group)
-            group_index = self.groups['group'].isin(use_group)
+        # if isinstance(self.case_groups, np.ndarray) or self.case_groups != 'all':
+        #     if isinstance(self.case_groups, str):
+        #         use_groups = [self.case_groups]
+        #     else:
+        #         use_groups = list(self.case_groups)
+        #     use_groups.append(self.control_groups)
+        if self.case_groups != 'all':
+            use_groups = self.case_groups
+            if self.control_groups != 'rest':
+                use_groups = list(set(self.case_groups + self.control_groups))
+            print(use_groups)
+            group_index = self.groups['group'].isin(use_groups)
             x = x[group_index, :]
             y = y[group_index]
         score_df = logreg(x, y)

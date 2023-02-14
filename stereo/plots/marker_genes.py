@@ -53,9 +53,10 @@ def marker_genes_text(
     else:
         n_panels_per_row = ncols
     if groups == 'all':
-        group_names = list(marker_res.keys())
+        group_names = [key for key in marker_res.keys() if '.vs.' in key]
     else:
         group_names = [groups] if isinstance(groups, str) else groups
+    group_names = natsort.natsorted(group_names)
     # one panel for each group
     # set up the figure
     n_panels_x = min(n_panels_per_row, len(group_names))
@@ -81,8 +82,8 @@ def marker_genes_text(
         scores = result.scores.values
         # Setting up axis, calculating y bounds
         if sharey:
-            ymin = min(ymin, np.min(scores))
-            ymax = max(ymax, np.max(scores))
+            ymin = min(ymin, np.min(scores)) if scores.size > 0 else ymin
+            ymax = max(ymax, np.max(scores)) if scores.size > 0 else ymax
 
             if ax0 is None:
                 ax = fig.add_subplot(gs[count])
@@ -90,12 +91,13 @@ def marker_genes_text(
             else:
                 ax = fig.add_subplot(gs[count], sharey=ax0)
         else:
-            ymin = np.min(scores)
-            ymax = np.max(scores)
+            ymin = np.min(scores) if scores.size > 0 else ymin
+            ymax = np.max(scores) if scores.size > 0 else ymax
             ymax += 0.3 * (ymax - ymin)
 
             ax = fig.add_subplot(gs[count])
-            ax.set_ylim(ymin, ymax)
+            if (not np.isinf(ymin)) and (not np.isinf(ymax)):
+                ax.set_ylim(ymin, ymax)
 
         ax.set_xlim(-0.9, markers_num - 0.1)
 
@@ -119,7 +121,7 @@ def marker_genes_text(
         if count % n_panels_x == 0:
             ax.set_ylabel('score')
 
-    if sharey is True:
+    if (sharey is True) and (not np.isinf(ymin)) and (not np.isinf(ymax)):
         ymax += 0.3 * (ymax - ymin)
         ax.set_ylim(ymin, ymax)
     return fig
@@ -152,7 +154,7 @@ def make_draw_df(data: StereoExpData, group: pd.DataFrame, marker_res: dict, top
 
 def get_groups_marker(marker_res: dict, top_genes: int = 8, sort_key: str = 'scores',
                       ascend: bool = False, gene_list: Optional[list] = None):
-    groups = marker_res.keys()
+    groups = [key for key in marker_res.keys() if '.vs.' in key]
     groups = natsort.natsorted(groups)
     groups_genes = OrderedDict()
     if gene_list is not None:
