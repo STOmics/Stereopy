@@ -17,9 +17,10 @@ from typing import Union, Any, Mapping, Optional, Callable
 from typing_extensions import Literal
 from types import MappingProxyType
 from sklearn.metrics import pairwise_distances
+
 AnyRandom = Union[None, int, random.RandomState]
 
-_Method = Literal['umap', 'gauss']
+_Method = Literal['umap', 'gauss', 'rapids']
 _MetricFn = Callable[[np.ndarray, np.ndarray], float]
 # from sklearn.metrics.pairwise_distances.__doc__:
 _MetricSparseCapable = Literal[
@@ -47,16 +48,49 @@ _MetricScipySpatial = Literal[
 _Metric = Union[_MetricSparseCapable, _MetricScipySpatial]
 
 
+def compute_neighbors_rapids(
+        X: np.ndarray, n_neighbors: int, metric: _Metric = 'euclidean'
+):
+    """Compute nearest neighbors using RAPIDS cuml.
+
+    Parameters
+    ----------
+    X: array of shape (n_samples, n_features)
+        The data to compute nearest neighbors for.
+    n_neighbors
+        The number of neighbors to use.
+    metric
+        The metric to use to compute distances in high dimensional space.
+        This string must match a valid predefined metric in RAPIDS cuml.
+
+        Returns
+    -------
+    **knn_indices**, **knn_dists** : np.arrays of shape (n_observations, n_neighbors)
+    """
+    try:
+        from cuml.neighbors.nearest_neighbors import NearestNeighbors
+    except ImportError:
+        raise ImportError("Your env don't have GPU related RAPIDS packages, if you want to run this option, follow the "
+                          "guide at https://stereopy.readthedocs.io/en/latest/Tutorials/clustering_by_gpu.html")
+
+    nn = NearestNeighbors(n_neighbors=n_neighbors, metric=metric)
+    X_contiguous = np.ascontiguousarray(X, dtype=np.float32)
+    nn.fit(X_contiguous)
+    knn_dist, knn_indices = nn.kneighbors(X_contiguous)
+    logger.info('cuml NearestNeighbors run end')
+    return knn_indices, knn_dist
+
+
 def find_neighbors(
-    x: np.ndarray,
-    n_neighbors: Optional[int] = 15,
-    n_pcs: Optional[int] = None,
-    method: Optional[_Method] = 'umap',
-    metric: Union[_Metric, _MetricFn] = 'euclidean',
-    metric_kwds: Mapping[str, Any] = MappingProxyType({}),
-    knn: bool = True,
-    random_state: AnyRandom = 0,
-    n_jobs: int = 10
+        x: np.ndarray,
+        n_neighbors: Optional[int] = 15,
+        n_pcs: Optional[int] = None,
+        method: Optional[_Method] = 'umap',
+        metric: Union[_Metric, _MetricFn] = 'euclidean',
+        metric_kwds: Mapping[str, Any] = MappingProxyType({}),
+        knn: bool = True,
+        random_state: AnyRandom = 0,
+        n_jobs: int = 10
 ):
     """
 
@@ -118,6 +152,8 @@ def find_neighbors(
     neighbor.x = neighbor.choose_x()
     use_dense_distances = (neighbor.metric == 'euclidean' and neighbor.x.shape[0] < 8192) or not neighbor.knn
     dists = neighbor.x
+
+    connectivities = None
     if use_dense_distances:
         dists = pairwise_distances(neighbor.x, metric=neighbor.metric, **metric_kwds)
         knn_indices, knn_distances = neighbor.get_indices_distances_from_dense_matrix(dists)
@@ -125,17 +161,24 @@ def find_neighbors(
             dists = neighbor.get_parse_distances_numpy(
                 knn_indices, knn_distances, neighbor.x.shape[0],
             )
+    elif method == 'rapids':
+        knn_indices, knn_distances = compute_neighbors_rapids(
+            neighbor.x, n_neighbors, metric=metric
+        )
     else:
         if neighbor.x.shape[0] < 4096:
             dists = pairwise_distances(neighbor.x, metric=neighbor.metric, **metric_kwds)
             neighbor.metric = 'precomputed'
         knn_indices, knn_distances, forest = neighbor.compute_neighbors_umap(
             dists, random_state=neighbor.random_state, metric_kwds=metric_kwds, n_jobs=n_jobs)
-    if not use_dense_distances or neighbor.method in {'umap'}:
+
+    if not use_dense_distances or neighbor.method in {'umap', 'rapids'}:
         connectivities = neighbor.compute_connectivities_umap(knn_indices, knn_distances)
         dists = neighbor.get_parse_distances_umap(knn_indices, knn_distances, )
+
     if method == 'gauss':
         connectivities = neighbor.compute_connectivities_diffmap(dists)
+
     return neighbor, dists, connectivities
 
 
@@ -152,14 +195,14 @@ class Neighbors(object):
     def check_setting(self):
         if self.method == 'umap' and not self.knn:
             logger.error(f'`method=\'umap\' only with knn=True`.')
-        if self.method not in {'umap', 'gauss'}:
+        if self.method not in {'umap', 'gauss', 'rapids'}:
             logger.error(f'`method=\'umap\' or method=\'gauss\'`.')
 
     def choose_x(self):
         self.x = self.x[:, :self.n_pcs]
         return self.x
 
-    def get_indices_distances_from_dense_matrix(self, dists,):
+    def get_indices_distances_from_dense_matrix(self, dists, ):
         sample_range = np.arange(dists.shape[0])[:, None]
         indices = np.argpartition(dists, self.n_neighbors - 1, axis=1)[:, :self.n_neighbors]
         indices = indices[sample_range, np.argsort(dists[sample_range, indices])]
@@ -188,7 +231,7 @@ class Neighbors(object):
                 distances[i, 1:] = dists[i][neighbors]
         return indices, distances
 
-    def get_parse_distances_numpy(self, indices, distances, n_obs,):
+    def get_parse_distances_numpy(self, indices, distances, n_obs, ):
         n_nonzero = n_obs * self.n_neighbors
         indptr = np.arange(0, n_nonzero + 1, self.n_neighbors)
         dists = csr_matrix(
@@ -249,8 +292,8 @@ class Neighbors(object):
 
         return knn_indices, knn_dists, forest
 
-    def find_n_neighbors(self,):
-        nbrs = NearestNeighbors(n_neighbors=self.n_neighbors+1, algorithm='ball_tree').fit(self.x)
+    def find_n_neighbors(self, ):
+        nbrs = NearestNeighbors(n_neighbors=self.n_neighbors + 1, algorithm='ball_tree').fit(self.x)
         dists, indices = nbrs.kneighbors(self.x)
         nn_idx = indices[:, 1:]
         nn_dist = dists[:, 1:]
@@ -301,14 +344,14 @@ class Neighbors(object):
 
         return connectivities.tocsr()
 
-    def compute_connectivities_diffmap(self, dists,):
+    def compute_connectivities_diffmap(self, dists, ):
         # init distances
         if self.knn:
             dsq = dists.power(2)
-            indices, distances_sq = self.get_indices_distances_from_sparse_matrix(dsq,)
+            indices, distances_sq = self.get_indices_distances_from_sparse_matrix(dsq, )
         else:
             dsq = np.power(dists, 2)
-            indices, distances_sq = self.get_indices_distances_from_dense_matrix(dsq,)
+            indices, distances_sq = self.get_indices_distances_from_dense_matrix(dsq, )
 
         # exclude the first point, the 0th neighbor
         indices = indices[:, 1:]
