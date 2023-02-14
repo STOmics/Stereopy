@@ -10,8 +10,9 @@
 import scipy.sparse as sp
 import pandas as pd
 import numpy as np
+import numba as nb
 from ..core.stereo_exp_data import StereoExpData
-from typing import Optional
+from typing import Optional, Iterable
 from datetime import datetime
 from stereo.core.cell import Cell
 from stereo.core.gene import Gene
@@ -19,13 +20,13 @@ from stereo.core.gene import Gene
 
 def select_group(st_data, groups, cluster):
     all_groups = set(cluster['group'].values)
-    groups = groups if isinstance(groups, list) else [groups]
+    groups = [groups] if isinstance(groups, str) else groups
     for g in groups:
         if g not in all_groups:
             raise ValueError(f"cluster {g} is not in all cluster.")
     group_index = cluster['group'].isin(groups)
-    exp_matrix = st_data.exp_matrix.toarray() if sp.issparse(st_data.exp_matrix) else st_data.exp_matrix
-    group_sub = exp_matrix[group_index]
+    # exp_matrix = st_data.exp_matrix.toarray() if sp.issparse(st_data.exp_matrix) else st_data.exp_matrix
+    group_sub = st_data.exp_matrix[group_index]
     return group_sub, group_index
 
 
@@ -55,7 +56,7 @@ def exp_matrix2df(data: StereoExpData, cell_name: Optional[np.ndarray] = None, g
 
 def get_top_marker(g_name: str, marker_res: dict, sort_key: str, ascend: bool = False, top_n: int = 10):
     result = marker_res[g_name]
-    top_res = result.sort_values(by=sort_key, ascending=ascend).head(top_n)
+    top_res = result.sort_values(by=sort_key, ascending=ascend).head(top_n).dropna(axis=0, how='any')
     return top_res
 
 
@@ -118,8 +119,7 @@ def merge(data1: StereoExpData = None, data2: StereoExpData = None, *args, reorg
             if new_data.cell_borders is not None and data.cell_borders is not None:
                 new_data.cells.cell_boder = np.concatenate([new_data.cells.cell_boder, data.cells.cell_boder])
             new_data.position = np.concatenate([new_data.position, data.position])
-            new_data.genes.gene_name, ind1, ind2 = np.intersect1d(new_data.genes.gene_name, data.genes.gene_name,
-                                                                  return_indices=True)
+            new_data.genes.gene_name, ind1, ind2 = np.intersect1d(new_data.genes.gene_name, data.genes.gene_name, return_indices=True)
             new_data.exp_matrix = sp.vstack([new_data.exp_matrix[:, ind1], data.exp_matrix[:, ind2]])
             if new_data.offset_x is not None and data.offset_x is not None:
                 new_data.offset_x = min(new_data.offset_x, data.offset_x)
