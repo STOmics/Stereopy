@@ -5,18 +5,32 @@
 @time: 2021/8/16 16:11
 """
 
-from scipy.sparse import issparse
+from scipy.sparse import issparse, spmatrix
 import pandas as pd
 import numpy as np
 from typing import Optional, Union, Tuple
+from functools import singledispatch
 from ..core.stereo_result import StereoResult
 from scipy.sparse import spmatrix, csr_matrix, issparse, csc_matrix
 import numba
 from ..log_manager import logger
 
+@singledispatch
+def get_mean_var(X, *, axis=0):
+    pass
+
+@get_mean_var.register(np.ndarray)
+def _(x, *, axis=0):
+    mean = np.mean(x, axis=axis, dtype=np.float64)
+    mean_sq = np.multiply(x, x).mean(axis=axis, dtype=np.float64)
+    var = mean_sq - mean ** 2
+    # enforce R convention (unbiased estimator) for variance
+    var *= x.shape[axis] / (x.shape[axis] - 1)
+    return mean, var
 
 # from scanpy _utils
-def get_mean_var(X, *, axis=0):
+@get_mean_var.register(spmatrix)
+def _(X, *, axis=0):
     if issparse(X):
         mean, var = sparse_mean_variance_axis(X, axis=axis)
     else:
@@ -156,7 +170,7 @@ def filter_genes(
     min_cells: Optional[int] = None,
     max_counts: Optional[int] = None,
     max_cells: Optional[int] = None,
-) -> Union[Tuple[np.ndarray, np.ndarray]]:
+) -> Tuple[np.ndarray, np.ndarray]:
     """\
     Filter genes based on number of cells or counts.
 
