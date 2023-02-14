@@ -6,14 +6,14 @@ Troubleshooting
 ------------------------------------
 
 .. note::
-    **Our tool could be installed on Linux with python3.7 or python3.8.**
+    **Our tool could be installed on Linux with python3.8.**
 
 
 Installation failed due to some factors:
 
 **Version of Python**
 
-    make sure you are using python3.7 or python3.8
+    make sure you are using python3.8
 
 **Conficts of dependencies**
 
