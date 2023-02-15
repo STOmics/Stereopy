@@ -138,6 +138,8 @@ def make_draw_df(data: StereoExpData, group: pd.DataFrame, marker_res: dict, top
     for label, gene_list in gene_names_dict.items():
         if isinstance(gene_list, str):
             gene_list = [gene_list]
+        if len(gene_list) == 0:
+            continue
         gene_names.extend(list(gene_list))
         gene_group_labels.append(label)
         gene_group_positions.append((start, start + len(gene_list) - 1))

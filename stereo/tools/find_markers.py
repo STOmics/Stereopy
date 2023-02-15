@@ -151,10 +151,10 @@ class FindMarker(ToolBase):
                 other_g = list(other_g)
             else:
                 other_g = self.control_groups
-            self.logger.info('start to select group')
+            # self.logger.info('start to select group')
             g_data, g_index = select_group(st_data=self.data, groups=g, cluster=group_info)
             other_data, _ = select_group(st_data=self.data, groups=other_g, cluster=group_info)
-            self.logger.info('end selelct group')
+            # self.logger.info('end selelct group')
             if self.method == 't_test':
                 result = statistics.ttest(g_data, other_data, self.corr_method)
             elif self.method == 'logreg':
