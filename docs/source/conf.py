@@ -29,7 +29,7 @@ source_suffix = '.rst'
 master_doc = 'index'
 default_role = 'literal'
 exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
-pygments_style = 'sphinx'
+#pygments_style = 'sphinx'
 
 extensions = [
     'sphinx.ext.todo',
@@ -56,6 +56,9 @@ api_dir = HERE / 'api'  # function_images
 # print(api_dir)
 # The master toctree document.
 language = None
+
+#If you want to include a notebook without outputs and yet don’t want nbsphinx to execute it for you, you can explicitly disable this feature.
+nbsphinx_execute = 'never'
 
 html_theme = 'furo'
 
@@ -91,12 +94,19 @@ for filename in glob.glob('**/*.ipynb', recursive=True):
 
 nbsphinx_thumbnails = {
     "Tutorials/clustering": "_static/squareBin_clustering.png",
+    "Tutorials/cell_clustering": "_static/cellBin_clustering.png",
+    "Tutorials/clustering_by_gpu": "_static/GPU.png",
+    "Tutorials/IO": "_static/io.png",
+    "Tutorials/FormatConversion": "_static/conversion.png",
+    "Tutorials/prepare": "_static/prepration.png",
+    "Tutorials/performance": "_static/performance.png",
     "Tutorials/cell_correction": "_static/cell_bin_correction.png",
     "Tutorials/tissue_cut": "_static/tissue_segmentation.png",
     "Tutorials/gaussian_smooth": "_static/gaussian_smooth_1.png",
     "Tutorials/batches_integration": "_static/batches_integration.png",
     "Tutorials/rna_velocity": "_static/rna_velocity.png",
     "Tutorials/hotspot": "_static/hotspot.png",
+    "Tutorials/Gaussian_Smoothing": "_static/gaussian_smooth_1.png",
     "Tutorials/high_resolution_export": "_static/box_select.gif",
     "Tutorials/sctransform":"_static/variance_sct.png"
 }

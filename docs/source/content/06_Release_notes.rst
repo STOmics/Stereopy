@@ -97,7 +97,7 @@ Version 0.2.4
 1. Fixed bug of tar package.
 
 Version 0.2.3
------------
+------------------
 0.2.3 : 2022-01-17
 ~~~~~~~~~~~~~~~~~~~~~~~
 1. Added cell segmentation and tissuecut segmentation function.
@@ -106,7 +106,7 @@ Version 0.2.3
 4. Supported DEG output to the csv file.
 
 Version 0.2.2
------------
+------------------
 0.2.2 : 2021-11-17
 ~~~~~~~~~~~~~~~~~~~~~~~
 1. Optimized the performance of find marker.
@@ -116,7 +116,7 @@ Version 0.2.2
 
 
 Version 0.2.1
------------
+------------------
 0.2.1 : 2021-10-15
 ~~~~~~~~~~~~~~~~~~~~~~~
 1. Fixed the bug of marker_genes_heatmap IndexError and sort the text of heatmap plot.
@@ -126,7 +126,7 @@ Version 0.2.1
 
 
 Version 0.2.0
------------
+------------------
 0.2.0 : 2021-09-16
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 
