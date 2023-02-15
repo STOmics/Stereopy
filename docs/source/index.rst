@@ -85,7 +85,7 @@ Version 0.8.0
 
     content/00_Installation
     content/01_Usage_principles
-    Tutorial/Cases
+    Tutorials/Cases
     content/03_API
     content/04_Community
     content/05_Contributing
