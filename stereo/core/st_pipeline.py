@@ -996,9 +996,9 @@ class StPipeline(object):
     def filter_marker_genes(
         self,
         marker_genes_res_key='marker_genes',
-        min_fold_change=None,
-        min_in_group_fraction=None,
-        max_out_group_fraction=None,
+        min_fold_change=1,
+        min_in_group_fraction=0.25,
+        max_out_group_fraction=0.5,
         compare_abs=False,
         remove_mismatch=False,
         res_key='marker_genes_filtered'
