@@ -18,8 +18,8 @@ suppress_warnings = ['ref.citation']
 
 # General information
 project = 'stereopy'
-copyright = '2023, Ping Qiu'
-author = 'Ping Qiu'
+copyright = '2023, BGI'
+author = 'BGI'
 version = 'v0.10.0'
 release = 'v0.10.0'
 
@@ -83,7 +83,6 @@ html_css_files = [
 # html_css_files = [
 #     '_static/html.css',
 # ]
-
 
 import nbclean, glob
 
