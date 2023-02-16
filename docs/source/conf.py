@@ -84,7 +84,6 @@ html_css_files = [
 #     '_static/html.css',
 # ]
 
-
 import nbclean, glob
 
 for filename in glob.glob('**/*.ipynb', recursive=True):
