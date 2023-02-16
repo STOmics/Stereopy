@@ -10,7 +10,7 @@ import hvplot.pandas
 import panel as pn
 import collections
 from holoviews import opts
-from stereo.config import StereoConfig
+from stereo.stereo_config import stereo_conf
 from natsort import natsorted
 
 conf = StereoConfig()
