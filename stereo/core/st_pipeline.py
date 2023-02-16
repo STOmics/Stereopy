@@ -1001,7 +1001,7 @@ class StPipeline(object):
         min_in_group_fraction=0.25,
         max_out_group_fraction=0.5,
         compare_abs=False,
-        remove_mismatch=False,
+        remove_mismatch=True,
         res_key='marker_genes_filtered'
     ):
         """Filters out genes based on log fold change and fraction of genes expressing the gene within and outside each group.
@@ -1020,6 +1020,7 @@ class StPipeline(object):
             raise Exception(f'{marker_genes_res_key} is not in the result, please check and run the find_marker_genes func.') 
 
         self.result[res_key] = {}
+        self.result[res_key]['marker_genes_res_key'] = marker_genes_res_key
         pct= self.result[marker_genes_res_key]['pct']
         pct_rest = self.result[marker_genes_res_key]['pct_rest']
         for key, res in self.result[marker_genes_res_key].items():
