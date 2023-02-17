@@ -1166,7 +1166,7 @@ class AnnBasedResult(dict):
 
         for name_type, name_dict in AnnBasedResult.TYPE_NAMES_DICT.items():
             for like_name in name_dict:
-                if like_name in key and self._real_set_item(name_type, key, value):
+                if not like_name.startswith('gene_exp_') and like_name in key and self._real_set_item(name_type, key, value):
                     return
 
         if type(value) is pd.DataFrame:
@@ -1188,6 +1188,7 @@ class AnnBasedResult(dict):
         raise KeyError
 
     def _set_cluster_res(self, key, value):
+
         assert type(value) is pd.DataFrame and 'group' in value.columns.values, f"this is not cluster res"
         # FIXME ignore set params to uns, this may cause dirty data in uns, if it exist at the first time
         self.__based_ann_data.uns[key] = {'params': {}, 'source': 'stereopy', 'method': key}
