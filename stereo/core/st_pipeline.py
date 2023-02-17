@@ -621,7 +621,7 @@ class StPipeline(object):
         gene_cluster_res_key = f'gene_exp_{res_key}'
         from ..utils.pipeline_utils import cell_cluster_to_gene_exp_cluster
         gene_exp_cluster_res = cell_cluster_to_gene_exp_cluster(self, res_key)
-        if gene_exp_cluster_res:
+        if gene_exp_cluster_res is not False:
             self.result[gene_cluster_res_key] = gene_exp_cluster_res
             self.reset_key_record('gene_exp_cluster', gene_cluster_res_key)
 
@@ -663,7 +663,7 @@ class StPipeline(object):
         self.reset_key_record(key, res_key)
         gene_cluster_res_key = f'gene_exp_{res_key}'
         gene_exp_cluster_res = cell_cluster_to_gene_exp_cluster(self, res_key)
-        if gene_exp_cluster_res:
+        if gene_exp_cluster_res is not False:
             self.result[gene_cluster_res_key] = gene_exp_cluster_res
             self.reset_key_record('gene_exp_cluster', gene_cluster_res_key)
 
@@ -698,8 +698,10 @@ class StPipeline(object):
         key = 'cluster'
         self.reset_key_record(key, res_key)
         gene_cluster_res_key = f'gene_exp_{res_key}'
-        self.result[gene_cluster_res_key] = cell_cluster_to_gene_exp_cluster(self, res_key)
-        self.reset_key_record('gene_exp_cluster', gene_cluster_res_key)
+        gene_exp_cluster_res = cell_cluster_to_gene_exp_cluster(self, res_key)
+        if gene_exp_cluster_res is not False:
+            self.result[gene_cluster_res_key] = gene_exp_cluster_res
+            self.reset_key_record('gene_exp_cluster', gene_cluster_res_key)
 
     @logit
     def find_marker_genes(self,
