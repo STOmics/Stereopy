@@ -1166,7 +1166,7 @@ class AnnBasedResult(dict):
 
         for name_type, name_dict in AnnBasedResult.TYPE_NAMES_DICT.items():
             for like_name in name_dict:
-                if not like_name.startswith('gene_exp_') and like_name in key and self._real_set_item(name_type, key, value):
+                if not key.startswith('gene_exp_') and like_name in key and self._real_set_item(name_type, key, value):
                     return
 
         if type(value) is pd.DataFrame:
