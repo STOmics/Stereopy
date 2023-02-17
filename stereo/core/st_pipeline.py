@@ -1018,7 +1018,7 @@ class StPipeline(object):
         :param compare_abs: If `True`, compare absolute values of log fold change with `min_fold_change`, defaults to False
         :param remove_mismatch: If `True`, remove the records which are mismatch conditions from the find_marker_genes result, 
                                 if `False`, these records will be set to np.nan,
-                                defaults to False
+                                defaults to True
         :param res_key: the key of the result of this function to be set to self.result, defaults to 'marker_genes_filtered'
         """
         if marker_genes_res_key not in self.result:
