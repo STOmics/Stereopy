@@ -1104,6 +1104,10 @@ class AnnBasedResult(dict):
                 return True
             elif AnnBasedResult.RENAME_DICT.get(item, None) in self.__based_ann_data.uns:
                 return True
+        elif item.startswith('gene_exp_'):
+            if item in self.__based_ann_data.uns:
+                return True
+
         obsm_obj = self.__based_ann_data.obsm.get(f'X_{item}', None)
         if obsm_obj is not None:
             return True
@@ -1133,6 +1137,9 @@ class AnnBasedResult(dict):
         elif name in AnnBasedResult.HVG_NAMES:
             # TODO ignore `mean_bin`, really need?
             return self.__based_ann_data.var.loc[:, ["means", "dispersions", "dispersions_norm", "highly_variable"]]
+        elif name.startswith('gene_exp_'):
+            return self.__based_ann_data.uns[name]
+        
         obsm_obj = self.__based_ann_data.obsm.get(f'X_{name}', None)
         if obsm_obj is not None:
             return pd.DataFrame(obsm_obj)
@@ -1186,6 +1193,9 @@ class AnnBasedResult(dict):
                 # TODO this is hard-code method to guess it's a reduce ndarray
                 self._set_reduce_res(key, value)
                 return
+            elif key.startswith('gene_exp_'):
+                self.__based_ann_data.uns[key] = value
+                return
         elif type(value) is dict:
             if not {'connectivities', 'nn_dist'} - set(value.keys()):
                 self._set_connectivities_res(key, value)
@@ -1194,7 +1204,6 @@ class AnnBasedResult(dict):
         raise KeyError
 
     def _set_cluster_res(self, key, value):
-
         assert type(value) is pd.DataFrame and 'group' in value.columns.values, f"this is not cluster res"
         # FIXME ignore set params to uns, this may cause dirty data in uns, if it exist at the first time
         self.__based_ann_data.uns[key] = {'params': {}, 'source': 'stereopy', 'method': key}
