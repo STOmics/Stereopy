@@ -433,7 +433,7 @@ class PlotCollection:
             fig = PolySelection(self.data, width=width, height=height, bgcolor=bgcolor)
         if not inline:
             fig.figure.show()
-        return fig.figure
+        return fig
     
     def batches_umap(
             self,
