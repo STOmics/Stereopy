@@ -115,6 +115,13 @@ def interact_spatial_cluster_annotation(
         data.tl.reset_key_record(key, res_key)
         gene_cluster_res_key = f'gene_exp_{res_key}'
         from stereo.utils.pipeline_utils import cell_cluster_to_gene_exp_cluster
+
+        gene_exp_cluster_res = cell_cluster_to_gene_exp_cluster(data.tl, res_key)
+        if gene_exp_cluster_res:
+            data.tl.result[gene_cluster_res_key] = gene_exp_cluster_res
+            data.tl.reset_key_record('gene_exp_cluster', gene_cluster_res_key)
+
+
         data.tl.result[gene_cluster_res_key] = cell_cluster_to_gene_exp_cluster(data.tl, res_key)
         data.tl.reset_key_record('gene_exp_cluster', gene_cluster_res_key)
         
