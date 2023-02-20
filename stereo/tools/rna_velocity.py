@@ -150,6 +150,10 @@ class RnaVelocity(object):
             df = df.rename(columns={"UMICounts": "MIDCount"})
         elif "UMICount" in df.columns:
             df = df.rename(columns={"UMICount": "MIDCount"})
+
+        if 'label' in df.columns:
+            df.rename(columns={'label': 'CellID'}, inplace=True)
+            
         df.dropna(inplace=True)
         return df
 
