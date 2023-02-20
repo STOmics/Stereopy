@@ -230,7 +230,7 @@ def _to_hdf5_vlen_strings(value: np.ndarray) -> np.ndarray:
 def read_dataframe(group) -> pd.DataFrame:
     columns = list(group.attrs['column-order'])
     idx_key = group.attrs['_index']
-    save_as_matrix = group.attrs['save-as-matrix']
+    save_as_matrix = group.attrs.get('save-as-matrix', default=False)
     df = pd.DataFrame(
         {k: read_series(group[k]) for k in columns} if not save_as_matrix else read_dataset(group['values']),
         index=read_series(group[idx_key]),
