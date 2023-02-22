@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 # coding: utf-8
 """
-@author: Ping Qiu  qiuping1@genomics.cn
-@last modified by: Ping Qiu
+@author: Junhao Xu  xujunhao@genomics.cn
+@last modified by: Junhao Xu
 @file:setup.py
-@time:2021/03/02
+@time:2023/02/22
 """
 from setuptools import setup, find_packages
 import sys
@@ -15,7 +15,7 @@ if sys.version_info < (3, 8):
 
 setup(
     name='stereopy',
-    version='0.9.0',
+    version='0.10.0',
     setup_requires=['setuptools_scm', 'numpy==1.21.4', 'panel', 'pytest', 'quilt3', 'scipy', 'phenograph'],
     description='Spatial transcriptomic analysis in python.',
     long_description=Path('README.md').read_text('utf-8'),

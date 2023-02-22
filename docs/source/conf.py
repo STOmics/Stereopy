@@ -18,10 +18,10 @@ suppress_warnings = ['ref.citation']
 
 # General information
 project = 'stereopy'
-copyright = '2021, Ping Qiu'
-author = 'Ping Qiu'
-version = 'v0.1'
-release = 'v0.1'
+copyright = '2023, BGI'
+author = 'BGI'
+version = 'v0.10.0'
+release = 'v0.10.0'
 
 # default settings
 templates_path = ['_templates']
