@@ -54,3 +54,4 @@ This section contains various short examples of format conversion for integratio
 .. nbgallery::
 
     FormatConversion
+    interactive_anndata
