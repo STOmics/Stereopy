@@ -6,7 +6,7 @@ Troubleshooting
 ------------------------------------
 
 .. note::
-    **Our tool could be installed on Linux with python3.8.**
+    **Our tool could be installed on Linux/Windows with python3.8.**
 
 
 Installation failed due to some factors:
