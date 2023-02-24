@@ -25,6 +25,9 @@ def cal_qc(data):
     data.cells.total_counts = total_count
     data.cells.pct_counts_mt = pct_counts_mt
     data.cells.n_genes_by_counts = n_gene_by_count
+
+    data.genes.n_cells = cal_n_cells(exp_matrix)
+    data.genes.n_counts = cal_per_gene_counts(exp_matrix)
     return data
 
 

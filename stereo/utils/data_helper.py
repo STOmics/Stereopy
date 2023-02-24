@@ -10,8 +10,9 @@
 import scipy.sparse as sp
 import pandas as pd
 import numpy as np
+import numba as nb
 from ..core.stereo_exp_data import StereoExpData
-from typing import Optional
+from typing import Optional, Iterable
 from datetime import datetime
 from stereo.core.cell import Cell
 from stereo.core.gene import Gene
@@ -19,13 +20,13 @@ from stereo.core.gene import Gene
 
 def select_group(st_data, groups, cluster):
     all_groups = set(cluster['group'].values)
-    groups = groups if isinstance(groups, list) else [groups]
+    groups = [groups] if isinstance(groups, str) else groups
     for g in groups:
         if g not in all_groups:
             raise ValueError(f"cluster {g} is not in all cluster.")
     group_index = cluster['group'].isin(groups)
-    exp_matrix = st_data.exp_matrix.toarray() if sp.issparse(st_data.exp_matrix) else st_data.exp_matrix
-    group_sub = exp_matrix[group_index]
+    # exp_matrix = st_data.exp_matrix.toarray() if sp.issparse(st_data.exp_matrix) else st_data.exp_matrix
+    group_sub = st_data.exp_matrix[group_index]
     return group_sub, group_index
 
 
@@ -41,10 +42,16 @@ def get_position_array(data, obs_key='spatial'):
 
 def exp_matrix2df(data: StereoExpData, cell_name: Optional[np.ndarray] = None, gene_name: Optional[np.ndarray] = None):
     if data.tl.raw:
-        data = data.tl.raw
+        cell_isin = np.isin(data.tl.raw.cell_names, data.cell_names)
+        gene_isin = np.isin(data.tl.raw.gene_names, data.gene_names)
+        exp_matrix = data.tl.raw.exp_matrix[cell_isin, :][:, gene_isin]
+        # data = data.tl.raw
+    else:
+        exp_matrix = data.exp_matrix
     cell_index = [np.argwhere(data.cells.cell_name == i)[0][0] for i in cell_name] if cell_name is not None else None
     gene_index = [np.argwhere(data.genes.gene_name == i)[0][0] for i in gene_name] if gene_name is not None else None
-    x = data.exp_matrix[cell_index, :] if cell_index is not None else data.exp_matrix
+    # x = data.exp_matrix[cell_index, :] if cell_index is not None else data.exp_matrix
+    x = exp_matrix[cell_index, :] if cell_index is not None else exp_matrix
     x = x[:, gene_index] if gene_index is not None else x
     x = x if isinstance(x, np.ndarray) else x.toarray()
     index = cell_name if cell_name is not None else data.cell_names
@@ -55,7 +62,7 @@ def exp_matrix2df(data: StereoExpData, cell_name: Optional[np.ndarray] = None, g
 
 def get_top_marker(g_name: str, marker_res: dict, sort_key: str, ascend: bool = False, top_n: int = 10):
     result = marker_res[g_name]
-    top_res = result.sort_values(by=sort_key, ascending=ascend).head(top_n)
+    top_res = result.sort_values(by=sort_key, ascending=ascend).head(top_n).dropna(axis=0, how='any')
     return top_res
 
 
@@ -118,8 +125,7 @@ def merge(data1: StereoExpData = None, data2: StereoExpData = None, *args, reorg
             if new_data.cell_borders is not None and data.cell_borders is not None:
                 new_data.cells.cell_boder = np.concatenate([new_data.cells.cell_boder, data.cells.cell_boder])
             new_data.position = np.concatenate([new_data.position, data.position])
-            new_data.genes.gene_name, ind1, ind2 = np.intersect1d(new_data.genes.gene_name, data.genes.gene_name,
-                                                                  return_indices=True)
+            new_data.genes.gene_name, ind1, ind2 = np.intersect1d(new_data.genes.gene_name, data.genes.gene_name, return_indices=True)
             new_data.exp_matrix = sp.vstack([new_data.exp_matrix[:, ind1], data.exp_matrix[:, ind2]])
             if new_data.offset_x is not None and data.offset_x is not None:
                 new_data.offset_x = min(new_data.offset_x, data.offset_x)
@@ -182,6 +188,7 @@ def split(data: StereoExpData = None):
         return None
 
     from copy import deepcopy
+    from .pipeline_utils import cell_cluster_to_gene_exp_cluster
 
     all_data = []
     data.array2sparse()
@@ -190,8 +197,7 @@ def split(data: StereoExpData = None):
     for bno in batch:
         cell_idx = np.where(data.cells.batch == bno)[0]
         cell_names = data.cell_names[cell_idx]
-        new_data = StereoExpData(bin_type=data.bin_type, bin_size=data.bin_size, cells=deepcopy(data.cells),
-                                 genes=deepcopy(data.genes))
+        new_data = StereoExpData(bin_type=data.bin_type, bin_size=data.bin_size, cells=deepcopy(data.cells), genes=deepcopy(data.genes))
         new_data.cells = new_data.cells.sub_set(cell_idx)
         new_data.position = data.position[cell_idx] - data.position_offset[bno]
         new_data.exp_matrix = data.exp_matrix[cell_idx]
@@ -237,11 +243,18 @@ def split(data: StereoExpData = None):
             elif key == 'tsne':
                 for res_key in all_res_key:
                     new_data.tl.result[res_key] = result[res_key]
+            elif key == 'gene_exp_cluster':
+                continue
             else:
                 for res_key in all_res_key:
                     new_data.tl.result[res_key] = result[res_key]
         if data.tl.raw is not None:
             new_data.tl.raw = data.tl.raw.tl.filter_cells(cell_list=cell_names, inplace=False)
+        if 'gene_exp_cluster' in data.tl.key_record:
+            for cluster_res_key in data.tl.key_record['cluster']:
+                gene_exp_cluster_res = cell_cluster_to_gene_exp_cluster(new_data.tl, cluster_res_key)
+                if gene_exp_cluster_res is not False:
+                    new_data.tl.result[f"gene_exp_{cluster_res_key}"] = gene_exp_cluster_res
         all_data.append(new_data)
 
     return all_data

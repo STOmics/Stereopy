@@ -45,8 +45,8 @@ def _(v, f, k):
 
 
 @write.register(pd.DataFrame)
-def _(v, f, k):
-    write_dataframe(f, k, v)
+def _(v, f, k, save_as_matrix=False):
+    write_dataframe(f, k, v, save_as_matrix=save_as_matrix)
 
 
 @write.register(sparse.spmatrix)
@@ -127,7 +127,7 @@ def write_spmatrix_as_dense(f, key, value, dataset_kwargs=MappingProxyType({})):
         dset[idx] = value[idx].toarray()
 
 
-def write_dataframe(f, key, df, dataset_kwargs=MappingProxyType({})):
+def write_dataframe(f, key, df, dataset_kwargs=MappingProxyType({}), save_as_matrix=False):
     # Check arguments
     for reserved in ('__categories', '_index'):
         if reserved in df.columns:
@@ -145,10 +145,14 @@ def write_dataframe(f, key, df, dataset_kwargs=MappingProxyType({})):
     group.attrs['encoding-type'] = 'dataframe'
     group.attrs['column-order'] = col_names
     group.attrs['_index'] = index_name
+    group.attrs['save-as-matrix'] = save_as_matrix
 
     write_series(group, index_name, df.index, dataset_kwargs=dataset_kwargs)
-    for col_name, (_, series) in zip(col_names, df.items()):
-        write_series(group, col_name, series, dataset_kwargs=dataset_kwargs)
+    if save_as_matrix:
+        write_array(group, 'values', df.values, dataset_kwargs=dataset_kwargs)
+    else:
+        for col_name, (_, series) in zip(col_names, df.items()):
+            write_series(group, col_name, series, dataset_kwargs=dataset_kwargs)
 
 
 def write_series(group, key, series, dataset_kwargs=MappingProxyType({})):
@@ -226,8 +230,9 @@ def _to_hdf5_vlen_strings(value: np.ndarray) -> np.ndarray:
 def read_dataframe(group) -> pd.DataFrame:
     columns = list(group.attrs['column-order'])
     idx_key = group.attrs['_index']
+    save_as_matrix = group.attrs.get('save-as-matrix', default=False)
     df = pd.DataFrame(
-        {k: read_series(group[k]) for k in columns},
+        {k: read_series(group[k]) for k in columns} if not save_as_matrix else read_dataset(group['values']),
         index=read_series(group[idx_key]),
         columns=list(columns),
     )

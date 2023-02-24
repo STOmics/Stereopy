@@ -423,6 +423,9 @@ class StereoExpData(Data):
     def __repr__(self):
         return self.__str__()
 
+    def issparse(self):
+        return issparse(self.exp_matrix)
+
 
 class AnnBasedStereoExpData(StereoExpData):
 
@@ -482,3 +485,5 @@ class AnnBasedStereoExpData(StereoExpData):
             self._ann_data.obs.loc[:, ['x', 'y']] = \
                 np.array(list(self._ann_data.obs.index.str.split('-', expand=True)), dtype=np.uint32)
         return self._ann_data.obs.loc[:, ['x', 'y']].values
+
+

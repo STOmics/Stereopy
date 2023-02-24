@@ -148,6 +148,7 @@ def read_stereo_h5ad(file_path, use_raw=True, use_result=True, ):
 
     :return:
     """
+    from ..utils.pipeline_utils import cell_cluster_to_gene_exp_cluster
     data = StereoExpData(file_path=file_path)
     if not data.file.exists():
         logger.error('the input file is not exists, please check!')
@@ -163,11 +164,22 @@ def read_stereo_h5ad(file_path, use_raw=True, use_result=True, ):
                 data.position = h5ad.read_dataset(f[k])
             elif k == 'bin_type':
                 data.bin_type = h5ad.read_dataset(f[k])
+            elif k == 'merged':
+                data.merged = h5ad.read_dataset(f[k])
             elif k == 'exp_matrix':
                 if isinstance(f[k], h5py.Group):
                     data.exp_matrix = h5ad.read_group(f[k])
                 else:
                     data.exp_matrix = h5ad.read_dataset(f[k])
+            elif k == 'sn':
+                sn_data = h5ad.read_group(f[k])
+                if sn_data.shape[0] == 1:
+                    data.sn = str(sn_data['sn'][0])
+                else:
+                    data.sn = {}
+                    for _, row in sn_data.iterrows():
+                        batch, sn = row[0], row[1]
+                        data.sn[str(batch)] = str(sn)
 
         # read raw
         if use_raw is True and 'exp_matrix@raw' in f.keys():
@@ -209,6 +221,12 @@ def read_stereo_h5ad(file_path, use_raw=True, use_result=True, ):
                         }
                     if analysis_key == 'cluster':
                         data.tl.result[res_key] = h5ad.read_group(f[f'{res_key}@cluster'])
+                        gene_cluster_res_key = f'gene_exp_{res_key}'
+                        if ('gene_exp_cluster' not in data.tl.key_record) or (gene_cluster_res_key not in data.tl.key_record['gene_exp_cluster']):
+                            data.tl.result[gene_cluster_res_key] = cell_cluster_to_gene_exp_cluster(data.tl, res_key)
+                            data.tl.reset_key_record('gene_exp_cluster', gene_cluster_res_key)
+                    if analysis_key == 'gene_exp_cluster':
+                        data.tl.result[res_key] = h5ad.read_group(f[f'{res_key}@gene_exp_cluster'])
                     if analysis_key == 'marker_genes':
                         clusters = h5ad.read_dataset(f[f'clusters_record@{res_key}@marker_genes'])
                         data.tl.result[res_key] = {}
@@ -490,6 +508,9 @@ def stereo_to_anndata(data: StereoExpData, flavor='scanpy', sample_id="sample", 
                     logger.info(f"Adding data.tl.result['{res_key}'] in adata.obs['{res_key}'] .")
                     adata.obs[res_key] = pd.DataFrame(data.tl.result[res_key]['group'].values,
                                                       index=data.cells.cell_name.astype('str'))
+            elif key == 'gene_exp_cluster':
+                for res_key in data.tl.key_record[key]: 
+                    adata.uns[res_key] = data.tl.result[res_key]
             else:
                 continue
 

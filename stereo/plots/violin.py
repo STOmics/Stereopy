@@ -18,7 +18,7 @@ def violin_distribution(data):  # Violin Statistics Chart
 
     :return: None
     """
-    _, axs = plt.subplots(1, 3, figsize=(18, 4))
+    fig, axs = plt.subplots(1, 3, figsize=(18, 4))
     # plt.ylabel("total_counts")
     seaborn.violinplot(y=data.cells.get_property('total_counts'), ax=axs[0])
     # plt.ylabel("n_genes_by_counts")
@@ -28,6 +28,7 @@ def violin_distribution(data):  # Violin Statistics Chart
     axs[0].set_ylabel('total counts', fontsize=15)
     axs[1].set_ylabel('n genes by counts', fontsize=15)
     axs[2].set_ylabel('pct counts mt', fontsize=15)
+    return fig
 
 
 def save_fig(output):
