@@ -1,0 +1,161 @@
+Release Notes
+=============
+
+.. role:: small
+
+Version 0.10.0
+------------------
+0.10.0 :2023-02-22
+~~~~~~~~~~~~~~~~~~~~~
+1. Supported installation on Windows.
+2. Addition of displaying basic information of StereoExpData object when simply typing it.
+3. Addition of saving statistic results when plotting.
+4. Addition of marker gene proportion (optional), in-group and out-of-group, in `data.tl.find_marker_gene`. Otherwise, supported filtering marker genes via `data.tl.filter_marker_gene`.
+5. Supported adapting to AnnData, for directly using data and results stored in AnnData for subsequent analysis.
+6. Addition of the matrix of gene count among clusters so that transformed output .rds file could be used for annotation by SingleR directly. 
+7. Initial release of Stereopy development solution.
+8. Update requirements.txt.
+
+
+Version 0.9.0
+------------------
+0.9.0 :2023-01-10
+~~~~~~~~~~~~~~~~~~~~~
+1. Resolve cell boundary overlapping issues during cell correction visualization.
+2. Addition of manually annotating cells and clusters via command lines or interactive visualization features.
+3. Addition of GPU version of UMAP, Neighbors, Leiden, and Louvian.
+4. Update requirements.txt.
+
+Version 0.8.0
+------------------
+0.8.0 :2022-12-02
+~~~~~~~~~~~~~~~~~~~~~
+1. Reconstruct SCTransform normalization in python.
+2. Optimize the efficiency of FAST cell correction.
+3. Enable to read Seurat output H5AD file for further analysis in Stereopy.
+
+Version 0.7.0
+------------------
+0.7.0 :2022-11-15
+~~~~~~~~~~~~~~~~~~~~~
+1. Acquire the cell expression matrix (cellbin) from the GEM file.
+2. Update hotspot to the latest version. Allow to output gene lists for every module.
+3. Allow to merge and arrange more than two matrices in a row.
+4. Speed up Stereopy installation. Allow installing heavy frameworks such as TensorFlow and PyTorch later before using.
+5. Update requirements.txt.
+
+Version 0.6.0
+------------------
+0.6.0 :2022-09-30
+~~~~~~~~~~~~~~~~~~~~~
+1. Increase 'Remove Batch Effect' algorithm.
+2. Increase RNA velocity analysis function.
+3. Increase export_high_res_area method to export high resolution matrix file(cell bin gef) after lasso.
+4. Update algorithm of scale.
+5. Optimize the efficiency of cell correction.
+6. Increase multi-chip fusion analysis.
+7. Update requirements.txt.
+
+Version 0.5.1
+------------------
+0.5.1 :2022-09-4
+~~~~~~~~~~~~~~~~~~~~~
+1. Fix bug when using gem file to run fast-cell-correction algorithm.
+
+Version 0.5.0
+------------------
+0.5.0 :2022-09-2
+~~~~~~~~~~~~~~~~~~~~~
+1. Increase fast-cell-correction algorithm.
+2. Update gmm-cell-correction algorithm(slower version)，fix bug that genes in the same position(bin) were assigned to different cells.
+3. Increase data.plt.cells_plotting method to show the detail of the cells.
+4. Increase export_high_res_area method to export high resolution matrix file(gef) after lasso.
+5. Increase tissue_extraction_to_bgef method to extract the tissue area.
+6. Update algorithm of highly_variable_genes, umap and normalization.
+7. Update requirements.txt.
+
+Version 0.4.0
+------------------
+0.4.0 :2022-07-30
+~~~~~~~~~~~~~~~~~~~~~
+1. Update tissue cut algorithm.
+2. Increase param(n_jobs) in neighbors and phenograph.
+3. Increase read_gef function filter by region of gene list.
+4. Update requirements.txt.
+
+Version 0.3.1
+------------------
+0.3.1 :2022-06-30
+~~~~~~~~~~~~~~~~~~~~~
+1. Add gaussian smooth function.
+2. The pca function increases the svd_solver parameter.
+3. The write_h5ad function increases the output parameter.
+4. Update requirements.txt.
+
+Version 0.3.0
+------------------
+0.3.0 :2022-06-10
+~~~~~~~~~~~~~~~~~~~~~
+1. Add cell bin correction function.
+2. Add scale function in normalization.
+3. Support write the StereoExpData into a gef file.
+4. Fix bug of sctransform, reading the gef/gem file and annh5ad2rds.R.
+5. Update default cluster groups to start at 1.
+6. Support write StereoExpData to stereo h5ad function.
+7. Update requirements.txt.
+
+Version 0.2.4
+------------------
+0.2.4 :2022-01-19
+~~~~~~~~~~~~~~~~~~~~~
+1. Fix bug of tar package.
+
+Version 0.2.3
+-----------
+0.2.3 :2022-01-17
+~~~~~~~~~~~~~~~~~~~~~~~
+1. Add cell segmentation and tissuecut segmentation function.
+2. Update stereo_to_anndata function and support output to h5ad file.
+3. Add the Rscript supporting h5ad file(with anndata object) to rds file.
+4. Support DEG output to the csv file.
+
+Version 0.2.2
+-----------
+0.2.2 :2021-11-17
+~~~~~~~~~~~~~~~~~~~~~~~
+1. Optimize the performance of find marker.
+2. Add Cython setup_build function and optimize gef io performance.
+3. Add hotspot pipeline for spatial data and squidpy for spatial_neighbor func.
+4. Add polygon selection for interactive scatter plot and simplify the visualization part of the code.
+
+
+Version 0.2.1
+-----------
+0.2.1 :2021-10-15
+~~~~~~~~~~~~~~~~~~~~~~~
+1. fix the bug of marker_genes_heatmap IndexError and sort the text of heatmap plot.
+2. invert yaxis one the top for spatial_scatter and cluster_scatter plot funcs.
+3. solve the problem that multiple results of sctransform run are inconsistent.
+4. update requirements.txt.
+
+
+Version 0.2.0
+-----------
+0.2.0 :2021-09-16
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Stereopy provides the analysis process based on spatial omics, including reading, preprocessing, clustering,
+differential expression testing and visualization, etc. There are the updates we made in this version.
+
+1. We propose StereoExpData, which is a data format specially adapted to spatial omics analysis.
+2. Support reading the gef file, which is faster than reading gem file.
+3. Support the conversion between StereoExpData and AnnData.
+4. Add the interactive visualization function for selecting data, you can dynamically select the area of interest, and then perform the next step of analysis.
+5. Dynamically display clustering scatter plots, you can modify the color and point size.
+6. Updated clustering related methods, such as leiden, louvain, which are comparable to the original algorithms.
+7. Add some analysis, such as the method of logres for find marker genes, highly variable genes analysis, sctransform method of normalization like Seruat.
+
+
+0.1.0 :2021-05-30
+~~~~~~~~~~~~~~~~~~~~~~~~~
+- Initial release

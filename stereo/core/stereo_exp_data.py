@@ -41,22 +41,23 @@ class StereoExpData(Data):
     ):
 
         """
-        The core data object is designed for expression matrix of spatial omics, which can be set 
-        corresponding properties directly to initialize the data. 
+        a Data designed for express matrix of spatial omics. It can directly set the corresponding properties
+        information to initialize the data. If the file path is not None, we will read the file information to
+        initialize the properties.
 
-        :param file_path: the path to input file of expression matrix.
-        :param file_format: the format of input file.
-        :param bin_type: the type of bin, if the file format is Stereo-seq file including `'bins'` or `'cell_bins'`.
-        :param bin_size: the size of the bin to merge, when `bin_type` is `'bins'`.
-        :param exp_matrix: the expression matrix.
-        :param genes: the gene object which contains information of gene level.
-        :param cells: the cell object which contains information of cell level.
-        :param position: spatial location information.
-        :param output: the path to output file.
+        :param file_path: the path of express matrix file.
+        :param file_format: the file format of the file_path.
+        :param bin_type: the type of bin, if file format is stereo-seq file. `bins` or `cell_bins`.
+        :param bin_size: size of bin to merge if bin type is 'bins'.
+        :param exp_matrix: the express matrix.
+        :param genes: the gene object which contain some info of gene.
+        :param cells: the cell object which contain some info of cell.
+        :param position: the spatial location.
+        :param output: the path of output.
         :param partitions: the number of multi-process cores, used when processing files in parallel.
-        :param offset_x: the x value of the offset . 
-        :param offset_y: the y value of the offset .
-        :param attr: attribute information from GEF file.
+        :param offset_x: the x of the offset.
+        :param offset_y: the y of the offset.
+        :param attr: attributions from gef file.
         """
         super(StereoExpData, self).__init__(file_path=file_path, file_format=file_format,
                                             partitions=partitions, output=output)
@@ -99,7 +100,7 @@ class StereoExpData(Data):
 
     def sub_by_index(self, cell_index=None, gene_index=None):
         """
-        Get data subset by indexl list of cells or genes.
+        get sub data by cell index or gene index list.
 
         :param cell_index: a list of cell index.
         :param gene_index: a list of gene index.
@@ -117,7 +118,7 @@ class StereoExpData(Data):
     def sub_by_name(self, cell_name: Optional[Union[np.ndarray, list]] = None,
                     gene_name: Optional[Union[np.ndarray, list]] = None):
         """
-        Get data subset by name list of cells or genes.
+        get sub data by cell name list or gene name list.
 
         :param cell_name: a list of cell name.
         :param gene_name: a list of gene name.
@@ -132,7 +133,7 @@ class StereoExpData(Data):
 
     def check(self):
         """
-        Check whether the parameters meet the requirement.
+        checking whether the params is in the range.
 
         :return:
         """
@@ -142,7 +143,7 @@ class StereoExpData(Data):
     @staticmethod
     def bin_type_check(bin_type):
         """
-        Check whether the bin type is from specific options.
+        check whether the bin type is in range.
 
         :param bin_type: bin type value, 'bins' or 'cell_bins'.
         :return:
@@ -153,17 +154,12 @@ class StereoExpData(Data):
 
     @property
     def shape(self):
-        """
-        Get the shape of expression matrix.
-
-        :return:
-        """
         return self.exp_matrix.shape
 
     @property
     def gene_names(self):
         """
-        Get the gene names.
+        get the gene names.
 
         :return:
         """
@@ -172,7 +168,7 @@ class StereoExpData(Data):
     @property
     def cell_names(self):
         """
-        Get the cell names.
+        get the cell names.
 
         :return:
         """
@@ -185,7 +181,7 @@ class StereoExpData(Data):
     @property
     def genes(self):
         """
-        Get the gene object.
+        get the value of self._genes.
 
         :return:
         """
@@ -204,7 +200,7 @@ class StereoExpData(Data):
     @property
     def cells(self):
         """
-        Get the cell object.
+        get the value of self._cells
 
         :return:
         """
@@ -223,7 +219,7 @@ class StereoExpData(Data):
     @property
     def exp_matrix(self):
         """
-        Get the expression matrix.
+        get the value of self._exp_matrix.
 
         :return:
         """
@@ -242,7 +238,7 @@ class StereoExpData(Data):
     @property
     def bin_type(self):
         """
-        Get the bin type.
+        get the value of self._bin_type.
 
         :return:
         """
@@ -262,7 +258,7 @@ class StereoExpData(Data):
     @property
     def position(self):
         """
-        Get the information of spatial location.
+        get the value of self._position.
 
         :return:
         """
@@ -289,7 +285,7 @@ class StereoExpData(Data):
     @property
     def offset_x(self):
         """
-        Get the x value of the offset.
+        get the x of self._offset_x.
 
         :return:
         """
@@ -307,7 +303,7 @@ class StereoExpData(Data):
     @property
     def offset_y(self):
         """
-        Get the y value of the offset.
+        get the offset_y of self._offset_y.
 
         :return:
         """
@@ -325,7 +321,7 @@ class StereoExpData(Data):
     @property
     def attr(self):
         """
-        Get the attribute information.
+        get the attr of self._attr.
 
         :return:
         """
@@ -358,7 +354,7 @@ class StereoExpData(Data):
 
     def to_df(self):
         """
-        Transform StereoExpData object to pd.DataFrame.
+        transform StereoExpData to pd.DataFrame.
 
         :return:
         """
@@ -371,7 +367,7 @@ class StereoExpData(Data):
 
     def sparse2array(self):
         """
-        Transform expression matrix to array if it is parse matrix.
+        transform expression matrix to array if it is parse matrix.
 
         :return:
         """
@@ -381,7 +377,7 @@ class StereoExpData(Data):
 
     def array2sparse(self):
         """
-        Transform expression matrix to sparse matrix if it is ndarray.
+        transform expression matrix to sparse matrix if it is ndarray
 
         :return:
         """
@@ -426,7 +422,7 @@ class StereoExpData(Data):
 
     def __repr__(self):
         return self.__str__()
-    
+
     def issparse(self):
         return issparse(self.exp_matrix)
 
@@ -489,5 +485,5 @@ class AnnBasedStereoExpData(StereoExpData):
             self._ann_data.obs.loc[:, ['x', 'y']] = \
                 np.array(list(self._ann_data.obs.index.str.split('-', expand=True)), dtype=np.uint32)
         return self._ann_data.obs.loc[:, ['x', 'y']].values
-    
+
 

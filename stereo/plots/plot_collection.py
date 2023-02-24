@@ -288,7 +288,7 @@ class PlotCollection:
             **kwargs
         )
         return fig
-    
+
     @download
     def spatial_scatter_by_gene(
             self,
@@ -349,7 +349,7 @@ class PlotCollection:
             **kwargs
         )
         return fig
-    
+
     @download
     def gaussian_smooth_scatter_by_gene(
             self,
@@ -614,7 +614,7 @@ class PlotCollection:
             group_list = np.where(group_list == group_id, group_id, 0)
             palette = ['#B3CDE3', '#FF7F00']
             kwargs['show_legend'] = False
-            
+
         fig = base_scatter(
             self.data.position[:, 0],
             self.data.position[:, 1],
