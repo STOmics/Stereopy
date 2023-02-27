@@ -453,31 +453,66 @@ def view_bar(message, id, total, end=''):
                                     "=" * (40 - rate_num), np.round(rate * 100), id, total,), end=end)
 
 
+# def split(image, cut_size, overlap=100):
+#     image = np.array(image)
+#     shapes = image.shape
+#     x_nums = int(shapes[0] / (cut_size - overlap))
+#     y_nums = int(shapes[1] / (cut_size - overlap))
+#     img_list = []
+#     x_list = []
+#     y_list = []
+#     for x_temp in range(x_nums + 1):
+#         for y_temp in range(y_nums + 1):
+#             x_begin = max(0, x_temp * (cut_size - overlap))
+#             y_begin = max(0, y_temp * (cut_size - overlap))
+#             x_end = min(x_begin + cut_size, shapes[0])
+#             y_end = min(y_begin + cut_size, shapes[1])
+#             i = image[x_begin: x_end, y_begin: y_end]
+#             if i.shape[0] < cut_size or i.shape[1] < cut_size:
+#                 continue
+#             # tifffile.imsave(os.path.join(outpath, file + '_' + str(shapes[0]) + '_' + str(shapes[1]) + '_' + str(x_begin) + '_' + str(y_begin) + '.tif'), i)  #, r'white_5000'r'20210326_other_crop'
+#             x_list.append(x_begin)
+#             y_list.append(y_begin)
+#             img_list.append(i)
+#     return img_list, x_list, y_list
+
 def split(image, cut_size, overlap=100):
     image = np.array(image)
     shapes = image.shape
-    x_nums = int(shapes[0] / (cut_size - overlap))
-    y_nums = int(shapes[1] / (cut_size - overlap))
+    x_nums = (shapes[0] - overlap) // (cut_size - overlap)
+    y_nums = (shapes[1] - overlap) // (cut_size - overlap)
+    if ((shapes[0] - overlap) % (cut_size - overlap)) > 0:
+        x_nums += 1
+    if ((shapes[1] - overlap) % (cut_size - overlap)) > 0:
+        y_nums += 1
     img_list = []
     x_list = []
     y_list = []
-    for x_temp in range(x_nums + 1):
-        for y_temp in range(y_nums + 1):
-            x_begin = max(0, x_temp * (cut_size - overlap))
-            y_begin = max(0, y_temp * (cut_size - overlap))
+    width_add, height_add = 0, 0
+    for x_temp in range(x_nums):
+        for y_temp in range(y_nums):
+            x_begin = x_temp * (cut_size - overlap)
+            y_begin = y_temp * (cut_size - overlap)
             x_end = min(x_begin + cut_size, shapes[0])
             y_end = min(y_begin + cut_size, shapes[1])
             i = image[x_begin: x_end, y_begin: y_end]
-            if i.shape[0] < 255 or i.shape[1] < 255:
-                continue
-            # tifffile.imsave(os.path.join(outpath, file + '_' + str(shapes[0]) + '_' + str(shapes[1]) + '_' + str(x_begin) + '_' + str(y_begin) + '.tif'), i)  #, r'white_5000'r'20210326_other_crop'
+            if i.shape[0] < cut_size:
+                height_add = cut_size - i.shape[0]
+                patch_shape = (height_add, i.shape[1], i.shape[2]) if len(i.shape) == 3 else (height_add, i.shape[1])
+                patch = np.zeros(shape=patch_shape, dtype=i.dtype)
+                i = np.concatenate([i, patch], axis=0)
+            if i.shape[1] < cut_size:
+                width_add = cut_size - i.shape[1]
+                patch_shape = (i.shape[0], width_add, i.shape[2]) if len(i.shape) == 3 else (i.shape[0], width_add)
+                patch = np.zeros(shape=patch_shape, dtype=i.dtype)
+                i = np.concatenate([i, patch], axis=1)
             x_list.append(x_begin)
             y_list.append(y_begin)
             img_list.append(i)
-    return img_list, x_list, y_list
+    return img_list, x_list, y_list, width_add, height_add
 
 
-def merge(label_list, x_list, y_list, shapes,  overlap=100, type=np.uint8):
+def merge(label_list, x_list, y_list, shapes,  overlap=100, type=np.uint8, width_add=0, height_add=0):
 
     if len(label_list) == 1:
         return label_list[0]
@@ -485,7 +520,7 @@ def merge(label_list, x_list, y_list, shapes,  overlap=100, type=np.uint8):
     if not isinstance(label_list, list):
         return label_list
 
-    image = np.zeros((int(shapes[0]), int(shapes[1])), dtype=type)
+    image = np.zeros((int(shapes[0]) + height_add, int(shapes[1]) + width_add), dtype=type)
     for index, temp_img in enumerate(label_list):
         info = [x_list[index], y_list[index]]
         h, w = temp_img.shape
@@ -497,7 +532,7 @@ def merge(label_list, x_list, y_list, shapes,  overlap=100, type=np.uint8):
             image[int(x_begin): int(x_begin) + h - overlap, int(y_begin): int(y_begin) + w - overlap] = temp_img[
                                                                                                         overlap // 2: - overlap // 2,
                                                                                                         overlap // 2: - overlap // 2]
-    return image
+    return image[0:shapes[0], 0:shapes[1]]
 
 
 def czi_save_tif(path, outpath):
