@@ -34,18 +34,31 @@ from stereo.log_manager import logger
 
 
 @ReadWriteUtils.check_file_exists
-def read_gem(file_path, sep='\t', bin_type="bins", bin_size=100, is_sparse=True):
+def read_gem(
+    file_path: str, 
+    sep: str='\t', 
+    bin_type: str="bins", 
+    bin_size: int=100, 
+    is_sparse: bool=True):
     """
-    Read the stereo-seq GEM file, and generate the StereoExpData object.
+    Read the Stereo-seq gem file, and generate the StereoExpData object.
 
-    :param file_path: input file
-    :param sep: separator string
-    :param bin_type: the type of bin, if file format is stereo-seq file. `bins` or `cell_bins`.
-    :param bin_size: the size of bin to merge. The parameter only takes effect
-                     when the value of data.bin_type is 'bins'.
-    :param is_sparse: the matrix is sparse matrix if is_sparse is True else np.ndarray
+    Parameters
+    -------------
+    file_path
+        - the path to input file.
+    sep
+        - the separator string.
+    bin_type
+        - the bin type includes `'bins'` or `'cell_bins'`. defaults to `bins`
+    bin_size
+        - the size of bin to merge, when `bin_type` is set to `'bins'`.
+    is_sparse
+        - the expression matrix is sparse matrix, if `True`, otherwise `np.ndarray`.
 
-    :return: an object of StereoExpData.
+    Returns
+    -------------
+    An object of StereoExpData.
     """
     data = StereoExpData(file_path=file_path, bin_type=bin_type, bin_size=bin_size)
     df = pd.read_csv(str(data.file), sep=sep, comment='#', header=0)
