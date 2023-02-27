@@ -4,8 +4,8 @@
 @author: qindanhua@genomics.cn
 @time:2021/08/31
 """
-from random import randint
-from typing import Optional, Union, Sequence
+import os.path
+from typing import Optional, Union, Sequence, Literal
 from functools import partial, wraps
 # import colorcet as cc
 import panel as pn
@@ -61,25 +61,6 @@ class PlotCollection:
         self.data = data
         self.result = self.data.tl.result
 
-    def __getattr__(self, item):
-        dict_attr = self.__dict__.get(item, None)
-        if dict_attr:
-            return dict_attr
-
-        # start with __ may not be our algorithm function, and will cause import problem
-        if item.startswith('__'):
-            raise AttributeError
-
-        new_attr = PlotBase.get_attribute_helper(item, self.data, self.result)
-        if new_attr:
-            self.__setattr__(item, new_attr)
-            logger.info(f'register plot_func {new_attr} to {self}')
-            return new_attr
-
-        raise AttributeError(
-            f'{item} not existed, please check the function name you called!'
-        )
-
     def interact_cluster(
             self,
             res_key='cluster', inline=True,
@@ -110,7 +91,7 @@ class PlotCollection:
     def interact_annotation_cluster(
             self,
             res_cluster_key='cluster',
-            res_marker_gene_key='marker_genes',
+            res_marker_gene_key='marker_genes', 
             res_key = 'annotation',
             inline=True,
             width=700, height=500
@@ -136,12 +117,12 @@ class PlotCollection:
             'bins': self.data.cell_names,
             'group': np.array(res['group'])
         })
+        
         fig = interact_spatial_cluster_annotation(self.data, df, res_marker_gene, res_key, width=width, height=height)
         if not inline:
             fig.show()
         return fig
 
-    @download
     def highly_variable_genes(self, res_key='highly_variable_genes'):
         """
         scatter of highly variable genes
@@ -288,7 +269,7 @@ class PlotCollection:
             **kwargs
         )
         return fig
-
+    
     @download
     def spatial_scatter_by_gene(
             self,
@@ -349,7 +330,7 @@ class PlotCollection:
             **kwargs
         )
         return fig
-
+    
     @download
     def gaussian_smooth_scatter_by_gene(
             self,
@@ -442,7 +423,7 @@ class PlotCollection:
             x_label: str = 'umap1',
             y_label: str = 'umap2',
             dot_size: int = 1,
-            colors: Optional[Union[str, list]] = 'stereo_30'
+            colors: Optional[Union[str, list]] = 'stereo_30'            
         ):
         import holoviews as hv
         import hvplot.pandas
@@ -614,7 +595,7 @@ class PlotCollection:
             group_list = np.where(group_list == group_id, group_id, 0)
             palette = ['#B3CDE3', '#FF7F00']
             kwargs['show_legend'] = False
-
+            
         fig = base_scatter(
             self.data.position[:, 0],
             self.data.position[:, 1],
@@ -725,6 +706,41 @@ class PlotCollection:
             do_log=do_log
         )
         return fig
+    
+    @download
+    def marker_genes_scatter(
+        self,
+        res_key: str = 'marker_genes',
+        markers_num: int = 10,
+        genes: Optional[Sequence[str]] = None,
+        groups: Optional[Sequence[str]] = None,
+        values_to_plot: Optional[
+            Literal[
+                'scores',
+                'logfoldchanges',
+                'pvalues',
+                'pvalues_adj',
+                'log10_pvalues',
+                'log10_pvalues_adj',
+            ]
+        ] = None,
+        sort_by: Literal[
+            'scores',
+            'logfoldchanges',
+            'pvalues',
+            'pvalues_adj'
+        ] = 'scores'
+    ):
+        from .marker_genes import MarkerGenesScatterPlot
+        marker_genes_res = self.check_res_key(res_key)
+        mgsp = MarkerGenesScatterPlot(self.data, marker_genes_res)
+        return mgsp.plot_scatter(
+            markers_num=markers_num,
+            genes=genes,
+            groups=groups,
+            values_to_plot=values_to_plot,
+            sort_by=sort_by
+        )
 
     def check_res_key(self, res_key):
         """

@@ -709,7 +709,7 @@ class StPipeline(object):
                           method: str = 't_test',
                           case_groups: Union[str, np.ndarray, list] = 'all',
                           control_groups: Union[str, np.ndarray, list] = 'rest',
-                          corr_method: str = 'bonferroni',
+                          corr_method: str = 'benjamini-hochberg',
                           use_raw: bool = True,
                           use_highly_genes: bool = True,
                           hvg_res_key: Optional[str] = 'highly_variable_genes',
@@ -745,6 +745,8 @@ class StPipeline(object):
         tool = FindMarker(data=data, groups=self.result[cluster_res_key], method=method, case_groups=case_groups,
                           control_groups=control_groups, corr_method=corr_method, raw_data=self.raw)
         self.result[res_key] = tool.result
+        self.result[res_key]['cluster_res_key'] = cluster_res_key
+        self.result[res_key]['method'] = method
         if output is not None:
             import natsort
             result = self.result[res_key]
@@ -1026,6 +1028,8 @@ class StPipeline(object):
 
         self.result[res_key] = {}
         self.result[res_key]['marker_genes_res_key'] = marker_genes_res_key
+        self.result[res_key]['cluster_res_key'] = self.result[marker_genes_res_key]['cluster_res_key']
+        self.result[res_key]['method'] = self.result[marker_genes_res_key]['method']
         pct= self.result[marker_genes_res_key]['pct']
         pct_rest = self.result[marker_genes_res_key]['pct_rest']
         for key, res in self.result[marker_genes_res_key].items():
