@@ -10,7 +10,7 @@ Version 0.10.0
 1. Supported installation on Windows.
 2. Addition of displaying basic information of StereoExpData object when simply typing it.
 3. Addition of saving statistic results when plotting.
-4. Addition of marker gene proportion (optional), in-group and out-of-group, in `data.tl.find_marker_gene`. Otherwise, supported filtering marker genes via `data.tl.filter_marker_gene`.
+4. Addition of marker gene proportion (optional), in-group and out-of-group, in `data.tl.find_marker_genes`. Otherwise, supported filtering marker genes via `data.tl.filter_marker_genes`.
 5. Supported adapting to AnnData, for directly using data and results stored in AnnData for subsequent analysis.
 6. Addition of the matrix of gene count among clusters so that transformed output .rds file could be used for annotation by SingleR directly. 
 7. Initial release of Stereopy development solution.

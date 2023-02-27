@@ -23,6 +23,7 @@
       ~PlotCollection.highly_variable_genes
       ~PlotCollection.hotspot_local_correlations
       ~PlotCollection.hotspot_modules
+      ~PlotCollection.interact_annotation_cluster
       ~PlotCollection.interact_cluster
       ~PlotCollection.interact_spatial_scatter
       ~PlotCollection.marker_gene_volcano

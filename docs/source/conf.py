@@ -66,6 +66,7 @@ html_title = "Stereopy"
 
 html_theme_options = {
     # "sidebar_hide_name": True,
+        "show_navbar_depth":0,
         "light_css_variables": {
         "color-brand-primary": "#003262",
         "color-brand-content": "#003262",
