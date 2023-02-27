@@ -567,7 +567,7 @@ class StPipeline(object):
         from ..io.reader import stereo_to_anndata
         import squidpy as sq
         neighbor, connectivities, dists = copy.deepcopy(self.get_neighbors_res(neighbors_res_key))
-        adata = stereo_to_anndata(self.data)
+        adata = stereo_to_anndata(self.data, split_batches=False)
         sq.gr.spatial_neighbors(adata, n_neighs=n_neighbors)
         connectivities.data[connectivities.data > 0] = 1
         adj = connectivities + adata.obsp['spatial_connectivities']
