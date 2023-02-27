@@ -50,7 +50,7 @@ class FindMarker(ToolBase):
             method: str = 't_test',
             case_groups: Union[str, np.ndarray, list, tuple] = 'all',
             control_groups: str = 'rest',
-            corr_method: str = 'bonferroni',
+            corr_method: str = 'benjamini-hochberg',
             tie_term: bool = False,
             raw_data=None
     ):

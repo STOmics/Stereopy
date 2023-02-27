@@ -5,7 +5,7 @@
 @time:2021/08/31
 """
 import os.path
-from typing import Optional, Union, Sequence
+from typing import Optional, Union, Sequence, Literal
 from functools import partial, wraps
 # import colorcet as cc
 import panel as pn
@@ -706,6 +706,41 @@ class PlotCollection:
             do_log=do_log
         )
         return fig
+    
+    @download
+    def marker_genes_scatter(
+        self,
+        res_key: str = 'marker_genes',
+        markers_num: int = 10,
+        genes: Optional[Sequence[str]] = None,
+        groups: Optional[Sequence[str]] = None,
+        values_to_plot: Optional[
+            Literal[
+                'scores',
+                'logfoldchanges',
+                'pvalues',
+                'pvalues_adj',
+                'log10_pvalues',
+                'log10_pvalues_adj',
+            ]
+        ] = None,
+        sort_by: Literal[
+            'scores',
+            'logfoldchanges',
+            'pvalues',
+            'pvalues_adj'
+        ] = 'scores'
+    ):
+        from .marker_genes import MarkerGenesScatterPlot
+        marker_genes_res = self.check_res_key(res_key)
+        mgsp = MarkerGenesScatterPlot(self.data, marker_genes_res)
+        return mgsp.plot_scatter(
+            markers_num=markers_num,
+            genes=genes,
+            groups=groups,
+            values_to_plot=values_to_plot,
+            sort_by=sort_by
+        )
 
     def check_res_key(self, res_key):
         """
