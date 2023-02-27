@@ -190,8 +190,8 @@ class CellSegPipe(object):
         """watershed and score on cell mask by neural network"""
         for idx, cell_mask in enumerate(cell_mask):
             cell_mask = np.squeeze(cell_mask)
-            cell_mask_tile, x_list, y_list = utils.split(cell_mask, self.deep_crop_size)
-            img_tile, _, _ = utils.split(self.img_list[idx], self.deep_crop_size)
+            cell_mask_tile, x_list, y_list, mask_width_add, mask_height_add = utils.split(cell_mask, self.deep_crop_size)
+            img_tile, _, _, _, _ = utils.split(self.img_list[idx], self.deep_crop_size)
             input_list = [[cell_mask_tile[id], img] for id, img in enumerate(img_tile)]
             if self.__is_water:
                 post_list_tile = grade.watershed_multi(input_list, 15)
@@ -200,8 +200,8 @@ class CellSegPipe(object):
 
             post_mask_tile = [label[0] for label in post_list_tile]
             score_mask_tile = [label[1] for label in post_list_tile]  # grade saved
-            post_mask = utils.merge(post_mask_tile, x_list, y_list, cell_mask.shape)
-            score_mask = utils.merge(score_mask_tile, x_list, y_list, cell_mask.shape)
+            post_mask = utils.merge(post_mask_tile, x_list, y_list, cell_mask.shape, width_add=mask_width_add, height_add=mask_height_add)
+            score_mask = utils.merge(score_mask_tile, x_list, y_list, cell_mask.shape, width_add=mask_width_add, height_add=mask_height_add)
             self.post_mask_list.append(post_mask)
             self.score_mask_list.append(score_mask)
 
@@ -253,10 +253,10 @@ class CellSegPipe(object):
 
         if not self.__is_list:
             self.__mkdir_subpkg()
-            mask_list, x_list, y_list = utils.split(self.post_mask_list[0], self.deep_crop_size)
+            mask_list, x_list, y_list, _, _ = utils.split(self.post_mask_list[0], self.deep_crop_size)
             mask_list_outline = map(utils.outline, mask_list)
             mask_list_outline = [mask for mask in mask_list_outline]
-            score_list, _, _ = utils.split(self.score_mask_list[0], self.deep_crop_size)
+            score_list, _, _, _, _ = utils.split(self.score_mask_list[0], self.deep_crop_size)
             for idx, img in enumerate(mask_list):
                 shapes = self.img_list[0].shape
                 tifffile.imsave(
