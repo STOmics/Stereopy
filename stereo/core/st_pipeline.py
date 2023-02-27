@@ -567,7 +567,7 @@ class StPipeline(object):
         from ..io.reader import stereo_to_anndata
         import squidpy as sq
         neighbor, connectivities, dists = copy.deepcopy(self.get_neighbors_res(neighbors_res_key))
-        adata = stereo_to_anndata(self.data, split_batches=False)
+        adata = stereo_to_anndata(self.data)
         sq.gr.spatial_neighbors(adata, n_neighs=n_neighbors)
         connectivities.data[connectivities.data > 0] = 1
         adj = connectivities + adata.obsp['spatial_connectivities']
@@ -999,7 +999,7 @@ class StPipeline(object):
 
         key = 'cluster'
         self.reset_key_record(key, res_key)
-
+    
     @logit
     def filter_marker_genes(
         self,
@@ -1018,13 +1018,13 @@ class StPipeline(object):
         :param min_in_group_fraction:  Minimum fraction of cells expressing the genes for each group, defaults to None
         :param max_out_group_fraction: Maximum fraction of cells from the union of the rest of each group expressing the genes, defaults to None
         :param compare_abs: If `True`, compare absolute values of log fold change with `min_fold_change`, defaults to False
-        :param remove_mismatch: If `True`, remove the records which are mismatch conditions from the find_marker_genes result,
+        :param remove_mismatch: If `True`, remove the records which are mismatch conditions from the find_marker_genes result, 
                                 if `False`, these records will be set to np.nan,
                                 defaults to True
         :param res_key: the key of the result of this function to be set to self.result, defaults to 'marker_genes_filtered'
         """
         if marker_genes_res_key not in self.result:
-            raise Exception(f'{marker_genes_res_key} is not in the result, please check and run the find_marker_genes func.')
+            raise Exception(f'{marker_genes_res_key} is not in the result, please check and run the find_marker_genes func.') 
 
         self.result[res_key] = {}
         self.result[res_key]['marker_genes_res_key'] = marker_genes_res_key
@@ -1049,7 +1049,7 @@ class StPipeline(object):
             else:
                 new_res[flag == True] = np.nan
             self.result[res_key][key] = new_res
-
+    
 
     # def scenic(self, tfs, motif, database_dir, res_key='scenic', use_raw=True, outdir=None,):
     #     """
@@ -1143,7 +1143,7 @@ class AnnBasedResult(dict):
             return self.__based_ann_data.var.loc[:, ["means", "dispersions", "dispersions_norm", "highly_variable"]]
         elif name.startswith('gene_exp_'):
             return self.__based_ann_data.uns[name]
-
+        
         obsm_obj = self.__based_ann_data.obsm.get(f'X_{name}', None)
         if obsm_obj is not None:
             return pd.DataFrame(obsm_obj)

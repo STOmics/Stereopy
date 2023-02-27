@@ -384,6 +384,9 @@ class StereoExpData(Data):
         if not issparse(self.exp_matrix):
             self.exp_matrix = csr_matrix(self.exp_matrix)
         return self.exp_matrix
+    
+    def issparse(self):
+        return issparse(self.exp_matrix)
 
     def __str__(self):
         format_str = f"StereoExpData object with n_cells X n_genes = {self.shape[0]} X {self.shape[1]}"
@@ -422,7 +425,7 @@ class StereoExpData(Data):
 
     def __repr__(self):
         return self.__str__()
-
+    
     def issparse(self):
         return issparse(self.exp_matrix)
 
@@ -485,5 +488,5 @@ class AnnBasedStereoExpData(StereoExpData):
             self._ann_data.obs.loc[:, ['x', 'y']] = \
                 np.array(list(self._ann_data.obs.index.str.split('-', expand=True)), dtype=np.uint32)
         return self._ann_data.obs.loc[:, ['x', 'y']].values
-
+    
 
