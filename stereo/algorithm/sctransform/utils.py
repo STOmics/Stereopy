@@ -193,7 +193,9 @@ def robust_scale_binned(
 ):
     bins = pd.cut(x, bins=breaks, ordered=True)
     y = y.astype(object)
-    tmp = y.groupby(bins).agg(robust_scale).dropna().explode().to_list()
+    # TODO: https://pandas.pydata.org/pandas-docs/version/1.5.3/whatsnew/v1.5.1.html
+    # changes in `pandas-1.5.1` shows return df whose length more than the length of `bins`
+    tmp = y.groupby(bins, observed=True).agg(robust_scale).dropna().explode().to_list()
     o = np.array(sorted(range(0, len(bins)), key=lambda x1: bins[x1]))
     sorted_score = pd.DataFrame(np.zeros(shape=(len(x), 1))).iloc[o,]
     sorted_score[0] = tmp

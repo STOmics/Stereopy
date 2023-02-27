@@ -61,6 +61,25 @@ class PlotCollection:
         self.data = data
         self.result = self.data.tl.result
 
+    def __getattr__(self, item):
+        dict_attr = self.__dict__.get(item, None)
+        if dict_attr:
+            return dict_attr
+
+        # start with __ may not be our algorithm function, and will cause import problem
+        if item.startswith('__'):
+            raise AttributeError
+
+        new_attr = PlotBase.get_attribute_helper(item, self.data, self.result)
+        if new_attr:
+            self.__setattr__(item, new_attr)
+            logger.info(f'register plot_func {new_attr} to {self}')
+            return new_attr
+
+        raise AttributeError(
+            f'{item} not existed, please check the function name you called!'
+        )
+
     def interact_cluster(
             self,
             res_key='cluster', inline=True,
@@ -91,7 +110,7 @@ class PlotCollection:
     def interact_annotation_cluster(
             self,
             res_cluster_key='cluster',
-            res_marker_gene_key='marker_genes', 
+            res_marker_gene_key='marker_genes',
             res_key = 'annotation',
             inline=True,
             width=700, height=500
@@ -117,12 +136,12 @@ class PlotCollection:
             'bins': self.data.cell_names,
             'group': np.array(res['group'])
         })
-        
         fig = interact_spatial_cluster_annotation(self.data, df, res_marker_gene, res_key, width=width, height=height)
         if not inline:
             fig.show()
         return fig
 
+    @download
     def highly_variable_genes(self, res_key='highly_variable_genes'):
         """
         scatter of highly variable genes
@@ -423,7 +442,7 @@ class PlotCollection:
             x_label: str = 'umap1',
             y_label: str = 'umap2',
             dot_size: int = 1,
-            colors: Optional[Union[str, list]] = 'stereo_30'            
+            colors: Optional[Union[str, list]] = 'stereo_30'
         ):
         import holoviews as hv
         import hvplot.pandas

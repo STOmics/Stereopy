@@ -14,10 +14,7 @@ change log:
     andata_to_stereo function by Yiran Wu.
     2021/08/20
     2022/02/09  read raw data and result
-
-
 """
-
 from copy import deepcopy
 from typing import Optional
 
@@ -56,6 +53,8 @@ def read_gem(file_path, sep='\t', bin_type="bins", bin_size=100, is_sparse=True)
         df.rename(columns={'MIDCounts': 'UMICount'}, inplace=True)
     elif 'MIDCount' in df.columns:
         df.rename(columns={'MIDCount': 'UMICount'}, inplace=True)
+    if 'CellID' in df.columns:
+        df.rename(columns={'CellID': 'cell_id'}, inplace=True)
     df.dropna(inplace=True)
     gdf = None
     if data.bin_type == 'cell_bins':
@@ -426,11 +425,14 @@ def stereo_to_anndata(data: StereoExpData, flavor='scanpy', sample_id="sample", 
 
     from scipy.sparse import issparse
 
-    exp = data.exp_matrix
-    # exp = data.exp_matrix.toarray() if issparse(data.exp_matrix) else data.exp_matrix
-    cells = data.cells.to_df()
+    if data.tl.raw is None:
+        logger.error('convert to AnnData should have raw data')
+        raise Exception
+
+    exp = data.tl.raw.exp_matrix if issparse(data.tl.raw.exp_matrix) else csr_matrix(data.tl.raw.exp_matrix)
+    cells = data.tl.raw.cells.to_df()
     cells.dropna(axis=1, how='all', inplace=True)
-    genes = data.genes.to_df()
+    genes = data.tl.raw.genes.to_df()
     genes.dropna(axis=1, how='all', inplace=True)
 
     adata = AnnData(X=exp,
@@ -464,6 +466,7 @@ def stereo_to_anndata(data: StereoExpData, flavor='scanpy', sample_id="sample", 
             if key == 'hvg':
                 res_key = data.tl.key_record[key][-1]
                 logger.info(f"Adding data.tl.result['{res_key}'] in adata.var .")
+                adata.uns[key] = {'params': {}, 'source': 'stereopy', 'method': key}
                 for i in data.tl.result[res_key]:
                     if i == 'mean_bin':
                         continue
@@ -472,9 +475,11 @@ def stereo_to_anndata(data: StereoExpData, flavor='scanpy', sample_id="sample", 
                 res_key = data.tl.key_record[key][-1]
                 # adata.uns[res_key] = {}
                 logger.info(f"Adding data.tl.result['{res_key}'] in adata.uns['sct_'] .")
-                adata.uns['sct_counts'] = csr_matrix(data.tl.result[res_key][0]['counts'])
-                adata.uns['sct_data'] = csr_matrix(data.tl.result[res_key][0]['data'])
-                adata.uns['sct_cellname'] = list(data.tl.result[res_key][1]['umi_cells'])
+                adata.uns['sct_counts'] = csr_matrix(data.tl.result[res_key][0]['counts'].T)
+                adata.uns['sct_data'] = csr_matrix(data.tl.result[res_key][0]['data'].T)
+                adata.uns['sct_scale'] = csr_matrix(data.tl.result[res_key][0]['scale.data'].T.to_numpy())
+                adata.uns['sct_top_features'] = list(data.tl.result[res_key][0]['scale.data'].index)
+                adata.uns['sct_cellname'] = list(data.tl.result[res_key][1]['umi_cells'].astype('str'))
                 adata.uns['sct_genename'] = list(data.tl.result[res_key][1]['umi_genes'])
             elif key in ['pca', 'umap', 'tsne']:
                 # pca :we do not keep variance and PCs(for varm which will be into feature.finding in pca of seurat.)
@@ -816,3 +821,18 @@ def read_gef_info(file_path: str):
         logger.info('Maximum expression: {0}'.format(info_dict['maxExpCount']))
 
     return info_dict
+
+
+# @ReadWriteUtils.check_file_exists
+# def read_h5ad(file_path: str, flavor: str = 'scanpy'):
+#     '''
+#     :param file_path: h5ad file path.
+#     :return: `StereoExpData`-like `AnnBasedStereoExpData` obj
+#     '''
+#     if flavor == 'scanpy':
+#         from stereo.core.stereo_exp_data import AnnBasedStereoExpData
+#         return AnnBasedStereoExpData(file_path)
+#     elif flavor == 'seurat':
+#         raise NotImplementedError
+#     else:
+#         raise Exception
