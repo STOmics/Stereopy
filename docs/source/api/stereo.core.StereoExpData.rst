@@ -20,6 +20,7 @@
       ~StereoExpData.file_check
       ~StereoExpData.format_check
       ~StereoExpData.get_sn_from_path
+      ~StereoExpData.issparse
       ~StereoExpData.output_check
       ~StereoExpData.sparse2array
       ~StereoExpData.sub_by_index

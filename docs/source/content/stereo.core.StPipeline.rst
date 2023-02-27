@@ -14,12 +14,14 @@
    .. autosummary::
    
       ~StPipeline.__init__
+      ~StPipeline.annotation
       ~StPipeline.batches_integrate
       ~StPipeline.cal_qc
       ~StPipeline.disksmooth_zscore
       ~StPipeline.filter_cells
       ~StPipeline.filter_coordinates
       ~StPipeline.filter_genes
+      ~StPipeline.filter_marker_genes
       ~StPipeline.find_marker_genes
       ~StPipeline.gaussian_smooth
       ~StPipeline.get_neighbors_res

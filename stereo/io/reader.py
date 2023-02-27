@@ -36,7 +36,7 @@ from stereo.log_manager import logger
 @ReadWriteUtils.check_file_exists
 def read_gem(file_path, sep='\t', bin_type="bins", bin_size=100, is_sparse=True):
     """
-    read the stereo-seq file, and generate the object of StereoExpData.
+    Read the stereo-seq GEM file, and generate the StereoExpData object.
 
     :param file_path: input file
     :param sep: separator string
@@ -738,9 +738,16 @@ def read_gef(file_path: str, bin_type="bins", bin_size=100, is_sparse=True, gene
 @ReadWriteUtils.check_file_exists
 def read_gef_info(file_path: str):
     """
-    read the infomation of gef(.h5) file.
+    Read the infomation of GEF(.h5) file.
 
-    :param file_path: input file
+    Parameters
+    -------------
+    file_path
+        - the path to input file.
+    
+    Returns
+    -------------
+    information of gef
     """
     from gefpy.utils import gef_is_cell_bin
 
