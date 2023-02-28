@@ -749,7 +749,7 @@ class StPipeline(object):
             import natsort
             result = self.result[res_key]
             show_cols = ['scores', 'pvalues', 'pvalues_adj', 'log2fc', 'genes']
-            groups = natsort.natsorted(result.keys())
+            groups = natsort.natsorted([key for key in result.keys() if '.vs.' in key])
             dat = pd.DataFrame(
                 {group.split(".")[0] + "_" + key: result[group][key] for group in groups for key in show_cols})
             dat.to_csv(output)
