@@ -1268,11 +1268,10 @@ class AnnBasedStPipeline(StPipeline):
         data._ann_data._inplace_subset_var(df['highly_variable'].values)
         return data
 
-    @property
-    def raw(self):
-        return self._raw
-
-    @raw.setter
-    def raw(self, value):
+    def raw_checkpoint(self):
         from .stereo_exp_data import AnnBasedStereoExpData
-        self._raw = AnnBasedStereoExpData("", based_ann_data=self.__based_ann_data)
+        if self.__based_ann_data.raw:
+            data = AnnBasedStereoExpData("", based_ann_data=self.__based_ann_data.raw)
+        else:
+            data = AnnBasedStereoExpData("", based_ann_data=copy.deepcopy(self.__based_ann_data))
+        self.raw = data
