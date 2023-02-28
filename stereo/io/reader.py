@@ -151,15 +151,25 @@ def to_interval(interval_string):
     return interval
 
 @ReadWriteUtils.check_file_exists
-def read_stereo_h5ad(file_path, use_raw=True, use_result=True, ):
+def read_stereo_h5ad(
+    file_path: str, 
+    use_raw: bool=True, 
+    use_result: bool=True, ):
     """
-    read the h5ad file, and generate the object of StereoExpData.
+    Read the h5ad file, and generate the StereoExpData object.
 
-    :param file_path: the path of input file.
-    :param use_raw: whether to save raw data
-    :param use_result: whether to save result and res_key
+    Parameters
+    ----------------------
+    file_path
+        - the path to input h5ad file.
+    use_raw
+        - whether to read data of `self.raw`.
+    use_result
+        - whether to read `result` and `res_key`.
 
-    :return:
+    Returns
+    --------------------
+    An object of StereoExpData.
     """
     from ..utils.pipeline_utils import cell_cluster_to_gene_exp_cluster
     data = StereoExpData(file_path=file_path)
@@ -249,12 +259,23 @@ def read_stereo_h5ad(file_path, use_raw=True, use_result=True, ):
     return data
 
 @ReadWriteUtils.check_file_exists
-def read_seurat_h5ad(file_path, use_raw=False):
+def read_seurat_h5ad(
+    file_path:str, 
+    use_raw: bool=False):
     """
-    read the h5ad file in Anndata format of seurat, and generate the object of StereoExpData.
+    Read the h5ad file in Anndata format of Seurat, and generate the StereoExpData object.
 
-    :param file_path: h5ad file path.
-    :return: StereoExpData obj.
+    Parameters
+    ------------------
+
+    file_path
+        - the path of input h5ad file.
+    use_raw
+        - whether to read data of `self.raw`.
+
+    Returns
+    ----------------------
+    An object of StereoExpData.
     """
     data = StereoExpData(file_path=file_path)
 
@@ -331,13 +352,23 @@ def read_seurat_h5ad(file_path, use_raw=False):
     return data
 
 @ReadWriteUtils.check_file_exists
-def read_ann_h5ad(file_path, spatial_key: Optional[str] = None):
+def read_ann_h5ad(
+    file_path: str, 
+    spatial_key: Optional[str] = None):
     """
-    read the h5ad file in Anndata format, and generate the object of StereoExpData.
+    Read the h5ad file in Anndata format of Scanpy, and generate the StereoExpData object.
 
-    :param file_path: h5ad file path.
-    :param spatial_key: use .obsm[`'spatial_key'`] as position.
-    :return: StereoExpData obj.
+    Parameters
+    ------------------
+    file_path
+        - the path to input h5ad file.
+    spatial_key
+        - use `.obsm['spatial_key']` as coordiante information.
+
+    Returns
+    ---------------
+    An object of StereoExpData.
+
     """
     data = StereoExpData(file_path=file_path)
 
@@ -380,14 +411,26 @@ def read_ann_h5ad(file_path, spatial_key: Optional[str] = None):
     return data
 
 
-def anndata_to_stereo(andata: AnnData, use_raw=False, spatial_key: Optional[str] = None):
+def anndata_to_stereo(
+        andata: AnnData, 
+        use_raw: bool=False, 
+        spatial_key: Optional[str] = None):
     """
-    transform the Anndata object into StereoExpData object.
+    Transform the Anndata object into StereoExpData format.
 
-    :param andata: input Anndata object,
-    :param use_raw: use andata.raw.X if True else andata.X. Default is False.
-    :param spatial_key: use .obsm[`'spatial_key'`] as position.
-    :return: StereoExpData obj.
+    Parameters
+    -----------------------
+    andata
+        - the input Anndata object.
+    use_raw
+        - use `anndata.raw.X` if True, otherwise `anndata.X`.
+    spatial_key
+        - use `.obsm['spatial_key']` as coordiante information.
+
+    Returns
+    ---------------------
+
+    An object of StereoExpData.
     """
     # data matrix,including X,raw,layer
     data = StereoExpData()
@@ -407,17 +450,32 @@ def anndata_to_stereo(andata: AnnData, use_raw=False, spatial_key: Optional[str]
     return data
 
 
-def stereo_to_anndata(data: StereoExpData, flavor='scanpy', sample_id="sample", reindex=False, output=None, split_batches=True):
+def stereo_to_anndata(
+        data: StereoExpData, 
+        flavor: str='scanpy', 
+        sample_id: str="sample", 
+        reindex: bool=False, 
+        output: str=None, 
+        split_batches: bool=True):
     """
-    transform the StereoExpData object into Anndata object.
+    Transform the StereoExpData object into Anndata format.  
 
-    :param data: StereoExpData object
-    :param flavor: 'scanpy' or 'seurat'.
-    if you want to convert the output_h5ad into h5seurat for seurat, please set 'seurat'.
-    :param sample_id: sample name, which will be set as 'orig.ident' in obs.
-    :param reindex: if True, the cell index will be reindex as "{sample_id}:{position_x}_{position_y}" format.
-    :param output: path of output_file(.h5ad).
-    :return: Anndata object
+    Parameters
+    -----------------------
+    data
+        - the input StereoExpData object.
+    flavor
+        - if you want to convert the output file into h5ad of Seurat, please set `'seurat'`.
+    sample_id
+        - the sample name which will be set as `orig.ident` in obs.
+    reindex
+        - if `True`, the cell index will be reindexed as `{sample_id}:{position_x}_{position_y}` format.
+    output
+        - the path to output h5ad file.
+
+    Returns
+    -----------------
+    An object of Anndata.
     """
     if data.merged and split_batches:
         from os import path
@@ -648,20 +706,35 @@ def stereo_to_anndata(data: StereoExpData, flavor='scanpy', sample_id="sample", 
 #     adata.obs_names = pd.read_csv(barcodesfile, header=None)[0].values
 #     return adata
 @ReadWriteUtils.check_file_exists
-def read_gef(file_path: str, bin_type="bins", bin_size=100, is_sparse=True, gene_list: list = None,
-             region: list = None):
+def read_gef(
+    file_path: str, 
+    bin_type: str="bins", 
+    bin_size: int=100, 
+    is_sparse: bool=True, 
+    gene_list: list = None,
+    region: list = None):
     """
-    read the gef(.h5) file, and generate the object of StereoExpData.
+    Read the GEF(.h5) file, and generate the StereoExpData object.
 
-    :param file_path: input file
-    :param bin_type: bin_type , bins or cell_bins
-    :param bin_size: the size of bin to merge. The parameter only takes effect
-                  when the value of data.bin_type is 'bins'.
-    :param is_sparse: the matrix is sparse matrix if is_sparse is True else np.ndarray
-    :param gene_list: restrict to this gene list
-    :param region: restrict to this region, [minX, maxX, minY, maxY]
+    Parameters
+    ---------------
+    file_path
+        - the path to input file.
+    bin_type
+        - the bin type includes `'bins'` or `'cell_bins'`.
+    bin_size
+        - the size of bin to merge, which only takes effect when the `bin_type` is set as `'bins'`.
+    is_sparse
+        - the matrix is sparse matrix, if `True`, otherwise `np.ndarray`.
+    gene_list
+        - select targeted data based on the gene list.
+    region
+        - restrict data to the region condition, like [minX, maxX, minY, maxY].
 
-    :return: an object of StereoExpData.
+    Returns
+    ------------------------
+
+    An object of StereoExpData.
     """
     logger.info(f'read_gef begin ...')
     if bin_type == 'cell_bins':

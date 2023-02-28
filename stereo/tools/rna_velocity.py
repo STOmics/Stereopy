@@ -83,7 +83,7 @@ class RnaVelocity(object):
 
             else:
                 logger.info("Exon information not found in gef file")
-                raise Exception("Exon information not found in gem file")
+                raise Exception("Exon information not found in gef file")
 
         return output_loom_file
 
