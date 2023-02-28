@@ -1079,15 +1079,17 @@ class AnnBasedResult(dict):
     CONNECTIVITY_NAMES = {'neighbors'}
     REDUCE_NAMES = {'umap', 'pca', 'tsne'}
     HVG_NAMES = {'highly_variable_genes', 'hvg'}
+    MARKER_GENES_NAMES = {'marker_genes', 'rank_genes_groups'}
 
-    RENAME_DICT = {'highly_variable_genes': 'hvg'}
+    RENAME_DICT = {'highly_variable_genes': 'hvg', 'marker_genes': 'rank_genes_groups'}
 
-    CLUSTER, CONNECTIVITY, REDUCE, HVG = 0, 1, 2, 3
+    CLUSTER, CONNECTIVITY, REDUCE, HVG, MARKER_GENES = 0, 1, 2, 3, 4
     TYPE_NAMES_DICT = {
         CLUSTER: CLUSTER_NAMES,
         CONNECTIVITY: CONNECTIVITY_NAMES,
         REDUCE: REDUCE_NAMES,
-        HVG: HVG_NAMES
+        HVG: HVG_NAMES,
+        MARKER_GENES: MARKER_GENES_NAMES
     }
 
     def __init__(self, based_ann_data: AnnData):
@@ -1104,6 +1106,11 @@ class AnnBasedResult(dict):
         elif item in AnnBasedResult.REDUCE_NAMES:
             return f'X_{item}' in self.__based_ann_data.obsm
         elif item in AnnBasedResult.HVG_NAMES:
+            if item in self.__based_ann_data.uns:
+                return True
+            elif AnnBasedResult.RENAME_DICT.get(item, None) in self.__based_ann_data.uns:
+                return True
+        elif item in AnnBasedResult.MARKER_GENES_NAMES:
             if item in self.__based_ann_data.uns:
                 return True
             elif AnnBasedResult.RENAME_DICT.get(item, None) in self.__based_ann_data.uns:
@@ -1141,6 +1148,8 @@ class AnnBasedResult(dict):
         elif name in AnnBasedResult.HVG_NAMES:
             # TODO ignore `mean_bin`, really need?
             return self.__based_ann_data.var.loc[:, ["means", "dispersions", "dispersions_norm", "highly_variable"]]
+        elif name in AnnBasedResult.MARKER_GENES_NAMES:
+            return self.__based_ann_data.uns[name]
         elif name.startswith('gene_exp_'):
             return self.__based_ann_data.uns[name]
         
@@ -1172,6 +1181,8 @@ class AnnBasedResult(dict):
             self._set_reduce_res(key, value)
         elif type == AnnBasedResult.HVG_NAMES:
             self._set_hvg_res(key, value)
+        elif type == AnnBasedResult.MARKER_GENES:
+            self._set_marker_genes_res(key, value)
         else:
             return False
         return True
@@ -1242,6 +1253,9 @@ class AnnBasedResult(dict):
         self.__based_ann_data.var.loc[:, ["means", "dispersions", "dispersions_norm", "highly_variable"]] = \
             value.loc[:, ["means", "dispersions", "dispersions_norm", "highly_variable"]].values
 
+    def _set_marker_genes_res(self, key, value):
+        self.__based_ann_data.uns[key] = value
+
 
 class AnnBasedStPipeline(StPipeline):
 
@@ -1257,3 +1271,12 @@ class AnnBasedStPipeline(StPipeline):
         df = self.result[hvg_res_key]
         data._ann_data._inplace_subset_var(df['highly_variable'].values)
         return data
+
+    @property
+    def raw(self):
+        return self._raw
+
+    @raw.setter
+    def raw(self, value):
+        from .stereo_exp_data import AnnBasedStereoExpData
+        self._raw = AnnBasedStereoExpData("", based_ann_data=self.__based_ann_data)
