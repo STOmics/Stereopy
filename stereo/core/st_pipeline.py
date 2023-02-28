@@ -567,7 +567,7 @@ class StPipeline(object):
         from ..io.reader import stereo_to_anndata
         import squidpy as sq
         neighbor, connectivities, dists = copy.deepcopy(self.get_neighbors_res(neighbors_res_key))
-        adata = stereo_to_anndata(self.data)
+        adata = stereo_to_anndata(self.data, split_batches=False)
         sq.gr.spatial_neighbors(adata, n_neighs=n_neighbors)
         connectivities.data[connectivities.data > 0] = 1
         adj = connectivities + adata.obsp['spatial_connectivities']
@@ -709,7 +709,7 @@ class StPipeline(object):
                           method: str = 't_test',
                           case_groups: Union[str, np.ndarray, list] = 'all',
                           control_groups: Union[str, np.ndarray, list] = 'rest',
-                          corr_method: str = 'benjamini-hochberg',
+                          corr_method: str = 'bonferroni',
                           use_raw: bool = True,
                           use_highly_genes: bool = True,
                           hvg_res_key: Optional[str] = 'highly_variable_genes',
@@ -745,8 +745,6 @@ class StPipeline(object):
         tool = FindMarker(data=data, groups=self.result[cluster_res_key], method=method, case_groups=case_groups,
                           control_groups=control_groups, corr_method=corr_method, raw_data=self.raw)
         self.result[res_key] = tool.result
-        self.result[res_key]['cluster_res_key'] = cluster_res_key
-        self.result[res_key]['method'] = method
         if output is not None:
             import natsort
             result = self.result[res_key]
@@ -1028,8 +1026,6 @@ class StPipeline(object):
 
         self.result[res_key] = {}
         self.result[res_key]['marker_genes_res_key'] = marker_genes_res_key
-        self.result[res_key]['cluster_res_key'] = self.result[marker_genes_res_key]['cluster_res_key']
-        self.result[res_key]['method'] = self.result[marker_genes_res_key]['method']
         pct= self.result[marker_genes_res_key]['pct']
         pct_rest = self.result[marker_genes_res_key]['pct_rest']
         for key, res in self.result[marker_genes_res_key].items():
@@ -1272,10 +1268,11 @@ class AnnBasedStPipeline(StPipeline):
         data._ann_data._inplace_subset_var(df['highly_variable'].values)
         return data
 
-    def raw_checkpoint(self):
+    @property
+    def raw(self):
+        return self._raw
+
+    @raw.setter
+    def raw(self, value):
         from .stereo_exp_data import AnnBasedStereoExpData
-        if self.__based_ann_data.raw:
-            data = AnnBasedStereoExpData("", based_ann_data=self.__based_ann_data.raw.to_adata())
-        else:
-            data = AnnBasedStereoExpData("", based_ann_data=copy.deepcopy(self.__based_ann_data))
-        self.raw = data
+        self._raw = AnnBasedStereoExpData("", based_ann_data=self.__based_ann_data)
