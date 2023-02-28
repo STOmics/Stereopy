@@ -59,3 +59,4 @@ This section shows how to implement format conversion for integration with Scanp
 
 .. nbgallery::
     FormatConversion
+    interactive_anndata
