@@ -22,17 +22,35 @@ import pandas as pd
 from copy import deepcopy
 
 
-def write_h5ad(data: StereoExpData, use_raw=True, use_result=True, key_record=None, output=None, split_batches=True):
+def write_h5ad(
+        data: StereoExpData, 
+        use_raw: bool=True, 
+        use_result: bool=True, 
+        key_record: dict=None, 
+        output: str=None, 
+        split_batches: bool=True):
     """
-    write the StereoExpData into h5ad file.
-    :param data: the StereoExpData object.
-    :param use_raw: bool, whether to save raw data
-    :param use_result: bool, whether to save result and res_key
-    :param key_record: Dict. if None, it will save the result and res_key of data.tl.key_record.
-    :param: output: the output path. StereoExpData's output will be reset if the output is not None.
-    otherwise, it will save the result and res_key of this dict.
+    Write the StereoExpData into a h5ad file.
 
-    :return:
+    Parameters
+    ---------------------
+    data
+        - the input StereoExpData object.
+    use_raw
+        - whether to save raw data.
+    use_result
+        - whether to save `result` and `res_key`.
+    key_record
+        - a dict includes selective `res_key` with the precondition 
+        that `use_result` is `True`, if None, it will save the `result` 
+        and `res_key` of `data.tl.key_record`,otherwise it will save 
+        the result and res_key of the dict.
+    output
+        - the path to output file.
+
+    Returns
+    -----------------------
+    None
     """
     if data.merged and split_batches:
         from os import path
@@ -156,13 +174,22 @@ def write_h5ad(data: StereoExpData, use_raw=True, use_result=True, key_record=No
                         pass
 
 
-def write_mid_gef(data, output):
+def write_mid_gef(
+        data: StereoExpData, 
+        output: str):
     """
-    write the StereoExpData into a gef file.
+    Write the StereoExpData object into a GEF(.h5) file. 
 
-    :param data: StereoExpData object
-    :param output: gef file.
-    :return:
+    Parameters
+    ---------------------
+    data
+        - the input StereoExpData object.
+    output
+        - the path to output file.
+
+    Returns
+    ---------------
+    None
     """
     logger.info("The output standard gef file only contains one expression matrix with mid count."
                 "Please make sure the expression matrix of StereoExpData object is mid count without normaliztion.")
@@ -228,14 +255,26 @@ def save_pkl(obj, output):
     f.close()
 
 
-def update_gef(data, gef_file, cluster_res_key):
+def update_gef(
+        data: StereoExpData, 
+        gef_file: str, 
+        cluster_res_key: str):
     """
-    add cluster result into gef file and update the gef file directly.
+    Add cluster result into gef(.h5) file and update the gef file directly.
 
-    :param data: SetreoExpData.
-    :param gef_file: add cluster result into gef file.
-    :param cluster_res_key: the key of cluster to get the result for group info.
-    :return:
+    Parameters
+    -----------------
+    data
+        - the input StereoExpData object.
+    gef_file
+        - the path of the GEF file to add cluster result to.
+    cluster_res_key
+        - the key to get cluster result from `data.tl.result`.
+
+    
+    Returns
+    --------------
+    None
     """
     cluster = {}
     if cluster_res_key not in data.tl.result:
