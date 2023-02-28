@@ -1271,7 +1271,7 @@ class AnnBasedStPipeline(StPipeline):
     def raw_checkpoint(self):
         from .stereo_exp_data import AnnBasedStereoExpData
         if self.__based_ann_data.raw:
-            data = AnnBasedStereoExpData("", based_ann_data=self.__based_ann_data.raw)
+            data = AnnBasedStereoExpData("", based_ann_data=self.__based_ann_data.raw.to_adata())
         else:
             data = AnnBasedStereoExpData("", based_ann_data=copy.deepcopy(self.__based_ann_data))
         self.raw = data
