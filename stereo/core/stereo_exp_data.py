@@ -434,9 +434,17 @@ class StereoExpData(Data):
 class AnnBasedStereoExpData(StereoExpData):
 
     def __init__(self, h5ad_file_path: str, *args, **kwargs):
+        if 'based_ann_data' in kwargs:
+            based_ann_data = kwargs.pop('based_ann_data')
+        else:
+            based_ann_data = None
         super(AnnBasedStereoExpData, self).__init__(*args, **kwargs)
         import anndata
-        self._ann_data = anndata.read_h5ad(h5ad_file_path)
+        if based_ann_data:
+            assert type(based_ann_data) is anndata.AnnData
+            self._ann_data = based_ann_data
+        else:
+            self._ann_data = anndata.read_h5ad(h5ad_file_path)
         self._genes = AnnBasedGene(self._ann_data, self._genes._gene_name)
         self._cells = AnnBasedCell(self._ann_data, self._cells._cell_name)
         from .st_pipeline import AnnBasedStPipeline
@@ -489,5 +497,3 @@ class AnnBasedStereoExpData(StereoExpData):
             self._ann_data.obs.loc[:, ['x', 'y']] = \
                 np.array(list(self._ann_data.obs.index.str.split('-', expand=True)), dtype=np.uint32)
         return self._ann_data.obs.loc[:, ['x', 'y']].values
-    
-
