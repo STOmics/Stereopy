@@ -1125,7 +1125,7 @@ class AnnBasedResult(dict):
 
     def __getitem__(self, name):
         if name in AnnBasedResult.CLUSTER_NAMES:
-            return pd.DataFrame(self.__based_ann_data.obs[name].values, columns=['group'])
+            return pd.DataFrame(self.__based_ann_data.obs[name].values, columns=['group'], index=self.__based_ann_data.obs_names)
         elif name in AnnBasedResult.CONNECTIVITY_NAMES:
             return {
                 'neighbor': None,  # TODO really needed?
@@ -1148,7 +1148,7 @@ class AnnBasedResult(dict):
             return pd.DataFrame(obsm_obj)
         obs_obj = self.__based_ann_data.obs.get(name, None)
         if obs_obj is not None:
-            return pd.DataFrame(self.__based_ann_data.obs[name].values, columns=['group'])
+            return pd.DataFrame(self.__based_ann_data.obs[name].values, columns=['group'], index=self.__based_ann_data.obs_names)
         uns_obj = self.__based_ann_data.uns.get(name, None)
         if uns_obj and 'params' in uns_obj and 'connectivities_key' in uns_obj['params'] and 'distances_key' in uns_obj[
             'params']:
@@ -1246,7 +1246,7 @@ class AnnBasedStPipeline(StPipeline):
         self.__based_ann_data = based_ann_data
         self.result = AnnBasedResult(based_ann_data)
 
-    def subset_by_hvg(self, hvg_res_key, inplace=True):
+    def subset_by_hvg(self, hvg_res_key, use_raw=False, inplace=True):
         data = self.data if inplace else copy.deepcopy(self.data)
         if hvg_res_key not in self.result:
             raise Exception(f'{hvg_res_key} is not in the result, please check and run the normalization func.')
