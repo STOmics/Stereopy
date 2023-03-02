@@ -62,14 +62,25 @@ def split_image(im, img_size, h5_path, bin_size):
     print(f"bin_{bin_size} split: {t1 - t0:.2f} seconds")
 
 
-def merge_pyramid(h5_path, bin_size, out_path):
+def merge_pyramid(
+        h5_path: str, 
+        bin_size: int, 
+        out_path: str):
     """
     Merge image patches back to large image.
 
-    :param h5_path: the path of h5 file.
-    :param bin_size: bin size.
-    :param out_path: output path.
-    :return:
+    Parameters
+    -----------------
+    h5_path
+        - the path to h5 file.
+    bin_size
+        - bin size.
+    out_path
+        - the path to output file.
+
+    Returns
+    -----------------
+    Large image.
     """
     t0 = time.time()
     h5 = h5py.File(h5_path, 'r')
@@ -98,17 +109,35 @@ def merge_pyramid(h5_path, bin_size, out_path):
     return im
 
 
-def create_pyramid(img_path, h5_path, img_size, x_start, y_start, mag):
+def create_pyramid(
+        img_path: str, 
+        h5_path: str, 
+        img_size: int, 
+        x_start: int, 
+        y_start: int, 
+        mag):
     """
-     Create image pyramid and save to h5.
+    Create image pyramid and save to h5.
 
-    :param img_path: the image path.
-    :param h5_path: the h5 file path.
-    :param img_size: the size of image.
-    :param x_start: x start.
-    :param y_start: y start.
-    :param mag: mag
-    :return:
+    Parameters
+    -------------------------------------
+
+    img_path
+        - the path to image file.
+    h5_path
+        - the path to h5 file.
+    img_size
+        - the size of image.
+    x_start
+        - start value of x.
+    y_start
+        - start value of y.
+    mag
+        - mag
+    
+    Returns
+    -----------
+    None
     """
     t0 = time.time()
     img = tifi.imread(img_path)

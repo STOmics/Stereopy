@@ -142,7 +142,8 @@ Image parse module.
     image.pyramid.create_pyramid
     image.segmentation.segment.cell_seg
     image.segmentation_deepcell.segment.cell_seg_deepcell
-    image.tissue_seg
+    image.tissue_cut.SingleStrandDNATissueCut
+    image.tissue_cut.RNATissueCut
 
 
 Tools: `tools`

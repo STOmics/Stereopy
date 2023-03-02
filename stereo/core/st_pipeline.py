@@ -94,7 +94,8 @@ class StPipeline(object):
 
     def reset_raw_data(self):
         """
-        reset the self.data to the raw data.
+        Reset `self.data` to the raw data saved in `self.raw` when you want data 
+        get raw expression matrix.
 
         :return:
         """
@@ -102,10 +103,16 @@ class StPipeline(object):
 
     def raw_checkpoint(self):
         """
-        Save the current results to self.raw.
-        :param key:
-        :param res_key:
-        :return:
+        Save current data to `self.raw`. Running this function will be a convinent choice, 
+        when your data have gone through several steps of basic preprocessing.
+
+        Parameters
+        -----------------------------
+        None
+
+        Returns
+        -----------------------------
+        None
         """
         self.raw = self.data
 
@@ -126,28 +133,57 @@ class StPipeline(object):
     @logit
     def cal_qc(self):
         """
-        calculate three qc index including the number of genes expressed in the count matrix, the total counts per cell
-        and the percentage of counts in mitochondrial genes.
+        Calculate the key indicators of quality control.
 
-        :return:
+        Observation level metrics include:
+            total_counts: - total number of counts for a cell
+            n_genes_by_count: - number of genes expressed of counts for a cell
+            pct_counts_mt: - percentage of total counts in a cell which are mitochondrial
+
+        Parameters
+        ---------------------
+
+        Returns
+        ---------------------
+        A StereoExpData object storing quality control indicators, including two levels of obs(cell) and var(gene).
+
         """
         from ..preprocess.qc import cal_qc
         cal_qc(self.data)
 
     @logit
-    def filter_cells(self, min_gene=None, max_gene=None, min_n_genes_by_counts=None, max_n_genes_by_counts=None,
-                     pct_counts_mt=None, cell_list=None, inplace=True):
+    def filter_cells(self, 
+                     min_gene: int=None, 
+                     max_gene: int=None, 
+                     min_n_genes_by_counts: int=None, 
+                     max_n_genes_by_counts: int=None,
+                     pct_counts_mt: float=None, 
+                     cell_list: list=None, 
+                     inplace: bool=True):
         """
-        filter cells based on numbers of genes expressed.
+        Filter cells based on counts or the numbers of genes expressed.
 
-        :param min_gene: Minimum number of genes expressed for a cell pass filtering.
-        :param max_gene: Maximum number of genes expressed for a cell pass filtering.
-        :param min_n_genes_by_counts: Minimum number of  n_genes_by_counts for a cell pass filtering.
-        :param max_n_genes_by_counts: Maximum number of  n_genes_by_counts for a cell pass filtering.
-        :param pct_counts_mt: Maximum number of  pct_counts_mt for a cell pass filtering.
-        :param cell_list: the list of cells which will be filtered.
-        :param inplace: whether inplace the original data or return a new data.
-        :return:
+        Parameters
+        ----------------------
+        min_gene
+            - minimum number of genes expressed required for a cell to pass fitlering.
+        max_gene
+            - maximum number of genes expressed required for a cell to pass fitlering.
+        min_n_genes_by_counts
+            - minimum number of counts required for a cell to pass filtering.
+        max_n_genes_by_counts
+            - maximum number of counts required for a cell to pass filtering.
+        pct_counts_mt
+            - maximum number of pct_counts_mt required for a cell to pass filtering.
+        cell_list
+            - the list of cells to be filtered.
+        inplace
+            - whether to inplace the previous data or return a new data.
+
+        Returns
+        ------------------------
+        An object of StereoExpData.
+        Depending on `inplace`, if `True`, the data will be replaced by those filtered.
         """
         from ..preprocess.filter import filter_cells
         data = filter_cells(self.data, min_gene, max_gene, min_n_genes_by_counts, max_n_genes_by_counts, pct_counts_mt,
@@ -155,44 +191,84 @@ class StPipeline(object):
         return data
 
     @logit
-    def filter_genes(self, min_cell=None, max_cell=None, gene_list=None, inplace=True):
+    def filter_genes(self, 
+                     min_cell: int=None, 
+                     max_cell: int=None, 
+                     gene_list: list=None, 
+                     inplace: bool=True):
         """
-        filter genes based on the numbers of cells.
+        Filter genes based on the numbers of cells or counts.
 
-        :param min_cell: Minimum number of cells for a gene pass filtering.
-        :param max_cell: Maximun number of cells for a gene pass filtering.
-        :param gene_list: the list of genes which will be filtered.
-        :param inplace: whether inplace the original data or return a new data.
-        :return:
+        Parameters
+        ---------------------
+        min_cell
+            - minimum number of cells expressed required for a gene to pass filering.
+        max_cell
+            - maximum number of cells expressed required for a gene to pass filering.
+        gene_list
+            - the list of genes to be filtered.
+        inplace
+            - whether to inplace the previous data or return a new data.
+
+        Returns
+        --------------------
+        An object of StereoExpData.
+        Depending on `inplace`, if `True`, the data will be replaced by those filtered.
         """
         from ..preprocess.filter import filter_genes
         data = filter_genes(self.data, min_cell, max_cell, gene_list, inplace)
         return data
 
     @logit
-    def filter_coordinates(self, min_x=None, max_x=None, min_y=None, max_y=None, inplace=True):
+    def filter_coordinates(self, 
+                           min_x: int=None, 
+                           max_x: int=None, 
+                           min_y: int=None, 
+                           max_y: int=None, 
+                           inplace: bool=True):
         """
-        filter cells based on the coordinates of cells.
+        Filter cells based on coordinate information.
 
-        :param min_x: Minimum of x for a cell pass filtering.
-        :param max_x: Maximum of x for a cell pass filtering.
-        :param min_y: Minimum of y for a cell pass filtering.
-        :param max_y: Maximum of y for a cell pass filtering.
-        :param inplace: whether inplace the original data or return a new data.
-        :return:
+        Parameters
+        -----------------
+        min_x
+            - minimum of coordinate x for a cell to pass filtering.
+        max_x
+            - maximum of coordinate x for a cell to pass filtering.
+        min_y
+            - minimum of coordinate y for a cell to pass filtering.
+        max_y
+            - maximum of coordinate y for a cell to pass filtering.
+        inplace
+            - whether to inplace the previous data or return a new data.
+
+        Returns
+        --------------------
+        An object of StereoExpData.
+        Depending on `inplace`, if `True`, the data will be replaced by those filtered.
         """
         from ..preprocess.filter import filter_coordinates
         data = filter_coordinates(self.data, min_x, max_x, min_y, max_y, inplace)
         return data
 
     @logit
-    def log1p(self, inplace=True, res_key='log1p'):
+    def log1p(self, 
+              inplace: bool=True, 
+              res_key: str='log1p'):
         """
-        log1p for express matrix.
+        Transform the express matrix logarithmically.
 
-        :param inplace: whether inplace the original data or get a new express matrix after log1p.
-        :param res_key: the key for getting the result from the self.result.
-        :return:
+        Parameters
+        -----------------
+        inplace
+            - whether to inplcae previous data or get a new express matrix after normalization of log1p.
+        res_key
+            - the key to get targeted result from `self.result`.
+
+        Returns
+        ----------------
+        An object of StereoExpData.
+        Depending on `inplace`, if `True`, the data will be replaced by those normalized.
         """
         if inplace:
             self.data.exp_matrix = np.log1p(self.data.exp_matrix)
@@ -200,14 +276,28 @@ class StPipeline(object):
             self.result[res_key] = np.log1p(self.data.exp_matrix)
 
     @logit
-    def normalize_total(self, target_sum=10000, inplace=True, res_key='normalize_total'):
+    def normalize_total(self, 
+                        target_sum: int=10000, 
+                        inplace: bool=True, 
+                        res_key: str='normalize_total'):
         """
-        total count normalize the data to `target_sum` reads per cell, so that counts become comparable among cells.
+        Normalize total counts over all genes per cell such that each cell has the same
+        total count after normalization.
 
-        :param target_sum: the number of reads per cell after normalization.
-        :param inplace: whether inplace the original data or get a new express matrix after normalize_total.
-        :param res_key: the key for getting the result from the self.result.
-        :return:
+        Parameters
+        -----------------------
+        target_sum
+            - the number of total counts per cell after normalization, if `None`, each cell has a 
+            total count equal to the median of total counts for all cells before normalization.
+        inplace
+            - whether to inplcae previous data or get a new express matrix after normalize_total.
+        res_key
+            - the key to get targeted result from `self.result`.
+
+        Returns
+        ----------------
+        An object of StereoExpData.
+        Depending on `inplace`, if `True`, the data will be replaced by those normalized
         """
         from ..algorithm.normalization import normalize_total
         if inplace:
@@ -216,15 +306,29 @@ class StPipeline(object):
             self.result[res_key] = normalize_total(self.data.exp_matrix, target_sum=target_sum)
 
     @logit
-    def scale(self, zero_center=True, max_value=None, inplace=True, res_key='scale'):
+    def scale(self, 
+              zero_center: bool=True, 
+              max_value: float=None, 
+              inplace: bool=True, 
+              res_key: str='scale'):
         """
-        scale to unit variance and zero mean for express matrix.
+        Scale express matrix to unit variance and zero mean.
 
-        :param zero_center: ignore zero variables if `False`
-        :param max_value: truncate to this value after scaling. If `None`, do not truncate.
-        :param inplace: whether inplace the original data or get a new express matrix after scale.
-        :param res_key: the key for getting the result from the self.result.
-        :return:
+        Parameters
+        --------------------
+        zero_center
+            - if `False`, ignore zero variables, which allows to deal with sparse input efficently.
+        max_value
+            - truncate to this value after scaling, if `None`, do not truncate.
+        inplace
+            - whether to inplcae the previous data or get a new express matrix after scaling.
+        res_key
+            - the key to get targeted result from `self.result`.
+
+        Returns
+        -----------------
+        An object of StereoExpData.
+        Depending on `inplace`, if `True`, the data will be replaced by those scaled.
         """
         from ..algorithm.scale import scale
         if inplace:
@@ -271,32 +375,47 @@ class StPipeline(object):
     @logit
     def sctransform(
             self,
-            n_cells=5000,
-            n_genes=2000,
-            filter_hvgs=True,
-            var_features_n=3000,
-            inplace=True,
-            res_key='sctransform',
-            exp_matrix_key="scale.data",
-            seed_use=1448145,
+            n_cells: int=5000,
+            n_genes: int=2000,
+            filter_hvgs: bool=True,
+            var_features_n: int=3000,
+            inplace: bool=True,
+            res_key: str='sctransform',
+            exp_matrix_key: str="scale.data",
+            seed_use: int=1448145,
             **kwargs
     ):
         """
-        scTransform reference Seruat.
+        Normalization of scTransform, refering to Seurat[Hafemeister19] (**link**).
 
-        :param method: offset, theta_ml, theta_lbfgs, alpha_lbfgs.
-        :param n_cells: Number of cells to use for estimating parameters in Step1: default is 5000.
-        :param n_genes: Number of genes to use for estimating parameters in Step1; default is None, means all genes.
-        :param filter_hvgs: bool.
-        :param res_clip_range: string or list
-                    options: 1)"seurat": Clips residuals to -sqrt(ncells/30), sqrt(ncells/30)
-                             2)"default": Clips residuals to -sqrt(ncells), sqrt(ncells)
-                    only used when filter_hvgs is true.
-        :param var_features_n: Number of variable features to select (for calculating a subset of pearson residuals).
-        :param inplace: whether inplace the original data or get a new express matrix after sctransform.
-        :param res_key: the key for getting the result from the self.result.
-        :param seed_use: random seed
-        :return:
+        Parameters
+        ----------------------
+        n_cells
+            - number of cells to use for estimating parameters.
+        n_genes
+            - number of genes to use for estimating parameters. means all genes.
+        filter_hvgs
+            - whether to filter highly variable genes.
+        var_features_n
+            - the number of variable features to select, for calculating a subset of pearson residuals.
+        inplace
+            - whether to replace the previous expression data.
+        res_key
+            - the key to get targeted result from `self.result`.
+        exp_matrix_key
+            - which expression matrix to use for analysis.
+        seed_use
+            - random seed.
+        res_clip_range[str,list]
+            - 1) `'seurat'`: clips residuals to -sqrt(ncells/30), sqrt(ncells/30), 2) `'default'`: 
+            clips residuals to -sqrt(ncells), sqrt(ncells), only used when `filter_hvgs` is `True`.
+        method 
+            – offset, theta_ml, theta_lbfgs, alpha_lbfgs.
+
+        Returns
+        -----------
+        An object of StereoExpData.
+        Depending on `inplace`, if `True`, the data will be replaced by those normalized.
         """
         from ..preprocess.sc_transform import sc_transform
         if inplace:
@@ -313,7 +432,7 @@ class StPipeline(object):
     @logit
     def highly_variable_genes(
             self,
-            groups=None,
+            groups: Optional[str] = None,
             method: Optional[str] = 'seurat',
             n_top_genes: Optional[int] = 2000,
             min_disp: Optional[float] = 0.5,
@@ -325,34 +444,49 @@ class StPipeline(object):
             res_key='highly_variable_genes'
     ):
         """
-        Annotate highly variable genes. reference scanpy.
+        Annotate highly variable genes, refering to Scanpy. 
+        Which method to implement depends on `flavor`,including Seurat[Satija15] (**link**), 
+        Cell Ranger[Zheng17] (**link**) and Seurat v3[Stuart19] (**link**).
 
-        :param groups:  If specified, highly-variable genes are selected within each batch separately and merged.
-                        This simple process avoids the selection of batch-specific genes and acts as a
-                        lightweight batch correction method. For all flavors, genes are first sorted
-                        by how many batches they are a HVG. For dispersion-based flavors ties are broken
-                        by normalized dispersion. If `flavor = 'seurat_v3'`, ties are broken by the median
-                        (across batches) rank based on within-batch normalized variance.
-        :param method:  Choose the flavor for identifying highly variable genes. For the dispersion
-                        based methods in their default workflows, Seurat passes the cutoffs whereas
-                        Cell Ranger passes `n_top_genes`.
-        :param n_top_genes: Number of highly-variable genes to keep. Mandatory if `flavor='seurat_v3'`.
-        :param min_disp: If `n_top_genes` unequals `None`, this and all other cutoffs for the means and the
-                         normalized dispersions are ignored. Ignored if `flavor='seurat_v3'`.
-        :param max_disp: If `n_top_genes` unequals `None`, this and all other cutoffs for the means and the
-                         normalized dispersions are ignored. Ignored if `flavor='seurat_v3'`.
-        :param min_mean: If `n_top_genes` unequals `None`, this and all other cutoffs for the means and the
-                         normalized dispersions are ignored. Ignored if `flavor='seurat_v3'`.
-        :param max_mean: If `n_top_genes` unequals `None`, this and all other cutoffs for the means and the
-                         normalized dispersions are ignored. Ignored if `flavor='seurat_v3'`.
-        :param span: The fraction of the data (cells) used when estimating the variance in the loess
-                         model fit if `flavor='seurat_v3'`.
-        :param n_bins: Number of bins for binning the mean gene expression. Normalization is
-                       done with respect to each bin. If just a single gene falls into a bin,
-                       the normalized dispersion is artificially set to 1. You'll be informed
-                       about this if you set `settings.verbosity = 4`.
-        :param res_key: the key for getting the result from the self.result.
-        :return:
+        Parameters
+        ----------------------
+        groups
+            - if specified, highly variable genes are selected within each batch separately and merged, 
+            which simply avoids the selection of batch-specific genes and acts as a lightweight batch 
+            correction method. For all flavors, genes are first sorted by how many batches they are a HVG.
+            For dispersion-based flavors ties are broken by normalized dispersion. If `flavor` 
+            is `'seurat_v3'`, ties are broken by the median (across batches) rank based on within-
+            batch normalized variance.
+        method: `Literal`[`'seurat'`,`'cell_ranger'`,`'seurat_v3'`]
+            - choose the flavor to identify highly variable genes. For the dispersion-based methods in 
+            their default workflows, Seurat passes the cutoffs whereas Cell Ranger passes `n_top_genes`.
+        n_top_genes
+            - number of highly variable genes to keep. Mandatory if `flavor='seurat_v3'`.
+        min_disp
+            - if `n_top_genes` is not None, this and all other cutoffs for the means and the normalized 
+            dispersions are ignored. Ignored if `flavor='seurat_v3'`.
+        max_disp
+            - if `n_top_genes` is not None, this and all other cutoffs for the means and the normalized 
+            dispersions are ignored. Ignored if `flavor='seurat_v3'`.
+        min_mean
+            - if `n_top_genes` is not None, this and all other cutoffs for the means and the normalized 
+            dispersions are ignored. Ignored if `flavor='seurat_v3'`.
+        max_mean
+            - if `n_top_genes` is not None, this and all other cutoffs for the means and the normalized 
+            dispersions are ignored. Ignored if `flavor='seurat_v3'`.
+        span
+            - the fraction of data (cells) used when estimating the variance in the Loess model fit 
+            if `flavor='seurat_v3'`.
+        n_bins
+            - number of bins for binning the mean gene expression. Normalization is done with respect to 
+            each bin. If just a single gene falls into a bin, the normalized dispersion is artificially set to 1.
+        res_key
+            - the key for getting the result from the self.result.
+
+        Returns
+        -----------------
+        An object of StereoExpData with the result of highly variable genes.
+        
         """
         from ..tools.highly_variable_genes import HighlyVariableGenes
         hvg = HighlyVariableGenes(self.data, groups=groups, method=method, n_top_genes=n_top_genes, min_disp=min_disp,
