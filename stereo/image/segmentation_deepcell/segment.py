@@ -5,17 +5,34 @@ import os
 from .seg_utils import cell_seg_pipeline as pipeline
 
 
-def cell_seg_deepcell(model_path, img_path, out_path, depp_cro_size=20000, overlap=100, gpu=-1):
+def cell_seg_deepcell(
+        model_path: str, 
+        img_path: str, 
+        out_path: str, 
+        depp_cro_size: int=20000, 
+        overlap: int=100, 
+        gpu: str='-1'):
     """
-    cell segmentation.
+    Implement cell segmentation by deep cell model.
 
-    :param model_path: the dir path of model.
-    :param img_path: image path
-    :param out_path: the ouput path of mask result
-    :param depp_cro_size: deep crop size
-    :param overlap: the size of overlap
-    :param gpu: the id of gpu, if -1,use the cpu to predict.
-    :return:
+    Parameters
+    ------------------------
+    model_path
+        - the path to deep cell model.
+    img_path
+        - the path to image file.
+    out_path
+        - the path to output mask result.
+    depp_cro_size
+        - deep crop size.
+    overlap
+        - overlap size.
+    gpu
+        - set gpu id, if `'-1'`, use cpu for prediction.
+
+    Returns
+    ------------------
+    None
     """
     try:
         import tensorflow as tf

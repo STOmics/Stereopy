@@ -711,29 +711,28 @@ def read_gef(
     bin_type: str="bins", 
     bin_size: int=100, 
     is_sparse: bool=True, 
-    gene_list: list = None,
-    region: list = None):
+    gene_list: Optional[list] = None,
+    region: Optional[list] = None):
     """
     Read the GEF(.h5) file, and generate the StereoExpData object.
 
     Parameters
     ---------------
     file_path
-        - the path to input file.
+        the path to input file.
     bin_type
-        - the bin type includes `'bins'` or `'cell_bins'`.
+        the bin type includes `'bins'` or `'cell_bins'`.
     bin_size
-        - the size of bin to merge, which only takes effect when the `bin_type` is set as `'bins'`.
+        the size of bin to merge, which only takes effect when the `bin_type` is set as `'bins'`.
     is_sparse
-        - the matrix is sparse matrix, if `True`, otherwise `np.ndarray`.
+        the matrix is sparse matrix, if `True`, otherwise `np.ndarray`.
     gene_list
-        - select targeted data based on the gene list.
+        select targeted data based on the gene list.
     region
-        - restrict data to the region condition, like [minX, maxX, minY, maxY].
+        restrict data to the region condition, like [minX, maxX, minY, maxY].
 
     Returns
     ------------------------
-
     An object of StereoExpData.
     """
     logger.info(f'read_gef begin ...')
