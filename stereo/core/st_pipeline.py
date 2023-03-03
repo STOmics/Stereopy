@@ -486,7 +486,7 @@ class StPipeline(object):
         self.reset_key_record(key, res_key)
 
     @logit
-    def neighbors(self, pca_res_key, method='umap', metric='euclidean', n_pcs=-1, n_neighbors=10, knn=True, n_jobs=10,
+    def neighbors(self, pca_res_key, method='umap', metric='euclidean', n_pcs=None, n_neighbors=10, knn=True, n_jobs=10,
                   res_key='neighbors'):
         """
         run the neighbors.
