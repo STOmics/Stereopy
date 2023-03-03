@@ -436,12 +436,18 @@ class MarkerGenesScatterPlot:
             codes.append(Path.LINETO)
             codes.append(Path.LINETO)
             codes.append(Path.LINETO)
-            text_position = left + (right - left) / 3
+            text = marker_genes_group_keys_to_show[i].split('.')[0]
+            if len(text) > 4:
+                text_position = left + (right - left) / 3
+                rotation = 40
+            else:
+                text_position = left + (right - left) / 2
+                rotation = 0
             ax.text(
                 x=text_position,
                 y=1,
-                s=marker_genes_group_keys_to_show[i],
-                rotation=40
+                s=text,
+                rotation=rotation
             )
         path = Path(verts, codes)
         patch = PathPatch(path, facecolor='none', lw=1.5)
