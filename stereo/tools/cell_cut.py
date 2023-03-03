@@ -42,7 +42,10 @@ class CellCut(object):
                 model_type='deep-learning',
                 depp_cro_size=20000,
                 overlap=100,
-                gen_mask_on_gpu='-1'):
+                gen_mask_on_gpu='-1',
+                tissue_seg_model_path=None,
+                tissue_seg_method=None
+        ):
         """generate cgef by bgef and mask or bgef and ssdna image
 
         :param bgef_path: the path of bgef, if None, need to specify the path of gem by parameter gem_path to generate it, defaults to None
@@ -55,6 +58,8 @@ class CellCut(object):
         :param depp_cro_size: deep crop size, parameter for generating mask, defaults to 20000
         :param overlap: the size of overlap, parameter for generating mask, defaults to 100
         :param gen_mask_on_gpu: specify the gpu id if calculated on gpu when generate mask, if -1, calculate on cpu, defaults to '-1'
+        :param tissue_seg_model_path: the path of deep-learning model of tissue segmentation, if set it to None, it would use OpenCV to process.
+        :param tissue_seg_method: the method of tissue segmentation, 0 is deep-learning and 1 is OpenCV.
         :return: the path of the generated cgef
         """
         if bgef_path is None and gem_path is None:
@@ -70,7 +75,7 @@ class CellCut(object):
         if mask_path is None:
             from .cell_segment import CellSegment
             logger.info(f"there is no mask file, generate it by model {model_path}")
-            cell_segment = CellSegment(image_path, gen_mask_on_gpu, self.cgef_out_dir)
+            cell_segment = CellSegment(image_path, gen_mask_on_gpu, self.cgef_out_dir, tissue_seg_model_path=tissue_seg_model_path, tissue_seg_method=tissue_seg_method)
             cell_segment.generate_mask(model_path, model_type, depp_cro_size, overlap)
             mask_path = cell_segment.get_mask_files()[0]
             logger.info(f"the generated mask file {mask_path}")

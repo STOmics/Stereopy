@@ -8,18 +8,44 @@ class CellSegment(object):
 
     def __init__(self, image_path, gpu='-1', mask_out_path=None):
         self.image_path = image_path
-        self.mask_out_path = "mask_result" if mask_out_path is None else mask_out_path
+        self.mask_out_path = "cell_seg_res" if mask_out_path is None else mask_out_path
         if not os.path.exists(self.mask_out_path):
             os.makedirs(self.mask_out_path)
         self.gpu = gpu
 
-    def generate_mask(self, model_path, model_type='deep-learning', depp_cro_size=20000, overlap=100):
+    def generate_mask(
+            self,
+            model_path,
+            model_type='deep-learning',
+            depp_cro_size=20000,
+            overlap=100,
+            tissue_seg_model_path=None,
+            tissue_seg_method=None
+        ):
         logger.info(f"start to generate mask,model type {model_type}.")
         self.mask_out_path = os.path.join(self.mask_out_path, model_type)
         if model_type == 'deep-learning':
-            cell_seg(model_path, self.image_path, self.mask_out_path, depp_cro_size, overlap, self.gpu)
+            cell_seg(
+                model_path,
+                self.image_path,
+                self.mask_out_path,
+                depp_cro_size,
+                overlap,
+                self.gpu,
+                tissue_seg_model_path=tissue_seg_model_path,
+                tissue_seg_method=tissue_seg_method
+            )
         else:
-            cell_seg_deepcell(model_path, self.image_path, self.mask_out_path, depp_cro_size, overlap, self.gpu)
+            cell_seg_deepcell(
+                model_path,
+                self.image_path,
+                self.mask_out_path,
+                depp_cro_size,
+                overlap,
+                self.gpu,
+                tissue_seg_model_path=tissue_seg_model_path,
+                tissue_seg_method=tissue_seg_method
+            )
         logger.info("generate mask end.")
     
     def get_mask_files(self):
