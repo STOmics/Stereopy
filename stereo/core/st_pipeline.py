@@ -1089,7 +1089,7 @@ class AnnBasedResult(dict):
     }
 
     def __init__(self, based_ann_data: AnnData):
-        super(dict, self).__init__()
+        super().__init__()
         self.__based_ann_data = based_ann_data
 
     def __contains__(self, item):
@@ -1256,7 +1256,7 @@ class AnnBasedResult(dict):
 class AnnBasedStPipeline(StPipeline):
 
     def __init__(self, based_ann_data: AnnData, data):
-        super(AnnBasedStPipeline, self).__init__(data)
+        super().__init__(data)
         self.__based_ann_data = based_ann_data
         self.result = AnnBasedResult(based_ann_data)
 
