@@ -493,3 +493,11 @@ class AnnBasedStereoExpData(StereoExpData):
             self._ann_data.obs.loc[:, ['x', 'y']] = \
                 np.array(list(self._ann_data.obs.index.str.split('-', expand=True)), dtype=np.uint32)
         return self._ann_data.obs.loc[:, ['x', 'y']].values
+
+    def sub_by_name(self, cell_name: Optional[Union[np.ndarray, list]] = None,
+                    gene_name: Optional[Union[np.ndarray, list]] = None):
+        if cell_name:
+            self._ann_data._inplace_subset_obs(cell_name)
+        if gene_name:
+            self._ann_data._inplace_subset_var(gene_name)
+        return self
