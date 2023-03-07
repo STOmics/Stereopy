@@ -1,3 +1,4 @@
+import copy
 import time
 from collections import defaultdict
 
@@ -60,9 +61,16 @@ class SingleR(AlgorithmBase):
             quantile=80,
             fine_tune_threshold=0.05,
             fine_tune_times=0,
-            n_jobs=int(cpu_count() / 2)
+            n_jobs=int(cpu_count() / 2),
     ):
         assert ref_use_col in ref_exp_data.tl.result
+
+        test_exp_data = copy.deepcopy(self.stereo_exp_data)
+        interact_genes = list(set(test_exp_data.gene_names) & set(ref_exp_data.gene_names))
+        assert interact_genes, "no gene of `test_exp_data.gene_names` in `ref_exp_data.gene_names`"
+        test_exp_data.sub_by_name(gene_name=interact_genes)
+        ref_exp_data.sub_by_name(gene_name=interact_genes)
+
         self.ref_exp_data = ref_exp_data
 
         self.group_data_frame = ref_exp_data.tl.result[ref_use_col]
@@ -80,7 +88,6 @@ class SingleR(AlgorithmBase):
         trained_data, common_gene = self._train_ref()
         logger.debug(f'training ref finished, cost {time.time() - start_time} seconds')
 
-        test_exp_data = self.stereo_exp_data
         if test_cluster_col:
             tmp_exp_matrix = pd.DataFrame(
                 test_exp_data.exp_matrix.todense(),
@@ -91,7 +98,11 @@ class SingleR(AlgorithmBase):
             test_data = _TestData(scipy.sparse.csr_matrix(tmp_exp_matrix.values), tmp_exp_matrix.index,
                                   test_exp_data.gene_names)
         else:
-            test_data = _TestData(test_exp_data.exp_matrix, test_exp_data.cell_names, test_exp_data.gene_names)
+            test_data = _TestData(
+                test_exp_data.exp_matrix,
+                test_exp_data.cell_names,
+                test_exp_data.gene_names
+            )
 
         logger.debug('start scoring test_data...')
         start_time = time.time()
@@ -114,10 +125,14 @@ class SingleR(AlgorithmBase):
         return res
 
     def _train_ref(self):
-        median_exp = pd.DataFrame(index=self.ref_exp_data.gene_names)
+        # median_exp = pd.DataFrame(index=self.ref_exp_data.gene_names)
+        dict_of_median_exp = dict()
         for label, y in self.group_data_frame.groupby('group'):
             cells_bool_list = np.isin(self.ref_exp_data.cell_names, y['bins'].values)
-            median_exp[label] = np.median(self.ref_exp_data.exp_matrix[cells_bool_list].toarray(), axis=0)
+            dict_of_median_exp[label] = pd.DataFrame(
+                np.median(self.ref_exp_data.exp_matrix[cells_bool_list].toarray(), axis=0))
+        median_exp = pd.concat(dict_of_median_exp, axis=1)
+        median_exp.index = self.ref_exp_data.gene_names
 
         ret_all = defaultdict(dict)
         ret_gene = defaultdict(dict)
