@@ -46,9 +46,8 @@ def write_h5ad(
         `data.tl.key_record`,otherwise it will save the result and res_key of the dict.
     output
         the path to output file.
-
     Returns
-    -----------------------
+    -------------------
     None
     """
     if data.merged and split_batches:
@@ -185,9 +184,8 @@ def write_mid_gef(
         the input StereoExpData object.
     output
         the path to output file.
-
     Returns
-    ---------------
+    ---------------------
     None
     """
     logger.info("The output standard gef file only contains one expression matrix with mid count."
