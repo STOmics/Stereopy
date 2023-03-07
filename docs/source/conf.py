@@ -60,7 +60,7 @@ language = None
 #If you want to include a notebook without outputs and yet don’t want nbsphinx to execute it for you, you can explicitly disable this feature.
 nbsphinx_execute = 'never'
 
-html_theme = 'furo'
+html_theme = 'sphinx_book_theme'
 
 html_title = "Stereopy"
 

@@ -49,7 +49,7 @@ In output part, we support writing StereoExpData as h5ad file for storage.
 
 
 StPipeline:  `tl`
-++++++++++++++++++++
+---------------------
 
 A tool-integrated class for basic analysis of StereoExpData, \
 which is compromised of basic preprocessing, embedding, clustering, and so on. 
@@ -77,9 +77,10 @@ which is compromised of basic preprocessing, embedding, clustering, and so on.
     core.StPipeline.find_marker_genes
     core.StPipeline.spatial_hotspot
     core.StPipeline.gaussian_smooth
+    core.StPipeline.annotation
 
 Plots: `plt`
-++++++++++++++++++++
+-------------------------
 
 .. module:: stereo.plt
 .. currentmodule:: stereo
@@ -91,6 +92,7 @@ Visualization module.
 
 Plot Collection
 ~~~~~~~~~~~~~~~~~~~
+The plot collection for StereoExpData object.
 
 .. autosummary::
    :toctree: .
@@ -113,7 +115,7 @@ Plot Collection
    plots.PlotCollection.violin
 
 Image: `im`
-++++++++++++++++++++
+-----------------------
 
 Image parse module.
 
@@ -129,7 +131,7 @@ Image parse module.
 
 
 Tools: `tools`
-++++++++++++++++++++
+-----------------------
 
 Tools to correct cells and generate CGEF file after cell cutting.
 
@@ -141,7 +143,7 @@ Tools to correct cells and generate CGEF file after cell cutting.
 
 
 Utils: `utils`
-+++++++++++++++++++
+-------------------------
 
 Handle multiple batches of data.
 

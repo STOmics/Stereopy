@@ -22,6 +22,7 @@ import h5py
 import numpy as np
 import pandas as pd
 from anndata import AnnData
+from typing_extensions import Literal
 from scipy.sparse import csr_matrix
 from shapely.geometry import Point, MultiPoint
 
@@ -46,15 +47,15 @@ def read_gem(
     Parameters
     -------------
     file_path
-        - the path to input file.
+        the path to input file.
     sep
-        - the separator string.
+        the separator string.
     bin_type
-        - the bin type includes `'bins'` or `'cell_bins'`. defaults to `bins`
+        the bin type includes `'bins'` or `'cell_bins'`. default to `bins`
     bin_size
-        - the size of bin to merge, when `bin_type` is set to `'bins'`.
+        the size of bin to merge, when `bin_type` is set to `'bins'`.
     is_sparse
-        - the expression matrix is sparse matrix, if `True`, otherwise `np.ndarray`.
+        the expression matrix is sparse matrix, if `True`, otherwise `np.ndarray`.
 
     Returns
     -------------
@@ -161,11 +162,11 @@ def read_stereo_h5ad(
     Parameters
     ----------------------
     file_path
-        - the path to input h5ad file.
+        the path to input h5ad file.
     use_raw
-        - whether to read data of `self.raw`.
+        whether to read data of `self.raw`.
     use_result
-        - whether to read `result` and `res_key`.
+        whether to read `result` and `res_key`.
 
     Returns
     --------------------
@@ -267,11 +268,10 @@ def read_seurat_h5ad(
 
     Parameters
     ------------------
-
     file_path
-        - the path of input h5ad file.
+        the path of input h5ad file.
     use_raw
-        - whether to read data of `self.raw`.
+        whether to read data of `self.raw`.
 
     Returns
     ----------------------
@@ -361,9 +361,9 @@ def read_ann_h5ad(
     Parameters
     ------------------
     file_path
-        - the path to input h5ad file.
+        the path to input h5ad file.
     spatial_key
-        - use `.obsm['spatial_key']` as coordiante information.
+        use `.obsm['spatial_key']` as coordiante information.
 
     Returns
     ---------------
@@ -421,15 +421,14 @@ def anndata_to_stereo(
     Parameters
     -----------------------
     andata
-        - the input Anndata object.
+        the input Anndata object.
     use_raw
-        - use `anndata.raw.X` if True, otherwise `anndata.X`.
+        use `anndata.raw.X` if True, otherwise `anndata.X`.
     spatial_key
-        - use `.obsm['spatial_key']` as coordiante information.
+        use `.obsm['spatial_key']` as coordiante information.
 
     Returns
     ---------------------
-
     An object of StereoExpData.
     """
     # data matrix,including X,raw,layer
@@ -452,7 +451,7 @@ def anndata_to_stereo(
 
 def stereo_to_anndata(
         data: StereoExpData, 
-        flavor: str='scanpy', 
+        flavor: Literal['scanpy', 'seurat']='scanpy', 
         sample_id: str="sample", 
         reindex: bool=False, 
         output: str=None, 
@@ -463,15 +462,15 @@ def stereo_to_anndata(
     Parameters
     -----------------------
     data
-        - the input StereoExpData object.
+        the input StereoExpData object.
     flavor
-        - if you want to convert the output file into h5ad of Seurat, please set `'seurat'`.
+        if you want to convert the output file into h5ad of Seurat, please set `'seurat'`.
     sample_id
-        - the sample name which will be set as `orig.ident` in obs.
+        the sample name which will be set as `orig.ident` in obs.
     reindex
-        - if `True`, the cell index will be reindexed as `{sample_id}:{position_x}_{position_y}` format.
+        if `True`, the cell index will be reindexed as `{sample_id}:{position_x}_{position_y}` format.
     output
-        - the path to output h5ad file.
+        the path to output h5ad file.
 
     Returns
     -----------------
@@ -823,12 +822,12 @@ def read_gef(
 @ReadWriteUtils.check_file_exists
 def read_gef_info(file_path: str):
     """
-    Read the infomation of GEF(.h5) file.
+    Read the property information of the GEF(.h5) file.
 
     Parameters
     -------------
     file_path
-        - the path to input file.
+        the path to input file.
     
     Returns
     -------------

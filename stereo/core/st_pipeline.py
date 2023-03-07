@@ -136,9 +136,9 @@ class StPipeline(object):
         Calculate the key indicators of quality control.
 
         Observation level metrics include:
-            total_counts: - total number of counts for a cell
-            n_genes_by_count: - number of genes expressed of counts for a cell
-            pct_counts_mt: - percentage of total counts in a cell which are mitochondrial
+            * total_counts: total number of counts for a cell.
+            * n_genes_by_count: number of genes expressed of counts for a cell.
+            * pct_counts_mt: percentage of total counts in a cell which are mitochondrial.
 
         Parameters
         ---------------------
@@ -153,12 +153,12 @@ class StPipeline(object):
 
     @logit
     def filter_cells(self, 
-                     min_gene: int=None, 
-                     max_gene: int=None, 
-                     min_n_genes_by_counts: int=None, 
-                     max_n_genes_by_counts: int=None,
-                     pct_counts_mt: float=None, 
-                     cell_list: list=None, 
+                     min_gene: Optional[int]=None, 
+                     max_gene: Optional[int]=None, 
+                     min_n_genes_by_counts: Optional[int]=None, 
+                     max_n_genes_by_counts: Optional[int]=None,
+                     pct_counts_mt: Optional[float]=None, 
+                     cell_list: Optional[list]=None, 
                      inplace: bool=True):
         """
         Filter cells based on counts or the numbers of genes expressed.
@@ -166,19 +166,19 @@ class StPipeline(object):
         Parameters
         ----------------------
         min_gene
-            - minimum number of genes expressed required for a cell to pass fitlering.
+            minimum number of genes expressed required for a cell to pass fitlering.
         max_gene
-            - maximum number of genes expressed required for a cell to pass fitlering.
+            maximum number of genes expressed required for a cell to pass fitlering.
         min_n_genes_by_counts
-            - minimum number of counts required for a cell to pass filtering.
+            minimum number of counts required for a cell to pass filtering.
         max_n_genes_by_counts
-            - maximum number of counts required for a cell to pass filtering.
+            maximum number of counts required for a cell to pass filtering.
         pct_counts_mt
-            - maximum number of pct_counts_mt required for a cell to pass filtering.
+            maximum number of pct_counts_mt required for a cell to pass filtering.
         cell_list
-            - the list of cells to be filtered.
+            the list of cells to be filtered.
         inplace
-            - whether to inplace the previous data or return a new data.
+            whether to inplace the previous data or return a new data.
 
         Returns
         ------------------------
@@ -192,9 +192,9 @@ class StPipeline(object):
 
     @logit
     def filter_genes(self, 
-                     min_cell: int=None, 
-                     max_cell: int=None, 
-                     gene_list: list=None, 
+                     min_cell: Optional[int]=None, 
+                     max_cell: Optional[int]=None, 
+                     gene_list: Optional[list]=None, 
                      inplace: bool=True):
         """
         Filter genes based on the numbers of cells or counts.
@@ -202,13 +202,13 @@ class StPipeline(object):
         Parameters
         ---------------------
         min_cell
-            - minimum number of cells expressed required for a gene to pass filering.
+            minimum number of cells expressed required for a gene to pass filering.
         max_cell
-            - maximum number of cells expressed required for a gene to pass filering.
+            maximum number of cells expressed required for a gene to pass filering.
         gene_list
-            - the list of genes to be filtered.
+            the list of genes to be filtered.
         inplace
-            - whether to inplace the previous data or return a new data.
+            whether to inplace the previous data or return a new data.
 
         Returns
         --------------------
@@ -261,9 +261,9 @@ class StPipeline(object):
         Parameters
         -----------------
         inplace
-            - whether to inplcae previous data or get a new express matrix after normalization of log1p.
+            whether to inplcae previous data or get a new express matrix after normalization of log1p.
         res_key
-            - the key to get targeted result from `self.result`.
+            the key to get targeted result from `self.result`.
 
         Returns
         ----------------
@@ -287,12 +287,12 @@ class StPipeline(object):
         Parameters
         -----------------------
         target_sum
-            - the number of total counts per cell after normalization, if `None`, each cell has a 
+            the number of total counts per cell after normalization, if `None`, each cell has a 
             total count equal to the median of total counts for all cells before normalization.
         inplace
-            - whether to inplcae previous data or get a new express matrix after normalize_total.
+            whether to inplcae previous data or get a new express matrix after normalize_total.
         res_key
-            - the key to get targeted result from `self.result`.
+            the key to get targeted result from `self.result`.
 
         Returns
         ----------------
@@ -308,7 +308,7 @@ class StPipeline(object):
     @logit
     def scale(self, 
               zero_center: bool=True, 
-              max_value: float=None, 
+              max_value: Optional[float]=None, 
               inplace: bool=True, 
               res_key: str='scale'):
         """
@@ -317,13 +317,13 @@ class StPipeline(object):
         Parameters
         --------------------
         zero_center
-            - if `False`, ignore zero variables, which allows to deal with sparse input efficently.
+            if `False`, ignore zero variables, which allows to deal with sparse input efficently.
         max_value
-            - truncate to this value after scaling, if `None`, do not truncate.
+            truncate to this value after scaling, if `None`, do not truncate.
         inplace
-            - whether to inplcae the previous data or get a new express matrix after scaling.
+            whether to inplace the previous data or get a new express matrix after scaling.
         res_key
-            - the key to get targeted result from `self.result`.
+            the key to get targeted result from `self.result`.
 
         Returns
         -----------------
@@ -386,31 +386,31 @@ class StPipeline(object):
             **kwargs
     ):
         """
-        Normalization of scTransform, refering to Seurat[Hafemeister19] (**link**).
+        Normalization of scTransform, refering to Seurat [Hafemeister19]_.
 
         Parameters
         ----------------------
         n_cells
-            - number of cells to use for estimating parameters.
+            number of cells to use for estimating parameters.
         n_genes
-            - number of genes to use for estimating parameters. means all genes.
+            number of genes to use for estimating parameters. means all genes.
         filter_hvgs
-            - whether to filter highly variable genes.
+            whether to filter highly variable genes.
         var_features_n
-            - the number of variable features to select, for calculating a subset of pearson residuals.
+            the number of variable features to select, for calculating a subset of pearson residuals.
         inplace
-            - whether to replace the previous expression data.
+            whether to replace the previous expression data.
         res_key
-            - the key to get targeted result from `self.result`.
+            the key to get targeted result from `self.result`.
         exp_matrix_key
-            - which expression matrix to use for analysis.
+            which expression matrix to use for analysis.
         seed_use
-            - random seed.
+            random seed.
         res_clip_range[str,list]
-            - 1) `'seurat'`: clips residuals to -sqrt(ncells/30), sqrt(ncells/30), 2) `'default'`: 
+            1) `'seurat'`: clips residuals to -sqrt(ncells/30), sqrt(ncells/30), 2) `'default'`: 
             clips residuals to -sqrt(ncells), sqrt(ncells), only used when `filter_hvgs` is `True`.
         method 
-            – offset, theta_ml, theta_lbfgs, alpha_lbfgs.
+            offset, theta_ml, theta_lbfgs, alpha_lbfgs.
 
         Returns
         -----------
@@ -433,7 +433,7 @@ class StPipeline(object):
     def highly_variable_genes(
             self,
             groups: Optional[str] = None,
-            method: Optional[str] = 'seurat',
+            method: Literal['seurat', 'cell_ranger','seurat_v3'] = 'seurat',
             n_top_genes: Optional[int] = 2000,
             min_disp: Optional[float] = 0.5,
             max_disp: Optional[float] = np.inf,
@@ -443,45 +443,45 @@ class StPipeline(object):
             n_bins: int = 20,
             res_key='highly_variable_genes'
     ):
-        """
+        """\
         Annotate highly variable genes, refering to Scanpy. 
-        Which method to implement depends on `flavor`,including Seurat[Satija15] (**link**), 
-        Cell Ranger[Zheng17] (**link**) and Seurat v3[Stuart19] (**link**).
+        Which method to implement depends on `flavor`,including Seurat [Satija15]_ , 
+        Cell Ranger [Zheng17]_ and Seurat v3 [Stuart19]_.
 
         Parameters
         ----------------------
         groups
-            - if specified, highly variable genes are selected within each batch separately and merged, 
+            if specified, highly variable genes are selected within each batch separately and merged, 
             which simply avoids the selection of batch-specific genes and acts as a lightweight batch 
             correction method. For all flavors, genes are first sorted by how many batches they are a HVG.
             For dispersion-based flavors ties are broken by normalized dispersion. If `flavor` 
             is `'seurat_v3'`, ties are broken by the median (across batches) rank based on within-
             batch normalized variance.
-        method: `Literal`[`'seurat'`,`'cell_ranger'`,`'seurat_v3'`]
-            - choose the flavor to identify highly variable genes. For the dispersion-based methods in 
+        method
+            Choose the flavor to identify highly variable genes. For the dispersion-based methods in 
             their default workflows, Seurat passes the cutoffs whereas Cell Ranger passes `n_top_genes`.
         n_top_genes
-            - number of highly variable genes to keep. Mandatory if `flavor='seurat_v3'`.
+            number of highly variable genes to keep. Mandatory if `flavor='seurat_v3'`.
         min_disp
-            - if `n_top_genes` is not None, this and all other cutoffs for the means and the normalized 
+            if `n_top_genes` is not None, this and all other cutoffs for the means and the normalized 
             dispersions are ignored. Ignored if `flavor='seurat_v3'`.
         max_disp
-            - if `n_top_genes` is not None, this and all other cutoffs for the means and the normalized 
+            if `n_top_genes` is not None, this and all other cutoffs for the means and the normalized 
             dispersions are ignored. Ignored if `flavor='seurat_v3'`.
         min_mean
-            - if `n_top_genes` is not None, this and all other cutoffs for the means and the normalized 
+            if `n_top_genes` is not None, this and all other cutoffs for the means and the normalized 
             dispersions are ignored. Ignored if `flavor='seurat_v3'`.
         max_mean
-            - if `n_top_genes` is not None, this and all other cutoffs for the means and the normalized 
+            if `n_top_genes` is not None, this and all other cutoffs for the means and the normalized 
             dispersions are ignored. Ignored if `flavor='seurat_v3'`.
         span
-            - the fraction of data (cells) used when estimating the variance in the Loess model fit 
+            the fraction of data (cells) used when estimating the variance in the Loess model fit 
             if `flavor='seurat_v3'`.
         n_bins
-            - number of bins for binning the mean gene expression. Normalization is done with respect to 
+            number of bins for binning the mean gene expression. Normalization is done with respect to 
             each bin. If just a single gene falls into a bin, the normalized dispersion is artificially set to 1.
         res_key
-            - the key for getting the result from the self.result.
+            the key for getting the result from the self.result.
 
         Returns
         -----------------
@@ -517,32 +517,39 @@ class StPipeline(object):
         return data
 
     @logit
-    def pca(self, use_highly_genes, n_pcs, svd_solver='auto', hvg_res_key='highly_variable_genes', res_key='pca'):
+    def pca(self, 
+            use_highly_genes: bool=False, 
+            n_pcs: int=None, 
+            svd_solver: Literal['auto', 'full','arpack','randomized']='auto', 
+            hvg_res_key: Optional[str]='highly_variable_genes', 
+            res_key: str='pca'):
         """
         Principal component analysis.
 
-        :param use_highly_genes: Whether to use only the expression of hypervariable genes as input.
-        :param n_pcs: the number of features for a return array after reducing.
-        :param svd_solver: {'auto', 'full', 'arpack', 'randomized'}, default to 'auto'
-                    If auto :
+        :param use_highly_genes: whether to use the expression of hypervariable genes only.
+        :param n_pcs: the number of principle components to compute.
+        :param svd_solver: default to 'auto'.
+
+                    - If auto :
                         The solver is selected by a default policy based on `X.shape` and
                         `n_pcs`: if the input data is larger than 500x500 and the
                         number of components to extract is lower than 80% of the smallest
                         dimension of the data, then the more efficient 'randomized'
                         method is enabled. Otherwise the exact full SVD is computed and
                         optionally truncated afterwards.
-                    If full :
+                    - If full :
                         run exact full SVD calling the standard LAPACK solver via
                         `scipy.linalg.svd` and select the components by postprocessing
-                    If arpack :
+                    - If arpack :
                         run SVD truncated to n_pcs calling ARPACK solver via
                         `scipy.sparse.linalg.svds`. It requires strictly
                         0 < n_pcs < min(x.shape)
-                    If randomized :
+                    - If randomized :
                         run randomized SVD by the method of Halko et al.
-        :param hvg_res_key: the key of highly varialbe genes to getting the result.
-        :param res_key: the key for getting the result from the self.result.
-        :return:
+        :param hvg_res_key: the key of highly variable genes to get targeted result,`use_highly_genes=True` is a necessary prerequisite.
+        :param res_key: the key for storage of PCA result.
+        
+        :return: Computation result of principal component analysis is stored in `self.result` where the result key is `'pca'`.
         """
         if use_highly_genes and hvg_res_key not in self.result:
             raise Exception(f'{hvg_res_key} is not in the result, please check and run the highly_var_genes func.')
@@ -563,9 +570,9 @@ class StPipeline(object):
     @logit
     def umap(
             self,
-            pca_res_key,
-            neighbors_res_key,
-            res_key='umap',
+            pca_res_key: str='pca',
+            neighbors_res_key: str='neighbors',
+            res_key: str='umap',
             min_dist: float = 0.5,
             spread: float = 1.0,
             n_components: int = 2,
@@ -579,32 +586,32 @@ class StPipeline(object):
         """
         Embed the neighborhood graph using UMAP [McInnes18]_.
 
-        :param pca_res_key: the key of pca to getting the result. Usually, in spatial omics analysis, the results
-                            after using pca are used for umap.
-        :param neighbors_res_key: the key of neighbors to getting the connectivities of neighbors result for umap.
-        :param res_key: the key for getting the result from the self.result.
-        :param min_dist: The effective minimum distance between embedded points. Smaller values
+        :param pca_res_key: the key of PCA analysis to get corresponding result from `self.result`.
+        :param neighbors_res_key: the key of neighbors to get corresponding result from `self.result`.
+        :param res_key: the key for storing result of UMAP.
+        :param min_dist: the effective minimum distance between embedded points. Smaller values
                          will result in a more clustered/clumped embedding where nearby points on
                          the manifold are drawn closer together, while larger values will result
                          on a more even dispersal of points. The value should be set relative to
                          the ``spread`` value, which determines the scale at which embedded
                          points will be spread out. The default of in the `umap-learn` package is
                          0.1.
-        :param spread: The effective scale of embedded points. In combination with `min_dist`
+        :param spread: the effective scale of embedded points. In combination with `min_dist`
                        this determines how clustered/clumped the embedded points are.
-        :param n_components: The number of dimensions of the embedding.
-        :param maxiter: The number of iterations (epochs) of the optimization. Called `n_epochs`
-                        in the original UMAP.
-        :param alpha: The initial learning rate for the embedding optimization.
-        :param gamma: Weighting applied to negative samples in low dimensional embedding
+        :param n_components: the number of dimensions of the embedding.
+        :param maxiter: the number of iterations (epochs) of the optimization. Called `n_epochs` in the original UMAP.
+        :param alpha: the initial learning rate for the embedding optimization.
+        :param gamma: weighting applied to negative samples in low dimensional embedding
                       optimization. Values higher than one will result in greater weight
                       being given to negative samples.
-        :param negative_sample_rate: The number of negative edge/1-simplex samples to use per positive
+        :param negative_sample_rate: the number of negative edge/1-simplex samples to use per positive
                       edge/1-simplex sample in optimizing the low dimensional embedding.
-        :param init_pos: How to initialize the low dimensional embedding.Called `init` in the original UMAP.Options are:
-                        * 'spectral': use a spectral embedding of the graph.
-                        * 'random': assign initial embedding positions at random.
-        :return:
+        :param init_pos: how to initialize the low dimensional embedding.Called init in the original UMAP.
+                        Options are:
+                            * 'spectral': use a spectral embedding of the graph.
+                            * 'random': assign initial embedding positions at random.
+
+        :return: UMAP result is stored in `self.result` where the result key is `'umap'`.
         """
         from ..algorithm.umap import umap
         if pca_res_key not in self.result:
@@ -620,14 +627,21 @@ class StPipeline(object):
         self.reset_key_record(key, res_key)
 
     @logit
-    def neighbors(self, pca_res_key, method='umap', metric='euclidean', n_pcs=None, n_neighbors=10, knn=True, n_jobs=10,
-                  res_key='neighbors'):
+    def neighbors(self, 
+                  pca_res_key: str='pca', 
+                  method: Literal['umap', 'gauss']='umap', 
+                  metric: str='euclidean', 
+                  n_pcs: int=None, 
+                  n_neighbors: int=10, 
+                  knn: bool=True, 
+                  n_jobs: int=10,
+                  res_key: str='neighbors'):
         """
-        run the neighbors.
+        Compute a spatial neighborhood graph over all cells.
 
-        :param pca_res_key: the key of pca to getting the result.
-        :param method: Use 'umap' or 'gauss'. for computing connectivities.
-        :param metric: A known metric's name or a callable that returns a distance.
+        :param pca_res_key: the key of PCA analysis to get corresponding result from `self.result`.
+        :param method: use `umap` or `gauss` to compute connectivities.
+        :param metric: a known metric's name or a callable that returns a distance,
                         include:
                             * euclidean
                             * manhattan
@@ -650,16 +664,16 @@ class StPipeline(object):
                             * sokalmichener
                             * sokalsneath
                             * yule
-        :param n_pcs: the number of pcs used to runing neighbor.
-        :param n_neighbors: Use this number of nearest neighbors.
-        :param knn: If `True`, use a hard threshold to restrict the number of neighbors to
-                    `n_neighbors`, that is, consider a knn graph. Otherwise, use a Gaussian
-                    Kernel to assign low weights to neighbors more distant than the
-                    `n_neighbors` nearest neighbor.
-        :param n_jobs: The number of parallel jobs to run for neighbors search, defaults to 10.
-                    if set to -1, means the all CPUs will be used, too high value may cause segment fault.
-        :param res_key: the key for getting the result from the self.result.
-        :return:
+        :param n_pcs: the number of principle components to run neighbors, default is None such that `self.X` is used.
+        :param n_neighbors: the size of nearest neighbors.
+        :param knn: if `True`, use a hard threshold to restrict the number of neighbors to `n_neighbors`, 
+                    namely consider a knn graph. Otherwise, use a Gaussian Kernel to assign low weights 
+                    to neighbors more distant than the `n_neighbors` nearest neighbors.
+        :param n_jobs: the number of parallel running jobs for neighbors, if set to `-1`, all CPUs will 
+                    be used. Notice that extremely high value of `n_jobs` may cause segment fault.
+        :param res_key: the key for storing result of neighbors, default is `neighbors`.
+
+        :return: Neighbors result is stored in `self.result` where the result key is `'neighbors'`.
         """
         if pca_res_key not in self.result:
             raise Exception(f'{pca_res_key} is not in the result, please check and run the pca func.')
@@ -689,14 +703,17 @@ class StPipeline(object):
         return neighbor, connectivities, nn_dist
 
     @logit
-    def spatial_neighbors(self, neighbors_res_key, n_neighbors=6, res_key='spatial_neighbors'):
+    def spatial_neighbors(self, 
+                          neighbors_res_key: str='neighbors', 
+                          n_neighbors: int=6, 
+                          res_key: str='spatial_neighbors'):
         """
         Create a graph from spatial coordinates using squidpy.
 
         :param neighbors_res_key: the key of neighbors to getting the result.
-        :param n_neighbors: Use this number of nearest neighbors.
+        :param n_neighbors: 6 or 4. Number of neighboring tiles.
         :param res_key: the key for getting the result from the self.result.
-        :return:
+        :return: Spatial neighbors result is stored in `self.result` where the result key is `'spatial_neighbors'`.
         """
         from ..io.reader import stereo_to_anndata
         import squidpy as sq
@@ -713,8 +730,8 @@ class StPipeline(object):
 
     @logit
     def leiden(self,
-               neighbors_res_key,
-               res_key='cluster',
+               neighbors_res_key: str='neighbors',
+               res_key: str='leiden',
                directed: bool = True,
                resolution: float = 1,
                use_weights: bool = True,
@@ -723,22 +740,22 @@ class StPipeline(object):
                method='normal'
                ):
         """
-        leiden of cluster.
+        Cluster cells into subgroups by Leiden algorithm [Traag18]_.
 
-        :param neighbors_res_key: the key of neighbors to getting the result.
-        :param res_key: the key for getting the result from the self.result.
-        :param directed: If True, treat the graph as directed. If False, undirected.
-        :param resolution: A parameter value controlling the coarseness of the clustering.
+        :param neighbors_res_key: the key of neighbors to get corresponding result from `self.result`.
+        :param res_key: the key for storing result of Leiden clustering.
+        :param directed: if `True`, treat the graph as directed. If `False`, undirected.
+        :param resolution: a parameter value controlling the coarseness of the clustering.
                             Higher values lead to more clusters.
                             Set to `None` if overriding `partition_type`
                             to one that doesn’t accept a `resolution_parameter`.
-        :param use_weights: If `True`, edge weights from the graph are used in the computation(placing more emphasis
-                            on stronger edges).
-        :param random_state: Change the initialization of the optimization.
-        :param n_iterations: How many iterations of the Leiden clustering algorithm to perform.
+        :param use_weights: if `True`, edge weights from the graph are used in computation, more emphasis should be placed on stronger edges.
+        :param random_state: change the initialization of the optimization.
+        :param n_iterations: how many iterations of the Leiden clustering algorithm to perform.
                              Positive values above 2 define the total number of iterations to perform,
                              -1 has the algorithm run until it reaches its optimal clustering.
-        :return:
+
+        :return: Clustering result of Leiden is stored in `self.result` where the key is `'leiden'`.
         """
         neighbor, connectivities, _ = self.get_neighbors_res(neighbors_res_key)
         if method == 'rapids':
@@ -761,8 +778,8 @@ class StPipeline(object):
 
     @logit
     def louvain(self,
-                neighbors_res_key,
-                res_key='cluster',
+                neighbors_res_key: str='neighbors',
+                res_key: str='louvain',
                 resolution: float = None,
                 random_state: int = 0,
                 flavor: Literal['vtraag', 'igraph', 'rapids'] = 'vtraag',
@@ -770,21 +787,21 @@ class StPipeline(object):
                 use_weights: bool = False
                 ):
         """
-        louvain of cluster.
+        Cluster cells into subgroups by Louvain algorithm [Blondel08]_.
 
-        :param neighbors_res_key: the key of neighbors to getting the result.
-        :param res_key: the key for getting the result from the self.result.
-        :param resolution: A parameter value controlling the coarseness of the clustering.
-                            Higher values lead to more clusters.
-                            Set to `None` if overriding `partition_type`
-                            to one that doesn't accept a `resolution_parameter`.
-        :param random_state: Change the initialization of the optimization.
-        :param flavor: Choose between to packages for computing the clustering.
-                        Including: ``'vtraag'``, ``'igraph'``, ``'taynaud'``.
-                        ``'vtraag'`` is much more powerful, and the default.
-        :param directed: If True, treat the graph as directed. If False, undirected.
-        :param use_weights: Use weights from knn graph.
-        :return:
+        :param neighbors_res_key: the key of neighbors to get corresponding result from `self.result`.
+        :param res_key: the key for storing result of Louvain clustering.
+        :param resolution: a parameter value to control the coarseness of clustering where higher value 
+                            leads to more clusters.
+        :param random_state: change the initialization of the optimization.
+        :param flavor: choose among of packages for computing the clustering.
+                        `'vtraag'` is much more powerful, and the default. 
+                        Set to `None` if overriding `partition_type` to one that 
+                        doesn't accept a `resolution_parameter`.
+        :param directed: if `True`, treat the graph as directed. If `False`, undirected.
+        :param use_weights: use weights from knn graph.
+        
+        :return: Clustering result of Louvain is stored in `self.result` where the key is `'louvain'`.
         """
         neighbor, connectivities, _ = self.get_neighbors_res(neighbors_res_key)
         from ..algorithm._louvain import louvain as lo
@@ -803,16 +820,21 @@ class StPipeline(object):
 
 
     @logit
-    def phenograph(self, phenograph_k, pca_res_key, n_jobs=10, res_key='cluster'):
+    def phenograph(self, 
+                   phenograph_k: int=30, 
+                   pca_res_key: str='pca', 
+                   n_jobs: int=10, 
+                   res_key: str='phenograph'):
         """
-        phenograph of cluster.
+        Cluster cells into subgroups by Phenograph.
 
-        :param phenograph_k: the k value of phenograph.
-        :param pca_res_key: the key of pca to getting the result for running the phenograph.
-        :param n_jobs: The number of parallel jobs to run for neighbors search, defaults to 10.
-                    if set to -1, means the all CPUs will be used, too high value may cause segment fault.
-        :param res_key: the key for getting the result from the self.result.
-        :return:
+        :param phenograph_k: the k value of Phenograph.
+        :param pca_res_key: the key of PCA analysis to get corresponding result from `self.result`.
+        :param n_jobs: the number of parallel jobs to run for neighbors search. If set to `-1`, all CPUs will be used. 
+                    Too high value may cause segment fault.
+        :param res_key: the key for storing result of Phenograph clustering.
+
+        :return: Clustering result of Phenograph is stored in `self.result` where the key is `'phenograph'`.
         """
         if pca_res_key not in self.result:
             raise Exception(f'{pca_res_key} is not in the result, please check and run the pca func.')
@@ -840,7 +862,7 @@ class StPipeline(object):
     @logit
     def find_marker_genes(self,
                           cluster_res_key,
-                          method: str = 't_test',
+                          method: Literal['t_test', 'wilcoxon_test'] = 't_test',
                           case_groups: Union[str, np.ndarray, list] = 'all',
                           control_groups: Union[str, np.ndarray, list] = 'rest',
                           corr_method: str = 'bonferroni',
@@ -851,20 +873,21 @@ class StPipeline(object):
                           output: Optional[str] = None,
                           ):
         """
-        a tool of finding maker gene. for each group, find statistical test different genes between one group and
-        the rest groups using t_test or wilcoxon_test.
+        A tool to find maker genes. For each group, find statistical test different genes 
+        between one group and the rest groups using t_test or wilcoxon_test.
 
-        :param cluster_res_key: the key of cluster to getting the result for group info.
-        :param method: t_test or wilcoxon_test.
-        :param case_groups: case group info, default all clusters.
-        :param control_groups: control group info, default the rest of groups.
+        :param cluster_res_key: the key of clustering to get corresponding result from `self.result`.
+        :param method: choose method for statistics.
+        :param case_groups: case group, default all clusters.
+        :param control_groups: control group, default the rest of groups.
         :param corr_method: correlation method.
-        :param use_raw: whether use the raw count express matrix for the analysis, default True.
-        :param use_highly_genes: Whether to use only the expression of hypervariable genes as input, default True.
-        :param hvg_res_key: the key of highly varialbe genes to getting the result.
-        :param res_key: the key for getting the result from the self.result.
-        :param output: path of output_file(.csv). If None, do not generate the output file.
-        :return:
+        :param use_raw: whether to use raw express matrix for analysis, default True.
+        :param use_highly_genes: whether to use only the expression of hypervariable genes as input, default True.
+        :param hvg_res_key: the key of highly variable genes to get corresponding result.
+        :param res_key: the key for storing result of marker genes.
+        :param output: the path to output file(`.csv). If None, do not generate output file.
+
+        :return: The result of marker genes is stored in `self.result` where the key is `'marker_genes'`.
         """
         from ..tools.find_markers import FindMarker
 
@@ -937,32 +960,38 @@ class StPipeline(object):
         self.result[res_key] = res
 
     @logit
-    def spatial_hotspot(self, use_highly_genes=True, hvg_res_key: Optional[str] = None, model='normal', n_neighbors=30,
-                        n_jobs=20, fdr_threshold=0.05, min_gene_threshold=10, outdir=None, res_key='spatial_hotspot',
-                        use_raw=True, ):
+    def spatial_hotspot(self, 
+                        use_highly_genes: bool=True, 
+                        hvg_res_key: Optional[str] = None, 
+                        model: Literal['danb','bernoilli','normal','none']='normal', 
+                        n_neighbors: int=30,
+                        n_jobs: int=20, 
+                        fdr_threshold: float=0.05, 
+                        min_gene_threshold: int=10, 
+                        outdir: str=None, 
+                        res_key: str='spatial_hotspot',
+                        use_raw: bool=True, ):
         """
-        identifying informative genes (and gene modules)
+        Identify informative genes or gene modules.
 
-        :param use_highly_genes: Whether to use only the expression of hypervariable genes as input, default True.
-        :param hvg_res_key: the key of highly varialbe genes to getting the result.
-        :param model: Specifies the null model to use for gene expression.
-            Valid choices are:
-                - 'danb': Depth-Adjusted Negative Binomial
-                - 'bernoulli': Models probability of detection
-                - 'normal': Depth-Adjusted Normal
-                - 'none': Assumes data has been pre-standardized
-        :param n_neighbors: Neighborhood size.
-        :param n_jobs: Number of parallel jobs to run.
-        :param fdr_threshold: Correlation threshold at which to stop assigning genes to modules
-        :param min_gene_threshold: Controls how small modules can be.
-            Increase if there are too many modules being formed.
-            Decrease if substructre is not being captured
-        :param outdir: directory containing output file(hotspot.pkl). Hotspot object will be totally output here.
-            If None, results will not be output to a file.
-        :param res_key: the key for getting the result from the self.result.
-        :param use_raw: whether use the raw count express matrix for the analysis, default True.
+        :param use_highly_genes: whether to use only the expression of hypervariable genes as input, default True.
+        :param hvg_res_key: the key of highly variable genes to get corresponding result.
+        :param model: specify the null model on gene expression from below:
+                * `'danb'`: Depth-Adjusted Negative Binomial
+                * `'bernoulli'`: Models probability of detection
+                * `'normal'`: Depth-Adjusted Normal
+                * `'none'`: Assumes data has been pre-standardized
+        :param n_neighbors: the neighborhood size.
+        :param n_jobs: the number of parallel jobs to run.
+        :param fdr_threshold: correlation threshold at which to stop assigning genes into modules.
+        :param min_gene_threshold: threshold that controls how small the modules could be. 
+            Increase if there are too many modules being formed, 
+            and decrease if substructre is not being captured.
+        :param outdir: the path to output file(`hotspot.pkl`), containing total hotspot object.
+        :param res_key: the key for storing result of spatial hotspot.
+        :param use_raw: whether to use raw express matrix for analysis.
 
-        :return:
+        :return: The result of spatial hotspot is stored in `self.result` where the key is `'spatial_hotspot'`.
         """
         from ..algorithm.spatial_hotspot import spatial_hotspot
         if use_highly_genes and hvg_res_key not in self.result:
@@ -983,16 +1012,26 @@ class StPipeline(object):
         self.result[res_key] = hs
 
     @logit
-    def gaussian_smooth(self, n_neighbors=10, smooth_threshold=90, pca_res_key='pca', res_key='gaussian_smooth',
-                        n_jobs=-1, inplace=True):
-        """smooth the expression matrix
+    def gaussian_smooth(self, 
+                        n_neighbors: int=10, 
+                        smooth_threshold: int=90, 
+                        pca_res_key: str='pca', 
+                        res_key: str='gaussian_smooth',
+                        n_jobs: int=-1, 
+                        inplace: bool=True):
+        """
+        Smooth the express matrix by the algorithm of Gaussian smoothing [Shen22]_.
 
-        :param n_neighbors: number of the nearest points to serach, Too high value may cause overfitting, Too low value may cause poor smoothing effect.
-        :param smooth_threshold: indicates Gaussian variance with a value between 20 and 100, Too high value may cause overfitting, Too low value may cause poor smoothing effect。
-        :param pca_res_key: the key of pca to get from self.result, defaults to 'pca'.
-        :param res_key: the key for getting the result from the self.result, defaults to 'gaussian_smooth'.
-        :param n_jobs: The number of parallel jobs to run for neighbors search, defaults to -1, means the all CPUs will be used.
-        :param inplace: whether inplace the express matrix or get a new express matrix, defaults to True.
+        :param n_neighbors: the number of the nearest points to search. 
+            Too high value may cause overfitting, and too low value may cause porr smoothing effect.
+        :param smooth_threshold: the threshold that indicates Gaussian variance with a value between 20 and 100. 
+            Also too high value may cause overfitting, and low value may cause poor smoothing effect.
+        :param pca_res_key: the key of PCA to get targeted result from `self.result`.
+        :param res_key: the key for storing result of Gaussian smoothing, defaults to 'gaussian_smooth'.
+        :param n_jobs: the number of parallel jobs to run for searching neighbors, if `-1`, all CPUs will be used.
+        :param inplace: whether to inplace the previous express matrix or get a new one.
+
+        :return: An object of StereoExpData with the express matrix processed by Gaussian smooting.
         """
         assert pca_res_key in self.result, f'{pca_res_key} is not in the result, please check and run the pca func.'
         assert self.raw is not None, 'no raw exp_matrix to be saved, please check and run the raw_checkpoint.'
@@ -1103,17 +1142,17 @@ class StPipeline(object):
     def annotation(
         self,
         annotation_information: Union[list, dict],
-        cluster_res_key = 'cluster',
-        res_key='annotation'
+        cluster_res_key: str = 'cluster',
+        res_key: str = 'annotation'
     ):
         """
-        annotation of cluster.
+        Set annotation to clusters.
 
-        :param annotation_information: Union[list, dict]
-            Annotation information for clustering results.
-        :param cluster_res_key: The key of cluster result in the self.result.
-        :param res_key: The key for getting the result from the self.result.
-        :return:
+        :param annotation_information: describe the annotation information to the clusters in a list or dictionary format.
+        :param cluster_res_key: get the targeted cluster result to add annotation.
+        :param res_key: the key for storing annotation result in `self.result`.
+
+        :return: Annotation result is stored in `self.result` where the key is `'annotation'`.
         """
 
         assert cluster_res_key in self.result, f'{cluster_res_key} is not in the result, please check and run the cluster func.'
@@ -1223,7 +1262,7 @@ class AnnBasedResult(dict):
     }
 
     def __init__(self, based_ann_data: AnnData):
-        super().__init__()
+        super(dict, self).__init__()
         self.__based_ann_data = based_ann_data
 
     def __contains__(self, item):
@@ -1390,7 +1429,7 @@ class AnnBasedResult(dict):
 class AnnBasedStPipeline(StPipeline):
 
     def __init__(self, based_ann_data: AnnData, data):
-        super().__init__(data)
+        super(AnnBasedStPipeline, self).__init__(data)
         self.__based_ann_data = based_ann_data
         self.result = AnnBasedResult(based_ann_data)
 
