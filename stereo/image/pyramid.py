@@ -72,11 +72,11 @@ def merge_pyramid(
     Parameters
     -----------------
     h5_path
-        - the path to h5 file.
+        the path to h5 file.
     bin_size
-        - bin size.
+        bin size.
     out_path
-        - the path to output file.
+        the path to output file.
 
     Returns
     -----------------
@@ -123,17 +123,17 @@ def create_pyramid(
     -------------------------------------
 
     img_path
-        - the path to image file.
+        the path to image file.
     h5_path
-        - the path to h5 file.
+        the path to h5 file.
     img_size
-        - the size of image.
+        the size of image.
     x_start
-        - start value of x.
+        start value of x.
     y_start
-        - start value of y.
+        start value of y.
     mag
-        - mag
+        mag
     
     Returns
     -----------

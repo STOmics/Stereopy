@@ -27,13 +27,13 @@ class StereoExpData(Data):
             file_path: Optional[str] = None,
             file_format: Optional[str] = None,
             bin_type: Optional[str] = None,
-            bin_size: int = 100,
+            bin_size: Optional[int] = 100,
             exp_matrix: Optional[Union[np.ndarray, spmatrix]] = None,
             genes: Optional[Union[np.ndarray, Gene]] = None,
             cells: Optional[Union[np.ndarray, Cell]] = None,
             position: Optional[np.ndarray] = None,
             output: Optional[str] = None,
-            partitions: int = 1,
+            partitions: Optional[int] = 1,
             offset_x: Optional[str] = None,
             offset_y: Optional[str] = None,
             attr: Optional[dict] = None,
@@ -44,19 +44,35 @@ class StereoExpData(Data):
         The core data object is designed for expression matrix of spatial omics, which can be set 
         corresponding properties directly to initialize the data. 
 
-        :param file_path: the path to input file of expression matrix.
-        :param file_format: the format of input file.
-        :param bin_type: the type of bin, if the file format is Stereo-seq file including `'bins'` or `'cell_bins'`.
-        :param bin_size: the size of the bin to merge, when `bin_type` is `'bins'`.
-        :param exp_matrix: the expression matrix.
-        :param genes: the gene object which contains information of gene level.
-        :param cells: the cell object which contains information of cell level.
-        :param position: spatial location information.
-        :param output: the path to output file.
-        :param partitions: the number of multi-process cores, used when processing files in parallel.
-        :param offset_x: the x value of the offset . 
-        :param offset_y: the y value of the offset .
-        :param attr: attribute information from GEF file.
+        Parameters
+        -------------------
+        file_path
+            the path to input file of expression matrix.
+        file_format
+            the format of input file.
+        bin_type
+            the type of bin, if the file format is Stereo-seq file including `'bins'` or `'cell_bins'`.
+        bin_size
+            the size of the bin to merge, when `bin_type` is `'bins'`.
+        exp_matrix
+            the expression matrix.
+        genes
+            the gene object which contains information of gene level.
+        cells
+            the cell object which contains information of cell level.
+        position
+            spatial location information.
+        output
+            the path to output file.
+        partitions
+            the number of multi-process cores, used when processing files in parallel.
+        offset_x
+            the x value of the offset . 
+        offset_y
+            the y value of the offset .
+        attr
+            attribute information from GEF file.
+
         """
         super(StereoExpData, self).__init__(file_path=file_path, file_format=file_format,
                                             partitions=partitions, output=output)
@@ -77,6 +93,9 @@ class StereoExpData(Data):
         self._sn = self.get_sn_from_path(file_path)
 
     def get_sn_from_path(self, file_path):
+        """
+        Get the SN information of input file.
+        """
         if file_path is None:
             return None
 
@@ -85,6 +104,9 @@ class StereoExpData(Data):
 
     @property
     def plt(self):
+        """
+        Call the visualization module.        
+        """
         if self._plt is None:
             from ..plots.plot_collection import PlotCollection
             self._plt = PlotCollection(self)
@@ -92,6 +114,9 @@ class StereoExpData(Data):
 
     @property
     def tl(self):
+        """
+        call StPipeline method.
+        """
         if self._tl is None:
             from .st_pipeline import StPipeline
             self._tl = StPipeline(self)
@@ -180,6 +205,9 @@ class StereoExpData(Data):
 
     @property
     def cell_borders(self):
+        """
+        Get the cell borders.
+        """
         return self.cells.cell_boder
 
     @property
@@ -280,6 +308,10 @@ class StereoExpData(Data):
 
     @property
     def position_offset(self):
+        """
+        Get the offset of position in gef.
+
+        """
         return self._position_offset
 
     @position_offset.setter
@@ -354,6 +386,9 @@ class StereoExpData(Data):
 
     @sn.setter
     def sn(self, sn):
+        """
+        The sample number
+        """
         self._sn = sn
 
     def to_df(self):
@@ -428,6 +463,9 @@ class StereoExpData(Data):
         return self.__str__()
     
     def issparse(self):
+        """
+        Check whether the matrix is sparse matrix type.
+        """
         return issparse(self.exp_matrix)
 
 
@@ -482,6 +520,9 @@ class AnnBasedStereoExpData(StereoExpData):
 
     @property
     def plt(self):
+        """
+        Call the visualization module. 
+        """
         if self._plt is None:
             from ..plots.plot_collection import PlotCollection
             self._plt = PlotCollection(self)
@@ -489,6 +530,9 @@ class AnnBasedStereoExpData(StereoExpData):
 
     @property
     def tl(self):
+        """
+        call StPipeline method.
+        """
         return self._tl
 
     @property

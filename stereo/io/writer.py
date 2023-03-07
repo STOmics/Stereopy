@@ -35,18 +35,17 @@ def write_h5ad(
     Parameters
     ---------------------
     data
-        - the input StereoExpData object.
+        the input StereoExpData object.
     use_raw
-        - whether to save raw data.
+        whether to save raw data.
     use_result
-        - whether to save `result` and `res_key`.
+        whether to save `result` and `res_key`.
     key_record
-        - a dict includes selective `res_key` with the precondition 
-        that `use_result` is `True`, if None, it will save the `result` 
-        and `res_key` of `data.tl.key_record`,otherwise it will save 
-        the result and res_key of the dict.
+        a dict includes selective `res_key` with the precondition that `use_result` 
+        is `True`, if None, it will save the `result` and `res_key` of 
+        `data.tl.key_record`,otherwise it will save the result and res_key of the dict.
     output
-        - the path to output file.
+        the path to output file.
 
     Returns
     -----------------------
@@ -183,9 +182,9 @@ def write_mid_gef(
     Parameters
     ---------------------
     data
-        - the input StereoExpData object.
+        the input StereoExpData object.
     output
-        - the path to output file.
+        the path to output file.
 
     Returns
     ---------------
@@ -265,11 +264,11 @@ def update_gef(
     Parameters
     -----------------
     data
-        - the input StereoExpData object.
+        the input StereoExpData object.
     gef_file
-        - the path of the GEF file to add cluster result to.
+        the path of the GEF file to add cluster result to.
     cluster_res_key
-        - the key to get cluster result from `data.tl.result`.
+        the key to get cluster result from `data.tl.result`.
 
     
     Returns

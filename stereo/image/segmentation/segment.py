@@ -18,22 +18,22 @@ def cell_seg(
     Parameters
     -----------------
     model_path
-        - the path to deep learning model.
+        the path to deep learning model.
     img_path
-        - the path to image file.
+        the path to image file.
     out_path
-        - the path to output mask result.
+        the path to output mask result.
     depp_cro_size
-        - deep crop size.
+        deep crop size.
     overlap
-        - overlap size.
+        overlap size.
     gpu
-        - set gpu id, if `'-1'`, use cpu for prediction.
+        set gpu id, if `'-1'`, use cpu for prediction.
 
     Returns
     ------------
     None
-    
+
     """
     os.environ["CUDA_VISIBLE_DEVICES"] = str(gpu)
     flag = 0

@@ -155,42 +155,48 @@ class CellCorrect(object):
             return cgef_file_adjusted
 
 @log_consumed_time    
-def cell_correct(out_dir,
-                threshold=20,
-                gem_path=None,
-                bgef_path=None,
-                raw_cgef_path=None,
-                mask_path=None,
-                image_path=None,
-                model_path=None,
-                mask_save=True,
-                model_type='deep-learning',
-                deep_cro_size=20000,
-                overlap=100, 
-                gpu='-1', 
-                process_count=10,
-                only_save_result=False,
-                fast=True):
-    """correct cells from gem and mask or gem and ssdna image or bgef and mask or bgef and raw cgef(the cgef without correcting)
+def cell_correct(out_dir: str,
+                threshold: int=20,
+                gem_path: str=None,
+                bgef_path: str=None,
+                raw_cgef_path: str=None,
+                mask_path: str=None,
+                image_path: str=None,
+                model_path: str=None,
+                mask_save: bool=True,
+                model_type: str='deep-learning',
+                deep_cro_size: int=20000,
+                overlap: int=100, 
+                gpu: str='-1', 
+                process_count: int=10,
+                only_save_result: bool=False,
+                fast: bool=True):
+    """
+    Correct cells using one of file conbinations as following:
+        * GEM and mask
+        * GEM and ssDNA image
+        * BGEF and mask
+        * BGEF and raw CGEF(not have been corrected)
 
-    :param out_dir: the path of the directory to save some intermediate result like mask(if generate from ssdna image),
-                    bgef(generate from gem),cgef(generate from gem and mask) etc. and finally corrected result
-    :param threshold: default to 20
-    :param gem_path: the path of gem file, if None, need to input bgef_path, defaults to None
-    :param bgef_path: the path of bgef file, if None, need to input gem_path and then generate from gem, defaults to None
-    :param raw_cgef_path: the path of cgef file contains the data without correcting, if None, generate from bgef and mask, defaults to None
-    :param mask_path: the path of mask, if None, need to input the ssdna image by image_path and then generate from ssdna image, defaults to None
-    :param image_path: the path of ssdna image , if None, need to input mask_path, defaults to None
-    :param model_path: the path of the model used to generate mask, defaults to None
-    :param mask_save: if generated mask from ssdna image, set it to True to save mask file after correcting, defaults to True
-    :param model_type: the type of model used to generate mask, only can be set to deep-learning or deep-cell, defaults to 'deep-learning'
-    :param deep_cro_size: deep crop size, defaults to 20000
-    :param overlap: the size of overlap, defaults to 100
-    :param gpu: specify the gpu id to predict on gpu when generate mask, if -1, predict on cpu, defaults to '-1'
-    :param process_count: the count of the process will be started when correct cells, defaults to 10
-    :param only_save_result: if True, only save result to disk; if False, return an object of StereoExpData, defaults to False
-    :param fast: if True, it will run more faster and only run by single process, defaults to True
-    :return: an object of StereoExpData if only_save_result was set to False or the path of the correct result if only_save_result was set to True
+    :param out_dir: the path to save intermediate result, like mask(if generate from ssDNA image), 
+        BGEF(generate from GEM), CGEF(generate from GEM and mask), etc. and final corrected result.
+    :param threshold: threshold size, default to 20
+    :param gem_path: the path to GEM file.
+    :param bgef_path: the path to BGEF file.
+    :param raw_cgef_path: the path to CGEF file in where data has not been corrected.
+    :param mask_path: the path to mask file.
+    :param image_path: the path to ssDNA image file.
+    :param model_path: the path to model file.
+    :param mask_save: whether to save mask file after correction, generated from ssDNA image.
+    :param model_type: the type of model to generate mask, whcih only could be set to deep learning model and deep cell model.
+    :param deep_cro_size: deep crop size.
+    :param overlap: overlap size.
+    :param gpu: specify gpu id to predict when generate mask, if `-1`, use cpu for prediction.
+    :param process_count: the count of process will be started when correct cells.
+    :param only_save_result: if `True`, only save result to disk; if `False`, return an StereoExpData object.
+    :param fast: if `True`, task will run faster only by single process.
+
+    :return: An StereoExpData object if `only_save_result` is set to `False`, otherwise none.
     """
     do_mask_generating = False
     if mask_path is None and image_path is not None:

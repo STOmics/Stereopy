@@ -120,7 +120,7 @@ class Cell(object):
 
     def to_df(self):
         """
-        transform Cell object to pd.DataFrame.
+        Transform StereoExpData object to pd.DataFrame.
 
         :return: a dataframe of Cell.
         """

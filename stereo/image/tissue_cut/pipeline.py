@@ -40,6 +40,8 @@ class _TissueCut(object):
             seg_method: Optional[int] = DEEP,
     ):
         """
+        Tissue segmentation based on ssDNA images.
+
             :param src_img_path: source image path, specify one image to transforming
             :param model_path: should specify when using `src_img_type` as `ssDNA`
             :param src_img_type: choose one of `RNA`, `ssDNA`,
@@ -308,6 +310,8 @@ class RNATissueCut(_TissueCut):
 
     def __init__(self, dst_img_path: Optional[str] = "", gef_path: Optional[str] = "", gem_path: Optional[str] = "", bin_size=20):
         """
+        Tissue segmentation based on RNA expression
+
         :param dst_img_path:
         :param gef_path: choose one of `gef_path` and `gem_path`
         :param gem_path: just like `gef_path`
@@ -362,6 +366,14 @@ class SingleStrandDNATissueCut(_TissueCut):
                  dst_img_path: Optional[str] = "",
                  seg_method: Optional[int] = DEEP
                  ):
+        """
+        Tissue segmentation based on ssDNA images.
+
+            :param src_img_path: source image path, specify one image to transforming
+            :param model_path: should specify when using `src_img_type` as `ssDNA`
+            :param dst_img_path: result image path, default to working path
+            :param seg_method: choose one of `INTENSITY`, `DEEP`
+        """
         super().__init__(
             src_img_type=ssDNA,
             src_img_path=src_img_path,
