@@ -56,7 +56,6 @@ def read_gem(
         the size of bin to merge, when `bin_type` is set to `'bins'`.
     is_sparse
         the expression matrix is sparse matrix, if `True`, otherwise `np.ndarray`.
-
     Returns
     -------------
     An object of StereoExpData.
@@ -167,7 +166,6 @@ def read_stereo_h5ad(
         whether to read data of `self.raw`.
     use_result
         whether to read `result` and `res_key`.
-
     Returns
     --------------------
     An object of StereoExpData.
@@ -272,7 +270,6 @@ def read_seurat_h5ad(
         the path of input h5ad file.
     use_raw
         whether to read data of `self.raw`.
-
     Returns
     ----------------------
     An object of StereoExpData.
@@ -364,7 +361,6 @@ def read_ann_h5ad(
         the path to input h5ad file.
     spatial_key
         use `.obsm['spatial_key']` as coordiante information.
-
     Returns
     ---------------
     An object of StereoExpData.
@@ -426,7 +422,6 @@ def anndata_to_stereo(
         use `anndata.raw.X` if True, otherwise `anndata.X`.
     spatial_key
         use `.obsm['spatial_key']` as coordiante information.
-
     Returns
     ---------------------
     An object of StereoExpData.
@@ -471,7 +466,6 @@ def stereo_to_anndata(
         if `True`, the cell index will be reindexed as `{sample_id}:{position_x}_{position_y}` format.
     output
         the path to output h5ad file.
-
     Returns
     -----------------
     An object of Anndata.
@@ -729,7 +723,6 @@ def read_gef(
         select targeted data based on the gene list.
     region
         restrict data to the region condition, like [minX, maxX, minY, maxY].
-
     Returns
     ------------------------
     An object of StereoExpData.
@@ -828,7 +821,6 @@ def read_gef_info(file_path: str):
     -------------
     file_path
         the path to input file.
-    
     Returns
     -------------
     information of gef

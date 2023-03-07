@@ -182,7 +182,7 @@ def split(data: StereoExpData = None):
 
     :param data: a merged data object.
 
-    :return: A splitted data list.
+    :return: A split data list.
     """
 
     if data is None:
