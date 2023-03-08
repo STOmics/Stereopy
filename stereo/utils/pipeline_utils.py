@@ -3,19 +3,16 @@ import numpy as np
 from stereo.core.st_pipeline import StPipeline
 from stereo.log_manager import logger
 
-def cell_cluster_to_gene_exp_cluster(tl: StPipeline, cluster_res_key: str=None):
-    if  tl.raw is None:
-        logger.warn(
-            """
-            The function cell_cluster_to_gene_exp_cluster must be based on raw data.
-            Please run data.tl.raw_checkpoint() before Normalization.
-            """
-        )
+
+def cell_cluster_to_gene_exp_cluster(tl: StPipeline, cluster_res_key: str = None):
+    if tl.raw is None:
+        logger.warn("This function should be based on raw data, you could run `raw_checkpoint` before pre-processing")
         return False
+
     if cluster_res_key is None:
         logger.warn("The parameter cluster_res_key of the function cell_cluster_to_gene_exp_cluster must be input")
         return False
-    
+
     if cluster_res_key not in tl.result:
         logger.warn(f"The cluster_res_key '{cluster_res_key}' is not exists")
         return False
@@ -34,4 +31,4 @@ def cell_cluster_to_gene_exp_cluster(tl: StPipeline, cluster_res_key: str=None):
         exp_sum = exp_matrix[cell_index].sum(axis=0).A[0]
         tmp.append(exp_sum)
     cluster_exp_matrix = np.vstack(tmp)
-    return pd.DataFrame(cluster_exp_matrix, columns=tl.data.gene_names, index=group_index.index).T 
+    return pd.DataFrame(cluster_exp_matrix, columns=tl.data.gene_names, index=group_index.index).T
