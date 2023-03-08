@@ -100,20 +100,20 @@ class _SSDataStruct(object):
         else:
             raise TypeError('In-Expression: only supports `name` or `StereoExpData-object`')
 
-    def add_data(self, objs, keys=None, *args, **kwargs) -> object:
+    def add_data(self, objs, keys=None, **kwargs) -> object:
         if not objs:
             raise Exception
         if isinstance(objs, StereoExpData):
             return self.__add_data_objs([objs], [keys] if keys else None)
         elif type(objs) is str:
-            return self.__add_data_paths([objs], [keys] if keys else None)
+            return self.__add_data_paths([objs], [keys] if keys else None, **kwargs)
         elif type(objs) is list:
             if len(objs) != len(keys):
                 raise Exception('length of objs and length of keys must equal')
             if isinstance(objs[0], StereoExpData):
                 return self.__add_data_objs(objs, keys)
             elif type(objs[0]) is str:
-                return self.__add_data_paths(objs, keys, *args, **kwargs)
+                return self.__add_data_paths(objs, keys, **kwargs)
         raise TypeError
 
     def del_data(self, name):
@@ -137,17 +137,27 @@ class _SSDataStruct(object):
             self.__real_add(data_obj, keys[idx] if keys and idx < len(keys) else None)
         return self
 
-    def __add_data_paths(self, file_path_list: List[str], keys: List[str] = None, *args, **kwargs) -> object:
+    def __add_data_paths(self, file_path_list: List[str], keys: List[str] = None, **kwargs) -> object:
         from stereo.io.reader import read_gef, read_gem, read_ann_h5ad
         data_list = []
         # TODO mixed file format, how to handle arguments
+        bin_sizes = kwargs.get('bin_size', None)
+        bin_types = kwargs.get('bin_type', None)
         for idx, file_path in enumerate(file_path_list):
             if file_path.endswith('.gef'):
-                data_list.append(read_gef(file_path, *args, **kwargs))
+                data_list.append(read_gef(
+                    file_path,
+                    bin_size=bin_sizes[idx] if bin_sizes else 100,
+                    bin_type=bin_types[idx] if bin_types else 'bins',
+                ))
             elif file_path.endswith('.gem'):
-                data_list.append(read_gem(file_path, *args, **kwargs))
+                data_list.append(read_gem(
+                    file_path,
+                    bin_size=bin_sizes[idx] if bin_sizes else 100,
+                    bin_type=bin_types[idx] if bin_types else 'bins',
+                ))
             elif file_path.endswith('.h5ad'):
-                data_list.append(read_ann_h5ad(file_path, *args, **kwargs))
+                data_list.append(read_ann_h5ad(file_path))
             else:
                 raise Exception(f'file format({file_path}) not support')
         return self.__add_data_objs(data_list, keys)
@@ -306,6 +316,7 @@ class SSDataPipeLine(object):
 
         if delayed_list:
             def temp(*args, **kwargs):
+                # TODO 这块有木有需求？有可能有多进程？
                 Parallel(n_jobs=min(len(self._ss_data._data_list), cpu_count()), backend='threading', verbose=100)(
                     delayed(one_job)(idx, *args, **kwargs)
                     for idx, one_job in enumerate(delayed_list)
