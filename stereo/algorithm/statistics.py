@@ -10,6 +10,7 @@ import numpy as np
 from scipy import stats
 from statsmodels.stats.multitest import multipletests
 from .mannwhitneyu import mannwhitneyu
+from ..utils.hvg_utils import get_mean_var
 
 
 def corr_pvalues(pvals, method, n_genes):
@@ -31,10 +32,11 @@ def corr_pvalues(pvals, method, n_genes):
 
 
 def cal_log2fc(group, other_group):
-    g_mean = np.mean(group, axis=0) + 1e-9
-    other_mean = np.mean(other_group, axis=0) + 1e-9
-    log2fc = np.log2(g_mean/other_mean + 10e-5)
-    return log2fc
+    g_mean = np.expm1(np.mean(group, axis=0)) + 1e-9
+    other_mean = np.expm1(np.mean(other_group, axis=0) )+ 1e-9
+    # log2fc = np.log2(g_mean/other_mean + 10e-5)
+    log2fc = np.log2(g_mean/other_mean)
+    return log2fc.A[0] if isinstance(log2fc, np.matrix) else log2fc
 
 
 def logreg(x, y, **kwds):
@@ -92,12 +94,3 @@ def ttest(group, other_group, corr_method=None):
         result['pvalues_adj'] = pvals_adj
     result['log2fc'] = cal_log2fc(group, other_group)
     return pd.DataFrame(result)
-
-
-def get_mean_var(x, *, axis=0):
-    mean = np.mean(x, axis=axis, dtype=np.float64)
-    mean_sq = np.multiply(x, x).mean(axis=axis, dtype=np.float64)
-    var = mean_sq - mean ** 2
-    # enforce R convention (unbiased estimator) for variance
-    var *= x.shape[axis] / (x.shape[axis] - 1)
-    return mean, var

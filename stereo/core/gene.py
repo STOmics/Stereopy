@@ -78,6 +78,12 @@ class AnnBasedGene(Gene):
         self.__based_ann_data = based_ann_data
         super(AnnBasedGene, self).__init__(gene_name)
 
+    def __str__(self):
+        return str(self.__based_ann_data.var)
+
+    def __repr__(self):
+        return self.__str__()
+
     @property
     def gene_name(self) -> np.ndarray:
         """

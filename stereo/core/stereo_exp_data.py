@@ -422,6 +422,9 @@ class StereoExpData(Data):
 
     def __repr__(self):
         return self.__str__()
+    
+    def issparse(self):
+        return issparse(self.exp_matrix)
 
 
 class AnnBasedStereoExpData(StereoExpData):
@@ -434,6 +437,12 @@ class AnnBasedStereoExpData(StereoExpData):
         self._cells = AnnBasedCell(self._ann_data, self._cells._cell_name)
         from .st_pipeline import AnnBasedStPipeline
         self._tl = AnnBasedStPipeline(self._ann_data, self)
+
+    def __str__(self):
+        return str(self._ann_data)
+
+    def __repr__(self):
+        return self.__str__()
 
     @property
     def exp_matrix(self):
@@ -476,3 +485,5 @@ class AnnBasedStereoExpData(StereoExpData):
             self._ann_data.obs.loc[:, ['x', 'y']] = \
                 np.array(list(self._ann_data.obs.index.str.split('-', expand=True)), dtype=np.uint32)
         return self._ann_data.obs.loc[:, ['x', 'y']].values
+    
+
