@@ -58,8 +58,8 @@ if (
   DefaultAssay(object=object) <- 'SCT'
 
   # TODO: tag the reductions as SCT, this will influence the find_cluster choice of data
-  object@reductions$pca@assay.used = 'SCT'
-  object@reductions$umap@assay.used = 'SCT'
+  object@reductions$pca@assay.used <- 'SCT'
+  object@reductions$umap@assay.used <- 'SCT'
   assay.used <- 'SCT'
   print("Finished! Got SCTransform result in object, create a new SCTAssay and set it as default assay.")
 } else {
