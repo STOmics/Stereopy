@@ -31,7 +31,7 @@ def rankdata1d(a: np.ndarray) -> np.ndarray:
 
     contains_nan = np.isnan(np.sum(a))
     if contains_nan:
-        return np.full_like(arr, np.nan)
+        return np.full_like(arr, np.nan, dtype=np.float32)
 
     sorter = np.argsort(arr, kind='quicksort')
     inv = np.empty(sorter.size, dtype=np.intp)

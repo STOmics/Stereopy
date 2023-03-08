@@ -1,4 +1,3 @@
-import copy
 import time
 from collections import defaultdict
 
@@ -65,10 +64,9 @@ class SingleR(AlgorithmBase):
     ):
         assert ref_use_col in ref_exp_data.tl.result
 
-        test_exp_data = copy.deepcopy(self.stereo_exp_data)
-        interact_genes = list(set(test_exp_data.gene_names) & set(ref_exp_data.gene_names))
+        interact_genes = list(set(self.stereo_exp_data.gene_names) & set(ref_exp_data.gene_names))
         assert interact_genes, "no gene of `test_exp_data.gene_names` in `ref_exp_data.gene_names`"
-        test_exp_data.sub_by_name(gene_name=interact_genes)
+        test_exp_data = self.stereo_exp_data.sub_by_name(gene_name=interact_genes)
         ref_exp_data.sub_by_name(gene_name=interact_genes)
 
         self.ref_exp_data = ref_exp_data
@@ -125,7 +123,6 @@ class SingleR(AlgorithmBase):
         return res
 
     def _train_ref(self):
-        # median_exp = pd.DataFrame(index=self.ref_exp_data.gene_names)
         dict_of_median_exp = dict()
         for label, y in self.group_data_frame.groupby('group'):
             cells_bool_list = np.isin(self.ref_exp_data.cell_names, y['bins'].values)
