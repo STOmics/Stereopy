@@ -137,7 +137,6 @@ def to_interval(interval_string):
     interval = pd.Interval(float(left), float(right))
     return interval
 
-
 @ReadWriteUtils.check_file_exists
 def read_stereo_h5ad(file_path, use_raw=True, use_result=True, ):
     """
@@ -223,8 +222,7 @@ def read_stereo_h5ad(file_path, use_raw=True, use_result=True, ):
                     if analysis_key == 'cluster':
                         data.tl.result[res_key] = h5ad.read_group(f[f'{res_key}@cluster'])
                         gene_cluster_res_key = f'gene_exp_{res_key}'
-                        if ('gene_exp_cluster' not in data.tl.key_record) or (
-                                gene_cluster_res_key not in data.tl.key_record['gene_exp_cluster']):
+                        if ('gene_exp_cluster' not in data.tl.key_record) or (gene_cluster_res_key not in data.tl.key_record['gene_exp_cluster']):
                             data.tl.result[gene_cluster_res_key] = cell_cluster_to_gene_exp_cluster(data.tl, res_key)
                             data.tl.reset_key_record('gene_exp_cluster', gene_cluster_res_key)
                     if analysis_key == 'gene_exp_cluster':
@@ -236,7 +234,6 @@ def read_stereo_h5ad(file_path, use_raw=True, use_result=True, ):
                             cluster_key = f'{cluster}@{res_key}@marker_genes'
                             data.tl.result[res_key][cluster] = h5ad.read_group(f[cluster_key])
     return data
-
 
 @ReadWriteUtils.check_file_exists
 def read_seurat_h5ad(file_path, use_raw=False):
@@ -270,14 +267,12 @@ def read_seurat_h5ad(file_path, use_raw=False):
                 data.cells.cell_name = cells_df.index.values
                 data.cells.total_counts = cells_df['total_counts'] if 'total_counts' in cells_df.keys() else None
                 data.cells.pct_counts_mt = cells_df['pct_counts_mt'] if 'pct_counts_mt' in cells_df.keys() else None
-                data.cells.n_genes_by_counts = cells_df[
-                    'n_genes_by_counts'] if 'n_genes_by_counts' in cells_df.keys() else None
+                data.cells.n_genes_by_counts = cells_df['n_genes_by_counts'] if 'n_genes_by_counts' in cells_df.keys() else None
                 data.position = cells_df[['x', 'y']].to_numpy(dtype=np.uint32)
                 for cluster_key in f['obs']['__categories'].keys():
                     if cluster_key == 'orig.ident':
                         continue
-                    data.tl.result[cluster_key] = pd.DataFrame(
-                        {'bins': data.cells.cell_name, 'group': cells_df[cluster_key].values})
+                    data.tl.result[cluster_key] = pd.DataFrame({'bins': data.cells.cell_name, 'group': cells_df[cluster_key].values})
                     data.tl.key_record['cluster'].append(cluster_key)
             elif k == "var":
                 genes_df = h5ad.read_dataframe(f[k])
@@ -322,7 +317,6 @@ def read_seurat_h5ad(file_path, use_raw=False):
                 data.tl.raw.genes.gene_name = data.genes.gene_name.copy()
     return data
 
-
 @ReadWriteUtils.check_file_exists
 def read_ann_h5ad(file_path, spatial_key: Optional[str] = None):
     """
@@ -356,8 +350,7 @@ def read_ann_h5ad(file_path, spatial_key: Optional[str] = None):
                 data.cells.cell_name = cells_df.index.values
                 data.cells.total_counts = cells_df['total_counts'] if 'total_counts' in cells_df.keys() else None
                 data.cells.pct_counts_mt = cells_df['pct_counts_mt'] if 'pct_counts_mt' in cells_df.keys() else None
-                data.cells.n_genes_by_counts = cells_df[
-                    'n_genes_by_counts'] if 'n_genes_by_counts' in cells_df.keys() else None
+                data.cells.n_genes_by_counts = cells_df['n_genes_by_counts'] if 'n_genes_by_counts' in cells_df.keys() else None
             elif k == "var":
                 genes_df = h5ad.read_dataframe(f[k])
                 data.genes.gene_name = genes_df.index.values
@@ -426,8 +419,7 @@ def stereo_to_anndata(data: StereoExpData, flavor='scanpy', sample_id="sample", 
                 boutput = f"{name}-{d.sn}{ext}"
             else:
                 boutput = None
-            adata = stereo_to_anndata(d, flavor=flavor, sample_id=sample_id, reindex=reindex, output=boutput,
-                                      split_batches=False)
+            adata = stereo_to_anndata(d, flavor=flavor, sample_id=sample_id, reindex=reindex, output=boutput, split_batches=False)
             adata_list.append(adata)
         return adata_list
 
@@ -462,7 +454,7 @@ def stereo_to_anndata(data: StereoExpData, flavor='scanpy', sample_id="sample", 
         logger.info(f"Adding data.position as adata.obs['x'] and adata.obs['y'] .")
         adata.obs['x'] = pd.DataFrame(data.position[:, 0], index=data.cell_names.astype('str'))
         adata.obs['y'] = pd.DataFrame(data.position[:, 1], index=data.cell_names.astype('str'))
-    
+
     if data.sn is not None:
         if isinstance(data.sn, str):
             sn_list = [['-1', data.sn]]
@@ -520,7 +512,7 @@ def stereo_to_anndata(data: StereoExpData, flavor='scanpy', sample_id="sample", 
                     adata.obs[res_key] = pd.DataFrame(data.tl.result[res_key]['group'].values,
                                                       index=data.cells.cell_name.astype('str'))
             elif key == 'gene_exp_cluster':
-                for res_key in data.tl.key_record[key]: 
+                for res_key in data.tl.key_record[key]:
                     adata.uns[res_key] = data.tl.result[res_key]
             else:
                 continue
@@ -674,12 +666,11 @@ def read_gef(file_path: str, bin_type="bins", bin_size=100, is_sparse=True, gene
                 gene_list = []
             if region is None:
                 region = []
-            uniq_cell, gene_names, count, cell_ind, gene_ind = gef.get_filtered_data(region, gene_list)
+            uniq_cell, gene_names, count, cell_ind, gene_ind = gef.get_filtered_data(region,gene_list)
             gene_num = gene_names.size
             cell_num = uniq_cell.size
             exp_matrix = csr_matrix((count, (cell_ind, gene_ind)), shape=(cell_num, gene_num), dtype=np.uint32)
-            position = np.array(
-                list((zip(np.right_shift(uniq_cell, 32), np.bitwise_and(uniq_cell, 0xffffffff))))).astype('uint32')
+            position = np.array(list((zip(np.right_shift(uniq_cell, 32), np.bitwise_and(uniq_cell, 0xffffffff))))).astype('uint32')
 
             data.position = position
             logger.info(f'the matrix has {cell_num} cells, and {gene_num} genes.')
@@ -694,8 +685,7 @@ def read_gef(file_path: str, bin_type="bins", bin_size=100, is_sparse=True, gene
             cell_bin_gef = CellExpReader(file_path)
             data.position = cell_bin_gef.positions
             logger.info(f'the matrix has {cell_bin_gef.cell_num} cells, and {cell_bin_gef.gene_num} genes.')
-            exp_matrix = csr_matrix((cell_bin_gef.count, (cell_bin_gef.rows, cell_bin_gef.cols)),
-                                    shape=(cell_bin_gef.cell_num, cell_bin_gef.gene_num), dtype=np.uint32)
+            exp_matrix = csr_matrix((cell_bin_gef.count, (cell_bin_gef.rows, cell_bin_gef.cols)), shape=(cell_bin_gef.cell_num, cell_bin_gef.gene_num), dtype=np.uint32)
             data.cells = Cell(cell_name=cell_bin_gef.cells, cell_border=cell_borders)
             data.genes = Gene(gene_name=cell_bin_gef.genes)
             data.exp_matrix = exp_matrix if is_sparse else exp_matrix.toarray()
@@ -706,7 +696,7 @@ def read_gef(file_path: str, bin_type="bins", bin_size=100, is_sparse=True, gene
         data = StereoExpData(file_path=file_path, bin_type=bin_type, bin_size=bin_size)
         data.offset_x, data.offset_y = gef.get_offset()
         gef_attr = gef.get_exp_attr()
-        data.attr = {
+        data.attr={
             'minX': gef_attr[0],
             'minY': gef_attr[1],
             'maxX': gef_attr[2],
@@ -725,8 +715,7 @@ def read_gef(file_path: str, bin_type="bins", bin_size=100, is_sparse=True, gene
             gene_num = gene_names.size
             logger.info(f'the matrix has {cell_num} cells, and {gene_num} genes.')
             exp_matrix = csr_matrix((count, (cell_ind, gene_ind)), shape=(cell_num, gene_num), dtype=np.uint32)
-            position = np.array(
-                list((zip(np.right_shift(uniq_cell, 32), np.bitwise_and(uniq_cell, 0xffffffff))))).astype('uint32')
+            position = np.array(list((zip(np.right_shift(uniq_cell, 32), np.bitwise_and(uniq_cell, 0xffffffff))))).astype('uint32')
 
             data.position = position
             data.cells = Cell(cell_name=uniq_cell)
@@ -748,7 +737,6 @@ def read_gef(file_path: str, bin_type="bins", bin_size=100, is_sparse=True, gene
     logger.info(f'read_gef end.')
 
     return data
-
 
 @ReadWriteUtils.check_file_exists
 def read_gef_info(file_path: str):
@@ -836,6 +824,7 @@ def read_gef_info(file_path: str):
         logger.info('Maximum expression: {0}'.format(info_dict['maxExpCount']))
 
     return info_dict
+
 
 # @ReadWriteUtils.check_file_exists
 # def read_h5ad(file_path: str, flavor: str = 'scanpy'):
