@@ -10,12 +10,11 @@ import hvplot.pandas
 import panel as pn
 import collections
 from holoviews import opts
-from stereo.config import StereoConfig
+from stereo.stereo_config import stereo_conf
 from natsort import natsorted
 
-conf = StereoConfig()
 
-colormaps = conf.colormaps
+colormaps = stereo_conf.colormaps
 pn.param.ParamMethod.loading_indicator = True
 theme_default = 'stereo_30'
 color_key = collections.OrderedDict()
@@ -54,7 +53,7 @@ def interact_spatial_cluster(
 
     ##
     if len(cs) > len(colormaps[theme_default]):
-        colormaps[theme_default] = conf.get_colors(theme_default, n=len(cs))
+        colormaps[theme_default] = stereo_conf.get_colors(theme_default, n=len(cs))
 
     global color_key
     color_key = collections.OrderedDict({k: c for k, c in zip(cs, colormaps[theme_default][0:len(cs)])})

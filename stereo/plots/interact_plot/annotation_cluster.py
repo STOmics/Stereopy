@@ -10,7 +10,7 @@ import hvplot.pandas
 import panel as pn
 import collections
 from holoviews import opts
-from stereo.config import StereoConfig
+from stereo.stereo_config import StereoConfig
 from natsort import natsorted
 
 conf = StereoConfig()
@@ -98,7 +98,8 @@ def interact_spatial_cluster_annotation(
             padding=(0.1, 0.1)
         ).opts(bgcolor='#ffffff',
                invert_yaxis=True,
-               aspect='equal'
+               aspect='equal',
+               active_tools=['wheel_zoom']
                # legend_muted=True,
                # legend_cols=2
                )
@@ -110,9 +111,15 @@ def interact_spatial_cluster_annotation(
     button_save = pn.widgets.Button(name='Save annotation', width=200)
     def save_annotation(event):
         data.tl.result[res_key] = df[['bins','group']]
-
         key = 'cluster'
         data.tl.reset_key_record(key, res_key)
+        gene_cluster_res_key = f'gene_exp_{res_key}'
+        from stereo.utils.pipeline_utils import cell_cluster_to_gene_exp_cluster
+
+        gene_exp_cluster_res = cell_cluster_to_gene_exp_cluster(data.tl, res_key)
+        if gene_exp_cluster_res is not False:
+            data.tl.result[gene_cluster_res_key] = gene_exp_cluster_res
+            data.tl.reset_key_record('gene_exp_cluster', gene_cluster_res_key)
         
     button_save.on_click(save_annotation)
     

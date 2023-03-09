@@ -8,7 +8,7 @@
 """
 
 import logging
-from .config import stereo_conf
+from .stereo_config import stereo_conf
 
 
 class LogManager(object):

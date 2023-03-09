@@ -13,9 +13,9 @@ import tifffile as tif
 from collections import OrderedDict
 # from selenium import webdriver
 # from chromedriver_py import binary_path
-from stereo.config import StereoConfig
+from stereo.stereo_config import stereo_conf
 
-conf = StereoConfig()
+
 
 class PlotCells:
     def __init__(self, data, cluster_res_key='cluster', bgcolor='#2F2F4F', figure_size=500, fg_alpha=0.8, base_image=None):
@@ -25,7 +25,7 @@ class PlotCells:
             self.cluster_res = np.array(res['group'])
             self.cluster_id = natsorted(np.unique(self.cluster_res).tolist())
             n = len(self.cluster_id)
-            cmap = conf.get_colors('stereo_30', n)
+            cmap = stereo_conf.get_colors('stereo_30', n)
             self.cluster_color_map = OrderedDict({k: v for k, v in zip(self.cluster_id, cmap)})
         else:
             self.cluster_res = None
@@ -100,7 +100,7 @@ class PlotCells:
             'total_counts': self.data.cells.total_counts.astype(np.uint32),
             'pct_counts_mt': self.data.cells.pct_counts_mt,
             'n_genes_by_counts': self.data.cells.n_genes_by_counts.astype(np.uint32),
-            'cluster_id': np.zeros_like(self.data.cell_names) if self.cluster_res is None else self.cluster_res.astype(np.int16)
+            'cluster_id': np.zeros_like(self.data.cell_names) if self.cluster_res is None else self.cluster_res
         })
 
         tooltips = [
@@ -117,8 +117,8 @@ class PlotCells:
         return polygons_detail, hover_tool, vdims
     
     def _create_widgets(self):
-        self.color_map_key_continuous = pn.widgets.Select(value='stereo', options=list(conf.linear_colormaps.keys()), name='color theme', width=200)
-        self.color_map_key_discrete = pn.widgets.Select(value='stereo_30', options=list(conf.colormaps.keys()), name='color theme', width=200)
+        self.color_map_key_continuous = pn.widgets.Select(value='stereo', options=list(stereo_conf.linear_colormaps.keys()), name='color theme', width=200)
+        self.color_map_key_discrete = pn.widgets.Select(value='stereo_30', options=list(stereo_conf.colormaps.keys()), name='color theme', width=200)
         if self.cluster_res is None:
             self.color_map_key_discrete.visible = False
         else:
@@ -198,7 +198,7 @@ class PlotCells:
                 else:
                     cm_key_value = cm_key_continuous_value
 
-                cmap = conf.linear_colors(cm_key_value, reverse=reverse_colormap_value)
+                cmap = stereo_conf.linear_colors(cm_key_value, reverse=reverse_colormap_value)
             else:
                 self.cluster.visible = True
                 self.cluster_colorpicker.visible = True
