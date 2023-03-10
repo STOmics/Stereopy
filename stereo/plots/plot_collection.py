@@ -15,6 +15,8 @@ import numpy as np
 from random import randint
 from .scatter import base_scatter, multi_scatter, marker_gene_volcano, highly_variable_genes
 from stereo.stereo_config import stereo_conf
+from stereo.log_manager import logger
+from .plot_base import PlotBase
 
 pn.param.ParamMethod.loading_indicator = True
 
@@ -70,10 +72,10 @@ class PlotCollection:
         if item.startswith('__'):
             raise AttributeError
 
-        new_attr = PlotBase.get_attribute_helper(item, self.data, self.result)
+        new_attr = download(PlotBase.get_attribute_helper(item, self.data, self.result))
         if new_attr:
             self.__setattr__(item, new_attr)
-            logger.info(f'register plot_func {new_attr} to {self}')
+            logger.info(f'register plot_func {item} to {self}')
             return new_attr
 
         raise AttributeError(

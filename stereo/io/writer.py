@@ -98,7 +98,8 @@ def write_h5ad(data: StereoExpData, use_raw=True, use_result=True, key_record=No
             # write key_record
             mykey_record = deepcopy(data.tl.key_record) if key_record is None else deepcopy(key_record)
             mykey_record_keys = list(mykey_record.keys())
-            supported_keys = ['hvg', 'pca', 'neighbors', 'umap', 'cluster', 'marker_genes', 'gene_exp_cluster'] # 'sct', 'spatial_hotspot'
+            # supported_keys = ['hvg', 'pca', 'neighbors', 'umap', 'cluster', 'marker_genes', 'cell_cell_communication '] # 'sct', 'spatial_hotspot'
+            supported_keys = data.tl.key_record.keys()
             for analysis_key in mykey_record_keys:
                 if analysis_key not in supported_keys:
                     mykey_record.pop(analysis_key)
@@ -154,6 +155,20 @@ def write_h5ad(data: StereoExpData, use_raw=True, use_result=True, key_record=No
                     if analysis_key == 'spatial_hotspot':
                         # Hotspot object
                         pass
+                    if analysis_key == 'cell_cell_communication':
+                        for key, item in data.tl.result[res_key].items():
+                            if key != 'parameters':
+                                h5ad.write(item, f, f'{res_key}@{key}@cell_cell_communication', save_as_matrix=False)  # -> dataframe
+                            else:
+                                name, value = [], []
+                                for pname, pvalue in item.items():
+                                    name.append(pname)
+                                    value.append(pvalue)
+                                parameters_df = pd.DataFrame({
+                                    'name': name,
+                                    'value': value
+                                })
+                                h5ad.write(parameters_df, f, f'{res_key}@{key}@cell_cell_communication', save_as_matrix=True)  # -> dataframe
 
 
 def write_mid_gef(data, output):
