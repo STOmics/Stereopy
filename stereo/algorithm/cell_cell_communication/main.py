@@ -1,6 +1,8 @@
 # python core module
 import os
-from typing import Tuple
+from typing import Tuple, Union
+from pathlib import Path
+import natsort
 
 # third part module
 import numpy as np
@@ -14,177 +16,225 @@ from multiprocessing.pool import Pool
 
 # module in self project
 from stereo.log_manager import logger
+from stereo.stereo_config import stereo_conf
 from stereo.plots.plot_base import PlotBase
 from stereo.algorithm.algorithm_base import AlgorithmBase
-from stereo.algorithm.cell_cell_communication.ref_database.sqlalchemy_model import Base
-from stereo.algorithm.cell_cell_communication.analysis_helper import Subsampler, write_to_file, get_separator, \
+from stereo.algorithm.cell_cell_communication.utils.sqlalchemy_model import Base
+from stereo.algorithm.cell_cell_communication.analysis_helper import (
+    Subsampler,
+    write_to_file,
+    get_separator,
     mouse2human
-from stereo.algorithm.cell_cell_communication.ref_database.database_utils import Database, DatabaseManager
-from stereo.algorithm.cell_cell_communication.ref_database.sqlalchemy_repository import ComplexRepository, \
-    GeneRepository, InteractionRepository, MultidataRepository, ProteinRepository
-from stereo.algorithm.cell_cell_communication.exceptions import ProcessMetaException, ParseCountsException, \
-    ThresholdValueException, AllCountsFilteredException, NoInteractionsFound, InvalidDatabase
-
+)
+from stereo.algorithm.cell_cell_communication.utils.database_utils import Database, DatabaseManager
+from stereo.algorithm.cell_cell_communication.utils.sqlalchemy_repository import (
+    ComplexRepository,
+    GeneRepository,
+    InteractionRepository,
+    MultidataRepository,
+    ProteinRepository
+)
+from stereo.algorithm.cell_cell_communication.exceptions import (
+    ProcessMetaException,
+    ParseCountsException,
+    ThresholdValueException,
+    AllCountsFilteredException,
+    NoInteractionsFound,
+    InvalidDatabase,
+    PipelineResultInexistent
+)
 
 class PlotCellCellCommunication(PlotBase):
     # TODO: change default paths
-    def dot_plot(self,
-                 means_path: str = r'E:\Stereopy\out\means.csv',
-                 pvalues_path: str = r'E:\Stereopy\out\pvalues.csv',
-                 output_path: str = r'E:\Stereopy\out',
-                 output_name: str = r'dotplot.pdf',
-                 rows_path: str = r'E:\Stereopy\out\rows.txt',
-                 columns_path: str = r'E:\Stereopy\out\columns.txt',
-                 palette: str = 'RdYlBu_r'):
-        """
-        Generate dot plot/heatmap.
+    def ccc_dot_plot(
+            self,
+            interacting_pairs: Union[str, list, np.ndarray] = None,
+            clusters1: Union[str, list, np.ndarray] = None,
+            clusters2: Union[str, list, np.ndarray] = None,
+            separator_cluster: str = '|',
+            palette: str = 'Reds',
+            res_key: str = 'cell_cell_communication',
+            # **kw_args
+    ):
+        """Generate dot plot based on the result of CellCellCommunication.
+
+        :param interacting_pairs: path, string, list or ndarray.
+                        specify the interacting pairs which would be shown on plot, defaults to None.
+                        1) path: the path of file in which saves the interacting pairs which would be shown, one line one pair.
+                        2) string: only one interacting pair.
+                        3) list or ndarray: an array contains the interacting pairs which would be shown.
+        :param clusters1: path, string, list or ndarray.
+                        the first clusters in cluster pairs which would be shown on plot, defaults to None.
+                        1) path: the path of file in which saves the clusters which would be shown, one line one cluster.
+                        2) string: only one cluster.
+                        3) list or ndarray: an array contains the clusters which would be shown.
+        :param clusters2: path, string, list or ndarray.
+                        the second clusters in cluster pairs which would be shown on plot, defaults to None.
+                        clusters1 and clusters2 together form cluster pairs
+                        each cluster in cluster1 will join with each one in cluster2 to form ther cluster pairs.
+                        if set it to None, it will be set to all clusters.
+                        1) path: the path of file in which saves the clusters which would be shown, one line one cluster.
+                        2) string: only one cluster.
+                        3) list or ndarray: an array contains the clusters which would be shown.
+        :param separator_cluster: the symbol for joining the clusters1 and clusters2, defaults to '|'
+        :param palette: plot palette, defaults to 'Reds'
+        :param res_key: the key which specifies the cell cell communication result in data.tl.result, defaults to 'cell_cell_communication'
+        :return: matplotlib.figure
         """
         logger.info('Generating dot plot')
-        self._ensure_path_exists(output_path)
-        pvalues_separator = get_separator(os.path.splitext(pvalues_path)[-1])
-        means_separator = get_separator(os.path.splitext(means_path)[-1])
-        # output_extension = os.path.splitext(output_name)[-1].lower()
-        filename = os.path.join(output_path, output_name)
 
-        means_df = pd.read_csv(means_path, sep=means_separator)
-        pvalues_df = pd.read_csv(pvalues_path, sep=pvalues_separator)
+        if res_key not in self.pipeline_res:
+            PipelineResultInexistent(res_key)
 
-        if not rows_path:
-            rows = means_df['interacting_pair'].tolist()
+        if self.pipeline_res[res_key]['parameters']['analysis_type'] != 'statistical':
+            logger.warn("This plot just only support analysis type 'statistical'")
+            return None
+
+        means_df = self.pipeline_res[res_key]['means']
+        pvalues_df = self.pipeline_res[res_key]['pvalues']
+
+        interacting_pairs = self._parse_interacting_pairs_or_clusters(interacting_pairs)
+        if interacting_pairs is None:
+            interacting_pairs = means_df['interacting_pair'].tolist()
         else:
-            rows = pd.read_csv(rows_path, header=None)[0].tolist()
+            if all(np.isin(interacting_pairs, means_df['interacting_pair']) == False):
+                raise Exception("there is no interacting pairs to show, maybe the parameter 'interacting_pairs' you set is not in result.")
 
-        if not columns_path:
-            columns = ['interacting_pair'] + means_df.columns.tolist()[11:]
+        clusters1 = self._parse_interacting_pairs_or_clusters(clusters1)
+        clusters2 = self._parse_interacting_pairs_or_clusters(clusters2)
+        if clusters1 is None:
+            cluster_pairs = natsort.natsorted([x for x in means_df.columns if separator_cluster in x])
         else:
-            columns = pd.read_csv(columns_path, header=None)[0].tolist()
+            if clusters2 is None:
+                cluster_res_key = self.pipeline_res[res_key]['parameters']['cluster_res_key']
+                clusters2 = self.pipeline_res[cluster_res_key]['group'].unique()
+            cluster_pairs = [f'{c1}{separator_cluster}{c2}' for c1 in clusters1 for c2 in clusters2]
+            cluster_pairs = natsort.natsorted([x for x in cluster_pairs if x in means_df.columns])
+            if len(cluster_pairs) == 0:
+                raise Exception("there is no cluster pairs to show, maybe the parameter 'clusters' you set is not in result.")
 
-        columns = [x for x in columns if x in means_df.columns]
-
-        means_selected = means_df[means_df['interacting_pair'].isin(rows)][['interacting_pair'] + columns]
-        pvalues_selected = pvalues_df[pvalues_df['interacting_pair'].isin(rows)][['interacting_pair'] + columns]
+        means_selected: pd.DataFrame = means_df[means_df['interacting_pair'].isin(interacting_pairs)][['interacting_pair'] + cluster_pairs]
+        pvalues_selected: pd.DataFrame = pvalues_df[pvalues_df['interacting_pair'].isin(interacting_pairs)][['interacting_pair'] + cluster_pairs]
 
         nrows, ncols = means_selected.shape
 
-        means = means_selected.melt(id_vars='interacting_pair', value_vars=columns, value_name='mean')
-        means['log2_mean'] = means['mean'].apply(lambda x: 0 if x == 0 else np.log2(x))
+        means = means_selected.melt(id_vars='interacting_pair', value_vars=cluster_pairs, value_name='mean')
+        means['log2(mean+1)'] = np.log2(means['mean'] + 1)
 
-        pvalues = pvalues_selected.melt(id_vars='interacting_pair', value_vars=columns, value_name='pvalue')
-        pvalues['n_log10_p'] = pvalues['pvalue'].apply(lambda x: -np.log10(0.0009) if x == 0 else -np.log10(x))
+        pvalues = pvalues_selected.melt(id_vars='interacting_pair', value_vars=cluster_pairs, value_name='pvalue')
+        # pvalues['log10_pvalue'] = pvalues['pvalue'].apply(lambda x: -np.log10(0.0009) if x == 0 else (-np.log10(x) if x != 1 else 0))
+        pvalues['log10(pvalue+1)'] = np.log10(pvalues['pvalue'] + 1)
 
         result = pd.merge(means, pvalues, on=["interacting_pair", "variable"])
         result = result.rename(columns={'variable': 'cluster_pair'})
 
         # plotting
-        plt.figure(figsize=(int(5 + max(3, ncols * 0.8)), int(3 + max(5, nrows * 0.5))))
-        plt.gcf().subplots_adjust(bottom=0.2, left=0.18, right=0.85)
-        plt.box(True)
-        dot_plot = sns.scatterplot(data=result, x="cluster_pair", y="interacting_pair", palette=palette,
-                                   hue='log2_mean', size='n_log10_p', sizes=(50, 250), legend='auto')
-        plt.legend(fontsize=12, frameon=False, ncols=1, loc=8, bbox_to_anchor=(1.1, 0))
-        plt.xticks(fontsize=12, rotation=90)
-        plt.yticks(fontsize=12)
-        plt.xlabel('')
-        plt.ylabel('')
+        width, height = int(5 + max(3, ncols * 0.8)), int(3 + max(5, nrows * 0.5))
+        fig, ax = plt.subplots(figsize=(width, height))
+        # fig.subplots_adjust(bottom=0.2, left=0.18, right=0.85)
+        sns.scatterplot(data=result, x="cluster_pair", y="interacting_pair", palette=palette, 
+                        hue='log2(mean+1)', size='log10(pvalue+1)', sizes=(100, 300), legend='auto', ax=ax)
+        # legend_position = kw_args.get('legend_position', 'lower right')
+        # legend_coodinate = kw_args.get('legend_coodinate')
+        # ax.legend(fontsize=12, frameon=False, ncol=1, loc=legend_position, bbox_to_anchor=legend_coodinate)
+        ax.legend(fontsize=12, frameon=False, ncol=1, loc=(1.02, 0))
+        ax.tick_params(axis='x', labelsize=12, labelrotation=90)
+        ax.tick_params(axis='y', labelsize=12)
+        ax.set_xlabel('')
+        ax.set_ylabel('')
+        return fig
 
-        fig = dot_plot.get_figure()
-        fig.savefig(filename)
-        plt.close(fig)
-
-    def heatmap(self,
-                meta_path: str = r'E:\Stereopy\CellphoneDB\in\example_data\test_meta.txt',
-                pvalues_path: str = r'E:\Stereopy\out\pvalues.csv',
-                separator_cluster: str = '|',
-                count_network_path: str = None,
-                pvalue: float = 0.05,
-                output_path: str = r'E:\Stereopy\out',
-                count_name: str = r'heatmap_count.pdf',
-                log_count_name: str = r'heatmap_log.pdf'
-                ):
+    def ccc_heatmap(
+            self,
+            pvalue: float = 0.05,
+            separator_cluster: str = '|',
+            res_key: str = 'cell_cell_communication'
+    ):
         """
         Heatmap of number of interactions in each cluster pairs.
-        Each off-diagonal cell value equals =
-                the number of interactions from A to B + the number of interactions from B to A
+        Each off-diagonal cell value equals the number of interactions from A to B + the number of interactions from B to A
+
+        :param pvalue: the threshold of pvalue, defaults to 0.05
+        :param separator_cluster: the symbol for joining the first and second cluster in cluster pairs, defaults to '|'
+        :param res_key: the key which specifies the cell cell communication result in data.tl.result, defaults to 'cell_cell_communication'
+        :return: _description_
         """
         logger.info('Generating heatmap plot')
-        self._ensure_path_exists(output_path)
-        filename_count = os.path.join(output_path, count_name)
-        filename_log = os.path.join(output_path, log_count_name)
 
-        meta_separator = get_separator(os.path.splitext(meta_path)[-1])
-        meta_df = pd.read_csv(meta_path, sep=meta_separator)
-        clusters_all = meta_df.iloc[:, 1].drop_duplicates().tolist()
+        if res_key not in self.pipeline_res:
+            PipelineResultInexistent(res_key)
+
+        if self.pipeline_res[res_key]['parameters']['analysis_type'] != 'statistical':
+            logger.warn("This plot just only support analysis type 'statistical'")
+            return None
+
+        cluster_res_key = self.pipeline_res[res_key]['parameters']['cluster_res_key']
+        meta_df = self.pipeline_res[cluster_res_key]
+        clusters_all = natsort.natsorted(meta_df['group'].unique())
         n_cluster: int = len(clusters_all)
 
-        if count_network_path is None:
-            pvalues_separator = get_separator(os.path.splitext(pvalues_path)[-1])
-            pvalues_df = pd.read_csv(pvalues_path, sep=pvalues_separator)
+        pvalues_df = self.pipeline_res[res_key]['pvalues']
 
-            cluster_pairs = np.array(np.meshgrid(clusters_all, clusters_all)).T.reshape(-1, 2)
-            network = pd.DataFrame(cluster_pairs, columns=['source', 'target'])
+        cluster_pairs = np.array(np.meshgrid(clusters_all, clusters_all)).T.reshape(-1, 2)
+        network = pd.DataFrame(cluster_pairs, columns=['source', 'target'])
 
-            for index, row in network.iterrows():
-                col1 = row['source'] + separator_cluster + row['target']
-                col2 = row['target'] + separator_cluster + row['source']
-                if col1 in pvalues_df.columns.tolist() and col2 in pvalues_df.columns.tolist():
-                    if col1 == col2:
-                        network.loc[index, 'number'] = pvalues_df.apply(lambda x: True if x[col1] <= pvalue else False,
-                                                                        axis=1).sum()
-                    else:
-                        network.loc[index, 'number'] = pvalues_df.apply(lambda x: True if x[col1] <= pvalue else False,
-                                                                        axis=1).sum() + pvalues_df.apply(
-                            lambda x: True if x[col2] <= pvalue else False, axis=1).sum()
+        for index, row in network.iterrows():
+            col1 = row['source'] + separator_cluster + row['target']
+            col2 = row['target'] + separator_cluster + row['source']
+            if col1 in pvalues_df.columns and col2 in pvalues_df.columns:
+                if col1 == col2:
+                    network.loc[index, 'number'] = (pvalues_df[col1] <= pvalue).sum()
                 else:
-                    network.loc[index, 'number'] = 0
+                    network.loc[index, 'number'] = (pvalues_df[col1] <= pvalue).sum() + (pvalues_df[col2] <= pvalue).sum()
+            else:
+                network.loc[index, 'number'] = 0
 
-            write_to_file(network, 'network', output_path=output_path, output_format='txt')
-        else:
-            network_separator = get_separator(os.path.splitext(meta_path)[-1])
-            network = pd.read_csv(count_network_path, sep=network_separator)
-
-        network = network.pivot("source", "target", "number")
+        network: pd.DataFrame = network.pivot("source", "target", "number")
+        network = network.loc[clusters_all][clusters_all]
         rows = network.index.tolist()
         rows.reverse()
         network = network[rows]
-        log_network = network.applymap(lambda x: np.log(x + 1))
+        log_network = np.log1p(network)
 
-        # count plot
-        plt.figure(figsize=(int(3 + max(3, n_cluster * 0.8)), int(3 + max(3, n_cluster * 0.5))))
-        plt.gcf().subplots_adjust(bottom=0.2, left=0.18, right=0.85)
-        plt.box(True)
+        width, height = int(3 + max(3, n_cluster * 0.5)) * 2, int(3 + max(3, n_cluster * 0.5))
+        fig, axes = plt.subplots(nrows=1, ncols=2, figsize=(width, height), gridspec_kw={'wspace': 0})
 
-        heatmap_plot = sns.heatmap(data=network, square=True, cmap='coolwarm', cbar_kws={'pad': 0.25, 'shrink': 0.5})
-        heatmap_plot.yaxis.set_ticks_position('right')
-        heatmap_plot.invert_yaxis()
+        sns.heatmap(data=network, square=True, cmap='coolwarm', cbar_kws={'pad': 0.1, 'shrink': 0.5, 'location': 'bottom', 'orientation': 'horizontal'}, ax=axes[0])
+        axes[0].yaxis.set_ticks_position('right')
+        axes[0].invert_yaxis()
+        axes[0].tick_params(axis='x', labelsize=13, labelrotation=90)
+        axes[0].tick_params(axis='y', labelsize=13)
+        axes[0].set_xlabel('')
+        axes[0].set_ylabel('')
+        axes[0].set_title('network')
 
-        plt.xticks(fontsize=12, rotation=90)
-        plt.yticks(fontsize=12, rotation=0)
-        plt.xlabel('')
-        plt.ylabel('')
+        sns.heatmap(data=log_network, square=True, cmap='coolwarm', cbar_kws={'pad': 0.1, 'shrink': 0.5, 'location': 'bottom', 'orientation': 'horizontal'}, ax=axes[1])
+        axes[1].yaxis.set_ticks_position('right')
+        axes[1].invert_yaxis()
+        axes[1].tick_params(axis='x', labelsize=13, labelrotation=90)
+        axes[1].tick_params(axis='y', labelsize=13)
+        axes[1].set_xlabel('')
+        axes[1].set_ylabel('')
+        axes[1].set_title('log1p_network')
 
-        fig = heatmap_plot.get_figure()
-        fig.savefig(filename_count)
-        plt.close(fig)
+        return fig
 
-        # log plot
-        fig = plt.figure(figsize=(int(3 + max(3, n_cluster * 0.8)), int(3 + max(3, n_cluster * 0.5))))
-        plt.gcf().subplots_adjust(bottom=0.2, left=0.18, right=0.8)
-        plt.box(True)
-        heatmap_plot = sns.heatmap(data=log_network, square=True, cmap='coolwarm', cbar_kws={'pad': 0.25, 'shrink': 0.5})
-        heatmap_plot.yaxis.set_ticks_position('right')
-        heatmap_plot.invert_yaxis()
+    def _parse_interacting_pairs_or_clusters(self, interacting_pairs_or_clusters: Union[str, list, np.ndarray]):
+        if isinstance(interacting_pairs_or_clusters, list) or isinstance(interacting_pairs_or_clusters, np.ndarray):
+            return np.unique(interacting_pairs_or_clusters)
+        
+        if isinstance(interacting_pairs_or_clusters, str):
+            path = Path(interacting_pairs_or_clusters)
+            if not path.is_file() and not path.is_dir():
+                return [interacting_pairs_or_clusters]
+            if path.is_file() and path.exists():
+                with path.open('r') as fp:
+                    return np.unique([line.strip() for line in fp.readlines()])
+        
+        return None
 
-        plt.xticks(fontsize=12, rotation=90)
-        plt.yticks(fontsize=12, rotation=0)
-        plt.xlabel('')
-        plt.ylabel('')
-
-        fig = heatmap_plot.get_figure()
-        fig.savefig(filename_log)
-        plt.close(fig)
-
-    @staticmethod
-    def _ensure_path_exists(path: str) -> None:
+    
+    def _ensure_path_exists(self, path: str):
         expanded_path = os.path.expanduser(path)
 
         if not os.path.exists(expanded_path):
@@ -192,88 +242,95 @@ class PlotCellCellCommunication(PlotBase):
 
 
 class CellCellCommunication(AlgorithmBase):
-    def __init__(self):
-        self.db_path = None
-
     # FIXME: change the default output_path in linux, change default homogene_path
-    def main(self,
-             analysis_type: str,
-             meta: pd.DataFrame,
-             counts: pd.DataFrame,
-             micro_envs: pd.DataFrame = None,
-             species: str = "HUMAN",
-             database: str = 'cellphonedb',
-             homogene_path: str = r'E:\Stereopy\database\mouse2human.csv',
-             counts_identifiers: str = "hgnc_symbol",
-             subsampling: bool = False,
-             subsampling_log: bool = False,
-             subsampling_num_pc: int = 1000,
-             subsampling_num_cells: int = None,
-             separator_cluster: str = "|",
-             separator_interaction: str = "_",
-             iterations: int = 1000,
-             threshold: float = 0.1,
-             threads: int = 4,
-             pvalue: float = 0.05,
-             result_precision: int = 3,
-             output_path: str = r'E:\Stereopy\out',
-             means_filename: str = 'means',
-             pvalues_filename: str = 'pvalues',
-             significant_means_filename: str = 'significant_means',
-             deconvoluted_filename: str = 'deconvoluted',
-             output_format: str = 'txt'
-             ):
+    def main(
+            self,
+            analysis_type: str = 'statistical',
+            cluster_res_key: str = 'cluster',
+            micro_envs: pd.DataFrame = None,
+            species: str = "HUMAN",
+            database: str = 'cellphonedb',
+            homogene_path: str = None,
+            counts_identifiers: str = "hgnc_symbol",
+            subsampling: bool = False,
+            subsampling_log: bool = False,
+            subsampling_num_pc: int = 1000,
+            subsampling_num_cells: int = None,
+            pca_res_key: str = None,
+            separator_cluster: str = "|",
+            separator_interaction: str = "_",
+            iterations: int = 500,
+            threshold: float = 0.1,
+            processes: int = 1,
+            pvalue: float = 0.05,
+            result_precision: int = 3,
+            output_path: str = None,
+            means_filename: str = 'means',
+            pvalues_filename: str = 'pvalues',
+            significant_means_filename: str = 'significant_means',
+            deconvoluted_filename: str = 'deconvoluted',
+            output_format: str = 'csv',
+            res_key: str = 'cell_cell_communication'
+    ):
         """
         Cell-cell communication analysis main functon.
 
         :param analysis_type: type of analysis: "simple", "statistical".
-        :param meta: This dataframe must have a column named "cell_type" and, either a column named "cell" storing the
-        cell names or the cell names as the indexes.
-        :param counts: dataframe with genes as indexes, cells as columns.
+        :param cluster_res_key: the key which specifies the clustering result in data.tl.result.
         :param micro_envs: two columns, column names should be "cell_type" and "microenvironment".
         :param species: 'HUMAN' or 'MOUSE'
         :param database: if species is HUMAN, choose from 'cellphonedb' or 'liana';
-         if MOUSE, use 'cellphonedb' or 'liana' or 'celltalkdb'
+                        if MOUSE, use 'cellphonedb' or 'liana' or 'celltalkdb'
         :param homogene_path: path to the file storing mouse-human homologous genes ralations.
-        If species is MOUSE but database is 'cellphonedb' or 'liana', we need to use the human
+                        if species is MOUSE but database is 'cellphonedb' or 'liana', we need to use the human
         homologous genes for the input mouse genes.
         :param counts_identifiers: type of gene identifiers in the Counts data: "ensembl", "gene_name" or "hgnc_symbol".
         :param subsampling: flag of subsampling.
         :param subsampling_log: flag of doing log1p transformation before subsampling.
         :param subsampling_num_pc: number of pcs used when doing subsampling, <= min(m,n).
         :param subsampling_num_cells: size of the subsample.
+        :param pca_res_key: the key which specifies the pca result in data.tl.result
+                        if set subsampling to True and set it to None, this function will run the pca.
         :param separator_cluster: separator of cluster names used in the result and plots, e.g. '|'.
         :param separator_interaction: separator of interactions used in the result and plots, e.g. '_'.
         :param iterations: number of samples used for generating the null distribution.
         :param threshold: threshold of percentage of gene expression, above which being considered as significant.
-        :param threads: number of threads usd for doing the statistical analysis.
+        :param processes: number of processes used for doing the statistical analysis, on notebook just only support one process.
         :param pvalue: the cut-point of p-value, below which being considered significant.
         :param result_precision: result precision for the results, default=3.
-        :param output_path: path of result files.
-        :param means_filename: name of the means result.
-        :param pvalues_filename: name of the pvalues result.
-        :param significant_means_filename: name of the significant mean result.
-        :param deconvoluted_filename: name of the convoluted result.
+        :param output_path: the directory to save the result file, set it to output the result to files.
+        :param means_filename: name of the means result file.
+        :param pvalues_filename: name of the pvalues result file.
+        :param significant_means_filename: name of the significant mean result file.
+        :param deconvoluted_filename: name of the convoluted result file.
         :param output_format: format of result, 'txt', 'csv', 'tsv', 'tab'.
         :return:
         """
+        if subsampling and pca_res_key is not None and pca_res_key not in self.pipeline_res:
+            raise PipelineResultInexistent(pca_res_key)
+
+        database_dir = os.path.join(stereo_conf.data_dir, "algorithm/cell_cell_communication/database")
+        if homogene_path is None:
+            homogene_path = os.path.join(database_dir, 'mouse2human.csv')
         # 0. prepare the reference database
         # FIXME: change the default database path
         if database == 'cellphonedb':
-            self.db_path = r'E:\Stereopy\database\CellPhoneDB_curated\cellphonedb_user_2023-01-10-16_45.db'
+            db_path = os.path.join(database_dir, 'cellphonedb.db')
         elif database == 'liana':
-            self.db_path = r'E:\Stereopy\database\Liana\cellphonedb_user_2023-01-14-15_52.db'
+            db_path = os.path.join(database_dir, 'liana.db')
         elif database == 'celltalkdb':
-            self.db_path = r'E:\Stereopy\database\CellTalkDB\cellphonedb_user_2023-01-11-15_51.db'
+            db_path = os.path.join(database_dir, 'celltalkdb.db')
         else:
             raise InvalidDatabase()
 
-        interactions, genes, complex_composition, complex_expanded = self._get_ref_database()
+        interactions, genes, complex_composition, complex_expanded = self._get_ref_database(db_path)
+
+        counts, meta = self._prepare_data(cluster_res_key)
 
         # 1. preprocess and validate input data
 
         # 1.1. preprocess and validate meta data (cell name as index, cell type as the only column).
-        meta = self._check_meta_data(meta)
+        # meta = self._check_meta_data(meta)
 
         # 1.2. preprocess and validate counts data
         self._check_counts_data(counts, counts_identifiers)
@@ -305,7 +362,10 @@ class CellCellCommunication(AlgorithmBase):
             subsampler = None
 
         if subsampler is not None:
-            counts = subsampler.subsample(counts)
+            if pca_res_key is not None:
+                counts = subsampler.subsample(counts, self.pipeline_res[pca_res_key])
+            else:
+                counts = subsampler.subsample(counts)
             meta = meta.filter(items=list(counts), axis=0)
 
         # 3. do the analysis
@@ -316,7 +376,7 @@ class CellCellCommunication(AlgorithmBase):
                                                                                           threshold,
                                                                                           result_precision,
                                                                                           iterations,
-                                                                                          threads))
+                                                                                          processes))
         if analysis_type == 'simple':
             logger.info(
                 '[{} analysis] Threshold:{} Precision:{}'.format(analysis_type, threshold, result_precision))
@@ -363,7 +423,7 @@ class CellCellCommunication(AlgorithmBase):
                                                                cluster_interactions,
                                                                complex_composition_filtered,
                                                                real_mean_analysis,
-                                                               threads,
+                                                               processes,
                                                                separator_cluster)
             result_pvalues = self.build_pvalue_result(real_mean_analysis,
                                                       real_percents_analysis,
@@ -418,20 +478,48 @@ class CellCellCommunication(AlgorithmBase):
             lambda rank: rank if rank != 0 else (1 + max_rank))
         significant_means.sort_values('rank', inplace=True)  # min to max, 0s at the bottom
 
-        logger.info('Writing results to files')
-
-        # Todo: Test output_path in linux
-        write_to_file(means_result, means_filename, output_path=output_path, output_format=output_format)
-        write_to_file(significant_means, significant_means_filename, output_path=output_path, output_format=output_format)
-        write_to_file(deconvoluted_result, deconvoluted_filename, output_path=output_path, output_format=output_format)
+        self.pipeline_res[res_key] = {
+            'means': means_result,
+            'significant_means': significant_means,
+            'deconvoluted': deconvoluted_result,
+            # 'interactions_filtered': interactions_filtered,
+            # 'interactions': interactions
+        }
         if analysis_type == "statistical":
-            write_to_file(pvalues_result, pvalues_filename, output_path=output_path, output_format=output_format)
+            self.pipeline_res[res_key]['pvalues'] = pvalues_result
+        self.pipeline_res[res_key]['parameters'] = {
+            'analysis_type': analysis_type,
+            'cluster_res_key': cluster_res_key
+        }
+        self.stereo_exp_data.tl.reset_key_record('cell_cell_communication', res_key)
 
-    def _get_ref_database(self):
+        if output_path is not None:
+            logger.info('Writing results to files')
+        # Todo: Test output_path in linux
+            write_to_file(means_result, means_filename, output_path=output_path, output_format=output_format)
+            write_to_file(significant_means, significant_means_filename, output_path=output_path, output_format=output_format)
+            write_to_file(deconvoluted_result, deconvoluted_filename, output_path=output_path, output_format=output_format)
+            if analysis_type == "statistical":
+                write_to_file(pvalues_result, pvalues_filename, output_path=output_path, output_format=output_format)
+
+    def _prepare_data(self, cluster_res_key):
+        if cluster_res_key not in self.pipeline_res:
+            raise PipelineResultInexistent(cluster_res_key)
+        cluster: pd.DataFrame = self.pipeline_res[cluster_res_key].copy()
+        cluster['bins'] = cluster['bins'].astype(str)
+        cluster.rename({'group': 'cell_type'}, axis=1, inplace=True)
+        cluster.set_index('bins', drop=True, inplace=True)
+        cluster.index.name = 'cell'
+        data = pd.DataFrame(self.stereo_exp_data.exp_matrix.T.toarray())
+        data.columns = self.stereo_exp_data.cell_names.astype(str)
+        data.index = self.stereo_exp_data.gene_names
+        return data, cluster
+
+    def _get_ref_database(self, db_path):
         """
         preprocessing the reference database
         """
-        url = 'sqlite:///{}'.format(self.db_path)
+        url = 'sqlite:///{}'.format(db_path)
         engine = create_engine(url)
         database = Database(engine)
         database.base_model = Base
@@ -455,8 +543,8 @@ class CellCellCommunication(AlgorithmBase):
 
         return interactions, genes, complex_composition, complex_expanded
 
-    @staticmethod
-    def _check_meta_data(meta_raw: pd.DataFrame):
+    
+    def _check_meta_data(self, meta_raw: pd.DataFrame):
         """
         Preprocess the meta dataframe:
         When the dataframe has both "cell" and "cell_type" columns, take "cell" as the index and "cell_type" as the
@@ -496,8 +584,8 @@ class CellCellCommunication(AlgorithmBase):
         except:
             raise ProcessMetaException
 
-    @staticmethod
-    def _check_counts_data(counts: pd.DataFrame, counts_data: str) -> None:
+    
+    def _check_counts_data(self, counts: pd.DataFrame, counts_data: str) -> None:
         """Naive check count data against counts gene names.
 
         This method quickly checks if count_data matches the all gene names and
@@ -516,8 +604,8 @@ class CellCellCommunication(AlgorithmBase):
                            f"some genes seem to be in another format. "
                            f"Try using hgnc_symbol if all counts are filtered.")
 
-    @staticmethod
-    def _counts_validations(counts: pd.DataFrame, meta: pd.DataFrame) -> pd.DataFrame:
+    
+    def _counts_validations(self, counts: pd.DataFrame, meta: pd.DataFrame) -> pd.DataFrame:
         """
         Change counts type to np.float32.
         Check if the column names of counts matches the indexes of meta.
@@ -541,8 +629,8 @@ class CellCellCommunication(AlgorithmBase):
             counts = counts.loc[:, counts.columns.isin(meta.index)].copy()
         return counts
 
-    @staticmethod
-    def _check_microenvs_data(microenvs: pd.DataFrame, meta: pd.DataFrame) -> pd.DataFrame:
+    
+    def _check_microenvs_data(self, microenvs: pd.DataFrame, meta: pd.DataFrame) -> pd.DataFrame:
         """
         Runs validations to make sure the file has enough columns and that all the cell types in the microenvironment
         are included in meta.
@@ -555,13 +643,14 @@ class CellCellCommunication(AlgorithmBase):
         elif len_columns > 2:
             logger.warning(f"Microenvrionemnts expects 2 columns and got {len_columns}. Droppoing extra columns.")
         microenvs = microenvs.iloc[:, 0:2]
-        if any(~microenvs.iloc[:, 0].isin(meta['cell_type'])):
+        # if any(~microenvs.iloc[:, 0].isin(meta['cell_type'])):
+        if not all(microenvs.iloc[:, 0].isin(meta['cell_type'])):
             raise Exception("Some clusters/cell_types in microenvironments are not present in meta")
         microenvs.columns = ["cell_type", "microenvironment"]
         return microenvs
 
-    @staticmethod
-    def add_multidata_and_means_to_counts(counts: pd.DataFrame, genes: pd.DataFrame, counts_identifiers: str):
+    
+    def add_multidata_and_means_to_counts(self, counts: pd.DataFrame, genes: pd.DataFrame, counts_identifiers: str):
         """Adds multidata and means to counts.
 
         This method merges multidata ids into counts data using counts_identifiers as column name for the genes.
@@ -599,10 +688,12 @@ class CellCellCommunication(AlgorithmBase):
 
         return counts, counts_relations
 
-    def prefilters(self,
-                   interactions: pd.DataFrame,
-                   counts: pd.DataFrame,
-                   complex_composition: pd.DataFrame):
+    def prefilters(
+            self,
+            interactions: pd.DataFrame,
+            counts: pd.DataFrame,
+            complex_composition: pd.DataFrame
+        ):
         """
         Filter complex_composition, interaction and counts.
         """
@@ -627,10 +718,12 @@ class CellCellCommunication(AlgorithmBase):
 
         return complex_composition_filtered, interactions_filtered, counts_filtered
 
-    @staticmethod
-    def _filter_complex_composition_by_counts(counts: pd.DataFrame,
-                                              complex_composition: pd.DataFrame
-                                              ) -> Tuple[pd.DataFrame, pd.DataFrame]:
+    
+    def _filter_complex_composition_by_counts(
+            self,
+            counts: pd.DataFrame,
+            complex_composition: pd.DataFrame
+        ) -> Tuple[pd.DataFrame, pd.DataFrame]:
         """
         Filter the counts and complex_composition:
         - keep only complexes whose composing proteins are all in the counts.
@@ -677,10 +770,13 @@ class CellCellCommunication(AlgorithmBase):
 
         return complex_composition_filtered, counts_filtered
 
-    @staticmethod
-    def _filter_interactions_by_counts(interactions: pd.DataFrame,
-                                       counts: pd.DataFrame,
-                                       complex_composition: pd.DataFrame) -> pd.DataFrame:
+    
+    def _filter_interactions_by_counts(
+            self,
+            interactions: pd.DataFrame,
+            counts: pd.DataFrame,
+            complex_composition: pd.DataFrame
+        ) -> pd.DataFrame:
         """
         Use filtered complex_composition and unfiltered counts to filter interactions.
         - keep only interactions that both parts are in the complex or counts.
@@ -702,9 +798,12 @@ class CellCellCommunication(AlgorithmBase):
 
         return interactions_filtered
 
-    @staticmethod
-    def _filter_counts_by_interactions(counts: pd.DataFrame,
-                                       interactions: pd.DataFrame) -> pd.DataFrame:
+    
+    def _filter_counts_by_interactions(
+            self,
+            counts: pd.DataFrame,
+            interactions: pd.DataFrame
+        ) -> pd.DataFrame:
         """
         Removes counts if is not defined in interactions components.
         """
@@ -715,11 +814,14 @@ class CellCellCommunication(AlgorithmBase):
 
         return counts_filtered
 
-    @staticmethod
-    def build_clusters(meta: pd.DataFrame,
-                       counts: pd.DataFrame,
-                       complex_composition: pd.DataFrame,
-                       skip_percent: bool) -> dict:
+    
+    def build_clusters(
+            self,
+            meta: pd.DataFrame,
+            counts: pd.DataFrame,
+            complex_composition: pd.DataFrame,
+            skip_percent: bool
+        ) -> dict:
         """
         Build the means and percent values for each cluster and stores the results in a dictionary with the
         following keys: 'names', 'means' and 'percents'.
@@ -780,8 +882,8 @@ class CellCellCommunication(AlgorithmBase):
 
         return {'names': cluster_names, 'means': cluster_means, 'percents': cluster_pcts}
 
-    @staticmethod
-    def get_cluster_combinations(cluster_names: np.array, microenvs: pd.DataFrame = pd.DataFrame()) -> np.array:
+    
+    def get_cluster_combinations(self, cluster_names: np.array, microenvs: pd.DataFrame = pd.DataFrame()) -> np.array:
         """
         Calculates and sorts combinations of clusters.
 
@@ -841,8 +943,8 @@ class CellCellCommunication(AlgorithmBase):
         logger.debug(f'Using {len(result)} cluster combinations for analysis')
         return result
 
-    @staticmethod
-    def build_result_matrix(interactions: pd.DataFrame, cluster_interactions: list, separator: str) -> pd.DataFrame:
+    
+    def build_result_matrix(self, interactions: pd.DataFrame, cluster_interactions: list, separator: str) -> pd.DataFrame:
         """
         builds an empty cluster matrix to fill it later, index is id_interaction
         """
@@ -855,11 +957,14 @@ class CellCellCommunication(AlgorithmBase):
 
         return result
 
-    @staticmethod
-    def mean_analysis(interactions: pd.DataFrame,
-                      clusters: dict,
-                      cluster_interactions: list,
-                      separator: str) -> pd.DataFrame:
+    
+    def mean_analysis(
+            self,
+            interactions: pd.DataFrame,
+            clusters: dict,
+            cluster_interactions: list,
+            separator: str
+        ) -> pd.DataFrame:
         """
         Calculates the mean for the list of interactions and for each cluster interaction
 
@@ -933,12 +1038,15 @@ class CellCellCommunication(AlgorithmBase):
 
         return result
 
-    @staticmethod
-    def percent_analysis(clusters: dict,
-                         threshold: float,
-                         interactions: pd.DataFrame,
-                         cluster_interactions: list,
-                         separator: str) -> pd.DataFrame:
+    
+    def percent_analysis(
+            self,
+            clusters: dict,
+            threshold: float,
+            interactions: pd.DataFrame,
+            cluster_interactions: list,
+            separator: str
+        ) -> pd.DataFrame:
         """
         Calculates the percents for cluster interactions and for each gene
         interaction.
@@ -993,43 +1101,51 @@ class CellCellCommunication(AlgorithmBase):
 
         return result
 
-    def shuffled_analysis(self,
-                          iterations: int,
-                          meta: pd.DataFrame,
-                          counts: pd.DataFrame,
-                          interactions: pd.DataFrame,
-                          cluster_interactions: list,
-                          complex_composition: pd.DataFrame,
-                          real_mean_analysis: pd.DataFrame,
-                          threads: int,
-                          separator: str) -> list:
+    def shuffled_analysis(
+            self,
+            iterations: int,
+            meta: pd.DataFrame,
+            counts: pd.DataFrame,
+            interactions: pd.DataFrame,
+            cluster_interactions: list,
+            complex_composition: pd.DataFrame,
+            real_mean_analysis: pd.DataFrame,
+            processes: int,
+            separator: str
+        ) -> list:
         """
         Shuffles meta and calculates the means for each and saves it in a list.
 
-        Runs it in a multiple threads to run it faster
-        """
-        with Pool(processes=threads) as pool:
-            statistical_analysis_thread = partial(self._statistical_analysis,
-                                                  cluster_interactions,
-                                                  counts,
-                                                  interactions,
-                                                  meta,
-                                                  complex_composition,
-                                                  separator,
-                                                  real_mean_analysis)
-            results = pool.map(statistical_analysis_thread, range(iterations))
+        Runs it in a multiple processes to run it faster
 
+        Note that on notebook just only support one process
+        """
+        statistical_analysis_thread = partial(self._statistical_analysis,
+                                            cluster_interactions,
+                                            counts,
+                                            interactions,
+                                            meta,
+                                            complex_composition,
+                                            separator,
+                                            real_mean_analysis)
+        if processes > 1:
+            with Pool(processes=processes) as pool:
+                results = pool.map(statistical_analysis_thread, range(iterations))
+        else:
+            results = [statistical_analysis_thread(i) for i in range(iterations)]
         return results
 
-    def _statistical_analysis(self,
-                              cluster_interactions,
-                              counts,
-                              interactions,
-                              meta,
-                              complex_composition: pd.DataFrame,
-                              separator,
-                              real_mean_analysis: pd.DataFrame,
-                              iteration_number):
+    def _statistical_analysis(
+            self,
+            cluster_interactions: list,
+            counts: pd.DataFrame,
+            interactions: pd.DataFrame,
+            meta: pd.DataFrame,
+            complex_composition: pd.DataFrame,
+            separator: str,
+            real_mean_analysis: pd.DataFrame,
+            iteration_number: int
+    ):
         """
         Shuffles meta dataset and calculates the means
         """
@@ -1054,11 +1170,14 @@ class CellCellCommunication(AlgorithmBase):
         result_mean_analysis = np.packbits(shuffled_mean_analysis.values > real_mean_analysis.values, axis=None)
         return result_mean_analysis
 
-    @staticmethod
-    def build_pvalue_result(real_mean_analysis: pd.DataFrame,
-                            real_percents_analysis: pd.DataFrame,
-                            statistical_mean_analysis: list,
-                            base_result: pd.DataFrame) -> pd.DataFrame:
+    
+    def build_pvalue_result(
+            self,
+            real_mean_analysis: pd.DataFrame,
+            real_percents_analysis: pd.DataFrame,
+            statistical_mean_analysis: list,
+            base_result: pd.DataFrame
+    ) -> pd.DataFrame:
         """
         Calculates the pvalues after statistical analysis.
 
@@ -1099,22 +1218,23 @@ class CellCellCommunication(AlgorithmBase):
 
         return pd.DataFrame(percent_result, index=base_result.index, columns=base_result.columns)
 
-    def build_results(self,
-                      analysis_type,
-                      interactions: pd.DataFrame,
-                      interactions_original: pd.DataFrame,
-                      counts_relations: pd.DataFrame,
-                      real_mean_analysis: pd.DataFrame,
-                      result_percent: pd.DataFrame,
-                      clusters_means: pd.DataFrame,
-                      complex_compositions: pd.DataFrame,
-                      counts: pd.DataFrame,
-                      genes: pd.DataFrame,
-                      result_precision: int,
-                      pvalue: float = None,
-                      counts_data: str = None,
-                      separator: str = '|'
-                      ):
+    def build_results(
+            self,
+            analysis_type,
+            interactions: pd.DataFrame,
+            interactions_original: pd.DataFrame,
+            counts_relations: pd.DataFrame,
+            real_mean_analysis: pd.DataFrame,
+            result_percent: pd.DataFrame,
+            clusters_means: pd.DataFrame,
+            complex_compositions: pd.DataFrame,
+            counts: pd.DataFrame,
+            genes: pd.DataFrame,
+            result_precision: int,
+            pvalue: float = None,
+            counts_data: str = None,
+            separator: str = '|'
+    ):
         """
         Sets the results data structure from method generated data. Results documents are defined by specs.
         """
@@ -1214,10 +1334,22 @@ class CellCellCommunication(AlgorithmBase):
                                                                      genes,
                                                                      counts_data)
 
+        def fillna_func(column: pd.Series):
+            if column.dtype == object:
+                return column.fillna(value='')
+            if column.dtype == bool:
+                return column.fillna(value=False)
+            return column.fillna(value=-1)
+        
+        pvalues_result = pvalues_result.apply(fillna_func, axis=0)
+        means_result = means_result.apply(fillna_func, axis=0)
+        significant_means_result = significant_means_result.apply(fillna_func, axis=0)
+        deconvoluted_result = deconvoluted_result.apply(fillna_func, axis=0)
+
         return pvalues_result, means_result, significant_means_result, deconvoluted_result
 
-    @staticmethod
-    def _interacting_pair_build(interactions: pd.DataFrame, separator) -> pd.Series:
+    
+    def _interacting_pair_build(self, interactions: pd.DataFrame, separator) -> pd.Series:
         """
         Returns the interaction result formated with name1_name2
         """
@@ -1239,10 +1371,12 @@ class CellCellCommunication(AlgorithmBase):
 
         return interacting_pair
 
-    def build_significant_means(self,
-                                real_mean_analysis: pd.DataFrame,
-                                result_percent: pd.DataFrame,
-                                min_significant_mean: float = None) -> Tuple[pd.Series, pd.DataFrame]:
+    def build_significant_means(
+            self,
+            real_mean_analysis: pd.DataFrame,
+            result_percent: pd.DataFrame,
+            min_significant_mean: float = None
+        ) -> Tuple[pd.Series, pd.DataFrame]:
         """
         Calculates the significant means and adds rank (number of non-empty entries divided by total entries)
         :param real_mean_analysis: the real mean results
@@ -1257,10 +1391,13 @@ class CellCellCommunication(AlgorithmBase):
         significant_mean_rank.name = 'rank'
         return significant_mean_rank, significant_means
 
-    @staticmethod
-    def _get_significant_means(real_mean_analysis: pd.DataFrame,
-                               result_percent: pd.DataFrame,
-                               min_significant_mean: float = None) -> pd.DataFrame:
+    
+    def _get_significant_means(
+            self,
+            real_mean_analysis: pd.DataFrame,
+            result_percent: pd.DataFrame,
+            min_significant_mean: float = None
+        ) -> pd.DataFrame:
         """
         Get the significant means for gene1_gene2|cluster1_cluster2.
 
@@ -1299,13 +1436,15 @@ class CellCellCommunication(AlgorithmBase):
                             index=real_mean_analysis.index,
                             columns=real_mean_analysis.columns)
 
-    def deconvoluted_complex_result_build(self,
-                                          clusters_means: pd.DataFrame,
-                                          interactions: pd.DataFrame,
-                                          complex_compositions: pd.DataFrame,
-                                          counts: pd.DataFrame,
-                                          genes: pd.DataFrame,
-                                          counts_data: str) -> pd.DataFrame:
+    def deconvoluted_complex_result_build(
+            self,
+            clusters_means: pd.DataFrame,
+            interactions: pd.DataFrame,
+            complex_compositions: pd.DataFrame,
+            counts: pd.DataFrame,
+            genes: pd.DataFrame,
+            counts_data: str
+        ) -> pd.DataFrame:
         genes_counts = list(counts.index)
         genes_filtered = genes[genes['id_multidata'].apply(lambda gene: gene in genes_counts)]
 
@@ -1344,8 +1483,8 @@ class CellCellCommunication(AlgorithmBase):
 
         return deconvoluted_result
 
-    @staticmethod
-    def _deconvolute_interaction_component(interactions, suffix, counts_data):
+    
+    def _deconvolute_interaction_component(self, interactions, suffix, counts_data):
         interactions = interactions[~interactions['is_complex{}'.format(suffix)]]
         deconvoluted_result = pd.DataFrame()
         deconvoluted_result['gene'] = interactions['{}{}'.format(counts_data, suffix)]
@@ -1360,12 +1499,15 @@ class CellCellCommunication(AlgorithmBase):
 
         return deconvoluted_result
 
-    @staticmethod
-    def _deconvolute_complex_interaction_component(complex_compositions,
-                                                   genes_filtered,
-                                                   interactions,
-                                                   suffix,
-                                                   counts_data):
+    
+    def _deconvolute_complex_interaction_component(
+            self,
+            complex_compositions,
+            genes_filtered,
+            interactions,
+            suffix,
+            counts_data
+        ):
         return_properties = [counts_data, 'protein_name', 'gene_name', 'name', 'is_complex', 'id_cp_interaction',
                              'receptor', 'complex_name']
         if complex_compositions.empty:

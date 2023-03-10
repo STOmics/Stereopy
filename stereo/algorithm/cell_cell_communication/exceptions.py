@@ -41,3 +41,11 @@ class NoInteractionsFound(Exception):
 class InvalidDatabase(Exception):
     def __init__(self):
         super(InvalidDatabase, self).__init__('Invalid database. Please choose from cellphonedb, liana and celltalkdb.')
+
+class PipelineResultInexistent(Exception):
+    def __init__(self, res_key: str = None):
+        if res_key is not None:
+            description = f"The result specified by {res_key} is not exists."
+        else:
+            description = "The result is not exists."
+        super(PipelineResultInexistent, self).__init__(description)

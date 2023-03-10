@@ -10,9 +10,15 @@ import pandas as pd
 from sqlalchemy import or_
 
 from stereo.log_manager import logger
-from stereo.algorithm.cell_cell_communication.ref_database.database_utils import Repository, remove_not_defined_columns
-from stereo.algorithm.cell_cell_communication.ref_database.sqlalchemy_model import Complex, ComplexComposition, Gene, \
-    Multidata, Protein, Interaction
+from stereo.algorithm.cell_cell_communication.utils.database_utils import Repository, remove_not_defined_columns
+from stereo.algorithm.cell_cell_communication.utils.sqlalchemy_model import (
+    Complex,
+    ComplexComposition,
+    Gene,
+    Multidata,
+    Protein,
+    Interaction
+)
 
 
 class ComplexRepository(Repository):

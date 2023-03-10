@@ -26,7 +26,7 @@ class Subsampler(object):
         self.num_cells = num_cells
         np.random.seed(debug_seed)
 
-    def subsample(self, counts: pd.DataFrame) -> pd.DataFrame:
+    def subsample(self, counts: pd.DataFrame, counts_pca: pd.DataFrame = None) -> pd.DataFrame:
         input_genes = counts.shape[1]  # number of cells
 
         if self.num_cells is None:
@@ -34,16 +34,19 @@ class Subsampler(object):
 
         logger.info('Subsampling {} to {}'.format(input_genes, self.num_cells))
 
-        counts_t = counts.T
-
-        if self.log:
-            pca_input = np.log1p(counts_t)  # natural log, ln(x+1）
-        else:
-            pca_input = counts_t
-
         try:
-            u, s, vt = pca(pca_input.values, k=self.num_pc)
-            x_dimred = u[:, :self.num_pc] * s[:self.num_pc]
+            counts_t = counts.T
+            if counts_pca is None:
+                logger.info(f"Running PCA, pcs is {self.num_pc}")
+                if self.log:
+                    pca_input = np.log1p(counts_t)  # natural log, ln(x+1）
+                else:
+                    pca_input = counts_t
+            
+                u, s, vt = pca(pca_input.values, k=self.num_pc)
+                x_dimred = u[:, :self.num_pc] * s[:self.num_pc]
+            else:
+                x_dimred = counts_pca.values
             sketch_index = gs(x_dimred, self.num_cells, replace=False)
             x_matrix = counts_t.iloc[sketch_index]
         except Exception as e:
