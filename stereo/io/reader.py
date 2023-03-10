@@ -255,6 +255,18 @@ def read_stereo_h5ad(
                         for cluster in clusters:
                             cluster_key = f'{cluster}@{res_key}@marker_genes'
                             data.tl.result[res_key][cluster] = h5ad.read_group(f[cluster_key])
+                    if analysis_key == 'cell_cell_communication':
+                        data.tl.result[res_key] = {}
+                        for key in ['means', 'significant_means', 'deconvoluted', 'pvalues']:
+                            full_key = f'{res_key}@{key}@cell_cell_communication'
+                            if full_key in f.keys():
+                                data.tl.result[res_key][key] = h5ad.read_group(f[full_key])
+                        parameters_df: pd.DataFrame = h5ad.read_group(f[f'{res_key}@parameters@cell_cell_communication'])
+                        data.tl.result[res_key]['parameters'] = {}
+                        for i, row in parameters_df.iterrows():
+                            name = row['name']
+                            value = row['value']
+                            data.tl.result[res_key]['parameters'][name] = value
     return data
 
 @ReadWriteUtils.check_file_exists

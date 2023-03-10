@@ -67,7 +67,7 @@ class StPipeline(object):
         new_attr = AlgorithmBase.get_attribute_helper(item, self.data, self.result)
         if new_attr:
             self.__setattr__(item, new_attr)
-            logger.info(f'register algorithm {new_attr} to {self}')
+            logger.info(f'register algorithm {item} to {self}')
             return new_attr
 
         raise AttributeError(
