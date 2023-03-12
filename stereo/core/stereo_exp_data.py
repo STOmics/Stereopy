@@ -496,6 +496,8 @@ class AnnBasedStereoExpData(StereoExpData):
 
     def sub_by_name(self, cell_name: Optional[Union[np.ndarray, list]] = None,
                     gene_name: Optional[Union[np.ndarray, list]] = None):
+        self._ann_data.obs_names_make_unique()
+        self._ann_data.var_names_make_unique()
         if cell_name:
             self._ann_data._inplace_subset_obs(cell_name)
         if gene_name:

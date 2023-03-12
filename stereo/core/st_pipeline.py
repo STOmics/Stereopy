@@ -1071,7 +1071,7 @@ class StPipeline(object):
 
 
 class AnnBasedResult(dict):
-    CLUSTER_NAMES = {'leiden', 'louvain', 'phenograph'}
+    CLUSTER_NAMES = {'leiden', 'louvain', 'phenograph', 'annotation'}
     CONNECTIVITY_NAMES = {'neighbors'}
     REDUCE_NAMES = {'umap', 'pca', 'tsne'}
     HVG_NAMES = {'highly_variable_genes', 'hvg'}
