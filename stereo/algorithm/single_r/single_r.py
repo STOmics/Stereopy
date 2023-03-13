@@ -56,7 +56,7 @@ class SingleR(AlgorithmBase):
             self,
             ref_exp_data: StereoExpData,
             ref_use_col="celltype",
-            test_cluster_col=None,
+            cluster_res_key=None,
             quantile=80,
             fine_tune_threshold=0.05,
             fine_tune_times=0,
@@ -97,14 +97,14 @@ class SingleR(AlgorithmBase):
         logger.debug(f'training ref finished, cost {time.time() - start_time} seconds')
 
         test_cluster_result = None
-        if test_cluster_col:
+        if cluster_res_key:
             tmp_exp_matrix = pd.DataFrame(
                 test_exp_data.exp_matrix.todense() if scipy.sparse.issparse(
                     test_exp_data.exp_matrix) else test_exp_data.exp_matrix,
                 index=test_exp_data.cell_names,
                 columns=test_exp_data.gene_names
             )
-            test_cluster_result = test_exp_data.tl.result[test_cluster_col]
+            test_cluster_result = test_exp_data.tl.result[cluster_res_key]
             test_group_data_frame = test_cluster_result['group']
             if 'bins' in test_cluster_result:
                 test_group_data_frame.index = test_cluster_result['bins'].values
@@ -132,12 +132,12 @@ class SingleR(AlgorithmBase):
         logger.debug(f'fine-tuning finished, cost {time.time() - start_time} seconds')
 
         res = pd.DataFrame(columns=['bins', 'group', 'first_labels'])
-        res['bins'] = test_data.cell_names if test_cluster_col else test_exp_data.cell_names
+        res['bins'] = test_data.cell_names if cluster_res_key else test_exp_data.cell_names
         res['group'] = ret_labels
         res['first_labels'] = labels_array
         res.index = res['bins'].values
         logger.info(f'single-r finished, cost {time.time() - the_very_start_time} seconds')
-        if test_cluster_col:
+        if cluster_res_key:
             res_single_r = pd.DataFrame(res.loc[test_cluster_result['group']])
             bins = test_cluster_result['bins'] if 'bins' in test_cluster_result else test_cluster_result.index
             res_single_r['bins'].astype(bins.dtype)
