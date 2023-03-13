@@ -1,5 +1,5 @@
 from dataclasses import dataclass, field
-from typing import Literal, List, Dict, Union
+from typing import List, Dict, Union
 
 import pandas as pd
 from joblib import Parallel, cpu_count, delayed
@@ -12,6 +12,28 @@ from ..plots.plot_collection import PlotCollection
 def _default_idx() -> int:
     # return -1 function `__get_auto_key` will start with 0 instead of 1
     return -1
+
+
+@dataclass
+class _SSDataView:
+    _data_list: List[StereoExpData] = field(default_factory=list)
+    _tl = None
+    _plt = None
+
+    @property
+    def tl(self):
+        if self._tl is None:
+            self._tl = TL(self)
+        return self._tl
+
+    @property
+    def plt(self):
+        if self._plt is None:
+            self._plt = PLT(self)
+        return self._plt
+
+    def __str__(self):
+        return f'''data_list: {len(self._data_list)}'''
 
 
 @dataclass
@@ -84,12 +106,20 @@ class _SSDataStruct(object):
     def __deepcopy__(self, _) -> object:
         return self
 
-    def __getitem__(self, key: Union[str, int]) -> StereoExpData:
+    def __getitem__(self, key: Union[str, int, slice]) -> Union[StereoExpData, _SSDataView]:
         if type(key) is int:
             idx = key
             return self._data_list[idx]
         elif type(key) is str:
             return self._name_dict[key]
+        elif type(key) is slice:
+            data_list = []
+            if type(key.start) is tuple or type(key.start) is list:
+                for obj_key in key.start:
+                    data_list.append(self._name_dict[obj_key])
+            elif type(key.start) is int:
+                data_list = self._data_list[key]
+            return _SSDataView(_data_list=data_list)
         raise TypeError(f'{key} is not one of Union[str, int]')
 
     def __contains__(self, item) -> bool:

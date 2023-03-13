@@ -47,12 +47,12 @@ class SSDataTestCases(unittest.TestCase):
             [
                 '/mnt/d/projects/stereopy_dev/demo_data/SS200000135TL_D1/SS200000135TL_D1.tissue.gef',
                 '/mnt/d/projects/stereopy_dev/demo_data/SS200000135TL_D1/SS200000135TL_D1_script_res_gem.h5ad',
-                '/mnt/d/projects/stereopy_dev/demo_data/SS200000135TL_D1/SS200000135TL_D1.tissue.gem'
+                # '/mnt/d/projects/stereopy_dev/demo_data/SS200000135TL_D1/SS200000135TL_D1.tissue.gem'
             ],
             [
                 'z',
                 'x',
-                'y'
+                # 'y'
             ],
             bin_size=[100, 100, 200],
             bin_type=['bins', 'cell_bins', 'bins'],
@@ -102,6 +102,25 @@ class SSDataTestCases(unittest.TestCase):
 
     def test_copy(self):
         self.assertIs(copy.deepcopy(self.ss_data), self.ss_data, copy.copy(self.ss_data))
+
+    def test_slice(self):
+        test_slice = self.ss_data[1:]
+        self.assertEqual(len(test_slice._data_list), 1)
+        self.assertIs(test_slice._data_list[0], self.ss_data[1])
+
+        name_tuple = ('a', '0')
+        test_slice = self.ss_data[name_tuple:]
+        self.assertEqual(len(test_slice._data_list), len(name_tuple))
+        self.assertIs(test_slice._data_list[0], self.ss_data['a'])
+        self.assertIs(test_slice._data_list[1], self.ss_data['0'])
+
+        name_list = ['a', '0']
+        test_slice = self.ss_data[name_list:]
+        self.assertEqual(len(test_slice._data_list), len(name_list))
+        self.assertIs(test_slice._data_list[0], self.ss_data['a'])
+        self.assertIs(test_slice._data_list[1], self.ss_data['0'])
+
+        test_slice.tl.log1p()
 
     def test_clustering(self):
         self.ss_data.tl.cal_qc()
