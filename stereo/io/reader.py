@@ -204,7 +204,8 @@ def read_stereo_h5ad(file_path, use_raw=True, use_result=True, ):
         # read key_record and result
         if use_result is True and 'key_record' in f.keys():
             h5ad.read_key_record(f['key_record'], data.tl.key_record)
-            for analysis_key, res_keys in data.tl.key_record.items():
+            for analysis_key in list(data.tl.key_record.keys()):
+                res_keys = data.tl.key_record[analysis_key]
                 for res_key in res_keys:
                     if analysis_key == 'hvg':
                         hvg_df = h5ad.read_group(f[f'{res_key}@hvg'])
