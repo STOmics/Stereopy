@@ -17,9 +17,7 @@ import numpy as np
 import pandas as pd
 from typing import Optional, Union
 import seaborn as sns
-from ..config import StereoConfig
-
-conf = StereoConfig()
+from ..stereo_config import stereo_conf
 
 
 def base_scatter(
@@ -75,7 +73,7 @@ def base_scatter(
     dot_size = 120000 / len(hue) if dot_size is None else dot_size
     # add a color bar
     if color_bar:
-        colors = conf.linear_colors(palette, reverse=color_bar_reverse)
+        colors = stereo_conf.linear_colors(palette, reverse=color_bar_reverse)
         cmap = ListedColormap(colors)
         cmap.set_bad(bad_color)
 
@@ -91,7 +89,7 @@ def base_scatter(
         from natsort import natsorted
         import collections
         g = natsorted(set(hue))
-        colors = conf.get_colors(palette)
+        colors = stereo_conf.get_colors(palette)
         color_dict = collections.OrderedDict(dict([(g[i], colors[i]) for i in range(len(g))]))
         sns.scatterplot(x=x, y=y, hue=hue, hue_order=g, linewidth=0, marker="s",
                         palette=color_dict, size=hue, sizes=(dot_size, dot_size), ax=ax)
@@ -115,7 +113,7 @@ def base_scatter(
     if not show_ticks:
         ax.set_yticks([])
         ax.set_xticks([])
-    return ax
+    return ax.get_figure()
 
 
 def multi_scatter(
@@ -251,7 +249,7 @@ def volcano(
                     color='black',
                     # weight='semibold'
                 )
-    return ax
+    return ax.get_figure()
 
 
 def marker_gene_volcano(
@@ -272,15 +270,15 @@ def marker_gene_volcano(
     if text_genes is not None:
         # df['text'] = df['group'] == 'up'
         df['label'] = df['genes'].isin(text_genes)
-        ax = volcano(df, x='x', y='y', hue='group', label='genes', text_visible='label',
+        fig = volcano(df, x='x', y='y', hue='group', label='genes', text_visible='label',
                      cut_off_pvalue=cut_off_pvalue,
                      cut_off_logFC=cut_off_logFC,
                      **kwargs)
     else:
-        ax = volcano(df, x='x', y='y', hue='group',
+        fig = volcano(df, x='x', y='y', hue='group',
                      cut_off_pvalue=cut_off_pvalue, cut_off_logFC=cut_off_logFC,
                      **kwargs)
-    return ax
+    return fig
 
 
 def highly_variable_genes(

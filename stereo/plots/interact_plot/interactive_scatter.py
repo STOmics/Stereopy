@@ -19,15 +19,14 @@ from typing import Optional
 import holoviews.operation.datashader as hd
 from stereo.log_manager import logger
 import copy
-from stereo.config import StereoConfig
+from stereo.stereo_config import stereo_conf
 from stereo.tools.boundary import ConcaveHull
 
-conf = StereoConfig()
 
 link = link_selections.instance()
 pn.param.ParamMethod.loading_indicator = True
 
-colormaps = conf.linear_colormaps
+colormaps = stereo_conf.linear_colormaps
 
 
 class InteractiveScatter:

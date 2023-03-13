@@ -63,7 +63,7 @@ def write_h5ad(data: StereoExpData, use_raw=True, use_result=True, key_record=No
                 for bno, sn in data.sn.items():
                     sn_list.append([bno, sn])
             sn_data = pd.DataFrame(sn_list, columns=['batch', 'sn'])
-            h5ad.write(sn_data, f, 'sn')
+            h5ad.write(sn_data, f, 'sn', save_as_matrix=True)
         h5ad.write(data.genes, f, 'genes')
         h5ad.write(data.cells, f, 'cells')
         h5ad.write(data.position, f, 'position')
@@ -73,6 +73,7 @@ def write_h5ad(data: StereoExpData, use_raw=True, use_result=True, key_record=No
         else:
             h5ad.write(data.exp_matrix, f, 'exp_matrix')
         h5ad.write(data.bin_type, f, 'bin_type')
+        h5ad.write(data.merged, f, 'merged')
 
         if use_raw is True:
             same_genes = np.array_equal(data.tl.raw.gene_names, data.gene_names)
@@ -97,7 +98,7 @@ def write_h5ad(data: StereoExpData, use_raw=True, use_result=True, key_record=No
             # write key_record
             mykey_record = deepcopy(data.tl.key_record) if key_record is None else deepcopy(key_record)
             mykey_record_keys = list(mykey_record.keys())
-            supported_keys = ['hvg', 'pca', 'neighbors', 'umap', 'cluster', 'marker_genes'] # 'sct', 'spatial_hotspot'
+            supported_keys = ['hvg', 'pca', 'neighbors', 'umap', 'cluster', 'marker_genes', 'gene_exp_cluster'] # 'sct', 'spatial_hotspot'
             for analysis_key in mykey_record_keys:
                 if analysis_key not in supported_keys:
                     mykey_record.pop(analysis_key)
@@ -127,6 +128,8 @@ def write_h5ad(data: StereoExpData, use_raw=True, use_result=True, key_record=No
                                 h5ad.write(value, f, f'{neighbor_key}@{res_key}@neighbors')  # -> Neighbors
                     if analysis_key == 'cluster':
                         h5ad.write(data.tl.result[res_key], f, f'{res_key}@cluster')  # -> dataframe
+                    if analysis_key == 'gene_exp_cluster':
+                        h5ad.write(data.tl.result[res_key], f, f'{res_key}@gene_exp_cluster', save_as_matrix=True)
                     if analysis_key == 'marker_genes':
                         clusters = list(data.tl.result[res_key].keys())
                         h5ad.write(clusters, f, f'clusters_record@{res_key}@marker_genes')  # -> list

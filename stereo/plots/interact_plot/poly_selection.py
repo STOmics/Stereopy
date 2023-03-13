@@ -9,14 +9,13 @@ import panel as pn
 import param
 from holoviews.element.selection import spatial_select
 from holoviews.util.transform import dim
-from stereo.config import StereoConfig
+from stereo.stereo_config import stereo_conf
 from typing import Optional
 from stereo.tools.boundary import ConcaveHull
 
 pn.extension()
 hv.extension('bokeh')
 
-conf = StereoConfig()
 
 pn.param.ParamMethod.loading_indicator = True
 pa = hv.annotate.instance()
@@ -153,7 +152,7 @@ class PolySelection(object):
     def _plot(self):
         scatter = self.scatter_df.hvplot.scatter(
             x='x', y='y', c='count', cnorm='eq_hist',
-            cmap=conf.linear_colors('stereo'),
+            cmap=stereo_conf.linear_colors('stereo'),
             width=self.width, height=self.height,
             padding=(0.1, 0.1),
             dynspread=True,

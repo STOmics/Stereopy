@@ -53,9 +53,10 @@ def marker_genes_text(
     else:
         n_panels_per_row = ncols
     if groups == 'all':
-        group_names = list(marker_res.keys())
+        group_names = [key for key in marker_res.keys() if '.vs.' in key]
     else:
         group_names = [groups] if isinstance(groups, str) else groups
+    group_names = natsort.natsorted(group_names)
     # one panel for each group
     # set up the figure
     n_panels_x = min(n_panels_per_row, len(group_names))
@@ -81,8 +82,8 @@ def marker_genes_text(
         scores = result.scores.values
         # Setting up axis, calculating y bounds
         if sharey:
-            ymin = min(ymin, np.min(scores))
-            ymax = max(ymax, np.max(scores))
+            ymin = min(ymin, np.min(scores)) if scores.size > 0 else ymin
+            ymax = max(ymax, np.max(scores)) if scores.size > 0 else ymax
 
             if ax0 is None:
                 ax = fig.add_subplot(gs[count])
@@ -90,12 +91,13 @@ def marker_genes_text(
             else:
                 ax = fig.add_subplot(gs[count], sharey=ax0)
         else:
-            ymin = np.min(scores)
-            ymax = np.max(scores)
+            ymin = np.min(scores) if scores.size > 0 else ymin
+            ymax = np.max(scores) if scores.size > 0 else ymax
             ymax += 0.3 * (ymax - ymin)
 
             ax = fig.add_subplot(gs[count])
-            ax.set_ylim(ymin, ymax)
+            if (not np.isinf(ymin)) and (not np.isinf(ymax)):
+                ax.set_ylim(ymin, ymax)
 
         ax.set_xlim(-0.9, markers_num - 0.1)
 
@@ -119,9 +121,10 @@ def marker_genes_text(
         if count % n_panels_x == 0:
             ax.set_ylabel('score')
 
-    if sharey is True:
+    if (sharey is True) and (not np.isinf(ymin)) and (not np.isinf(ymax)):
         ymax += 0.3 * (ymax - ymin)
         ax.set_ylim(ymin, ymax)
+    return fig
 
 
 def make_draw_df(data: StereoExpData, group: pd.DataFrame, marker_res: dict, top_genes: int = 8,
@@ -135,6 +138,8 @@ def make_draw_df(data: StereoExpData, group: pd.DataFrame, marker_res: dict, top
     for label, gene_list in gene_names_dict.items():
         if isinstance(gene_list, str):
             gene_list = [gene_list]
+        if len(gene_list) == 0:
+            continue
         gene_names.extend(list(gene_list))
         gene_group_labels.append(label)
         gene_group_positions.append((start, start + len(gene_list) - 1))
@@ -151,7 +156,7 @@ def make_draw_df(data: StereoExpData, group: pd.DataFrame, marker_res: dict, top
 
 def get_groups_marker(marker_res: dict, top_genes: int = 8, sort_key: str = 'scores',
                       ascend: bool = False, gene_list: Optional[list] = None):
-    groups = marker_res.keys()
+    groups = [key for key in marker_res.keys() if '.vs.' in key]
     groups = natsort.natsorted(groups)
     groups_genes = OrderedDict()
     if gene_list is not None:
@@ -254,6 +259,7 @@ def plot_heatmap(
             left_adjustment=-0.3,
             right_adjustment=0.3,
         )
+    return fig
 
 
 def marker_genes_heatmap(
@@ -295,5 +301,5 @@ def marker_genes_heatmap(
                                                          gene_list=gene_list, min_value=min_value, max_value=max_value)
     if do_log:
         draw_df = np.log1p(draw_df)
-    plot_heatmap(df=draw_df, show_labels=show_labels, show_group=show_group, show_group_txt=show_group_txt,
-                 group_position=group_position, group_labels=group_labels, cluster_colors_array=cluster_colors_array)
+    return plot_heatmap(df=draw_df, show_labels=show_labels, show_group=show_group, show_group_txt=show_group_txt, 
+                        group_position=group_position, group_labels=group_labels, cluster_colors_array=cluster_colors_array)
