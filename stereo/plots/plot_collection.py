@@ -28,10 +28,13 @@ def download(func):
             out_path = kwargs['out_path']
             del kwargs['out_path']
         fig = func(*args, **kwargs)
+        if fig is None:
+            return None
         if out_path is None:
             pn.extension()
             file_name_input = pn.widgets.TextInput(placeholder='Enter a file name...', width=200)
             export_button = pn.widgets.Button(name='download', button_type="primary", width=100)
+            static_text = pn.widgets.StaticText(width=800)
             def _action(_, figure):
                 export_button.loading = True
                 try:
@@ -39,11 +42,12 @@ def download(func):
                     if out_path is not None and len(out_path) > 0:
                         out_path = f"{out_path}_{func.__name__}.png"
                         figure.savefig(out_path, bbox_inches='tight')
+                        static_text.value = f'the plot has alrady been saved in the same path as this notebook and named as <font color="red"><b>{out_path}</b></font>'
                 finally:
                     export_button.loading = False
             action = partial(_action, figure=fig)
             export_button.on_click(action)
-            return pn.Row(file_name_input, export_button)
+            return pn.Row(file_name_input, export_button, static_text)
         else:
             fig.savefig(out_path, bbox_inches='tight')
     return wrapped
