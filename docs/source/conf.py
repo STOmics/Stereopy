@@ -84,6 +84,7 @@ nbsphinx_thumbnails = {
     "Tutorials/rna_velocity": "_static/rna_velocity.png",
     "Tutorials/hotspot": "_static/hotspot.png",
     "Tutorials/high_resolution_export": "_static/box_select.gif",
-    "Tutorials/sctransform":"_static/variance_sct.png"
+    "Tutorials/sctransform":"_static/variance_sct.png",
+    "Tutorials/cell_cell_communication":"_static/cell_cell_communication.png"
 }
 

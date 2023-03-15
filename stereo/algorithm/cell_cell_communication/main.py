@@ -5,6 +5,7 @@ from pathlib import Path
 import natsort
 
 # third part module
+from tqdm import tqdm
 import numpy as np
 import pandas as pd
 import seaborn as sns
@@ -41,7 +42,8 @@ from stereo.algorithm.cell_cell_communication.exceptions import (
     AllCountsFilteredException,
     NoInteractionsFound,
     InvalidDatabase,
-    PipelineResultInexistent
+    PipelineResultInexistent,
+    InvalidSpecies
 )
 
 class PlotCellCellCommunication(PlotBase):
@@ -71,7 +73,7 @@ class PlotCellCellCommunication(PlotBase):
         :param clusters2: path, string, list or ndarray.
                         the second clusters in cluster pairs which would be shown on plot, defaults to None.
                         clusters1 and clusters2 together form cluster pairs
-                        each cluster in cluster1 will join with each one in cluster2 to form ther cluster pairs.
+                        each cluster in cluster1 will join with each one in cluster2 to form the cluster pairs.
                         if set it to None, it will be set to all clusters.
                         1) path: the path of file in which saves the clusters which would be shown, one line one cluster.
                         2) string: only one cluster.
@@ -122,8 +124,8 @@ class PlotCellCellCommunication(PlotBase):
         means['log2(mean+1)'] = np.log2(means['mean'] + 1)
 
         pvalues = pvalues_selected.melt(id_vars='interacting_pair', value_vars=cluster_pairs, value_name='pvalue')
-        # pvalues['log10_pvalue'] = pvalues['pvalue'].apply(lambda x: -np.log10(0.0009) if x == 0 else (-np.log10(x) if x != 1 else 0))
-        pvalues['log10(pvalue+1)'] = np.log10(pvalues['pvalue'] + 1)
+        pvalues['-log10(pvalue)'] = pvalues['pvalue'].apply(lambda x: -np.log10(0.000001) if x == 0 else (-np.log10(x) if x != 1 else 0))
+        # pvalues['log10(pvalue+1)'] = np.log10(pvalues['pvalue'] + 1)
 
         result = pd.merge(means, pvalues, on=["interacting_pair", "variable"])
         result = result.rename(columns={'variable': 'cluster_pair'})
@@ -133,7 +135,7 @@ class PlotCellCellCommunication(PlotBase):
         fig, ax = plt.subplots(figsize=(width, height))
         # fig.subplots_adjust(bottom=0.2, left=0.18, right=0.85)
         sns.scatterplot(data=result, x="cluster_pair", y="interacting_pair", palette=palette, 
-                        hue='log2(mean+1)', size='log10(pvalue+1)', sizes=(100, 300), legend='auto', ax=ax)
+                        hue='log2(mean+1)', size='-log10(pvalue)', sizes=(100, 300), legend='auto', ax=ax)
         # legend_position = kw_args.get('legend_position', 'lower right')
         # legend_coodinate = kw_args.get('legend_coodinate')
         # ax.legend(fontsize=12, frameon=False, ncol=1, loc=legend_position, bbox_to_anchor=legend_coodinate)
@@ -206,7 +208,7 @@ class PlotCellCellCommunication(PlotBase):
         axes[0].tick_params(axis='y', labelsize=13)
         axes[0].set_xlabel('')
         axes[0].set_ylabel('')
-        axes[0].set_title('network')
+        axes[0].set_title('count')
 
         sns.heatmap(data=log_network, square=True, cmap='coolwarm', cbar_kws={'pad': 0.1, 'shrink': 0.5, 'location': 'bottom', 'orientation': 'horizontal'}, ax=axes[1])
         axes[1].yaxis.set_ticks_position('right')
@@ -215,7 +217,7 @@ class PlotCellCellCommunication(PlotBase):
         axes[1].tick_params(axis='y', labelsize=13)
         axes[1].set_xlabel('')
         axes[1].set_ylabel('')
-        axes[1].set_title('log1p_network')
+        axes[1].set_title('log_count')
 
         return fig
 
@@ -254,7 +256,7 @@ class CellCellCommunication(AlgorithmBase):
             counts_identifiers: str = "hgnc_symbol",
             subsampling: bool = False,
             subsampling_log: bool = False,
-            subsampling_num_pc: int = 1000,
+            subsampling_num_pc: int = 100,
             subsampling_num_cells: int = None,
             pca_res_key: str = None,
             separator_cluster: str = "|",
@@ -280,7 +282,8 @@ class CellCellCommunication(AlgorithmBase):
         :param micro_envs: two columns, column names should be "cell_type" and "microenvironment".
         :param species: 'HUMAN' or 'MOUSE'
         :param database: if species is HUMAN, choose from 'cellphonedb' or 'liana';
-                        if MOUSE, use 'cellphonedb' or 'liana' or 'celltalkdb'
+                        if MOUSE, use 'cellphonedb' or 'liana' or 'celltalkdb';
+                        you can also specify the path of a database.
         :param homogene_path: path to the file storing mouse-human homologous genes ralations.
                         if species is MOUSE but database is 'cellphonedb' or 'liana', we need to use the human
         homologous genes for the input mouse genes.
@@ -293,36 +296,35 @@ class CellCellCommunication(AlgorithmBase):
                         if set subsampling to True and set it to None, this function will run the pca.
         :param separator_cluster: separator of cluster names used in the result and plots, e.g. '|'.
         :param separator_interaction: separator of interactions used in the result and plots, e.g. '_'.
-        :param iterations: number of samples used for generating the null distribution.
+        :param iterations: number of iterations for the 'statistical' analysis type.
         :param threshold: threshold of percentage of gene expression, above which being considered as significant.
         :param processes: number of processes used for doing the statistical analysis, on notebook just only support one process.
         :param pvalue: the cut-point of p-value, below which being considered significant.
         :param result_precision: result precision for the results, default=3.
-        :param output_path: the directory to save the result file, set it to output the result to files.
+        :param output_path: the path of directory to save the result files, set it to output the result to files.
         :param means_filename: name of the means result file.
         :param pvalues_filename: name of the pvalues result file.
         :param significant_means_filename: name of the significant mean result file.
-        :param deconvoluted_filename: name of the convoluted result file.
+        :param deconvoluted_filename: name of the deconvoluted result file.
         :param output_format: format of result, 'txt', 'csv', 'tsv', 'tab'.
         :return:
         """
         if subsampling and pca_res_key is not None and pca_res_key not in self.pipeline_res:
             raise PipelineResultInexistent(pca_res_key)
 
-        database_dir = os.path.join(stereo_conf.data_dir, "algorithm/cell_cell_communication/database")
-        if homogene_path is None:
-            homogene_path = os.path.join(database_dir, 'mouse2human.csv')
-        # 0. prepare the reference database
-        # FIXME: change the default database path
-        if database == 'cellphonedb':
-            db_path = os.path.join(database_dir, 'cellphonedb.db')
-        elif database == 'liana':
-            db_path = os.path.join(database_dir, 'liana.db')
-        elif database == 'celltalkdb':
-            db_path = os.path.join(database_dir, 'celltalkdb.db')
-        else:
+        if species is None or species.upper() not in ('HUMAN', 'MOUSE'):
+            raise InvalidSpecies(species)
+        
+        if species.upper() == 'HUMAN' and database == 'celltalkdb':
+            raise InvalidDatabase("The database 'celltalkdb' can not be used with species 'HUMAN'")
+        
+        db_path = self._check_database(database)
+        if db_path is None:
             raise InvalidDatabase()
-
+        
+        logger.info(f'species: {species.upper()}')
+        logger.info(f'database: {database}')
+        
         interactions, genes, complex_composition, complex_expanded = self._get_ref_database(db_path)
 
         counts, meta = self._prepare_data(cluster_res_key)
@@ -338,6 +340,8 @@ class CellCellCommunication(AlgorithmBase):
 
         # 1.3. if species is mouse, get the homologous genes.
         if species.upper() == 'MOUSE' and (database == 'cellphonedb' or database == 'liana'):
+            if homogene_path is None:
+                homogene_path = Path(stereo_conf.data_dir, 'algorithm/cell_cell_communication/database/mouse2human.csv').absolute().as_posix()
             genes_mouse = counts.index.tolist()
             genes_human = mouse2human(genes_mouse, homogene_path)
             counts.index = genes_human
@@ -514,6 +518,25 @@ class CellCellCommunication(AlgorithmBase):
         data.columns = self.stereo_exp_data.cell_names.astype(str)
         data.index = self.stereo_exp_data.gene_names
         return data, cluster
+    
+    def _check_database(self, database: str):
+        if (database is None) or (not isinstance(database, str)):
+            return None
+        
+        database_dir = Path(stereo_conf.data_dir, "algorithm/cell_cell_communication/database")
+        
+        path = Path(database)
+
+        if path.is_dir():
+            return None
+        
+        if path.is_file():
+            return path.absolute().as_posix() if path.exists() else None
+        
+        if database not in ('cellphonedb', 'liana', 'celltalkdb'):
+            return None
+        return (database_dir/f'{database}.db').absolute().as_posix()
+
 
     def _get_ref_database(self, db_path):
         """
@@ -1132,7 +1155,7 @@ class CellCellCommunication(AlgorithmBase):
             with Pool(processes=processes) as pool:
                 results = pool.map(statistical_analysis_thread, range(iterations))
         else:
-            results = [statistical_analysis_thread(i) for i in range(iterations)]
+            results = [statistical_analysis_thread(i) for i in tqdm(range(iterations), desc='statistical analysis', ncols=100)]
         return results
 
     def _statistical_analysis(

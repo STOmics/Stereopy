@@ -168,7 +168,7 @@ def write_h5ad(data: StereoExpData, use_raw=True, use_result=True, key_record=No
                                     'name': name,
                                     'value': value
                                 })
-                                h5ad.write(parameters_df, f, f'{res_key}@{key}@cell_cell_communication', save_as_matrix=True)  # -> dataframe
+                                h5ad.write(parameters_df, f, f'{res_key}@{key}@cell_cell_communication', save_as_matrix=False)  # -> dataframe
 
 
 def write_mid_gef(data, output):
