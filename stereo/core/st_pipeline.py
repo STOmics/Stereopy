@@ -531,6 +531,8 @@ class StPipeline(object):
             raise Exception(f'{pca_res_key} is not in the result, please check and run the pca func.')
         if n_jobs > cpu_count():
             n_jobs = -1
+        if n_pcs is None:
+            n_pcs = self.result[pca_res_key].shape[1]
         from ..algorithm.neighbors import find_neighbors
         neighbor, dists, connectivities = find_neighbors(x=self.result[pca_res_key].values, method=method, n_pcs=n_pcs,
                                                          n_neighbors=n_neighbors, metric=metric, knn=knn, n_jobs=n_jobs)

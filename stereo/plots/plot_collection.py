@@ -756,6 +756,17 @@ class PlotCollection:
             'pvalues_adj'
         ] = 'scores'
     ):
+        """scatter of marker genes
+
+        :param res_key: results key, defaults to 'marker_genes'
+        :param markers_num: top N makers, defaults to 10
+        :param genes: name of genes which would be shown on plot, markers_num is ignored if it is set, defaults to None
+        :param groups: cell types which would be shown on plot, all cell types would be shown if set it to None, defaults to None
+        :param values_to_plot: specify the value which color the plot, the mean expression in group would be set if set it to None defaults to None
+                        available values include: [scores, logfoldchanges, pvalues, pvalues_adj, log10_pvalues, log10_pvalues_adj]
+        :param sort_by: specify the value which sort by when select top N markers, defaults to 'scores'
+                        available values include: [scores, logfoldchanges, pvalues, pvalues_adj]
+        """
         from .marker_genes import MarkerGenesScatterPlot
         marker_genes_res = self.check_res_key(res_key)
         mgsp = MarkerGenesScatterPlot(self.data, marker_genes_res)
