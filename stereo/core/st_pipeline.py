@@ -155,7 +155,7 @@ class StPipeline(object):
         return data
 
     @logit
-    def filter_genes(self, min_cell=None, max_cell=None, gene_list=None, inplace=True):
+    def filter_genes(self, min_cell=None, max_cell=None, gene_list=None, mean_umi_gt=None, inplace=True):
         """
         filter genes based on the numbers of cells.
 
@@ -163,10 +163,11 @@ class StPipeline(object):
         :param max_cell: Maximun number of cells for a gene pass filtering.
         :param gene_list: the list of genes which will be filtered.
         :param inplace: whether inplace the original data or return a new data.
+        :param mean_umi_gt: genes mean umi should greater than this.
         :return:
         """
         from ..preprocess.filter import filter_genes
-        data = filter_genes(self.data, min_cell, max_cell, gene_list, inplace)
+        data = filter_genes(self.data, min_cell, max_cell, gene_list, mean_umi_gt, inplace)
         return data
 
     @logit
@@ -715,6 +716,8 @@ class StPipeline(object):
                           hvg_res_key: Optional[str] = 'highly_variable_genes',
                           res_key: str = 'marker_genes',
                           output: Optional[str] = None,
+                          sort_by='scores',
+                          n_genes: Union[str, int] = 'all'
                           ):
         """
         a tool of finding maker gene. for each group, find statistical test different genes between one group and
@@ -730,6 +733,9 @@ class StPipeline(object):
         :param hvg_res_key: the key of highly varialbe genes to getting the result.
         :param res_key: the key for getting the result from the self.result.
         :param output: path of output_file(.csv). If None, do not generate the output file.
+        :param sort_by: default to 'scores', the result will sort by the key, other options 'log2fc'.
+        :param n_genes: default to 0, means will auto calculate n_genes by N = 10000/K². K is cluster number, and N is
+                larger or equal to 1, less or equal to 50.
         :return:
         """
         from ..tools.find_markers import FindMarker
@@ -743,15 +749,22 @@ class StPipeline(object):
         data = self.raw if use_raw else self.data
         data = self.subset_by_hvg(hvg_res_key, use_raw=use_raw, inplace=False) if use_highly_genes else data
         tool = FindMarker(data=data, groups=self.result[cluster_res_key], method=method, case_groups=case_groups,
-                          control_groups=control_groups, corr_method=corr_method, raw_data=self.raw)
+                          control_groups=control_groups, corr_method=corr_method, raw_data=self.raw, sort_by=sort_by,
+                          n_genes=n_genes)
         self.result[res_key] = tool.result
         if output is not None:
             import natsort
             result = self.result[res_key]
-            show_cols = ['scores', 'pvalues', 'pvalues_adj', 'log2fc', 'genes']
-            groups = natsort.natsorted(result.keys())
-            dat = pd.DataFrame(
-                {group.split(".")[0] + "_" + key: result[group][key] for group in groups for key in show_cols})
+            show_cols = ['scores', 'pvalues', 'pvalues_adj', 'log2fc', 'genes', 'pct', 'pct_rest']
+            groups = natsort.natsorted([key for key in result.keys() if '.vs.' in key])
+            dat = pd.concat(
+                [
+                    pd.DataFrame(
+                        {group.split(".")[0] + "_" + key: result[group][key].values}
+                    ) for group in groups for key in show_cols
+                ],
+                axis=1
+            )
             dat.to_csv(output)
         key = 'marker_genes'
         self.reset_key_record(key, res_key)
@@ -1007,7 +1020,8 @@ class StPipeline(object):
         max_out_group_fraction=0.5,
         compare_abs=False,
         remove_mismatch=True,
-        res_key='marker_genes_filtered'
+        res_key='marker_genes_filtered',
+        output=None
     ):
         """Filters out genes based on log fold change and fraction of genes expressing the gene within and outside each group.
 
@@ -1020,6 +1034,7 @@ class StPipeline(object):
                                 if `False`, these records will be set to np.nan,
                                 defaults to True
         :param res_key: the key of the result of this function to be set to self.result, defaults to 'marker_genes_filtered'
+        :param output: path of output_file(.csv). If None, do not generate the output file.
         """
         if marker_genes_res_key not in self.result:
             raise Exception(f'{marker_genes_res_key} is not in the result, please check and run the find_marker_genes func.')
@@ -1045,6 +1060,20 @@ class StPipeline(object):
             else:
                 new_res[flag == True] = np.nan
             self.result[res_key][key] = new_res
+        if output is not None:
+            import natsort
+            result = self.result[res_key]
+            show_cols = ['scores', 'pvalues', 'pvalues_adj', 'log2fc', 'genes', 'pct', 'pct_rest']
+            groups = natsort.natsorted([key for key in result.keys() if '.vs.' in key])
+            dat = pd.concat(
+                [
+                    pd.DataFrame(
+                        {group.split(".")[0] + "_" + key: result[group][key].values}
+                    ) for group in groups for key in show_cols
+                ],
+                axis=1
+            )
+            dat.to_csv(output)
 
 
     # def scenic(self, tfs, motif, database_dir, res_key='scenic', use_raw=True, outdir=None,):

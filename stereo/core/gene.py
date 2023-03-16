@@ -21,6 +21,7 @@ class Gene(object):
         self._gene_name = gene_name if gene_name is None else gene_name.astype('U')
         self.n_cells = None
         self.n_counts = None
+        self.mean_umi = None
 
     @property
     def gene_name(self):
@@ -56,6 +57,8 @@ class Gene(object):
             self.n_cells = self.n_cells[index]
         if self.n_counts is not None:
             self.n_counts = self.n_counts[index]
+        if self.mean_umi is not None:
+            self.mean_umi = self.mean_umi[index]
         return self
 
     def to_df(self):
@@ -67,6 +70,7 @@ class Gene(object):
         attributes = {
             'n_counts': self.n_counts,
             'n_cells': self.n_cells,
+            'mean_umi': self.mean_umi
         }
         df = pd.DataFrame(attributes, index=self.gene_name)
         return df
