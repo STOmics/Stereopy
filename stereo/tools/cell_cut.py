@@ -44,7 +44,8 @@ class CellCut(object):
                 overlap=100,
                 gen_mask_on_gpu='-1',
                 tissue_seg_model_path=None,
-                tissue_seg_method=None
+                tissue_seg_method=None,
+                post_processing_workers=10
         ):
         """generate cgef by bgef and mask or bgef and ssdna image
 
@@ -75,7 +76,9 @@ class CellCut(object):
         if mask_path is None:
             from .cell_segment import CellSegment
             logger.info(f"there is no mask file, generate it by model {model_path}")
-            cell_segment = CellSegment(image_path, gen_mask_on_gpu, self.cgef_out_dir, tissue_seg_model_path=tissue_seg_model_path, tissue_seg_method=tissue_seg_method)
+            cell_segment = CellSegment(image_path, gen_mask_on_gpu, self.cgef_out_dir,
+                                       tissue_seg_model_path=tissue_seg_model_path, tissue_seg_method=tissue_seg_method,
+                                       post_processing_workers=post_processing_workers)
             cell_segment.generate_mask(model_path, model_type, depp_cro_size, overlap)
             mask_path = cell_segment.get_mask_files()[0]
             logger.info(f"the generated mask file {mask_path}")

@@ -13,7 +13,8 @@ def cell_seg_deepcell(
         overlap=100,
         gpu=-1,
         tissue_seg_model_path=None,
-        tissue_seg_method=None
+        tissue_seg_method=None,
+        post_processing_workers=10
     ):
     """
     cell segmentation.
@@ -24,8 +25,9 @@ def cell_seg_deepcell(
     :param depp_cro_size: deep crop size
     :param overlap: the size of overlap
     :param gpu: the id of gpu, if -1,use the cpu to predict.
-    :param tissue_seg_model_path: the path of deep-learning model of tissue segmentation, if set it to None, it would use OpenCV to process.
-    :param tissue_seg_method: the method of tissue segmentation, 0 is deep-learning and 1 is OpenCV.
+    :param tissue_seg_model_path: the path of deep learning model of tissue segmentation, if set it to None, it would use OpenCV to process.
+    :param tissue_seg_method: the method of tissue segmentation, 1 is based on deep learning and 0 is based on OpenCV.
+    :param post_processing_workers: the number of processes for post-processing
     :return:
     """
     try:
@@ -42,6 +44,7 @@ def cell_seg_deepcell(
         overlap,
         model_path,
         tissue_seg_model_path=tissue_seg_model_path,
-        tissue_seg_method=tissue_seg_method
+        tissue_seg_method=tissue_seg_method,
+        post_processing_workers=post_processing_workers
     )
     cell_seg_pipeline.run()
