@@ -4,17 +4,18 @@
 @author: qindanhua@genomics.cn
 @time:2021/08/31
 """
-from random import randint
-from typing import Optional, Union, Sequence
+import numpy as np
 from functools import partial, wraps
-# import colorcet as cc
+from typing import Optional, Union, Sequence
+
 import panel as pn
 import matplotlib.pyplot as plt
 from matplotlib import gridspec
-import numpy as np
-from random import randint
-from .scatter import base_scatter, multi_scatter, marker_gene_volcano, highly_variable_genes
+
+from .plot_base import PlotBase
+from ..log_manager import logger
 from stereo.stereo_config import stereo_conf
+from .scatter import base_scatter, multi_scatter, marker_gene_volcano, highly_variable_genes
 
 pn.param.ParamMethod.loading_indicator = True
 
