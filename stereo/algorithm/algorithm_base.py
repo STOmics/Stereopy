@@ -24,7 +24,7 @@ class AlgorithmBase(metaclass=ABCMeta):
     """
 
     # common object variable
-    stereo_exp_data: StereoExpData
+    stereo_exp_data: StereoExpData = None
     pipeline_res: dict = None
 
     _steps_order_by_name = list()
@@ -91,9 +91,9 @@ class AlgorithmBase(metaclass=ABCMeta):
         # num of subclasses may be like 100-200 at most
         for sub_cls in AlgorithmBase.__subclasses__():
             sub_cls_name = _camel_to_snake(sub_cls.__name__.split(".")[-1])
-            if sub_cls_name == item:
+            if sub_cls_name == item and sub_cls.__name__ != 'ms_data_algorithm_base':
                 # snake_cls_name as method name in pipeline
-                sub_obj = sub_cls(stereo_exp_data, res)
+                sub_obj = sub_cls(stereo_exp_data=stereo_exp_data, pipeline_res=res)
                 return sub_obj.main
         return None
 

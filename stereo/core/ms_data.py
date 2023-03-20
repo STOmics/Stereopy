@@ -1,5 +1,6 @@
-from dataclasses import dataclass, field
+from collections import defaultdict
 from typing import List, Dict, Union
+from dataclasses import dataclass, field
 
 import pandas as pd
 from joblib import Parallel, cpu_count, delayed
@@ -85,6 +86,7 @@ class _MSDataStruct(object):
         if len(value) != len(self._data_list):
             raise Exception(f'new names\' length should be same as data_list')
         self._names = value
+        self.reset_name(default_key=False)
 
     @property
     def relationship(self):
@@ -236,7 +238,7 @@ class _MSDataStruct(object):
         if not self._data_list:
             raise Exception('`MSData` object with no data')
         if self._var is None or 'var' in self.__reconstruct:
-            self._var = pd.DataFrame(index=self.__var_indexes(), columns=['test_var_1'])
+            self._var = pd.DataFrame(index=list(self.__var_indexes()), columns=['test_var_1'])
             if 'var' in self.__reconstruct:
                 self.__reconstruct.remove('var')
         return self._var
@@ -303,12 +305,25 @@ class _MSDataStruct(object):
         return self
 
 
+class MsDataResult(object):
+
+    def __init__(self):
+        self.result = dict()
+        self._key_records = defaultdict(list)
+
+    def set_result(self, res_key, res, type_key: str = None):
+        self.result[res_key] = res
+        if type_key:
+            self._key_records[type_key].append(res_key)
+
+
 class MSDataPipeLine(object):
     ATTR_NAME = 'tl'
     BASE_CLASS = StPipeline
 
     def __init__(self, _ms_data):
         self._ms_data = _ms_data
+        self._result = MsDataResult()
 
     def __getattr__(self, item):
         dict_attr = self.__dict__.get(item, None)
@@ -337,12 +352,12 @@ class MSDataPipeLine(object):
         delayed_list = []
         for exp_obj in self._ms_data._data_list:
             obj_method = AlgorithmBase.get_attribute_helper(item, exp_obj.tl.data, exp_obj.tl.result)
+            if obj_method:
+                def log_delayed_task(idx, *arg, **kwargs):
+                    logger.info(f'index-{idx} in ms_data start to run {item}')
+                    obj_method(*arg, **kwargs)
 
-            def log_delayed_task(idx, *arg, **kwargs):
-                logger.info(f'index-{idx} in ms_data start to run {item}')
-                obj_method(*arg, **kwargs)
-
-            delayed_list.append(log_delayed_task)
+                delayed_list.append(log_delayed_task)
 
         if delayed_list:
             def temp(*args, **kwargs):
@@ -353,6 +368,11 @@ class MSDataPipeLine(object):
                 )
 
             return temp
+
+        from ..algorithm.ms_algorithm_base import MSDataAlgorithmBase
+        ms_data_method = MSDataAlgorithmBase.get_attribute_helper(item, self._ms_data, self._result)
+        if ms_data_method:
+            return ms_data_method
 
         raise AttributeError
 
@@ -379,9 +399,12 @@ class MSData(_MSDataStruct):
         return self._plt
 
     def __str__(self):
-        return f'''names: {self._names}
-s_type: {self._type}
-s_data: {dict(zip(self._names, [data_obj.shape for data_obj in self._data_list]))}'''
+        return f'''ms_data: {self._names}
+num_slice: {self.num_slice}
+names: {self.names}
+obs: {self.obs.columns}
+var: {self.var.columns}
+'''
 
     def __repr__(self):
         return self.__str__()
