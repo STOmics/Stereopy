@@ -17,6 +17,7 @@ def _default_idx() -> int:
 
 @dataclass
 class _MSDataView:
+    _names: List[str] = field(default_factory=list)
     _data_list: List[StereoExpData] = field(default_factory=list)
     _tl = None
     _plt = None
@@ -53,6 +54,7 @@ class _MSDataStruct(object):
     _names: List[str] = field(default_factory=list)
     _obs: pd.DataFrame = None
     _var: pd.DataFrame = None
+    _var_type: str = 'interact'
     _relationship: str = 'other'
     _relationship_info: object = None  # TODO not define yet
 
@@ -116,12 +118,17 @@ class _MSDataStruct(object):
             return self._name_dict[key]
         elif type(key) is slice:
             data_list = []
+            names = []
             if type(key.start) is tuple or type(key.start) is list:
                 for obj_key in key.start:
                     data_list.append(self._name_dict[obj_key])
-            elif type(key.start) is int:
+                    names.append(obj_key)
+            elif type(key.start) or int and type(key.stop) is int or type(key.step) is int:
                 data_list = self._data_list[key]
-            return _MSDataView(_data_list=data_list)
+                names = self._names[key]
+            else:
+                raise TypeError(f'{key} is slice but not in rules')
+            return _MSDataView(_data_list=data_list, _names=names)
         raise TypeError(f'{key} is not one of Union[str, int]')
 
     def __contains__(self, item) -> bool:
@@ -228,10 +235,13 @@ class _MSDataStruct(object):
         return self._obs
 
     def __var_indexes(self) -> set:
-        res = set(self._data_list[0].gene_names)
-        for obj in self._data_list[1:]:
-            res = res & set(obj.gene_names)
-        return res
+        if self._var_type == 'interact':
+            res = set(self._data_list[0].gene_names)
+            for obj in self._data_list[1:]:
+                res = res & set(obj.gene_names)
+            return res
+        else:
+            raise NotImplementedError
 
     @property
     def var(self) -> pd.DataFrame:
@@ -348,31 +358,39 @@ class MSDataPipeLine(object):
 
             return temp
 
-        from ..algorithm.algorithm_base import AlgorithmBase
-        delayed_list = []
-        for exp_obj in self._ms_data._data_list:
-            obj_method = AlgorithmBase.get_attribute_helper(item, exp_obj.tl.data, exp_obj.tl.result)
-            if obj_method:
-                def log_delayed_task(idx, *arg, **kwargs):
-                    logger.info(f'index-{idx} in ms_data start to run {item}')
-                    obj_method(*arg, **kwargs)
+        if MSDataPipeLine.ATTR_NAME == "tl":
+            from ..algorithm.algorithm_base import AlgorithmBase
+            delayed_list = []
+            for exp_obj in self._ms_data._data_list:
+                obj_method = AlgorithmBase.get_attribute_helper(item, exp_obj.tl.data, exp_obj.tl.result)
+                if obj_method:
+                    def log_delayed_task(idx, *arg, **kwargs):
+                        logger.info(f'index-{idx} in ms_data start to run {item}')
+                        obj_method(*arg, **kwargs)
 
-                delayed_list.append(log_delayed_task)
+                    delayed_list.append(log_delayed_task)
 
-        if delayed_list:
-            def temp(*args, **kwargs):
-                # TODO 这块有木有需求？有可能有多进程？
-                Parallel(n_jobs=min(len(self._ms_data._data_list), cpu_count()), backend='threading', verbose=100)(
-                    delayed(one_job)(idx, *args, **kwargs)
-                    for idx, one_job in enumerate(delayed_list)
-                )
+            if delayed_list:
+                def temp(*args, **kwargs):
+                    # TODO 这块有木有需求？有可能有多进程？
+                    Parallel(n_jobs=min(len(self._ms_data._data_list), cpu_count()), backend='threading', verbose=100)(
+                        delayed(one_job)(idx, *args, **kwargs)
+                        for idx, one_job in enumerate(delayed_list)
+                    )
 
-            return temp
+                return temp
 
-        from ..algorithm.ms_algorithm_base import MSDataAlgorithmBase
-        ms_data_method = MSDataAlgorithmBase.get_attribute_helper(item, self._ms_data, self._result)
-        if ms_data_method:
-            return ms_data_method
+            from ..algorithm.ms_algorithm_base import MSDataAlgorithmBase
+            ms_data_method = MSDataAlgorithmBase.get_attribute_helper(item, self._ms_data, self._result)
+            if ms_data_method:
+                return ms_data_method
+        else:
+            # TODO PlotBase is designed to stereo_exp_data
+            # from ..plots.plot_base import PlotBase
+            # new_attr = PlotBase.get_attribute_helper(item, self._ms_data, self._result)
+            # if new_attr:
+            #     return new_attr
+            pass
 
         raise AttributeError
 
@@ -399,11 +417,13 @@ class MSData(_MSDataStruct):
         return self._plt
 
     def __str__(self):
-        return f'''ms_data: {self._names}
+        return f'''ms_data: {self.shape}
 num_slice: {self.num_slice}
 names: {self.names}
 obs: {self.obs.columns}
 var: {self.var.columns}
+var_type: {self._var_type} to {len(self.var.index)}
+tl.result: {self.tl._result._key_records}
 '''
 
     def __repr__(self):
