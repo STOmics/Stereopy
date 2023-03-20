@@ -49,11 +49,11 @@ class _MSDataStruct(object):
     # base attributes
     # TODO: temporarily length 10
     _data_list: List[StereoExpData] = field(default_factory=list)
-    _s_names: List[str] = field(default_factory=list)
+    _names: List[str] = field(default_factory=list)
     _obs: pd.DataFrame = None
     _var: pd.DataFrame = None
-    _type: str = 'time_series'
-    _type_info: object = None  # TODO not define yet
+    _relationship: str = 'other'
+    _relationship_info: object = None  # TODO not define yet
 
     # code-supported attributes
     _name_dict: Dict[str, StereoExpData] = field(default_factory=dict)
@@ -62,12 +62,12 @@ class _MSDataStruct(object):
     __reconstruct: set = field(default_factory=set)
 
     # class attr
-    _NON_EDITABLE_ATTRS = {'data_list', 's_names', '_obs', '_var', '_type', '_type_info'}
-    TYPE_ENUM = {'continuous', 'time_series'}
+    _NON_EDITABLE_ATTRS = {'data_list', 'names', '_obs', '_var', '_relationship', '_relationship_info'}
+    RELATIONSHIP_ENUM = {'continuous', 'time_series', 'other'}
 
     def __post_init__(self) -> object:
-        while len(self._data_list) > len(self._s_names):
-            self._s_names.append(self.__get_auto_key())
+        while len(self._data_list) > len(self._names):
+            self._names.append(self.__get_auto_key())
         if not self._name_dict or not self._data_dict:
             self.reset_name(default_key=False)
         return self
@@ -77,24 +77,24 @@ class _MSDataStruct(object):
         return self._data_list
 
     @property
-    def s_names(self):
-        return self._s_names
+    def names(self):
+        return self._names
 
-    @s_names.setter
-    def s_names(self, value: List[str]):
+    @names.setter
+    def names(self, value: List[str]):
         if len(value) != len(self._data_list):
-            raise Exception(f'new s_names\' length should be same as data_list')
-        self._s_names = value
+            raise Exception(f'new names\' length should be same as data_list')
+        self._names = value
 
     @property
-    def type(self):
-        return self._type
+    def relationship(self):
+        return self._relationship
 
-    @type.setter
-    def type(self, value: str):
-        if value not in MSData.TYPE_ENUM:
-            raise Exception(f'new type must be in {MSData.TYPE_ENUM}')
-        self._type = value
+    @relationship.setter
+    def relationship(self, value: str):
+        if value not in MSData.RELATIONSHIP_ENUM:
+            raise Exception(f'new relationship must be in {MSData.RELATIONSHIP_ENUM}')
+        self._relationship = value
 
     def __len__(self):
         return len(self._data_list)
@@ -149,7 +149,7 @@ class _MSDataStruct(object):
     def del_data(self, name):
         obj = self._name_dict.pop(name)
         self._data_list.index(obj)
-        self._s_names.remove(name)
+        self._names.remove(name)
         self._data_dict.pop(id(obj))
         self._data_list.remove(obj)
         self.__reconstruct.add('var')
@@ -158,7 +158,7 @@ class _MSDataStruct(object):
     def __add_data_objs(self, data_list: List[StereoExpData], keys: List[str] = None) -> object:
         if keys:
             for key in keys:
-                if key in self._s_names:
+                if key in self._names:
                     raise KeyError(f'key={key} already exists')
         for data_obj in data_list:
             if data_obj in self:
@@ -201,7 +201,7 @@ class _MSDataStruct(object):
             key = self.__get_auto_key()
         self._name_dict[key] = obj
         self._data_dict[id(obj)] = key
-        self._s_names.append(key)
+        self._names.append(key)
         self._data_list.append(obj)
         self.__reconstruct.add('var')
         self.__reconstruct.add('obs')
@@ -254,10 +254,10 @@ class _MSDataStruct(object):
 
     @property
     def shape(self) -> dict:
-        return dict(zip(self._s_names, [data_obj.shape for data_obj in self._data_list]))
+        return dict(zip(self._names, [data_obj.shape for data_obj in self._data_list]))
 
     @property
-    def s_n(self):
+    def num_slice(self):
         return len(self)
 
     def rename(self, mapper: Dict[str, str]) -> object:
@@ -284,9 +284,9 @@ class _MSDataStruct(object):
             src_obj = self._name_dict.pop(src)
             self._name_dict[dst] = src_obj
             self._data_dict[id(src_obj)] = dst
-        self._s_names = []
+        self._names = []
         for obj in self._data_list:
-            self._s_names.append(self._data_dict[id(obj)])
+            self._names.append(self._data_dict[id(obj)])
         return self
 
     def reset_name(self, start_idx=None, default_key=True) -> object:
@@ -294,12 +294,12 @@ class _MSDataStruct(object):
         self.__idx_generator = _default_idx() if start_idx is None else start_idx
         self._name_dict, self._data_dict = dict(), dict()
         for idx, obj in enumerate(self._data_list):
-            self._name_dict[self.__get_auto_key() if default_key else self._s_names[idx]] = obj
+            self._name_dict[self.__get_auto_key() if default_key else self._names[idx]] = obj
         for name, obj in self._name_dict.items():
             self._data_dict[id(obj)] = name
-        self._s_names = []
+        self._names = []
         for obj in self._data_list:
-            self._s_names.append(self._data_dict[id(obj)])
+            self._names.append(self._data_dict[id(obj)])
         return self
 
 
@@ -379,9 +379,9 @@ class MSData(_MSDataStruct):
         return self._plt
 
     def __str__(self):
-        return f'''s_names: {self._s_names}
+        return f'''names: {self._names}
 s_type: {self._type}
-s_data: {dict(zip(self._s_names, [data_obj.shape for data_obj in self._data_list]))}'''
+s_data: {dict(zip(self._names, [data_obj.shape for data_obj in self._data_list]))}'''
 
     def __repr__(self):
         return self.__str__()
