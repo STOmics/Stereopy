@@ -15,7 +15,7 @@ def _default_idx() -> int:
 
 
 @dataclass
-class _SSDataView:
+class _MSDataView:
     _data_list: List[StereoExpData] = field(default_factory=list)
     _tl = None
     _plt = None
@@ -37,9 +37,9 @@ class _SSDataView:
 
 
 @dataclass
-class _SSDataStruct(object):
+class _MSDataStruct(object):
     # 最重要的思想：
-    # 1 `_SSDataStruct` 只索引、组织使用逻辑，不缓存样本数据，真正的数据在StereoExpData
+    # 1 `_MSDataStruct` 只索引、组织使用逻辑，不缓存样本数据，真正的数据在StereoExpData
     # 2 内存：懒加载; 运行时间：代码质量、numba、GPU; 
 
     # TODO 单片增删改细胞、基因，会影响obs、var
@@ -92,8 +92,8 @@ class _SSDataStruct(object):
 
     @type.setter
     def type(self, value: str):
-        if value not in SSData.TYPE_ENUM:
-            raise Exception(f'new type must be in {SSData.TYPE_ENUM}')
+        if value not in MSData.TYPE_ENUM:
+            raise Exception(f'new type must be in {MSData.TYPE_ENUM}')
         self._type = value
 
     def __len__(self):
@@ -106,7 +106,7 @@ class _SSDataStruct(object):
     def __deepcopy__(self, _) -> object:
         return self
 
-    def __getitem__(self, key: Union[str, int, slice]) -> Union[StereoExpData, _SSDataView]:
+    def __getitem__(self, key: Union[str, int, slice]) -> Union[StereoExpData, _MSDataView]:
         if type(key) is int:
             idx = key
             return self._data_list[idx]
@@ -119,7 +119,7 @@ class _SSDataStruct(object):
                     data_list.append(self._name_dict[obj_key])
             elif type(key.start) is int:
                 data_list = self._data_list[key]
-            return _SSDataView(_data_list=data_list)
+            return _MSDataView(_data_list=data_list)
         raise TypeError(f'{key} is not one of Union[str, int]')
 
     def __contains__(self, item) -> bool:
@@ -218,7 +218,7 @@ class _SSDataStruct(object):
     @property
     def obs(self) -> pd.DataFrame:
         if not self._data_list:
-            raise Exception('`SSData` object with no data')
+            raise Exception('`MSData` object with no data')
         if self._obs is None or 'obs' in self.__reconstruct:
             self._obs = pd.DataFrame(index=self.__obs_indexes(), columns=['test_obs_1'])
             if 'obs' in self.__reconstruct:
@@ -234,7 +234,7 @@ class _SSDataStruct(object):
     @property
     def var(self) -> pd.DataFrame:
         if not self._data_list:
-            raise Exception('`SSData` object with no data')
+            raise Exception('`MSData` object with no data')
         if self._var is None or 'var' in self.__reconstruct:
             self._var = pd.DataFrame(index=self.__var_indexes(), columns=['test_var_1'])
             if 'var' in self.__reconstruct:
@@ -266,7 +266,7 @@ class _SSDataStruct(object):
         if not mapper:
             raise Exception('`rename_keys` is empty or None')
         elif not self._name_dict:
-            raise Exception('`ss_data` is empty')
+            raise Exception('`ms_data` is empty')
         mapper_values = mapper.values()
         set_of_src = set(mapper_values)
         if len(set_of_src) != len(mapper_values):
@@ -278,7 +278,7 @@ class _SSDataStruct(object):
         # allow intersection_src_keys being empty
         intersection_dst_keys = mapper.keys() & self._name_dict.keys()
         if len(intersection_dst_keys) != len(mapper.keys()):
-            raise Exception(f'some keys in {mapper.keys()} not exist in ss_data')
+            raise Exception(f'some keys in {mapper.keys()} not exist in ms_data')
         for src in intersection_dst_keys:
             dst = mapper[src]
             src_obj = self._name_dict.pop(src)
@@ -303,12 +303,12 @@ class _SSDataStruct(object):
         return self
 
 
-class SSDataPipeLine(object):
+class MSDataPipeLine(object):
     ATTR_NAME = 'tl'
     BASE_CLASS = StPipeline
 
-    def __init__(self, _ss_data):
-        self._ss_data = _ss_data
+    def __init__(self, _ms_data):
+        self._ms_data = _ms_data
 
     def __getattr__(self, item):
         dict_attr = self.__dict__.get(item, None)
@@ -319,27 +319,27 @@ class SSDataPipeLine(object):
         if item.startswith('__'):
             raise AttributeError
 
-        new_attr = SSDataPipeLine.BASE_CLASS.__dict__.get(item)
+        new_attr = MSDataPipeLine.BASE_CLASS.__dict__.get(item)
         if new_attr:
             def log_delayed_task(idx, *arg, **kwargs):
-                logger.info(f'data_obj(idx={idx}) in ss_data start to run {item}')
+                logger.info(f'data_obj(idx={idx}) in ms_data start to run {item}')
                 new_attr(*arg, **kwargs)
 
             def temp(*args, **kwargs):
-                Parallel(n_jobs=min(len(self._ss_data._data_list), cpu_count()), backend='threading', verbose=100)(
-                    delayed(log_delayed_task)(idx, obj.__getattribute__(SSDataPipeLine.ATTR_NAME), *args, **kwargs)
-                    for idx, obj in enumerate(self._ss_data._data_list)
+                Parallel(n_jobs=min(len(self._ms_data._data_list), cpu_count()), backend='threading', verbose=100)(
+                    delayed(log_delayed_task)(idx, obj.__getattribute__(MSDataPipeLine.ATTR_NAME), *args, **kwargs)
+                    for idx, obj in enumerate(self._ms_data._data_list)
                 )
 
             return temp
 
         from ..algorithm.algorithm_base import AlgorithmBase
         delayed_list = []
-        for exp_obj in self._ss_data._data_list:
+        for exp_obj in self._ms_data._data_list:
             obj_method = AlgorithmBase.get_attribute_helper(item, exp_obj.tl.data, exp_obj.tl.result)
 
             def log_delayed_task(idx, *arg, **kwargs):
-                logger.info(f'index-{idx} in ss_data start to run {item}')
+                logger.info(f'index-{idx} in ms_data start to run {item}')
                 obj_method(*arg, **kwargs)
 
             delayed_list.append(log_delayed_task)
@@ -347,7 +347,7 @@ class SSDataPipeLine(object):
         if delayed_list:
             def temp(*args, **kwargs):
                 # TODO 这块有木有需求？有可能有多进程？
-                Parallel(n_jobs=min(len(self._ss_data._data_list), cpu_count()), backend='threading', verbose=100)(
+                Parallel(n_jobs=min(len(self._ms_data._data_list), cpu_count()), backend='threading', verbose=100)(
                     delayed(one_job)(idx, *args, **kwargs)
                     for idx, one_job in enumerate(delayed_list)
                 )
@@ -357,12 +357,12 @@ class SSDataPipeLine(object):
         raise AttributeError
 
 
-TL = type('TL', (SSDataPipeLine,), {'ATTR_NAME': 'tl', "BASE_CLASS": StPipeline})
-PLT = type('PLT', (SSDataPipeLine,), {'ATTR_NAME': 'plt', "BASE_CLASS": PlotCollection})
+TL = type('TL', (MSDataPipeLine,), {'ATTR_NAME': 'tl', "BASE_CLASS": StPipeline})
+PLT = type('PLT', (MSDataPipeLine,), {'ATTR_NAME': 'plt', "BASE_CLASS": PlotCollection})
 
 
 @dataclass
-class SSData(_SSDataStruct):
+class MSData(_MSDataStruct):
     _tl = None
     _plt = None
 
