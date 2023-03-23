@@ -68,8 +68,11 @@ class AlgorithmBase(metaclass=ABCMeta):
             yield ErrorCode.Success
 
     @final
-    def test_memory_profile(self, stream=sys.stdout, **kwargs):
-        from memory_profiler import profile
+    def memory_profile(self, stream=sys.stdout, **kwargs):
+        try:
+            from memory_profiler import profile
+        except ImportError:
+            raise ImportError
         # these cost some `io` and `cpu` to profile memory
         if self._steps_order_by_name:
             for f_name, f, f_args_name in self._steps_order_by_name:

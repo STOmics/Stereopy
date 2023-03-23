@@ -10,7 +10,7 @@ class MSDataTestCases(unittest.TestCase):
     def setUp(self, *args, **kwargs):
         super().setUp()
         self.ms_data = MSData()
-        # self.obj = read_gef('d:\\projects\\stereopy_dev\\demo_data\\SS200000135TL_D1\\SS200000135TL_D1.tissue.gef')
+        # TODO should download from net
         self.obj = read_gef('/mnt/d/projects/stereopy_dev/demo_data/SS200000135TL_D1/SS200000135TL_D1.tissue.gef')
         self.obj2 = copy.deepcopy(self.obj)
 
@@ -33,6 +33,15 @@ class MSDataTestCases(unittest.TestCase):
         self.assertEqual(len(self.ms_data), 2)
         self.assertIs(self.ms_data[0], self.obj)
         self.assertIs(self.ms_data[1], self.obj2)
+
+        obj3 = read_gef('/mnt/d/projects/stereopy_dev/demo_data/SS200000135TL_D1/SS200000135TL_D1.tissue.gef')
+        self.ms_data += obj3
+        obj4 = read_gef('/mnt/d/projects/stereopy_dev/demo_data/SS200000135TL_D1/SS200000135TL_D1.tissue.gef')
+        self.ms_data += obj4
+        self.assertEqual(len(self.ms_data), 4)
+
+        self.assertIs(self.ms_data[2], obj3)
+        self.assertIs(self.ms_data[3], obj4)
 
     def test_add_path(self):
         self.ms_data.add_data('/mnt/d/projects/stereopy_dev/demo_data/SS200000135TL_D1/SS200000135TL_D1.tissue.gef')
