@@ -318,7 +318,7 @@ def read_seurat_h5ad(file_path, use_raw=False):
     return data
 
 @ReadWriteUtils.check_file_exists
-def read_ann_h5ad(file_path, spatial_key: Optional[str] = None):
+def read_ann_h5ad(file_path, spatial_key: Optional[str] = None, bin_type=None, bin_size=None):
     """
     read the h5ad file in Anndata format, and generate the object of StereoExpData.
 
@@ -326,7 +326,7 @@ def read_ann_h5ad(file_path, spatial_key: Optional[str] = None):
     :param spatial_key: use .obsm[`'spatial_key'`] as position.
     :return: StereoExpData obj.
     """
-    data = StereoExpData(file_path=file_path)
+    data = StereoExpData(file_path=file_path, bin_type=bin_type, bin_size=bin_size)
 
     # basic
     # attributes = ["obsm", "varm", "obsp", "varp", "uns", "layers"]

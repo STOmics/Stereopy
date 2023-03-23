@@ -293,6 +293,7 @@ class _MSDataStruct(object):
         # TODO mixed file format, how to handle arguments
         bin_sizes = kwargs.get('bin_size', None)
         bin_types = kwargs.get('bin_type', None)
+        spatial_keys = kwargs.get('spatial_key', None)
         if bin_sizes is not None or bin_types is not None:
             assert len(file_path_list) == len(bin_sizes) == len(bin_types)
         for idx, file_path in enumerate(file_path_list):
@@ -309,9 +310,12 @@ class _MSDataStruct(object):
                     bin_type=bin_types[idx] if bin_types is not None else 'bins',
                 ))
             elif file_path.endswith('.h5ad'):
-                if bin_types and bin_types[idx]:
-                    logger.warn(f"reading h5ad({file_path}), ignore its bin_type({bin_types[idx]})")
-                data_list.append(read_ann_h5ad(file_path))
+                data_list.append(read_ann_h5ad(
+                    file_path,
+                    spatial_key=spatial_keys[idx],
+                    bin_size=bin_sizes[idx],
+                    bin_type=bin_types[idx],
+                ))
             else:
                 raise Exception(f'file format({file_path}) not support')
         return self.__add_data_objs(data_list, keys)
