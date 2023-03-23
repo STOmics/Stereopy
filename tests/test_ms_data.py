@@ -109,6 +109,11 @@ class MSDataTestCases(unittest.TestCase):
     def test_tl_ms_data_method_algorithm_base(self):
         self.ms_data.tl.ms_log1p_fake()
 
+    def test_plt(self):
+        self.ms_data.tl.cal_qc()
+        self.ms_data.plt.violin()
+        self.ms_data.plt.violin(out_paths=['violin1.png', 'violin2.png'])
+
     def test_num_slice(self):
         self.assertEqual(len(self.ms_data), self.ms_data.num_slice, len(self.ms_data.data_list))
 

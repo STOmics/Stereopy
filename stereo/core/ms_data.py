@@ -520,8 +520,14 @@ class MSDataPipeLine(object):
         else:
             if new_attr:
                 def temp(*args, **kwargs):
+                    out_paths = kwargs.get('out_paths', None)
+                    if out_paths:
+                        del kwargs['out_paths']
+                        assert len(self._ms_data._data_list) == len(out_paths)
                     for idx, obj in enumerate(self._ms_data._data_list):
                         logger.info(f'data_obj(idx={idx}) in ms_data start to run {item}')
+                        if out_paths:
+                            kwargs['out_path'] = out_paths[idx]
                         new_attr(obj.__getattribute__(self.__class__.ATTR_NAME), *args, **kwargs)
                 return temp
 
