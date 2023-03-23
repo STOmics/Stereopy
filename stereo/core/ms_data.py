@@ -309,6 +309,8 @@ class _MSDataStruct(object):
                     bin_type=bin_types[idx] if bin_types is not None else 'bins',
                 ))
             elif file_path.endswith('.h5ad'):
+                if bin_types and bin_types[idx]:
+                    logger.warn(f"reading h5ad({file_path}), ignore its bin_type({bin_types[idx]})")
                 data_list.append(read_ann_h5ad(file_path))
             else:
                 raise Exception(f'file format({file_path}) not support')
