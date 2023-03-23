@@ -3,15 +3,23 @@ import unittest
 
 from stereo.core.ms_data import MSData
 from stereo.io.reader import read_gef
+from stereo.utils._download import _download
 
 
 class MSDataTestCases(unittest.TestCase):
 
+    DEMO_DATA_URL = 'https://pan.genomics.cn/ucdisk/api/2.0/share/link/download?' \
+                    'shareEventId=share_2022928142945896_010df2aa7d344d97a610557de7bad81b&' \
+                    'nodeId=8a80804a837dc46f018382c40ca51af0&code='
+
     def setUp(self, *args, **kwargs):
         super().setUp()
+
+        self.file_path = _download(MSDataTestCases.DEMO_DATA_URL)
+
         self.ms_data = MSData()
         # TODO should download from net
-        self.obj = read_gef('/mnt/d/projects/stereopy_dev/demo_data/SS200000135TL_D1/SS200000135TL_D1.tissue.gef')
+        self.obj = read_gef(self.file_path)
         self.obj2 = copy.deepcopy(self.obj)
 
         self.ms_data.add_data(self.obj)
@@ -34,9 +42,9 @@ class MSDataTestCases(unittest.TestCase):
         self.assertIs(self.ms_data[0], self.obj)
         self.assertIs(self.ms_data[1], self.obj2)
 
-        obj3 = read_gef('/mnt/d/projects/stereopy_dev/demo_data/SS200000135TL_D1/SS200000135TL_D1.tissue.gef')
+        obj3 = read_gef(self.file_path)
         self.ms_data += obj3
-        obj4 = read_gef('/mnt/d/projects/stereopy_dev/demo_data/SS200000135TL_D1/SS200000135TL_D1.tissue.gef')
+        obj4 = read_gef(self.file_path)
         self.ms_data += obj4
         self.assertEqual(len(self.ms_data), 4)
 
@@ -44,7 +52,7 @@ class MSDataTestCases(unittest.TestCase):
         self.assertIs(self.ms_data[3], obj4)
 
     def test_add_path(self):
-        self.ms_data.add_data('/mnt/d/projects/stereopy_dev/demo_data/SS200000135TL_D1/SS200000135TL_D1.tissue.gef')
+        self.ms_data.add_data(self.file_path)
 
     def test_multi_add(self):
         self.ms_data.add_data(copy.deepcopy(self.obj2), 'c')
@@ -112,7 +120,7 @@ class MSDataTestCases(unittest.TestCase):
     def test_plt(self):
         self.ms_data.tl.cal_qc()
         self.ms_data.plt.violin()
-        self.ms_data.plt.violin(out_paths=['violin1.png', 'violin2.png'])
+        self.ms_data.plt.violin(out_paths=['image_path/violin1.png', 'image_path/violin2.png'])
 
     def test_num_slice(self):
         self.assertEqual(len(self.ms_data), self.ms_data.num_slice, len(self.ms_data.data_list))
