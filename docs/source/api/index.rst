@@ -70,9 +70,11 @@ A class for basic analysis of StereoExpData. It is the `StereoExpData.tl`.
     core.StPipeline.louvain
     core.StPipeline.phenograph
     core.StPipeline.find_marker_genes
+    core.StPipeline.filter_marker_genes
     core.StPipeline.spatial_hotspot
     core.StPipeline.gaussian_smooth
-
+    core.StPipeline.batches_integrate
+    algorithm.cell_cell_communication.main.CellCellCommunication.main
 
 Plots: `plt`
 ++++++++++++++++++++
@@ -114,16 +116,22 @@ Interactive Plot
    plots.InteractiveScatter
 
 
+Marker Genes
+~~~~~~~~
+.. autosummary::
+   :toctree: .
+
+   plots.marker_genes_text
+   plots.marker_genes_heatmap
+   plots.PlotCollection.marker_genes_scatter
+
+
 Others
 ~~~~~~~~
 .. autosummary::
    :toctree: .
 
    plots.violin_distribution
-   plots.marker_genes_text
-   plots.marker_genes_heatmap
-
-
 
 
 Image: `im`
@@ -153,7 +161,7 @@ Tools module.
     tools.cell_cut.CellCut.cell_cut
 
 
-utils: `utils`
+Utils: `utils`
 +++++++++++++++++++
 
 Utils Module.

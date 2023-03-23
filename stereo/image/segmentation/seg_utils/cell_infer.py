@@ -378,7 +378,7 @@ def cellInfer(model_path, file, size, overlap=100):
         # h, w = image.shape
         # print(h, w)
         image = cv2.cvtColor(image, cv2.COLOR_GRAY2RGB)
-        img_list, x_list, y_list = split(image, 256, 100)
+        img_list, x_list, y_list, width_add, height_add = split(image, 256, 100)
         # total_num = len(img_list)
         print('【image %d/%d】' % (idx + 1, len(file_list)))
 
@@ -395,6 +395,6 @@ def cellInfer(model_path, file, size, overlap=100):
             for i in range(len(pred_mask)):
                 label_list.append(pred[i])
 
-        merge_label = merge(label_list, x_list, y_list, image[:, :, 0].shape)
+        merge_label = merge(label_list, x_list, y_list, image[:, :, 0].shape, width_add=width_add, height_add=height_add)
         result.append(merge_label)
     return result

@@ -26,6 +26,7 @@ Additional Functionalities
     batches_integration
     rna_velocity
     sctransform
+    cell_cell_communication
 
 Interactive Visualization
 --------------------------------------------
@@ -49,7 +50,7 @@ This section contains various examples from the :mod:`stereo.im` and :mod:`stere
 
 Working with Other Spatial Tools
 --------------------------------------------------
-This section contains various short examples of format conversion for integration with scanpy，seurat:
+This section contains various short examples of format conversion for integration with scanpy, seurat:
 
 .. nbgallery::
 

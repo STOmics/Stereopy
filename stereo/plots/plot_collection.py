@@ -4,18 +4,19 @@
 @author: qindanhua@genomics.cn
 @time:2021/08/31
 """
-import numpy as np
+import os.path
+from typing import Optional, Union, Sequence, Literal
 from functools import partial, wraps
-from typing import Optional, Union, Sequence
-
+# import colorcet as cc
 import panel as pn
 import matplotlib.pyplot as plt
 from matplotlib import gridspec
-
-from .plot_base import PlotBase
-from ..log_manager import logger
-from stereo.stereo_config import stereo_conf
+import numpy as np
+from random import randint
 from .scatter import base_scatter, multi_scatter, marker_gene_volcano, highly_variable_genes
+from stereo.stereo_config import stereo_conf
+from stereo.log_manager import logger
+from .plot_base import PlotBase
 
 pn.param.ParamMethod.loading_indicator = True
 
@@ -27,10 +28,13 @@ def download(func):
             out_path = kwargs['out_path']
             del kwargs['out_path']
         fig = func(*args, **kwargs)
+        if fig is None:
+            return None
         if out_path is None:
             pn.extension()
             file_name_input = pn.widgets.TextInput(placeholder='Enter a file name...', width=200)
             export_button = pn.widgets.Button(name='download', button_type="primary", width=100)
+            static_text = pn.widgets.StaticText(width=800)
             def _action(_, figure):
                 export_button.loading = True
                 try:
@@ -38,11 +42,12 @@ def download(func):
                     if out_path is not None and len(out_path) > 0:
                         out_path = f"{out_path}_{func.__name__}.png"
                         figure.savefig(out_path, bbox_inches='tight')
+                        static_text.value = f'the plot has alrady been saved in the same path as this notebook and named as <font color="red"><b>{out_path}</b></font>'
                 finally:
                     export_button.loading = False
             action = partial(_action, figure=fig)
             export_button.on_click(action)
-            return pn.Row(file_name_input, export_button)
+            return pn.Row(file_name_input, export_button, static_text)
         else:
             fig.savefig(out_path, bbox_inches='tight')
     return wrapped
@@ -71,10 +76,10 @@ class PlotCollection:
         if item.startswith('__'):
             raise AttributeError
 
-        new_attr = PlotBase.get_attribute_helper(item, self.data, self.result)
+        new_attr = download(PlotBase.get_attribute_helper(item, self.data, self.result))
         if new_attr:
             self.__setattr__(item, new_attr)
-            logger.info(f'register plot_func {new_attr} to {self}')
+            logger.info(f'register plot_func {item} to {self}')
             return new_attr
 
         raise AttributeError(
@@ -289,7 +294,7 @@ class PlotCollection:
             **kwargs
         )
         return fig
-
+    
     @download
     def spatial_scatter_by_gene(
             self,
@@ -350,7 +355,7 @@ class PlotCollection:
             **kwargs
         )
         return fig
-
+    
     @download
     def gaussian_smooth_scatter_by_gene(
             self,
@@ -615,7 +620,7 @@ class PlotCollection:
             group_list = np.where(group_list == group_id, group_id, 0)
             palette = ['#B3CDE3', '#FF7F00']
             kwargs['show_legend'] = False
-
+            
         fig = base_scatter(
             self.data.position[:, 0],
             self.data.position[:, 1],
@@ -726,6 +731,52 @@ class PlotCollection:
             do_log=do_log
         )
         return fig
+
+    @download
+    def marker_genes_scatter(
+        self,
+        res_key: str = 'marker_genes',
+        markers_num: int = 10,
+        genes: Optional[Sequence[str]] = None,
+        groups: Optional[Sequence[str]] = None,
+        values_to_plot: Optional[
+            Literal[
+                'scores',
+                'logfoldchanges',
+                'pvalues',
+                'pvalues_adj',
+                'log10_pvalues',
+                'log10_pvalues_adj',
+            ]
+        ] = None,
+        sort_by: Literal[
+            'scores',
+            'logfoldchanges',
+            'pvalues',
+            'pvalues_adj'
+        ] = 'scores'
+    ):
+        """scatter of marker genes
+
+        :param res_key: results key, defaults to 'marker_genes'
+        :param markers_num: top N makers, defaults to 10
+        :param genes: name of genes which would be shown on plot, markers_num is ignored if it is set, defaults to None
+        :param groups: cell types which would be shown on plot, all cell types would be shown if set it to None, defaults to None
+        :param values_to_plot: specify the value which color the plot, the mean expression in group would be set if set it to None defaults to None
+                        available values include: [scores, logfoldchanges, pvalues, pvalues_adj, log10_pvalues, log10_pvalues_adj]
+        :param sort_by: specify the value which sort by when select top N markers, defaults to 'scores'
+                        available values include: [scores, logfoldchanges, pvalues, pvalues_adj]
+        """
+        from .marker_genes import MarkerGenesScatterPlot
+        marker_genes_res = self.check_res_key(res_key)
+        mgsp = MarkerGenesScatterPlot(self.data, marker_genes_res)
+        return mgsp.plot_scatter(
+            markers_num=markers_num,
+            genes=genes,
+            groups=groups,
+            values_to_plot=values_to_plot,
+            sort_by=sort_by
+        )
 
     def check_res_key(self, res_key):
         """

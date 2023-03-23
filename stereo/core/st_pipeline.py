@@ -66,7 +66,7 @@ class StPipeline(object):
         new_attr = AlgorithmBase.get_attribute_helper(item, self.data, self.result)
         if new_attr:
             self.__setattr__(item, new_attr)
-            logger.info(f'register algorithm {item} to {self.__class__}')
+            logger.info(f'register algorithm {item} to {self}')
             return new_attr
 
         raise AttributeError(
@@ -155,7 +155,7 @@ class StPipeline(object):
         return data
 
     @logit
-    def filter_genes(self, min_cell=None, max_cell=None, gene_list=None, mean_umi_gt=None, inplace=True):
+    def filter_genes(self, min_cell=None, max_cell=None, gene_list=None, inplace=True):
         """
         filter genes based on the numbers of cells.
 
@@ -163,11 +163,10 @@ class StPipeline(object):
         :param max_cell: Maximun number of cells for a gene pass filtering.
         :param gene_list: the list of genes which will be filtered.
         :param inplace: whether inplace the original data or return a new data.
-        :param mean_umi_gt: genes mean umi should greater than this.
         :return:
         """
         from ..preprocess.filter import filter_genes
-        data = filter_genes(self.data, min_cell, max_cell, gene_list, mean_umi_gt, inplace)
+        data = filter_genes(self.data, min_cell, max_cell, gene_list, inplace)
         return data
 
     @logit
@@ -487,7 +486,7 @@ class StPipeline(object):
         self.reset_key_record(key, res_key)
 
     @logit
-    def neighbors(self, pca_res_key, method='umap', metric='euclidean', n_pcs=-1, n_neighbors=10, knn=True, n_jobs=10,
+    def neighbors(self, pca_res_key, method='umap', metric='euclidean', n_pcs=None, n_neighbors=10, knn=True, n_jobs=10,
                   res_key='neighbors'):
         """
         run the neighbors.
@@ -532,6 +531,8 @@ class StPipeline(object):
             raise Exception(f'{pca_res_key} is not in the result, please check and run the pca func.')
         if n_jobs > cpu_count():
             n_jobs = -1
+        if n_pcs is None:
+            n_pcs = self.result[pca_res_key].shape[1]
         from ..algorithm.neighbors import find_neighbors
         neighbor, dists, connectivities = find_neighbors(x=self.result[pca_res_key].values, method=method, n_pcs=n_pcs,
                                                          n_neighbors=n_neighbors, metric=metric, knn=knn, n_jobs=n_jobs)
@@ -710,7 +711,7 @@ class StPipeline(object):
                           method: str = 't_test',
                           case_groups: Union[str, np.ndarray, list] = 'all',
                           control_groups: Union[str, np.ndarray, list] = 'rest',
-                          corr_method: str = 'bonferroni',
+                          corr_method: str = 'benjamini-hochberg',
                           use_raw: bool = True,
                           use_highly_genes: bool = True,
                           hvg_res_key: Optional[str] = 'highly_variable_genes',
@@ -752,6 +753,8 @@ class StPipeline(object):
                           control_groups=control_groups, corr_method=corr_method, raw_data=self.raw, sort_by=sort_by,
                           n_genes=n_genes)
         self.result[res_key] = tool.result
+        self.result[res_key]['cluster_res_key'] = cluster_res_key
+        self.result[res_key]['method'] = method
         if output is not None:
             import natsort
             result = self.result[res_key]
@@ -1041,6 +1044,8 @@ class StPipeline(object):
 
         self.result[res_key] = {}
         self.result[res_key]['marker_genes_res_key'] = marker_genes_res_key
+        self.result[res_key]['cluster_res_key'] = self.result[marker_genes_res_key]['cluster_res_key']
+        self.result[res_key]['method'] = self.result[marker_genes_res_key]['method']
         pct= self.result[marker_genes_res_key]['pct']
         pct_rest = self.result[marker_genes_res_key]['pct_rest']
         for key, res in self.result[marker_genes_res_key].items():
@@ -1074,6 +1079,7 @@ class StPipeline(object):
                 axis=1
             )
             dat.to_csv(output)
+
 
 
     # def scenic(self, tfs, motif, database_dir, res_key='scenic', use_raw=True, outdir=None,):

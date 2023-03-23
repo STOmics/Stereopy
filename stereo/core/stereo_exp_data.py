@@ -385,6 +385,9 @@ class StereoExpData(Data):
             self.exp_matrix = csr_matrix(self.exp_matrix)
         return self.exp_matrix
 
+    def issparse(self):
+        return issparse(self.exp_matrix)
+
     def __str__(self):
         format_str = f"StereoExpData object with n_cells X n_genes = {self.shape[0]} X {self.shape[1]}"
         format_str += f"\nbin_type: {self.bin_type}"

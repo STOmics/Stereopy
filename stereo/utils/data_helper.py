@@ -71,8 +71,7 @@ def merge(data1: StereoExpData = None, data2: StereoExpData = None, *args, reorg
     """merge two or more datas to one
 
     :param data1: the first data to be merged, an object of StereoExpData, defaults to None
-    :param data2: the second data to be merged, an object of StereoExpData, defaults to None
-        you can also input more than two datas
+    :param data2: the second data to be merged, an object of StereoExpData, defaults to None, you can also input more than two datas
     :param reorganize_coordinate: set it to decide to whether reorganize the coordinates of the cells
                 if set it to False, will not reorganize 
                 if set it to a number, like 2, the coordinates of cells will be reorganized to 2 columns like below:
