@@ -155,7 +155,7 @@ class StPipeline(object):
         return data
 
     @logit
-    def filter_genes(self, min_cell=None, max_cell=None, gene_list=None, inplace=True):
+    def filter_genes(self, min_cell=None, max_cell=None, gene_list=None, mean_umi_gt=None, inplace=True):
         """
         filter genes based on the numbers of cells.
 
@@ -163,10 +163,11 @@ class StPipeline(object):
         :param max_cell: Maximun number of cells for a gene pass filtering.
         :param gene_list: the list of genes which will be filtered.
         :param inplace: whether inplace the original data or return a new data.
+        :param mean_umi_gt: genes mean umi should greater than this.
         :return:
         """
         from ..preprocess.filter import filter_genes
-        data = filter_genes(self.data, min_cell, max_cell, gene_list, inplace)
+        data = filter_genes(self.data, min_cell, max_cell, gene_list, mean_umi_gt, inplace)
         return data
 
     @logit
