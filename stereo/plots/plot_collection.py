@@ -15,6 +15,8 @@ import numpy as np
 from random import randint
 from .scatter import base_scatter, multi_scatter, marker_gene_volcano, highly_variable_genes
 from stereo.stereo_config import stereo_conf
+from stereo.log_manager import logger
+from .plot_base import PlotBase
 
 pn.param.ParamMethod.loading_indicator = True
 

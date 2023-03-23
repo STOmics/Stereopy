@@ -26,7 +26,7 @@ def scenic(data, tfs, motif, database_dir, outdir=None,):
     """
     ex_matrix = data.to_df()
     tf_names = load_tf_names(tfs) # Derive list of Transcription Factors(TF) for Mus musculus
-    db_fnames = glob.glob(os.path.join(database_dir,"*feather")) # Load ranking databases
+    db_fnames = glob.glob(database_dir) # Load ranking databases
     dbs = [RankingDatabase(fname=fname, name=get_name(fname)) for fname in db_fnames]
     # Phase I: Inference of co-expression modules
     # Run GRNboost from arboreto to infer co-expression modules

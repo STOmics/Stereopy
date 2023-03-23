@@ -1047,27 +1047,27 @@ class StPipeline(object):
             self.result[res_key][key] = new_res
 
 
-    # def scenic(self, tfs, motif, database_dir, res_key='scenic', use_raw=True, outdir=None,):
-    #     """
-    #
-    #     :param tfs: tfs file in txt format
-    #     :param motif: motif file in tbl format
-    #     :param database_dir: directory containing reference database(*.feather files) from cisTarget.
-    #     :param res_key: the key for getting the result from the self.result.
-    #     :param use_raw: whether use the raw count express matrix for the analysis, default True.
-    #     :param outdir: directory containing output files(including modules.pkl, regulons.csv, adjacencies.tsv,
-    #         motifs.csv). If None, results will not be output to files.
-    #
-    #     :return:
-    #     """
-    #     from ..algorithm.scenic import scenic as cal_sce
-    #     if use_raw and not self.raw:
-    #         raise Exception(f'self.raw must be set if use_raw is True.')
-    #     data = self.raw if use_raw else self.data
-    #     modules, regulons, adjacencies, motifs, auc_mtx, regulons_df = cal_sce(data, tfs, motif, database_dir, outdir)
-    #     res = {"modules": modules, "regulons": regulons, "adjacencies": adjacencies, "motifs": motifs,
-    #            "auc_mtx":auc_mtx, "regulons_df": regulons_df}
-    #     self.result[res_key] = res
+    def scenic(self, tfs, motif, database_dir, res_key='scenic', use_raw=True, outdir=None,):
+        """
+    
+        :param tfs: tfs file in txt format
+        :param motif: motif file in tbl format
+        :param database_dir: directory containing reference database(*.feather files) from cisTarget.
+        :param res_key: the key for getting the result from the self.result.
+        :param use_raw: whether use the raw count express matrix for the analysis, default True.
+        :param outdir: directory containing output files(including modules.pkl, regulons.csv, adjacencies.tsv,
+            motifs.csv). If None, results will not be output to files.
+    
+        :return:
+        """
+        from ..algorithm.scenic import scenic as cal_sce
+        if use_raw and not self.raw:
+            raise Exception(f'self.raw must be set if use_raw is True.')
+        data = self.raw if use_raw else self.data
+        modules, regulons, adjacencies, motifs, auc_mtx, regulons_df = cal_sce(data, tfs, motif, database_dir, outdir)
+        res = {"modules": modules, "regulons": regulons, "adjacencies": adjacencies, "motifs": motifs,
+               "auc_mtx":auc_mtx, "regulons_df": regulons_df}
+        self.result[res_key] = res
 
 
 class AnnBasedResult(dict):
