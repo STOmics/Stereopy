@@ -38,6 +38,9 @@ class _MSDataView(object):
         return f'''data_list: {len(self._data_list)}'''
 
 
+_NON_EDITABLE_ATTRS = {'data_list', 'names', '_obs', '_var', '_relationship', '_relationship_info'}
+_RELATIONSHIP_ENUM = {'continuous', 'time_series', 'other'}
+
 @dataclass
 class _MSDataStruct(object):
     """
@@ -152,17 +155,13 @@ class _MSDataStruct(object):
     _var_type: str = 'intersect'
     _relationship: str = 'other'
     # TODO not define yet
-    _relationship_info: object = None
+    _relationship_info: dict = field(default_factory=dict)
 
     # code-supported attributes
     _name_dict: Dict[str, StereoExpData] = field(default_factory=dict)
     _data_dict: Dict[int, str] = field(default_factory=dict)
     __idx_generator: int = _default_idx()
     __reconstruct: set = field(default_factory=set)
-
-    # class attr
-    _NON_EDITABLE_ATTRS = {'data_list', 'names', '_obs', '_var', '_relationship', '_relationship_info'}
-    _RELATIONSHIP_ENUM = {'continuous', 'time_series', 'other'}
 
     def __post_init__(self) -> object:
         while len(self._data_list) > len(self._names):
@@ -192,9 +191,13 @@ class _MSDataStruct(object):
 
     @relationship.setter
     def relationship(self, value: str):
-        if value not in MSData._RELATIONSHIP_ENUM:
-            raise Exception(f'new relationship must be in {MSData._RELATIONSHIP_ENUM}')
+        if value not in _RELATIONSHIP_ENUM:
+            raise Exception(f'new relationship must be in {_RELATIONSHIP_ENUM}')
         self._relationship = value
+
+    @property
+    def relationship_info(self):
+        return self._relationship_info
 
     def __len__(self):
         return len(self._data_list)
@@ -327,6 +330,8 @@ class _MSDataStruct(object):
     def __real_add(self, obj: StereoExpData, key: Union[str, None] = None) -> object:
         if not key:
             key = self.__get_auto_key()
+            while key in self._name_dict:
+                key = self.__get_auto_key()
         self._name_dict[key] = obj
         self._data_dict[id(obj)] = key
         self._names.append(key)
@@ -348,7 +353,9 @@ class _MSDataStruct(object):
         if not self._data_list:
             raise Exception('`MSData` object with no data')
         if self._obs is None or 'obs' in self.__reconstruct:
+            # TODO reconstruct may remove old data
             self._obs = pd.DataFrame(index=self.__obs_indexes(), columns=['test_obs_1'])
+            self._obs['test_obs_1'] = 0
             if 'obs' in self.__reconstruct:
                 self.__reconstruct.remove('obs')
         return self._obs
@@ -367,7 +374,9 @@ class _MSDataStruct(object):
         if not self._data_list:
             raise Exception('`MSData` object with no data')
         if self._var is None or 'var' in self.__reconstruct:
+            # TODO reconstruct may remove old data
             self._var = pd.DataFrame(index=list(self.__var_indexes()), columns=['test_var_1'])
+            self._var['test_var_1'] = 0
             if 'var' in self.__reconstruct:
                 self.__reconstruct.remove('var')
         return self._var
