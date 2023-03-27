@@ -41,6 +41,7 @@ class _MSDataView(object):
 _NON_EDITABLE_ATTRS = {'data_list', 'names', '_obs', '_var', '_relationship', '_relationship_info'}
 _RELATIONSHIP_ENUM = {'continuous', 'time_series', 'other'}
 
+
 @dataclass
 class _MSDataStruct(object):
     """
@@ -149,6 +150,7 @@ class _MSDataStruct(object):
     # base attributes
     # TODO temporarily length 10
     _data_list: List[StereoExpData] = field(default_factory=list)
+    _merged_data: StereoExpData = None
     _names: List[str] = field(default_factory=list)
     _obs: pd.DataFrame = None
     _var: pd.DataFrame = None
@@ -173,6 +175,14 @@ class _MSDataStruct(object):
     @property
     def data_list(self):
         return self._data_list
+
+    @property
+    def merged_data(self):
+        return self._merged_data
+
+    @merged_data.setter
+    def merged_data(self, value: StereoExpData):
+        self._merged_data = value
 
     @property
     def names(self):
@@ -486,8 +496,13 @@ class MSDataPipeLine(object):
         if item.startswith('__'):
             raise AttributeError
 
-        new_attr = self.__class__.BASE_CLASS.__dict__.get(item)
         if self.__class__.ATTR_NAME == "tl":
+            from ..algorithm.ms_algorithm_base import MSDataAlgorithmBase
+            ms_data_method = MSDataAlgorithmBase.get_attribute_helper(item, self._ms_data, self._result)
+            if ms_data_method:
+                return ms_data_method
+
+            new_attr = self.__class__.BASE_CLASS.__dict__.get(item)
             if new_attr:
                 def log_delayed_task(idx, *arg, **kwargs):
                     logger.info(f'data_obj(idx={idx}) in ms_data start to run {item}')
@@ -522,11 +537,8 @@ class MSDataPipeLine(object):
 
                 return temp
 
-            from ..algorithm.ms_algorithm_base import MSDataAlgorithmBase
-            ms_data_method = MSDataAlgorithmBase.get_attribute_helper(item, self._ms_data, self._result)
-            if ms_data_method:
-                return ms_data_method
         else:
+            new_attr = self.__class__.BASE_CLASS.__dict__.get(item)
             if new_attr:
                 def temp(*args, **kwargs):
                     out_paths = kwargs.get('out_paths', None)
@@ -538,6 +550,7 @@ class MSDataPipeLine(object):
                         if out_paths:
                             kwargs['out_path'] = out_paths[idx]
                         new_attr(obj.__getattribute__(self.__class__.ATTR_NAME), *args, **kwargs)
+
                 return temp
 
         raise AttributeError
@@ -549,7 +562,6 @@ PLT = type('PLT', (MSDataPipeLine,), {'ATTR_NAME': 'plt', "BASE_CLASS": PlotColl
 
 @dataclass
 class MSData(_MSDataStruct):
-
     __doc__ = _MSDataStruct.__doc__
 
     _tl = None
@@ -566,6 +578,15 @@ class MSData(_MSDataStruct):
         if self._plt is None:
             self._plt = PLT(self)
         return self._plt
+
+    def merge_for_batching_integrate(self, **kwargs):
+        from stereo.utils.data_helper import merge
+        self.merged_data = merge(*self.data_list, **kwargs)
+
+    def split_after_batching_integrate(self):
+        from stereo.utils.data_helper import split
+        self._data_list = split(self.merged_data)
+        self.reset_name(default_key=False)
 
     def __str__(self):
         return f'''ms_data: {self.shape}
