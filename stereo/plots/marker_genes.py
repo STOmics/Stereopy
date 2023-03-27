@@ -189,7 +189,7 @@ def plot_heatmap(
     :param show_group_txt: show the group info on the top of the heatmap.
     :param group_position: the position of group txt, must to be set if show_group_txt is True.
     :param group_labels: the label of group, must to be set if show_group_txt is True.
-    :param cluster_colors_array: he list of colors in the color block on the left of heatmap.
+    :param cluster_colors_array: the list of colors in the color block on the left of heatmap.
     :param kwargs: other args for plot.
 
     """

@@ -91,12 +91,12 @@ class PlotCollection:
             height: int=500
     ):
         """
-        Interactive spatial scatter after clustering
+        Interactive spatial scatter after clustering.
 
-        :param res_key: cluster result key
-        :param inline: show in notebook
-        :param width: figure width
-        :param height: figure height
+        :param res_key: the result key of clustering.
+        :param inline: show in notebook.
+        :param width: the figure width.
+        :param height: the figure height.
 
         """
         res = self.check_res_key(res_key)
@@ -121,14 +121,14 @@ class PlotCollection:
             width=700, height=500
     ):
         """
-        Interactive spatial scatter after clustering
+        Interactive spatial scatter after clustering.
 
-        :param res_cluster_key: cluster result key
-        :param res_marker_gene_key: marker gene result key
-        :param res_key: The key for getting the result from the self.result.
-        :param inline: show in notebook
-        :param width: figure width
-        :param height: figure height
+        :param res_cluster_key: the result key of annotation.
+        :param res_marker_gene_key: the result key of marker genes.
+        :param res_key: the key for getting the result from the `self.result`.
+        :param inline: show in notebook.
+        :param width: the figure width.
+        :param height: the figure height.
 
         """
         res = self.check_res_key(res_cluster_key)
@@ -151,7 +151,7 @@ class PlotCollection:
         """
         Scatter of highly variable genes
 
-        :param res_key: result key
+        :param res_key: the result key of highly variable genes.
 
         """
         res = self.check_res_key(res_key)
@@ -174,23 +174,22 @@ class PlotCollection:
             cut_off_logFC: int=1
     ):
         """
-        Volcano of maker genes
+        Volcano plot of maker genes.
 
-        :param group_name: group name
-        :param res_key: result key
-        :param hue_order: order of gene type
-        :param colors: color tuple
-        :param alpha: alpha
-        :param dot_size: dot size
-        :param text_genes: show these genes name
-        :param x_label: x label
-        :param y_label: y label
-        :param vlines: plot cutoff line or not
-        :param cut_off_pvalue: cut off of pvalue to define gene type, pvalues < cut_off and log2fc > cut_off_logFC
-        define as up genes, pvalues < cut_off and log2fc < -cut_off_logFC define as down genes
-        :param cut_off_logFC: cut off of log2fc to define gene type
+        :param group_name: the group name.
+        :param res_key: the result key of marker gene.
+        :param hue_order: the classification method.
+        :param colors: the color set.
+        :param alpha: the opacity.
+        :param dot_size: the dot size.
+        :param text_genes: show gene names.
+        :param x_label: the x label.
+        :param y_label: the y label.
+        :param vlines: plot cutoff line or not.
+        :param cut_off_pvalue: cut off of p-value to define gene type, p-values < cut_off and log2fc > cut_off_logFC
+        define as up genes, p-values < cut_off and log2fc < -cut_off_logFC define as down genes.
+        :param cut_off_logFC: cut off of log2fc to define gene type.
 
-        :return: axes a axes object
         """
         res = self.check_res_key(res_key)[group_name]
         fig = marker_gene_volcano(
@@ -217,13 +216,13 @@ class PlotCollection:
             **kwargs
     ):
         """
-        Quality control index distribution visualization
+        Quality control index distribution visualization.
 
-        :param x: list of x label
-        :param y: list of y label
-        :param ncols: number of cols
-        :param: dot_size
-        :param: out_path: path of output file. If None, do not save the picture.
+        :param x: list of x label.
+        :param y: list of y label.
+        :param ncols: the number of columns.
+        :param dot_size: the dot size.
+        :param out_path: path of output file. If `None`, do not save the plot.
 
         """
         import math
@@ -271,12 +270,12 @@ class PlotCollection:
             **kwargs
     ):
         """
-        Spatial distribution of total_counts and n_genes_by_counts
+        Spatial distribution of `total_counts` and `n_genes_by_counts`.
 
-        :param cells_key: specified obs key list, for example: ["total_counts", "n_genes_by_counts"]
-        :param ncols: numbr of plot columns.
-        :param dot_size: marker size.
-        :param palette: Color theme.
+        :param cells_key: specified cells key list.
+        :param ncols: the number of plot columns.
+        :param dot_size: the dot size.
+        :param palette: the color theme.
 
         """
         from .scatter import multi_scatter
@@ -305,12 +304,12 @@ class PlotCollection:
             ignore_no_expression=False,
             **kwargs
     ):
-        """Draw the spatial distribution of expression quantity of the gene specified by gene_name
+        """Draw the spatial distribution of expression quantity of the gene specified by gene names.
 
-        :param gene_name: specify the gene you want to draw, defaults to None, if none, will select randomly.
-        :param dot_size: marker size, defaults to None
-        :param palette: Color theme, defaults to 'CET_L4'
-        :param ignore_no_expression: whether ignore the cells no expression, defaults to False
+        :param gene_name: specify the gene you want to draw, if `None` by default, will select randomly.
+        :param dot_size: the dot size, defaults to `None`.
+        :param palette: the color theme, defaults to `'CET_L4'`.
+        :param ignore_no_expression: whether to ignore the cells without expression, default to `False`.
         """
 
         # self.data.sparse2array()
@@ -366,12 +365,12 @@ class PlotCollection:
             color_bar_reverse: bool=True,
             **kwargs
     ):
-        """Draw the spatial distribution of expression quantity of the gene specified by gene_name,
-        just only for gaussian smooth, inluding the raw and smoothed.
+        """Draw the spatial distribution of expression quantity of the gene specified by gene names,
+        just only for Gaussian smoothing, inluding the raw and smoothed.
 
-        :param gene_name: specify the gene you want to draw, defaults to None, if none, will select randomly.
-        :param dot_size: marker sizemarker size, defaults to None
-        :param palette: Color theme, defaults to 'CET_L4'
+        :param gene_name: specify the gene you want to draw, if `None` by default, will select randomly.
+        :param dot_size: marker sizemarker size, defaults to `None`.
+        :param palette: Color theme, defaults to `'CET_L4'`.
         """
         self.data.tl.raw.sparse2array()
         self.data.sparse2array()
@@ -408,9 +407,8 @@ class PlotCollection:
     @download
     def violin(self):
         """
-        Violin plot showing quality control index distribution
+        Violin plot to show index distribution of quality control.
 
-        :return:
         """
         from .violin import violin_distribution
         fig = violin_distribution(self.data)
@@ -425,12 +423,12 @@ class PlotCollection:
             poly_select: bool=False
     ):
         """
-        Interactive spatial distribution
+        Interactive spatial distribution.
 
-        :param inline: notebook out if true else open in a new window
-        :param width: width
-        :param height: height
-        :param bgcolor: background color
+        :param inline: show in notebook.
+        :param width: the figure width.
+        :param height: the figure height.
+        :param bgcolor: set background color.
 
         """
         from .interact_plot.interactive_scatter import InteractiveScatter
@@ -535,16 +533,16 @@ class PlotCollection:
             **kwargs
     ):
         """
-        Plot scatter after dimension reduce
+        Scatter plot of UMAP after reducing dimensionalities.
 
-        :param gene_names: list of gene names
-        :param cluster_key: dot color set by cluster if given
-        :param res_key: result key
-        :param title: title, it's list when plot multiple scatter
-        :param x_label: x label, it's list when plot multiple scatter
-        :param y_label: y label, it's list when plot multiple scatter
-        :param dot_size: dot size
-        :param colors: color list
+        :param gene_names: the list of gene names.
+        :param cluster_key: the result key of clustering.
+        :param res_key: the result key of UMAP.
+        :param title: the plot titles.
+        :param x_label: the x label.
+        :param y_label: the y label.
+        :param dot_size: the dot size.
+        :param colors: the color list.
 
         """
         res = self.check_res_key(res_key)
@@ -602,16 +600,17 @@ class PlotCollection:
             **kwargs
     ):
         """
-        Spatial distribution ofter scatter
+        Spatial distribution ofter scatter.
 
-        :param res_key: cluster result key
-        :param title: title
-        :param x_label: x label
-        :param y_label: y label
-        :param dot_size: dot size
-        :param colors: color list
+        :param res_key: cluster result key.
+        :param title: the plot title.
+        :param x_label: x label.
+        :param y_label: y label.
+        :param dot_size: dot size.
+        :param colors: color list.
         :param invert_y: whether to invert y-axis.
 
+        :return: Spatial scatter distribution of clusters.
         """
         res = self.check_res_key(res_key)
         group_list = np.array(res['group'])
@@ -650,17 +649,16 @@ class PlotCollection:
             **kwargs
     ):
         """
-        Maker genes plot
+        Scatter plot of maker genes. 
 
-        :param res_key: marker genes result key
-        :param groups: group name
+        :param res_key: the result key of marker genes.
+        :param groups: the group names.
         :param markers_num: top N genes to show in each cluster.
-        :param sort_key: the sort key for getting top n marker genes, default `scores`.
-        :param ascend: asc or dec.
-        :param fontsize: font size.
+        :param sort_key: the sort key for getting top N marker genes, default `'scores'`.
+        :param ascend: whether to sort by ascending.
+        :param fontsize: the font size.
         :param ncols: number of plot columns.
-        :param sharey: share scale or not
-        :param kwargs: other args for plot.
+        :param sharey: share scale or not.
 
         """
         from .marker_genes import marker_genes_text
@@ -690,27 +688,27 @@ class PlotCollection:
             show_group: bool = True,
             show_group_txt: bool = True,
             cluster_colors_array: bool=None,
-            min_value: bool=None,
-            max_value: bool=None,
-            gene_list: bool=None,
+            min_value: int=None,
+            max_value: int=None,
+            gene_list: list=None,
             do_log: bool=True
     ):
         """
-        Heatmap of maker genes
+        Heatmap plot of maker genes.
 
-        :param res_key: results key
-        :param cluster_res_key: cluster result key
-        :param markers_num: top N maker
-        :param sort_key: sorted by key
-        :param ascend: False or True
-        :param show_labels: show labels or not
-        :param show_group: show group or not
-        :param show_group_txt: show group names or not
-        :param cluster_colors_array: color values
-        :param min_value: minimum value
-        :param max_value: maximum value
-        :param gene_list: gene name list
-        :param do_log: calculate log or not
+        :param res_key: the result key of marker genes.
+        :param cluster_res_key: the result key of clustering.
+        :param markers_num: top N maker genes.
+        :param sort_key: sorted by which key.
+        :param ascend: whether to sort by ascending.
+        :param show_labels: show labels or not.
+        :param show_group: show group or not.
+        :param show_group_txt: show group names or not.
+        :param cluster_colors_array: whether to show color scale.
+        :param min_value: minimum value of scale.
+        :param max_value: maximum value of scale.
+        :param gene_list: gene name list.
+        :param do_log: perform normalization if log1p before plotting, or not.
 
         """
         from .marker_genes import marker_genes_heatmap
@@ -752,9 +750,9 @@ class PlotCollection:
     @download
     def hotspot_local_correlations(self, res_key='spatial_hotspot', ):
         """
-        Visualize module scores with spatial position
+        Visualize module scores with spatial position.
 
-        :return:
+        :param res_key: the result key of spatial hotspot.
         """
         res = self.check_res_key(res_key)
         plt.rcParams['figure.figsize'] = (15.0, 12.0)
@@ -773,10 +771,10 @@ class PlotCollection:
         """
         Plot hotspot modules
 
-        :param ncols: number of cols
-        :param dot_size: dot size
+        :param ncols: the number of columns.
+        :param dot_size: the dot size.
+        :param res_key: the result key of spatial hotspot.
 
-        :return:
         """
         res = self.check_res_key(res_key)
         scores = [res.module_scores[module] for module in range(1, res.modules.max() + 1)]
@@ -851,16 +849,16 @@ class PlotCollection:
         plt.show()
 
     def cells_plotting(self, cluster_res_key='cluster', figure_size=500, fg_alpha=0.8, base_image=None):
-        """Plot the cells
+        """Plot the cells.
 
-        :param cluster_res_key: result key of clustering, defaults to 'cluster'
-                color by cluster result if cluster result is not None, or by total_counts
-        :param figure_size: the figure size is figure_size * figure_size, defaults to 500
+        :param cluster_res_key: result key of clustering, defaults to `'cluster'`
+                color by cluster result if cluster result is not None, or by `total_counts`.
+        :param figure_size: the figure size is figure_size * figure_size, defaults to 500.
         :param fg_alpha: the alpha of foreground image, between 0 and 1, defaults to 0.8
-                            this is the colored image of the cells
+                            this is the colored image of the cells.
         :param base_image: the path of the ssdna image after calibration, defaults to None
-                            it will be located behide the image of the cells
-        :return: figure to show
+                            it will be located behide the image of the cells.
+        :return: Cells distribution figure.
         """
         from .plot_cells import PlotCells
         pc = PlotCells(self.data, cluster_res_key=cluster_res_key, figure_size=figure_size, fg_alpha=fg_alpha, base_image=base_image)

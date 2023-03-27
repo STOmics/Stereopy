@@ -176,11 +176,11 @@ def cell_correct(out_dir: str,
         * GEM and mask
         * GEM and ssDNA image
         * BGEF and mask
-        * BGEF and raw CGEF(not have been corrected)
+        * BGEF and raw CGEF (not have been corrected)
 
-    :param out_dir: the path to save intermediate result, like mask(if generate from ssDNA image), 
-        BGEF(generate from GEM), CGEF(generate from GEM and mask), etc. and final corrected result.
-    :param threshold: threshold size, default to 20
+    :param out_dir: the path to save intermediate result, like mask (if generate from ssDNA image), 
+        BGEF (generate from GEM), CGEF (generate from GEM and mask), etc. and final corrected result.
+    :param threshold: threshold size, default to 20.
     :param gem_path: the path to GEM file.
     :param bgef_path: the path to BGEF file.
     :param raw_cgef_path: the path to CGEF file in where data has not been corrected.
@@ -191,7 +191,7 @@ def cell_correct(out_dir: str,
     :param model_type: the type of model to generate mask, whcih only could be set to deep learning model and deep cell model.
     :param deep_cro_size: deep crop size.
     :param overlap: overlap size.
-    :param gpu: specify gpu id to predict when generate mask, if `-1`, use cpu for prediction.
+    :param gpu: specify gpu id to predict when generate mask, if `'-1'`, use cpu for prediction.
     :param process_count: the count of process will be started when correct cells.
     :param only_save_result: if `True`, only save result to disk; if `False`, return an StereoExpData object.
     :param fast: if `True`, task will run faster only by single process.

@@ -108,7 +108,6 @@ class StPipeline(object):
 
         Parameters
         -----------------------------
-        None
 
         Returns
         -----------------------------
@@ -145,7 +144,7 @@ class StPipeline(object):
 
         Returns
         ---------------------
-        A StereoExpData object storing quality control indicators, including two levels of obs(cell) and var(gene).
+        A StereoExpData object storing quality control indicators, including two levels of obs (cell) and var (gene).
 
         """
         from ..preprocess.qc import cal_qc
@@ -174,7 +173,7 @@ class StPipeline(object):
         max_n_genes_by_counts
             maximum number of counts required for a cell to pass filtering.
         pct_counts_mt
-            maximum number of pct_counts_mt required for a cell to pass filtering.
+            maximum number of `pct_counts_mt` required for a cell to pass filtering.
         cell_list
             the list of cells to be filtered.
         inplace
@@ -481,7 +480,7 @@ class StPipeline(object):
             number of bins for binning the mean gene expression. Normalization is done with respect to 
             each bin. If just a single gene falls into a bin, the normalized dispersion is artificially set to 1.
         res_key
-            the key for getting the result from the self.result.
+            the key for getting the result from `self.result`.
 
         Returns
         -----------------
@@ -528,24 +527,25 @@ class StPipeline(object):
 
         :param use_highly_genes: whether to use the expression of hypervariable genes only.
         :param n_pcs: the number of principle components to compute.
-        :param svd_solver: default to 'auto'.
+        :param svd_solver: default to `'auto'`.
 
-                    - If auto :
+                    - If `'auto'` :
                         The solver is selected by a default policy based on `X.shape` and
                         `n_pcs`: if the input data is larger than 500x500 and the
                         number of components to extract is lower than 80% of the smallest
                         dimension of the data, then the more efficient 'randomized'
                         method is enabled. Otherwise the exact full SVD is computed and
                         optionally truncated afterwards.
-                    - If full :
+                    - If `'full'` :
                         run exact full SVD calling the standard LAPACK solver via
                         `scipy.linalg.svd` and select the components by postprocessing
-                    - If arpack :
+                    - If `'arpack'` :
                         run SVD truncated to n_pcs calling ARPACK solver via
                         `scipy.sparse.linalg.svds`. It requires strictly
                         0 < n_pcs < min(x.shape)
-                    - If randomized :
-                        run randomized SVD by the method of Halko et al.
+                    - If `'randomized'` :
+                        run randomized SVD.
+
         :param hvg_res_key: the key of highly variable genes to get targeted result,`use_highly_genes=True` is a necessary prerequisite.
         :param res_key: the key for storage of PCA result.
         
@@ -606,10 +606,10 @@ class StPipeline(object):
                       being given to negative samples.
         :param negative_sample_rate: the number of negative edge/1-simplex samples to use per positive
                       edge/1-simplex sample in optimizing the low dimensional embedding.
-        :param init_pos: how to initialize the low dimensional embedding.Called init in the original UMAP.
+        :param init_pos: how to initialize the low dimensional embedding. Called init in the original UMAP.
                         Options are:
-                            * 'spectral': use a spectral embedding of the graph.
-                            * 'random': assign initial embedding positions at random.
+                            `'spectral'`: use a spectral embedding of the graph.
+                            `'random'`: assign initial embedding positions at random.
 
         :return: UMAP result is stored in `self.result` where the result key is `'umap'`.
         """
@@ -708,11 +708,11 @@ class StPipeline(object):
                           n_neighbors: int=6, 
                           res_key: str='spatial_neighbors'):
         """
-        Create a graph from spatial coordinates using squidpy.
+        Create a graph from spatial coordinates using Squidpy.
 
         :param neighbors_res_key: the key of neighbors to getting the result.
-        :param n_neighbors: 6 or 4. Number of neighboring tiles.
-        :param res_key: the key for getting the result from the self.result.
+        :param n_neighbors: 6 or 4, the number of neighboring tiles.
+        :param res_key: the key for getting the result from the `self.result`.
         :return: Spatial neighbors result is stored in `self.result` where the result key is `'spatial_neighbors'`.
         """
         from ..io.reader import stereo_to_anndata
@@ -753,7 +753,7 @@ class StPipeline(object):
         :param random_state: change the initialization of the optimization.
         :param n_iterations: how many iterations of the Leiden clustering algorithm to perform.
                              Positive values above 2 define the total number of iterations to perform,
-                             -1 has the algorithm run until it reaches its optimal clustering.
+                             `-1` has the algorithm run until it reaches its optimal clustering.
 
         :return: Clustering result of Leiden is stored in `self.result` where the key is `'leiden'`.
         """
@@ -874,7 +874,7 @@ class StPipeline(object):
                           ):
         """
         A tool to find maker genes. For each group, find statistical test different genes 
-        between one group and the rest groups using t_test or wilcoxon_test.
+        between one group and the rest groups using `t_test` or `wilcoxon_test`.
 
         :param cluster_res_key: the key of clustering to get corresponding result from `self.result`.
         :param method: choose method for statistics.
@@ -885,7 +885,7 @@ class StPipeline(object):
         :param use_highly_genes: whether to use only the expression of hypervariable genes as input, default True.
         :param hvg_res_key: the key of highly variable genes to get corresponding result.
         :param res_key: the key for storing result of marker genes.
-        :param output: the path to output file(`.csv). If None, do not generate output file.
+        :param output: the path to output file `.csv`. If None, do not generate output file.
 
         :return: The result of marker genes is stored in `self.result` where the key is `'marker_genes'`.
         """
@@ -977,10 +977,10 @@ class StPipeline(object):
         :param use_highly_genes: whether to use only the expression of hypervariable genes as input, default True.
         :param hvg_res_key: the key of highly variable genes to get corresponding result.
         :param model: specify the null model on gene expression from below:
-                * `'danb'`: Depth-Adjusted Negative Binomial
-                * `'bernoulli'`: Models probability of detection
-                * `'normal'`: Depth-Adjusted Normal
-                * `'none'`: Assumes data has been pre-standardized
+                        `'danb'`: Depth-Adjusted Negative Binomial
+                        `'bernoulli'`: Models probability of detection
+                        `'normal'`: Depth-Adjusted Normal
+                        `'none'`: Assumes data has been pre-standardized
         :param n_neighbors: the neighborhood size.
         :param n_jobs: the number of parallel jobs to run.
         :param fdr_threshold: correlation threshold at which to stop assigning genes into modules.

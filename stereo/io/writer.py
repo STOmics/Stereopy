@@ -30,7 +30,7 @@ def write_h5ad(
         output: str=None, 
         split_batches: bool=True):
     """
-    Write the StereoExpData into a h5ad file.
+    Write the StereoExpData into a H5ad file.
 
     Parameters
     ---------------------
@@ -176,7 +176,7 @@ def write_mid_gef(
         data: StereoExpData, 
         output: str):
     """
-    Write the StereoExpData object into a GEF(.h5) file. 
+    Write the StereoExpData object into a GEF (.h5) file. 
 
     Parameters
     ---------------------
@@ -184,6 +184,7 @@ def write_mid_gef(
         the input StereoExpData object.
     output
         the path to output file.
+
     Returns
     ---------------------
     None
@@ -257,7 +258,7 @@ def update_gef(
         gef_file: str, 
         cluster_res_key: str):
     """
-    Add cluster result into gef(.h5) file and update the gef file directly.
+    Add cluster result into GEF (.h5) file and update the GEF file directly.
 
     Parameters
     -----------------
@@ -267,7 +268,6 @@ def update_gef(
         the path of the GEF file to add cluster result to.
     cluster_res_key
         the key to get cluster result from `data.tl.result`.
-
     
     Returns
     --------------

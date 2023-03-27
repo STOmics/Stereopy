@@ -374,6 +374,9 @@ class StereoExpData(Data):
 
     @property
     def merged(self):
+        """
+        Get the flag whether merged.
+        """
         return self._merged
 
     @merged.setter
@@ -382,13 +385,13 @@ class StereoExpData(Data):
 
     @property
     def sn(self):
+        """
+        Get the sample name.
+        """
         return self._sn
 
     @sn.setter
     def sn(self, sn):
-        """
-        The sample number
-        """
         self._sn = sn
 
     def to_df(self):

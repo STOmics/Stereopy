@@ -42,7 +42,7 @@ def read_gem(
     bin_size: int=100, 
     is_sparse: bool=True):
     """
-    Read the Stereo-seq gem file, and generate the StereoExpData object.
+    Read the Stereo-seq GEM file, and generate the StereoExpData object.
 
     Parameters
     -------------
@@ -51,11 +51,12 @@ def read_gem(
     sep
         the separator string.
     bin_type
-        the bin type includes `'bins'` or `'cell_bins'`. default to `bins`
+        the bin type includes `'bins'` or `'cell_bins'`, default to `'bins'`
     bin_size
         the size of bin to merge, when `bin_type` is set to `'bins'`.
     is_sparse
         the expression matrix is sparse matrix, if `True`, otherwise `np.ndarray`.
+
     Returns
     -------------
     An object of StereoExpData.
@@ -156,16 +157,17 @@ def read_stereo_h5ad(
     use_raw: bool=True, 
     use_result: bool=True, ):
     """
-    Read the h5ad file, and generate the StereoExpData object.
+    Read the H5ad file, and generate the StereoExpData object.
 
     Parameters
     ----------------------
     file_path
-        the path to input h5ad file.
+        the path to input H5ad file.
     use_raw
         whether to read data of `self.raw`.
     use_result
         whether to read `result` and `res_key`.
+
     Returns
     --------------------
     An object of StereoExpData.
@@ -262,14 +264,15 @@ def read_seurat_h5ad(
     file_path:str, 
     use_raw: bool=False):
     """
-    Read the h5ad file in Anndata format of Seurat, and generate the StereoExpData object.
+    Read the H5ad file in Anndata format of Seurat, and generate the StereoExpData object.
 
     Parameters
     ------------------
     file_path
-        the path of input h5ad file.
+        the path of input H5ad file.
     use_raw
         whether to read data of `self.raw`.
+        
     Returns
     ----------------------
     An object of StereoExpData.
@@ -353,14 +356,15 @@ def read_ann_h5ad(
     file_path: str, 
     spatial_key: Optional[str] = None):
     """
-    Read the h5ad file in Anndata format of Scanpy, and generate the StereoExpData object.
+    Read the H5ad file in Anndata format of Scanpy, and generate the StereoExpData object.
 
     Parameters
     ------------------
     file_path
-        the path to input h5ad file.
+        the path to input H5ad file.
     spatial_key
         use `.obsm['spatial_key']` as coordiante information.
+
     Returns
     ---------------
     An object of StereoExpData.
@@ -707,7 +711,7 @@ def read_gef(
     gene_list: Optional[list] = None,
     region: Optional[list] = None):
     """
-    Read the GEF(.h5) file, and generate the StereoExpData object.
+    Read the GEF (.h5) file, and generate the StereoExpData object.
 
     Parameters
     ---------------
@@ -723,6 +727,7 @@ def read_gef(
         select targeted data based on the gene list.
     region
         restrict data to the region condition, like [minX, maxX, minY, maxY].
+
     Returns
     ------------------------
     An object of StereoExpData.
@@ -815,15 +820,17 @@ def read_gef(
 @ReadWriteUtils.check_file_exists
 def read_gef_info(file_path: str):
     """
-    Read the property information of the GEF(.h5) file.
+    Read the property information of the GEF `(.h5)` file.
 
     Parameters
     -------------
     file_path
         the path to input file.
+
     Returns
-    -------------
-    information of gef
+    --------------------
+    An attribute dictionary.
+
     """
     from gefpy.utils import gef_is_cell_bin
 

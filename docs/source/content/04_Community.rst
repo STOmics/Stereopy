@@ -2,13 +2,13 @@ Community
 ==========
 
 **Stereopy** is in a stage of rapid development so that we will carefully consider 
-all aspects of the proposal. We hope the future input will be given by both 
+all aspects of your proposal. We hope future input will be given by both 
 users and developers. 
 
-Discussion on Github
---------------------
+Discussion on `GitHub <https://github.com/BGIResearch/stereopy>`_
+----------------------------------------------------------------
 
-Please use github issues tracker for reports and discussion of:
+Please use GitHub `issues <https://github.com/BGIResearch/stereopy/issues>`_ tracker for reports and discussions of:
 
 * Bug reports
 * Document and data issues
