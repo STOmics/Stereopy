@@ -1,2 +1,2 @@
 from .main import CellCellCommunication
-from .main import PlotCellCellCommunication
+from .plot_ccc import PlotCellCellCommunication
