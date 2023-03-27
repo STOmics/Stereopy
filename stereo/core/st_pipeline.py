@@ -975,7 +975,7 @@ class StPipeline(object):
         """
         import harmonypy as hm
         assert pca_res_key in self.result, f'{pca_res_key} is not in the result, please check and run the pca method.'
-        assert self.data.cells.batch is not None, f'this is not a data were merged from diffrent experiments'
+        assert self.data.cells.batch is not None, f'this is not a data were merged from different experiments'
 
         out = hm.run_harmony(self.result[pca_res_key], self.data.cells.to_df(), 'batch', **kwargs)
         self.result[res_key] = pd.DataFrame(out.Z_corr.T)

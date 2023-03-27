@@ -34,8 +34,16 @@ class _MSDataView(object):
             self._plt = PLT(self)
         return self._plt
 
+    @property
+    def data_list(self):
+        return self._data_list
+
     def __str__(self):
         return f'''data_list: {len(self._data_list)}'''
+
+
+_NON_EDITABLE_ATTRS = {'data_list', 'names', '_obs', '_var', '_relationship', '_relationship_info'}
+_RELATIONSHIP_ENUM = {'continuous', 'time_series', 'other'}
 
 
 @dataclass
@@ -47,6 +55,9 @@ class _MSDataStruct(object):
     ----------
     data_list: List[StereoExpData] `stereo_exp_data` array
         An array of `stereo_exp_data` organized by some relationship defined by `_relationship` and `_relationship_info`.
+
+    merged_data: `stereo_exp_data` object
+        An `stereo_exp_data` merged with `data_list` used batches integrate.
 
     names: List[str] `stereo_exp_data` array's names
         An array of `stereo_exp_data`s' unique names.
@@ -146,23 +157,20 @@ class _MSDataStruct(object):
     # base attributes
     # TODO temporarily length 10
     _data_list: List[StereoExpData] = field(default_factory=list)
+    _merged_data: StereoExpData = None
     _names: List[str] = field(default_factory=list)
     _obs: pd.DataFrame = None
     _var: pd.DataFrame = None
     _var_type: str = 'intersect'
     _relationship: str = 'other'
     # TODO not define yet
-    _relationship_info: object = None
+    _relationship_info: dict = field(default_factory=dict)
 
     # code-supported attributes
     _name_dict: Dict[str, StereoExpData] = field(default_factory=dict)
     _data_dict: Dict[int, str] = field(default_factory=dict)
     __idx_generator: int = _default_idx()
     __reconstruct: set = field(default_factory=set)
-
-    # class attr
-    _NON_EDITABLE_ATTRS = {'data_list', 'names', '_obs', '_var', '_relationship', '_relationship_info'}
-    _RELATIONSHIP_ENUM = {'continuous', 'time_series', 'other'}
 
     def __post_init__(self) -> object:
         while len(self._data_list) > len(self._names):
@@ -174,6 +182,14 @@ class _MSDataStruct(object):
     @property
     def data_list(self):
         return self._data_list
+
+    @property
+    def merged_data(self):
+        return self._merged_data
+
+    @merged_data.setter
+    def merged_data(self, value: StereoExpData):
+        self._merged_data = value
 
     @property
     def names(self):
@@ -192,9 +208,13 @@ class _MSDataStruct(object):
 
     @relationship.setter
     def relationship(self, value: str):
-        if value not in MSData._RELATIONSHIP_ENUM:
-            raise Exception(f'new relationship must be in {MSData._RELATIONSHIP_ENUM}')
+        if value not in _RELATIONSHIP_ENUM:
+            raise Exception(f'new relationship must be in {_RELATIONSHIP_ENUM}')
         self._relationship = value
+
+    @property
+    def relationship_info(self):
+        return self._relationship_info
 
     def __len__(self):
         return len(self._data_list)
@@ -327,6 +347,8 @@ class _MSDataStruct(object):
     def __real_add(self, obj: StereoExpData, key: Union[str, None] = None) -> object:
         if not key:
             key = self.__get_auto_key()
+            while key in self._name_dict:
+                key = self.__get_auto_key()
         self._name_dict[key] = obj
         self._data_dict[id(obj)] = key
         self._names.append(key)
@@ -348,7 +370,9 @@ class _MSDataStruct(object):
         if not self._data_list:
             raise Exception('`MSData` object with no data')
         if self._obs is None or 'obs' in self.__reconstruct:
+            # TODO reconstruct may remove old data
             self._obs = pd.DataFrame(index=self.__obs_indexes(), columns=['test_obs_1'])
+            self._obs['test_obs_1'] = 0
             if 'obs' in self.__reconstruct:
                 self.__reconstruct.remove('obs')
         return self._obs
@@ -367,7 +391,9 @@ class _MSDataStruct(object):
         if not self._data_list:
             raise Exception('`MSData` object with no data')
         if self._var is None or 'var' in self.__reconstruct:
+            # TODO reconstruct may remove old data
             self._var = pd.DataFrame(index=list(self.__var_indexes()), columns=['test_var_1'])
+            self._var['test_var_1'] = 0
             if 'var' in self.__reconstruct:
                 self.__reconstruct.remove('var')
         return self._var
@@ -445,11 +471,15 @@ class MsDataResult(object):
         if type_key:
             self._key_records[type_key].append(res_key)
 
+    @property
+    def key_records(self):
+        return self._key_records
+
     def __str__(self):
-        return str(self._key_records)
+        return str(self.key_records)
 
     def __repr__(self):
-        return str(self._key_records)
+        return str(self.key_records)
 
     def __getitem__(self, item):
         return self.result[item]
@@ -461,7 +491,7 @@ class MSDataPipeLine(object):
 
     def __init__(self, _ms_data):
         super().__init__()
-        self._ms_data = _ms_data
+        self.ms_data = _ms_data
         self._result = MsDataResult()
 
     @property
@@ -477,24 +507,24 @@ class MSDataPipeLine(object):
         if item.startswith('__'):
             raise AttributeError
 
-        new_attr = self.__class__.BASE_CLASS.__dict__.get(item)
         if self.__class__.ATTR_NAME == "tl":
-            if new_attr:
+            new_attr = self.__class__.BASE_CLASS.__dict__.get(item)
+            if new_attr and item != 'batches_integrate':
                 def log_delayed_task(idx, *arg, **kwargs):
                     logger.info(f'data_obj(idx={idx}) in ms_data start to run {item}')
                     new_attr(*arg, **kwargs)
 
                 def temp(*args, **kwargs):
-                    Parallel(n_jobs=min(len(self._ms_data._data_list), cpu_count()), backend='threading', verbose=100)(
+                    Parallel(n_jobs=min(len(self.ms_data.data_list), cpu_count()), backend='threading', verbose=100)(
                         delayed(log_delayed_task)(idx, obj.__getattribute__(self.__class__.ATTR_NAME), *args, **kwargs)
-                        for idx, obj in enumerate(self._ms_data._data_list)
+                        for idx, obj in enumerate(self.ms_data.data_list)
                     )
 
                 return temp
 
             from ..algorithm.algorithm_base import AlgorithmBase
             delayed_list = []
-            for exp_obj in self._ms_data._data_list:
+            for exp_obj in self.ms_data.data_list:
                 obj_method = AlgorithmBase.get_attribute_helper(item, exp_obj.tl.data, exp_obj.tl.result)
                 if obj_method:
                     def log_delayed_task(idx, *arg, **kwargs):
@@ -506,7 +536,7 @@ class MSDataPipeLine(object):
             if delayed_list:
                 def temp(*args, **kwargs):
                     # TODO need multiprocessing?
-                    Parallel(n_jobs=min(len(self._ms_data._data_list), cpu_count()), backend='threading', verbose=100)(
+                    Parallel(n_jobs=min(len(self.ms_data.data_list), cpu_count()), backend='threading', verbose=100)(
                         delayed(one_job)(idx, *args, **kwargs)
                         for idx, one_job in enumerate(delayed_list)
                     )
@@ -514,21 +544,24 @@ class MSDataPipeLine(object):
                 return temp
 
             from ..algorithm.ms_algorithm_base import MSDataAlgorithmBase
-            ms_data_method = MSDataAlgorithmBase.get_attribute_helper(item, self._ms_data, self._result)
+            ms_data_method = MSDataAlgorithmBase.get_attribute_helper(item, self.ms_data, self._result)
             if ms_data_method:
                 return ms_data_method
+
         else:
+            new_attr = self.__class__.BASE_CLASS.__dict__.get(item)
             if new_attr:
                 def temp(*args, **kwargs):
                     out_paths = kwargs.get('out_paths', None)
                     if out_paths:
                         del kwargs['out_paths']
-                        assert len(self._ms_data._data_list) == len(out_paths)
-                    for idx, obj in enumerate(self._ms_data._data_list):
+                        assert len(self.ms_data.data_list) == len(out_paths)
+                    for idx, obj in enumerate(self.ms_data.data_list):
                         logger.info(f'data_obj(idx={idx}) in ms_data start to run {item}')
                         if out_paths:
                             kwargs['out_path'] = out_paths[idx]
                         new_attr(obj.__getattribute__(self.__class__.ATTR_NAME), *args, **kwargs)
+
                 return temp
 
         raise AttributeError
@@ -540,7 +573,6 @@ PLT = type('PLT', (MSDataPipeLine,), {'ATTR_NAME': 'plt', "BASE_CLASS": PlotColl
 
 @dataclass
 class MSData(_MSDataStruct):
-
     __doc__ = _MSDataStruct.__doc__
 
     _tl = None
@@ -558,6 +590,15 @@ class MSData(_MSDataStruct):
             self._plt = PLT(self)
         return self._plt
 
+    def merge_for_batching_integrate(self, **kwargs):
+        from stereo.utils.data_helper import merge
+        self.merged_data = merge(*self.data_list, **kwargs)
+
+    def split_after_batching_integrate(self):
+        from stereo.utils.data_helper import split
+        self._data_list = split(self.merged_data)
+        self.reset_name(default_key=False)
+
     def __str__(self):
         return f'''ms_data: {self.shape}
 num_slice: {self.num_slice}
@@ -566,7 +607,7 @@ obs: {self.obs.columns.to_list()}
 var: {self.var.columns.to_list()}
 relationship: {self.relationship}
 var_type: {self._var_type} to {len(self.var.index)}
-tl.result: {self.tl._result._key_records}
+tl.result: {self.tl.result.key_records}
 '''
 
     def __repr__(self):
