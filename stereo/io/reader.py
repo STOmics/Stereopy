@@ -259,6 +259,7 @@ def _read_stereo_h5ad_from_group(f, data, use_raw, use_result):
 def read_h5ms(file_path, use_raw=True, use_result=True):
     with h5py.File(file_path, mode='r') as f:
         data_list = []
+        merged_data = None
         names = []
         obs = None
         var = None
@@ -269,6 +270,9 @@ def read_h5ms(file_path, use_raw=True, use_result=True):
                 for one_slice_key in f[k].keys():
                     data = StereoExpData()
                     data_list.append(_read_stereo_h5ad_from_group(f[k][one_slice_key], data, use_raw, use_result))
+            elif k == 'slice_merged':
+                merged_data = StereoExpData()
+                merged_data = _read_stereo_h5ad_from_group(f[k], merged_data, use_raw, use_result)
             elif k == 'names':
                 names = h5ad.read_dataset(f[k])
             elif k == 'obs':
@@ -281,7 +285,10 @@ def read_h5ms(file_path, use_raw=True, use_result=True):
                 relationship = h5ad.read_dataset(f[k])
 
         from stereo.core.ms_data import MSData
-        return MSData(_data_list=data_list, _names=names, _obs=obs, _var=var, _var_type=var_type, _relationship=relationship)
+        return MSData(
+            _data_list=data_list, _merged_data=merged_data, _names=names, _obs=obs, _var=var,
+            _var_type=var_type, _relationship=relationship
+        )
 
 @ReadWriteUtils.check_file_exists
 def read_seurat_h5ad(file_path, use_raw=False):

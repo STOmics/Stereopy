@@ -52,6 +52,9 @@ class _MSDataStruct(object):
     data_list: List[StereoExpData] `stereo_exp_data` array
         An array of `stereo_exp_data` organized by some relationship defined by `_relationship` and `_relationship_info`.
 
+    merged_data: `stereo_exp_data` object
+        An `stereo_exp_data` merged with `data_list` used batches integrate.
+
     names: List[str] `stereo_exp_data` array's names
         An array of `stereo_exp_data`s' unique names.
 
