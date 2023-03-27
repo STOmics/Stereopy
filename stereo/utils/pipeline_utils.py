@@ -1,11 +1,10 @@
 from typing import Sequence, Optional, Union
 import pandas as pd
 import numpy as np
-from stereo.core.st_pipeline import StPipeline
 from stereo.log_manager import logger
 
 def cell_cluster_to_gene_exp_cluster(
-    tl: StPipeline,
+    tl,
     cluster_res_key: str = None,
     groups: Union[Optional[Sequence[str]], str] = None,
     genes: Union[Optional[Sequence[str]], str] = None,

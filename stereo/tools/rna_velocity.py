@@ -11,7 +11,6 @@ import gtfparse as gp
 import scipy.sparse as sparse
 from tqdm import tqdm
 from ..log_manager import logger
-from ..io import read_gem
 from shapely.geometry import Point, MultiPoint
 
 class RnaVelocity(object):
