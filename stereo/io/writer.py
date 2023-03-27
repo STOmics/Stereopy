@@ -181,7 +181,8 @@ def write_h5ms(ms_data, output : str):
             f['slice'].create_group(f'slice_{idx}')
             _write_one_h5ad(f['slice'][f'slice_{idx}'], data)
         if ms_data._merged_data:
-            _write_one_h5ad(f['slice_merged'], data)
+            f.create_group(f'slice_merged')
+            _write_one_h5ad(f['slice_merged'], ms_data._merged_data)
         h5ad.write_list(f, 'names', ms_data.names)
         h5ad.write_dataframe(f, 'obs', ms_data.obs)
         h5ad.write_dataframe(f, 'var', ms_data.var)
