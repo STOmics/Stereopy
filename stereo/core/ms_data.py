@@ -34,6 +34,10 @@ class _MSDataView(object):
             self._plt = PLT(self)
         return self._plt
 
+    @property
+    def data_list(self):
+        return self._data_list
+
     def __str__(self):
         return f'''data_list: {len(self._data_list)}'''
 
@@ -467,11 +471,15 @@ class MsDataResult(object):
         if type_key:
             self._key_records[type_key].append(res_key)
 
+    @property
+    def key_records(self):
+        return self._key_records
+
     def __str__(self):
-        return str(self._key_records)
+        return str(self.key_records)
 
     def __repr__(self):
-        return str(self._key_records)
+        return str(self.key_records)
 
     def __getitem__(self, item):
         return self.result[item]
@@ -483,7 +491,7 @@ class MSDataPipeLine(object):
 
     def __init__(self, _ms_data):
         super().__init__()
-        self._ms_data = _ms_data
+        self.ms_data = _ms_data
         self._result = MsDataResult()
 
     @property
@@ -500,28 +508,23 @@ class MSDataPipeLine(object):
             raise AttributeError
 
         if self.__class__.ATTR_NAME == "tl":
-            from ..algorithm.ms_algorithm_base import MSDataAlgorithmBase
-            ms_data_method = MSDataAlgorithmBase.get_attribute_helper(item, self._ms_data, self._result)
-            if ms_data_method:
-                return ms_data_method
-
             new_attr = self.__class__.BASE_CLASS.__dict__.get(item)
-            if new_attr:
+            if new_attr and item != 'batches_integrate':
                 def log_delayed_task(idx, *arg, **kwargs):
                     logger.info(f'data_obj(idx={idx}) in ms_data start to run {item}')
                     new_attr(*arg, **kwargs)
 
                 def temp(*args, **kwargs):
-                    Parallel(n_jobs=min(len(self._ms_data._data_list), cpu_count()), backend='threading', verbose=100)(
+                    Parallel(n_jobs=min(len(self.ms_data.data_list), cpu_count()), backend='threading', verbose=100)(
                         delayed(log_delayed_task)(idx, obj.__getattribute__(self.__class__.ATTR_NAME), *args, **kwargs)
-                        for idx, obj in enumerate(self._ms_data._data_list)
+                        for idx, obj in enumerate(self.ms_data.data_list)
                     )
 
                 return temp
 
             from ..algorithm.algorithm_base import AlgorithmBase
             delayed_list = []
-            for exp_obj in self._ms_data._data_list:
+            for exp_obj in self.ms_data.data_list:
                 obj_method = AlgorithmBase.get_attribute_helper(item, exp_obj.tl.data, exp_obj.tl.result)
                 if obj_method:
                     def log_delayed_task(idx, *arg, **kwargs):
@@ -533,12 +536,17 @@ class MSDataPipeLine(object):
             if delayed_list:
                 def temp(*args, **kwargs):
                     # TODO need multiprocessing?
-                    Parallel(n_jobs=min(len(self._ms_data._data_list), cpu_count()), backend='threading', verbose=100)(
+                    Parallel(n_jobs=min(len(self.ms_data.data_list), cpu_count()), backend='threading', verbose=100)(
                         delayed(one_job)(idx, *args, **kwargs)
                         for idx, one_job in enumerate(delayed_list)
                     )
 
                 return temp
+
+            from ..algorithm.ms_algorithm_base import MSDataAlgorithmBase
+            ms_data_method = MSDataAlgorithmBase.get_attribute_helper(item, self.ms_data, self._result)
+            if ms_data_method:
+                return ms_data_method
 
         else:
             new_attr = self.__class__.BASE_CLASS.__dict__.get(item)
@@ -547,8 +555,8 @@ class MSDataPipeLine(object):
                     out_paths = kwargs.get('out_paths', None)
                     if out_paths:
                         del kwargs['out_paths']
-                        assert len(self._ms_data._data_list) == len(out_paths)
-                    for idx, obj in enumerate(self._ms_data._data_list):
+                        assert len(self.ms_data.data_list) == len(out_paths)
+                    for idx, obj in enumerate(self.ms_data.data_list):
                         logger.info(f'data_obj(idx={idx}) in ms_data start to run {item}')
                         if out_paths:
                             kwargs['out_path'] = out_paths[idx]
@@ -599,7 +607,7 @@ obs: {self.obs.columns.to_list()}
 var: {self.var.columns.to_list()}
 relationship: {self.relationship}
 var_type: {self._var_type} to {len(self.var.index)}
-tl.result: {self.tl._result._key_records}
+tl.result: {self.tl.result.key_records}
 '''
 
     def __repr__(self):

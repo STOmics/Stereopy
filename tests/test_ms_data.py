@@ -59,21 +59,22 @@ class MSDataTestCases(unittest.TestCase):
         self.assertIs(self.ms_data['0'], self.ms_data[0])
         self.assertIs(self.ms_data['c'], self.ms_data[2])
 
-    # def test_multi_add_path(self):
-    #     self.ms_data.add_data(
-    #         [
-    #             '/mnt/d/projects/stereopy_dev/demo_data/SS200000135TL_D1/SS200000135TL_D1.tissue.gef',
-    #             '/mnt/d/projects/stereopy_dev/demo_data/SS200000135TL_D1/SS200000135TL_D1_script_res_gem.h5ad',
-    #             '/mnt/d/projects/stereopy_dev/demo_data/SS200000135TL_D1/SS200000135TL_D1.tissue.gem'
-    #         ],
-    #         [
-    #             'z',
-    #             'x',
-    #             'y'
-    #         ],
-    #         bin_size=[100, 100, 200],
-    #         bin_type=['bins', 'cell_bins', 'bins'],
-    #     )
+    def test_multi_add_path(self):
+        self.ms_data.add_data(
+            [
+                '/mnt/d/projects/stereopy_dev/demo_data/SS200000135TL_D1/SS200000135TL_D1.tissue.gef',
+                '/mnt/d/projects/stereopy_dev/demo_data/SS200000135TL_D1/SS200000135TL_D1_script_res_gem.h5ad',
+                '/mnt/d/projects/stereopy_dev/demo_data/SS200000135TL_D1/SS200000135TL_D1.tissue.gem'
+            ],
+            [
+                'z',
+                'x',
+                'y'
+            ],
+            bin_size=[100, 100, 200],
+            bin_type=['bins', 'cell_bins', 'bins'],
+            spatial_key=[None, None, 'spatial']
+        )
 
     def test_del_data(self):
         self.ms_data.del_data('0')
@@ -147,17 +148,17 @@ class MSDataTestCases(unittest.TestCase):
 
         test_slice.tl.log1p()
 
-    # def test_clustering(self):
-    #     self.ms_data.tl.cal_qc()
-    #     self.ms_data.tl.filter_cells(min_gene=200, min_n_genes_by_counts=3, max_n_genes_by_counts=7000, pct_counts_mt=8,
-    #                                  inplace=False)
-    #     self.ms_data.tl.log1p()
-    #     self.ms_data.tl.normalize_total(target_sum=1e4)
-    #     self.ms_data.tl.pca(use_highly_genes=False, hvg_res_key='highly_variable_genes', n_pcs=20, res_key='pca',
-    #                         svd_solver='arpack')
-    #     self.ms_data.tl.neighbors(pca_res_key='pca', n_pcs=30, res_key='neighbors', n_jobs=8)
-    #     self.ms_data.tl.umap(pca_res_key='pca', neighbors_res_key='neighbors', res_key='umap', init_pos='spectral')
-    #     self.ms_data.tl.leiden(neighbors_res_key='neighbors', res_key='leiden')
+    def test_clustering(self):
+        self.ms_data.tl.cal_qc()
+        self.ms_data.tl.filter_cells(min_gene=200, min_n_genes_by_counts=3, max_n_genes_by_counts=7000, pct_counts_mt=8,
+                                     inplace=False)
+        self.ms_data.tl.log1p()
+        self.ms_data.tl.normalize_total(target_sum=1e4)
+        self.ms_data.tl.pca(use_highly_genes=False, hvg_res_key='highly_variable_genes', n_pcs=20, res_key='pca',
+                            svd_solver='arpack')
+        self.ms_data.tl.neighbors(pca_res_key='pca', n_pcs=30, res_key='neighbors', n_jobs=8)
+        self.ms_data.tl.umap(pca_res_key='pca', neighbors_res_key='neighbors', res_key='umap', init_pos='spectral')
+        self.ms_data.tl.leiden(neighbors_res_key='neighbors', res_key='leiden')
 
 
 if __name__ == "__main__":
