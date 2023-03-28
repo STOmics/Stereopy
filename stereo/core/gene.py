@@ -63,7 +63,7 @@ class Gene(object):
 
     def to_df(self):
         """
-        transform Gene object to pd.DataFrame.
+        Transform StereoExpData object to pd.DataFrame.
 
         :return: a dataframe of Gene.
         """

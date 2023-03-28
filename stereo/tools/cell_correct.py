@@ -4,6 +4,7 @@
 # @Email    : tanliwei@genomics.cnW
 import os
 import time
+from typing import Union
 from multiprocessing import cpu_count
 import pandas as pd
 import numpy as np
@@ -229,56 +230,64 @@ class CellCorrect(object):
             return cgef_file_adjusted
 
 @log_consumed_time    
-def cell_correct(out_dir,
-                threshold=20,
-                gem_path=None,
-                bgef_path=None,
-                raw_cgef_path=None,
-                mask_path=None,
-                image_path=None,
-                model_path=None,
-                mask_save=True,
-                model_type='deep-learning',
-                process_count=None,
-                only_save_result=False,
-                fast='v2',
-                tissue_mask_path=None,
+def cell_correct(out_dir: str,
+                threshold: int=20,
+                gem_path: str=None,
+                bgef_path: str=None,
+                raw_cgef_path: str=None,
+                mask_path: str=None,
+                image_path: str=None,
+                model_path: str=None,
+                mask_save: bool=True,
+                model_type: str='deep-learning',
+				gpu: str='-1',
+                process_count: int=None,
+                only_save_result: bool=False,
+                fast: Union[bool, str]='v2',
+                tissue_mask_path: str=None,
                 **kwags
 ):
-    """correct cells from gem and mask or gem and ssdna image or bgef and mask or bgef and raw cgef(the cgef without correcting)
 
-    :param out_dir: the path of the directory to save some intermediate result like mask(if generate from ssdna image),
-                    bgef(generate from gem),cgef(generate from gem and mask) etc. and finally corrected result
-    :param threshold: default to 20
-    :param gem_path: the path of gem file, if None, need to input bgef_path, defaults to None
-    :param bgef_path: the path of bgef file, if None, need to input gem_path and then generate from gem, defaults to None
-    :param raw_cgef_path: the path of cgef file contains the data without correcting, if None, generate from bgef and mask, defaults to None
-    :param mask_path: the path of cell mask, if None, need to input the ssdna image by image_path and then generate from ssdna image, defaults to None
-    :param image_path: the path of ssdna image , if None, need to input mask_path, defaults to None
-    :param model_path: the path of the model used to generate mask, defaults to None
-    :param mask_save: if generated mask from ssdna image, set it to True to save mask file after correcting, defaults to True
-    :param model_type: the type of model used to generate mask, only can be set to deep-learning or deep-cell, defaults to 'deep-learning'
+    """
+    Correct cells using one of file conbinations as following:
+        * GEM and mask
+        * GEM and ssDNA image
+        * BGEF and mask
+        * BGEF and raw CGEF (not have been corrected)
+
+    :param out_dir: the path to save intermediate result, like mask (if generate from ssDNA image), 
+        BGEF (generate from GEM), CGEF (generate from GEM and mask), etc. and final corrected result.
+    :param threshold: threshold size, default to 20.
+    :param gem_path: the path to GEM file.
+    :param bgef_path: the path to BGEF file.
+    :param raw_cgef_path: the path to CGEF file in where data has not been corrected.
+    :param mask_path: the path to mask file.
+    :param image_path: the path to ssDNA image file.
+    :param model_path: the path to model file.
+    :param mask_save: whether to save mask file after correction, generated from ssDNA image.
+    :param model_type: the type of model to generate mask, whcih only could be set to deep learning model and deep cell model.
+	:param gpu: specify gpu id to predict when generate mask, if `'-1'`, use cpu for prediction.
     :param process_count: the count of the process will be started when correct cells, defaults to None
-                    by default, it will be set to 10 when `fast` is set to False and will be set to 1 when `fast` is set to True, v1 or v2.
-                    if it is set to -1, all of the cores will be used.
-    :param only_save_result: if True, only save result to disk; if False, return an object of StereoExpData, defaults to False
+                by default, it will be set to 10 when `fast` is set to False and will be set to 1 when `fast` is set to True, v1 or v2.
+                if it is set to -1, all of the cores will be used.
+	:param only_save_result: if `True`, only save result to disk; if `False`, return an StereoExpData object.
     :param fast: specify the version of algorithm, available values include [False, True, v1, v2], defaults to v2.
                     False: the oldest and slowest version, it will uses multiprocessing if set `process_count` to more than 1.
                     True or v1: the first fast version, it olny uses single process and single threading.
                     v2: default algorithm, the latest fast version, faster than v1, it will uses multithreading if set `process_count` to more than 1.
     :param tissue_mask_path: the path of tissue mask, default to None.
                     if it is set, the data will be filterd by tissue_mask, unavailable if set the `fast` to v2.
-    :return: an object of StereoExpData if only_save_result was set to False or the path of the correct result if only_save_result was set to True
+    :param deep_cro_size: deep crop size.
+    :param overlap: overlap size.
+
+    :return: An StereoExpData object if `only_save_result` is set to `False`, otherwise none.
     """
     do_mask_generating = False
     if mask_path is None and image_path is not None:
         from .cell_segment import CellSegment
         do_mask_generating = True
-        gpu = kwags.get('gpu', -1)
         deep_cro_size = kwags.get('deep_cro_size', 20000)
         overlap = kwags.get('overlap', 100)
-        if 'gpu' in kwags:
-            del kwags['gpu']
         if 'deep_cro_size' in kwags:
             del kwags['deep_cro_size']
         if 'overlap' in kwags:

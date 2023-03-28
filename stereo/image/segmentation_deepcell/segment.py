@@ -6,29 +6,42 @@ from .seg_utils import cell_seg_pipeline as pipeline
 
 
 def cell_seg_deepcell(
-        model_path,
-        img_path,
-        out_path,
-        depp_cro_size=20000,
-        overlap=100,
-        gpu=-1,
-        tissue_seg_model_path=None,
-        tissue_seg_method=None,
-        post_processing_workers=10
+        model_path: str, 
+        img_path: str, 
+        out_path: str, 
+        depp_cro_size: int=20000, 
+        overlap: int=100, 
+        gpu: str='-1',
+        tissue_seg_model_path: str=None,
+        tissue_seg_method: str=None,
+        post_processing_workers: int=10
     ):
     """
-    cell segmentation.
+    Implement cell segmentation by deep cell model.
 
-    :param model_path: the dir path of model.
-    :param img_path: image path
-    :param out_path: the ouput path of mask result
-    :param depp_cro_size: deep crop size
-    :param overlap: the size of overlap
-    :param gpu: the id of gpu, if -1,use the cpu to predict.
-    :param tissue_seg_model_path: the path of deep learning model of tissue segmentation, if set it to None, it would use OpenCV to process.
-    :param tissue_seg_method: the method of tissue segmentation, 1 is based on deep learning and 0 is based on OpenCV.
-    :param post_processing_workers: the number of processes for post-processing
-    :return:
+    Parameters
+    ------------------------
+    model_path
+        the path to deep cell model.
+    img_path
+        the path to image file.
+    out_path
+        the path to output mask result.
+    depp_cro_size
+        deep crop size.
+    overlap
+        overlap size.
+    gpu
+        set gpu id, if `'-1'`, use cpu for prediction.
+    tissue_seg_model_path
+	    the path of deep learning model of tissue segmentation, if set it to None, it would use OpenCV to process.
+    tissue_seg_method
+	    the method of tissue segmentation, 1 is based on deep learning and 0 is based on OpenCV.
+    post_processing_workers
+	    the number of processes for post-processing.
+    Returns
+    ------------------
+    None
     """
     try:
         import tensorflow as tf

@@ -33,35 +33,40 @@ class CellCut(object):
         return bgef_path
     
     def cell_cut(self,
-                bgef_path=None,
-                gem_path=None,
-                mask_path=None,
-                image_path=None,
-                model_path=None,
-                mask_save=True,
-                model_type='deep-learning',
-                depp_cro_size=20000,
-                overlap=100,
-                gen_mask_on_gpu='-1',
-                tissue_seg_model_path=None,
-                tissue_seg_method=None,
-                post_processing_workers=10
+                bgef_path: str = None,
+                gem_path: str = None,
+                mask_path: str = None,
+                image_path: str = None,
+                model_path: str = None,
+                mask_save: bool = True,
+                model_type: str = 'deep-learning',
+                depp_cro_size: int = 20000,
+                overlap: int = 100,
+                gen_mask_on_gpu: str = '-1',
+                tissue_seg_model_path: str=None,
+                tissue_seg_method: str=None,
+                post_processing_workers: int=10
         ):
-        """generate cgef by bgef and mask or bgef and ssdna image
+        """
+        Generate CGEF resutl via following combinations:
+            * BGEF and mask
+            * BGEF and ssDNA image
 
-        :param bgef_path: the path of bgef, if None, need to specify the path of gem by parameter gem_path to generate it, defaults to None
-        :param gem_path: the path of gem, if there is no bgef, must to input it to convert to bgef, defaults to None
-        :param mask_path: the path of mask, if None, need to specify the path of ssdn image by parameter image_path to generate it, defaults to None
-        :param image_path: the path of ssdn image, if there is no mask, must to input it, defaults to None
-        :param model_path: the path of model use to generate mask, defaults to None
-        :param mask_save: if True, save the mask after generating cgef, if False, don't to save, defaults to True
-        :param model_type: the model type of the model use to generate mask, deep-learning or deep-cell, defaults to 'deep-learning'
-        :param depp_cro_size: deep crop size, parameter for generating mask, defaults to 20000
-        :param overlap: the size of overlap, parameter for generating mask, defaults to 100
-        :param gen_mask_on_gpu: specify the gpu id if calculated on gpu when generate mask, if -1, calculate on cpu, defaults to '-1'
+        :param bgef_path: the path to BGEF file.
+        :param gem_path: the path to GEM file.
+        :param mask_path: the path to mask file.
+        :param image_path: the path to ssDNA image file.
+        :param model_path: the path to model file.
+        :param mask_save: whether to save mask file after correction, generated from ssDNA image.
+        :param model_type: the type of model to generate mask, whcih only could be set to deep learning model and deep cell model.
+        :param depp_cro_size: deep crop size.
+        :param overlap: overlap size.
+        :param gen_mask_on_gpu: specify gpu id to predict when generate mask, if `'-1'`, use cpu for prediction.
         :param tissue_seg_model_path: the path of deep-learning model of tissue segmentation, if set it to None, it would use OpenCV to process.
         :param tissue_seg_method: the method of tissue segmentation, 0 is deep-learning and 1 is OpenCV.
-        :return: the path of the generated cgef
+		:param post_processing_workers: the number of processes for post-processing.
+	
+        :return: Path to CGEF result.
         """
         if bgef_path is None and gem_path is None:
             raise Exception("must to input the path of bgef or the path of gem")
