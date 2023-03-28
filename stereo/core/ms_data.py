@@ -564,6 +564,11 @@ class MSDataPipeLine(object):
 
                 return temp
 
+            from ..plots.ms_plot_base import MSDataPlotBase
+            ms_data_method = MSDataPlotBase.get_attribute_helper(item, self.ms_data, self._result)
+            if ms_data_method:
+                return ms_data_method
+
         raise AttributeError
 
 
