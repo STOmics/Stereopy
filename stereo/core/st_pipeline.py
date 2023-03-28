@@ -688,8 +688,7 @@ class StPipeline(object):
         import phenograph as phe
         from natsort import natsorted
         from ..utils.pipeline_utils import cell_cluster_to_gene_exp_cluster
-        communities, _, _ = phe.cluster(self.result[pca_res_key], k=phenograph_k, clustering_algo='leiden',
-                                        n_jobs=n_jobs)
+        communities, _, _ = phe.cluster(self.result[pca_res_key], k=phenograph_k, clustering_algo='leiden', n_jobs=n_jobs)
         communities = communities + 1
         clusters = pd.Categorical(
             values=communities.astype('U'),
@@ -748,14 +747,17 @@ class StPipeline(object):
             raise Exception(f'self.raw must be set if use_raw is True.')
         if cluster_res_key not in self.result:
             raise Exception(f'{cluster_res_key} is not in the result, please check and run the func of cluster.')
+        if self.result[cluster_res_key]['group'].unique().size <= 1:
+            raise Exception(f'this function must be based on a cluster result which includes at least two groups.')
         data = self.raw if use_raw else self.data
         data = self.subset_by_hvg(hvg_res_key, use_raw=use_raw, inplace=False) if use_highly_genes else data
         tool = FindMarker(data=data, groups=self.result[cluster_res_key], method=method, case_groups=case_groups,
                           control_groups=control_groups, corr_method=corr_method, raw_data=self.raw, sort_by=sort_by,
                           n_genes=n_genes)
         self.result[res_key] = tool.result
-        self.result[res_key]['cluster_res_key'] = cluster_res_key
-        self.result[res_key]['method'] = method
+        self.result[res_key]['parameters'] = {}
+        self.result[res_key]['parameters']['cluster_res_key'] = cluster_res_key
+        self.result[res_key]['parameters']['method'] = method
         if output is not None:
             import natsort
             result = self.result[res_key]
@@ -1015,6 +1017,13 @@ class StPipeline(object):
         key = 'cluster'
         self.reset_key_record(key, res_key)
 
+        from ..utils.pipeline_utils import cell_cluster_to_gene_exp_cluster
+        gene_cluster_res_key = f'gene_exp_{res_key}'
+        gene_exp_cluster_res = cell_cluster_to_gene_exp_cluster(self, res_key)
+        if gene_exp_cluster_res is not False:
+            self.result[gene_cluster_res_key] = gene_exp_cluster_res
+            self.reset_key_record('gene_exp_cluster', gene_cluster_res_key)
+
     @logit
     def filter_marker_genes(
         self,
@@ -1044,9 +1053,10 @@ class StPipeline(object):
             raise Exception(f'{marker_genes_res_key} is not in the result, please check and run the find_marker_genes func.')
 
         self.result[res_key] = {}
-        self.result[res_key]['marker_genes_res_key'] = marker_genes_res_key
-        self.result[res_key]['cluster_res_key'] = self.result[marker_genes_res_key]['cluster_res_key']
-        self.result[res_key]['method'] = self.result[marker_genes_res_key]['method']
+        self.result[res_key]['parameters'] = {}
+        self.result[res_key]['parameters']['marker_genes_res_key'] = marker_genes_res_key
+        self.result[res_key]['parameters']['cluster_res_key'] = self.result[marker_genes_res_key]['parameters']['cluster_res_key']
+        self.result[res_key]['parameters']['method'] = self.result[marker_genes_res_key]['parameters']['method']
         pct= self.result[marker_genes_res_key]['pct']
         pct_rest = self.result[marker_genes_res_key]['pct_rest']
         for key, res in self.result[marker_genes_res_key].items():
@@ -1080,6 +1090,9 @@ class StPipeline(object):
                 axis=1
             )
             dat.to_csv(output)
+        
+        key = 'marker_genes'
+        self.reset_key_record(key, res_key)
 
 
 

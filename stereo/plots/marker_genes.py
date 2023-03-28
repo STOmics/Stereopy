@@ -324,6 +324,7 @@ class MarkerGenesScatterPlot:
     ):
         self.data = data
         self.marker_genes_res = marker_genes_res
+        self.marker_genes_parameters = marker_genes_res['parameters']
     
     def _store_marker_genes_result_by_group(self):
         marker_genes_group_keys = natsort.natsorted([key for key in self.marker_genes_res.keys() if '.vs.' in key])
@@ -339,10 +340,10 @@ class MarkerGenesScatterPlot:
         gene_index,
         values_to_plot=None,
     ):
-        original_marker_genes_key = self.marker_genes_res.get('marker_genes_res_key')
+        original_marker_genes_key = self.marker_genes_parameters.get('marker_genes_res_key')
         pct: pd.DataFrame = self.data.tl.result[original_marker_genes_key]['pct'] if original_marker_genes_key is not None else self.marker_genes_res['pct']
         marker_genes_res_dict = self._store_marker_genes_result_by_group()
-        mean_expressin_in_group = pipeline_utils.cell_cluster_to_gene_exp_cluster(self.data.tl, self.marker_genes_res['cluster_res_key'], kind='mean')
+        mean_expressin_in_group = pipeline_utils.cell_cluster_to_gene_exp_cluster(self.data.tl, self.marker_genes_parameters['cluster_res_key'], kind='mean')
         # gene_isin = pct['genes'].isin(gene_names)
         for g in groups:
             if values_to_plot is None:
@@ -366,7 +367,7 @@ class MarkerGenesScatterPlot:
         values_to_plot=None,
         sort_by='scores'
     ):
-        cluster_res = self.data.tl.result[self.marker_genes_res['cluster_res_key']]
+        cluster_res = self.data.tl.result[self.marker_genes_parameters['cluster_res_key']]
         if values_to_plot is None:
             group_names = np.asarray(natsort.natsorted(cluster_res['group'].unique()))
         else:
@@ -528,7 +529,7 @@ class MarkerGenesScatterPlot:
             'pvalues_adj'
         ] = 'scores'
     ):
-        if (values_to_plot is not None) and ('pvalues' in values_to_plot) and self.marker_genes_res['method'] == 'logreg':
+        if (values_to_plot is not None) and ('pvalues' in values_to_plot) and self.marker_genes_parameters['method'] == 'logreg':
             raise Exception("Just only the t_test and wilcoxon_test method would output the pvalues and pvalues_adj.")
 
         plot_data, gene_names, group_names, marker_genes_group_keys_to_show, gene_intervals = \
