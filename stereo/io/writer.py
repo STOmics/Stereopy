@@ -29,7 +29,8 @@ def write_h5ad(data: StereoExpData, use_raw=True, use_result=True, key_record=No
     :param use_raw: bool, whether to save raw data
     :param use_result: bool, whether to save result and res_key
     :param key_record: Dict. if None, it will save the result and res_key of data.tl.key_record.
-    :param: output: the output path. StereoExpData's output will be reset if the output is not None.
+    :param output: the output path. StereoExpData's output will be reset if the output is not None.
+    :param split_batches: Whether to save each batch to a single file if it is a merged data, default to True.
     otherwise, it will save the result and res_key of this dict.
 
     :return:
@@ -138,7 +139,18 @@ def _write_one_h5ad(f, data, use_raw=False, use_result=True, key_record=None):
                     clusters = list(data.tl.result[res_key].keys())
                     h5ad.write(clusters, f, f'clusters_record@{res_key}@marker_genes')  # -> list
                     for cluster, df in data.tl.result[res_key].items():
-                        h5ad.write(df, f, f'{cluster}@{res_key}@marker_genes')  # -> dataframe
+                        if cluster != 'parameters':
+                            h5ad.write(df, f, f'{cluster}@{res_key}@marker_genes')  # -> dataframe
+                        else:
+                            name, value = [], []
+                            for pname, pvalue in df.items():
+                                name.append(pname)
+                                value.append(pvalue)
+                            parameters_df = pd.DataFrame({
+                                'name': name,
+                                'value': value
+                            })
+                            h5ad.write(parameters_df, f, f'{cluster}@{res_key}@marker_genes')  # -> dataframe
                 if analysis_key == 'sct':
                     # tuple: (StereoExpData, dict-17 keys with different type)
 

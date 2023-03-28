@@ -9,15 +9,16 @@ Generally, there are two ways to do it.
 Note
 --------
   1. If you need to generate mask file from ssdna image, you have to install some necessary modules, please refer to `Prepare <https://stereopy.readthedocs.io/en/latest/Tutorials/prepare.html>`_.
-  2. We have two versions of the algorithm, one is more slower but more accurate, another one is more faster but less accurate.You can set the parameter `fast` to True to run the faster version, default to True.
-
+  2. We have three versions of the algorithm, specify it by parameter `fast`, available values include [False, True, 'v1', 'v2'], recommend to use 'v2'
+        1. False: the oldest and slowest version, it will uses multiprocessing if set `process_count` to more than 1.
+        2. True or v1: the first fast but least accurate version, it olny uses single process and single threading.
+        3. v2: default and recommended algorithm, the latest fast version, faster and more accurate than v1, it will uses multithreading if set `process_count` to more than 1.
+  3. More details of parameters refer to `API <https://stereopy.readthedocs.io/en/latest/api/stereo.tools.cell_correct.cell_correct.html#stereo.tools.cell_correct.cell_correct>`_.
 
 Correcting from BGEF and Mask
 ------------------------------
 
 On this way, you should specify the path of bgef by parameter `bgef_path`, the path of mask by parameter `mask_path` and the path of directory to save corrected result by parameter `out_dir`.
-
-You can specify the count of processes by parameter `process_count`, default to 10.
 
 Default to return an object of StereoExpData, if you set the parameter `only_save_result` to True, only return the path of cgef after correcting.
 
@@ -35,11 +36,10 @@ In the directory specified by out_dir, you can see some files, include:
     mask_path = "SS200000135TL_D1_regist.tif"
     out_dir = "cell_correct_result"
     only_save_result = False
-    fast = True
+    fast = 'v2'
     data = cell_correct(out_dir=out_dir,
                         bgef_path=bgef_path,
                         mask_path=mask_path,
-                        process_count=10,
                         only_save_result=only_save_result,
                         fast=fast)
 
@@ -66,14 +66,13 @@ In the `out_dir` directory, there is a new directory named deep-learning or deep
     #model_type = "deep-cell"
     gpu = -1
     only_save_result = False
-    fast = True
+    fast = 'v2'
     data = cell_correct(out_dir=out_dir,
                         bgef_path=bgef_path,
                         image_path=image_path,
                         model_path=model_path,
                         model_type=model_type,
                         gpu=gpu,
-                        process_count=10,
                         only_save_result=only_save_result,
                         fast=fast)
 
@@ -93,11 +92,10 @@ In the `out_dir` directory, you can also see a file named \*\*.bgef, this is the
     mask_path = "SS200000135TL_D1_regist.tif"
     out_dir = "cell_correct_result"
     only_save_result = False
-    fast = True
+    fast = 'v2'
     data = cell_correct(out_dir=out_dir,
-                      gem_path=gem_path,
+                        gem_path=gem_path,
                         mask_path=mask_path,
-                        process_count=10,
                         only_save_result=only_save_result,
                         fast=fast)
 
@@ -116,14 +114,13 @@ Similar to the way on bgef and ssdna image, you can correct cells from gem and s
     #model_type = "deep-cell"
     gpu = -1
     only_save_result = False
-    fast = True
+    fast = 'v2'
     data = cell_correct(out_dir=out_dir,
                         gem_path=gem_path,
                         image_path=image_path,
                         model_path=model_path,
                         model_type=model_type,
                         gpu=gpu,
-                        process_count=10,
                         only_save_result=only_save_result,
                         fast=fast)
 
@@ -131,7 +128,7 @@ Similar to the way on bgef and ssdna image, you can correct cells from gem and s
 Runing on Jupyter Notebook
 ---------------------------
 
-Jupyter notebook can not support multiprocess directly, if you want to run on notebook, refer to the following two steps.
+Jupyter notebook can not support multiprocessing directly, if you want to run on notebook, refer to the following two steps.
 
 The first, you need to write the source code into a .py file by command %%writefile.
 
@@ -146,11 +143,10 @@ After running the example below, you should see a file named temp.py in current 
     mask_path = "SS200000135TL_D1_regist.tif"
     out_dir = "cell_correct_result"
     only_save_result = False
-    fast = True
+    fast = False
     data = cell_correct(out_dir=out_dir,
                         bgef_path=bgef_path,
                         mask_path=mask_path,
-                        process_count=10,
                         only_save_result=only_save_result,
                         fast=fast)
 
@@ -186,10 +182,18 @@ Performance
 |10       |140G        |2330%  |2h13m  |
 +---------+------------+-------+-------+
 
-`fast=True` (only support single process)
+`fast=True or v1` (only support single process)
 
 +---------+------------+-------+-------+
 |process  |memory(max) |cpu    |time   |
 +=========+============+=======+=======+
-|1        |49G         |99%    |40m    |
+|1        |49G         |99%    |31m    |
++---------+------------+-------+-------+
+
+`fast=v2` (single process)
+
++---------+------------+-------+-------+
+|process  |memory(max) |cpu    |time   |
++=========+============+=======+=======+
+|1        |50G         |100%    |23m    |
 +---------+------------+-------+-------+

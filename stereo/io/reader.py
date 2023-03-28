@@ -239,7 +239,15 @@ def _read_stereo_h5ad_from_group(f, data, use_raw, use_result):
                     data.tl.result[res_key] = {}
                     for cluster in clusters:
                         cluster_key = f'{cluster}@{res_key}@marker_genes'
-                        data.tl.result[res_key][cluster] = h5ad.read_group(f[cluster_key])
+                        if cluster !=  'parameters':
+                            data.tl.result[res_key][cluster] = h5ad.read_group(f[cluster_key])
+                        else:
+                            parameters_df: pd.DataFrame = h5ad.read_group(f[cluster_key])
+                            data.tl.result[res_key]['parameters'] = {}
+                            for i, row in parameters_df.iterrows():
+                                name = row['name']
+                                value = row['value']
+                                data.tl.result[res_key]['parameters'][name] = value
                 if analysis_key == 'cell_cell_communication':
                     data.tl.result[res_key] = {}
                     for key in ['means', 'significant_means', 'deconvoluted', 'pvalues']:
@@ -459,6 +467,7 @@ def stereo_to_anndata(data: StereoExpData, flavor='scanpy', sample_id="sample", 
     :param sample_id: sample name, which will be set as 'orig.ident' in obs.
     :param reindex: if True, the cell index will be reindex as "{sample_id}:{position_x}_{position_y}" format.
     :param output: path of output_file(.h5ad).
+    :param split_batches: Whether to save each batch to a single file if it is a merged data, default to True.
     :return: Anndata object
     """
     if data.merged and split_batches:
@@ -523,7 +532,7 @@ def stereo_to_anndata(data: StereoExpData, flavor='scanpy', sample_id="sample", 
         if len(data.tl.key_record[key]) > 0:
             if key == 'hvg':
                 res_key = data.tl.key_record[key][-1]
-                logger.info(f"Adding data.tl.result['{res_key}'] in adata.var .")
+                logger.info(f"Adding data.tl.result['{res_key}'] into adata.var .")
                 adata.uns[key] = {'params': {}, 'source': 'stereopy', 'method': key}
                 for i in data.tl.result[res_key]:
                     if i == 'mean_bin':
@@ -532,7 +541,7 @@ def stereo_to_anndata(data: StereoExpData, flavor='scanpy', sample_id="sample", 
             elif key == 'sct':
                 res_key = data.tl.key_record[key][-1]
                 # adata.uns[res_key] = {}
-                logger.info(f"Adding data.tl.result['{res_key}'] in adata.uns['sct_'] .")
+                logger.info(f"Adding data.tl.result['{res_key}'] into adata.uns['sct_'] .")
                 adata.uns['sct_counts'] = csr_matrix(data.tl.result[res_key][0]['counts'].T)
                 adata.uns['sct_data'] = csr_matrix(data.tl.result[res_key][0]['data'].T)
                 adata.uns['sct_scale'] = csr_matrix(data.tl.result[res_key][0]['scale.data'].T.to_numpy())
@@ -543,7 +552,7 @@ def stereo_to_anndata(data: StereoExpData, flavor='scanpy', sample_id="sample", 
                 # pca :we do not keep variance and PCs(for varm which will be into feature.finding in pca of seurat.)
                 res_key = data.tl.key_record[key][-1]
                 sc_key = f'X_{key}'
-                logger.info(f"Adding data.tl.result['{res_key}'] in adata.obsm['{sc_key}'] .")
+                logger.info(f"Adding data.tl.result['{res_key}'] into adata.obsm['{sc_key}'] .")
                 adata.obsm[sc_key] = data.tl.result[res_key].values
             elif key == 'neighbors':
                 # neighbor :seurat use uns for conversion to @graph slot, but scanpy canceled neighbors of uns at present.
@@ -551,11 +560,11 @@ def stereo_to_anndata(data: StereoExpData, flavor='scanpy', sample_id="sample", 
                 for res_key in data.tl.key_record[key]:
                     sc_con = 'connectivities' if res_key == 'neighbors' else f'{res_key}_connectivities'
                     sc_dis = 'distances' if res_key == 'neighbors' else f'{res_key}_distances'
-                    logger.info(f"Adding data.tl.result['{res_key}']['connectivities'] in adata.obsp['{sc_con}'] .")
-                    logger.info(f"Adding data.tl.result['{res_key}']['nn_dist'] in adata.obsp['{sc_dis}'] .")
+                    logger.info(f"Adding data.tl.result['{res_key}']['connectivities'] into adata.obsp['{sc_con}'] .")
+                    logger.info(f"Adding data.tl.result['{res_key}']['nn_dist'] into adata.obsp['{sc_dis}'] .")
                     adata.obsp[sc_con] = data.tl.result[res_key]['connectivities']
                     adata.obsp[sc_dis] = data.tl.result[res_key]['nn_dist']
-                    logger.info(f"Adding info in adata.uns['{res_key}'].")
+                    logger.info(f"Adding info into adata.uns['{res_key}'].")
                     adata.uns[res_key] = {}
                     adata.uns[res_key]['connectivities_key'] = sc_con
                     adata.uns[res_key]['distance_key'] = sc_dis
@@ -563,12 +572,13 @@ def stereo_to_anndata(data: StereoExpData, flavor='scanpy', sample_id="sample", 
                     # adata.uns[res_key]['distances'] = data.tl.result[res_key]['nn_dist']
             elif key == 'cluster':
                 for res_key in data.tl.key_record[key]:
-                    logger.info(f"Adding data.tl.result['{res_key}'] in adata.obs['{res_key}'] .")
+                    logger.info(f"Adding data.tl.result['{res_key}'] into adata.obs['{res_key}'] .")
                     adata.obs[res_key] = pd.DataFrame(data.tl.result[res_key]['group'].values,
                                                       index=data.cells.cell_name.astype('str'))
-            elif key == 'gene_exp_cluster':
+            elif key in ('gene_exp_cluster', 'cell_cell_communication'):
                 for res_key in data.tl.key_record[key]:
-                    adata.uns[res_key] = data.tl.result[res_key]
+                    logger.info(f"Adding data.tl.result['{res_key}'] into adata.uns['{key}@{res_key}']")
+                    adata.uns[f"{key}@{res_key}"] = data.tl.result[res_key]
             else:
                 continue
 
