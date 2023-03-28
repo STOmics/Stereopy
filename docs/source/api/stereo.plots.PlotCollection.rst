@@ -28,6 +28,7 @@
       ~PlotCollection.interact_spatial_scatter
       ~PlotCollection.marker_gene_volcano
       ~PlotCollection.marker_genes_heatmap
+      ~PlotCollection.marker_genes_scatter
       ~PlotCollection.marker_genes_text
       ~PlotCollection.scenic_clustermap
       ~PlotCollection.scenic_regulons
