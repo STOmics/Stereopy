@@ -11,7 +11,7 @@ from joblib import Parallel, delayed, cpu_count
 from ...log_manager import logger
 from ..algorithm_base import AlgorithmBase
 from .utils import corr_spearman, apply_along_axis
-from ...core.stereo_exp_data import StereoExpData, AnnBasedStereoExpData
+from ...core.stereo_exp_data import StereoExpData
 
 
 class _TestData(object):
