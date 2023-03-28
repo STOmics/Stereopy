@@ -1,1 +1,2 @@
 from .cell_cell_communication import PlotCellCellCommunication
+from .inference_regulatory_network import PlotRegulatoryNetwork
