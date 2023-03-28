@@ -284,6 +284,15 @@ def _read_stereo_h5ad_from_group(f, data, use_raw, use_result):
                         name = row['name']
                         value = row['value']
                         data.tl.result[res_key]['parameters'][name] = value
+                if analysis_key == 'inference_regulatory_network':
+                    data.tl.result[res_key] = {}
+                    for key in ['regulons', 'auc_matrix', 'adjacencies']:
+                        full_key = f'{res_key}@{key}@inference_regulatory_network'
+                        if full_key in f.keys():
+                            if key == 'regulons':
+                                data.tl.result[res_key][key] = ast.literal_eval(h5ad.read_dataset(f[full_key]))
+                            else:
+                                data.tl.result[res_key][key] = h5ad.read_group(f[full_key])
     return data
 
 
@@ -654,6 +663,15 @@ def stereo_to_anndata(
                 for res_key in data.tl.key_record[key]:
                     logger.info(f"Adding data.tl.result['{res_key}'] into adata.uns['{key}@{res_key}']")
                     adata.uns[f"{key}@{res_key}"] = data.tl.result[res_key]
+            elif key == 'inference_regulatory_network':
+                for res_key in data.tl.key_record[key]: 
+                    logger.info(f"Adding data.tl.result['{res_key}'] in adata.uns['{res_key}'] .")
+                    regulon_key = f'{res_key}_regulons'
+                    adata.uns[regulon_key] = data.tl.result[res_key]['regulons']
+                    auc_matrix_key = f'{res_key}_auc_matrix'
+                    adata.uns[auc_matrix_key] = data.tl.result[res_key]['auc_matrix']
+                    adjacencies_key = f'{res_key}_adjacencies'
+                    adata.uns[adjacencies_key] = data.tl.result[res_key]['adjacencies']
             else:
                 continue
 

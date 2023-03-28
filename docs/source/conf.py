@@ -57,7 +57,7 @@ api_dir = HERE / 'api'  # function_images
 # The master toctree document.
 language = None
 
-#If you want to include a notebook without outputs and yet don’t want nbsphinx to execute it for you, you can explicitly disable this feature.
+#If you want to include a notebook without outputs and yet donâ€™t want nbsphinx to execute it for you, you can explicitly disable this feature.
 nbsphinx_execute = 'never'
 
 html_theme = 'furo'
