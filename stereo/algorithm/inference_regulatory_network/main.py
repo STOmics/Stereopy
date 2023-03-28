@@ -15,18 +15,12 @@ change log:
 # python core modules
 import os
 import csv
-import warnings
 from typing import Union
 
 # third party modules
 import json
 import glob
-import anndata
-import scipy.sparse
 import pandas as pd
-import numpy as np
-import seaborn as sns
-import matplotlib.pyplot as plt
 from arboreto.utils import load_tf_names
 from multiprocessing import cpu_count
 from pyscenic.export import export2loom
@@ -36,17 +30,11 @@ from arboreto.algo import grnboost2
 from ctxcore.rnkdb import FeatherRankingDatabase as RankingDatabase
 from pyscenic.prune import prune2df, df2regulons
 from pyscenic.utils import modules_from_adjacencies
-from pyscenic.cli.utils import load_signatures
-from pyscenic.rss import regulon_specificity_scores
 from pyscenic.aucell import aucell
 
 # modules in self project
 from stereo.log_manager import logger
-from stereo.plots.plot_base import PlotBase
 from stereo.algorithm.algorithm_base import AlgorithmBase
-from stereo.io.reader import read_gef
-from stereo.core.stereo_exp_data import StereoExpData
-from stereo.plots.scatter import base_scatter
 
 
 class InferenceRegulatoryNetwork(AlgorithmBase):
