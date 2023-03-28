@@ -66,7 +66,7 @@ class StPipeline(object):
         new_attr = AlgorithmBase.get_attribute_helper(item, self.data, self.result)
         if new_attr:
             self.__setattr__(item, new_attr)
-            logger.info(f'register algorithm {new_attr} to {self}')
+            logger.info(f'register algorithm {item} to {self}')
             return new_attr
 
         raise AttributeError(
@@ -194,6 +194,7 @@ class StPipeline(object):
                      min_cell: Optional[int]=None, 
                      max_cell: Optional[int]=None, 
                      gene_list: Optional[list]=None, 
+					 mean_umi_gt: float = None,
                      inplace: bool=True):
         """
         Filter genes based on the numbers of cells or counts.
@@ -208,14 +209,15 @@ class StPipeline(object):
             the list of genes to be filtered.
         inplace
             whether to inplace the previous data or return a new data.
-
+        mean_umi_gt
+			genes mean umi should greater than this.
         Returns
         --------------------
         An object of StereoExpData.
         Depending on `inplace`, if `True`, the data will be replaced by those filtered.
         """
         from ..preprocess.filter import filter_genes
-        data = filter_genes(self.data, min_cell, max_cell, gene_list, inplace)
+        data = filter_genes(self.data, min_cell, max_cell, gene_list, mean_umi_gt, inplace)
         return data
 
     @logit
@@ -679,6 +681,8 @@ class StPipeline(object):
             raise Exception(f'{pca_res_key} is not in the result, please check and run the pca func.')
         if n_jobs > cpu_count():
             n_jobs = -1
+        if n_pcs is None:
+            n_pcs = self.result[pca_res_key].shape[1]
         from ..algorithm.neighbors import find_neighbors
         neighbor, dists, connectivities = find_neighbors(x=self.result[pca_res_key].values, method=method, n_pcs=n_pcs,
                                                          n_neighbors=n_neighbors, metric=metric, knn=knn, n_jobs=n_jobs)
@@ -865,12 +869,14 @@ class StPipeline(object):
                           method: Literal['t_test', 'wilcoxon_test'] = 't_test',
                           case_groups: Union[str, np.ndarray, list] = 'all',
                           control_groups: Union[str, np.ndarray, list] = 'rest',
-                          corr_method: str = 'bonferroni',
+                          corr_method: str = 'benjamini-hochberg',
                           use_raw: bool = True,
                           use_highly_genes: bool = True,
                           hvg_res_key: Optional[str] = 'highly_variable_genes',
                           res_key: str = 'marker_genes',
                           output: Optional[str] = None,
+                          sort_by='scores',
+                          n_genes: Union[str, int] = 'all'
                           ):
         """
         A tool to find maker genes. For each group, find statistical test different genes 
@@ -886,7 +892,9 @@ class StPipeline(object):
         :param hvg_res_key: the key of highly variable genes to get corresponding result.
         :param res_key: the key for storing result of marker genes.
         :param output: the path to output file `.csv`. If None, do not generate output file.
-
+        :param sort_by: default to 'scores', the result will sort by the key, other options 'log2fc'.
+        :param n_genes: default to 0, means will auto calculate n_genes by N = 10000/K². K is cluster number, and N is
+                larger or equal to 1, less or equal to 50.
         :return: The result of marker genes is stored in `self.result` where the key is `'marker_genes'`.
         """
         from ..tools.find_markers import FindMarker
@@ -897,18 +905,30 @@ class StPipeline(object):
             raise Exception(f'self.raw must be set if use_raw is True.')
         if cluster_res_key not in self.result:
             raise Exception(f'{cluster_res_key} is not in the result, please check and run the func of cluster.')
+        if self.result[cluster_res_key]['group'].unique().size <= 1:
+            raise Exception(f'this function must be based on a cluster result which includes at least two groups.')
         data = self.raw if use_raw else self.data
         data = self.subset_by_hvg(hvg_res_key, use_raw=use_raw, inplace=False) if use_highly_genes else data
         tool = FindMarker(data=data, groups=self.result[cluster_res_key], method=method, case_groups=case_groups,
-                          control_groups=control_groups, corr_method=corr_method, raw_data=self.raw)
+                          control_groups=control_groups, corr_method=corr_method, raw_data=self.raw, sort_by=sort_by,
+                          n_genes=n_genes)
         self.result[res_key] = tool.result
+        self.result[res_key]['parameters'] = {}
+        self.result[res_key]['parameters']['cluster_res_key'] = cluster_res_key
+        self.result[res_key]['parameters']['method'] = method
         if output is not None:
             import natsort
             result = self.result[res_key]
-            show_cols = ['scores', 'pvalues', 'pvalues_adj', 'log2fc', 'genes']
+            show_cols = ['scores', 'pvalues', 'pvalues_adj', 'log2fc', 'genes', 'pct', 'pct_rest']
             groups = natsort.natsorted([key for key in result.keys() if '.vs.' in key])
-            dat = pd.DataFrame(
-                {group.split(".")[0] + "_" + key: result[group][key] for group in groups for key in show_cols})
+            dat = pd.concat(
+                [
+                    pd.DataFrame(
+                        {group.split(".")[0] + "_" + key: result[group][key].values}
+                    ) for group in groups for key in show_cols
+                ],
+                axis=1
+            )
             dat.to_csv(output)
         key = 'marker_genes'
         self.reset_key_record(key, res_key)
@@ -1131,7 +1151,7 @@ class StPipeline(object):
         """
         import harmonypy as hm
         assert pca_res_key in self.result, f'{pca_res_key} is not in the result, please check and run the pca method.'
-        assert self.data.cells.batch is not None, f'this is not a data were merged from diffrent experiments'
+        assert self.data.cells.batch is not None, f'this is not a data were merged from different experiments'
 
         out = hm.run_harmony(self.result[pca_res_key], self.data.cells.to_df(), 'batch', **kwargs)
         self.result[res_key] = pd.DataFrame(out.Z_corr.T)
@@ -1170,7 +1190,14 @@ class StPipeline(object):
 
         key = 'cluster'
         self.reset_key_record(key, res_key)
-    
+
+        from ..utils.pipeline_utils import cell_cluster_to_gene_exp_cluster
+        gene_cluster_res_key = f'gene_exp_{res_key}'
+        gene_exp_cluster_res = cell_cluster_to_gene_exp_cluster(self, res_key)
+        if gene_exp_cluster_res is not False:
+            self.result[gene_cluster_res_key] = gene_exp_cluster_res
+            self.reset_key_record('gene_exp_cluster', gene_cluster_res_key)
+
     @logit
     def filter_marker_genes(
         self,
@@ -1180,7 +1207,8 @@ class StPipeline(object):
         max_out_group_fraction=0.5,
         compare_abs=False,
         remove_mismatch=True,
-        res_key='marker_genes_filtered'
+        res_key='marker_genes_filtered',
+        output=None
     ):
         """Filters out genes based on log fold change and fraction of genes expressing the gene within and outside each group.
 
@@ -1193,12 +1221,16 @@ class StPipeline(object):
                                 if `False`, these records will be set to np.nan,
                                 defaults to True
         :param res_key: the key of the result of this function to be set to self.result, defaults to 'marker_genes_filtered'
+        :param output: path of output_file(.csv). If None, do not generate the output file.
         """
         if marker_genes_res_key not in self.result:
-            raise Exception(f'{marker_genes_res_key} is not in the result, please check and run the find_marker_genes func.') 
+            raise Exception(f'{marker_genes_res_key} is not in the result, please check and run the find_marker_genes func.')
 
         self.result[res_key] = {}
-        self.result[res_key]['marker_genes_res_key'] = marker_genes_res_key
+        self.result[res_key]['parameters'] = {}
+        self.result[res_key]['parameters']['marker_genes_res_key'] = marker_genes_res_key
+        self.result[res_key]['parameters']['cluster_res_key'] = self.result[marker_genes_res_key]['parameters']['cluster_res_key']
+        self.result[res_key]['parameters']['method'] = self.result[marker_genes_res_key]['parameters']['method']
         pct= self.result[marker_genes_res_key]['pct']
         pct_rest = self.result[marker_genes_res_key]['pct_rest']
         for key, res in self.result[marker_genes_res_key].items():
@@ -1218,7 +1250,25 @@ class StPipeline(object):
             else:
                 new_res[flag == True] = np.nan
             self.result[res_key][key] = new_res
-    
+        if output is not None:
+            import natsort
+            result = self.result[res_key]
+            show_cols = ['scores', 'pvalues', 'pvalues_adj', 'log2fc', 'genes', 'pct', 'pct_rest']
+            groups = natsort.natsorted([key for key in result.keys() if '.vs.' in key])
+            dat = pd.concat(
+                [
+                    pd.DataFrame(
+                        {group.split(".")[0] + "_" + key: result[group][key].values}
+                    ) for group in groups for key in show_cols
+                ],
+                axis=1
+            )
+            dat.to_csv(output)
+        
+        key = 'marker_genes'
+        self.reset_key_record(key, res_key)
+
+
 
     # def scenic(self, tfs, motif, database_dir, res_key='scenic', use_raw=True, outdir=None,):
     #     """
@@ -1244,7 +1294,7 @@ class StPipeline(object):
 
 
 class AnnBasedResult(dict):
-    CLUSTER_NAMES = {'leiden', 'louvain', 'phenograph'}
+    CLUSTER_NAMES = {'leiden', 'louvain', 'phenograph', 'annotation'}
     CONNECTIVITY_NAMES = {'neighbors'}
     REDUCE_NAMES = {'umap', 'pca', 'tsne'}
     HVG_NAMES = {'highly_variable_genes', 'hvg'}
@@ -1262,7 +1312,7 @@ class AnnBasedResult(dict):
     }
 
     def __init__(self, based_ann_data: AnnData):
-        super(dict, self).__init__()
+        super().__init__()
         self.__based_ann_data = based_ann_data
 
     def __contains__(self, item):
@@ -1321,7 +1371,7 @@ class AnnBasedResult(dict):
             return self.__based_ann_data.uns[name]
         elif name.startswith('gene_exp_'):
             return self.__based_ann_data.uns[name]
-        
+
         obsm_obj = self.__based_ann_data.obsm.get(f'X_{name}', None)
         if obsm_obj is not None:
             return pd.DataFrame(obsm_obj)
@@ -1429,7 +1479,7 @@ class AnnBasedResult(dict):
 class AnnBasedStPipeline(StPipeline):
 
     def __init__(self, based_ann_data: AnnData, data):
-        super(AnnBasedStPipeline, self).__init__(data)
+        super().__init__(data)
         self.__based_ann_data = based_ann_data
         self.result = AnnBasedResult(based_ann_data)
 

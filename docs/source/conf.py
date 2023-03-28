@@ -108,5 +108,6 @@ nbsphinx_thumbnails = {
     "Tutorials/Gaussian_Smoothing": "_static/gaussian_smooth_1.png",
     "Tutorials/High_Resolution_Export": "_static/box_select.gif",
     "Tutorials/scTransform":"_static/variance_sct.png"
+	"Tutorials/Cell_Cell_Communication":"_static/cell_cell_communication.png"
 }
 

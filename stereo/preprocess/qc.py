@@ -75,6 +75,10 @@ def cal_n_cells(exp_matrix):
     return n_cells
 
 
+def cal_gene_mean_umi(exp_matrix):
+    return (np.array(np.sum(exp_matrix, axis=0))[0] if issparse(exp_matrix) else np.sum(exp_matrix, axis=0)) / exp_matrix.shape[0]
+
+
 def cal_n_genes_by_counts(exp_matrix):
     n_genes_by_counts = exp_matrix.getnnz(axis=1) if issparse(exp_matrix) else np.count_nonzero(exp_matrix, axis=1)
     return n_genes_by_counts

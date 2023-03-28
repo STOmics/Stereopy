@@ -1,16 +1,15 @@
 from abc import ABCMeta
-from dataclasses import dataclass
 
 from ..core import StereoExpData
 
 
-@dataclass
 class PlotBase(metaclass=ABCMeta):
     PLOT_NAME_TO_NAMES = {}
 
-    # common object variable
-    stereo_exp_data: StereoExpData
-    pipeline_res: dict = None
+    def __init__(self, stereo_exp_data: StereoExpData, pipeline_res: dict = None):
+        # common object variable
+        self.stereo_exp_data = stereo_exp_data
+        self.pipeline_res = pipeline_res
 
     @classmethod
     def __init_subclass__(cls, **kwargs):
