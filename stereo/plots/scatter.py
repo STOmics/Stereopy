@@ -40,6 +40,7 @@ def base_scatter(
         vmin=None,
         vmax=None,
         SegmentedColormap=None,
+        hue_order=None,
 ):  # scatter plot, Expression matrix spatial distribution after clustering
     """
     scatter plotter
@@ -91,6 +92,8 @@ def base_scatter(
         g = natsorted(set(hue))
         colors = stereo_conf.get_colors(palette)
         color_dict = collections.OrderedDict(dict([(g[i], colors[i]) for i in range(len(g))]))
+        if hue_order:
+            g = hue_order
         sns.scatterplot(x=x, y=y, hue=hue, hue_order=g, linewidth=0, marker="s",
                         palette=color_dict, size=hue, sizes=(dot_size, dot_size), ax=ax)
         handles, labels = ax.get_legend_handles_labels()

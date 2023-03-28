@@ -596,6 +596,7 @@ class PlotCollection:
             dot_size: int = None,
             colors='stereo_30',
             invert_y: bool = True,
+            hue_order: set=None,
             **kwargs
     ):
         """
@@ -627,6 +628,7 @@ class PlotCollection:
             hue=group_list,
             palette=palette,
             title=title, x_label=x_label, y_label=y_label, dot_size=dot_size, invert_y=invert_y,
+            hue_order=hue_order,
             **kwargs
         )
         return fig
