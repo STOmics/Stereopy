@@ -1,5 +1,5 @@
 Tutorials
-==============
+============
 This section consists of various cases which will make you familiar with the process of 
 main analysis. If you want to dig deeper, **API** could give more information.
 
