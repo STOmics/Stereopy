@@ -580,9 +580,9 @@ def stereo_to_anndata(
 
     exp = data.exp_matrix if issparse(data.exp_matrix) else csr_matrix(data.exp_matrix)
 
-    cells = data.tl.raw.cells.to_df()
+    cells = data.cells.to_df()
     cells.dropna(axis=1, how='all', inplace=True)
-    genes = data.tl.raw.genes.to_df()
+    genes = data.genes.to_df()
     genes.dropna(axis=1, how='all', inplace=True)
 
     adata = AnnData(X=exp,
@@ -591,7 +591,7 @@ def stereo_to_anndata(
                     var=genes,
                     # uns={'neighbors': {'connectivities_key': 'None','distance_key': 'None'}},
                     )
-    adata.raw = AnnData(X=data.tl.raw.exp_matrix, dtype=np.float64, obs=data.cells.to_df(), var=data.genes.to_df())
+    adata.raw = AnnData(X=data.tl.raw.exp_matrix, dtype=np.float64, obs=data.tl.raw.cells.to_df(), var=data.tl.raw.genes.to_df())
 
     ##sample id
     logger.info(f"Adding {sample_id} in adata.obs['orig.ident'].")
