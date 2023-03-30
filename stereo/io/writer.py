@@ -201,12 +201,12 @@ def _write_one_h5ad(f, data, use_raw=False, use_result=True, key_record=None):
                                 'value': value
                             })
                             h5ad.write(parameters_df, f, f'{res_key}@{key}@cell_cell_communication', save_as_matrix=False)  # -> dataframe
-                if analysis_key == 'inference_regulatory_network':
+                if analysis_key == 'regulatory_network_inference':
                     for key, item in data.tl.result[res_key].items():
                         if key == 'regulons':
-                            h5ad.write(str(item), f, f'{res_key}@{key}@inference_regulatory_network')  # -> str
+                            h5ad.write(str(item), f, f'{res_key}@{key}@regulatory_network_inference')  # -> str
                         else:
-                            h5ad.write(item, f, f'{res_key}@{key}@inference_regulatory_network', save_as_matrix=False)  # -> dataframe
+                            h5ad.write(item, f, f'{res_key}@{key}@regulatory_network_inference', save_as_matrix=False)  # -> dataframe
 
 
 def write_h5ms(ms_data, output : str):
