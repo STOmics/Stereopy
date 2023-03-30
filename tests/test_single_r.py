@@ -7,15 +7,24 @@ from stereo.utils._download import _download
 
 class TestSingleR(unittest.TestCase, SingleR):
     # TODO with no download url
-    DEMO_REF_URL = ''
-    DEMO_TEST_URL = ''
+    DEMO_REF_URL = 'https://pan.genomics.cn/ucdisk/api/2.0/share/link/download?' \
+                   'shareEventId=share_2022928142945896_010df2aa7d344d97a610557de7bad81b&' \
+                   'nodeId=8a80804386ed81950187315defb43bc2&code='
+
+    DEMO_TEST_URL = 'https://pan.genomics.cn/ucdisk/api/2.0/share/link/download?' \
+                   'shareEventId=share_2022928142945896_010df2aa7d344d97a610557de7bad81b&' \
+                   'nodeId=8a80804386ed81950187315e260e3bc7&code='
+
+    def setUp(self) -> None:
+        ref_file_path = _download(TestSingleR.DEMO_REF_URL)
+        test_file_path = _download(TestSingleR.DEMO_TEST_URL)
+
+        self.ref_data = AnnBasedStereoExpData(h5ad_file_path=ref_file_path)
+        self.test_data = AnnBasedStereoExpData(h5ad_file_path=test_file_path)
+
 
     def test_example_single_r(self):
-        ref_file_path = _download(TestSingleR.DEMO_REF_URL, file_name='GSE84133_GSM2230761_mouse1_ref.h5ad')
-        test_file_path = _download(TestSingleR.DEMO_TEST_URL, file_name='GSE84133_GSM2230762_mouse2_test.h5ad')
+        self.test_data.tl.single_r(self.ref_data, ref_use_col="celltype")
 
-        ref_data = AnnBasedStereoExpData(h5ad_file_path=ref_file_path)
-        ref_data._ann_data.obs['celltype'] = ref_data._ann_data.obsm['annotation_au']['celltype']
-
-        test_data = AnnBasedStereoExpData(h5ad_file_path=test_file_path)
-        test_data.tl.single_r(ref_data, ref_use_col="celltype")
+    def test_example_single_r_cluster(self):
+        self.test_data.tl.single_r(self.ref_data, ref_use_col="celltype", cluster_res_key='leiden')
