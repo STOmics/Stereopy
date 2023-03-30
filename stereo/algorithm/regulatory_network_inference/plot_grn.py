@@ -67,7 +67,7 @@ class PlotRegulatoryNetwork(PlotBase):
                        celltypes: Union[str, list] = None,
                        groupby: str = 'group',
                        cell_label: str = 'bins',
-                       ign_res_key: str = 'inference_regulatory_network', 
+                       network_res_key: str = 'regulatory_network_inference', 
                        palette: str = 'Reds',
                        **kwargs):
         """
@@ -87,20 +87,20 @@ class PlotRegulatoryNetwork(PlotBase):
             2) list: an array contains the clusters which would be shown.
         :param groupby: cell type label.
         :param cell_label: cell bin label.
-        :param ign_res_key: the key which specifies inference regulatory network result
-             in data.tl.result, defaults to 'inference_regulatory_network'
+        :param network_res_key: the key which specifies inference regulatory network result
+             in data.tl.result, defaults to 'regulatory_network_inference'
         :param palette: Color theme, defaults to 'Reds'
         :param kwargs: features Input vector of features, or named list of feature vectors
         
         :return: matplotlib.figure
         """
-        if ign_res_key not in self.pipeline_res:
-            logger.info(f"The result specified by {ign_res_key} is not exists.")
+        if network_res_key not in self.pipeline_res:
+            logger.info(f"The result specified by {network_res_key} is not exists.")
 
-        expr_matrix = self.stereo_exp_data.to_df()
+        expr_matrix = self.stereo_exp_data.tl.raw.to_df()
         dot_data = {'cell type': [], 'regulons': [], 'percentage': [], 'avg exp': []}
 
-        regulon_dict = self.pipeline_res[ign_res_key]['regulons']
+        regulon_dict = self.pipeline_res[network_res_key]['regulons']
 
         if celltypes is None:
             meta_new = meta.drop_duplicates(subset='group', inplace=False)
@@ -155,14 +155,14 @@ class PlotRegulatoryNetwork(PlotBase):
 
     def auc_heatmap(
             self, 
-            ign_res_key = 'inference_regulatory_network', 
+            network_res_key = 'regulatory_network_inference', 
             width=8, 
             height=8, 
         ):
         """
         Plot heatmap for auc value for regulons
-        :param ign_res_key: the key which specifies inference regulatory network result
-             in data.tl.result, defaults to 'inference_regulatory_network'
+        :param network_res_key: the key which specifies inference regulatory network result
+             in data.tl.result, defaults to 'regulatory_network_inference'
         :param height: height of drawing
         :param width: width of drawing
 
@@ -170,11 +170,11 @@ class PlotRegulatoryNetwork(PlotBase):
         """
         logger.info('Generating auc heatmap plot')
 
-        if ign_res_key not in self.pipeline_res:
-            logger.info(f"The result specified by {ign_res_key} is not exists.")
+        if network_res_key not in self.pipeline_res:
+            logger.info(f"The result specified by {network_res_key} is not exists.")
         
         fig = sns.clustermap(
-            self.pipeline_res[ign_res_key]['auc_matrix'], 
+            self.pipeline_res[network_res_key]['auc_matrix'], 
             figsize=(width,height),
             dendrogram_ratio=(.1, .2),
             cbar_pos=(-.05, .2, .03, .4),
@@ -184,7 +184,7 @@ class PlotRegulatoryNetwork(PlotBase):
 
     def spatial_scatter_by_regulon(
             self, 
-            ign_res_key: str='inference_regulatory_network', 
+            network_res_key: str='regulatory_network_inference', 
             reg_name: str=None, 
             dot_size: int=None,
             palette: str='CET_L4',
@@ -192,8 +192,8 @@ class PlotRegulatoryNetwork(PlotBase):
         """
         Plot genes of one regulon on a 2D map
 
-        :param ign_res_key: the key which specifies inference regulatory network result
-             in data.tl.result, defaults to 'inference_regulatory_network'
+        :param network_res_key: the key which specifies inference regulatory network result
+             in data.tl.result, defaults to 'regulatory_network_inference'
         :param reg_name: specify the regulon you want to draw, defaults to None, if none, will select randomly.
         :param dot_size: marker size, defaults to None
         :param palette: Color theme, defaults to 'CET_L4'
@@ -202,17 +202,17 @@ class PlotRegulatoryNetwork(PlotBase):
         """
         logger.info(f'Please adjust the dot_size to prevent dots from covering each other')
 
-        if ign_res_key not in self.pipeline_res:
-            logger.info(f"The result specified by {ign_res_key} is not exists.")
+        if network_res_key not in self.pipeline_res:
+            logger.info(f"The result specified by {network_res_key} is not exists.")
 
         if reg_name is None:
-            regulon_dict = self.pipeline_res[ign_res_key]['regulons']
+            regulon_dict = self.pipeline_res[network_res_key]['regulons']
             reg_name = list(regulon_dict.keys())[0]
         elif '(+)' not in reg_name:
             reg_name = reg_name + '(+)'
         cell_coor = self.stereo_exp_data.position
         # prepare plotting data
-        auc_zscore = cal_zscore(self.pipeline_res[ign_res_key]['auc_matrix'][reg_name])
+        auc_zscore = cal_zscore(self.pipeline_res[network_res_key]['auc_matrix'][reg_name])
         # sort data points by zscore (low to high), because first dot will be covered by latter dots
         df = pd.DataFrame({'x':cell_coor[:, 0],'y':cell_coor[:, 1],'auc_zscore':auc_zscore})
         df.sort_values(by=['auc_zscore'],inplace=True)
@@ -270,7 +270,7 @@ class PlotRegulatoryNetwork(PlotBase):
         plt.close()
 
     def auc_heatmap_by_group(self,
-                    ign_res_key: str = 'inference_regulatory_network', 
+                    network_res_key: str = 'regulatory_network_inference', 
                     celltype_res_key: str = 'leiden',
                     top_n_feature: int=5,
                     width: int=18,
@@ -286,12 +286,12 @@ class PlotRegulatoryNetwork(PlotBase):
         :return: 
         """
     
-        if ign_res_key not in self.pipeline_res:
-            logger.info(f"The result specified by {ign_res_key} is not exists.")
+        if network_res_key not in self.pipeline_res:
+            logger.info(f"The result specified by {network_res_key} is not exists.")
         elif celltype_res_key not in self.pipeline_res:
             logger.info(f"The result specified by {celltype_res_key} is not exists.")
 
-        auc_mtx = self.pipeline_res[ign_res_key]['auc_matrix']
+        auc_mtx = self.pipeline_res[network_res_key]['auc_matrix']
         
         meta = self.pipeline_res[celltype_res_key].copy(deep=True)
         # Regulon specificity scores (RSS) across predicted cell types

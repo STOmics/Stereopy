@@ -37,7 +37,7 @@ from stereo.log_manager import logger
 from stereo.algorithm.algorithm_base import AlgorithmBase
 
 
-class InferenceRegulatoryNetwork(AlgorithmBase):
+class RegulatoryNetworkInference(AlgorithmBase):
     """
     Algorithms to inference Gene Regulatory Networks (GRN)
     """
@@ -45,20 +45,20 @@ class InferenceRegulatoryNetwork(AlgorithmBase):
     # GRN pipeline main logic
     def main(self,
              database: str = None,
-             motif_anno_fn: str= None,
-             tfs_fn: Union[str, list]=None,
+             motif_anno: str= None,
+             tfs: Union[str, list]=None,
              target_genes: list=None,
              auc_threshold: float=0.5, 
              num_workers: int=None,
-             res_key: str = 'inference_regulatory_network',
+             res_key: str = 'regulatory_network_inference',
              seed: int = None,
              cache: bool = False,
-             cache_res_key: str = 'inference_regulatory_network',
+             cache_res_key: str = 'regulatory_network_inference',
              save: bool=True):
         """
         :param database: the sequence of databases.
-        :param motif_anno_fn: the name of the file that contains the motif annotations to use.
-        :param tfs_fn: list of target transcription factors. If None or 'all', the list of gene_names will be used.
+        :param motif_anno: the name of the file that contains the motif annotations to use.
+        :param tfs: list of target transcription factors. If None or 'all', the list of gene_names will be used.
         :param target_genes: optional list of gene names (strings). Required when a (dense or sparse) matrix is passed as
             'expression_data' instead of a DataFrame
         :param auc_threshold: the fraction of the ranked genome to take into account for the calculation of the Area Under the recovery Curve.
@@ -67,7 +67,7 @@ class InferenceRegulatoryNetwork(AlgorithmBase):
         :param seed: optional random seed for the regressors. Default None.
         :param cache: whether to use cache files. Need to provide adj.csv, motifs.csv and auc.csv.
         :param save: whether to save the result as a file.
-        :return: Computation result of inference regulatory network is stored in self.result where the result key is 'inference_regulatory_network'.
+        :return: Computation result of inference regulatory network is stored in self.result where the result key is 'regulatory_network_inference'.
         """
         matrix = self.stereo_exp_data.to_df()
         df = self.stereo_exp_data.to_df()
@@ -79,22 +79,22 @@ class InferenceRegulatoryNetwork(AlgorithmBase):
             target_genes = self.stereo_exp_data.gene_names
 
         # 1. load TF list
-        if tfs_fn is None:
-            tfs = 'all'
-        elif tfs_fn == 'all':
-            tfs = 'all'
-        elif isinstance(tfs_fn,list):
-            tfs = tfs_fn
-        elif os.path.isfile(tfs_fn):
-            tfs = self.load_tfs(tfs_fn)
+        if tfs is None:
+            tfsf = 'all'
+        elif tfs == 'all':
+            tfsf = 'all'
+        elif isinstance(tfs,list):
+            tfsf = tfs
+        elif os.path.isfile(tfs):
+            tfsf = self.load_tfs(tfs)
 
         # 2. load the ranking database
         dbs = self.load_database(database)
         # 3. GRN inference
-        adjacencies = self.grn_inference(matrix, genes=target_genes, tf_names=tfs, num_workers=num_workers, seed=seed, cache=cache, cache_res_key=cache_res_key)
+        adjacencies = self.grn_inference(matrix, genes=target_genes, tf_names=tfsf, num_workers=num_workers, seed=seed, cache=cache, cache_res_key=cache_res_key)
         modules = self.get_modules(adjacencies, df)
         # 4. Regulons prediction aka cisTarget
-        regulons = self.prune_modules(modules, dbs, motif_anno_fn, num_workers, cache=cache, cache_res_key=cache_res_key)
+        regulons = self.prune_modules(modules, dbs, motif_anno, num_workers, cache=cache, cache_res_key=cache_res_key)
         self.regulon_dict = get_regulon_dict(regulons)
         # 5: Cellular enrichment (aka AUCell)
         auc_matrix = self.auc_activity_level(df, regulons, auc_threshold, num_workers, seed=seed, cache=cache, cache_res_key=cache_res_key)
@@ -105,7 +105,7 @@ class InferenceRegulatoryNetwork(AlgorithmBase):
             'auc_matrix': auc_matrix, 
             'adjacencies': adjacencies
             }
-        self.stereo_exp_data.tl.reset_key_record('inference_regulatory_network', res_key)
+        self.stereo_exp_data.tl.reset_key_record('regulatory_network_inference', res_key)
 
         if save:
             self.regulons_to_csv(regulons)
@@ -156,7 +156,7 @@ class InferenceRegulatoryNetwork(AlgorithmBase):
                       verbose: bool = True,
                       seed: int = None,
                       cache: bool = True,
-                      cache_res_key: str = 'inference_regulatory_network',
+                      cache_res_key: str = 'regulatory_network_inference',
                       **kwargs) -> pd.DataFrame:
         """
         Inference of co-expression modules
@@ -190,7 +190,7 @@ class InferenceRegulatoryNetwork(AlgorithmBase):
 
         if num_workers is None:
             num_workers = cpu_count()
-        custom_client = InferenceRegulatoryNetwork._set_client(num_workers)
+        custom_client = RegulatoryNetworkInference._set_client(num_workers)
         adjacencies = grnboost2(matrix,
                                 tf_names=tf_names,
                                 gene_names=genes,
@@ -249,17 +249,17 @@ class InferenceRegulatoryNetwork(AlgorithmBase):
     def prune_modules(self,
                       modules: list,
                       dbs: list,
-                      motif_anno_fn: str,
+                      motif_anno: str,
                       num_workers: int = None,
                       cache: bool = True,
-                      cache_res_key: str = 'inference_regulatory_network',
+                      cache_res_key: str = 'regulatory_network_inference',
                       **kwargs):
         """
         First, calculate a list of enriched motifs and the corresponding target genes for all modules.
         Then, create regulon_list from this table of enriched motifs.
         :param modules: the sequence of modules.
         :param dbs: the sequence of databases.
-        :param motif_anno_fn: the name of the file that contains the motif annotations to use.
+        :param motif_anno: the name of the file that contains the motif annotations to use.
         :param num_workers: if not using a cluster, the number of workers to use for the calculation. None of all available CPUs need to be used.
         :param cache: 
         :param save:
@@ -279,14 +279,14 @@ class InferenceRegulatoryNetwork(AlgorithmBase):
             num_workers = cpu_count()
 
         with ProgressBar():
-            df = prune2df(dbs, modules, motif_anno_fn, num_workers=num_workers, **kwargs)
+            df = prune2df(dbs, modules, motif_anno, num_workers=num_workers, **kwargs)
             
         regulon_list = df2regulons(df)
         self.regulon_list = regulon_list
 
 
         # alternative way of getting regulon_list, without creating df first
-        # regulon_list = prune(dbs, modules, motif_anno_fn)
+        # regulon_list = prune(dbs, modules, motif_anno)
         return regulon_list
 
     def auc_activity_level(self,
@@ -296,7 +296,7 @@ class InferenceRegulatoryNetwork(AlgorithmBase):
                            num_workers: int,
                            seed=None,
                            cache: bool = True,
-                           cache_res_key: str = 'inference_regulatory_network',
+                           cache_res_key: str = 'regulatory_network_inference',
                            **kwargs) -> pd.DataFrame:
         """
 
