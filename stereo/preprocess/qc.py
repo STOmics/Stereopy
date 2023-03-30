@@ -28,6 +28,7 @@ def cal_qc(data):
 
     data.genes.n_cells = cal_n_cells(exp_matrix)
     data.genes.n_counts = cal_per_gene_counts(exp_matrix)
+    data.genes.mean_umi = cal_gene_mean_umi(data)
     return data
 
 
@@ -75,8 +76,8 @@ def cal_n_cells(exp_matrix):
     return n_cells
 
 
-def cal_gene_mean_umi(exp_matrix):
-    return (np.array(np.sum(exp_matrix, axis=0))[0] if issparse(exp_matrix) else np.sum(exp_matrix, axis=0)) / exp_matrix.shape[0]
+def cal_gene_mean_umi(data):
+    return data.genes.n_counts / data.genes.n_cells
 
 
 def cal_n_genes_by_counts(exp_matrix):

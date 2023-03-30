@@ -54,7 +54,8 @@ class FindMarker(ToolBase):
             tie_term: bool = False,
             raw_data=None,
             sort_by='scores',
-            n_genes: Union[str, int] = 'all'
+            n_genes: Union[str, int] = 'all',
+            ascending: Union[bool] = False
     ):
         super(FindMarker, self).__init__(data=data, groups=groups, method=method)
         self.corr_method = corr_method.lower()
@@ -64,6 +65,7 @@ class FindMarker(ToolBase):
         self.raw_data = raw_data
         self.sort_by = sort_by
         self.n_genes = n_genes
+        self.ascending = ascending
         self.fit()
 
     @ToolBase.method.setter
@@ -120,6 +122,8 @@ class FindMarker(ToolBase):
         """
         run
         """
+        if self.n_genes == 0:
+            raise ValueError('self.n_genes can not be zero')
         if self.sort_by not in {'scores', 'log2fc'}:
             raise ValueError('sort_by must be in {\'scores\', \'log2fc\'}')
         if self.method == 'wilcoxon_test':
@@ -176,13 +180,14 @@ class FindMarker(ToolBase):
                     tie_term = mannwhitneyu.cal_tie_term(ranks)
                 result = statistics.wilcoxon(g_data, other_data, self.corr_method, ranks, tie_term, g_index)
             result['genes'] = self.data.gene_names
-            result.sort_values(by=self.sort_by, ascending=False, inplace=True)
+            result.sort_values(by=self.sort_by, ascending=self.ascending, inplace=True)
+
 
             if self.n_genes != 'all':
-                if self.n_genes:
-                    to = self.n_genes
-                else:
+                if self.n_genes == 'auto':
                     to = int(10000 / len(case_groups) ** 2)
+                else:
+                    to = self.n_genes
                 to = min(max(to, 1), 50)
                 result = result[:to]
 

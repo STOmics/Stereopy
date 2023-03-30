@@ -876,7 +876,8 @@ class StPipeline(object):
                           res_key: str = 'marker_genes',
                           output: Optional[str] = None,
                           sort_by='scores',
-                          n_genes: Union[str, int] = 'all'
+                          n_genes: Union[str, int] = 'all',
+                          ascending: Union[bool] = False
                           ):
         """
         A tool to find maker genes. For each group, find statistical test different genes 
@@ -895,6 +896,7 @@ class StPipeline(object):
         :param sort_by: default to 'scores', the result will sort by the key, other options 'log2fc'.
         :param n_genes: default to 0, means will auto calculate n_genes by N = 10000/K². K is cluster number, and N is
                 larger or equal to 1, less or equal to 50.
+        :param ascending: default to False.
         :return: The result of marker genes is stored in `self.result` where the key is `'marker_genes'`.
         """
         from ..tools.find_markers import FindMarker
@@ -911,7 +913,7 @@ class StPipeline(object):
         data = self.subset_by_hvg(hvg_res_key, use_raw=use_raw, inplace=False) if use_highly_genes else data
         tool = FindMarker(data=data, groups=self.result[cluster_res_key], method=method, case_groups=case_groups,
                           control_groups=control_groups, corr_method=corr_method, raw_data=self.raw, sort_by=sort_by,
-                          n_genes=n_genes)
+                          n_genes=n_genes, ascending=ascending)
         self.result[res_key] = tool.result
         self.result[res_key]['parameters'] = {}
         self.result[res_key]['parameters']['cluster_res_key'] = cluster_res_key

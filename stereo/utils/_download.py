@@ -1,7 +1,11 @@
+import os
 from ..log_manager import logger
 
 
-def _download(url: str, dir_str: str = None):
+def _download(url: str, dir_str: str = "./stereopy_data/", file_name: str = None):
+    if file_name and os.path.isfile(dir_str + file_name):
+        return dir_str + file_name
+
     from tqdm import tqdm
     from urllib.request import urlopen, Request
     from urllib.error import URLError

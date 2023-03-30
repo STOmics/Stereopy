@@ -13,7 +13,7 @@ change log:
 import numpy as np
 import copy
 from .qc import cal_total_counts, cal_pct_counts_mt, cal_n_genes_by_counts, cal_n_cells_by_counts, cal_n_cells, \
-    cal_gene_mean_umi
+    cal_gene_mean_umi, cal_per_gene_counts
 
 
 def filter_cells(
@@ -89,8 +89,10 @@ def filter_genes(data, min_cell=None, max_cell=None, gene_list=None, mean_umi_gt
         raise ValueError('please set any of `min_cell` or `max_cell` or `gene_list` or `mean_umi_gt`')
     if data.genes.n_cells is None:
         data.genes.n_cells = cal_n_cells(data.exp_matrix)
+    if data.genes.n_counts is None:
+        data.genes.n_counts = cal_per_gene_counts(data.exp_matrix)
     if data.genes.mean_umi is None:
-        data.genes.mean_umi = cal_gene_mean_umi(data.exp_matrix)
+        data.genes.mean_umi = cal_gene_mean_umi(data)
     if min_cell:
         gene_subset = data.genes.n_cells >= min_cell
         data.sub_by_index(gene_index=gene_subset)
