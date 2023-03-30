@@ -95,19 +95,19 @@ for filename in glob.glob('**/*.ipynb', recursive=True):
 nbsphinx_thumbnails = {
     "Tutorials/SquareBin_Clustering": "_static/squareBin_clustering.png",
     "Tutorials/CellBin_Clustering": "_static/cellBin_clustering.png",
-    "Tutorials/Clustering_by_GPU": "_static/GPU.png",
+    "Tutorials/clustering_by_gpu": "_static/GPU.png",
     "Tutorials/IO": "_static/io.png",
     "Tutorials/Format_Conversion": "_static/conversion.png",
-    "Tutorials/Performance": "_static/performance.png",
-    "Tutorials/Cell_Correction": "_static/cell_bin_correction.png",
+    "Tutorials/performance": "_static/performance.png",
+    "Tutorials/cell_correction": "_static/cell_bin_correction.png",
     "Tutorials/Tissue_Segmentation": "_static/tissue_segmentation.png",
     "Tutorials/Gaussian_Smoothing": "_static/gaussian_smooth_1.png",
-    "Tutorials/Batches_Integration": "_static/batches_integration.png",
-    "Tutorials/RNA_Velocity": "_static/rna_velocity.png",
+    "Tutorials/batches_integration": "_static/batches_integration.png",
+    "Tutorials/rna_velocity": "_static/rna_velocity.png",
     "Tutorials/Spatial_Hotspot": "_static/hotspot.png",
     "Tutorials/Gaussian_Smoothing": "_static/gaussian_smooth_1.png",
-    "Tutorials/High_Resolution_Export": "_static/box_select.gif",
-    "Tutorials/scTransform":"_static/variance_sct.png",
+    "Tutorials/high_resolution_export": "_static/box_select.gif",
+    "Tutorials/sctransform":"_static/variance_sct.png",
 	"Tutorials/Cell_Cell_Communication":"_static/cell_cell_communication.png"
 }
 

@@ -182,6 +182,7 @@ def read_stereo_h5ad(
     return data
 
 def _read_stereo_h5ad_from_group(f, data, use_raw, use_result):
+    import ast
     from ..utils.pipeline_utils import cell_cluster_to_gene_exp_cluster
     # read data
     for k in f.keys():
