@@ -580,9 +580,9 @@ def stereo_to_anndata(
 
     exp = data.exp_matrix if issparse(data.exp_matrix) else csr_matrix(data.exp_matrix)
 
-    cells = data.tl.raw.cells.to_df()
+    cells = data.tl.cells.to_df()
     cells.dropna(axis=1, how='all', inplace=True)
-    genes = data.tl.raw.genes.to_df()
+    genes = data.tl.genes.to_df()
     genes.dropna(axis=1, how='all', inplace=True)
 
     adata = AnnData(X=exp,
