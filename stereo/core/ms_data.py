@@ -323,7 +323,7 @@ class _MSDataStruct(object):
                     bin_size=bin_sizes[idx] if bin_sizes is not None else 100,
                     bin_type=bin_types[idx] if bin_types is not None else 'bins',
                 ))
-            elif file_path.endswith('.gem'):
+            elif file_path.endswith('.gem') or file_path.endswith('.gem.gz'):
                 data_list.append(read_gem(
                     file_path,
                     bin_size=bin_sizes[idx] if bin_sizes is not None else 100,
