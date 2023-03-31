@@ -302,7 +302,7 @@ class SingleR(AlgorithmBase):
         from scipy.stats import rankdata
         res_sci = rankdata(mat, axis=0).astype(np.float32)
 
-        assert np.all(res_self == res_sci), 'self define rank is different with the SciPy\'s verions'
+        assert np.all(res_self == res_sci), 'self define rank is different with the SciPy\'s versions'
         logger.info('test_rank success')
 
     def _group_data_frame_checker(self):
