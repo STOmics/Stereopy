@@ -30,6 +30,7 @@
       ~PlotCollection.marker_genes_heatmap
       ~PlotCollection.marker_genes_scatter
       ~PlotCollection.marker_genes_text
+      ~PlotCollection.marker_genes_scatter
       ~PlotCollection.scenic_clustermap
       ~PlotCollection.scenic_regulons
       ~PlotCollection.spatial_scatter
