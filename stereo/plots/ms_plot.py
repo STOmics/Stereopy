@@ -38,5 +38,5 @@ class MSPlot(MSDataPlotBase):
 
             res = data.tl.result[res_key]
             hue = np.array(res['group'])
-            g &= set(hue)
+            g |= set(hue)
         return fig
