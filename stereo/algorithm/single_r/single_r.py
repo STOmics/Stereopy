@@ -63,6 +63,21 @@ class SingleR(AlgorithmBase):
             n_jobs=int(cpu_count() / 2),
             res_key='annotation',
     ):
+        """
+        Single-cell recognition is a tool to automatically annotate a test sample by a reference sample.
+
+        :param ref_exp_data: a `StereoExpData` as reference data.
+        :param ref_use_col: `ref_use_col` mean cluster-like or annotation result key in ref's `StereoExpData.tl.result`.
+        :param cluster_res_key: test's cluster-like key in `StereoExpData.tl.result`.
+        :param quantile: quantile will influence scoring and fine_tune result.
+        :param fine_tune_threshold: while in fine_tuning, if result greater than `max(result) - fine_tune_threshold`,
+                                    will be filtered.
+        :param fine_tune_times: default to 0, meaning that it will fine_tune until results decreasing to only 1.
+                                If it is set to num(eg: 5), it will only loop only 5 times, and choose the first one.
+        :param n_jobs: `joblib` parameter, will create `n_jobs` num of threads to work.
+        :param res_key: default to `annotation`, means the result will be stored as key `annotation` in the `tl.result`.
+        :return: `pandas.DataFrame`
+        """
         assert ref_use_col in ref_exp_data.tl.result
 
         interact_genes = list(set(self.stereo_exp_data.gene_names) & set(ref_exp_data.gene_names))
