@@ -39,6 +39,7 @@ This sections contains various cases for additional functionalities.
     Spatial_Hotspot
     RNA_Velocity
     Batches_Integration
+    Gene_Regulatory_Network
 
 
 Interactive Visualization

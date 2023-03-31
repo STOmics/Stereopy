@@ -56,6 +56,8 @@ class RegulatoryNetworkInference(AlgorithmBase):
              cache_res_key: str = 'regulatory_network_inference',
              save: bool=True):
         """
+        Enables researchers to infer transcription factors (TFs) and gene regulatory networks.
+
         :param database: the sequence of databases.
         :param motif_anno: the name of the file that contains the motif annotations to use.
         :param tfs: list of target transcription factors. If None or 'all', the list of gene_names will be used.
