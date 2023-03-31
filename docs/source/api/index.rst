@@ -74,8 +74,10 @@ A class for basic analysis of StereoExpData. It is the `StereoExpData.tl`.
     core.StPipeline.louvain
     core.StPipeline.phenograph
     core.StPipeline.find_marker_genes
+    core.StPipeline.filter_marker_genes
     core.StPipeline.spatial_hotspot
     core.StPipeline.gaussian_smooth
+    algorithm.cell_cell_communication.main.CellCellCommunication.main
 
 
 Plots: `plt`
