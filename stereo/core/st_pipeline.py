@@ -877,7 +877,7 @@ class StPipeline(object):
                           output: Optional[str] = None,
                           sort_by='scores',
                           n_genes: Union[str, int] = 'all',
-                          ascending: Union[bool] = False
+                          ascending: bool = False
                           ):
         """
         A tool to find maker genes. For each group, find statistical test different genes 
