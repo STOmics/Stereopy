@@ -77,7 +77,12 @@ def cal_n_cells(exp_matrix):
 
 
 def cal_gene_mean_umi(data):
-    return data.genes.n_counts / data.genes.n_cells
+    old_settings = np.seterr(divide='ignore', invalid='ignore')
+    gene_mean_umi = data.genes.n_counts / data.genes.n_cells
+    flag = np.isnan(gene_mean_umi) | np.isinf(gene_mean_umi)
+    gene_mean_umi[flag] = 0
+    np.seterr(**old_settings)
+    return gene_mean_umi
 
 
 def cal_n_genes_by_counts(exp_matrix):
