@@ -85,12 +85,12 @@ html_css_files = [
 #     '_static/html.css',
 # ]
 
-import nbclean, glob
+# import nbclean, glob
 
-for filename in glob.glob('**/*.ipynb', recursive=True):
-    ntbk = nbclean.NotebookCleaner(filename)
-    ntbk.clear('stderr')
-    ntbk.save(filename)
+# for filename in glob.glob('**/*.ipynb', recursive=True):
+#     ntbk = nbclean.NotebookCleaner(filename)
+#     ntbk.clear('stderr')
+#     ntbk.save(filename)
 
 nbsphinx_thumbnails = {
     "Tutorials/SquareBin_Clustering": "_static/squareBin_clustering.png",
