@@ -122,7 +122,7 @@ class FindMarker(ToolBase):
         """
         run
         """
-        if self.n_genes == 0:
+        if self.n_genes == 0 or self.n_genes is None:
             raise ValueError('self.n_genes can not be zero')
         if self.sort_by not in {'scores', 'log2fc'}:
             raise ValueError('sort_by must be in {\'scores\', \'log2fc\'}')
