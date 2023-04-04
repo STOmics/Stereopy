@@ -29,7 +29,8 @@ class CellSegPipe(object):
             DEEP_CROP_SIZE=20000,
             OVERLAP=100,
             tissue_seg_model_path='',
-            tissue_seg_method=DEEP
+            tissue_seg_method=DEEP,
+            post_processing_workers=10
         ):
         self.deep_crop_size = DEEP_CROP_SIZE
         self.overlap = OVERLAP
@@ -66,6 +67,7 @@ class CellSegPipe(object):
         self.cell_mask = []
         self.post_mask_list = []
         self.score_mask_list = []
+        self.post_processing_workers = post_processing_workers
 
     def __imload_list(self, img_path):
 
@@ -221,9 +223,9 @@ class CellSegPipe(object):
             img_tile, _, _, _, _ = utils.split(self.img_list[idx], self.deep_crop_size)
             input_list = [[cell_mask_tile[id], img] for id, img in enumerate(img_tile)]
             if self.__is_water:
-                post_list_tile = grade.watershed_multi(input_list, 15)
+                post_list_tile = grade.watershed_multi(input_list, self.post_processing_workers)
             else:
-                post_list_tile = grade.score_multi(input_list, 15)
+                post_list_tile = grade.score_multi(input_list, self.post_processing_workers)
 
             post_mask_tile = [label[0] for label in post_list_tile]
             score_mask_tile = [label[1] for label in post_list_tile]  # grade saved

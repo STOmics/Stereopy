@@ -1,7 +1,7 @@
 Installation
 ============
 
-.. note::
+.. attention::
     Our tool could be installed on Linux/Windows with Python3.8.
 
 Anaconda
@@ -55,7 +55,7 @@ The same beginning as conda part:
     conda activate st
 
 
-Use the latest version of def branch on Github, you need to clone the repository and enter the directory: 
+Use the latest version of dev branch on Github, you need to clone the repository and enter the directory: 
 
 .. code-block:: 
 
@@ -82,6 +82,5 @@ Find out packages that lead to failures, then create a new requirements.txt of t
 .. code-block:: 
 
     pip install -r requirements.txt
-
 
 

@@ -25,7 +25,8 @@ class CellSegPipe(object):
             OVERLAP=100,
             model_path=None,
             tissue_seg_model_path='',
-            tissue_seg_method=DEEP
+            tissue_seg_method=DEEP,
+            post_processing_workers=10
         ):
         self.deep_crop_size = DEEP_CROP_SIZE
         self.overlap = OVERLAP
@@ -64,6 +65,7 @@ class CellSegPipe(object):
         self.post_mask_list = []
         self.score_mask_list = []
         self.model_path= model_path
+        self.post_processing_workers = post_processing_workers
 
     def __imload_list(self, img_path):
 
@@ -212,9 +214,9 @@ class CellSegPipe(object):
 
             input_list = [[cell_mask_tile[id], img] for id, img in enumerate(img_tile)]
             if self.__is_water:
-                post_list_tile = grade.watershed_multi(input_list, 15)
+                post_list_tile = grade.watershed_multi(input_list, self.post_processing_workers)
             else:
-                post_list_tile = grade.score_multi(input_list, 15)
+                post_list_tile = grade.score_multi(input_list, self.post_processing_workers)
 
 
             post_mask_tile = [label[0] for label in post_list_tile]
@@ -266,7 +268,6 @@ class CellSegPipe(object):
 
     def save_cell_mask(self):
         """save cell mask from network or watershed"""
-        print(f"len(__file) = {len(self.__file)}")
         for idx, file in enumerate(self.__file):
             file_name, _ = os.path.splitext(file)
             self.__save_each_file_result(file_name, idx)

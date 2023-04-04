@@ -5,58 +5,72 @@ main analysis. If you want to dig deeper, **API** could give more information.
 
 Clustering
 ----------------------
-This section contains the main preprocessing and analysis on single-cell data, including Square Bin and Cell Bin cases.
+This section contains main preprocessing and analysis on single-cell data, including Square Bin and Cell Bin cases.
+
 
 .. nbgallery::
     
-    clustering
-    cell_clustering
-    clustering_by_gpu
-    performance
+    SquareBin_Clustering
+    CellBin_Clustering
+    Clustering_by_GPU
+    Performance
 
 
 IO
 ----------------------
-This section contains bassic input and output operations.
+This section contains basic input and output operations.
 
 .. nbgallery::
     
     IO
 
+
 Additional Functionalities
 --------------------------------------------
-This sections contains various examples for 
+This sections contains various cases for additional functionalities.
 
 
 .. nbgallery::
-    hotspot
+
     Gaussian_Smoothing
-    batches_integration
-    rna_velocity
-    sctransform
+    scTransform
+    SingleR
+    Cell_Cell_Communication
+    Spatial_Hotspot
+    RNA_Velocity
+    Batches_Integration
+    Gene_Regulatory_Network
+
 
 Interactive Visualization
 --------------------------------------------
-This section contains various examples for the interactive plots.
+This section shows how to perform interactive plotting and export the region of interest.
+
 
 .. nbgallery::
-    interactive_cluster
-    high_resolution_export
 
-Image Preprocessing
+    Interactive_Cluster
+    High_Resolution_Export
+
+
+Image Processing
 ---------------------------------------
 This section contains various examples from the :mod:`stereo.im` and :mod:`stereo.tools` module.
 
+
 .. nbgallery::
-    prepare
-    cell_segmentation
-    cell_correction
-    tissue_cut
+
+    Cell_Segmentation
+    Cell_Correction
+    Tissue_Segmentation
+
 
 Working with Other Tools
 --------------------------------------------------
-This section shows how to implement format conversion for integration with Scanpy, Seurat:
+This section shows how to implement format conversion, compatible with Scanpy and Seurat.
+
 
 .. nbgallery::
-    FormatConversion
-    interactive_anndata
+
+    Format_Conversion
+    Interactive_Anndata

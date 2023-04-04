@@ -120,12 +120,18 @@ def score(input_list):
 
 
 def watershed_multi(input_list, processes):
-    with mp.Pool(processes=processes) as p:
-        post_img = p.map(water_score, input_list)
+    if processes > 1:
+        with mp.Pool(processes=processes) as p:
+            post_img = p.map(water_score, input_list)
+    else:
+        post_img = [water_score(input) for input in input_list]
     return post_img
 
 
 def score_multi(input_list, processes):
-    with mp.Pool(processes=processes) as p:
-        post_img = p.map(score, input_list)
+    if processes > 1:
+        with mp.Pool(processes=processes) as p:
+            post_img = p.map(score, input_list)
+    else:
+        post_img = [score(input) for input in input_list]
     return post_img

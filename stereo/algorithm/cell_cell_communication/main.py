@@ -1,29 +1,25 @@
 # python core module
 import os
-from typing import Tuple, Union
+from typing import Tuple
 from pathlib import Path
-import natsort
 
 # third part module
+from tqdm import tqdm
 import numpy as np
 import pandas as pd
-import seaborn as sns
 import numpy_groupies as npg
 from functools import partial
-import matplotlib.pyplot as plt
 from sqlalchemy import create_engine
 from multiprocessing.pool import Pool
 
 # module in self project
 from stereo.log_manager import logger
 from stereo.stereo_config import stereo_conf
-from stereo.plots.plot_base import PlotBase
 from stereo.algorithm.algorithm_base import AlgorithmBase
 from stereo.algorithm.cell_cell_communication.utils.sqlalchemy_model import Base
 from stereo.algorithm.cell_cell_communication.analysis_helper import (
     Subsampler,
     write_to_file,
-    get_separator,
     mouse2human
 )
 from stereo.algorithm.cell_cell_communication.utils.database_utils import Database, DatabaseManager
@@ -41,204 +37,9 @@ from stereo.algorithm.cell_cell_communication.exceptions import (
     AllCountsFilteredException,
     NoInteractionsFound,
     InvalidDatabase,
-    PipelineResultInexistent
+    PipelineResultInexistent,
+    InvalidSpecies
 )
-
-class PlotCellCellCommunication(PlotBase):
-    # TODO: change default paths
-    def ccc_dot_plot(
-            self,
-            interacting_pairs: Union[str, list, np.ndarray] = None,
-            clusters1: Union[str, list, np.ndarray] = None,
-            clusters2: Union[str, list, np.ndarray] = None,
-            separator_cluster: str = '|',
-            palette: str = 'Reds',
-            res_key: str = 'cell_cell_communication',
-            # **kw_args
-    ):
-        """Generate dot plot based on the result of CellCellCommunication.
-
-        :param interacting_pairs: path, string, list or ndarray.
-                        specify the interacting pairs which would be shown on plot, defaults to None.
-                        1) path: the path of file in which saves the interacting pairs which would be shown, one line one pair.
-                        2) string: only one interacting pair.
-                        3) list or ndarray: an array contains the interacting pairs which would be shown.
-        :param clusters1: path, string, list or ndarray.
-                        the first clusters in cluster pairs which would be shown on plot, defaults to None.
-                        1) path: the path of file in which saves the clusters which would be shown, one line one cluster.
-                        2) string: only one cluster.
-                        3) list or ndarray: an array contains the clusters which would be shown.
-        :param clusters2: path, string, list or ndarray.
-                        the second clusters in cluster pairs which would be shown on plot, defaults to None.
-                        clusters1 and clusters2 together form cluster pairs
-                        each cluster in cluster1 will join with each one in cluster2 to form ther cluster pairs.
-                        if set it to None, it will be set to all clusters.
-                        1) path: the path of file in which saves the clusters which would be shown, one line one cluster.
-                        2) string: only one cluster.
-                        3) list or ndarray: an array contains the clusters which would be shown.
-        :param separator_cluster: the symbol for joining the clusters1 and clusters2, defaults to '|'
-        :param palette: plot palette, defaults to 'Reds'
-        :param res_key: the key which specifies the cell cell communication result in data.tl.result, defaults to 'cell_cell_communication'
-        :return: matplotlib.figure
-        """
-        logger.info('Generating dot plot')
-
-        if res_key not in self.pipeline_res:
-            PipelineResultInexistent(res_key)
-
-        if self.pipeline_res[res_key]['parameters']['analysis_type'] != 'statistical':
-            logger.warn("This plot just only support analysis type 'statistical'")
-            return None
-
-        means_df = self.pipeline_res[res_key]['means']
-        pvalues_df = self.pipeline_res[res_key]['pvalues']
-
-        interacting_pairs = self._parse_interacting_pairs_or_clusters(interacting_pairs)
-        if interacting_pairs is None:
-            interacting_pairs = means_df['interacting_pair'].tolist()
-        else:
-            if all(np.isin(interacting_pairs, means_df['interacting_pair']) == False):
-                raise Exception("there is no interacting pairs to show, maybe the parameter 'interacting_pairs' you set is not in result.")
-
-        clusters1 = self._parse_interacting_pairs_or_clusters(clusters1)
-        clusters2 = self._parse_interacting_pairs_or_clusters(clusters2)
-        if clusters1 is None:
-            cluster_pairs = natsort.natsorted([x for x in means_df.columns if separator_cluster in x])
-        else:
-            if clusters2 is None:
-                cluster_res_key = self.pipeline_res[res_key]['parameters']['cluster_res_key']
-                clusters2 = self.pipeline_res[cluster_res_key]['group'].unique()
-            cluster_pairs = [f'{c1}{separator_cluster}{c2}' for c1 in clusters1 for c2 in clusters2]
-            cluster_pairs = natsort.natsorted([x for x in cluster_pairs if x in means_df.columns])
-            if len(cluster_pairs) == 0:
-                raise Exception("there is no cluster pairs to show, maybe the parameter 'clusters' you set is not in result.")
-
-        means_selected: pd.DataFrame = means_df[means_df['interacting_pair'].isin(interacting_pairs)][['interacting_pair'] + cluster_pairs]
-        pvalues_selected: pd.DataFrame = pvalues_df[pvalues_df['interacting_pair'].isin(interacting_pairs)][['interacting_pair'] + cluster_pairs]
-
-        nrows, ncols = means_selected.shape
-
-        means = means_selected.melt(id_vars='interacting_pair', value_vars=cluster_pairs, value_name='mean')
-        means['log2(mean+1)'] = np.log2(means['mean'] + 1)
-
-        pvalues = pvalues_selected.melt(id_vars='interacting_pair', value_vars=cluster_pairs, value_name='pvalue')
-        # pvalues['log10_pvalue'] = pvalues['pvalue'].apply(lambda x: -np.log10(0.0009) if x == 0 else (-np.log10(x) if x != 1 else 0))
-        pvalues['log10(pvalue+1)'] = np.log10(pvalues['pvalue'] + 1)
-
-        result = pd.merge(means, pvalues, on=["interacting_pair", "variable"])
-        result = result.rename(columns={'variable': 'cluster_pair'})
-
-        # plotting
-        width, height = int(5 + max(3, ncols * 0.8)), int(3 + max(5, nrows * 0.5))
-        fig, ax = plt.subplots(figsize=(width, height))
-        # fig.subplots_adjust(bottom=0.2, left=0.18, right=0.85)
-        sns.scatterplot(data=result, x="cluster_pair", y="interacting_pair", palette=palette, 
-                        hue='log2(mean+1)', size='log10(pvalue+1)', sizes=(100, 300), legend='auto', ax=ax)
-        # legend_position = kw_args.get('legend_position', 'lower right')
-        # legend_coodinate = kw_args.get('legend_coodinate')
-        # ax.legend(fontsize=12, frameon=False, ncol=1, loc=legend_position, bbox_to_anchor=legend_coodinate)
-        ax.legend(fontsize=12, frameon=False, ncol=1, loc=(1.02, 0))
-        ax.tick_params(axis='x', labelsize=12, labelrotation=90)
-        ax.tick_params(axis='y', labelsize=12)
-        ax.set_xlabel('')
-        ax.set_ylabel('')
-        return fig
-
-    def ccc_heatmap(
-            self,
-            pvalue: float = 0.05,
-            separator_cluster: str = '|',
-            res_key: str = 'cell_cell_communication'
-    ):
-        """
-        Heatmap of number of interactions in each cluster pairs.
-        Each off-diagonal cell value equals the number of interactions from A to B + the number of interactions from B to A
-
-        :param pvalue: the threshold of pvalue, defaults to 0.05
-        :param separator_cluster: the symbol for joining the first and second cluster in cluster pairs, defaults to '|'
-        :param res_key: the key which specifies the cell cell communication result in data.tl.result, defaults to 'cell_cell_communication'
-        :return: _description_
-        """
-        logger.info('Generating heatmap plot')
-
-        if res_key not in self.pipeline_res:
-            PipelineResultInexistent(res_key)
-
-        if self.pipeline_res[res_key]['parameters']['analysis_type'] != 'statistical':
-            logger.warn("This plot just only support analysis type 'statistical'")
-            return None
-
-        cluster_res_key = self.pipeline_res[res_key]['parameters']['cluster_res_key']
-        meta_df = self.pipeline_res[cluster_res_key]
-        clusters_all = natsort.natsorted(meta_df['group'].unique())
-        n_cluster: int = len(clusters_all)
-
-        pvalues_df = self.pipeline_res[res_key]['pvalues']
-
-        cluster_pairs = np.array(np.meshgrid(clusters_all, clusters_all)).T.reshape(-1, 2)
-        network = pd.DataFrame(cluster_pairs, columns=['source', 'target'])
-
-        for index, row in network.iterrows():
-            col1 = row['source'] + separator_cluster + row['target']
-            col2 = row['target'] + separator_cluster + row['source']
-            if col1 in pvalues_df.columns and col2 in pvalues_df.columns:
-                if col1 == col2:
-                    network.loc[index, 'number'] = (pvalues_df[col1] <= pvalue).sum()
-                else:
-                    network.loc[index, 'number'] = (pvalues_df[col1] <= pvalue).sum() + (pvalues_df[col2] <= pvalue).sum()
-            else:
-                network.loc[index, 'number'] = 0
-
-        network: pd.DataFrame = network.pivot("source", "target", "number")
-        network = network.loc[clusters_all][clusters_all]
-        rows = network.index.tolist()
-        rows.reverse()
-        network = network[rows]
-        log_network = np.log1p(network)
-
-        width, height = int(3 + max(3, n_cluster * 0.5)) * 2, int(3 + max(3, n_cluster * 0.5))
-        fig, axes = plt.subplots(nrows=1, ncols=2, figsize=(width, height), gridspec_kw={'wspace': 0})
-
-        sns.heatmap(data=network, square=True, cmap='coolwarm', cbar_kws={'pad': 0.1, 'shrink': 0.5, 'location': 'bottom', 'orientation': 'horizontal'}, ax=axes[0])
-        axes[0].yaxis.set_ticks_position('right')
-        axes[0].invert_yaxis()
-        axes[0].tick_params(axis='x', labelsize=13, labelrotation=90)
-        axes[0].tick_params(axis='y', labelsize=13)
-        axes[0].set_xlabel('')
-        axes[0].set_ylabel('')
-        axes[0].set_title('network')
-
-        sns.heatmap(data=log_network, square=True, cmap='coolwarm', cbar_kws={'pad': 0.1, 'shrink': 0.5, 'location': 'bottom', 'orientation': 'horizontal'}, ax=axes[1])
-        axes[1].yaxis.set_ticks_position('right')
-        axes[1].invert_yaxis()
-        axes[1].tick_params(axis='x', labelsize=13, labelrotation=90)
-        axes[1].tick_params(axis='y', labelsize=13)
-        axes[1].set_xlabel('')
-        axes[1].set_ylabel('')
-        axes[1].set_title('log1p_network')
-
-        return fig
-
-    def _parse_interacting_pairs_or_clusters(self, interacting_pairs_or_clusters: Union[str, list, np.ndarray]):
-        if isinstance(interacting_pairs_or_clusters, list) or isinstance(interacting_pairs_or_clusters, np.ndarray):
-            return np.unique(interacting_pairs_or_clusters)
-        
-        if isinstance(interacting_pairs_or_clusters, str):
-            path = Path(interacting_pairs_or_clusters)
-            if not path.is_file() and not path.is_dir():
-                return [interacting_pairs_or_clusters]
-            if path.is_file() and path.exists():
-                with path.open('r') as fp:
-                    return np.unique([line.strip() for line in fp.readlines()])
-        
-        return None
-
-    
-    def _ensure_path_exists(self, path: str):
-        expanded_path = os.path.expanduser(path)
-
-        if not os.path.exists(expanded_path):
-            os.makedirs(expanded_path)
 
 
 class CellCellCommunication(AlgorithmBase):
@@ -254,7 +55,7 @@ class CellCellCommunication(AlgorithmBase):
             counts_identifiers: str = "hgnc_symbol",
             subsampling: bool = False,
             subsampling_log: bool = False,
-            subsampling_num_pc: int = 1000,
+            subsampling_num_pc: int = 100,
             subsampling_num_cells: int = None,
             pca_res_key: str = None,
             separator_cluster: str = "|",
@@ -280,7 +81,8 @@ class CellCellCommunication(AlgorithmBase):
         :param micro_envs: two columns, column names should be "cell_type" and "microenvironment".
         :param species: 'HUMAN' or 'MOUSE'
         :param database: if species is HUMAN, choose from 'cellphonedb' or 'liana';
-                        if MOUSE, use 'cellphonedb' or 'liana' or 'celltalkdb'
+                        if MOUSE, use 'cellphonedb' or 'liana' or 'celltalkdb';
+                        you can also specify the path of a database.
         :param homogene_path: path to the file storing mouse-human homologous genes ralations.
                         if species is MOUSE but database is 'cellphonedb' or 'liana', we need to use the human
         homologous genes for the input mouse genes.
@@ -293,36 +95,35 @@ class CellCellCommunication(AlgorithmBase):
                         if set subsampling to True and set it to None, this function will run the pca.
         :param separator_cluster: separator of cluster names used in the result and plots, e.g. '|'.
         :param separator_interaction: separator of interactions used in the result and plots, e.g. '_'.
-        :param iterations: number of samples used for generating the null distribution.
+        :param iterations: number of iterations for the 'statistical' analysis type.
         :param threshold: threshold of percentage of gene expression, above which being considered as significant.
         :param processes: number of processes used for doing the statistical analysis, on notebook just only support one process.
         :param pvalue: the cut-point of p-value, below which being considered significant.
         :param result_precision: result precision for the results, default=3.
-        :param output_path: the directory to save the result file, set it to output the result to files.
+        :param output_path: the path of directory to save the result files, set it to output the result to files.
         :param means_filename: name of the means result file.
         :param pvalues_filename: name of the pvalues result file.
         :param significant_means_filename: name of the significant mean result file.
-        :param deconvoluted_filename: name of the convoluted result file.
+        :param deconvoluted_filename: name of the deconvoluted result file.
         :param output_format: format of result, 'txt', 'csv', 'tsv', 'tab'.
         :return:
         """
         if subsampling and pca_res_key is not None and pca_res_key not in self.pipeline_res:
             raise PipelineResultInexistent(pca_res_key)
 
-        database_dir = os.path.join(stereo_conf.data_dir, "algorithm/cell_cell_communication/database")
-        if homogene_path is None:
-            homogene_path = os.path.join(database_dir, 'mouse2human.csv')
-        # 0. prepare the reference database
-        # FIXME: change the default database path
-        if database == 'cellphonedb':
-            db_path = os.path.join(database_dir, 'cellphonedb.db')
-        elif database == 'liana':
-            db_path = os.path.join(database_dir, 'liana.db')
-        elif database == 'celltalkdb':
-            db_path = os.path.join(database_dir, 'celltalkdb.db')
-        else:
+        if species is None or species.upper() not in ('HUMAN', 'MOUSE'):
+            raise InvalidSpecies(species)
+        
+        if species.upper() == 'HUMAN' and database == 'celltalkdb':
+            raise InvalidDatabase("The database 'celltalkdb' can not be used with species 'HUMAN'")
+        
+        db_path = self._check_database(database)
+        if db_path is None:
             raise InvalidDatabase()
-
+        
+        logger.info(f'species: {species.upper()}')
+        logger.info(f'database: {database}')
+        
         interactions, genes, complex_composition, complex_expanded = self._get_ref_database(db_path)
 
         counts, meta = self._prepare_data(cluster_res_key)
@@ -338,6 +139,8 @@ class CellCellCommunication(AlgorithmBase):
 
         # 1.3. if species is mouse, get the homologous genes.
         if species.upper() == 'MOUSE' and (database == 'cellphonedb' or database == 'liana'):
+            if homogene_path is None:
+                homogene_path = Path(stereo_conf.data_dir, 'algorithm/cell_cell_communication/database/mouse2human.csv').absolute().as_posix()
             genes_mouse = counts.index.tolist()
             genes_human = mouse2human(genes_mouse, homogene_path)
             counts.index = genes_human
@@ -514,6 +317,25 @@ class CellCellCommunication(AlgorithmBase):
         data.columns = self.stereo_exp_data.cell_names.astype(str)
         data.index = self.stereo_exp_data.gene_names
         return data, cluster
+    
+    def _check_database(self, database: str):
+        if (database is None) or (not isinstance(database, str)):
+            return None
+        
+        database_dir = Path(stereo_conf.data_dir, "algorithm/cell_cell_communication/database")
+        
+        path = Path(database)
+
+        if path.is_dir():
+            return None
+        
+        if path.is_file():
+            return path.absolute().as_posix() if path.exists() else None
+        
+        if database not in ('cellphonedb', 'liana', 'celltalkdb'):
+            return None
+        return (database_dir/f'{database}.db').absolute().as_posix()
+
 
     def _get_ref_database(self, db_path):
         """
@@ -1132,7 +954,7 @@ class CellCellCommunication(AlgorithmBase):
             with Pool(processes=processes) as pool:
                 results = pool.map(statistical_analysis_thread, range(iterations))
         else:
-            results = [statistical_analysis_thread(i) for i in range(iterations)]
+            results = [statistical_analysis_thread(i) for i in tqdm(range(iterations), desc='statistical analysis', ncols=100)]
         return results
 
     def _statistical_analysis(

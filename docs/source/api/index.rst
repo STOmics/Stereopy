@@ -74,9 +74,10 @@ A class for basic analysis of StereoExpData. It is the `StereoExpData.tl`.
     core.StPipeline.louvain
     core.StPipeline.phenograph
     core.StPipeline.find_marker_genes
-    core.StPipeline.filter_marker_gene
+    core.StPipeline.filter_marker_genes
     core.StPipeline.spatial_hotspot
     core.StPipeline.gaussian_smooth
+    algorithm.cell_cell_communication.main.CellCellCommunication.main
 
 
 Plots: `plt`
@@ -116,6 +117,7 @@ Interactive Plot
    :toctree: .
 
    plots.interact_spatial_cluster
+   plots.interact_annotation_cluster
    plots.InteractiveScatter
 
 

@@ -308,14 +308,18 @@ class _TissueCut(object):
 
 class RNATissueCut(_TissueCut):
 
-    def __init__(self, dst_img_path: Optional[str] = "", gef_path: Optional[str] = "", gem_path: Optional[str] = "", bin_size=20):
+    def __init__(self, 
+                 dst_img_path: Optional[str] = None, 
+                 gef_path: Optional[str] = None, 
+                 gem_path: Optional[str] = None, 
+                 bin_size: int=20):
         """
-        Tissue segmentation based on RNA expression
+        Tissue segmentation based on RNA expression.
 
-        :param dst_img_path:
-        :param gef_path: choose one of `gef_path` and `gem_path`
-        :param gem_path: just like `gef_path`
-        :param bin_size: set 1 mean `bin1` for high quality, or use `bin100` for efficiency
+        :param dst_img_path: the result image path, default to working path.
+        :param gef_path: choose one of `gef_path` and `gem_path`.
+        :param gem_path: just like `gef_path`.
+        :param bin_size: set 1 mean `bin1` for high quality, or use `bin100` for efficiency.
         """
         # Don't need source image type, this class will read data from gef/gem(txt)
         super().__init__(src_img_path="", src_img_type=RNA, seg_method=INTENSITY, dst_img_path=dst_img_path)
@@ -361,18 +365,19 @@ class RNATissueCut(_TissueCut):
 class SingleStrandDNATissueCut(_TissueCut):
 
     def __init__(self,
-                 src_img_path: Optional[str],
-                 model_path: Optional[str] = "",
-                 dst_img_path: Optional[str] = "",
+                 src_img_path: Optional[str] = None,
+                 model_path: Optional[str] = None,
+                 dst_img_path: Optional[str] = None,
                  seg_method: Optional[int] = DEEP
                  ):
         """
         Tissue segmentation based on ssDNA images.
 
-            :param src_img_path: source image path, specify one image to transforming
-            :param model_path: should specify when using `src_img_type` as `ssDNA`
-            :param dst_img_path: result image path, default to working path
-            :param seg_method: choose one of `INTENSITY`, `DEEP`
+        :param src_img_path: source image path, specify one image to transforming.
+        :param model_path: should specify when using `src_img_type` as `ssDNA`.
+        :param dst_img_path: result image path, default to working path.
+        :param seg_method: choose one of `'INTENSITY'`, `'DEEP'`.
+
         """
         super().__init__(
             src_img_type=ssDNA,

@@ -11,6 +11,7 @@ import scipy.sparse as sp
 import pandas as pd
 import numpy as np
 import numba as nb
+from typing import Optional, Union
 from ..core.stereo_exp_data import StereoExpData
 from typing import Optional, Iterable
 from datetime import datetime
@@ -66,14 +67,17 @@ def get_top_marker(g_name: str, marker_res: dict, sort_key: str, ascend: bool = 
     return top_res
 
 
-def merge(data1: StereoExpData = None, data2: StereoExpData = None, *args, reorganize_coordinate=2,
-          coordinate_offset_additional=0):
+def merge(data1: StereoExpData = None, 
+          data2: StereoExpData = None, 
+          *args, 
+          reorganize_coordinate: Union[bool,int]=2,
+          coordinate_offset_additional: Union[bool,int]=0):
     """
     Merge two or more batches of data.
 
     :param data1: the first data object to be merged.
     :param data2: the second data object to be merged. More than two datas could be input.
-    :param reorganize_coordinate: Union[bool,int]. whether to reorganize the coordinates of the obs(cells), 
+    :param reorganize_coordinate: whether to reorganize the coordinates of the obs(cells), 
         if set it to a number, like 2, the coordinates will be reorganized to 2 columns as below:
                         ---------------
                         | data1 data2
@@ -82,7 +86,7 @@ def merge(data1: StereoExpData = None, data2: StereoExpData = None, *args, reorg
                         | ...   ...  
                         ---------------
                 if set to `False`, the coordinates maybe overlap between datas.
-    :param coordinate_offset_additional: Union[`bool`,`int`]. The offset value on up/down/left/right 
+    :param coordinate_offset_additional: the offset value on up/down/left/right 
         after reorganizing the coordinates, between a pair of adjacent datas, for example, data1 & data2, 
         data1 & data3, data2 & data4, ... which would be ignored if set to `False`.
 

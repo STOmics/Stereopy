@@ -1,5 +1,5 @@
-Contributing Guide
-===================
+Contributing
+==============
 
 
 Project Structure
@@ -8,7 +8,7 @@ Project Structure
 - `stereo <https://github.com/BGIResearch/stereopy/tree/main/stereo>`_: the root of the package.
 - `stereo/core <https://github.com/BGIResearch/stereopy/tree/main/stereo/core>`_: the core code of stereo which contains the base classes and data structure of Stereopy.
 - `stereo/algorithm <https://github.com/BGIResearch/stereopy/tree/main/stereo/algorithm>`_: the algorithm module, containing main analysis and implementation algorithms which deals with methodology realization.
-- `stereo/image <https://github.com/BGIResearch/stereopy/tree/main/stereo/image>`_: the image module which deals with the tissue image related analysis, such as cell segmentation, etc.
+- `stereo/image <https://github.com/BGIResearch/stereopy/tree/main/stereo/image>`_: the image module which deals with analysis related to the image file, such as cell segmentation, etc.
 - `stereo/io <https://github.com/BGIResearch/stereopy/tree/main/stereo/io>`_: the io module which deals with reading, writing and format conversion of different data structures, between StereoExpData and AnnData, etc.
 - `stereo/plots <https://github.com/BGIResearch/stereopy/tree/main/stereo/plots>`_: the plotting module which contains all plotting functions for visualization.
 - `stereo/utils <https://github.com/BGIResearch/stereopy/tree/main/stereo/utils>`_: the common processing scripts.
@@ -23,16 +23,16 @@ Contributing Guide
 
 3. **Add new functions** or **fix bugs** in your codebase, don't forget to follow the rules of `Code Style`_.
 
-4. After completing the **code work**, we strongly recommend contributors to add `{your_work_tutorial}.ipynb`, whose style like `HotSpot Tutorial <https://stereopy.readthedocs.io/en/latest/Tutorials/hotspot.html>`_, into `stereopy/docs/source/Tutorials/`.
+4. After completing **code work**, we strongly recommend contributors to add `{your_work_tutorial}.ipynb`, whose style like `Spatial hotSpot tutorial <https://stereopy.readthedocs.io/en/latest/Tutorials/hotspot.html>`_, into `stereopy/docs/source/Tutorials/`.
 
-5. **Run all tests**, and read `Testing`_ for more details.
+5. **Run all tests**, and read `Test`_ for more details.
 
-6. After testing, update the relevant **documentation**, such as release notes, examples, etc.
+6. After testing, update relevant **documentation**, such as release notes, examples, etc.
 
-7. **Pull Requests** to the dev branch. We will review your work and merge it with the main branch if there are no issues of performance or logic.
+7. `Pull Requests` to dev branch, and we will review your work and merge it into the main branch if there are no issues of performance or logic.
 
 
-Creating Environment
+Development Environment
 --------------------------------
 
 Clone your repository.
@@ -42,7 +42,7 @@ Clone your repository.
     git clone https://github.com/{your_github_name}/stereopy.git
 
 
-Check out the dev branch, you can directly start your work at dev branch, or create a new branch.
+Check out the dev branch, you can directly start work at dev branch, or create a new branch.
 
 .. code:: bash
 
@@ -69,11 +69,11 @@ Code Style
 ----------
 1. Coding requirements comply with `PEP8 <https://legacy.python.org/dev/peps/pep-0008/#a-foolish-consistency-is-the-hobgoblin-of-little-minds>`_ specification.
 
-2. The file name uses the snake case naming rule, while the class name uses the camel case naming rule, see `Algorithm Method Class`_.
+2. The file name should use the snake case naming rule, while the class name should use the camel case naming rule, see `Algorithm Method Class`_.
 
 3. A variable should be used in a lenient snake case and should be as meaningful as possible, avoiding unintentional naming.
 
-4. Comments should be perfect. Each file, function and class should be given comments. We recommend using ReStructured Text as the docstring format for marking information.
+4. Comments, given to each file, function and class, should be as complete and detailed as possible. We recommend using `ReStructured Text` as the docstring format for marks.
 
 .. code:: python
 
@@ -103,15 +103,15 @@ Code Style
     from ..log_manager import logger
     from .algorithm_base import AlgorithmBase, ErrorCode
 
-6. Functions and logic that are not implemented in the requirements but have been planned should be marked with TODO. Confirm that a certain situation is faulty, and mark FIXME.
+6. Functions and logic, which are not implemented in the requirements but have been planned, should be marked with `TODO`. Confirm that a certain situation is faulty, and mark `FIXME`.
 
 7. Use the logger in `log_manager` instead of your custom logger or print.
 
 8. A new algorithm method should inherit with the base class `AlgorithmBase` (see: `Algorithm Method Class`_).
 
 
-Testing
--------
+Test
+-----
 For each function module, a corresponding test script should be created to ensure that the developed function is normal.
 
 All test files are unified in the `tests <https://github.com/BGIResearch/stereopy/tree/main/tests>`_ directory.

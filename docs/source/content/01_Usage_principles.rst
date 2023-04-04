@@ -10,7 +10,7 @@ Import Stereopy as:
 Workflow
 ---------
 
-.. image:: ./../_static/Stereopy_workflow_v10.png
+.. image:: ./../_static/Stereopy_workflow_v0.11.0.png
     :alt: Title figure
     :width: 700px
     :align: center
@@ -18,8 +18,8 @@ Workflow
 StereoExpData
 --------------
 
-**StereoExpData** is purposefully designed for express matrix of spatial omics, \
-which displays high running performance in spite of huge data volume. \
-It contains four important attributes, recording gene, cell, expression \
-matrix and spatial location information respectively. The expression matrix \
-supports both sparse and dense data. 
+**Stereopy** is a fundamental and comprehensive tool for mining and visualization \
+based on spatial transcriptomics data, such as Stereo-seq(spatial enhanced resolution \
+omics sequencing) data. More analysis will be added here, either from other popular \
+tools or developed by ourselves, to meet diverse requirements. Meanwhile, we are still \
+working on the improvement of performance and calculation efficiency.

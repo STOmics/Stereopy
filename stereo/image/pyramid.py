@@ -117,7 +117,7 @@ def create_pyramid(
         y_start: int, 
         mag):
     """
-    Create image pyramid and save to h5.
+    Create image pyramid and save to `.h5`.
 
     Parameters
     -------------------------------------
@@ -125,7 +125,7 @@ def create_pyramid(
     img_path
         the path to image file.
     h5_path
-        the path to h5 file.
+        the path to `.h5` file.
     img_size
         the size of image.
     x_start
