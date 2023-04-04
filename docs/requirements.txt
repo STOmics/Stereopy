@@ -169,11 +169,10 @@ Send2Trash==1.8.0
 shapely>=2.0.0
 sinfo==0.3.4
 six==1.16.0
-slicerator==1.0.0
+slicerator==1.1.0
 slideio==0.5.225
 snowballstemmer==2.2.0
 sortedcontainers==2.4.0
-Sphinx==5.3.0
 sphinx-autodoc-typehints==1.15.2
 sphinx-gallery==0.10.1
 sphinx-rtd-theme==1.0.0
@@ -234,3 +233,4 @@ fbpca>=1.0
 geosketch>=1.2
 pyscenic>=0.12.1
 furo==2022.12.7
+Sphinx==5.3.0
