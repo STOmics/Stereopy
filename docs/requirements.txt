@@ -43,7 +43,7 @@ flatbuffers==2.0
 fonttools==4.28.5
 fsspec==2022.1.0
 gast==0.4.0
-gefpy>=0.6.9
+gefpy>=0.6.17
 glog==0.3.1
 google-auth==2.3.3
 google-auth-oauthlib==0.4.6
@@ -230,3 +230,7 @@ spatialpandas>=0.4.4
 loompy==3.0.7
 gtfparse==1.2.1
 harmonypy==0.0.6
+SQLAlchemy==1.4.46
+fbpca>=1.0
+geosketch>=1.2
+pyscenic>=0.12.1

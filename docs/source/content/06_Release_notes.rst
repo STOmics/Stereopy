@@ -3,6 +3,24 @@ Release Notes
 
 .. role:: small
 
+Version 0.11.0
+---------------------
+0.11.0 : 2022-04-04
+~~~~~~~~~~~~~~~~~~~~~~~~
+1. Addition of Cell-cell Communication analysis;
+2. Addition of Gene Regulatory Network analysis;
+3. Addition of SingleR function for automatic annotation;
+4. Addition of `v2` algorithm fast cell correction;
+5. Addition of dot plot to display gene-level results;
+6. Addition of the sorting function and the limitation of output genes in `data.tl.find_marker_genes`;
+7. Added `pct` and `pct_rest` to the output files of marker genes;
+8. Addition of the parameter `mean_uni_gt` in `data.tl.filter_genes` to filter genes on average expression;
+9. Fixed the bug that `adata.X` to output AnnData was the raw matrix;
+10. Fixed the failed compatibility to analysis results from `.h5ad` (version <= 0.9.0);
+11. Updated the tissue segmentation algorithm in the module of cell segmentation to avoid the lack of tissue;
+12. Reconstructed the manual of Stereopy.
+13. Update requirements.txt.
+
 Version 0.10.0
 ------------------
 0.10.0 :2023-02-22

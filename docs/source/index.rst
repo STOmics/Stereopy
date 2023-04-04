@@ -29,7 +29,7 @@ Stereopy -  Spatial Transcriptomics Analysis in Python
 **Stereopy** is a fundamental and comprehensive tool for mining and visualization \
 based on spatial transcriptomics data, such as Stereo-seq (spatial enhanced resolution omics sequencing) data. \
 More analysis will be added here, either from other popular tools or developed by ourselves, to meet diverse requirements. \
-Meanwhile we are still working on the improvement of performance and calculation efficiency.
+Meanwhile, we are still working on the improvement of performance and calculation efficiency.
 
 
 * Get quickly started by browsing `Usage Principles <https://stereopy.readthedocs.io/en/latest/index.html>`_, `Tutorials <https://stereopy.readthedocs.io/en/latest/Tutorials/Examples.html>`_ or `API <https://stereopy.readthedocs.io/en/latest/api/index.html>`_.
@@ -58,6 +58,24 @@ Workflow
 Latest Additions
 ------------------
 
+Version 0.11.0
+~~~~~~~~~~~~~~
+0.11.0 : 2022-04-04
+
+1. Addition of Cell-cell Communication analysis;
+2. Addition of Gene Regulatory Network analysis;
+3. Addition of SingleR function for automatic annotation;
+4. Addition of `v2` algorithm fast cell correction;
+5. Addition of dot plot to display gene-level results;
+6. Addition of the sorting function and the limitation of output genes in `data.tl.find_marker_genes`;
+7. Added `pct` and `pct_rest` to the output files of marker genes;
+8. Addition of the parameter `mean_uni_gt` in `data.tl.filter_genes` to filter genes on average expression;
+9. Fixed the bug that `adata.X` to output AnnData was the raw matrix;
+10. Fixed the failed compatibility to analysis results from `.h5ad` (version <= 0.9.0);
+11. Updated the tissue segmentation algorithm in the module of cell segmentation to avoid the lack of tissue;
+12. Reconstructed the manual of Stereopy.
+13. Update requirements.txt.
+
 Version 0.10.0
 ~~~~~~~~~~~~~~
 0.10.0 : 2022-02-22
@@ -70,15 +88,6 @@ Version 0.10.0
 6. Addition of the matrix of gene count among clusters so that transformed output `.rds` file could be used for annotation by SingleR directly.
 7. Initial release of Stereopy development solution.
 8. Update requirements.txt.
-
-Version 0.9.0
-~~~~~~~~~~~~~~
-0.9.0 : 2023-01-10
-
-1. Resolved cell boundary overlapping issues during cell correction visualization.
-2. Addition of manually annotating cells and clusters via command lines or interactive visualization features.
-3. Addition of GPU version of UMAP, Neighbors, Leiden, and Louvian.
-4. Updated requirements.txt.
 
 
 
