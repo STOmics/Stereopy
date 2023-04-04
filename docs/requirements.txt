@@ -99,7 +99,7 @@ natsort==7.1.1
 nbclean==0.3.2
 nbconvert==5.6.1
 nbformat==5.1.3
-nbgrader==0.6.2
+nbgrader==0.8.2
 nbsphinx==0.8.8
 nest-asyncio==1.5.4
 networkx==2.6.3
