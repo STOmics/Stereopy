@@ -127,7 +127,7 @@ Pillow==9.2.0
 PIMS==0.5
 pkginfo==1.8.2
 prometheus-client==0.12.0
-prompt-toolkit==3.0.24
+prompt-toolkit==3.0.36
 protobuf<3.21.0a0,>=3.20.1
 psutil==5.9.0
 ptyprocess==0.7.0
