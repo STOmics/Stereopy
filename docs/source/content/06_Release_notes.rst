@@ -19,7 +19,7 @@ Version 0.11.0
 10. Fixed the failed compatibility to analysis results from `.h5ad` (version <= 0.9.0);
 11. Updated the tissue segmentation algorithm in the module of cell segmentation to avoid the lack of tissue;
 12. Reconstructed the manual of Stereopy.
-13. Update requirements.txt.
+13. Updated requirements.txt.
 
 Version 0.10.0
 ------------------
@@ -32,7 +32,7 @@ Version 0.10.0
 5. Supported adapting to AnnData, to directly use data and results stored in AnnData for subsequent analysis.
 6. Addition of the matrix of gene count among clusters so that transformed output `.rds` file could be used for annotation by SingleR directly. 
 7. Initial release of Stereopy development solution.
-8. Update requirements.txt.
+8. Updated requirements.txt.
 
 Version 0.9.0
 -----------------
