@@ -27,7 +27,7 @@ commonmark==0.9.1
 cryptography==36.0.1
 cycler==0.11.0
 Cython==3.0.0a10
-dask==2022.2.0
+dask==2022.11.1
 dask-image==2021.12.0
 datashader==0.14.1rc1
 datashape==0.5.2
@@ -177,7 +177,7 @@ Sphinx==4.3.2
 sphinx-autodoc-typehints==1.15.2
 sphinx-gallery==0.10.1
 sphinx-rtd-theme==1.0.0
-sphinxcontrib-applehelp==1.0.2
+sphinxcontrib-applehelp==1.0.4
 sphinxcontrib-devhelp==1.0.2
 sphinxcontrib-htmlhelp==2.0.0
 sphinxcontrib-jsmath==1.0.1
