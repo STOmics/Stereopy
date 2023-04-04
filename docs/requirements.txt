@@ -213,7 +213,7 @@ urllib3==1.26.9
 wcwidth==0.2.5
 webencodings==0.5.1
 Werkzeug==2.0.2
-widgetsnbextension==3.5.2
+widgetsnbextension==4.0.5
 wrapt==1.13.3
 xarray==0.20.2
 xlrd==1.2.0
