@@ -76,7 +76,7 @@ jupyter==1.0.0
 jupyter-client==7.1.1
 jupyter-console==6.4.0
 jupyter-core==4.9.1
-jupyterlab-widgets==1.0.2
+jupyterlab-widgets==3.0.5
 KDEpy==1.1.0
 keras==2.7.0
 Keras-Preprocessing==1.1.2
