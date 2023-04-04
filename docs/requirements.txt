@@ -233,3 +233,4 @@ SQLAlchemy==1.3.24
 fbpca>=1.0
 geosketch>=1.2
 pyscenic>=0.12.1
+furo==2022.12.7
