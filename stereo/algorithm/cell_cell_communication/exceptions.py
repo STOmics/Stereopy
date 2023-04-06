@@ -41,3 +41,9 @@ class NoInteractionsFound(Exception):
 class InvalidDatabase(Exception):
     def __init__(self):
         super(InvalidDatabase, self).__init__('Invalid database. Please choose from cellphonedb, liana and celltalkdb.')
+
+
+class InvalidMicroEnvInput(Exception):
+    def __init__(self, description: str = None):
+        super(InvalidMicroEnvInput, self).__init__(description)
+        self.description = description
