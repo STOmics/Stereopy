@@ -10,6 +10,7 @@
 change log:
     2021/07/20  create file.
 """
+
 import copy
 from functools import wraps
 from typing import Optional, Union
