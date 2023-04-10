@@ -17,7 +17,13 @@
 **Stereopy** is a fundamental and comprehensive tool for mining and visualization based on spatial transcriptomics data, such as Stereo-seq (spatial enhanced resolution omics sequencing) data. More analysis will be added here, either from other popular tools or developed by ourselves, to meet diverse requirements. Meanwhile, we are still working on the improvement of performance and calculation efficiency.
 
 ## Discussion 
-Please use github issue tracker to report coding related [issues](https://github.com/BGIResearch/stereopy/issues) of stereopy.
+Please use GitHub [issues](https://github.com/BGIResearch/stereopy/issues) tracker for reports and discussions of:
+ - Bug reports
+ - Document and data issues
+ - Feature requirements
+ - ...
 
 ## Contribution 
-Contributions to stereopy are highly welcome! The contributing guide will be updated later.
+**Stereopy** is in a stage of rapid development so that we will carefully consider all aspects of your proposal. We hope future input will be given by both users and developers.
+
+Details to [contributing](https://stereopy.readthedocs.io/en/latest/content/05_Contributing.html).
