@@ -7,10 +7,9 @@ on:
 jobs:
   build-linux:
     runs-on: Linux
-    strategy:
-      max-parallel: 5
 
     steps:
+    - uses: actions/checkout@v3
     - name: Add conda to system path
       run: |
         # $CONDA is an environment variable pointing to the root of the miniconda directory
