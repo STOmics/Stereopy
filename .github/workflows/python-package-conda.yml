@@ -28,5 +28,5 @@ jobs:
     - name: Test with pytest
       run: |
         conda install pytest -c conda-forge
-        pytest
+        ~/anaconda3/envs/test/bin/python -m pytest
 
