@@ -1,4 +1,4 @@
-name: github/stereopy-pytest
+name: github_action_pytest_stereopy
 channels:
   - https://mirrors.tuna.tsinghua.edu.cn/anaconda/cloud/conda-forge
   - https://mirrors.tuna.tsinghua.edu.cn/anaconda/cloud/bioconda/
@@ -28,4 +28,4 @@ dependencies:
   - tk=8.6.12=h27826a3_0
   - wheel=0.40.0=pyhd8ed1ab_0
   - xz=5.2.6=h166bdaf_0
-prefix: /usr/local/miniconda3/envs/test
+prefix: /home/linliang/anaconda3/envs/github_action_pytest_stereopy
