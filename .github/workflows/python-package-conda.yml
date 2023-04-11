@@ -19,6 +19,8 @@ jobs:
         conda env update --file environment.yml --name test -q
     - name: Install Stereopy dependencies
       run: |
+        conda init bash
+        source ~/.bashrc
         conda activate test
         pip install -r requirements.txt
     - name: Test with pytest
