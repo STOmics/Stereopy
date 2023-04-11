@@ -23,6 +23,7 @@ jobs:
         source ~/.bashrc
         conda activate test
         pip install -r requirements.txt
+        pip install pathlib
         python setup.py develop
     - name: Test with pytest
       run: |
