@@ -1,4 +1,3 @@
-name: stereopy_github_action
 channels:
   - https://mirrors.tuna.tsinghua.edu.cn/anaconda/cloud/conda-forge
   - https://mirrors.tuna.tsinghua.edu.cn/anaconda/cloud/bioconda/
@@ -28,4 +27,3 @@ dependencies:
   - tk=8.6.12=h27826a3_0
   - wheel=0.40.0=pyhd8ed1ab_0
   - xz=5.2.6=h166bdaf_0
-prefix: /home/linliang/anaconda3/envs/stereopy_github_action
