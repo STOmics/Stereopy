@@ -1,4 +1,4 @@
-name: base
+name: github/stereopy-pytest
 channels:
   - https://mirrors.tuna.tsinghua.edu.cn/anaconda/cloud/conda-forge
   - https://mirrors.tuna.tsinghua.edu.cn/anaconda/cloud/bioconda/
