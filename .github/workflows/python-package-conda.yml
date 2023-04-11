@@ -17,7 +17,6 @@ jobs:
         echo $CONDA/bin >> $GITHUB_PATH
     - name: Install dependencies
       run: |
-        cat environment.yml
         conda env update --file environment.yml --name test/stereopy_github_action
     - name: Lint with flake8
       run: |
