@@ -27,6 +27,7 @@ jobs:
         flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
     - name: Install Stereopy dependencies
       run: |
+        # install pypi package in requirement.txt
         pip install -r requirement.txt
     - name: Test with pytest
       run: |
