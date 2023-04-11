@@ -3,17 +3,16 @@ import unittest
 import stereo as st
 from stereo.utils._download import _download
 
+from settings import TEST_DATA_PATH, TEST_IMAGE_PATH, DEMO_DATA_URL
+
 
 class TestMarkerGenes(unittest.TestCase):
     data = None
     gef_file = None
-    DEMO_DATA_URL = 'https://pan.genomics.cn/ucdisk/api/2.0/share/link/download?' \
-                    'shareEventId=share_2022928142945896_010df2aa7d344d97a610557de7bad81b&' \
-                    'nodeId=8a80804a837dc46f018382c40ca51af0&code='
 
     @classmethod
     def setUpClass(cls) -> None:
-        file_path = _download(TestMarkerGenes.DEMO_DATA_URL)
+        file_path = _download(DEMO_DATA_URL, dir_str=TEST_DATA_PATH)
         cls.gef_file = file_path
         cls.data = st.io.read_gef(cls.gef_file)
         cls.data.tl.cal_qc()
@@ -77,40 +76,46 @@ class TestMarkerGenes(unittest.TestCase):
         self.data.tl.find_marker_genes(cluster_res_key='leiden', method="wilcoxon_test", n_genes='auto')
 
     def test_find_marker_genes_method_wilcoxon_test_sort_by_log2fc_n_genes_none(self):
-        self.data.tl.find_marker_genes(cluster_res_key='leiden', method="wilcoxon_test", sort_by="log2fc", n_genes='auto')
+        self.data.tl.find_marker_genes(cluster_res_key='leiden', method="wilcoxon_test", sort_by="log2fc",
+                                       n_genes='auto')
 
     def test_find_marker_genes_output(self):
-        self.data.tl.find_marker_genes(cluster_res_key='leiden', output='./stereopy_data/marker_genes1.csv')
-        self.data.plt.marker_genes_scatter(res_key='marker_genes', markers_num=5, out_path='./image_path/marker_genes_scatter.png')
+        self.data.tl.find_marker_genes(cluster_res_key='leiden', output=TEST_DATA_PATH + "/marker_genes1.csv")
+        self.data.plt.marker_genes_scatter(res_key='marker_genes', markers_num=5,
+                                           out_path=TEST_IMAGE_PATH + "marker_genes_scatter.png")
 
     def test_find_marker_genes_sort_by_log2fc_output(self):
         self.data.tl.find_marker_genes(cluster_res_key='leiden', sort_by="log2fc",
-                                       output='./stereopy_data/marker_genes2.csv')
-        self.data.plt.marker_gene_volcano(group_name='2.vs.rest', vlines=False, out_path='./image_path/marker_gene_volcano.png')
+                                       output=TEST_DATA_PATH + "/marker_genes2.csv")
+        self.data.plt.marker_gene_volcano(group_name='2.vs.rest', vlines=False,
+                                          out_path=TEST_IMAGE_PATH + "marker_gene_volcano.png")
 
     def test_find_marker_genes_sort_by_log2fc_n_genes_none_output(self):
         self.data.tl.find_marker_genes(cluster_res_key='leiden', sort_by="log2fc", n_genes='auto',
-                                       output='./stereopy_data/marker_genes3.csv')
-        self.data.plt.marker_genes_text(res_key='marker_genes', markers_num=10, sort_key='scores', out_path='./image_path/marker_genes.png')
+                                       output=TEST_DATA_PATH + "/marker_genes3.csv")
+        self.data.plt.marker_genes_text(res_key='marker_genes', markers_num=10, sort_key='scores',
+                                        out_path=TEST_IMAGE_PATH + "marker_genes.png")
 
     def test_filter_marker_genes_sort_by_log2fc_n_genes_none_output(self):
         self.data.tl.find_marker_genes(cluster_res_key='leiden', sort_by="log2fc", n_genes='auto',
-                                       output='./stereopy_data/marker_genes4.csv')
+                                       output=TEST_DATA_PATH + "/marker_genes4.csv")
         self.data.tl.filter_marker_genes(min_fold_change=1, min_in_group_fraction=0.001, max_out_group_fraction=0.1,
-                                         output="./stereopy_data/filter_genes4.csv")
-        self.data.plt.marker_genes_text(res_key='marker_genes', markers_num=10, sort_key='scores', out_path='./image_path/marker_genes_filtered.png')
-
+                                         output=TEST_DATA_PATH + "filter_genes4.csv")
+        self.data.plt.marker_genes_text(res_key='marker_genes', markers_num=10, sort_key='scores',
+                                        out_path=TEST_IMAGE_PATH + "marker_genes_filtered.png")
 
     def test_filter_plot_scatter(self):
         self.data.tl.find_marker_genes(cluster_res_key='leiden', sort_by="log2fc", n_genes='auto',
-                                       output='./stereopy_data/marker_genes4.csv')
+                                       output=TEST_DATA_PATH + "/marker_genes4.csv")
         self.data.tl.filter_marker_genes(min_fold_change=1, min_in_group_fraction=0.001, max_out_group_fraction=0.1,
-                                         output="./stereopy_data/filter_genes4.csv")
-        self.data.plt.marker_genes_scatter(res_key='marker_genes', markers_num=5, out_path='./image_path/marker_genes_scatter_filtered.png')
+                                         output=TEST_DATA_PATH + "filter_genes4.csv")
+        self.data.plt.marker_genes_scatter(res_key='marker_genes', markers_num=5,
+                                           out_path=TEST_IMAGE_PATH + "marker_genes_scatter_filtered.png")
 
     def test_filter_plot_volcano(self):
         self.data.tl.find_marker_genes(cluster_res_key='leiden', sort_by="log2fc", n_genes='auto',
-                                       output='./stereopy_data/marker_genes4.csv')
+                                       output=TEST_DATA_PATH + "marker_genes4.csv")
         self.data.tl.filter_marker_genes(min_fold_change=1, min_in_group_fraction=0.001, max_out_group_fraction=0.1,
-                                         output="./stereopy_data/filter_genes4.csv")
-        self.data.plt.marker_gene_volcano(group_name='2.vs.rest', vlines=False, out_path='./image_path/marker_gene_volcano_filtered.png')
+                                         output=TEST_DATA_PATH + "filter_genes4.csv")
+        self.data.plt.marker_gene_volcano(group_name='2.vs.rest', vlines=False,
+                                          out_path=TEST_IMAGE_PATH + "marker_gene_volcano_filtered.png")
