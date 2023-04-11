@@ -408,11 +408,6 @@ class StPipeline(object):
             which expression matrix to use for analysis.
         seed_use
             random seed.
-        res_clip_range[str,list]
-            1) `'seurat'`: clips residuals to -sqrt(ncells/30), sqrt(ncells/30), 2) `'default'`: 
-            clips residuals to -sqrt(ncells), sqrt(ncells), only used when `filter_hvgs` is `True`.
-        method 
-            offset, theta_ml, theta_lbfgs, alpha_lbfgs.
 
         Returns
         -----------
