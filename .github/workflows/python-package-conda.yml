@@ -23,6 +23,7 @@ jobs:
         source ~/.bashrc
         conda activate test
         pip install -r requirements.txt
+        python setup.py develop
     - name: Test with pytest
       run: |
         conda install pytest -c conda-forge
