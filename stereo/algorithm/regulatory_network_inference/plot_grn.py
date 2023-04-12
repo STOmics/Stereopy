@@ -144,7 +144,7 @@ class PlotRegulatoryNetwork(PlotBase):
         width, height = int(5 + max(3, ncols * 0.8)), int(3 + max(5, nrows * 0.5))
 
         fig, ax = plt.subplots(figsize=(width, height))
-        fig = sns.scatterplot(data=dot_df, size='percentage', hue='avg exp', x='regulons', y='cell type', sizes=(100, 300),
+        sns.scatterplot(data=dot_df, size='percentage', hue='avg exp', x='regulons', y='cell type', sizes=(100, 300),
                             marker='o', palette=palette, legend='auto', ax=ax, **kwargs)
         ax.legend(fontsize=12, frameon=False, ncol=1, loc=(1.02, 0))
         ax.tick_params(axis='x', labelsize=12, labelrotation=90)
