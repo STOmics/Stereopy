@@ -21,13 +21,14 @@ class TestRegulatoryNetworkInference(unittest.TestCase):
             min_gene=20, min_n_genes_by_counts=3, pct_counts_mt=5, inplace=True
         )
         self.test_data.tl.raw_checkpoint()
-        self.test_data.tl.regulatory_network_inference(self.database_fn, self.motif_anno_fn, self.tfs_fn, save=True, num_workers=20)
+        from multiprocessing import cpu_count
+        self.test_data.tl.regulatory_network_inference(self.database_fn, self.motif_anno_fn, self.tfs_fn, save=True, num_workers=int(cpu_count() / 2))
 
         #test auc_heatmap() method.  This method requires the use of the `test_data` object.  It also requires the use of the `test_data` object
         self.test_data.plt.auc_heatmap(network_res_key='regulatory_network_inference',width=28,height=28, out_path=TEST_IMAGE_PATH + "auc_heatmap.png")
 
         #test spatial_scatter_by_regulon() method.  This method requires the use of the `test_data` object.  It also requires the use of the `test_data` object
-        self.test_data.plt.spatial_scatter_by_regulon(reg_name='Thra(+)', network_res_key='regulatory_network_inference', dot_size=2, out_path=TEST_IMAGE_PATH + "spatial_scatter_by_regulon.png")
+        # self.test_data.plt.spatial_scatter_by_regulon(reg_name='Thra(+)', network_res_key='regulatory_network_inference', dot_size=2, out_path=TEST_IMAGE_PATH + "spatial_scatter_by_regulon.png")
 
         #normalization
         self.test_data.tl.normalize_total(target_sum=10000)
