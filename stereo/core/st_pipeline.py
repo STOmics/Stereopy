@@ -416,8 +416,8 @@ class StPipeline(object):
         """
         from ..preprocess.sc_transform import sc_transform
         if inplace:
-            self.result[res_key] = sc_transform(self.data, n_cells, n_genes, filter_hvgs, exp_matrix_key=exp_matrix_key,
-                                                seed_use=seed_use, **kwargs)
+            self.result[res_key] = sc_transform(self.data, n_cells, n_genes, filter_hvgs, var_features_n,
+                                                exp_matrix_key=exp_matrix_key, seed_use=seed_use, **kwargs)
         else:
             import copy
             data = copy.deepcopy(self.data)
