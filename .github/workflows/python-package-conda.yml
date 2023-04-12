@@ -23,6 +23,7 @@ jobs:
         source ~/.bashrc
         conda activate test
         pip install -r requirements.txt
+        pip install -r tests/extra_requirements.txt
         pip install pathlib
         ~/anaconda3/envs/test/bin/python setup.py develop
     - name: Test with pytest
