@@ -27,6 +27,8 @@ jobs:
         ~/anaconda3/envs/test/bin/python setup.py develop
     - name: Test with pytest
       run: |
+        conda init bash
+        source ~/.bashrc
         conda activate test
         conda install pytest -c conda-forge
         ~/anaconda3/envs/test/bin/python -m pytest
