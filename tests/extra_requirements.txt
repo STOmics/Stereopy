@@ -1,1 +1,2 @@
-dynamo
+dynamo-release
+cdlib
