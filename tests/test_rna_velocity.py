@@ -1,5 +1,6 @@
 import unittest
-import dynamo as dyn
+import stereo as st
+
 from stereo.tools import generate_loom
 
 from stereo.utils._download import _download
@@ -13,6 +14,7 @@ class TestSpatialHotspot(unittest.TestCase):
         self.gtf_file = _download(DEMO_GTF_URL)
 
     def test_spatial_hotspot(self):
+
         loom_data = generate_loom(
             gef_path=self.test_file_path, 
             gtf_path=self.gtf_file,
@@ -20,6 +22,12 @@ class TestSpatialHotspot(unittest.TestCase):
             bin_size=100,
             out_dir=TEST_DATA_PATH
             )
+        
+        try:
+            import dynamo as dyn
+        except ImportError as e:
+            st.logger.info(f'Please pip install dynamo-release, exception: {str(e)}')
+            return
         
         dyn.configuration.set_figure_params('dynamo', background='white')
         # read data
