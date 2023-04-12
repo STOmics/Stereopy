@@ -43,7 +43,7 @@ DEMO_REF_URL = 'https://pan.genomics.cn/ucdisk/api/2.0/share/link/download?' \
 # GSE84133_GSM2230762_mouse2.anndata075.h5ad
 DEMO_TEST_URL = 'https://pan.genomics.cn/ucdisk/api/2.0/share/link/download?' \
                 'shareEventId=share_2022928142945896_010df2aa7d344d97a610557de7bad81b&' \
-                'nodeId=8a80804386ed81950187315e260e3bc7&code='
+                'nodeId=8a80804a86ed7f8501876ee6b905228d&code='
 
 # test_mm_mgi_tfs.txt
 DEMO_TFS_URL = 'https://pan.genomics.cn/ucdisk/api/2.0/share/link/download?' \
