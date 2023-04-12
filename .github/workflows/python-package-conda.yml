@@ -22,15 +22,15 @@ jobs:
         conda init bash
         source ~/.bashrc
         conda activate test
-        pip install -r requirements.txt
-        pip install -r tests/extra_requirements.txt
-        pip install pathlib
+        pip install -r requirements.txt -q
+        pip install -r tests/extra_requirements.txt -q
+        pip install pathlib -q
         ~/anaconda3/envs/test/bin/python setup.py develop
     - name: Test with pytest
       run: |
         conda init bash
         source ~/.bashrc
         conda activate test
-        conda install pytest -c conda-forge
+        conda install pytest -c conda-forge -q
         ~/anaconda3/envs/test/bin/python -m pytest
 
