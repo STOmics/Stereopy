@@ -18,7 +18,7 @@ class TestRegulatoryNetworkInference(unittest.TestCase):
 
     def test_example_regulatory_network_inference(self):
         self.test_data.tl.filter_cells(
-            min_genes=20, min_n_genes_by_counts=3, pct_counts_mt=5, inplace=True
+            min_gene=20, min_n_genes_by_counts=3, pct_counts_mt=5, inplace=True
         )
         self.test_data.tl.raw_checkpoints()
         self.test_data.tl.regulatory_network_inference(self.database_fn, self.motif_anno_fn, self.tfs_fn, save=True, num_workers=20)
