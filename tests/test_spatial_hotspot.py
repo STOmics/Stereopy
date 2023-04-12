@@ -17,7 +17,7 @@ class TestSpatialHotspot(unittest.TestCase):
         self.test_data.tl.filter_cells(
             min_gene=200, min_n_genes_by_counts=3, max_n_genes_by_counts=2500, pct_counts_mt=5, inplace=True
         )
-        self.test_data.tl.raw_checkpoints()
+        self.test_data.tl.raw_checkpoint()
         self.test_data.tl.normalize_total(target_sum=10000)
         self.test_data.tl.log1p()
         self.test_data.tl.highly_variable_genes(min_mean=0.0125, max_mean=3,min_disp=0.5, n_top_genes=2000, res_key='highly_variable_genes')
