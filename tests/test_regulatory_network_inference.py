@@ -20,7 +20,7 @@ class TestRegulatoryNetworkInference(unittest.TestCase):
         self.test_data.tl.filter_cells(
             min_gene=20, min_n_genes_by_counts=3, pct_counts_mt=5, inplace=True
         )
-        self.test_data.tl.raw_checkpoints()
+        self.test_data.tl.raw_checkpoint()
         self.test_data.tl.regulatory_network_inference(self.database_fn, self.motif_anno_fn, self.tfs_fn, save=True, num_workers=20)
 
         #test auc_heatmap() method.  This method requires the use of the `test_data` object.  It also requires the use of the `test_data` object
