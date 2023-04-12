@@ -47,16 +47,20 @@ DEMO_TEST_URL = 'https://pan.genomics.cn/ucdisk/api/2.0/share/link/download?' \
 
 # test_mm_mgi_tfs.txt
 DEMO_TFS_URL = 'https://pan.genomics.cn/ucdisk/api/2.0/share/link/download?' \
-                    'shareEventId=share_2022928142945896_010df2aa7d344d97a610557de7bad81b&' \
-                    'nodeId=8a80804386ed8195018725dae9ef3c24&code='
+                'shareEventId=share_2022928142945896_010df2aa7d344d97a610557de7bad81b&' \
+                'nodeId=8a80804386ed8195018725dae9ef3c24&code='
 
 # mm10_10kbp_up_10kbp_down_full_tx_v10_clust.genes_vs_motifs.rankings.feather
 DEMO_DATABASE_URL = 'https://pan.genomics.cn/ucdisk/api/2.0/share/link/download?'\
-                        'shareEventId=share_2022928142945896_010df2aa7d344d97a610557de7bad81b&' \
-                        'nodeId=8a80804386ed8195018725dac1363c20&code='
+                    'shareEventId=share_2022928142945896_010df2aa7d344d97a610557de7bad81b&' \
+                    'nodeId=8a80804386ed8195018725dac1363c20&code='
 
 # motifs-v10nr_clust-nr.mgi-m0.001-o0.0.tbl
 DEMO_MOTIF_URL = 'https://pan.genomics.cn/ucdisk/api/2.0/share/link/download?' \
-                    'shareEventId=share_2022928142945896_010df2aa7d344d97a610557de7bad81b&' \
-                    'nodeId=8a80804386ed8195018725dae91a3c22&code='
+                'shareEventId=share_2022928142945896_010df2aa7d344d97a610557de7bad81b&' \
+                'nodeId=8a80804386ed8195018725dae91a3c22&code='
 
+#gene.gtf
+DEMO_GTF_URL = 'https://pan.genomics.cn/ucdisk/api/2.0/share/link/download?' \
+                'shareEventId=share_2022928142945896_010df2aa7d344d97a610557de7bad81b&' \
+                'nodeId=8a80804a837dc46f018382c713661b63&code='
