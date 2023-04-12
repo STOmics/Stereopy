@@ -14,7 +14,7 @@ class TestRegulatoryNetworkInference(unittest.TestCase):
 
         test_file_path = _download(DEMO_DATA_URL)
 
-        self.test_data = st.io.read_gef(test_file_path)
+        self.test_data = st.io.read_gef(test_file_path, bin_size=600)
 
     def test_example_regulatory_network_inference(self):
         self.test_data.tl.filter_cells(
