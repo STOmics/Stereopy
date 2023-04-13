@@ -16,7 +16,7 @@ jobs:
           echo $CONDA/bin >> $GITHUB_PATH
       - name: Install dependencies
         run: |
-          conda env update --file tests/workflows/environment_linux_gpu.yml --name rapids-22.12 -q
+          conda env update --file tests/workflows_conf/environment_linux_gpu.yml --name rapids-22.12 -q
       - name: Install Stereopy dependencies
         run: |
           conda init bash
