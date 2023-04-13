@@ -36,6 +36,10 @@ jobs:
           ~/anaconda3/envs/test/bin/python setup.py develop
       - name: Show Env Info
         run: |
+          conda init bash
+          source ~/.bashrc
+          conda activate test
+          which python
           conda info
           env
           pip list
