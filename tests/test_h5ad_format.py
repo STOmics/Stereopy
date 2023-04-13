@@ -20,7 +20,9 @@ class TestH5adFormat(unittest.TestCase):
         self.data.tl.highly_variable_genes(min_mean=0.0125, max_mean=3, min_disp=0.5, res_key='highly_variable_genes',
                                            n_top_genes=None)
         self.data.tl.scale(zero_center=False)
-        self.data.tl.pca(use_highly_genes=True, hvg_res_key='highly_variable_genes', n_pcs=20, res_key='pca', svd_solver='arpack')
+        self.data.tl.pca(
+            use_highly_genes=True, hvg_res_key='highly_variable_genes', n_pcs=20, res_key='pca', svd_solver='arpack'
+        )
         self.data.tl.neighbors(pca_res_key='pca', n_pcs=30, res_key='neighbors', n_jobs=2)
         self.data.tl.umap(pca_res_key='pca', neighbors_res_key='neighbors', res_key='umap', init_pos='spectral')
         self.data.tl.leiden(neighbors_res_key='neighbors', res_key='leiden')
