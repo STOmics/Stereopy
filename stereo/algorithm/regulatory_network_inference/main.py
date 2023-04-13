@@ -41,14 +41,14 @@ class RegulatoryNetworkInference(AlgorithmBase):
     """
     Algorithms to inference Gene Regulatory Networks (GRN)
     """
-    
+
     # GRN pipeline main logic
     def main(self,
              database: str = None,
              motif_anno: str= None,
              tfs: Union[str, list]=None,
              target_genes: list=None,
-             auc_threshold: float=0.5, 
+             auc_threshold: float=0.5,
              num_workers: int=None,
              res_key: str = 'regulatory_network_inference',
              seed: int = None,
@@ -146,7 +146,7 @@ class RegulatoryNetworkInference(AlgorithmBase):
         :param num_workers:
         :return:
         """
-        local_cluster = LocalCluster(n_workers=num_workers, threads_per_worker=1)
+        local_cluster = LocalCluster(n_workers=num_workers, dashboard_address=None, threads_per_worker=4, processes=False)
         custom_client = Client(local_cluster)
         return custom_client
 
