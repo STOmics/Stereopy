@@ -55,4 +55,4 @@ jobs:
           pip list
       - name: Test with pytest
         run: |
-          ~/anaconda3/envs/test/bin/python -m pytest -m "not gpu and not heavy" --durations=0 -n 8
+          ~/anaconda3/envs/test/bin/python -m pytest -m "not gpu and not heavy" --durations=0 -n 2
