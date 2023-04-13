@@ -3,11 +3,10 @@ name: CPU PyTest in Conda
 on:
   push:
     branches:
-      - "work"
-    tags:
-      - test_cpu_linux.**
-    # paths:
-    #  - '**.py'
+      - 'work'
+    paths-ignore:
+      - '.github/workflows/**'
+      - 'docs/**'
 
 jobs:
   build-linux-and-start-pytest:
