@@ -19,7 +19,7 @@ jobs:
           echo $CONDA/bin >> $GITHUB_PATH
       - name: Install dependencies
         run: |
-          conda env update --file tests/workflows_conf/environment_linux_38.yml --name test -q
+          conda env update --file tests/workflows_conf/environment_linux.yml --name test -q
       - name: Install Stereopy dependencies
         run: |
           conda init bash
