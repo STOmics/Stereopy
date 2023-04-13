@@ -12,7 +12,8 @@ change log:
 """
 import numpy as np
 import copy
-from .qc import cal_total_counts, cal_pct_counts_mt, cal_n_genes_by_counts, cal_n_cells_by_counts, cal_n_cells
+from .qc import cal_total_counts, cal_pct_counts_mt, cal_n_genes_by_counts, cal_n_cells_by_counts, cal_n_cells, \
+    cal_gene_mean_umi, cal_per_gene_counts
 
 
 def filter_cells(
@@ -71,22 +72,27 @@ def filter_cells(
     return data
 
 
-def filter_genes(data, min_cell=None, max_cell=None, gene_list=None, inplace=True):
+def filter_genes(data, min_cell=None, max_cell=None, gene_list=None, mean_umi_gt=None, inplace=True):
     """
     filter genes based on the numbers of cells.
 
     :param data: StereoExpData object.
     :param min_cell: Minimum number of cells for a gene pass filtering.
     :param max_cell: Maximun number of cells for a gene pass filtering.
+    :param mean_umi_gt: Filter genes whose mean umi greater than this value.
     :param gene_list: the list of genes which will be filtered.
     :param inplace: whether inplace the original data or return a new data.
     :return: StereoExpData object.
     """
     data = data if inplace else copy.deepcopy(data)
-    if min_cell is None and max_cell is None and gene_list is None:
-        raise ValueError('please set `min_cell` or `max_cell` or `gene_list` or both of them.')
+    if min_cell is None and max_cell is None and gene_list is None and mean_umi_gt is None:
+        raise ValueError('please set any of `min_cell` or `max_cell` or `gene_list` or `mean_umi_gt`')
     if data.genes.n_cells is None:
         data.genes.n_cells = cal_n_cells(data.exp_matrix)
+    if data.genes.n_counts is None:
+        data.genes.n_counts = cal_per_gene_counts(data.exp_matrix)
+    if data.genes.mean_umi is None:
+        data.genes.mean_umi = cal_gene_mean_umi(data)
     if min_cell:
         gene_subset = data.genes.n_cells >= min_cell
         data.sub_by_index(gene_index=gene_subset)
@@ -95,6 +101,9 @@ def filter_genes(data, min_cell=None, max_cell=None, gene_list=None, inplace=Tru
         data.sub_by_index(gene_index=gene_subset)
     if gene_list:
         gene_subset = np.isin(data.gene_names, gene_list)
+        data.sub_by_index(gene_index=gene_subset)
+    if mean_umi_gt is not None:
+        gene_subset = data.genes.mean_umi > mean_umi_gt
         data.sub_by_index(gene_index=gene_subset)
     return data
 

@@ -11,6 +11,7 @@ import scipy.sparse as sp
 import pandas as pd
 import numpy as np
 import numba as nb
+from typing import Optional, Union
 from ..core.stereo_exp_data import StereoExpData
 from typing import Optional, Iterable
 from datetime import datetime
@@ -66,27 +67,30 @@ def get_top_marker(g_name: str, marker_res: dict, sort_key: str, ascend: bool = 
     return top_res
 
 
-def merge(data1: StereoExpData = None, data2: StereoExpData = None, *args, reorganize_coordinate=2,
-          coordinate_offset_additional=0):
-    """merge two or more datas to one
+def merge(data1: StereoExpData = None, 
+          data2: StereoExpData = None, 
+          *args, 
+          reorganize_coordinate: Union[bool,int]=2,
+          coordinate_offset_additional: Union[bool,int]=0):
+    """
+    Merge two or more batches of data.
 
-    :param data1: the first data to be merged, an object of StereoExpData, defaults to None
-    :param data2: the second data to be merged, an object of StereoExpData, defaults to None
-        you can also input more than two datas
-    :param reorganize_coordinate: set it to decide to whether reorganize the coordinates of the cells
-                if set it to False, will not reorganize 
-                if set it to a number, like 2, the coordinates of cells will be reorganized to 2 columns like below:
+    :param data1: the first data object to be merged.
+    :param data2: the second data object to be merged. More than two datas could be input.
+    :param reorganize_coordinate: whether to reorganize the coordinates of the obs(cells), 
+        if set it to a number, like 2, the coordinates will be reorganized to 2 columns as below:
                         ---------------
-                        | data1 data2 |
-                        | data3 data4 |
-                        | data5 ...   |
-                        | ...   ...   |
+                        | data1 data2
+                        | data3 data4
+                        | data5 ...  
+                        | ...   ...  
                         ---------------
-                if set to False, the coordinates maybe overlap between each data.
-    :param coordinate_offset_additional: the offset between left and right or up and down after reorganizing the coordinates of cells
-                for example, between data1 and data2, data1 and data3, data2 and data4...
-                be ignored if reorganize_coordinate set to False
-    :return: a new object of StereoExpData
+                if set to `False`, the coordinates maybe overlap between datas.
+    :param coordinate_offset_additional: the offset value on up/down/left/right 
+        after reorganizing the coordinates, between a pair of adjacent datas, for example, data1 & data2, 
+        data1 & data3, data2 & data4, ... which would be ignored if set to `False`.
+
+    :return: A merged StereoExpData object.
     """
     assert data1 is not None, 'the first parameter `data1` must be input'
     if data2 is None:
@@ -178,11 +182,12 @@ def merge(data1: StereoExpData = None, data2: StereoExpData = None, *args, reorg
 
 def split(data: StereoExpData = None):
     """
-    splitting a data which is merged from different batches base on batch number
+    Split a data object which is merged from different batches of data, according to the batch number.
 
-    :param data: a merged data, defaults to None
-    :return: a split data list
-    """
+    :param data: a merged data object.
+
+    :return: A split data list.
+    """
 
     if data is None:
         return None

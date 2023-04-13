@@ -17,6 +17,9 @@ from colorcet import palette
 class StereoConfig(object):
     """
     config of stereo.
+
+    log_format:
+    https://docs.python.org/3.8/library/logging.html?highlight=logging#logrecord-attributes
     """
 
     def __init__(
@@ -26,7 +29,7 @@ class StereoConfig(object):
             n_jobs=1,
             log_file: Union[str, Path, None] = None,
             log_level: str = "info",
-            log_format: str = "[%(asctime)s][%(name)s][%(process)d][%(thread)d][%(module)s][%(lineno)d][%(levelname)s]: %(message)s",
+            log_format: str = "[%(asctime)s][%(name)s][%(process)d][%(threadName)s][%(thread)d][%(module)s][%(lineno)d][%(levelname)s]: %(message)s",
             output: str = "./output",
             data_dir: str = None
     ):
