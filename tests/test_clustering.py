@@ -1,3 +1,4 @@
+import pytest
 import unittest
 
 import stereo as st
@@ -36,16 +37,8 @@ class TestClustering(unittest.TestCase):
         data.plt.umap(res_key='umap', cluster_key='leiden', out_path=TEST_IMAGE_PATH + "umap.png")
         data.plt.cluster_scatter(res_key='leiden', out_path=TEST_IMAGE_PATH + "leiden.png")
 
+    @pytest.mark.gpu
     def test_clustering_gpu(self):
-        try:
-            import cudf
-            import cugraph
-            from cuml import UMAP
-            from cuml.neighbors.nearest_neighbors import NearestNeighbors
-        except ImportError as e:
-            st.logger.info(f'this is not a GPU environment, got expection: {str(e)}')
-            return
-
         data = st.io.read_gef(self.gef_file, bin_size=50)
         data.tl.cal_qc()
         data.tl.normalize_total(target_sum=1e4)
