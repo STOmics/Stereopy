@@ -2,10 +2,15 @@ name: CPU PyTest in Conda
 
 on:
   push:
-    branches: [ "work" ]
+    branches:
+      - "work"
+    tags:
+      - test_cpu_linux.**
+    # paths:
+    #  - '**.py'
 
 jobs:
-  build-linux:
+  build-linux-and-start-pytest:
     runs-on: cpu
 
     steps:
@@ -22,11 +27,18 @@ jobs:
           conda init bash
           source ~/.bashrc
           conda activate test
+
           pip install -r requirements.txt -q
           # TODO temporarily not install `tests/extra_requirements.txt`
           # pip install -r tests/extra_requirements.txt -q
           pip install pathlib -q
+
           ~/anaconda3/envs/test/bin/python setup.py develop
+      - name: Show Env Info
+        run: |
+          conda info
+          env
+          pip list
       - name: Test with pytest
         run: |
-          ~/anaconda3/envs/test/bin/python -m pytest
+          ~/anaconda3/envs/test/bin/python -m pytest --durations=0
