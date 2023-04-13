@@ -1,12 +1,6 @@
 name: CPU PyTest in Conda
 
 on:
-  push:
-    branches:
-      - 'work'
-    paths-ignore:
-      - '.github/workflows/**'
-      - 'docs/**'
   workflow_dispatch:
     inputs:
       python_version:
@@ -18,6 +12,12 @@ on:
           - py38
           - py39
           - py310
+  push:
+    branches:
+      - 'work'
+    paths-ignore:
+      - '.github/workflows/**'
+      - 'docs/**'
 
 jobs:
   build-linux-and-start-pytest:
