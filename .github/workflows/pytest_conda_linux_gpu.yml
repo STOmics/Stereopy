@@ -2,8 +2,6 @@ name: GPU PyTest in Conda
 
 on:
   push:
-    branches:
-      - "work"
     tags:
       - test_gpu_linux.**
 
