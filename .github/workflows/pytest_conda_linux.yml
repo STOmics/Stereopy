@@ -7,11 +7,21 @@ on:
     paths-ignore:
       - '.github/workflows/**'
       - 'docs/**'
+  workflow_dispatch:
+    inputs:
+      python_version:
+        description: 'Choose python version this action test with'
+        required: true
+        default: 'py38'
+        type: choice
+        options:
+          - py38
+          - py39
+          - py310
 
 jobs:
   build-linux-and-start-pytest:
     runs-on: cpu
-
     steps:
       - uses: actions/checkout@v3
       - name: Add conda to system path
@@ -20,7 +30,7 @@ jobs:
           echo $CONDA/bin >> $GITHUB_PATH
       - name: Install dependencies
         run: |
-          conda env update --file tests/workflows_conf/environment_linux.yml --name test -q
+          conda env update --file tests/workflows_conf/environment_linux_${{ inputs.python_version }}.yml --name test -q
       - name: Install Stereopy dependencies
         run: |
           conda init bash
