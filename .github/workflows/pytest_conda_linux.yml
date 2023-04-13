@@ -12,12 +12,12 @@ on:
           - py38
           - py39
           - py310
-  push:
-    branches:
-      - 'work'
-    paths-ignore:
-      - '.github/workflows/**'
-      - 'docs/**'
+#  push:
+#    branches:
+#      - 'work'
+#    paths-ignore:
+#      - '.github/workflows/**'
+#      - 'docs/**'
 
 jobs:
   build-linux-and-start-pytest:
