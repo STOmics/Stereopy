@@ -8,6 +8,11 @@ on:
       - '.github/workflows/**'
       - 'docs/**'
 
+defaults:
+  run: |
+    conda init bash
+    source ~/.bashrc
+
 jobs:
   build-linux-and-start-pytest:
     runs-on: cpu
@@ -23,8 +28,6 @@ jobs:
           conda env update --file tests/workflows_conf/environment_linux.yml --name test -q
       - name: Install Stereopy dependencies
         run: |
-          conda init bash
-          source ~/.bashrc
           conda activate test
 
           pip install -r requirements.txt -q
