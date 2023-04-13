@@ -1,5 +1,6 @@
 import copy
 import unittest
+import pytest
 
 from stereo.core.ms_data import MSData
 from stereo.io.reader import read_gef
@@ -16,7 +17,6 @@ class MSDataTestCases(unittest.TestCase):
         self.file_path = _download(DEMO_DATA_URL, dir_str=TEST_DATA_PATH)
         self.file_path_gem_gz = _download(DEMO_DATA_135_TISSUE_GEM_GZ_URL, dir_str=TEST_DATA_PATH)
         self.file_path_h5ad = _download(DEMO_H5AD_URL, dir_str=TEST_DATA_PATH)
-
 
         self.ms_data = MSData()
         # TODO should download from net
@@ -60,6 +60,7 @@ class MSDataTestCases(unittest.TestCase):
         self.assertIs(self.ms_data['0'], self.ms_data[0])
         self.assertIs(self.ms_data['c'], self.ms_data[2])
 
+    @pytest.mark.heavy
     def test_multi_add_path(self):
         self.ms_data.add_data(
             [
@@ -75,6 +76,21 @@ class MSDataTestCases(unittest.TestCase):
             bin_size=[100, 100, 200],
             bin_type=['bins', 'cell_bins', 'bins'],
             spatial_key=[None, None, 'spatial']
+        )
+
+    def test_multi_add_path_light(self):
+        self.ms_data.add_data(
+            [
+                self.file_path,
+                self.file_path_h5ad,
+            ],
+            [
+                'z',
+                'x',
+            ],
+            bin_size=[100, 100],
+            bin_type=['bins', 'cell_bins'],
+            spatial_key=[None, None]
         )
 
     def test_del_data(self):
@@ -122,7 +138,8 @@ class MSDataTestCases(unittest.TestCase):
     def test_plt(self):
         self.ms_data.tl.cal_qc()
         self.ms_data.plt.violin()
-        self.ms_data.plt.violin(out_paths=[TEST_IMAGE_PATH + "ms_data_violin1.png", TEST_IMAGE_PATH + "ms_data_violin2.png"])
+        self.ms_data.plt.violin(
+            out_paths=[TEST_IMAGE_PATH + "ms_data_violin1.png", TEST_IMAGE_PATH + "ms_data_violin2.png"])
 
     def test_num_slice(self):
         self.assertEqual(len(self.ms_data), self.ms_data.num_slice, len(self.ms_data.data_list))

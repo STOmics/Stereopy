@@ -21,7 +21,7 @@ jobs:
           echo $CONDA/bin >> $GITHUB_PATH
       - name: Install dependencies
         run: |
-          conda env update --file tests/environment_cpu.yml --name test -q
+          conda env update --file tests/workflows/environment_linux.yml --name test -q
       - name: Install Stereopy dependencies
         run: |
           conda init bash
@@ -41,4 +41,4 @@ jobs:
           pip list
       - name: Test with pytest
         run: |
-          ~/anaconda3/envs/test/bin/python -m pytest --durations=0
+          ~/anaconda3/envs/test/bin/python -m pytest -m "not gpu and not heavy" --durations=0
