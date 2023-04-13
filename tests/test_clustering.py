@@ -25,8 +25,7 @@ class TestClustering(unittest.TestCase):
         data.tl.highly_variable_genes(
             min_mean=0.0125, max_mean=3, min_disp=0.5, res_key='highly_variable_genes', n_top_genes=None
         )
-        data.plt.highly_variable_genes(res_key='highly_variable_genes',
-                                       out_path=TEST_IMAGE_PATH + "highly_variable_genes.png")
+        data.plt.highly_variable_genes(res_key='highly_variable_genes', out_path=TEST_IMAGE_PATH + "highly_variable_genes.png")
         data.tl.scale(zero_center=False)
         data.tl.pca(
             use_highly_genes=True, hvg_res_key='highly_variable_genes', n_pcs=20, res_key='pca', svd_solver='arpack'
