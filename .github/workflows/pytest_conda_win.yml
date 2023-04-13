@@ -2,7 +2,11 @@ name: CPU Windows PyTest in Conda
 
 on:
   push:
-    branches: [ "work" ]
+    branches:
+      - "work"
+    tags:
+      - test_cpu_win.**
+
 
 jobs:
   build-linux:

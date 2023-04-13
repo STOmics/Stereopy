@@ -2,7 +2,10 @@ name: GPU PyTest in Conda
 
 on:
   push:
-    branches: [ "work" ]
+    branches:
+      - "work"
+    tags:
+      - test_gpu_linux.**
 
 jobs:
   build-linux:
@@ -28,4 +31,4 @@ jobs:
           ~/anaconda3/envs/rapids-22.12/bin/python setup.py develop
       - name: Test with pytest
         run: |
-          ~/anaconda3/envs/rapids-22.12/bin/python -m pytest
+          ~/anaconda3/envs/rapids-22.12/bin/python -m pytest -m "gpu"
