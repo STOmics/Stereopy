@@ -8,11 +8,11 @@ from settings import TEST_DATA_PATH, DEMO_DATA_URL, DEMO_TFS_URL, DEMO_DATABASE_
 class TestRegulatoryNetworkInference(unittest.TestCase):
 
     def setUp(self) -> None:
-        self.tfs_fn  = _download(DEMO_TFS_URL)
-        self.database_fn  = _download(DEMO_DATABASE_URL)
-        self.motif_anno_fn = _download(DEMO_MOTIF_URL)
+        self.tfs_fn  = _download(DEMO_TFS_URL, dir_str=TEST_DATA_PATH)
+        self.database_fn  = _download(DEMO_DATABASE_URL, dir_str=TEST_DATA_PATH)
+        self.motif_anno_fn = _download(DEMO_MOTIF_URL, dir_str=TEST_DATA_PATH)
 
-        test_file_path = _download(DEMO_DATA_URL)
+        test_file_path = _download(DEMO_DATA_URL, dir_str=TEST_DATA_PATH)
 
         self.test_data = st.io.read_gef(test_file_path, bin_size=600)
 
