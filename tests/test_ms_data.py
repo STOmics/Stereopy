@@ -122,7 +122,7 @@ class MSDataTestCases(unittest.TestCase):
     def test_plt(self):
         self.ms_data.tl.cal_qc()
         self.ms_data.plt.violin()
-        self.ms_data.plt.violin(out_paths=[TEST_IMAGE_PATH + "violin1.png", TEST_IMAGE_PATH + "violin2.png"])
+        self.ms_data.plt.violin(out_paths=[TEST_IMAGE_PATH + "ms_data_violin1.png", TEST_IMAGE_PATH + "ms_data_violin2.png"])
 
     def test_num_slice(self):
         self.assertEqual(len(self.ms_data), self.ms_data.num_slice, len(self.ms_data.data_list))
