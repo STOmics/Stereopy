@@ -16,4 +16,3 @@ class TestSCTransform(unittest.TestCase):
 
     def test_scTransform(self):
         self.DATA.tl.sctransform()
-
