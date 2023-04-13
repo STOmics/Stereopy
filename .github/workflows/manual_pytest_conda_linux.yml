@@ -1,12 +1,17 @@
-name: CPU PyTest in Conda
+name: Manual CPU PyTest in Conda
 
 on:
-  push:
-    branches:
-      - 'work'
-    paths-ignore:
-      - '.github/workflows/**'
-      - 'docs/**'
+  workflow_dispatch:
+    inputs:
+      python_version:
+        description: 'Choose python version this action test with'
+        required: true
+        default: 'py38'
+        type: choice
+        options:
+          - py38
+          - py39
+          - py310
 
 jobs:
   build-linux-and-start-pytest:
