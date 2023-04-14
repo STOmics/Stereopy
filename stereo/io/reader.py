@@ -649,7 +649,7 @@ def stereo_to_anndata(
                 adata.uns['sct_data'] = csr_matrix(data.tl.result[res_key][0]['data'].T)
                 adata.uns['sct_scale'] = csr_matrix(data.tl.result[res_key][0]['scale.data'].T.to_numpy())
                 adata.uns['sct_scale_genename'] = list(data.tl.result[res_key][0]['scale.data'].index)
-                adata.uns['sct_top_features'] = list(data.tl.result[res_key][1]['umi_genes'])
+                adata.uns['sct_top_features'] = list(data.tl.result[res_key][1]['top_features'])
                 adata.uns['sct_cellname'] = list(data.tl.result[res_key][1]['umi_cells'].astype('str'))
                 adata.uns['sct_genename'] = list(data.tl.result[res_key][1]['umi_genes'])
             elif key in ['pca', 'umap', 'tsne']:
