@@ -43,7 +43,6 @@ if (
     !is.null(object@misc$sct_top_features)
   ) {
   sct.assay.out <- CreateAssayObject(counts=object[['Spatial']]@counts, check.matrix=FALSE)
-  # VariableFeatures(object=sct.assay.out) <- rownames(object@misc$sct_top_features)
   sct.assay.out <- SetAssayData(
       object = sct.assay.out,
       slot = "data",
@@ -51,7 +50,7 @@ if (
     )
   sct.assay.out@scale.data <- as.matrix(object@misc$sct_scale)
   colnames(sct.assay.out@scale.data) <- object@misc$sct_cellname
-  rownames(sct.assay.out@scale.data) <- object@misc$sct_top_features
+  rownames(sct.assay.out@scale.data) <- object@misc$sct_scale_genename
   sct.assay.out <- Seurat:::SCTAssay(sct.assay.out, assay.orig='Spatial')
   Seurat::VariableFeatures(object = sct.assay.out) <- object@misc$sct_top_features
   object[['SCT']] <- sct.assay.out
