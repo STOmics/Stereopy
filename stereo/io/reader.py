@@ -257,6 +257,24 @@ def _read_stereo_h5ad_from_group(f, data, use_raw, use_result):
                             gene_cluster_res_key not in data.tl.key_record['gene_exp_cluster']):
                         data.tl.result[gene_cluster_res_key] = cell_cluster_to_gene_exp_cluster(data.tl, res_key)
                         data.tl.reset_key_record('gene_exp_cluster', gene_cluster_res_key)
+                if analysis_key == 'sct':
+                    data.tl.result[res_key] = [
+                        {
+                            'counts': h5ad.read_group(f[f'exp_matrix@{res_key}@sct_counts']),
+                            'data': h5ad.read_group(f[f'exp_matrix@{res_key}@sct_data']),
+                            'scale.data': h5ad.read_group(f[f'exp_matrix@{res_key}@sct_scale']),
+                        },
+                        {
+                            'top_features': h5ad.read_dataset(f[f'genes@{res_key}@sct_top_features']),
+                            'umi_genes': h5ad.read_dataset(f[f'genes@{res_key}@sct']),
+                            'umi_cells': h5ad.read_dataset(f[f'cells@{res_key}@sct']),
+                        }
+                    ]
+                    data.tl.result[res_key][0]['scale.data'] = pd.DataFrame(
+                        data.tl.result[res_key][0]['scale.data'].toarray(),
+                        columns=data.tl.result[res_key][1]['umi_cells'],
+                        index=h5ad.read_dataset(f[f'genes@{res_key}@sct_scale_genename']),
+                    )
                 if analysis_key == 'gene_exp_cluster':
                     data.tl.result[res_key] = h5ad.read_group(f[f'{res_key}@gene_exp_cluster'])
                 if analysis_key == 'marker_genes':
@@ -630,7 +648,8 @@ def stereo_to_anndata(
                 adata.uns['sct_counts'] = csr_matrix(data.tl.result[res_key][0]['counts'].T)
                 adata.uns['sct_data'] = csr_matrix(data.tl.result[res_key][0]['data'].T)
                 adata.uns['sct_scale'] = csr_matrix(data.tl.result[res_key][0]['scale.data'].T.to_numpy())
-                adata.uns['sct_top_features'] = list(data.tl.result[res_key][0]['scale.data'].index)
+                adata.uns['sct_scale_genename'] = list(data.tl.result[res_key][0]['scale.data'].index)
+                adata.uns['sct_top_features'] = list(data.tl.result[res_key][1]['umi_genes'])
                 adata.uns['sct_cellname'] = list(data.tl.result[res_key][1]['umi_cells'].astype('str'))
                 adata.uns['sct_genename'] = list(data.tl.result[res_key][1]['umi_genes'])
             elif key in ['pca', 'umap', 'tsne']:

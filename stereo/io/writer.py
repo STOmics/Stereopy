@@ -169,21 +169,20 @@ def _write_one_h5ad(f, data, use_raw=False, use_result=True, key_record=None):
                             })
                             h5ad.write(parameters_df, f, f'{cluster}@{res_key}@marker_genes')  # -> dataframe
                 if analysis_key == 'sct':
-                    # tuple: (StereoExpData, dict-17 keys with different type)
-
-                    # st_exp_data = data.tl.result[res_key][0]
-                    # sct_dict = data.tl.result[res_key][1]
-                    # if not np.array_equal(data.exp_matrix, st_exp_data.exp_matrix):
-                    #     h5ad.write(st_exp_data.genes, f, f'genes@{res_key}@sct')
-                    #     h5ad.write(st_exp_data.cells, f, f'cells@{res_key}@sct')
-                    #     h5ad.write(st_exp_data.position, f, f'position@{res_key}@sct')
-                    #     if issparse(st_exp_data.exp_matrix):
-                    #         sp_format = 'csr' if isinstance(st_exp_data.exp_matrix, csr_matrix) else 'csc'
-                    #         h5ad.write(st_exp_data.exp_matrix, f, f'exp_matrix@{res_key}@sct', sp_format)
-                    #     else:
-                    #         h5ad.write(st_exp_data.exp_matrix, f, f'exp_matrix@{res_key}@sct')
-                    # h5ad.write_sct(f, f'sct_dict@{res_key}@sct', sct_dict)
-                    pass
+                    h5ad.write(
+                        csr_matrix(data.tl.result[res_key][0]['counts']), f, f'exp_matrix@{res_key}@sct_counts', 'csr'
+                    )
+                    h5ad.write(
+                        csr_matrix(data.tl.result[res_key][0]['data']), f, f'exp_matrix@{res_key}@sct_data', 'csr'
+                    )
+                    h5ad.write(
+                        csr_matrix(data.tl.result[res_key][0]['scale.data']), f, f'exp_matrix@{res_key}@sct_scale', 'csr'
+                    )
+                    h5ad.write(list(data.tl.result[res_key][1]['umi_genes']), f, f'genes@{res_key}@sct')
+                    h5ad.write(list(data.tl.result[res_key][1]['umi_cells']), f, f'cells@{res_key}@sct')
+                    h5ad.write(list(data.tl.result[res_key][1]['top_features']), f, f'genes@{res_key}@sct_top_features')
+                    h5ad.write(list(data.tl.result[res_key][0]['scale.data'].index), f,f'genes@{res_key}@sct_scale_genename')
+                    # TODO ignored other result of the sct
                 if analysis_key == 'spatial_hotspot':
                     # Hotspot object
                     pass
