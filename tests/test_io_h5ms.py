@@ -1,4 +1,5 @@
 import copy
+import pytest
 import unittest
 
 from stereo.core.ms_data import MSData
@@ -21,6 +22,7 @@ class TestIOH5ms(unittest.TestCase):
         self.ms_data += read_gef(self.file_path)
         self.ms_data += copy.deepcopy(self.ms_data[0])
 
+    @pytest.mark.tryfirst
     def test_1_write(self):
         write_h5ms(self.ms_data, TEST_DATA_PATH + "SS200000135TL_D1.h5ms")
 
