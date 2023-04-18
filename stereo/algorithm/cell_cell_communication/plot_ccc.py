@@ -60,7 +60,7 @@ class PlotCellCellCommunication(PlotBase):
             PipelineResultInexistent(res_key)
 
         if self.pipeline_res[res_key]['parameters']['analysis_type'] != 'statistical':
-            logger.warn("This plot just only support analysis type 'statistical'")
+            logger.warning("This plot just only support analysis type 'statistical'")
             return None
 
         means_df = self.pipeline_res[res_key]['means']
@@ -144,7 +144,7 @@ class PlotCellCellCommunication(PlotBase):
             PipelineResultInexistent(res_key)
 
         if self.pipeline_res[res_key]['parameters']['analysis_type'] != 'statistical':
-            logger.warn("This plot just only support analysis type 'statistical'")
+            logger.warning("This plot just only support analysis type 'statistical'")
             return None
 
         cluster_res_key = self.pipeline_res[res_key]['parameters']['cluster_res_key']
