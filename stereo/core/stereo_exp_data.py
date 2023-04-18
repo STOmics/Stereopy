@@ -155,6 +155,32 @@ class StereoExpData(Data):
                       gene_name] if gene_name is not None else None
         return data.sub_by_index(cell_index, gene_index)
 
+    def sub_exp_matrix_by_name(
+            self,
+            cell_name: Optional[Union[np.ndarray, list, str, int]] = None,
+            gene_name: Optional[Union[np.ndarray, list, str]] = None,
+            order_preserving: bool = True
+    ) -> Union[np.ndarray, spmatrix]:
+        new_exp_matrix = self.exp_matrix
+        if cell_name is not None:
+            if isinstance(cell_name, str) or isinstance(cell_name, int):
+                cell_name = [cell_name]
+            if order_preserving:
+                index = [np.argwhere(self.cell_names == c)[0][0] for c in cell_name]
+            else:
+                index = np.isin(self.cell_names, cell_name)
+            new_exp_matrix = new_exp_matrix[index]
+        if gene_name is not None:
+            if isinstance(gene_name, str):
+                gene_name = [gene_name]
+            if order_preserving:
+                index = [np.argwhere(self.gene_names == g)[0][0] for g in gene_name]
+            else:
+                index = np.isin(self.gene_names, gene_name)
+            new_exp_matrix = new_exp_matrix[:, index]
+        return new_exp_matrix
+            
+
     def check(self):
         """
         Check whether the parameters meet the requirement.
@@ -208,7 +234,7 @@ class StereoExpData(Data):
         """
         Get the cell borders.
         """
-        return self.cells.cell_boder
+        return self.cells.cell_border
 
     @property
     def genes(self):
@@ -249,7 +275,7 @@ class StereoExpData(Data):
         self._cells = cell
 
     @property
-    def exp_matrix(self):
+    def exp_matrix(self) -> Union[np.ndarray, spmatrix]:
         """
         Get the expression matrix.
 

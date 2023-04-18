@@ -52,7 +52,7 @@ def interact_spatial_cluster_annotation(
     cs = natsorted(set(df['group']))
     cluster_select = pn.widgets.Select(name='cluster', options=cs, value=cs[0], width=100, loading=False)
 
-    marker_gene_select = pn.widgets.DataFrame(res_marker_gene['1.vs.rest'].sort_values(by='scores', ascending=False)[['genes','scores']].set_index('scores').head(100), width=200, height=400)
+    # marker_gene_select = pn.widgets.DataFrame(res_marker_gene['1.vs.rest'].sort_values(by='scores', ascending=False)[['genes','scores']].set_index('scores').head(100), width=200, height=400)
     ##
     if len(cs) > len(colormaps[theme_default]):
         colormaps[theme_default] = conf.get_colors(theme_default, n=len(cs))
@@ -73,7 +73,13 @@ def interact_spatial_cluster_annotation(
     @pn.depends(cluster_select)
     def _df_marker_gene(x):
         marker_cluster_select = x + '.vs.rest'
-        marker_gene_select = pn.widgets.DataFrame(res_marker_gene[marker_cluster_select].sort_values(by='scores', ascending=False)[['genes','scores']].set_index('scores').head(100), width=200, height=400)
+        marker_gene_data = res_marker_gene[marker_cluster_select].sort_values(by='scores', ascending=False)
+        marker_gene_data = marker_gene_data[['genes','scores']]
+        marker_gene_data.set_index('scores', inplace=True)
+        marker_gene_data = marker_gene_data.head(100)
+        marker_gene_select = pn.widgets.DataFrame(marker_gene_data, width=200, height=400)
+        # marker_gene_select = pn.widgets.DataFrame(res_marker_gene[marker_cluster_select].sort_values(by='scores', ascending=False)[['genes','scores']].set_index('scores').head(100), width=200, height=400)
+        
         return marker_gene_select
     
     @pn.depends(dot_slider, cluster_text)
