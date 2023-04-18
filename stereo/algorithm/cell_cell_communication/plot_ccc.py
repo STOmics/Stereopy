@@ -25,6 +25,8 @@ class PlotCellCellCommunication(PlotBase):
             separator_cluster: str = '|',
             palette: str = 'Reds',
             res_key: str = 'cell_cell_communication',
+            width: int = None,
+            height: int = None
             # **kw_args
     ):
         """Generate dot plot based on the result of CellCellCommunication.
@@ -100,7 +102,11 @@ class PlotCellCellCommunication(PlotBase):
         result = result.rename(columns={'variable': 'cluster_pair'})
 
         # plotting
-        width, height = int(5 + max(3, ncols * 0.8)), int(3 + max(5, nrows * 0.5))
+        if width is None or height is None:
+            width, height = int(5 + max(3, ncols * 0.8)), int(3 + max(5, nrows * 0.5))
+        else:
+            width = width / 100 if width >= 100 else int(5 + max(3, ncols * 0.8))
+            height = height / 100 if height >= 100 else int(3 + max(5, nrows * 0.5))
         fig, ax = plt.subplots(figsize=(width, height))
         # fig.subplots_adjust(bottom=0.2, left=0.18, right=0.85)
         sns.scatterplot(data=result, x="cluster_pair", y="interacting_pair", palette=palette, 
@@ -119,7 +125,9 @@ class PlotCellCellCommunication(PlotBase):
             self,
             pvalue: float = 0.05,
             separator_cluster: str = '|',
-            res_key: str = 'cell_cell_communication'
+            res_key: str = 'cell_cell_communication',
+            width: int = None,
+            height: int = None
     ):
         """
         Heatmap of number of interactions in each cluster pairs.
@@ -167,7 +175,11 @@ class PlotCellCellCommunication(PlotBase):
         network = network[rows]
         log_network = np.log1p(network)
 
-        width, height = int(3 + max(3, n_cluster * 0.5)) * 2, int(3 + max(3, n_cluster * 0.5))
+        if width is None or height is None:
+            width, height = int(3 + max(3, n_cluster * 0.5)) * 2, int(3 + max(3, n_cluster * 0.5))
+        else:
+            width = width / 100 if width >= 100 else int(3 + max(3, n_cluster * 0.5)) * 2
+            height = height / 100 if height >= 100 else int(3 + max(3, n_cluster * 0.5))
         fig, axes = plt.subplots(nrows=1, ncols=2, figsize=(width, height), gridspec_kw={'wspace': 0})
 
         sns.heatmap(data=network, square=True, cmap='coolwarm', cbar_kws={'pad': 0.1, 'shrink': 0.5, 'location': 'bottom', 'orientation': 'horizontal'}, ax=axes[0])

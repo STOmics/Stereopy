@@ -13,8 +13,10 @@ from matplotlib.cm import get_cmap
 import matplotlib.pyplot as plt
 from matplotlib.colors import ListedColormap, to_hex, Normalize, LinearSegmentedColormap
 from matplotlib import gridspec
+from matplotlib.axes import Axes
 import numpy as np
 import pandas as pd
+from scipy.sparse import issparse
 from typing import Optional, Union
 import seaborn as sns
 from ..stereo_config import stereo_conf
@@ -41,6 +43,8 @@ def base_scatter(
         vmax=None,
         SegmentedColormap=None,
         hue_order=None,
+        width=None,
+        height=None
 ):  # scatter plot, Expression matrix spatial distribution after clustering
     """
     scatter plotter
@@ -70,7 +74,13 @@ def base_scatter(
 
     """
     if not ax:
-        _, ax = plt.subplots(figsize=(7, 7))
+        if width is None or height is None:
+            figsize = (7, 7)
+        else:
+            width = width / 100 if width >= 100 else 7
+            height = height / 100 if height >= 100 else 7
+            figsize = (width, height)
+        _, ax = plt.subplots(figsize=figsize)
     dot_size = 120000 / len(hue) if dot_size is None else dot_size
     # add a color bar
     if color_bar:
@@ -90,10 +100,10 @@ def base_scatter(
         from natsort import natsorted
         import collections
         g = natsorted(set(hue))
+        if hue_order is not None:
+            g = hue_order
         colors = stereo_conf.get_colors(palette)
         color_dict = collections.OrderedDict(dict([(g[i], colors[i]) for i in range(len(g))]))
-        if hue_order:
-            g = hue_order
         sns.scatterplot(x=x, y=y, hue=hue, hue_order=g, linewidth=0, marker="s",
                         palette=color_dict, size=hue, sizes=(dot_size, dot_size), ax=ax)
         handles, labels = ax.get_legend_handles_labels()
@@ -134,6 +144,8 @@ def multi_scatter(
         palette: Optional[Union[np.ndarray, list, str]] = 'stereo',
         vmin=None,
         vmax=None,
+        width=None,
+        height=None
 ):
     """
     plot multiple scatters
@@ -155,10 +167,17 @@ def multi_scatter(
     :return: matplotlib Axes object
 
     """
-    ncols = min(ncols, len(hue))
-    nrows = np.ceil(len(hue) / ncols).astype(int)
+    hue_length = len(hue) if isinstance(hue, list) else hue.shape[0]
+    ncols = min(ncols, hue_length)
+    nrows = np.ceil(hue_length / ncols).astype(int)
     # each panel will have the size of rcParams['figure.figsize']
-    fig = plt.figure(figsize=(ncols * 10, nrows * 8))
+    if width is None or height is None:
+        figsize = (ncols * 10, nrows * 8)
+    else:
+        width = width / 100 if width >= 100 else ncols * 8
+        height = height / 100 if height >= 100 else nrows * 8
+        figsize = (width, height)
+    fig = plt.figure(figsize=figsize)
     left = 0.2 / ncols
     bottom = 0.13 / nrows
     axs = gridspec.GridSpec(
@@ -172,12 +191,14 @@ def multi_scatter(
         # wspace=wspace,
     )
     for i, cv in enumerate(hue):
+        if issparse(cv):
+            cv = cv.toarray()[0]
         ax = fig.add_subplot(axs[i])  # ax = plt.subplot(axs[i]) || ax = fig.add_subplot(axs[1, 1]))
         base_scatter(x, y, cv,
                      ax=ax,
-                     title=title[i] if title else None,
-                     x_label=x_label[i] if x_label else None,
-                     y_label=y_label[i] if y_label else None,
+                     title=title[i] if title is not None else None,
+                     x_label=x_label[i] if x_label is not None else None,
+                     y_label=y_label[i] if y_label is not None else None,
                      color_bar=color_bar,
                      color_bar_reverse=color_bar_reverse,
                      bad_color=bad_color,
@@ -197,6 +218,7 @@ def volcano(
         label: Optional[str] = None, text_visible: Optional[str] = None,
         x_label='log2(fold change)', y_label='-log10(pvalue)',
         vlines=True, cut_off_pvalue=0.01, cut_off_logFC=1,
+        width=None, height=None
 ):
     """
     volcano plot
@@ -218,13 +240,21 @@ def volcano(
     :param vlines: plot vlines or not
     :return:
     """
-    ax = sns.scatterplot(
+    if width is None or height is None:
+        width, height = 6, 6
+    else:
+        width = width / 100 if width >= 100 else 6
+        height = height / 100 if height >= 100 else 6
+    fig, ax = plt.subplots(figsize=(width, height))
+    ax: Axes = sns.scatterplot(
         data=data,
         x=x, y=y, hue=hue,
         hue_order=hue_order,
         palette=palette,
         alpha=alpha, s=s,
+        ax=ax
     )
+    # ax.figure.set_size_inches(width, height)
     ax.spines['right'].set_visible(False)  # remove right border
     ax.spines['top'].set_visible(False)  # remove top border
     ax.set_ylabel(y_label, fontweight='bold')  # set y-axis labels
@@ -241,18 +271,18 @@ def volcano(
         # ax.set_xticks(range(xmin, xmax, 4))# set x-axis labels
         # ax.set_yticks(range(ymin, ymax, 2))# set y-axis labels
     if label and text_visible:
-        for line in range(0, data.shape[0]):
-            if data[text_visible][line]:
-                ax.text(
-                    data[x][line] + 0.01,
-                    data[y][line],
-                    data[label][line],
-                    horizontalalignment='left',
-                    size='medium',
-                    color='black',
-                    # weight='semibold'
-                )
-    return ax.get_figure()
+        data = data[data[text_visible]]
+        for _, row in data.iterrows():
+            ax.text(
+                row[x] + 0.01,
+                row[y],
+                row[label],
+                horizontalalignment='left',
+                size='medium',
+                color='black',
+                # weight='semibold'
+            )
+    return fig
 
 
 def marker_gene_volcano(
@@ -285,7 +315,9 @@ def marker_gene_volcano(
 
 
 def highly_variable_genes(
-        data: Optional[pd.DataFrame]
+        data: Optional[pd.DataFrame],
+        width: int = None,
+        height: int = None
 ):
     """
     scatter of highly variable genes
@@ -300,7 +332,13 @@ def highly_variable_genes(
     else:
         y_label = 'dispersions'
     data['gene type'] = ['highly variable genes' if i else 'other genes' for i in data['highly_variable']]
-    fig = plt.figure(figsize=(12, 6))
+    if width is None or height is None:
+        width, height = 12, 6
+        height = 6
+    else:
+        width = width / 100 if width >= 100 else 12
+        height = height / 100 if height >= 100 else 6
+    fig = plt.figure(figsize=(width, height), clear=True)
     ax1 = fig.add_subplot(121)
     ax2 = fig.add_subplot(122)
     sns.scatterplot(x="means", y=y_label + '_norm',
