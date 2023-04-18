@@ -85,7 +85,7 @@ class CellCellCommunication(AlgorithmBase):
                         you can also specify the path of a database.
         :param homogene_path: path to the file storing mouse-human homologous genes ralations.
                         if species is MOUSE but database is 'cellphonedb' or 'liana', we need to use the human
-        homologous genes for the input mouse genes.
+                        homologous genes for the input mouse genes.
         :param counts_identifiers: type of gene identifiers in the Counts data: "ensembl", "gene_name" or "hgnc_symbol".
         :param subsampling: flag of subsampling.
         :param subsampling_log: flag of doing log1p transformation before subsampling.

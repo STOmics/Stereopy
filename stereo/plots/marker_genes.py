@@ -34,6 +34,8 @@ def marker_genes_text(
         ncols: int = 4,
         sharey: bool = True,
         ax: Optional[Axes] = None,
+        width: Optional[int] = None,
+        height: Optional[int] = None,
         **kwargs,
 ):  # scatter plot, marker gene significance map, gravel-like map
     """
@@ -66,14 +68,13 @@ def marker_genes_text(
     n_panels_x = min(n_panels_per_row, len(group_names))
     n_panels_y = np.ceil(len(group_names) / n_panels_x).astype(int)
     # initialize image
-    width = 10
-    height = 10
-    fig = plt.figure(
-        figsize=(
-            n_panels_x * width,  # rcParams['figure.figsize'][0],
-            n_panels_y * height,  # rcParams['figure.figsize'][1],
-        )
-    )
+    if width is None or height is None:
+        width = 10 * n_panels_x
+        height = 10 * n_panels_y
+    else:
+        width = width / 100 if width >= 100 else 10 * n_panels_x
+        height = height / 100 if height >= 100 else 10 * n_panels_y
+    fig = plt.figure(figsize=(width, height))
     gs = gridspec.GridSpec(nrows=n_panels_y, ncols=n_panels_x, wspace=0.22, hspace=0.3)
 
     ax0 = None
@@ -182,6 +183,8 @@ def plot_heatmap(
         group_position=None,
         group_labels=None,
         cluster_colors_array=None,
+        width=None,
+        height=None,
         **kwargs
 ):
     """
@@ -197,20 +200,21 @@ def plot_heatmap(
     :param kwargs: other args for plot.
 
     """
-    kwargs.setdefault("figsize", (10, 10))
+    # kwargs.setdefault("figsize", (10, 10))
     kwargs.setdefault("colorbar_width", 0.2)
     colorbar_width = kwargs.get("colorbar_width")
-    figsize = kwargs.get("figsize")
+    # figsize = kwargs.get("figsize")
     cluster_block_width = kwargs.setdefault("cluster_block_width", 0.2) if show_group else 0
-    if figsize is None:
-        height = 6
+    if width is None or height is None:
+        height = 10
         if show_labels:
             heatmap_width = len(df.columns) * 0.3
         else:
             heatmap_width = 8
         width = heatmap_width + cluster_block_width
     else:
-        width, height = figsize
+        width = width / 100 if width >= 100 else 10
+        height = height / 100 if height >= 100 else 10
         heatmap_width = width - cluster_block_width
     if show_group_txt:
         # add some space in case 'brackets' want to be plotted on top of the image
@@ -280,7 +284,9 @@ def marker_genes_heatmap(
         min_value=None,
         max_value=None,
         gene_list=None,
-        do_log=True):
+        do_log=True,
+        width=None,
+        height=None):
     """
     heatmap of marker genes
 
@@ -306,7 +312,8 @@ def marker_genes_heatmap(
     if do_log:
         draw_df = np.log1p(draw_df)
     return plot_heatmap(df=draw_df, show_labels=show_labels, show_group=show_group, show_group_txt=show_group_txt, 
-                        group_position=group_position, group_labels=group_labels, cluster_colors_array=cluster_colors_array)
+                        group_position=group_position, group_labels=group_labels, cluster_colors_array=cluster_colors_array,
+                        width=width, height=height)
 
 
 class MarkerGenesScatterPlot:
@@ -527,7 +534,9 @@ class MarkerGenesScatterPlot:
             'logfoldchanges',
             'pvalues',
             'pvalues_adj'
-        ] = 'scores'
+        ] = 'scores',
+        width: int=None,
+        height: int=None
     ):
         if (values_to_plot is not None) and ('pvalues' in values_to_plot) and self.marker_genes_parameters['method'] == 'logreg':
             raise Exception("Just only the t_test and wilcoxon_test method would output the pvalues and pvalues_adj.")
@@ -535,7 +544,16 @@ class MarkerGenesScatterPlot:
         plot_data, gene_names, group_names, marker_genes_group_keys_to_show, gene_intervals = \
             self._create_plot_scatter_data(markers_num, genes, groups, values_to_plot, sort_by)
         
-        main_area_width, main_area_height = self.__category_width * len(gene_names), self.__category_height * len(group_names)
+        if width is None or height is None:
+            main_area_width, main_area_height = self.__category_width * len(gene_names), self.__category_height * len(group_names)
+        else:
+            width /= 100
+            height /= 100
+            if width <= self.__legend_width:
+                width = 50
+            if height <= self.__gene_groups_brackets_height:
+                height = 7
+            main_area_width, main_area_height = width - self.__legend_width, height - self.__gene_groups_brackets_height
         width_ratios = [main_area_width, self.__legend_width]
         height_ratios = [self.__gene_groups_brackets_height + main_area_height]
         width = sum(width_ratios)

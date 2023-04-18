@@ -69,6 +69,8 @@ class PlotRegulatoryNetwork(PlotBase):
                        cell_label: str = 'bins',
                        network_res_key: str = 'regulatory_network_inference', 
                        palette: str = 'Reds',
+                       width: int = None,
+                       height: int = None,
                        **kwargs):
         """
         Intuitive way of visualizing how feature expression changes across different
@@ -91,6 +93,8 @@ class PlotRegulatoryNetwork(PlotBase):
              in data.tl.result, defaults to 'regulatory_network_inference'
         :param palette: Color theme, defaults to 'Reds'
         :param kwargs: features Input vector of features, or named list of feature vectors
+        :param width: the figure width in pixels.
+        :param height: the figure height in pixels.
         
         :return: matplotlib.figure
         """
@@ -141,7 +145,11 @@ class PlotRegulatoryNetwork(PlotBase):
         ncols = len(dot_df['regulons'].unique())
         nrows = len(dot_df['cell type'].unique())
 
-        width, height = int(5 + max(3, ncols * 0.8)), int(3 + max(5, nrows * 0.5))
+        if width is None or height is None:
+            width, height = int(5 + max(3, ncols * 0.8)), int(3 + max(5, nrows * 0.5))
+        else:
+            width = width / 100 if width >= 100 else int(5 + max(3, ncols * 0.8))
+            height = height / 100 if height >= 100 else int(3 + max(5, nrows * 0.5))
 
         fig, ax = plt.subplots(figsize=(width, height))
         sns.scatterplot(data=dot_df, size='percentage', hue='avg exp', x='regulons', y='cell type', sizes=(100, 300),
@@ -188,6 +196,8 @@ class PlotRegulatoryNetwork(PlotBase):
             reg_name: str=None, 
             dot_size: int=None,
             palette: str='CET_L4',
+            width: int=None,
+            height: int=None,
             **kwargs):
         """
         Plot genes of one regulon on a 2D map
@@ -234,6 +244,8 @@ class PlotRegulatoryNetwork(PlotBase):
             palette=palette,
             color_bar=True,
             color_bar_reverse=color_bar_reverse,
+            width=width,
+            height=height,
             **kwargs
         )
 
