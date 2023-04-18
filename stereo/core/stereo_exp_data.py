@@ -9,16 +9,18 @@
 change log:
     2021/08/12  add to_andata function , by wuyiran.
 """
+import copy
+from warnings import warn
+from typing import Optional, Union
 
-from .data import Data
 import pandas as pd
 import numpy as np
-from typing import Optional, Union
 from scipy.sparse import spmatrix, issparse, csr_matrix
+
+from .data import Data
 from .cell import Cell, AnnBasedCell
 from .gene import Gene, AnnBasedGene
 from ..log_manager import logger
-import copy
 
 
 class StereoExpData(Data):
@@ -256,6 +258,20 @@ class StereoExpData(Data):
         self._genes = gene
 
     @property
+    def genes_matrix(self):
+        """
+        Get the genes matrix.
+        """
+        return self._genes._matrix
+
+    @property
+    def genes_pairwise(self):
+        """
+        Get the genes pairwise.
+        """
+        return self._genes._pairwise
+
+    @property
     def cells(self):
         """
         Get the cell object.
@@ -273,6 +289,20 @@ class StereoExpData(Data):
         :return:
         """
         self._cells = cell
+
+    @property
+    def cells_matrix(self):
+        """
+        Get the cells matrix.
+        """
+        return self._cells._matrix
+
+    @property
+    def cells_pairwise(self):
+        """
+        Get the cells pairwise.
+        """
+        return self._cells._pairwise
 
     @property
     def exp_matrix(self) -> Union[np.ndarray, spmatrix]:
@@ -460,30 +490,26 @@ class StereoExpData(Data):
             format_str += f"\n{'bin_size: %d' % self.bin_size}"
         format_str += f"\noffset_x = {self.offset_x}"
         format_str += f"\noffset_y = {self.offset_y}"
-        format_cells = []
-        for attr_name in [('_cell_name', 'cell_name'), 'total_counts', 'n_genes_by_counts', 'pct_counts_mt']:
-            if type(attr_name) is tuple:
-                real_name, show_name = attr_name[0], attr_name[1]
-            else:
-                real_name = show_name = attr_name
-            # `is not None` is ugly but object in __dict__ may be a pandas.DataFrame
-            if self.cells.__dict__.get(real_name, None) is not None:
-                format_cells.append(show_name)
-        if format_cells:
-            format_str += f"\ncells: {format_cells}"
-        format_genes = []
-        for attr_name in [('_gene_name', 'gene_name'), 'n_counts', 'n_cells']:
-            if type(attr_name) is tuple:
-                real_name, show_name = attr_name[0], attr_name[1]
-            else:
-                real_name = show_name = attr_name
-            if self.genes.__dict__.get(real_name, None) is not None:
-                format_genes.append(show_name)
-        if format_genes:
-            format_str += f"\ngenes: {format_genes}"
-        # TODO: no decide yet
-        # format_str += "\nposition: T"
-        format_key_record = {key: value for key, value in self.tl.key_record.items() if value}
+        format_str += str(self.cells)
+        format_str += str(self.genes)
+        if self.cells_matrix:
+            format_str += f"\ncells_matrix = {list(self.cells_matrix.keys())}"
+        if self.genes_matrix:
+            format_str += f"\ngenes_matrix = {list(self.cells_matrix.keys())}"
+        if self.cells_pairwise:
+            format_str += f"\ncells_pairwise = {list(self.cells._pairwise.keys())}"
+        if self.genes_pairwise:
+            format_str += f"\ngenes_pairwise = {list(self.genes._pairwise.keys())}"
+        format_key_record = {
+            key: value
+            for key, value in self.tl.key_record.items() if value
+        }
+        warn(
+            'FutureWarning: `pca`, `neighbors`, `cluster`, `umap` will be inaccessible in result in future version.'
+            '\nMake sure your code access result from the right property, such as `pca` and `umap` will be in the '
+            '`StereoExpData.cells_matrix`, see more details at: https://www.baidu.com',
+            category=FutureWarning
+        )
         if format_key_record:
             format_str += f"\nkey_record: {format_key_record}"
         return format_str
@@ -512,8 +538,8 @@ class AnnBasedStereoExpData(StereoExpData):
             self._ann_data = based_ann_data
         else:
             self._ann_data = anndata.read_h5ad(h5ad_file_path)
-        self._genes = AnnBasedGene(self._ann_data, self._genes._gene_name)
-        self._cells = AnnBasedCell(self._ann_data, self._cells._cell_name)
+        self._genes = AnnBasedGene(self._ann_data, self._genes.gene_name)
+        self._cells = AnnBasedCell(self._ann_data, self._cells.cell_name)
         from .st_pipeline import AnnBasedStPipeline
         self._tl = AnnBasedStPipeline(self._ann_data, self)
 

@@ -9,9 +9,8 @@ from settings import TEST_DATA_PATH, DEMO_DATA_URL, DEMO_GTF_URL, TEST_IMAGE_PAT
 
 class TestSpatialHotspot(unittest.TestCase):
     def setUp(self) -> None:
-
-        self.test_file_path = _download(DEMO_DATA_URL)
-        self.gtf_file = _download(DEMO_GTF_URL)
+        self.test_file_path = _download(DEMO_DATA_URL, dir_str=TEST_DATA_PATH)
+        self.gtf_file = _download(DEMO_GTF_URL, dir_str=TEST_DATA_PATH)
 
     def test_spatial_hotspot(self):
 

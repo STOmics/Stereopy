@@ -74,7 +74,7 @@ def pca(x, n_pcs, svd_solver='auto', random_state=0):
     """
     if issparse(x):
         if svd_solver != 'arpack':
-            logger.warn(
+            logger.warning(
                 f'svd_solver: {svd_solver} can not be used with sparse input.\n'
                 'Use "arpack" (the default) instead.'
             )
