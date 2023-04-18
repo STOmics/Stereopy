@@ -23,6 +23,7 @@ import numpy as np
 import pandas as pd
 from scipy.sparse import issparse
 
+from .stereo_exp_data import StereoExpData
 from ..log_manager import logger
 from ..utils.time_consume import TimeConsume
 from ..algorithm.algorithm_base import AlgorithmBase
@@ -44,15 +45,15 @@ def logit(func):
 
 class StPipeline(object):
 
-    def __init__(self, data):
+    def __init__(self, data: StereoExpData):
         """
         A analysis tool sets for StereoExpData. include preprocess, filter, cluster, plot and so on.
 
         :param data: StereoExpData object.
         """
-        self.data = data
+        self.data: StereoExpData = data
         self.result = dict()
-        self._raw = None
+        self._raw: StereoExpData = None
         self.key_record = {'hvg': [], 'pca': [], 'neighbors': [], 'umap': [], 'cluster': [], 'marker_genes': []}
 
     def __getattr__(self, item):
@@ -75,7 +76,7 @@ class StPipeline(object):
         )
 
     @property
-    def raw(self):
+    def raw(self) -> StereoExpData:
         """
         get the StereoExpData whose exp_matrix is raw count.
 
@@ -980,7 +981,7 @@ class StPipeline(object):
     @logit
     def spatial_hotspot(self, 
                         use_highly_genes: bool=True, 
-                        hvg_res_key: Optional[str] = None, 
+                        hvg_res_key: Optional[str] = 'highly_variable_genes', 
                         model: Literal['danb','bernoilli','normal','none']='normal', 
                         n_neighbors: int=30,
                         n_jobs: int=20, 
@@ -1020,9 +1021,8 @@ class StPipeline(object):
         data = copy.deepcopy(self.raw) if use_raw else copy.deepcopy(self.data)
         if use_highly_genes:
             df = self.result[hvg_res_key]
-            genes_index = df['highly_variable'].values
-            gene_name = np.array(df.index)[genes_index]
-            data = data.sub_by_name(gene_name=gene_name)
+            highly_genes_name = df.index[df['highly_variable']]
+            data = data.sub_by_name(gene_name=highly_genes_name)
         hs = spatial_hotspot(data, model=model, n_neighbors=n_neighbors, n_jobs=n_jobs, fdr_threshold=fdr_threshold,
                              min_gene_threshold=min_gene_threshold, outdir=outdir)
         # res = {"results":hs.results, "local_cor_z": hs.local_correlation_z, "modules": hs.modules,
@@ -1057,7 +1057,7 @@ class StPipeline(object):
         assert smooth_threshold >= 20 and smooth_threshold <= 100, 'smooth_threshold must be between 20 and 100'
 
         pca_exp_matrix = self.result[pca_res_key].values
-        raw_exp_matrix = self.raw.exp_matrix.toarray() if issparse(self.raw.exp_matrix) else self.raw.exp_matrix
+        raw_exp_matrix = self.raw.exp_matrix.toarray() if self.raw.issparse() else self.raw.exp_matrix
 
         if pca_exp_matrix.shape[0] != raw_exp_matrix.shape[0]:
             raise Exception(
