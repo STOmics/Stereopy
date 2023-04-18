@@ -10,7 +10,7 @@ def cell_cluster_to_gene_exp_cluster(
     genes: Union[Optional[Sequence[str]], str] = None,
     kind='sum'):
     if  tl.raw is None:
-        logger.warn(
+        logger.warning(
             """
             The function cell_cluster_to_gene_exp_cluster must be based on raw data.
             Please run data.tl.raw_checkpoint() before Normalization.
@@ -18,11 +18,11 @@ def cell_cluster_to_gene_exp_cluster(
         )
         return False
     if cluster_res_key is None:
-        logger.warn("The parameter cluster_res_key of the function cell_cluster_to_gene_exp_cluster must be input")
+        logger.warning("The parameter cluster_res_key of the function cell_cluster_to_gene_exp_cluster must be input")
         return False
     
     if cluster_res_key not in tl.result:
-        logger.warn(f"The cluster_res_key '{cluster_res_key}' is not exists")
+        logger.warning(f"The cluster_res_key '{cluster_res_key}' is not exists")
         return False
 
     cluster_result: pd.DataFrame = tl.result[cluster_res_key].copy()

@@ -15,16 +15,16 @@ import copy
 from functools import wraps
 from typing import Optional, Union
 from multiprocessing import cpu_count
-
-from anndata import AnnData
 from typing_extensions import Literal
 
 import numpy as np
 import pandas as pd
+from anndata import AnnData
 from scipy.sparse import issparse
 
-from .stereo_exp_data import StereoExpData
 from ..log_manager import logger
+from .result import Result, AnnBasedResult
+from .stereo_exp_data import StereoExpData
 from ..utils.time_consume import TimeConsume
 from ..algorithm.algorithm_base import AlgorithmBase
 
@@ -52,7 +52,7 @@ class StPipeline(object):
         :param data: StereoExpData object.
         """
         self.data: StereoExpData = data
-        self.result = dict()
+        self.result = Result(data)
         self._raw: StereoExpData = None
         self.key_record = {'hvg': [], 'pca': [], 'neighbors': [], 'umap': [], 'cluster': [], 'marker_genes': []}
 
@@ -981,7 +981,7 @@ class StPipeline(object):
     @logit
     def spatial_hotspot(self, 
                         use_highly_genes: bool=True, 
-                        hvg_res_key: Optional[str] = 'highly_variable_genes', 
+                        hvg_res_key: Optional[str] = 'highly_variable_genes',
                         model: Literal['danb','bernoilli','normal','none']='normal', 
                         n_neighbors: int=30,
                         n_jobs: int=20, 
@@ -1030,13 +1030,13 @@ class StPipeline(object):
         self.result[res_key] = hs
 
     @logit
-    def gaussian_smooth(self, 
-                        n_neighbors: int=10, 
-                        smooth_threshold: int=90, 
-                        pca_res_key: str='pca', 
-                        res_key: str='gaussian_smooth',
-                        n_jobs: int=-1, 
-                        inplace: bool=True):
+    def gaussian_smooth(self,
+                        n_neighbors: int = 10,
+                        smooth_threshold: int = 90,
+                        pca_res_key: str = 'pca',
+                        res_key: str = 'gaussian_smooth',
+                        n_jobs: int = -1,
+                        inplace: bool = True):
         """
         Smooth the express matrix by the algorithm of Gaussian smoothing [Shen22]_.
 
@@ -1057,7 +1057,7 @@ class StPipeline(object):
         assert smooth_threshold >= 20 and smooth_threshold <= 100, 'smooth_threshold must be between 20 and 100'
 
         pca_exp_matrix = self.result[pca_res_key].values
-        raw_exp_matrix = self.raw.exp_matrix.toarray() if self.raw.issparse() else self.raw.exp_matrix
+        raw_exp_matrix = self.raw.exp_matrix.toarray() if issparse(self.raw.exp_matrix) else self.raw.exp_matrix
 
         if pca_exp_matrix.shape[0] != raw_exp_matrix.shape[0]:
             raise Exception(
@@ -1158,10 +1158,10 @@ class StPipeline(object):
 
     @logit
     def annotation(
-        self,
-        annotation_information: Union[list, dict],
-        cluster_res_key: str = 'cluster',
-        res_key: str = 'annotation'
+            self,
+            annotation_information: Union[list, dict],
+            cluster_res_key: str = 'cluster',
+            res_key: str = 'annotation'
     ):
         """
         Set annotation to clusters.
@@ -1176,9 +1176,9 @@ class StPipeline(object):
         assert cluster_res_key in self.result, f'{cluster_res_key} is not in the result, please check and run the cluster func.'
 
         df = copy.deepcopy(self.result[cluster_res_key])
-        if isinstance(annotation_information,list):
+        if isinstance(annotation_information, list):
             df.group.cat.categories = annotation_information
-        elif isinstance(annotation_information,dict):
+        elif isinstance(annotation_information, dict):
             new_annotation_list = []
             for i in df.group.cat.categories:
                 new_annotation_list.append(annotation_information[i])
@@ -1198,15 +1198,15 @@ class StPipeline(object):
 
     @logit
     def filter_marker_genes(
-        self,
-        marker_genes_res_key='marker_genes',
-        min_fold_change=1,
-        min_in_group_fraction=0.25,
-        max_out_group_fraction=0.5,
-        compare_abs=False,
-        remove_mismatch=True,
-        res_key='marker_genes_filtered',
-        output=None
+            self,
+            marker_genes_res_key='marker_genes',
+            min_fold_change=1,
+            min_in_group_fraction=0.25,
+            max_out_group_fraction=0.5,
+            compare_abs=False,
+            remove_mismatch=True,
+            res_key='marker_genes_filtered',
+            output=None
     ):
         """Filters out genes based on log fold change and fraction of genes expressing the gene within and outside each group.
 
@@ -1222,14 +1222,16 @@ class StPipeline(object):
         :param output: path of output_file(.csv). If None, do not generate the output file.
         """
         if marker_genes_res_key not in self.result:
-            raise Exception(f'{marker_genes_res_key} is not in the result, please check and run the find_marker_genes func.')
+            raise Exception(
+                f'{marker_genes_res_key} is not in the result, please check and run the find_marker_genes func.')
 
         self.result[res_key] = {}
         self.result[res_key]['parameters'] = {}
         self.result[res_key]['parameters']['marker_genes_res_key'] = marker_genes_res_key
-        self.result[res_key]['parameters']['cluster_res_key'] = self.result[marker_genes_res_key]['parameters']['cluster_res_key']
+        self.result[res_key]['parameters']['cluster_res_key'] = self.result[marker_genes_res_key]['parameters'][
+            'cluster_res_key']
         self.result[res_key]['parameters']['method'] = self.result[marker_genes_res_key]['parameters']['method']
-        pct= self.result[marker_genes_res_key]['pct']
+        pct = self.result[marker_genes_res_key]['pct']
         pct_rest = self.result[marker_genes_res_key]['pct_rest']
         for key, res in self.result[marker_genes_res_key].items():
             if '.vs.' not in key:
@@ -1239,9 +1241,12 @@ class StPipeline(object):
             if not compare_abs:
                 gene_set_1 = res[res['log2fc'] < min_fold_change]['genes'].values if min_fold_change is not None else []
             else:
-                gene_set_1 = res[res['log2fc'].abs() < min_fold_change]['genes'].values if min_fold_change is not None else []
-            gene_set_2 = pct[pct[group_name] < min_in_group_fraction]['genes'].values if min_in_group_fraction is not None else []
-            gene_set_3 = pct_rest[pct_rest[group_name] > max_out_group_fraction]['genes'].values if max_out_group_fraction is not None else []
+                gene_set_1 = res[res['log2fc'].abs() < min_fold_change][
+                    'genes'].values if min_fold_change is not None else []
+            gene_set_2 = pct[pct[group_name] < min_in_group_fraction][
+                'genes'].values if min_in_group_fraction is not None else []
+            gene_set_3 = pct_rest[pct_rest[group_name] > max_out_group_fraction][
+                'genes'].values if max_out_group_fraction is not None else []
             flag = res['genes'].isin(np.union1d(gene_set_1, np.union1d(gene_set_2, gene_set_3)))
             if remove_mismatch:
                 new_res = new_res[flag == False]
@@ -1262,11 +1267,9 @@ class StPipeline(object):
                 axis=1
             )
             dat.to_csv(output)
-        
+
         key = 'marker_genes'
         self.reset_key_record(key, res_key)
-
-
 
     # def scenic(self, tfs, motif, database_dir, res_key='scenic', use_raw=True, outdir=None,):
     #     """
@@ -1289,189 +1292,6 @@ class StPipeline(object):
     #     res = {"modules": modules, "regulons": regulons, "adjacencies": adjacencies, "motifs": motifs,
     #            "auc_mtx":auc_mtx, "regulons_df": regulons_df}
     #     self.result[res_key] = res
-
-
-class AnnBasedResult(dict):
-    CLUSTER_NAMES = {'leiden', 'louvain', 'phenograph', 'annotation'}
-    CONNECTIVITY_NAMES = {'neighbors'}
-    REDUCE_NAMES = {'umap', 'pca', 'tsne'}
-    HVG_NAMES = {'highly_variable_genes', 'hvg'}
-    MARKER_GENES_NAMES = {'marker_genes', 'rank_genes_groups'}
-
-    RENAME_DICT = {'highly_variable_genes': 'hvg', 'marker_genes': 'rank_genes_groups'}
-
-    CLUSTER, CONNECTIVITY, REDUCE, HVG, MARKER_GENES = 0, 1, 2, 3, 4
-    TYPE_NAMES_DICT = {
-        CLUSTER: CLUSTER_NAMES,
-        CONNECTIVITY: CONNECTIVITY_NAMES,
-        REDUCE: REDUCE_NAMES,
-        HVG: HVG_NAMES,
-        MARKER_GENES: MARKER_GENES_NAMES
-    }
-
-    def __init__(self, based_ann_data: AnnData):
-        super().__init__()
-        self.__based_ann_data = based_ann_data
-
-    def __contains__(self, item):
-        if item in self.keys():
-            return True
-        elif item in AnnBasedResult.CLUSTER_NAMES:
-            return item in self.__based_ann_data.obs
-        elif item in AnnBasedResult.CONNECTIVITY_NAMES:
-            return item in self.__based_ann_data.uns
-        elif item in AnnBasedResult.REDUCE_NAMES:
-            return f'X_{item}' in self.__based_ann_data.obsm
-        elif item in AnnBasedResult.HVG_NAMES:
-            if item in self.__based_ann_data.uns:
-                return True
-            elif AnnBasedResult.RENAME_DICT.get(item, None) in self.__based_ann_data.uns:
-                return True
-        elif item in AnnBasedResult.MARKER_GENES_NAMES:
-            if item in self.__based_ann_data.uns:
-                return True
-            elif AnnBasedResult.RENAME_DICT.get(item, None) in self.__based_ann_data.uns:
-                return True
-        elif item.startswith('gene_exp_'):
-            if item in self.__based_ann_data.uns:
-                return True
-
-        obsm_obj = self.__based_ann_data.obsm.get(f'X_{item}', None)
-        if obsm_obj is not None:
-            return True
-        obsm_obj = self.__based_ann_data.obsm.get(f'{item}', None)
-        if obsm_obj is not None:
-            return True
-        obs_obj = self.__based_ann_data.obs.get(item, None)
-        if obs_obj is not None:
-            return True
-        uns_obj = self.__based_ann_data.uns.get(item, None)
-        if uns_obj and 'params' in uns_obj and 'connectivities_key' in uns_obj['params'] and 'distances_key' in uns_obj[
-            'params']:
-            return True
-        return False
-
-    def __getitem__(self, name):
-        if name in AnnBasedResult.CLUSTER_NAMES:
-            return pd.DataFrame(self.__based_ann_data.obs[name].values, columns=['group'], index=self.__based_ann_data.obs_names)
-        elif name in AnnBasedResult.CONNECTIVITY_NAMES:
-            return {
-                'neighbor': None,  # TODO really needed?
-                'connectivities': self.__based_ann_data.obsp['connectivities'],
-                'nn_dist': self.__based_ann_data.obsp['distances'],
-            }
-        elif name in AnnBasedResult.REDUCE_NAMES:
-            return pd.DataFrame(self.__based_ann_data.obsm[f'X_{name}'], copy=False)
-        elif name in AnnBasedResult.HVG_NAMES:
-            # TODO ignore `mean_bin`, really need?
-            return self.__based_ann_data.var.loc[:, ["means", "dispersions", "dispersions_norm", "highly_variable"]]
-        elif name in AnnBasedResult.MARKER_GENES_NAMES:
-            return self.__based_ann_data.uns[name]
-        elif name.startswith('gene_exp_'):
-            return self.__based_ann_data.uns[name]
-
-        obsm_obj = self.__based_ann_data.obsm.get(f'X_{name}', None)
-        if obsm_obj is not None:
-            return pd.DataFrame(obsm_obj)
-        obsm_obj = self.__based_ann_data.obsm.get(f'{name}', None)
-        if obsm_obj is not None:
-            return pd.DataFrame(obsm_obj)
-        obs_obj = self.__based_ann_data.obs.get(name, None)
-        if obs_obj is not None:
-            return pd.DataFrame(self.__based_ann_data.obs[name].values, columns=['group'], index=self.__based_ann_data.obs_names)
-        uns_obj = self.__based_ann_data.uns.get(name, None)
-        if uns_obj and 'params' in uns_obj and 'connectivities_key' in uns_obj['params'] and 'distances_key' in uns_obj[
-            'params']:
-            return {
-                'neighbor': None,  # TODO really needed?
-                'connectivities': self.__based_ann_data.obsp[uns_obj['params']['connectivities_key']],
-                'nn_dist': self.__based_ann_data.obsp[uns_obj['params']['distances_key']],
-            }
-        raise Exception
-
-    def _real_set_item(self, type, key, value):
-        if type == AnnBasedResult.CLUSTER:
-            self._set_cluster_res(key, value)
-        elif type == AnnBasedResult.CONNECTIVITY:
-            self._set_connectivities_res(key, value)
-        elif type == AnnBasedResult.REDUCE:
-            self._set_reduce_res(key, value)
-        elif type == AnnBasedResult.HVG_NAMES:
-            self._set_hvg_res(key, value)
-        elif type == AnnBasedResult.MARKER_GENES:
-            self._set_marker_genes_res(key, value)
-        else:
-            return False
-        return True
-
-    def __setitem__(self, key, value):
-        for name_type, name_dict in AnnBasedResult.TYPE_NAMES_DICT.items():
-            if key in name_dict and self._real_set_item(name_type, key, value):
-                return
-
-        for name_type, name_dict in AnnBasedResult.TYPE_NAMES_DICT.items():
-            for like_name in name_dict:
-                if not key.startswith('gene_exp_') and like_name in key and self._real_set_item(name_type, key, value):
-                    return
-
-        if type(value) is pd.DataFrame:
-            if 'bins' in value.columns.values and 'group' in value.columns.values:
-                self._set_cluster_res(key, value)
-                return
-            elif not {"means", "dispersions", "dispersions_norm", "highly_variable"} - set(value.columns.values):
-                self._set_hvg_res(key, value)
-                return
-            elif len(value.shape) == 2 and value.shape[0] > 399 and value.shape[1] > 399:
-                # TODO this is hard-code method to guess it's a reduce ndarray
-                self._set_reduce_res(key, value)
-                return
-            elif key.startswith('gene_exp_'):
-                self.__based_ann_data.uns[key] = value
-                return
-        elif type(value) is dict:
-            if not {'connectivities', 'nn_dist'} - set(value.keys()):
-                self._set_connectivities_res(key, value)
-                return
-
-        raise KeyError
-
-    def _set_cluster_res(self, key, value):
-        assert type(value) is pd.DataFrame and 'group' in value.columns.values, f"this is not cluster res"
-        # FIXME ignore set params to uns, this may cause dirty data in uns, if it exist at the first time
-        self.__based_ann_data.uns[key] = {'params': {}, 'source': 'stereopy', 'method': key}
-        self.__based_ann_data.obs[key] = value['group'].values
-
-    def _set_connectivities_res(self, key, value):
-        assert type(value) is dict and not {'connectivities', 'nn_dist'} - set(value.keys()), \
-            f'not enough key to set connectivities'
-        self.__based_ann_data.uns[key] = {
-            'params': {'method': 'umap'},
-            'source': 'stereopy',
-            'method': 'neighbors'
-        }
-        if key == 'neighbors':
-            self.__based_ann_data.uns[key]['params']['connectivities_key'] = 'connectivities'
-            self.__based_ann_data.uns[key]['params']['distances_key'] = 'distances'
-            self.__based_ann_data.obsp['connectivities'] = value['connectivities']
-            self.__based_ann_data.obsp['distances'] = value['nn_dist']
-        else:
-            self.__based_ann_data.uns[key]['params']['connectivities_key'] = f'{key}_connectivities'
-            self.__based_ann_data.uns[key]['params']['distances_key'] = f'{key}_distances'
-            self.__based_ann_data.obsp[f'{key}_connectivities'] = value['connectivities']
-            self.__based_ann_data.obsp[f'{key}_distances'] = value['nn_dist']
-
-    def _set_reduce_res(self, key, value):
-        assert type(value) is pd.DataFrame, f'reduce result must be pandas.DataFrame'
-        self.__based_ann_data.uns[key] = {'params': {}, 'source': 'stereopy', 'method': key}
-        self.__based_ann_data.obsm[f'X_{key}'] = value.values
-
-    def _set_hvg_res(self, key, value):
-        self.__based_ann_data.uns[key] = {'params': {}, 'source': 'stereopy', 'method': key}
-        self.__based_ann_data.var.loc[:, ["means", "dispersions", "dispersions_norm", "highly_variable"]] = \
-            value.loc[:, ["means", "dispersions", "dispersions_norm", "highly_variable"]].values
-
-    def _set_marker_genes_res(self, key, value):
-        self.__based_ann_data.uns[key] = value
 
 
 class AnnBasedStPipeline(StPipeline):

@@ -115,7 +115,7 @@ def merge(data1: StereoExpData = None,
         new_data.sn[str(i)] = data.sn
         if i == 0:
             new_data.exp_matrix = data.exp_matrix.copy()
-            new_data.cells = Cell(cell_name=cell_names, cell_border=data.cells.cell_boder, batch=data.cells.batch)
+            new_data.cells = Cell(cell_name=cell_names, cell_border=data.cells.cell_border, batch=data.cells.batch)
             new_data.genes = Gene(gene_name=data.gene_names)
             new_data.position = data.position
             new_data.bin_type = data.bin_type
@@ -124,10 +124,9 @@ def merge(data1: StereoExpData = None,
             new_data.offset_y = data.offset_y
             new_data.attr = data.attr
         else:
-            new_data.cells.cell_name = np.concatenate([new_data.cells.cell_name, cell_names])
-            new_data.cells.batch = np.concatenate([new_data.cells.batch, data.cells.batch])
+            new_data.cells._obs = pd.concat([new_data.cells._obs, data.cells._obs])
             if new_data.cell_borders is not None and data.cell_borders is not None:
-                new_data.cells.cell_boder = np.concatenate([new_data.cells.cell_boder, data.cells.cell_boder])
+                new_data.cells.cell_border = np.concatenate([new_data.cells.cell_border, data.cells.cell_border])
             new_data.position = np.concatenate([new_data.position, data.position])
             new_data.genes.gene_name, ind1, ind2 = np.intersect1d(new_data.genes.gene_name, data.genes.gene_name, return_indices=True)
             new_data.exp_matrix = sp.vstack([new_data.exp_matrix[:, ind1], data.exp_matrix[:, ind2]])
