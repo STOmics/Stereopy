@@ -153,14 +153,14 @@ class StPipeline(object):
         cal_qc(self.data)
 
     @logit
-    def filter_cells(self, 
-                     min_gene: Optional[int]=None, 
-                     max_gene: Optional[int]=None, 
-                     min_n_genes_by_counts: Optional[int]=None, 
-                     max_n_genes_by_counts: Optional[int]=None,
-                     pct_counts_mt: Optional[float]=None, 
-                     cell_list: Optional[list]=None, 
-                     inplace: bool=True):
+    def filter_cells(self,
+                     min_gene: Optional[int] = None,
+                     max_gene: Optional[int] = None,
+                     min_n_genes_by_counts: Optional[int] = None,
+                     max_n_genes_by_counts: Optional[int] = None,
+                     pct_counts_mt: Optional[float] = None,
+                     cell_list: Optional[list] = None,
+                     inplace: bool = True):
         """
         Filter cells based on counts or the numbers of genes expressed.
 
@@ -192,12 +192,12 @@ class StPipeline(object):
         return data
 
     @logit
-    def filter_genes(self, 
-                     min_cell: Optional[int]=None, 
-                     max_cell: Optional[int]=None, 
-                     gene_list: Optional[list]=None, 
-					 mean_umi_gt: float = None,
-                     inplace: bool=True):
+    def filter_genes(self,
+                     min_cell: Optional[int] = None,
+                     max_cell: Optional[int] = None,
+                     gene_list: Optional[list] = None,
+                     mean_umi_gt: float = None,
+                     inplace: bool = True):
         """
         Filter genes based on the numbers of cells or counts.
 
@@ -223,12 +223,12 @@ class StPipeline(object):
         return data
 
     @logit
-    def filter_coordinates(self, 
-                           min_x: int=None, 
-                           max_x: int=None, 
-                           min_y: int=None, 
-                           max_y: int=None, 
-                           inplace: bool=True):
+    def filter_coordinates(self,
+                           min_x: int = None,
+                           max_x: int = None,
+                           min_y: int = None,
+                           max_y: int = None,
+                           inplace: bool = True):
         """
         Filter cells based on coordinate information.
 
@@ -255,9 +255,9 @@ class StPipeline(object):
         return data
 
     @logit
-    def log1p(self, 
-              inplace: bool=True, 
-              res_key: str='log1p'):
+    def log1p(self,
+              inplace: bool = True,
+              res_key: str = 'log1p'):
         """
         Transform the express matrix logarithmically.
 
@@ -279,10 +279,10 @@ class StPipeline(object):
             self.result[res_key] = np.log1p(self.data.exp_matrix)
 
     @logit
-    def normalize_total(self, 
-                        target_sum: int=10000, 
-                        inplace: bool=True, 
-                        res_key: str='normalize_total'):
+    def normalize_total(self,
+                        target_sum: int = 10000,
+                        inplace: bool = True,
+                        res_key: str = 'normalize_total'):
         """
         Normalize total counts over all genes per cell such that each cell has the same
         total count after normalization.
@@ -309,11 +309,11 @@ class StPipeline(object):
             self.result[res_key] = normalize_total(self.data.exp_matrix, target_sum=target_sum)
 
     @logit
-    def scale(self, 
-              zero_center: bool=True, 
-              max_value: Optional[float]=None, 
-              inplace: bool=True, 
-              res_key: str='scale'):
+    def scale(self,
+              zero_center: bool = True,
+              max_value: Optional[float] = None,
+              inplace: bool = True,
+              res_key: str = 'scale'):
         """
         Scale express matrix to unit variance and zero mean.
 
@@ -378,14 +378,14 @@ class StPipeline(object):
     @logit
     def sctransform(
             self,
-            n_cells: int=5000,
-            n_genes: int=2000,
-            filter_hvgs: bool=True,
-            var_features_n: int=3000,
-            inplace: bool=True,
-            res_key: str='sctransform',
-            exp_matrix_key: str="scale.data",
-            seed_use: int=1448145,
+            n_cells: int = 5000,
+            n_genes: int = 2000,
+            filter_hvgs: bool = True,
+            var_features_n: int = 3000,
+            inplace: bool = True,
+            res_key: str = 'sctransform',
+            exp_matrix_key: str = "scale.data",
+            seed_use: int = 1448145,
             **kwargs
     ):
         """
@@ -431,7 +431,7 @@ class StPipeline(object):
     def highly_variable_genes(
             self,
             groups: Optional[str] = None,
-            method: Literal['seurat', 'cell_ranger','seurat_v3'] = 'seurat',
+            method: Literal['seurat', 'cell_ranger', 'seurat_v3'] = 'seurat',
             n_top_genes: Optional[int] = 2000,
             min_disp: Optional[float] = 0.5,
             max_disp: Optional[float] = np.inf,
@@ -515,12 +515,12 @@ class StPipeline(object):
         return data
 
     @logit
-    def pca(self, 
-            use_highly_genes: bool=False, 
-            n_pcs: int=None, 
-            svd_solver: Literal['auto', 'full','arpack','randomized']='auto', 
-            hvg_res_key: Optional[str]='highly_variable_genes', 
-            res_key: str='pca'):
+    def pca(self,
+            use_highly_genes: bool = False,
+            n_pcs: int = None,
+            svd_solver: Literal['auto', 'full', 'arpack', 'randomized'] = 'auto',
+            hvg_res_key: Optional[str] = 'highly_variable_genes',
+            res_key: str = 'pca'):
         """
         Principal component analysis.
 
@@ -569,9 +569,9 @@ class StPipeline(object):
     @logit
     def umap(
             self,
-            pca_res_key: str='pca',
-            neighbors_res_key: str='neighbors',
-            res_key: str='umap',
+            pca_res_key: str = 'pca',
+            neighbors_res_key: str = 'neighbors',
+            res_key: str = 'umap',
             min_dist: float = 0.5,
             spread: float = 1.0,
             n_components: int = 2,
@@ -626,15 +626,15 @@ class StPipeline(object):
         self.reset_key_record(key, res_key)
 
     @logit
-    def neighbors(self, 
-                  pca_res_key: str='pca', 
-                  method: Literal['umap', 'gauss']='umap', 
-                  metric: str='euclidean', 
-                  n_pcs: int=None, 
-                  n_neighbors: int=10, 
-                  knn: bool=True, 
-                  n_jobs: int=10,
-                  res_key: str='neighbors'):
+    def neighbors(self,
+                  pca_res_key: str = 'pca',
+                  method: Literal['umap', 'gauss'] = 'umap',
+                  metric: str = 'euclidean',
+                  n_pcs: int = None,
+                  n_neighbors: int = 10,
+                  knn: bool = True,
+                  n_jobs: int = 10,
+                  res_key: str = 'neighbors'):
         """
         Compute a spatial neighborhood graph over all cells.
 
@@ -704,10 +704,10 @@ class StPipeline(object):
         return neighbor, connectivities, nn_dist
 
     @logit
-    def spatial_neighbors(self, 
-                          neighbors_res_key: str='neighbors', 
-                          n_neighbors: int=6, 
-                          res_key: str='spatial_neighbors'):
+    def spatial_neighbors(self,
+                          neighbors_res_key: str = 'neighbors',
+                          n_neighbors: int = 6,
+                          res_key: str = 'spatial_neighbors'):
         """
         Create a graph from spatial coordinates using Squidpy.
 
@@ -731,8 +731,8 @@ class StPipeline(object):
 
     @logit
     def leiden(self,
-               neighbors_res_key: str='neighbors',
-               res_key: str='leiden',
+               neighbors_res_key: str = 'neighbors',
+               res_key: str = 'leiden',
                directed: bool = True,
                resolution: float = 1,
                use_weights: bool = True,
@@ -779,8 +779,8 @@ class StPipeline(object):
 
     @logit
     def louvain(self,
-                neighbors_res_key: str='neighbors',
-                res_key: str='louvain',
+                neighbors_res_key: str = 'neighbors',
+                res_key: str = 'louvain',
                 resolution: float = None,
                 random_state: int = 0,
                 flavor: Literal['vtraag', 'igraph', 'rapids'] = 'vtraag',
@@ -819,13 +819,12 @@ class StPipeline(object):
             self.result[gene_cluster_res_key] = gene_exp_cluster_res
             self.reset_key_record('gene_exp_cluster', gene_cluster_res_key)
 
-
     @logit
-    def phenograph(self, 
-                   phenograph_k: int=30, 
-                   pca_res_key: str='pca', 
-                   n_jobs: int=10, 
-                   res_key: str='phenograph'):
+    def phenograph(self,
+                   phenograph_k: int = 30,
+                   pca_res_key: str = 'pca',
+                   n_jobs: int = 10,
+                   res_key: str = 'phenograph'):
         """
         Cluster cells into subgroups by Phenograph.
 
@@ -979,17 +978,17 @@ class StPipeline(object):
         self.result[res_key] = res
 
     @logit
-    def spatial_hotspot(self, 
-                        use_highly_genes: bool=True, 
+    def spatial_hotspot(self,
+                        use_highly_genes: bool = True,
                         hvg_res_key: Optional[str] = 'highly_variable_genes',
-                        model: Literal['danb','bernoilli','normal','none']='normal', 
-                        n_neighbors: int=30,
-                        n_jobs: int=20, 
-                        fdr_threshold: float=0.05, 
-                        min_gene_threshold: int=10, 
-                        outdir: str=None, 
-                        res_key: str='spatial_hotspot',
-                        use_raw: bool=True, ):
+                        model: Literal['danb', 'bernoilli', 'normal', 'none'] = 'normal',
+                        n_neighbors: int = 30,
+                        n_jobs: int = 20,
+                        fdr_threshold: float = 0.05,
+                        min_gene_threshold: int = 10,
+                        outdir: str = None,
+                        res_key: str = 'spatial_hotspot',
+                        use_raw: bool = True, ):
         """
         Identify informative genes or gene modules.
 
