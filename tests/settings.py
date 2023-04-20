@@ -64,3 +64,23 @@ DEMO_MOTIF_URL = 'https://pan.genomics.cn/ucdisk/api/2.0/share/link/download?' \
 DEMO_GTF_URL = 'https://pan.genomics.cn/ucdisk/api/2.0/share/link/download?' \
                'shareEventId=share_2022928142945896_010df2aa7d344d97a610557de7bad81b&' \
                'nodeId=8a80804a837dc46f018382c713661b63&code='
+
+# SS200000135TL_D1.cellbin.gef
+DEMO_135_CELL_BIN_GEF_URL = "https://pan.genomics.cn/ucdisk/api/2.0/share/link/download?" \
+                            "shareEventId=share_2022928142945896_010df2aa7d344d97a610557de7bad81b&" \
+                            "nodeId=8a80804a837dc46f018382c2da791aec&code="
+
+# SS200000135TL_D1.cellbin.gem
+DEMO_135_CELL_BIN_GEM_URL = "https://pan.genomics.cn/ucdisk/api/2.0/share/link/download?" \
+                            "shareEventId=share_2022928142945896_010df2aa7d344d97a610557de7bad81b&" \
+                            "nodeId=8a808043837dc3ac0183d57a731b7331&code="
+
+# 20210426-T173-Z3-L-M019-01_regist_21635_18385_9064_13184.tif
+DEMO_CELL_SEGMENTATION_TIF_URL = "https://pan.genomics.cn/ucdisk/api/2.0/share/link/download?" \
+                                 "shareEventId=share_2022928142945896_010df2aa7d344d97a610557de7bad81b&" \
+                                 "nodeId=8a808043837dc3ac01840d148e2b1a31&code="
+
+# cell_segmetation_v3.0.onnx
+DEMO_CELL_SEGMENTATION_V3_MODEL_URL = "https://pan.genomics.cn/ucdisk/api/2.0/share/link/download?" \
+                                      "shareEventId=share_2022928142945896_010df2aa7d344d97a610557de7bad81b&" \
+                                      "nodeId=8a80804a86ed7f8501879db1c1b84496&code="
