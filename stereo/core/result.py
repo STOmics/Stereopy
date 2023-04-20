@@ -126,8 +126,7 @@ class Result(_BaseResult, dict):
             if not {'connectivities', 'nn_dist'} - set(value.keys()):
                 self._set_connectivities_res(key, value)
                 return
-        else:
-            dict.__setitem__(self, key, value)
+        dict.__setitem__(self, key, value)
 
     def _set_cluster_res(self, key, value):
         assert type(value) is pd.DataFrame and 'group' in value.columns.values, f"this is not cluster res"
