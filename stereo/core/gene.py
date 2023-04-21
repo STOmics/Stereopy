@@ -34,7 +34,7 @@ class Gene(object):
     def n_cells(self):
         if 'n_cells' not in self._var.columns:
             return None
-        return self._var['n_cells']
+        return self._var['n_cells'].to_numpy()
 
     @n_cells.setter
     def n_cells(self, values):
@@ -44,7 +44,7 @@ class Gene(object):
     def n_counts(self):
         if 'n_counts' not in self._var.columns:
             return None
-        return self._var['n_counts']
+        return self._var['n_counts'].to_numpy()
 
     @n_counts.setter
     def n_counts(self, values):
@@ -54,7 +54,7 @@ class Gene(object):
     def mean_umi(self):
         if 'mean_umi' not in self._var.columns:
             return None
-        return self._var['mean_umi']
+        return self._var['mean_umi'].to_numpy()
 
     @mean_umi.setter
     def mean_umi(self, values):
