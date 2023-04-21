@@ -145,7 +145,7 @@ class Cell(object):
         :param name: the name of property.
         :return: the property.
         """
-        return self._obs[name]
+        return self._obs[name].to_numpy()
 
     def to_df(self):
         """
