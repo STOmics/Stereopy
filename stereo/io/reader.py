@@ -1,6 +1,3 @@
-#!/usr/bin/env python3
-# coding: utf-8
-
 """
 @file: reader.py
 @description:
@@ -36,11 +33,12 @@ from stereo.log_manager import logger
 
 @ReadWriteUtils.check_file_exists
 def read_gem(
-    file_path: str, 
-    sep: str='\t', 
-    bin_type: str="bins", 
-    bin_size: int=100, 
-    is_sparse: bool=True):
+        file_path: str,
+        sep: str = '\t',
+        bin_type: str = "bins",
+        bin_size: int = 100,
+        is_sparse: bool = True
+):
     """
     Read the Stereo-seq GEM file, and generate the StereoExpData object.
 
@@ -139,7 +137,7 @@ def make_multipoint(x):
 
 
 def merge_bin_coor(coor: np.ndarray, coor_min: int, bin_size: int):
-    return np.floor((coor - coor_min) / bin_size).astype(np.int)
+    return np.floor((coor - coor_min) / bin_size).astype(np.int32)
 
 
 def get_bin_center(bin_coor: np.ndarray, coor_min: int, bin_size: int):
@@ -151,11 +149,13 @@ def to_interval(interval_string):
     interval = pd.Interval(float(left), float(right))
     return interval
 
+
 @ReadWriteUtils.check_file_exists
 def read_stereo_h5ad(
-    file_path: str, 
-    use_raw: bool=True, 
-    use_result: bool=True, ):
+        file_path: str,
+        use_raw: bool = True,
+        use_result: bool = True
+):
     """
     Read the H5ad file, and generate the StereoExpData object.
 
@@ -180,6 +180,7 @@ def read_stereo_h5ad(
     with h5py.File(data.file, mode='r') as f:
         data = _read_stereo_h5ad_from_group(f, data, use_raw, use_result)
     return data
+
 
 def _read_stereo_h5ad_from_group(f, data, use_raw, use_result):
     import ast
@@ -282,7 +283,7 @@ def _read_stereo_h5ad_from_group(f, data, use_raw, use_result):
                     data.tl.result[res_key] = {}
                     for cluster in clusters:
                         cluster_key = f'{cluster}@{res_key}@marker_genes'
-                        if cluster !=  'parameters':
+                        if cluster != 'parameters':
                             data.tl.result[res_key][cluster] = h5ad.read_group(f[cluster_key])
                         else:
                             parameters_df: pd.DataFrame = h5ad.read_group(f[cluster_key])
@@ -350,10 +351,12 @@ def read_h5ms(file_path, use_raw=True, use_result=True):
             _var_type=var_type, _relationship=relationship
         )
 
+
 @ReadWriteUtils.check_file_exists
 def read_seurat_h5ad(
-    file_path:str, 
-    use_raw: bool=False):
+        file_path: str,
+        use_raw: bool = False
+):
     """
     Read the H5ad file in Anndata format of Seurat, and generate the StereoExpData object.
 
@@ -392,12 +395,14 @@ def read_seurat_h5ad(
                 data.cells.cell_name = cells_df.index.values
                 data.cells.total_counts = cells_df['total_counts'] if 'total_counts' in cells_df.keys() else None
                 data.cells.pct_counts_mt = cells_df['pct_counts_mt'] if 'pct_counts_mt' in cells_df.keys() else None
-                data.cells.n_genes_by_counts = cells_df['n_genes_by_counts'] if 'n_genes_by_counts' in cells_df.keys() else None
+                data.cells.n_genes_by_counts = cells_df[
+                    'n_genes_by_counts'] if 'n_genes_by_counts' in cells_df.keys() else None
                 data.position = cells_df[['x', 'y']].to_numpy(dtype=np.uint32)
                 for cluster_key in f['obs']['__categories'].keys():
                     if cluster_key == 'orig.ident':
                         continue
-                    data.tl.result[cluster_key] = pd.DataFrame({'bins': data.cells.cell_name, 'group': cells_df[cluster_key].values})
+                    data.tl.result[cluster_key] = pd.DataFrame(
+                        {'bins': data.cells.cell_name, 'group': cells_df[cluster_key].values})
                     data.tl.key_record['cluster'].append(cluster_key)
             elif k == "var":
                 genes_df = h5ad.read_dataframe(f[k])
@@ -442,12 +447,13 @@ def read_seurat_h5ad(
                 data.tl.raw.genes.gene_name = data.genes.gene_name.copy()
     return data
 
+
 @ReadWriteUtils.check_file_exists
 def read_ann_h5ad(
-    file_path: str, 
-    spatial_key: Optional[str] = "spatial",
-	bin_type: str=None,
-	bin_size: int=None
+        file_path: str,
+        spatial_key: Optional[str] = "spatial",
+        bin_type: str = None,
+        bin_size: int = None
 ):
     """
     Read the H5ad file in Anndata format of Scanpy, and generate the StereoExpData object.
@@ -491,7 +497,8 @@ def read_ann_h5ad(
                 data.cells.cell_name = cells_df.index.values
                 data.cells.total_counts = cells_df['total_counts'] if 'total_counts' in cells_df.keys() else None
                 data.cells.pct_counts_mt = cells_df['pct_counts_mt'] if 'pct_counts_mt' in cells_df.keys() else None
-                data.cells.n_genes_by_counts = cells_df['n_genes_by_counts'] if 'n_genes_by_counts' in cells_df.keys() else None
+                data.cells.n_genes_by_counts = cells_df[
+                    'n_genes_by_counts'] if 'n_genes_by_counts' in cells_df.keys() else None
             elif k == "var":
                 genes_df = h5ad.read_dataframe(f[k])
                 data.genes.gene_name = genes_df.index.values
@@ -509,9 +516,10 @@ def read_ann_h5ad(
 
 
 def anndata_to_stereo(
-        andata: AnnData, 
-        use_raw: bool=False, 
-        spatial_key: Optional[str] = None):
+        andata: AnnData,
+        use_raw: bool = False,
+        spatial_key: Optional[str] = None
+):
     """
     Transform the Anndata object into StereoExpData format.
 
@@ -546,12 +554,13 @@ def anndata_to_stereo(
 
 
 def stereo_to_anndata(
-        data: StereoExpData, 
-        flavor: Literal['scanpy', 'seurat']='scanpy', 
-        sample_id: str="sample", 
-        reindex: bool=False, 
-        output: str=None, 
-        split_batches: bool=True):
+        data: StereoExpData,
+        flavor: Literal['scanpy', 'seurat'] = 'scanpy',
+        sample_id: str = "sample",
+        reindex: bool = False,
+        output: str = None,
+        split_batches: bool = True
+):
     """
     Transform the StereoExpData object into Anndata format.  
 
@@ -586,7 +595,8 @@ def stereo_to_anndata(
                 boutput = f"{name}-{d.sn}{ext}"
             else:
                 boutput = None
-            adata = stereo_to_anndata(d, flavor=flavor, sample_id=sample_id, reindex=reindex, output=boutput, split_batches=False)
+            adata = stereo_to_anndata(d, flavor=flavor, sample_id=sample_id, reindex=reindex, output=boutput,
+                                      split_batches=False)
             adata_list.append(adata)
         return adata_list
 
@@ -603,13 +613,9 @@ def stereo_to_anndata(
     genes = data.genes.to_df()
     genes.dropna(axis=1, how='all', inplace=True)
 
-    adata = AnnData(X=exp,
-                    dtype=np.float64,
-                    obs=cells,
-                    var=genes,
-                    # uns={'neighbors': {'connectivities_key': 'None','distance_key': 'None'}},
-                    )
-    adata.raw = AnnData(X=data.tl.raw.exp_matrix, dtype=np.float64, obs=data.tl.raw.cells.to_df(), var=data.tl.raw.genes.to_df())
+    adata = AnnData(X=exp, dtype=np.float64, obs=cells, var=genes)
+    adata.raw = AnnData(X=data.tl.raw.exp_matrix, dtype=np.float64, obs=data.tl.raw.cells.to_df(),
+                        var=data.tl.raw.genes.to_df())
 
     ##sample id
     logger.info(f"Adding {sample_id} in adata.obs['orig.ident'].")
@@ -684,7 +690,7 @@ def stereo_to_anndata(
                     logger.info(f"Adding data.tl.result['{res_key}'] into adata.uns['{key}@{res_key}']")
                     adata.uns[f"{key}@{res_key}"] = data.tl.result[res_key]
             elif key == 'regulatory_network_inference':
-                for res_key in data.tl.key_record[key]: 
+                for res_key in data.tl.key_record[key]:
                     logger.info(f"Adding data.tl.result['{res_key}'] in adata.uns['{res_key}'] .")
                     regulon_key = f'{res_key}_regulons'
                     adata.uns[regulon_key] = data.tl.result[res_key]['regulons']
@@ -716,7 +722,7 @@ def stereo_to_anndata(
             raw_exp = data.tl.raw.exp_matrix
             raw_genes = data.tl.raw.genes.to_df()
             raw_genes.dropna(axis=1, how='all', inplace=True)
-            raw_adata = AnnData(X=raw_exp, var=raw_genes, dtype=np.float64, )
+            raw_adata = AnnData(X=raw_exp, var=raw_genes, dtype=np.float64)
             adata.raw = raw_adata
 
     if reindex:
@@ -817,12 +823,13 @@ def stereo_to_anndata(
 #     return adata
 @ReadWriteUtils.check_file_exists
 def read_gef(
-    file_path: str, 
-    bin_type: str="bins", 
-    bin_size: int=100, 
-    is_sparse: bool=True, 
-    gene_list: Optional[list] = None,
-    region: Optional[list] = None):
+        file_path: str,
+        bin_type: str = "bins",
+        bin_size: int = 100,
+        is_sparse: bool = True,
+        gene_list: Optional[list] = None,
+        region: Optional[list] = None
+):
     """
     Read the GEF (.h5) file, and generate the StereoExpData object.
 
@@ -858,11 +865,12 @@ def read_gef(
                 gene_list = []
             if region is None:
                 region = []
-            uniq_cell, gene_names, count, cell_ind, gene_ind = gef.get_filtered_data(region,gene_list)
+            uniq_cell, gene_names, count, cell_ind, gene_ind = gef.get_filtered_data(region, gene_list)
             gene_num = gene_names.size
             cell_num = uniq_cell.size
             exp_matrix = csr_matrix((count, (cell_ind, gene_ind)), shape=(cell_num, gene_num), dtype=np.uint32)
-            position = np.array(list((zip(np.right_shift(uniq_cell, 32), np.bitwise_and(uniq_cell, 0xffffffff))))).astype('uint32')
+            position = np.array(
+                list((zip(np.right_shift(uniq_cell, 32), np.bitwise_and(uniq_cell, 0xffffffff))))).astype('uint32')
 
             data.position = position
             logger.info(f'the matrix has {cell_num} cells, and {gene_num} genes.')
@@ -877,7 +885,8 @@ def read_gef(
             cell_bin_gef = CellExpReader(file_path)
             data.position = cell_bin_gef.positions
             logger.info(f'the matrix has {cell_bin_gef.cell_num} cells, and {cell_bin_gef.gene_num} genes.')
-            exp_matrix = csr_matrix((cell_bin_gef.count, (cell_bin_gef.rows, cell_bin_gef.cols)), shape=(cell_bin_gef.cell_num, cell_bin_gef.gene_num), dtype=np.uint32)
+            exp_matrix = csr_matrix((cell_bin_gef.count, (cell_bin_gef.rows, cell_bin_gef.cols)),
+                                    shape=(cell_bin_gef.cell_num, cell_bin_gef.gene_num), dtype=np.uint32)
             data.cells = Cell(cell_name=cell_bin_gef.cells, cell_border=cell_borders)
             data.genes = Gene(gene_name=cell_bin_gef.genes)
             data.exp_matrix = exp_matrix if is_sparse else exp_matrix.toarray()
@@ -888,7 +897,7 @@ def read_gef(
         data = StereoExpData(file_path=file_path, bin_type=bin_type, bin_size=bin_size)
         data.offset_x, data.offset_y = gef.get_offset()
         gef_attr = gef.get_exp_attr()
-        data.attr={
+        data.attr = {
             'minX': gef_attr[0],
             'minY': gef_attr[1],
             'maxX': gef_attr[2],
@@ -907,7 +916,8 @@ def read_gef(
             gene_num = gene_names.size
             logger.info(f'the matrix has {cell_num} cells, and {gene_num} genes.')
             exp_matrix = csr_matrix((count, (cell_ind, gene_ind)), shape=(cell_num, gene_num), dtype=np.uint32)
-            position = np.array(list((zip(np.right_shift(uniq_cell, 32), np.bitwise_and(uniq_cell, 0xffffffff))))).astype('uint32')
+            position = np.array(
+                list((zip(np.right_shift(uniq_cell, 32), np.bitwise_and(uniq_cell, 0xffffffff))))).astype('uint32')
 
             data.position = position
             data.cells = Cell(cell_name=uniq_cell)
@@ -929,6 +939,7 @@ def read_gef(
     logger.info(f'read_gef end.')
 
     return data
+
 
 @ReadWriteUtils.check_file_exists
 def read_gef_info(file_path: str):
@@ -1024,7 +1035,6 @@ def read_gef_info(file_path: str):
         logger.info('Maximum expression: {0}'.format(info_dict['maxExpCount']))
 
     return info_dict
-
 
 # @ReadWriteUtils.check_file_exists
 # def read_h5ad(file_path: str, flavor: str = 'scanpy'):
