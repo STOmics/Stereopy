@@ -35,7 +35,7 @@ class Cell(object):
         return item in self._obs.columns or item in self._matrix or item in self._pairwise
 
     def __setattr__(self, key, value):
-        if key in {'_obs', '_matrix', '_pairwise', '_cell_border', 'cell_name', 'cell_boder'}:
+        if key in {'_obs', '_matrix', '_pairwise', '_cell_border', 'cell_name', 'cell_border'}:
             object.__setattr__(self, key, value)
         elif key == 'batch':
             self._obs[key] = self._set_batch(value)
