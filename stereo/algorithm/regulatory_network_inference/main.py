@@ -20,6 +20,7 @@ from typing import Union
 # third party modules
 import json
 import glob
+import hotspot
 import pandas as pd
 from arboreto.utils import load_tf_names
 from multiprocessing import cpu_count
@@ -54,7 +55,8 @@ class RegulatoryNetworkInference(AlgorithmBase):
              seed: int = None,
              cache: bool = False,
              cache_res_key: str = 'regulatory_network_inference',
-             save: bool=True):
+             save: bool=True,
+             method: str='grnboost'):
         """
         Enables researchers to infer transcription factors (TFs) and gene regulatory networks.
 
@@ -69,6 +71,7 @@ class RegulatoryNetworkInference(AlgorithmBase):
         :param seed: optional random seed for the regressors. Default None.
         :param cache: whether to use cache files. Need to provide adj.csv, motifs.csv and auc.csv.
         :param save: whether to save the result as a file.
+        :param method: the method to inference GRN, 'grnboost' or 'hotspot'.
         :return: Computation result of inference regulatory network is stored in self.result where the result key is 'regulatory_network_inference'.
         """
         matrix = self.stereo_exp_data.to_df()
@@ -93,7 +96,11 @@ class RegulatoryNetworkInference(AlgorithmBase):
         # 2. load the ranking database
         dbs = self.load_database(database)
         # 3. GRN inference
-        adjacencies = self.grn_inference(matrix, genes=target_genes, tf_names=tfsf, num_workers=num_workers, seed=seed, cache=cache, cache_res_key=cache_res_key)
+        if method == 'grnboost':
+            adjacencies = self.grn_inference(matrix, genes=target_genes, tf_names=tfsf, num_workers=num_workers, seed=seed, cache=cache, cache_res_key=cache_res_key)
+        elif method == 'hotspot':
+            adjacencies = self.hotspot_matrix(tf_list=tfsf, jobs=num_workers, cache=cache, cache_res_key=cache_res_key)
+        
         modules = self.get_modules(adjacencies, df)
         # 4. Regulons prediction aka cisTarget
         regulons = self.prune_modules(modules, dbs, motif_anno, num_workers, cache=cache, cache_res_key=cache_res_key)
@@ -114,6 +121,113 @@ class RegulatoryNetworkInference(AlgorithmBase):
             #self.regulons_to_json(regulons)
             self.to_loom(df, auc_matrix, regulons)
             #self.to_cytoscape(regulons, adjacencies, 'Zfp354c')
+
+    @staticmethod
+    def input_hotspot(data):
+        """
+        Extract needed information to construct a Hotspot instance from StereoExpData data
+        :param data:
+        :return: a dictionary
+        """
+        # 3. use dataframe and position array, StereoExpData as well
+        counts = data.to_df().T  # gene x cell
+        position = data.position
+        num_umi = counts.sum(axis=0)  # total counts for each cell
+        # Filter genes
+        gene_counts = (counts > 0).sum(axis=1)
+        valid_genes = gene_counts >= 50
+        counts = counts.loc[valid_genes]
+        return {'counts': counts, 'num_umi': num_umi, 'position': position}
+
+    def hotspot_matrix(self,
+                       model='bernoulli',
+                       distances: pd.DataFrame = None,
+                       tree=None,
+                       weighted_graph: bool = False,
+                       n_neighbors=30,
+                       fdr_threshold: float = 0.05,
+                       tf_list: list = None,
+                       jobs=None,
+                       cache: bool = True,
+                       cache_res_key: str = 'regulatory_network_inference',
+                       **kwargs) -> pd.DataFrame:
+        """
+        Inference of co-expression modules via hotspot method
+        :param data: Count matrix (shape is cells by genes)
+        :param model: Specifies the null model to use for gene expression.
+            Valid choices are:
+                * 'danb': Depth-Adjusted Negative Binomial
+                * 'bernoulli': Models probability of detection
+                * 'normal': Depth-Adjusted Normal
+                * 'none': Assumes data has been pre-standardized
+        :param distances: Distances encoding cell-cell similarities directly
+            Shape is (cells x cells)
+        :param tree: Root tree node.  Can be created using ete3.Tree
+        :param weighted_graph: Whether or not to create a weighted graph
+        :param n_neighbors: Neighborhood size
+        :param neighborhood_factor: Used when creating a weighted graph.  Sets how quickly weights decay
+            relative to the distances within the neighborhood.  The weight for
+            a cell with a distance d will decay as exp(-d/D) where D is the distance
+            to the `n_neighbors`/`neighborhood_factor`-th neighbor.
+        :param approx_neighbors: Use approximate nearest neighbors or exact scikit-learn neighbors. Only
+            when hotspot initialized with `latent`.
+        :param fdr_threshold: Correlation theshold at which to stop assigning genes to modules
+        :param tf_list: predefined TF names
+        :param jobs: Number of parallel jobs to run
+        :return: A dataframe, local correlation Z-scores between genes (shape is genes x genes)
+        """
+
+        if cache and ('adjacencies' in self.pipeline_res[cache_res_key].keys()):
+            logger.info(f'cached file {cache_res_key}["adjacencies"] found')
+            adjacencies = self.pipeline_res[cache_res_key]['adjacencies']
+            self.adjacencies = adjacencies
+            return adjacencies
+        else:
+            logger.info('cached file not found, running hotspot now')
+
+        global hs
+        data = self.stereo_exp_data
+        hotspot_data = RegulatoryNetworkInference.input_hotspot(data)
+        hs = hotspot.Hotspot.legacy_init(hotspot_data['counts'],
+                                            model=model,
+                                            latent=hotspot_data['position'],
+                                            umi_counts=hotspot_data['num_umi'],
+                                            distances=distances,
+                                            tree=tree)
+
+        hs.create_knn_graph(weighted_graph=weighted_graph, n_neighbors=n_neighbors)
+
+        # the most? time consuming step
+        logger.info('compute_autocorrelations()')
+        hs_results = hs.compute_autocorrelations(jobs=jobs)
+        logger.info('compute_autocorrelations() done')
+
+        hs_genes = hs_results.loc[hs_results.FDR < fdr_threshold].index  # Select genes
+        logger.info('compute_local_correlations')
+        # nope, THIS is the most time consuming step
+        local_correlations = hs.compute_local_correlations(hs_genes, jobs=jobs)  # jobs for parallelization
+        logger.info('Network Inference DONE')
+        logger.info(f'Hotspot: create {local_correlations.shape[0]} features')
+        logger.info(local_correlations.shape)
+
+        # subset by TFs
+        if tf_list:
+            if tf_list != 'all':
+                common_tf_list = list(set(tf_list).intersection(set(local_correlations.columns)))
+                logger.info(f'detected {len(common_tf_list)} predefined TF in data')
+                assert len(common_tf_list) > 0, 'predefined TFs not found in data'
+        else:
+            common_tf_list = local_correlations.columns
+
+        # reshape matrix
+        local_correlations['TF'] = local_correlations.columns
+        local_correlations = local_correlations.melt(id_vars=['TF'])
+        local_correlations.columns = ['TF', 'target', 'importance']
+        # remove if TF = target
+        local_correlations = local_correlations[local_correlations.TF != local_correlations.target]
+
+        self.adjacencies = local_correlations
+        return local_correlations
 
     @staticmethod
     def read_motif_file(fname):
@@ -173,14 +287,11 @@ class RegulatoryNetworkInference(AlgorithmBase):
         :param verbose: print info
         :param seed: optional random seed for the regressors. Default None.
         :param cache:
-        :param save: if save adjacencies result into a file
-        :param sn: sample name. Save adjacencies result in sn.adj.csv.
         :return:
 
         Example:
 
         """
-        #TODO remove cached
 
         if cache and ('adjacencies' in self.pipeline_res[cache_res_key].keys()):
             logger.info(f'cached file {cache_res_key}["adjacencies"] found')
