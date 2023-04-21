@@ -79,7 +79,7 @@ class Gene(object):
         """
         if not isinstance(name, np.ndarray):
             raise TypeError('gene name must be a np.ndarray object.')
-        self._var.reindex(name)
+        self._var = self._var.reindex(name)
 
     def sub_set(self, index):
         """
