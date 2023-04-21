@@ -5,7 +5,7 @@ Release Notes
 
 Version 0.11.0
 ---------------------
-0.11.0 : 2022-04-04
+0.11.0 : 2023-04-04
 ~~~~~~~~~~~~~~~~~~~~~~~~
 1. Addition of Cell-cell Communication analysis;
 2. Addition of Gene Regulatory Network analysis;

@@ -60,7 +60,7 @@ Latest Additions
 
 Version 0.11.0
 ~~~~~~~~~~~~~~
-0.11.0 : 2022-04-04
+0.11.0 : 2023-04-04
 
 1. Addition of Cell-cell Communication analysis;
 2. Addition of Gene Regulatory Network analysis;
@@ -78,7 +78,7 @@ Version 0.11.0
 
 Version 0.10.0
 ~~~~~~~~~~~~~~
-0.10.0 : 2022-02-22
+0.10.0 : 2023-02-22
 
 1. Supported installation on Windows.
 2. Addition of displaying basic information of StereoExpData object when simply typing it.
