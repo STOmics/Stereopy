@@ -31,7 +31,8 @@ class TestRegulatoryNetworkInference(unittest.TestCase):
         self.test_data.plt.auc_heatmap(network_res_key='regulatory_network_inference', width=28, height=28,
                                        out_path=TEST_IMAGE_PATH + "auc_heatmap.png")
 
-        # test spatial_scatter_by_regulon() method.  This method requires the use of the `test_data` object.  It also requires the use of the `test_data` object
+        # test spatial_scatter_by_regulon() method.  This method requires the use of the `test_data` object.
+        # It also requires the use of the `test_data` object
         # self.test_data.plt.spatial_scatter_by_regulon(reg_name='Thra(+)', network_res_key='regulatory_network_inference', dot_size=2, out_path=TEST_IMAGE_PATH + "spatial_scatter_by_regulon.png")
 
         # normalization
