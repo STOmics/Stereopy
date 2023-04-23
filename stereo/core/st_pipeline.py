@@ -766,8 +766,9 @@ class StPipeline(object):
             from ..algorithm.leiden import leiden as le
             clusters = le(neighbor=neighbor, adjacency=connectivities, directed=directed, resolution=resolution,
                           use_weights=use_weights, random_state=random_state, n_iterations=n_iterations)
-        df = pd.DataFrame({'bins': self.data.cell_names, 'group': clusters})
-        self.result[res_key] = df
+        self.data.cells[res_key] = clusters
+        # df = pd.DataFrame({'bins': self.data.cell_names, 'group': clusters})
+        # self.result[res_key] = df
         key = 'cluster'
         self.reset_key_record(key, res_key)
         gene_cluster_res_key = f'gene_exp_{res_key}'
@@ -809,8 +810,9 @@ class StPipeline(object):
         from ..utils.pipeline_utils import cell_cluster_to_gene_exp_cluster
         clusters = lo(neighbor=neighbor, resolution=resolution, random_state=random_state,
                       adjacency=connectivities, flavor=flavor, directed=directed, use_weights=use_weights)
-        df = pd.DataFrame({'bins': self.data.cell_names, 'group': clusters})
-        self.result[res_key] = df
+        self.data.cells[res_key] = clusters
+        # df = pd.DataFrame({'bins': self.data.cell_names, 'group': clusters})
+        # self.result[res_key] = df
         key = 'cluster'
         self.reset_key_record(key, res_key)
         gene_cluster_res_key = f'gene_exp_{res_key}'
@@ -849,8 +851,9 @@ class StPipeline(object):
             categories=natsorted(map(str, np.unique(communities))),
         )
         # clusters = communities.astype(str)
-        df = pd.DataFrame({'bins': self.data.cell_names, 'group': clusters})
-        self.result[res_key] = df
+        self.data.cells[res_key] = clusters
+        # df = pd.DataFrame({'bins': self.data.cell_names, 'group': clusters})
+        # self.result[res_key] = df
         key = 'cluster'
         self.reset_key_record(key, res_key)
         gene_cluster_res_key = f'gene_exp_{res_key}'
