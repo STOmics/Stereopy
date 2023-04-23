@@ -931,32 +931,33 @@ class StPipeline(object):
         key = 'marker_genes'
         self.reset_key_record(key, res_key)
 
-    @logit
-    def spatial_lag(self,
-                    cluster_res_key,
-                    genes=None,
-                    random_drop=True,
-                    drop_dummy=None,
-                    n_neighbors=8,
-                    res_key='spatial_lag'):
-        """
-        spatial lag model, calculate cell-bin's lag coefficient, lag z-stat and p-value.
-
-        :param cluster_res_key: the key of cluster to getting the result for group info.
-        :param genes: specify genes, default using all genes.
-        :param random_drop: randomly drop bin-cells if True.
-        :param drop_dummy: drop specify clusters.
-        :param n_neighbors: number of neighbors.
-        :param res_key: the key for getting the result from the self.result.
-        :return:
-        """
-        from ..tools.spatial_lag import SpatialLag
-        if cluster_res_key not in self.result:
-            raise Exception(f'{cluster_res_key} is not in the result, please check and run the func of cluster.')
-        tool = SpatialLag(data=self.data, groups=self.result[cluster_res_key], genes=genes, random_drop=random_drop,
-                          drop_dummy=drop_dummy, n_neighbors=n_neighbors)
-        tool.fit()
-        self.result[res_key] = tool.result
+    # TODO old method can not use
+    # @logit
+    # def spatial_lag(self,
+    #                 cluster_res_key,
+    #                 genes=None,
+    #                 random_drop=True,
+    #                 drop_dummy=None,
+    #                 n_neighbors=8,
+    #                 res_key='spatial_lag'):
+    #     """
+    #     spatial lag model, calculate cell-bin's lag coefficient, lag z-stat and p-value.
+    #
+    #     :param cluster_res_key: the key of cluster to getting the result for group info.
+    #     :param genes: specify genes, default using all genes.
+    #     :param random_drop: randomly drop bin-cells if True.
+    #     :param drop_dummy: drop specify clusters.
+    #     :param n_neighbors: number of neighbors.
+    #     :param res_key: the key for getting the result from the self.result.
+    #     :return:
+    #     """
+    #     from ..tools.spatial_lag import SpatialLag
+    #     if cluster_res_key not in self.result:
+    #         raise Exception(f'{cluster_res_key} is not in the result, please check and run the func of cluster.')
+    #     tool = SpatialLag(data=self.data, groups=self.result[cluster_res_key], genes=genes, random_drop=random_drop,
+    #                       drop_dummy=drop_dummy, n_neighbors=n_neighbors)
+    #     tool.fit()
+    #     self.result[res_key] = tool.result
 
     @logit
     def spatial_pattern_score(self, use_raw=True, res_key='spatial_pattern'):
