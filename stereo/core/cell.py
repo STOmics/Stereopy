@@ -42,6 +42,12 @@ class Cell(object):
         else:
             self._obs[key] = value
 
+    def __setitem__(self, key, value):
+        self._obs[key] = value
+
+    def __getitem__(self, key):
+        return self._obs[key]
+
     @property
     def total_counts(self):
         if 'total_counts' not in self._obs.columns:
