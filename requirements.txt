@@ -48,10 +48,7 @@ pillow
 #opencv-python
 scikit-image
 tifffile
-# torch
 opencv-python
-# tensorflow
-# tensorflow-io-gcs-filesystem
 protobuf
 hotspotsc
 distributed
