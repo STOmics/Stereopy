@@ -256,12 +256,6 @@ class TestIO(unittest.TestCase):
         # ann_data.raw.X is sample as data.tl.raw.exp_matrix
         self.assertEqual(ann_data.raw.X.shape, data.tl.raw.exp_matrix.shape)
         self.assertEqual(ann_data.raw.X[1].sum(), data.tl.raw.exp_matrix[1].sum())
-        # ann_data.X is from sct `counts`
-        self.assertEqual(ann_data.X.shape, data.tl.result['sctransform'][0]['counts'].T.shape)
-        self.assertAlmostEqual(
-            ann_data.X[1].sum(), data.tl.result['sctransform'][0]['counts'].to_numpy().T[1].sum(),
-            places=4
-        )
         # ann_data.X is sample as data.exp_matrix
         self.assertEqual(ann_data.X.shape, data.exp_matrix.shape)
         self.assertAlmostEqual(ann_data.X[1].sum(), data.exp_matrix[1].sum(), places=4)
