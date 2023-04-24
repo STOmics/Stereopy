@@ -136,6 +136,7 @@ class Result(_BaseResult, dict):
             category=FutureWarning
         )
         self.__stereo_exp_data.cells._obs[key] = value['group'].values
+        self.CLUSTER_NAMES.add(key)
 
     def _set_connectivities_res(self, key, value):
         assert type(value) is dict and not {'connectivities', 'nn_dist'} - set(value.keys()), \
@@ -146,6 +147,7 @@ class Result(_BaseResult, dict):
             category=FutureWarning
         )
         self.__stereo_exp_data.cells._pairwise[key] = value
+        self.CONNECTIVITY_NAMES.add(key)
 
     def _set_reduce_res(self, key, value):
         assert type(value) is pd.DataFrame, f'reduce result must be pandas.DataFrame'
@@ -155,6 +157,7 @@ class Result(_BaseResult, dict):
             category=FutureWarning
         )
         self.__stereo_exp_data.cells._matrix[key] = value
+        self.REDUCE_NAMES.add(key)
 
     def _set_hvg_res(self, key, value):
         dict.__setitem__(self, key, value)
