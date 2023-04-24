@@ -24,7 +24,6 @@ jobs:
         run: |
           conda init bash
           source ~/.bashrc
-          conda env remove -n test_requirement
           conda activate test_requirement
 
           pip install -r requirements.txt -q
@@ -46,3 +45,8 @@ jobs:
       - name: Test with pytest
         run: |
           ~/anaconda3/envs/test_requirement/bin/python -m pytest -m "not gpu and not heavy" --durations=0
+      - name: Remove conda env
+        run: |
+          conda init bash
+          source ~/.bashrc
+          conda env remove -n test_requirement
