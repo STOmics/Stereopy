@@ -79,30 +79,25 @@ def cluster_bins_to_cellbins(
     if bins_cluster_res_key not in bins_data.tl.result:
         raise ValueError(f"the key {bins_cluster_res_key} is not in the bins' result.")
 
-    @nb.njit(cache=True)
+    @nb.njit(cache=True, nogil=True, parallel=True)
     def __locate_cellbins_to_bins(bins_position, bin_size, bins_groups_idx, cellbins_names, cellbins_position):
         cells_count = cellbins_position.shape[0]
         cells_groups_idx = np.empty((cells_count, ), dtype=bins_groups_idx.dtype)
-        cells_filtered = np.empty_like(cellbins_names)
-        cells_located = np.empty_like(cellbins_names)
-        filtered_count = 0
-        located_count = 0
+        cells_bool_list = np.zeros((cells_count, )).astype(np.bool8)
         bins_position_end = bins_position + bin_size
         cellbins_position = cellbins_position.astype(bins_position.dtype)
-        for cell_name, cell_position in zip(cellbins_names, cellbins_position):
-            # bool_list = np.all((cell_position >= bins_position) & (cell_position <= bins_position_end), axis=1)
+        for i in nb.prange(cells_count):
+            cell_position = cellbins_position[i]
             flag = (cell_position >= bins_position) & (cell_position <= bins_position_end)
             bool_list = flag[:, 0] & flag[:, 1]
-            if bins_groups_idx[bool_list].size == 0:
-            # if not bool_list.any():
-                cells_filtered[filtered_count] = cell_name
-                filtered_count += 1
+            bins_groups_idx_selected = bins_groups_idx[bool_list]
+            if bins_groups_idx_selected.size == 0:
+                cells_groups_idx[i] = -1
+                cells_bool_list[i] = False
                 continue
-            bin_group_idx = bins_groups_idx[bool_list][0]
-            cells_groups_idx[located_count] = bin_group_idx
-            cells_located[located_count] = cell_name
-            located_count += 1
-        return cells_groups_idx[0:located_count], cells_located[0:located_count], cells_filtered[0:filtered_count]
+            cells_groups_idx[i] = bins_groups_idx_selected[0]
+            cells_bool_list[i] = True
+        return cells_groups_idx[cells_bool_list], cellbins_names[cells_bool_list], cellbins_names[~cells_bool_list]
 
     bins_groups_idx = np.arange(bins_data.cell_names.shape[0], dtype=np.int64)
     cells_groups_idx, cells_located, cells_filtered = \
