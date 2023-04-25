@@ -27,6 +27,7 @@ from stereo.io import h5ad
 from stereo.core.cell import Cell
 from stereo.core.gene import Gene
 from stereo.core.stereo_exp_data import StereoExpData
+from stereo.core.constants import CHIP_RESOLUTION
 from stereo.utils.read_write_utils import ReadWriteUtils
 from stereo.log_manager import logger
 
@@ -92,6 +93,11 @@ def read_gem(
         data.cells.cell_point = gdf.loc[cells]['cell_point'].values
     data.offset_x = df['x'].min()
     data.offset_y = df['y'].min()
+    resolution = 0
+    for chip_name in CHIP_RESOLUTION.keys():
+        if data.sn[0:len(chip_name)] == chip_name:
+            resolution = CHIP_RESOLUTION[chip_name]
+            break
     data.attr = {
         'minX': df['x'].min(),
         'minY': df['y'].min(),
@@ -99,7 +105,7 @@ def read_gem(
         'maxY': df['y'].max(),
         'minExp': data.exp_matrix.toarray().min() if is_sparse else data.exp_matrix.min(),
         'maxExp': data.exp_matrix.toarray().max() if is_sparse else data.exp_matrix.min(),
-        'resolution': 0,
+        'resolution': resolution,
     }
     return data
 
@@ -186,6 +192,10 @@ def _read_stereo_h5ad_from_group(f, data, use_raw, use_result):
     import ast
     from ..utils.pipeline_utils import cell_cluster_to_gene_exp_cluster
     # read data
+    if f.attrs is not None:
+        data.attr = {}
+        for key, value in f.attrs.items():
+            data.attr[key] = value
     for k in f.keys():
         if k == 'cells':
             data.cells = h5ad.read_group(f[k])
@@ -890,6 +900,9 @@ def read_gef(
             data.cells = Cell(cell_name=cell_bin_gef.cells, cell_border=cell_borders)
             data.genes = Gene(gene_name=cell_bin_gef.genes)
             data.exp_matrix = exp_matrix if is_sparse else exp_matrix.toarray()
+        data.attr = {
+            'resolution': read_gef_info(file_path)['resolution']
+        }
     else:
         from gefpy.bgef_reader_cy import BgefR
         gef = BgefR(file_path, bin_size, 4)

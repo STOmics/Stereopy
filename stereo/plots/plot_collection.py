@@ -20,52 +20,10 @@ from stereo.core.stereo_exp_data import StereoExpData
 from stereo.stereo_config import stereo_conf
 from stereo.log_manager import logger
 from .plot_base import PlotBase
+from .decorator import plot_scale, download
 
 pn.param.ParamMethod.loading_indicator = True
 
-def download(func):
-    @wraps(func)
-    def wrapped(*args, **kwargs):
-        out_path = None
-        dpi = 100
-        if 'out_path' in kwargs:
-            out_path = kwargs['out_path']
-            del kwargs['out_path']
-        if 'out_dpi' in kwargs:
-            dpi = kwargs['out_dpi']
-            del kwargs['out_dpi']
-        fig: Figure = func(*args, **kwargs)
-        if fig is None:
-            return None
-        if out_path is None:
-            pn.extension()
-            file_name_input = pn.widgets.TextInput(name='file name', placeholder='Enter a file name...', width=200)
-            dpi_input = pn.widgets.IntInput(name='dpi', placeholder='Enter the dip...', width=200, value=100, step=1, start=0)
-            export_button = pn.widgets.Button(name='export', button_type="primary", width=100)
-            static_text = pn.widgets.StaticText(width=800)
-            def _action(_, figure: Figure):
-                export_button.loading = True
-                static_text.value = ""
-                try:
-                    out_path = file_name_input.value
-                    dpi = dpi_input.value if dpi_input.value > 0 else 100
-                    if out_path is not None and len(out_path) > 0:
-                        out_path = f"{out_path}_{func.__name__}.png"
-                        figure.savefig(out_path, bbox_inches='tight', dpi=dpi)
-                        static_text.value = f'the plot has alrady been saved in the same directory as this notebook and named as <font color="red"><b>{out_path}</b></font>'
-                finally:
-                    export_button.loading = False
-            action = partial(_action, figure=fig)
-            export_button.on_click(action)
-            return pn.Column(
-                '<font size="3"><br>Exporting the plot.</br></font>',
-                pn.Row(file_name_input, dpi_input),
-                pn.Row(export_button, static_text)
-            )
-            # return pn.Row(file_name_input, export_button, static_text)
-        else:
-            fig.savefig(out_path, bbox_inches='tight', dpi=dpi)
-    return wrapped
 
 class PlotCollection:
     """
@@ -302,6 +260,7 @@ class PlotCollection:
             )
         return fig
 
+    @plot_scale
     @download
     def spatial_scatter(
             self,
@@ -323,6 +282,7 @@ class PlotCollection:
         :param palette: the color theme.
         :param width: the figure width in pixels.
         :param height: the figure height in pixels.
+        :param show_plotting_scale: wheter to show the scale.
 
         """
         from .scatter import multi_scatter
@@ -340,10 +300,13 @@ class PlotCollection:
             color_bar=True,
             width=width,
             height=height,
+            # show_plotting_scale=show_plotting_scale,
+            # data_resolution=self.data.attr['resolution'] if self.data.bin_type == 'cell_bins' else self.data.attr['resolution'] * self.data.bin_size,
             **kwargs
         )
         return fig
     
+    @plot_scale
     @download
     def spatial_scatter_by_gene(
             self,
@@ -362,6 +325,7 @@ class PlotCollection:
         :param palette: the color theme, defaults to `'CET_L4'`.
         :param width: the figure width in pixels.
         :param height: the figure height in pixels.
+        :param show_plotting_scale: wheter to show the scale.
 
         """
 
@@ -394,6 +358,7 @@ class PlotCollection:
         
         return fig
     
+    @plot_scale
     @download
     def gaussian_smooth_scatter_by_gene(
             self,
@@ -646,6 +611,7 @@ class PlotCollection:
                 **kwargs
             )
 
+    @plot_scale
     @download
     def cluster_scatter(
             self,

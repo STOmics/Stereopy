@@ -80,7 +80,10 @@ def write_h5ad(
         _write_one_h5ad(f, data, use_raw=use_raw, use_result=use_result, key_record=key_record)
 
 
-def _write_one_h5ad(f, data, use_raw=False, use_result=True, key_record=None):
+def _write_one_h5ad(f, data: StereoExpData, use_raw=False, use_result=True, key_record=None):
+    if data.attr is not None:
+        for key, value in data.attr.items():
+            f.attrs[key] = value
     if data.sn is not None:
         if isinstance(data.sn, str):
             sn_list = [['-1', data.sn]]
