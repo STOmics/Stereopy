@@ -17,6 +17,7 @@ from pyscenic.rss import regulon_specificity_scores
 from stereo.log_manager import logger
 from stereo.plots.plot_base import PlotBase
 from stereo.plots.scatter import base_scatter
+from stereo.plots.decorator import plot_scale
 
 class PlotRegulatoryNetwork(PlotBase):
     """
@@ -190,6 +191,7 @@ class PlotRegulatoryNetwork(PlotBase):
         
         return fig
 
+    @plot_scale
     def spatial_scatter_by_regulon(
             self, 
             network_res_key: str='regulatory_network_inference', 

@@ -14,6 +14,8 @@ import matplotlib.pyplot as plt
 from matplotlib.colors import ListedColormap, to_hex, Normalize, LinearSegmentedColormap
 from matplotlib import gridspec
 from matplotlib.axes import Axes
+from matplotlib.path import Path
+from matplotlib.patches import PathPatch
 import numpy as np
 import pandas as pd
 from scipy.sparse import issparse
@@ -44,7 +46,11 @@ def base_scatter(
         SegmentedColormap=None,
         hue_order=None,
         width=None,
-        height=None
+        height=None,
+        show_plotting_scale=False,
+        plotting_scale_width=2000,
+        plotting_scale_offset=10,
+        data_resolution=None
 ):  # scatter plot, Expression matrix spatial distribution after clustering
     """
     scatter plotter
@@ -83,6 +89,7 @@ def base_scatter(
         _, ax = plt.subplots(figsize=figsize)
     dot_size = 120000 / len(hue) if dot_size is None else dot_size
     # add a color bar
+
     if color_bar:
         colors = stereo_conf.linear_colors(palette, reverse=color_bar_reverse)
         cmap = ListedColormap(colors)
@@ -113,19 +120,128 @@ def base_scatter(
         for lh in ax.legend_.legendHandles:
             lh.set_alpha(1)
             lh._sizes = [40]
+    
+    ax.set_title(title, fontsize=18, fontweight='bold')
+    ax.set_ylabel(y_label, fontsize=15)  # set y-axis labels
+    ax.set_xlabel(x_label, fontsize=15)  # set x-axis labels
+
     if invert_y:
         ax.invert_yaxis()
+
+    if show_plotting_scale:
+        # print(ax.get_xlim(), ax.get_ylim())
+        min_x, max_x = np.min(x).astype(int), np.max(x).astype(int)
+        min_y, max_y = np.min(y).astype(int), np.max(y).astype(int)
+
+        ax_left, ax_right = ax.get_xlim()
+        ax_bottom, ax_top = ax.get_ylim()
+        ax_width = ax_right - ax_left + 1
+        ax_height = abs(ax_top - ax_bottom) + 1
+
+        plotting_scale_height = plotting_scale_width / 10
+
+        # if show_ticks:
+        #     horizontal_start_x = ax_left + ax_width / 30
+        # else:
+        #     horizontal_start_x = ax_left
+        horizontal_start_x = min_x
+        horizontal_end_x = horizontal_start_x + plotting_scale_width - 1
+        # horizontal_y_location = ax_top
+        horizontal_text_location_x = horizontal_start_x + plotting_scale_width / 2
+
+        # vertical_x_location = ax_left - plotting_scale_height / 2
+        vertical_x_location = min_x - plotting_scale_height * 2
+        # vertical_start_y = ax_top
+        vertical_text_location_x = vertical_x_location - plotting_scale_height
+        new_ax_left = vertical_text_location_x - plotting_scale_height * 3
+        ax.set_xlim(left=new_ax_left)
+        if invert_y:
+            # horizontal_y_location -= plotting_scale_height / 2
+            horizontal_y_location = min_y - plotting_scale_height * 2
+
+
+            vertical_start_y = min_y
+            vertical_end_y = vertical_start_y + plotting_scale_width - 1
+            vertical_text_location_y = vertical_start_y + plotting_scale_width / 2
+            vertices = [
+                (horizontal_start_x, horizontal_y_location - plotting_scale_height),
+                (horizontal_start_x, horizontal_y_location),
+                (horizontal_end_x, horizontal_y_location),
+                (horizontal_end_x, horizontal_y_location - plotting_scale_height),
+            ]
+            horizontal_text_location_y = horizontal_y_location - plotting_scale_height
+            new_ax_top = horizontal_text_location_y - plotting_scale_height * 3
+            ax.set_ylim(top=new_ax_top)
+        else:
+            # horizontal_y_location += plotting_scale_height / 2
+            horizontal_y_location = max_y + plotting_scale_height * 2
+            
+
+            vertical_start_y = max_y
+            vertical_end_y = vertical_start_y - plotting_scale_width + 1
+            vertical_text_location_y = vertical_start_y - plotting_scale_width / 2
+            vertices = [
+                (horizontal_start_x, horizontal_y_location + plotting_scale_height),
+                (horizontal_start_x, horizontal_y_location),
+                (horizontal_end_x, horizontal_y_location),
+                (horizontal_end_x, horizontal_y_location + plotting_scale_height),
+            ]
+            horizontal_text_location_y = horizontal_y_location + plotting_scale_height
+            new_ax_top = horizontal_text_location_y + plotting_scale_height * 3
+            ax.set_ylim(top=new_ax_top)
+
+        vertices.extend([
+            (vertical_x_location - plotting_scale_height, vertical_start_y),
+            (vertical_x_location, vertical_start_y),
+            (vertical_x_location, vertical_end_y),
+            (vertical_x_location - plotting_scale_height, vertical_end_y)
+        ])
+        codes = [Path.MOVETO, Path.LINETO, Path.LINETO, Path.LINETO, Path.MOVETO, Path.LINETO, Path.LINETO, Path.LINETO]
+        path = Path(vertices, codes)
+        patch = PathPatch(path, facecolor='none', lw=1.5)
+        ax.add_patch(patch)
+
+        real_length = data_resolution * plotting_scale_width
+        unit = 'nm'
+        if real_length >= 1e9:
+            real_length /= 1e9
+            unit = 'm'
+        elif real_length >= 1e6:
+            real_length /= 1e6
+            unit = 'mm'
+        elif real_length >= 1e3:
+            real_length /= 1e3
+            unit = 'um'
+
+                
+        ax.text(
+                x=horizontal_text_location_x,
+                y=horizontal_text_location_y,
+                s=f"{real_length}{unit}",
+                # fontsize='small',
+                rotation=0,
+                horizontalalignment='center',
+                verticalalignment='bottom'
+        )
+        ax.text(
+                x=vertical_text_location_x,
+                y=vertical_text_location_y,
+                s=f"{real_length}{unit}",
+                # fontsize='small',
+                rotation=90,
+                # rotation_mode='anchor',
+                horizontalalignment='right',
+                verticalalignment='center'
+        )
+
     if not show_legend:
         ax.legend_.remove()
 
     if not show_ticks:
         ax.set_aspect('equal', adjustable='datalim')
-    ax.set_title(title, fontsize=18, fontweight='bold')
-    ax.set_ylabel(y_label, fontsize=15)  # set y-axis labels
-    ax.set_xlabel(x_label, fontsize=15)  # set x-axis labels
-    if not show_ticks:
         ax.set_yticks([])
         ax.set_xticks([])
+    
     return ax.get_figure()
 
 
@@ -145,7 +261,10 @@ def multi_scatter(
         vmin=None,
         vmax=None,
         width=None,
-        height=None
+        height=None,
+        show_plotting_scale=False,
+        data_resolution=None,
+        **kwargs
 ):
     """
     plot multiple scatters
@@ -193,7 +312,7 @@ def multi_scatter(
     for i, cv in enumerate(hue):
         if issparse(cv):
             cv = cv.toarray()[0]
-        ax = fig.add_subplot(axs[i])  # ax = plt.subplot(axs[i]) || ax = fig.add_subplot(axs[1, 1]))
+        ax: Axes = fig.add_subplot(axs[i])  # ax = plt.subplot(axs[i]) || ax = fig.add_subplot(axs[1, 1]))
         base_scatter(x, y, cv,
                      ax=ax,
                      title=title[i] if title is not None else None,
@@ -206,6 +325,9 @@ def multi_scatter(
                      palette=palette,
                      vmin=vmin,
                      vmax=vmax,
+                     show_plotting_scale=show_plotting_scale,
+                     data_resolution=data_resolution,
+                     **kwargs
                      )
     return fig
 
