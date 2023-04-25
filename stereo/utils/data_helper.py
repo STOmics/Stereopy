@@ -135,7 +135,6 @@ def merge(data1: StereoExpData = None,
             if new_data.offset_y is not None and data.offset_y is not None:
                 new_data.offset_y = min(new_data.offset_y, data.offset_y)
             if new_data.attr is not None and data.attr is not None:
-                new_data.attr = {}
                 for key, value in data.attr.items():
                     if key in ('minX', 'minY'):
                         new_data.attr[key] = min(new_data.attr[key], value)
