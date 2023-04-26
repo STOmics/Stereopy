@@ -1,8 +1,12 @@
+import os
+
+import numpy as np
 from tifffile import tifffile
 
 from . import CellBinElement
 from ..dnn.cseg.detector import Segmentation
 from ..dnn.cseg.cell_trace import get_trace as get_t
+from ...tissue_cut import SingleStrandDNATissueCut, DEEP, INTENSITY
 
 
 class CellSegmentation(CellBinElement):
@@ -39,13 +43,74 @@ class CellSegmentation(CellBinElement):
         return get_t(mask)
 
 
-def cell_seg_v3(input_path, out_path, model_path, gpu="0", num_threads=0):
+def _get_tissue_mask(img_path, model_path, method, dst_img_path):
+    if method is None:
+        method = DEEP
+    if not model_path or len(model_path) == 0:
+        method = INTENSITY
+    ssDNA_tissue_cut = SingleStrandDNATissueCut(
+        src_img_path=img_path,
+        model_path=model_path,
+        dst_img_path=dst_img_path,
+        seg_method=method
+    )
+    ssDNA_tissue_cut.tissue_seg()
+    return ssDNA_tissue_cut.mask
+
+
+def _get_img_filter(img, tissue_mask):
+    """get tissue image by tissue mask"""
+    img_filter = np.multiply(img, tissue_mask).astype(np.uint8)
+    return img_filter
+
+
+def cell_seg_v3(
+        model_path: str,
+        img_path: str,
+        out_path: str,
+        gpu="-1",
+        num_threads=0,
+        need_tissue_cut=True,
+        tissue_seg_model_path: str = None,
+        tissue_seg_method: str = None,
+        tissue_seg_dst_img_path=None,
+
+):
+    """
+    Implement cell segmentation v3 by deep learning model.
+
+    Parameters
+    -----------------
+    model_path
+        the path to deep learning model.
+    img_path
+        the path to image file.
+    out_path
+        the path to output mask result.
+    gpu
+        set gpu id, if `'-1'`, use cpu for prediction.
+    tissue_seg_model_path
+        the path of deep learning model of tissue segmentation, if set it to None, it would use OpenCV to process.
+    tissue_seg_method
+        the method of tissue segmentation, 1 is based on deep learning and 0 is based on OpenCV.
+    tissue_seg_dst_img_path
+        default to the img_path's directory.
+    Returns
+    ------------
+    None
+
+    """
     cell_bcdu = CellSegmentation(
         model_path=model_path,
         gpu=gpu,
         num_threads=num_threads
     )
-    img = tifffile.imread(input_path)
+    img = tifffile.imread(img_path)
+    if need_tissue_cut:
+        if tissue_seg_dst_img_path is None:
+            tissue_seg_dst_img_path = os.path.dirname(img_path)
+        tissue_mask = _get_tissue_mask(img_path, tissue_seg_model_path, tissue_seg_method, tissue_seg_dst_img_path)
+        img = _get_img_filter(img, tissue_mask)
     mask = cell_bcdu.run(img)
     CellSegmentation.get_trace(mask)
     tifffile.imwrite(out_path, mask)
