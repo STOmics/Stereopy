@@ -55,12 +55,12 @@ def _get_tissue_mask(img_path, model_path, method, dst_img_path):
         seg_method=method
     )
     ssDNA_tissue_cut.tissue_seg()
-    return ssDNA_tissue_cut.mask
+    return ssDNA_tissue_cut.mask[0]
 
 
 def _get_img_filter(img, tissue_mask):
     """get tissue image by tissue mask"""
-    img_filter = np.multiply(img, tissue_mask).astype(np.uint8)
+    img_filter = np.multiply(img, tissue_mask)
     return img_filter
 
 
