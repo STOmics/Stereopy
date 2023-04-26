@@ -135,15 +135,17 @@ def merge(data1: StereoExpData = None,
             if new_data.offset_y is not None and data.offset_y is not None:
                 new_data.offset_y = min(new_data.offset_y, data.offset_y)
             if new_data.attr is not None and data.attr is not None:
-                new_data.attr = {
-                    'minX': min(new_data.attr['minX'], data.attr['minX']),
-                    'minY': min(new_data.attr['minY'], data.attr['minY']),
-                    'maxX': max(new_data.attr['maxX'], data.attr['maxX']),
-                    'maxY': max(new_data.attr['maxY'], data.attr['maxY']),
-                    'minExp': new_data.exp_matrix.min(),
-                    'maxExp': new_data.exp_matrix.min(),
-                    'resolution': 0,
-                }
+                for key, value in data.attr.items():
+                    if key in ('minX', 'minY'):
+                        new_data.attr[key] = min(new_data.attr[key], value)
+                    elif key in ('maxX', 'maxY'):
+                        new_data.attr[key] = max(new_data.attr[key], value)
+                    elif key == 'minExp':
+                        new_data.attr['minExp'] = new_data.exp_matrix.min()
+                    elif key == 'maxExp':
+                        new_data.attr['maxExp'] = new_data.exp_matrix.max()
+                    elif key == 'resolution':
+                        new_data.attr['resolution'] = value
         if reorganize_coordinate:
             position_row_number = i // reorganize_coordinate
             position_column_number = i % reorganize_coordinate
