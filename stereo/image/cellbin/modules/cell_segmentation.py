@@ -110,9 +110,10 @@ def cell_seg_v3(
         num_threads=num_threads
     )
     img = tifffile.imread(img_path)
-    assert img.dtype == np.uint16
-    # img must be 16 bit image, and finally transfer to 8 bit
-    img = transfer_16bit_to_8bit(img)
+    # img must be 16 bit ot 8 bit, and 16 bit image finally will be transferred to 8 bit
+    assert img.dtype == np.uint16 or img.dtype == np.uint8
+    if img.dtype == np.uint16:
+        img = transfer_16bit_to_8bit(img)
     if need_tissue_cut:
         if tissue_seg_dst_img_path is None:
             tissue_seg_dst_img_path = os.path.dirname(img_path)
