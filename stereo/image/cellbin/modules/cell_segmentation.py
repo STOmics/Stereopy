@@ -89,6 +89,10 @@ def cell_seg_v3(
         the path to output mask result.
     gpu
         set gpu id, if `'-1'`, use cpu for prediction.
+    num_threads
+        multi threads num of the model reading process
+    need_tissue_cut
+        whether cut image as tissue before cell segmentation
     tissue_seg_model_path
         the path of deep learning model of tissue segmentation, if set it to None, it would use OpenCV to process.
     tissue_seg_method

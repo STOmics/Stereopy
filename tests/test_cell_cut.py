@@ -1,3 +1,4 @@
+import pytest
 import unittest
 
 from settings import TEST_DATA_PATH, DEMO_CELL_SEGMENTATION_TIF_URL, DEMO_CELL_SEGMENTATION_V3_MODEL_URL, \
@@ -15,5 +16,6 @@ class TestCellCut(unittest.TestCase):
         self.demo_tif_path = demo_tif_path
         self.model_v3_path = model_v3_path
 
+    @pytest.mark.cell_cut_env
     def test_cell_cut(self):
         cell_seg_v3(self.demo_tif_path, TEST_IMAGE_PATH + "cell_cut_v3.tif", self.model_v3_path)
