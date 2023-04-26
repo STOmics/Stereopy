@@ -4,8 +4,8 @@ import numpy as np
 from tifffile import tifffile
 
 from . import CellBinElement
-from ..dnn.cseg.detector import Segmentation
 from ..dnn.cseg.cell_trace import get_trace as get_t
+from ..dnn.cseg.detector import Segmentation
 from ...tissue_cut import SingleStrandDNATissueCut, DEEP, INTENSITY
 
 
@@ -110,6 +110,8 @@ def cell_seg_v3(
         num_threads=num_threads
     )
     img = tifffile.imread(img_path)
+    assert img.dtype is np.uint16
+    img = transfer_16bit_to_8bit(img)
     if need_tissue_cut:
         if tissue_seg_dst_img_path is None:
             tissue_seg_dst_img_path = os.path.dirname(img_path)
@@ -118,3 +120,10 @@ def cell_seg_v3(
     mask = cell_bcdu.run(img)
     CellSegmentation.get_trace(mask)
     tifffile.imwrite(out_path, mask)
+
+
+def transfer_16bit_to_8bit(image_16bit):
+    min_16bit = np.min(image_16bit)
+    max_16bit = np.max(image_16bit)
+    image_8bit = np.array(np.rint(255 * ((image_16bit - min_16bit) / (max_16bit - min_16bit))), dtype=np.uint8)
+    return image_8bit
