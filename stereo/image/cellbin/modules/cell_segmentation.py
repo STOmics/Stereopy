@@ -111,6 +111,7 @@ def cell_seg_v3(
     )
     img = tifffile.imread(img_path)
     assert img.dtype == np.uint16
+    # img must be 16 bit image, and finally transfer to 8 bit
     img = transfer_16bit_to_8bit(img)
     if need_tissue_cut:
         if tissue_seg_dst_img_path is None:
