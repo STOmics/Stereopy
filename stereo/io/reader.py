@@ -103,8 +103,8 @@ def read_gem(
         'minY': df['y'].min(),
         'maxX': df['x'].max(),
         'maxY': df['y'].max(),
-        'minExp': data.exp_matrix.toarray().min() if is_sparse else data.exp_matrix.min(),
-        'maxExp': data.exp_matrix.toarray().max() if is_sparse else data.exp_matrix.min(),
+        'minExp': data.exp_matrix.min(),
+        'maxExp': data.exp_matrix.min(),
         'resolution': resolution,
     }
     return data
@@ -205,6 +205,8 @@ def _read_stereo_h5ad_from_group(f, data, use_raw, use_result):
             data.position = h5ad.read_dataset(f[k])
         elif k == 'bin_type':
             data.bin_type = h5ad.read_dataset(f[k])
+        elif k == 'bin_size':
+            data.bin_size = h5ad.read_dataset(f[k])
         elif k == 'merged':
             data.merged = h5ad.read_dataset(f[k])
         elif k == 'exp_matrix':

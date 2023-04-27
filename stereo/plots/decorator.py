@@ -6,13 +6,23 @@ def plot_scale(func):
     @wraps(func)
     def wrapped(*args, **kwargs):
         from stereo.plots.plot_collection import PlotCollection
-        pc_object: PlotCollection = args[0]
-        if (pc_object.data.attr is None) or ('resolution' not in pc_object.data.attr) or (pc_object.data.attr['resolution'] <= 0):
-            kwargs['show_plotting_scale'] = False
-        else:
-            kwargs.setdefault('show_plotting_scale', True)
-            data_resolution = pc_object.data.attr['resolution'] if pc_object.data.bin_type == 'cell_bins' else pc_object.data.attr['resolution'] * pc_object.data.bin_size
-            kwargs.setdefault('data_resolution', data_resolution)
+        from stereo.plots.plot_base import PlotBase
+        pc_object = args[0]
+        data = None
+        if isinstance(pc_object, PlotCollection):
+            data = pc_object.data
+        elif isinstance(pc_object, PlotBase):
+            data = pc_object.stereo_exp_data
+        if data:
+            if (data.attr is None) or \
+                ('resolution' not in data.attr) or (data.attr['resolution'] <= 0):
+                kwargs['show_plotting_scale'] = False
+            else:
+                kwargs.setdefault('show_plotting_scale', True)
+                data_resolution = data.attr['resolution'] if data.bin_type == 'cell_bins' else data.attr['resolution'] * data.bin_size
+                data_bin_offset = 1 if data.bin_type == 'cell_bins' else data.bin_size
+                kwargs.setdefault('data_resolution', data_resolution)
+                kwargs.setdefault('data_bin_offset', data_bin_offset)
         return func(*args, **kwargs)
     return wrapped
 
