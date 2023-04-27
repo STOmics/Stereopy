@@ -144,6 +144,7 @@ Image parse module.
     image.pyramid.merge_pyramid
     image.pyramid.create_pyramid
     image.segmentation.segment.cell_seg
+    image.cellbin.modules.cell_segmentation.cell_seg_v3
     image.segmentation_deepcell.segment.cell_seg_deepcell
     image.tissue_cut.SingleStrandDNATissueCut
     image.tissue_cut.RNATissueCut
