@@ -1,4 +1,4 @@
-name: CPU PyTest in Conda Dev Branch
+name: CPU PyTest in Conda Dev/Work Branch Image
 
 on:
   push:
