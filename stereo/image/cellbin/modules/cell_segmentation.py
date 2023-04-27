@@ -118,6 +118,7 @@ def cell_seg_v3(
         raise Exception("cell seg only support tif and png")
     if img.dtype == np.float32:
         img.astype('uint32')
+        transfer_32bit_to_8bit(img)
 
     # img must be 16 bit ot 8 bit, and 16 bit image finally will be transferred to 8 bit
     assert img.dtype == np.uint16 or img.dtype == np.uint8, f'{img.dtype} is not supported'
