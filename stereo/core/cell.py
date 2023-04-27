@@ -141,7 +141,10 @@ class Cell(object):
 
         if self.cell_border is not None:
             self.cell_border = self.cell_border[index]
-        self._obs = self._obs[index]
+        if index.dtype == bool:
+            self._obs = self._obs[index]
+        else:
+            self._obs = self._obs.iloc[index]
         return self
 
     def get_property(self, name):
