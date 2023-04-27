@@ -1,4 +1,4 @@
-name: CPU PyTest in Conda
+name: CPU PyTest in Conda Work Branch
 
 on:
   push:
