@@ -1,4 +1,4 @@
-name: GPU PyTest in Conda
+name: GPU PyTest in Conda Work
 
 on:
   push:
