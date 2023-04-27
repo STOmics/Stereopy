@@ -102,6 +102,7 @@ def _write_one_h5ad(f, data: StereoExpData, use_raw=False, use_result=True, key_
     else:
         h5ad.write(data.exp_matrix, f, 'exp_matrix')
     h5ad.write(data.bin_type, f, 'bin_type')
+    h5ad.write(data.bin_size, f, 'bin_size')
     h5ad.write(data.merged, f, 'merged')
 
     if use_raw is True:

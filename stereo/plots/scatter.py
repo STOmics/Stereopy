@@ -49,8 +49,8 @@ def base_scatter(
         height=None,
         show_plotting_scale=False,
         plotting_scale_width=2000,
-        plotting_scale_offset=10,
-        data_resolution=None
+        data_resolution=None,
+        data_bin_offset=1,
 ):  # scatter plot, Expression matrix spatial distribution after clustering
     """
     scatter plotter
@@ -129,39 +129,28 @@ def base_scatter(
         ax.invert_yaxis()
 
     if show_plotting_scale:
-        # print(ax.get_xlim(), ax.get_ylim())
         min_x, max_x = np.min(x).astype(int), np.max(x).astype(int)
         min_y, max_y = np.min(y).astype(int), np.max(y).astype(int)
 
         ax_left, ax_right = ax.get_xlim()
         ax_bottom, ax_top = ax.get_ylim()
-        ax_width = ax_right - ax_left + 1
-        ax_height = abs(ax_top - ax_bottom) + 1
 
-        plotting_scale_height = plotting_scale_width / 10
+        plotting_scale_height = 200
 
-        # if show_ticks:
-        #     horizontal_start_x = ax_left + ax_width / 30
-        # else:
-        #     horizontal_start_x = ax_left
         horizontal_start_x = min_x
-        horizontal_end_x = horizontal_start_x + plotting_scale_width - 1
-        # horizontal_y_location = ax_top
+        bin_count = plotting_scale_width // data_bin_offset
+
+        horizontal_end_x = horizontal_start_x + (bin_count - 1) * data_bin_offset
         horizontal_text_location_x = horizontal_start_x + plotting_scale_width / 2
 
-        # vertical_x_location = ax_left - plotting_scale_height / 2
         vertical_x_location = min_x - plotting_scale_height * 2
-        # vertical_start_y = ax_top
         vertical_text_location_x = vertical_x_location - plotting_scale_height
-        new_ax_left = vertical_text_location_x - plotting_scale_height * 3
-        ax.set_xlim(left=new_ax_left)
+        # new_ax_left = vertical_text_location_x - plotting_scale_height * 3
+        # ax.set_xlim(left=new_ax_left)
         if invert_y:
-            # horizontal_y_location -= plotting_scale_height / 2
             horizontal_y_location = min_y - plotting_scale_height * 2
-
-
             vertical_start_y = min_y
-            vertical_end_y = vertical_start_y + plotting_scale_width - 1
+            vertical_end_y = vertical_start_y + (bin_count - 1) * data_bin_offset
             vertical_text_location_y = vertical_start_y + plotting_scale_width / 2
             vertices = [
                 (horizontal_start_x, horizontal_y_location - plotting_scale_height),
@@ -170,15 +159,12 @@ def base_scatter(
                 (horizontal_end_x, horizontal_y_location - plotting_scale_height),
             ]
             horizontal_text_location_y = horizontal_y_location - plotting_scale_height
-            new_ax_top = horizontal_text_location_y - plotting_scale_height * 3
-            ax.set_ylim(top=new_ax_top)
+            # new_ax_top = horizontal_text_location_y - plotting_scale_height * 3
+            # ax.set_ylim(top=new_ax_top)
         else:
-            # horizontal_y_location += plotting_scale_height / 2
             horizontal_y_location = max_y + plotting_scale_height * 2
-            
-
             vertical_start_y = max_y
-            vertical_end_y = vertical_start_y - plotting_scale_width + 1
+            vertical_end_y = vertical_start_y - (bin_count - 1) * data_bin_offset
             vertical_text_location_y = vertical_start_y - plotting_scale_width / 2
             vertices = [
                 (horizontal_start_x, horizontal_y_location + plotting_scale_height),
@@ -187,8 +173,8 @@ def base_scatter(
                 (horizontal_end_x, horizontal_y_location + plotting_scale_height),
             ]
             horizontal_text_location_y = horizontal_y_location + plotting_scale_height
-            new_ax_top = horizontal_text_location_y + plotting_scale_height * 3
-            ax.set_ylim(top=new_ax_top)
+            # new_ax_top = horizontal_text_location_y + plotting_scale_height * 3
+            # ax.set_ylim(top=new_ax_top)
 
         vertices.extend([
             (vertical_x_location - plotting_scale_height, vertical_start_y),
@@ -198,10 +184,10 @@ def base_scatter(
         ])
         codes = [Path.MOVETO, Path.LINETO, Path.LINETO, Path.LINETO, Path.MOVETO, Path.LINETO, Path.LINETO, Path.LINETO]
         path = Path(vertices, codes)
-        patch = PathPatch(path, facecolor='none', lw=1.5)
+        patch = PathPatch(path, facecolor='none', lw=2)
         ax.add_patch(patch)
 
-        real_length = data_resolution * plotting_scale_width
+        real_length = data_resolution * bin_count
         unit = 'nm'
         if real_length >= 1e9:
             real_length /= 1e9
@@ -214,7 +200,7 @@ def base_scatter(
             unit = 'um'
 
                 
-        ax.text(
+        t1 = ax.text(
                 x=horizontal_text_location_x,
                 y=horizontal_text_location_y,
                 s=f"{real_length}{unit}",
@@ -223,7 +209,7 @@ def base_scatter(
                 horizontalalignment='center',
                 verticalalignment='bottom'
         )
-        ax.text(
+        t2 = ax.text(
                 x=vertical_text_location_x,
                 y=vertical_text_location_y,
                 s=f"{real_length}{unit}",
@@ -233,6 +219,26 @@ def base_scatter(
                 horizontalalignment='right',
                 verticalalignment='center'
         )
+        renderer = ax.get_figure().canvas.get_renderer()
+        bbox  = t1.get_window_extent(renderer)
+        trans = ax.transData.inverted()
+        t1_top_left = trans.transform_point((bbox.x0, bbox.y1))
+        if invert_y:
+            if t1_top_left[1] <= ax_top:
+                new_ax_top = ax_top - plotting_scale_height * 4
+                ax.set_ylim(top=new_ax_top)
+        else:
+            if t1_top_left[1] >= ax_top:
+                new_ax_top = ax_top + plotting_scale_height * 4
+                ax.set_ylim(top=new_ax_top)
+
+        bbox  = t2.get_window_extent(renderer)
+        trans = ax.transData.inverted()
+        t2_top_left = trans.transform_point((bbox.x0, bbox.y1))
+        if t2_top_left[0] <= ax_left:
+            new_ax_lef = ax_left - plotting_scale_height * 4
+            ax.set_xlim(left=new_ax_lef)
+
 
     if not show_legend:
         ax.legend_.remove()
