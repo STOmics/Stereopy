@@ -141,7 +141,9 @@ class Cell(object):
 
         if self.cell_border is not None:
             self.cell_border = self.cell_border[index]
-        if index.dtype == bool:
+        if type(index) is list:
+            self._obs = self._obs.iloc[index]
+        elif index.dtype == bool:
             self._obs = self._obs[index]
         else:
             self._obs = self._obs.iloc[index]

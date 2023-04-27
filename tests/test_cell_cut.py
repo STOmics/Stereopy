@@ -19,4 +19,4 @@ class TestCellCut(unittest.TestCase):
     @pytest.mark.cell_cut_env
     def test_cell_cut(self):
         from stereo.image import cell_seg_v3
-        cell_seg_v3(self.demo_tif_path, TEST_IMAGE_PATH + "cell_cut_v3.tif", self.model_v3_path)
+        cell_seg_v3(self.model_v3_path, self.demo_tif_path, TEST_IMAGE_PATH + "cell_cut_v3.tif")
