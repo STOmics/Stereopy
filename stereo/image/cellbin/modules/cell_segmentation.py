@@ -114,8 +114,12 @@ def cell_seg_v3(
         img = tifffile.imread(img_path)
     elif img_path.split('.')[-1] == "png":
         img = plt.imread(img_path)
+        if img.dtype == np.float32:
+            img.astype('uint32')
+            img = transfer_32bit_to_8bit(img)
     else:
         raise Exception("cell seg only support tif and png")
+
     # img must be 16 bit ot 8 bit, and 16 bit image finally will be transferred to 8 bit
     assert img.dtype == np.uint16 or img.dtype == np.uint8, f'{img.dtype} is not supported'
     if img.dtype == np.uint16:
@@ -134,4 +138,13 @@ def transfer_16bit_to_8bit(image_16bit):
     min_16bit = np.min(image_16bit)
     max_16bit = np.max(image_16bit)
     image_8bit = np.array(np.rint(255 * ((image_16bit - min_16bit) / (max_16bit - min_16bit))), dtype=np.uint8)
+    return image_8bit
+
+
+def transfer_32bit_to_8bit(image_32bit):
+    min_32bit = np.min(image_32bit)
+    max_32bit = np.max(image_32bit)
+    image_8bit = np.array(
+        np.rint(255 * ((image_32bit - min_32bit) / (max_32bit - min_32bit))), dtype=np.uint8
+    )
     return image_8bit
