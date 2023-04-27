@@ -1,0 +1,4 @@
+tensorflow==2.7.0
+torch==1.10.0
+torchvision==0.11.1
+albumentations==0.4.6
