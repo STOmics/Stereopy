@@ -2,7 +2,7 @@ import os
 
 import numpy as np
 from tifffile import tifffile
-from matplotlib.pyplot import plot as plt
+import matplotlib.pyplot as plt
 
 from . import CellBinElement
 from ..dnn.cseg.cell_trace import get_trace as get_t
