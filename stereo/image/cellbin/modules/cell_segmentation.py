@@ -117,7 +117,7 @@ def cell_seg_v3(
     else:
         raise Exception("cell seg only support tif and png")
     # img must be 16 bit ot 8 bit, and 16 bit image finally will be transferred to 8 bit
-    assert img.dtype == np.uint16 or img.dtype == np.uint8
+    assert img.dtype == np.uint16 or img.dtype == np.uint8, f'{img.dtype} is not supported'
     if img.dtype == np.uint16:
         img = transfer_16bit_to_8bit(img)
     if need_tissue_cut:
