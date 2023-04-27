@@ -2,6 +2,7 @@ import os
 
 import numpy as np
 from tifffile import tifffile
+from matplotlib.pyplot import plot as plt
 
 from . import CellBinElement
 from ..dnn.cseg.cell_trace import get_trace as get_t
@@ -109,7 +110,12 @@ def cell_seg_v3(
         gpu=gpu,
         num_threads=num_threads
     )
-    img = tifffile.imread(img_path)
+    if img_path.split('.')[-1] == "tif":
+        img = tifffile.imread(img_path)
+    elif img_path.split('.')[-1] == "png":
+        img = plt.imread(img_path)
+    else:
+        raise Exception("cell seg only support tif and png")
     # img must be 16 bit ot 8 bit, and 16 bit image finally will be transferred to 8 bit
     assert img.dtype == np.uint16 or img.dtype == np.uint8
     if img.dtype == np.uint16:
