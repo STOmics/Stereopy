@@ -104,7 +104,7 @@ def read_gem(
         'maxX': df['x'].max(),
         'maxY': df['y'].max(),
         'minExp': data.exp_matrix.min(),
-        'maxExp': data.exp_matrix.min(),
+        'maxExp': data.exp_matrix.max(),
         'resolution': resolution,
     }
     return data

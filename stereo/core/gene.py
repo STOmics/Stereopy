@@ -88,7 +88,9 @@ class Gene(object):
         :param index: a numpy array of index info.
         :return: the subset of Gene object.
         """
-        if index.dtype == bool:
+        if type(index) is list:
+            self._var = self._var.iloc[index]
+        elif index.dtype == bool:
             self._var = self._var[index]
         else:
             self._var = self._var.iloc[index]
