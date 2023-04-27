@@ -8,7 +8,7 @@ from stereo.utils._download import _download
 from settings import TEST_DATA_PATH, TEST_IMAGE_PATH, DEMO_DATA_URL, DEMO_135_CELL_BIN_GEF_URL
 
 
-class TestClustering(unittest.TestCase):
+class TestStereoExpData(unittest.TestCase):
 
     def setUp(self) -> None:
         file_path = _download(DEMO_DATA_URL, dir_str=TEST_DATA_PATH)
