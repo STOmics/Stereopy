@@ -58,6 +58,16 @@ Workflow
 Latest Additions
 ------------------
 
+Version 0.12.0
+~~~~~~~~~~~~~~
+0.12.0 : 2023-04-27
+
+1. Addition of the algorithm of Cell Segmentation V3.0;
+2. Addition of method='hotspot' to data.tl.regulatory_network_inference, which takes spatial coordinate information into account to calculate the relative importance between TFs and their target genes;
+3. Addition of dpi and width/height setting for visualization, and addition of plotting scale for displaying static plot;
+4. Optimized required memory while plotting UMAP embedding via data.plt.umap and cell distribution via data.plt.cells_plotting;
+5.  Updated requirements.txt.
+
 Version 0.11.0
 ~~~~~~~~~~~~~~
 0.11.0 : 2023-04-04
@@ -73,21 +83,8 @@ Version 0.11.0
 9. Fixed the bug that `adata.X` to output AnnData was the raw matrix;
 10. Fixed the failed compatibility to analysis results from `.h5ad` (version <= 0.9.0);
 11. Updated the tissue segmentation algorithm in the module of cell segmentation to avoid the lack of tissue;
-12. Reconstructed the manual of Stereopy.
+12. Reconstructed the manual of Stereopy;
 13. Updated requirements.txt.
-
-Version 0.10.0
-~~~~~~~~~~~~~~
-0.10.0 : 2023-02-22
-
-1. Supported installation on Windows.
-2. Addition of displaying basic information of StereoExpData object when simply typing it.
-3. Addition of saving statistic results when plotting.
-4. Addition of marker gene proportion (optional), in-group and out-of-group, in `data.tl.find_marker_genes`. Otherwise, supported filtering marker genes via `data.tl.filter_marker_genes`.
-5. Supported adapting to AnnData, use directly use data and results stored in AnnData for subsequent analysis.
-6. Addition of the matrix of gene count among clusters so that transformed output `.rds` file could be used for annotation by SingleR directly.
-7. Initial release of Stereopy development solution.
-8. Updated requirements.txt.
 
 
 
