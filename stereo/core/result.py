@@ -43,14 +43,14 @@ class Result(_BaseResult, dict):
             if name in genes._var:
                 warn(
                     f'{name} will be moved from `StereoExpData.tl.result` to `StereoExpData.genes` in the '
-                    f'future, make sure your code access the property correctly. See more details at: https://www.baidu.com',
+                    f'future, make sure your code access the property correctly.',
                     category=FutureWarning
                 )
                 return genes._var[name]
             elif name in genes._matrix:
                 warn(
                     f'FutureWarning: {name} will be moved from `StereoExpData.tl.result` to `StereoExpData.genes_matrix` in the '
-                    f'future, make sure your code access the property correctly. See more details at: https://www.baidu.com',
+                    f'future, make sure your code access the property correctly.',
                     category=FutureWarning
                 )
                 return genes._matrix[name]
@@ -58,7 +58,7 @@ class Result(_BaseResult, dict):
             if name in cells._obs.columns:
                 warn(
                     f'FutureWarning: {name} will be moved from `StereoExpData.tl.result` to `StereoExpData.cells` in the '
-                    f'future, make sure your code access the property correctly. See more details at: https://www.baidu.com',
+                    f'future, make sure your code access the property correctly. ',
                     category=FutureWarning
                 )
                 if name in Result.CLUSTER_NAMES:
@@ -72,14 +72,14 @@ class Result(_BaseResult, dict):
             elif name in cells._matrix:
                 warn(
                     f'FutureWarning: {name} will be moved from `StereoExpData.tl.result` to `StereoExpData.cells_matrix` in the '
-                    f'future, make sure your code access the property correctly. See more details at: https://www.baidu.com',
+                    f'future, make sure your code access the property correctly. ',
                     category=FutureWarning
                 )
                 return cells._matrix[name]
             elif name in cells._pairwise:
                 warn(
                     f'FutureWarning: {name} will be moved from `StereoExpData.tl.result` to `StereoExpData.cells_pairwise` in the '
-                    f'future, make sure your code access the property correctly. See more details at: https://www.baidu.com',
+                    f'future, make sure your code access the property correctly. ',
                     category=FutureWarning
                 )
                 return cells._pairwise[name]
@@ -132,7 +132,7 @@ class Result(_BaseResult, dict):
         assert type(value) is pd.DataFrame and 'group' in value.columns.values, f"this is not cluster res"
         warn(
             f'FutureWarning: {key} will be moved from `StereoExpData.tl.result` to `StereoExpData.cells` in the '
-            f'future, make sure your code set the property correctly. See more details at: https://www.baidu.com',
+            f'future, make sure your code set the property correctly. ',
             category=FutureWarning
         )
         self.__stereo_exp_data.cells._obs[key] = value['group'].values
@@ -143,7 +143,7 @@ class Result(_BaseResult, dict):
             f'not enough key to set connectivities'
         warn(
             f'FutureWarning: {key} will be moved from `StereoExpData.tl.result` to `StereoExpData.cells_pairwise` in the '
-            f'future, make sure your code set the property correctly. See more details at: https://www.baidu.com',
+            f'future, make sure your code set the property correctly. ',
             category=FutureWarning
         )
         self.__stereo_exp_data.cells._pairwise[key] = value
@@ -153,7 +153,7 @@ class Result(_BaseResult, dict):
         assert type(value) is pd.DataFrame, f'reduce result must be pandas.DataFrame'
         warn(
             f'FutureWarning: {key} will be moved from `StereoExpData.tl.result` to `StereoExpData.cells_matrix` in the '
-            f'future, make sure your code set the property correctly. See more details at: https://www.baidu.com',
+            f'future, make sure your code set the property correctly. ',
             category=FutureWarning
         )
         self.__stereo_exp_data.cells._matrix[key] = value
