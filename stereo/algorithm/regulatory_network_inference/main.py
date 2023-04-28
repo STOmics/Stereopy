@@ -260,7 +260,7 @@ class RegulatoryNetworkInference(AlgorithmBase):
         :param num_workers:
         :return:
         """
-        local_cluster = LocalCluster(n_workers=num_workers, dashboard_address=None, threads_per_worker=4, processes=False)
+        local_cluster = LocalCluster(n_workers=num_workers, dashboard_address=None, threads_per_worker=4)
         custom_client = Client(local_cluster)
         return custom_client
 
