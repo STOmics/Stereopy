@@ -3,6 +3,16 @@ Release Notes
 
 .. role:: small
 
+Version 0.12.0
+---------------------
+0.12.0 : 2023-04-27
+~~~~~~~~~~~~~~~~~~~~~~~~
+1. Addition of the algorithm of Cell Segmentation V3.0;
+2. Addition of method='hotspot' to data.tl.regulatory_network_inference, which takes spatial coordinate information into account to calculate the relative importance between TFs and their target genes;
+3. Addition of dpi and width/height setting for visualization, and addition of plotting scale for displaying static plot;
+4. Optimized required memory while plotting UMAP embedding via data.plt.umap and cell distribution via data.plt.cells_plotting;
+5.  Updated requirements.txt.
+
 Version 0.11.0
 ---------------------
 0.11.0 : 2023-04-04
