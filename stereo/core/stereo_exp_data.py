@@ -507,7 +507,7 @@ class StereoExpData(Data):
         warn(
             'FutureWarning: `pca`, `neighbors`, `cluster`, `umap` will be inaccessible in result in future version.'
             '\nMake sure your code access result from the right property, such as `pca` and `umap` will be in the '
-            '`StereoExpData.cells_matrix`, see more details at: https://www.baidu.com',
+            '`StereoExpData.cells_matrix`.',
             category=FutureWarning
         )
         if format_key_record:
