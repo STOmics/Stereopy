@@ -11,7 +11,6 @@ import gtfparse as gp
 import scipy.sparse as sparse
 from tqdm import tqdm
 from ..log_manager import logger
-from ..io import read_gem
 from shapely.geometry import Point, MultiPoint
 
 class RnaVelocity(object):
@@ -83,7 +82,7 @@ class RnaVelocity(object):
 
             else:
                 logger.info("Exon information not found in gef file")
-                raise Exception("Exon information not found in gem file")
+                raise Exception("Exon information not found in gef file")
 
         return output_loom_file
 

@@ -10,12 +10,24 @@ from . import tissue_seg as tissue_seg
 from . import cell_infer as cell_infer
 from . import grade as grade
 from . import utils as utils
+from stereo.image.tissue_cut import SingleStrandDNATissueCut, DEEP, INTENSITY
 from stereo.log_manager import logger
 
 
 class CellSegPipe(object):
 
-    def __init__(self, img_path, out_path, is_water, DEEP_CROP_SIZE=20000, OVERLAP=100, model_path=None):
+    def __init__(
+            self,
+            img_path,
+            out_path,
+            is_water,
+            DEEP_CROP_SIZE=20000,
+            OVERLAP=100,
+            model_path=None,
+            tissue_seg_model_path='',
+            tissue_seg_method=DEEP,
+            post_processing_workers=10
+        ):
         self.deep_crop_size = DEEP_CROP_SIZE
         self.overlap = OVERLAP
         self.__img_path = img_path
@@ -43,16 +55,17 @@ class CellSegPipe(object):
         self.tissue_num = []  # tissue num in each image
         self.tissue_bbox = []  # tissue roi bbox in each image
         self.img_filter = []  # image filtered by tissue mask
-        self.__get_tissue_mask()
+        self.__get_tissue_mask(tissue_seg_model_path, tissue_seg_method)
         t2 = time.time()
         logger.info('Get tissue mask : %.2f' % (t2 - t1))
         self.__get_img_filter()
         self.__get_roi()
-        self.save_tissue_mask()
+        # self.save_tissue_mask()
         self.cell_mask = []
         self.post_mask_list = []
         self.score_mask_list = []
         self.model_path= model_path
+        self.post_processing_workers = post_processing_workers
 
     def __imload_list(self, img_path):
 
@@ -89,19 +102,35 @@ class CellSegPipe(object):
                 logger.info('%s transfer to 8bit'%self.__file[idx])
                 self.img_list[idx] = utils.transfer_16bit_to_8bit(img)
 
-    def __get_tissue_mask(self):
+    # def __get_tissue_mask(self):
 
-        process = 15 if self.__is_list else 1
+    #     process = 15 if self.__is_list else 1
 
-        pre_tissue = tissue_seg.tissue_seg_multi(self.img_list, process)
-        self.tissue_mask = [label[0] for label in pre_tissue]
-        self.tissue_mask_thumb = [label[1] for label in pre_tissue]
+    #     pre_tissue = tissue_seg.tissue_seg_multi(self.img_list, process)
+    #     self.tissue_mask = [label[0] for label in pre_tissue]
+    #     self.tissue_mask_thumb = [label[1] for label in pre_tissue]
+
+    def __get_tissue_mask(self, tissue_seg_model_path, tissue_seg_method):
+        if tissue_seg_method is None:
+            tissue_seg_method = DEEP
+        if tissue_seg_model_path is None or len(tissue_seg_model_path) == 0:
+            tissue_seg_method = INTENSITY
+        ssDNA_tissue_cut = SingleStrandDNATissueCut(
+            src_img_path=self.__img_path,
+            model_path=tissue_seg_model_path,
+            dst_img_path=self.__out_path,
+            seg_method=tissue_seg_method
+        )
+        ssDNA_tissue_cut.tissue_seg()
+        self.tissue_mask = ssDNA_tissue_cut.mask
+        # self.tissue_mask_thumb = ssDNA_tissue_cut.mask_thumb
 
     def __get_img_filter(self):
         """get tissue image by tissue mask"""
-        for idx, img in enumerate(self.img_list):
+        # for idx, img in enumerate(self.img_list):
+        for img, tissue_mask in zip(self.img_list, self.tissue_mask):
 
-            img_filter = np.multiply(img, self.tissue_mask[idx]).astype(np.uint8)
+            img_filter = np.multiply(img, tissue_mask).astype(np.uint8)
             self.img_filter.append(img_filter)
 
     def __filter_roi(self, props):
@@ -131,7 +160,7 @@ class CellSegPipe(object):
                     bbox = tissue_tile['bbox']
                     tissue_mask_filter[bbox[0]: bbox[2], bbox[1]: bbox[3]] += tissue_tile['image']
                 self.tissue_mask[idx] = np.uint8(tissue_mask_filter > 0)
-                self.tissue_mask_thumb[idx] = tissue_seg.down_sample(self.tissue_mask[idx])
+                # self.tissue_mask_thumb[idx] = tissue_seg.down_sample(self.tissue_mask[idx])
             self.tissue_num.append(len(filtered_props))
             self.tissue_bbox.append([p['bbox'] for p in filtered_props])
 
@@ -139,9 +168,10 @@ class CellSegPipe(object):
 
         """cell segmentation in tissue area by neural network"""
         tissue_cell_label = []
-        for idx, img in enumerate(self.img_list):
+        # for idx, img in enumerate(self.img_list):
 
-            tissue_bbox = self.tissue_bbox[idx]
+        #     tissue_bbox = self.tissue_bbox[idx]
+        for img, tissue_bbox in zip(self.img_filter, self.tissue_bbox):
             tissue_img = [img[p[0]: p[2], p[1]: p[3]] for p in tissue_bbox]
 
             label_list = cell_infer.cellInfer(tissue_img, self.deep_crop_size, self.overlap, self.model_path)
@@ -184,9 +214,9 @@ class CellSegPipe(object):
 
             input_list = [[cell_mask_tile[id], img] for id, img in enumerate(img_tile)]
             if self.__is_water:
-                post_list_tile = grade.watershed_multi(input_list, 15)
+                post_list_tile = grade.watershed_multi(input_list, self.post_processing_workers)
             else:
-                post_list_tile = grade.score_multi(input_list, 15)
+                post_list_tile = grade.score_multi(input_list, self.post_processing_workers)
 
 
             post_mask_tile = [label[0] for label in post_list_tile]
@@ -224,17 +254,17 @@ class CellSegPipe(object):
             os.mkdir(self.__subpkg_score)
 
     def __save_each_file_result(self, file_name, idx):
-       mask_outline_name = r'_watershed_outline.tif' if self.__is_water else r'_outline.tif'
-       mask_name = r'_watershed_mask.tif' if self.__is_water else r'_mask.tif'
+        mask_outline_name = r'_watershed_outline.tif' if self.__is_water else r'_outline.tif'
+        mask_name = r'_watershed_mask.tif' if self.__is_water else r'_mask.tif'
 
-       tifffile.imsave(join(self.__out_path, file_name + r'_score.tif'),
-                       self.score_mask_list[idx])
-       tifffile.imsave(join(self.__out_path, file_name + r'_tissue_cut.tif'),
-                       self.tissue_mask_thumb[idx])
-       tifffile.imsave(join(self.__out_path, file_name + mask_outline_name),
-                       utils.outline(self.post_mask_list[idx]))
-       tifffile.imsave(join(self.__out_path, file_name + mask_name),
-                       self.post_mask_list[idx])
+        tifffile.imsave(join(self.__out_path, file_name + r'_score.tif'),
+                        self.score_mask_list[idx])
+        # tifffile.imsave(join(self.__out_path, file_name + r'_tissue_cut.tif'),
+        #                 self.tissue_mask_thumb[idx])
+        tifffile.imsave(join(self.__out_path, file_name + mask_outline_name),
+                        utils.outline(self.post_mask_list[idx]))
+        tifffile.imsave(join(self.__out_path, file_name + mask_name),
+                        self.post_mask_list[idx])
 
     def save_cell_mask(self):
         """save cell mask from network or watershed"""
@@ -262,7 +292,7 @@ class CellSegPipe(object):
 
     def save_result(self):
         """save tissue mask"""
-        self.save_tissue_mask()
+        # self.save_tissue_mask()
         self.save_cell_mask()
 
     def run(self):

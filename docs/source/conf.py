@@ -29,9 +29,10 @@ source_suffix = '.rst'
 master_doc = 'index'
 default_role = 'literal'
 exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
-pygments_style = 'sphinx'
+#pygments_style = 'sphinx'
 
 extensions = [
+    'sphinx.ext.todo',
     'sphinx.ext.autodoc',
     'sphinx.ext.intersphinx',
     'sphinx.ext.doctest',
@@ -56,7 +57,24 @@ api_dir = HERE / 'api'  # function_images
 # The master toctree document.
 language = None
 
-html_theme = 'sphinx_rtd_theme'
+#If you want to include a notebook without outputs and yet don’t want nbsphinx to execute it for you, you can explicitly disable this feature.
+nbsphinx_execute = 'never'
+
+html_theme = 'furo'
+
+html_title = "Stereopy"
+
+html_theme_options = {
+    # "sidebar_hide_name": True,
+        "show_navbar_depth":0,
+        "light_css_variables": {
+        "color-brand-primary": "#003262",
+        "color-brand-content": "#003262",
+        "admonition-font-size": "var(--font-size-normal)",
+        "admonition-title-font-size": "var(--font-size-normal)",
+        "code-font-size": "var(--font-size--small)",
+    },
+}
 
 html_static_path = ['_static']
 
@@ -67,23 +85,31 @@ html_css_files = [
 #     '_static/html.css',
 # ]
 
+# import nbclean, glob
 
-import nbclean, glob
-
-for filename in glob.glob('**/*.ipynb', recursive=True):
-    ntbk = nbclean.NotebookCleaner(filename)
-    ntbk.clear('stderr')
-    ntbk.save(filename)
+# for filename in glob.glob('**/*.ipynb', recursive=True):
+#     ntbk = nbclean.NotebookCleaner(filename)
+#     ntbk.clear('stderr')
+#     ntbk.save(filename)
 
 nbsphinx_thumbnails = {
-    "Tutorials/clustering": "_static/squareBin_clustering.png",
-    "Tutorials/cell_correction": "_static/cell_bin_correction.png",
-    "Tutorials/tissue_cut": "_static/tissue_segmentation.png",
-    "Tutorials/gaussian_smooth": "_static/gaussian_smooth_1.png",
-    "Tutorials/batches_integration": "_static/batches_integration.png",
-    "Tutorials/rna_velocity": "_static/rna_velocity.png",
-    "Tutorials/hotspot": "_static/hotspot.png",
-    "Tutorials/high_resolution_export": "_static/box_select.gif",
-    "Tutorials/sctransform":"_static/variance_sct.png"
+    "Tutorials/SquareBin_Clustering": "_static/squareBin_clustering.png",
+    "Tutorials/CellBin_Clustering": "_static/cellBin_clustering.png",
+    "Tutorials/Clustering_by_GPU": "_static/GPU.png",
+    "Tutorials/IO": "_static/io.png",
+    "Tutorials/Format_Conversion": "_static/conversion.png",
+    "Tutorials/Performance": "_static/performance.png",
+    "Tutorials/Cell_Correction": "_static/cell_bin_correction.png",
+    "Tutorials/Tissue_Segmentation": "_static/tissue_segmentation.png",
+    "Tutorials/Gaussian_Smoothing": "_static/gaussian_smooth_1.png",
+    "Tutorials/Batches_Integration": "_static/batches_integration.png",
+    "Tutorials/RNA_Velocity": "_static/rna_velocity.png",
+    "Tutorials/Spatial_Hotspot": "_static/hotspot.png",
+    "Tutorials/Gaussian_Smoothing": "_static/gaussian_smooth_1.png",
+    "Tutorials/High_Resolution_Export": "_static/box_select.gif",
+    "Tutorials/scTransform":"_static/variance_sct.png",
+	"Tutorials/Cell_Cell_Communication":"_static/cell_cell_communication.png",
+    "Tutorials/SingleR":"_static/singleR.png",
+    "Tutorials/Gene_Regulatory_Network":"_static/gene_regulatory_network.png"
 }
 

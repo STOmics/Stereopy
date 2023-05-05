@@ -93,13 +93,13 @@ def SCTransform(
 
     # FIXME: ignore `batch_var`
     if 'batch_var' in kwargs:
-        logger.warn(f'`batch_var` not implemented yet, will add the feature in the future')
+        logger.warning(f'`batch_var` not implemented yet, will add the feature in the future')
         raise NotImplementedError
 
     if callable(clip_range):
         clip_range = clip_range(umi)
     else:
-        logger.warn(f'clip_range type: {type(clip_range)} is not callable')
+        logger.warning(f'clip_range type: {type(clip_range)} is not callable')
         raise TypeError
 
     vst_args = kwargs

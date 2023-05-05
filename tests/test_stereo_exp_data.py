@@ -1,98 +1,37 @@
-#!/usr/bin/env python3
-# coding: utf-8
-"""
-@file: test_stereo_exp_data.py
-@description: 
-@author: Ping Qiu
-@email: qiuping1@genomics.cn
-@last modified by: Ping Qiu
+import unittest
 
-change log:
-    2021/06/17  create file.
-"""
+import numpy as np
+import pandas as pd
+import stereo as st
+from stereo.utils._download import _download
 
-from stereo.core.data import Data
-from stereo.core.stereo_exp_data import StereoExpData
+from settings import TEST_DATA_PATH, TEST_IMAGE_PATH, DEMO_DATA_URL, DEMO_135_CELL_BIN_GEF_URL
 
 
-filename = '/home/qiuping/workspace/st/stereopy_data/mouse/DP8400013846TR_F5.gem'
-binsize = 100
+class TestStereoExpData(unittest.TestCase):
 
+    def setUp(self) -> None:
+        file_path = _download(DEMO_DATA_URL, dir_str=TEST_DATA_PATH)
+        self.gef_file = file_path
+        file_path = _download(DEMO_135_CELL_BIN_GEF_URL, dir_str=TEST_DATA_PATH)
+        self.cgef_file = file_path
 
-def test_data():
-    data = Data(file_path=filename, file_format='gem')
-    data.check()
-    print(data.file)
+    def test_sub_by_index(self):
+        data = st.io.read_gef(self.gef_file)
+        data.sub_by_index(cell_index=np.array([1, 2, 3, 4]))
+        self.assertEqual(len(data.cell_names), 4)
 
+    def test_sub_by_index_pd_index(self):
+        data = st.io.read_gef(self.gef_file)
+        data.sub_by_index(cell_index=pd.Index([1, 2, 3, 4]))
+        self.assertEqual(len(data.cell_names), 4)
 
-def test_read_bins():
-    stereo_data = StereoExpData(file_path=filename, file_format='gem', bin_type='bins')
-    #stereo_data.read()
-    print(stereo_data.genes)
-    print(stereo_data.cells)
-    print(stereo_data.exp_matrix)
-    return stereo_data
+    def test_sub_by_name_cell(self):
+        data = st.io.read_gef(self.gef_file)
+        data = data.sub_by_name(cell_name=['36936718752000', '37795712221600', '38225208951600', '40802189322600'])
+        self.assertEqual(len(data.cell_names), 4)
 
-
-def test_read_cell_bins():
-    path = '/home/qiuping//workspace/st/stereopy_data/cell_bin/ssdna_Cell_GetExp_gene.txt'
-    stereo_data = StereoExpData(file_path=path, file_format='gem', bin_type='cell_bins')
-    #stereo_data.read()
-    print(stereo_data.genes)
-    print(stereo_data.cells)
-    print(stereo_data.exp_matrix)
-
-
-def make_data():
-    import numpy as np
-    from scipy import sparse
-    genes = ['g1', 'g2', 'g3']
-    rows = [0, 1, 0, 1, 2, 0, 1, 2]
-    cols = [0, 0, 1, 1, 1, 2, 2, 2]
-    cells = ['c1', 'c2', 'c3']
-    v = [2, 3, 4, 5, 6, 3, 4, 5]
-    exp_matrix = sparse.csr_matrix((v, (rows, cols)))
-    position = np.random.randint(0, 10, (len(cells), 2))
-    out_path = '/home/qiuping//workspace/st/stereopy_data/test.h5ad'
-    data = StereoExpData(bin_type='cell_bins', exp_matrix=exp_matrix, genes=np.array(genes),
-                         cells=np.array(cells), position=position, output=out_path)
-    return data
-
-
-def print_data(data):
-    print('genes:')
-    print(data.genes.gene_name)
-    print('cells:')
-    print(data.cells.cell_name)
-    print('exp_matrix:')
-    print(data.exp_matrix.shape)
-    print(data.exp_matrix)
-    print('pos:')
-    print(data.position)
-    print('bin_type:')
-    print(data.bin_type)
-
-
-def test_write_h5ad(data=None):
-    data = make_data() if data is None else data
-    data.write_h5ad()
-    print_data(data)
-
-
-def test_read_h5ad():
-    file_path = '/home/qiuping//workspace/st/stereopy_data/test.h5ad'
-    data = StereoExpData(file_path=file_path, file_format='h5ad')
-    #data.read()
-    print_data(data)
-
-
-if __name__ == '__main__':
-    data = make_data()
-    data.exp_matrix = data.exp_matrix.toarray()
-    print(data.log1p(inplace=False))
-    data.normalize_total(inplace=True)
-    print(data.exp_matrix)
-    # print('test write...')
-    # data = test_read_bins()
-    # data.output = '/home/qiuping//workspace/st/stereopy_data/mource_bin100.h5ad'
-    # test_write_h5ad(data)
+    def test_sub_by_name_gene(self):
+        data = st.io.read_gef(self.gef_file)
+        data = data.sub_by_name(gene_name=['CAAA01147332.1', 'CAAA01118383.1', 'Gm47283'])
+        self.assertEqual(len(data.gene_names), 3)

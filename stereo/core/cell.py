@@ -1,5 +1,3 @@
-#!/usr/bin/env python3
-# coding: utf-8
 """
 @file: cell.py
 @description: 
@@ -19,14 +17,66 @@ from anndata import AnnData
 
 
 class Cell(object):
-    def __init__(self, cell_name: Optional[np.ndarray] = None, cell_border: Optional[np.ndarray] = None,
-                 batch: Optional[Union[np.ndarray, list, int, str]] = None):
-        self._cell_name = cell_name
+
+    def __init__(
+            self,
+            cell_name: Optional[np.ndarray],
+            cell_border: Optional[np.ndarray] = None,
+            batch: Optional[Union[np.ndarray, list, int, str]] = None
+    ):
+        self._obs = pd.DataFrame(index=cell_name if cell_name is None else cell_name.astype('U'))
+        self._matrix = dict()
+        self._pairwise = dict()
+        if batch is not None:
+            self._obs['batch'] = self._set_batch(batch)
         self._cell_border = cell_border
-        self._batch = self._set_batch(batch) if batch is not None else None
-        self.total_counts = None
-        self.pct_counts_mt = None
-        self.n_genes_by_counts = None
+
+    def __contains__(self, item):
+        return item in self._obs.columns or item in self._matrix or item in self._pairwise
+
+    def __setattr__(self, key, value):
+        if key in {'_obs', '_matrix', '_pairwise', '_cell_border', 'cell_name', 'cell_border'}:
+            object.__setattr__(self, key, value)
+        elif key == 'batch':
+            self._obs[key] = self._set_batch(value)
+        else:
+            self._obs[key] = value
+
+    def __setitem__(self, key, value):
+        self._obs[key] = value
+
+    def __getitem__(self, key):
+        return self._obs[key]
+
+    @property
+    def total_counts(self):
+        if 'total_counts' not in self._obs.columns:
+            return None
+        return self._obs['total_counts'].values
+
+    @total_counts.setter
+    def total_counts(self, value):
+        self._obs['total_counts'] = value
+
+    @property
+    def pct_counts_mt(self):
+        if 'pct_counts_mt' not in self._obs.columns:
+            return None
+        return self._obs['pct_counts_mt'].values
+
+    @pct_counts_mt.setter
+    def pct_counts_mt(self, value):
+        self._obs['pct_counts_mt'] = value
+
+    @property
+    def n_genes_by_counts(self):
+        if 'n_genes_by_counts' not in self._obs.columns:
+            return None
+        return self._obs['n_genes_by_counts'].values
+
+    @n_genes_by_counts.setter
+    def n_genes_by_counts(self, value):
+        self._obs['n_genes_by_counts'] = value
 
     @property
     def cell_name(self):
@@ -35,7 +85,7 @@ class Cell(object):
 
         :return: cell name
         """
-        return self._cell_name
+        return self._obs.index.to_numpy().astype('U')
 
     @cell_name.setter
     def cell_name(self, name: np.ndarray):
@@ -47,25 +97,23 @@ class Cell(object):
         """
         if not isinstance(name, np.ndarray):
             raise TypeError('cell name must be a np.ndarray object.')
-        self._cell_name = name
+        self._obs = self._obs.reindex(name)
 
     @property
     def cell_border(self):
         return self._cell_border
 
     @cell_border.setter
-    def cell_boder(self, cell_border: np.ndarray):
+    def cell_border(self, cell_border: np.ndarray):
         if not isinstance(cell_border, np.ndarray):
             raise TypeError('cell border must be a np.ndarray object.')
         self._cell_border = cell_border
 
     @property
     def batch(self):
-        return self._batch
-
-    @batch.setter
-    def batch(self, batch: Union[np.ndarray, list, int]):
-        self._batch = self._set_batch(batch)
+        if 'batch' not in self._obs.columns:
+            return None
+        return self._obs['batch'].values
 
     def _set_batch(self, batch: Union[np.ndarray, list, int]):
         if batch is None:
@@ -90,18 +138,15 @@ class Cell(object):
         :param index: a numpy array of index info.
         :return: the subset of Cell object.
         """
-        if self.cell_name is not None:
-            self.cell_name = self.cell_name[index]
-        if self.cell_boder is not None:
-            self.cell_boder = self.cell_boder[index]
-        if self.total_counts is not None:
-            self.total_counts = self.total_counts[index]
-        if self.pct_counts_mt is not None:
-            self.pct_counts_mt = self.pct_counts_mt[index]
-        if self.n_genes_by_counts is not None:
-            self.n_genes_by_counts = self.n_genes_by_counts[index]
-        if self.batch is not None:
-            self.batch = self.batch[index]
+
+        if self.cell_border is not None:
+            self.cell_border = self.cell_border[index]
+        if type(index) is list:
+            self._obs = self._obs.iloc[index]
+        elif index.dtype == bool:
+            self._obs = self._obs[index]
+        else:
+            self._obs = self._obs.iloc[index]
         return self
 
     def get_property(self, name):
@@ -111,28 +156,21 @@ class Cell(object):
         :param name: the name of property.
         :return: the property.
         """
-        if name == 'total_counts':
-            return self.total_counts
-        if name == 'pct_counts_mt':
-            return self.pct_counts_mt
-        if name == 'n_genes_by_counts':
-            return self.n_genes_by_counts
+        return self._obs[name].to_numpy()
 
     def to_df(self):
         """
-        transform Cell object to pd.DataFrame.
+        Transform StereoExpData object to pd.DataFrame.
 
         :return: a dataframe of Cell.
         """
-        attributes = {
-            'total_counts': self.total_counts,
-            'pct_counts_mt': self.pct_counts_mt,
-            'n_genes_by_counts': self.n_genes_by_counts
-        }
-        if self._batch is not None:
-            attributes['batch'] = self._batch
-        df = pd.DataFrame(attributes, index=self.cell_name)
-        return df
+        return self._obs.copy(deep=True)
+
+    def __str__(self):
+        format_cells = ['cell_name']
+        for attr_name in self._obs.columns:
+            format_cells.append(attr_name)
+        return f"\ncells: {format_cells}" if format_cells else ""
 
 
 class AnnBasedCell(Cell):
@@ -142,6 +180,9 @@ class AnnBasedCell(Cell):
                  batch: Optional[Union[np.ndarray, list, int, str]] = None):
         self.__based_ann_data = based_ann_data
         super(AnnBasedCell, self).__init__(cell_name, cell_border, batch)
+
+    def __setattr__(self, key, value):
+        object.__setattr__(self, key, value)
 
     def __str__(self):
         return str(self.__based_ann_data.obs)
