@@ -22,7 +22,7 @@ class Gene(object):
         self._pairwise = dict()
 
     def __contains__(self, item):
-        return item in self._var.columns or item in self._matrix or item in self._pairwise
+        return item in self._var.columns
 
     def __setattr__(self, key, value):
         if key in {'_var', '_matrix', '_pairwise', 'gene_name'}:
@@ -126,6 +126,12 @@ class AnnBasedGene(Gene):
     def __repr__(self):
         return self.__str__()
 
+    def __getitem__(self, item):
+        return self.__based_ann_data.var[item]
+
+    def __contains__(self, item):
+        return item in self.__based_ann_data.var.columns
+
     @property
     def gene_name(self) -> np.ndarray:
         """
@@ -146,3 +152,6 @@ class AnnBasedGene(Gene):
         if not isinstance(name, np.ndarray):
             raise TypeError('gene name must be a np.ndarray object.')
         self.__based_ann_data._inplace_subset_var(name)
+
+    def to_df(self):
+        return self.__based_ann_data.var

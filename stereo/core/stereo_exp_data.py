@@ -592,7 +592,9 @@ class AnnBasedStereoExpData(StereoExpData):
 
     @property
     def position(self):
-        if {'x', 'y'} - set(self._ann_data.obs.columns.values):
+        if 'spatial' in self._ann_data.obsm:
+            return self._ann_data.obsm['spatial']
+        elif {'x', 'y'} - set(self._ann_data.obs.columns.values):
             self._ann_data.obs.loc[:, ['x', 'y']] = \
                 np.array(list(self._ann_data.obs.index.str.split('-', expand=True)), dtype=np.uint32)
         return self._ann_data.obs.loc[:, ['x', 'y']].values

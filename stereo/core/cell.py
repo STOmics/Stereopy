@@ -32,7 +32,7 @@ class Cell(object):
         self._cell_border = cell_border
 
     def __contains__(self, item):
-        return item in self._obs.columns or item in self._matrix or item in self._pairwise
+        return item in self._obs.columns
 
     def __setattr__(self, key, value):
         if key in {'_obs', '_matrix', '_pairwise', '_cell_border', 'cell_name', 'cell_border'}:
@@ -179,7 +179,7 @@ class AnnBasedCell(Cell):
                  cell_border: Optional[np.ndarray] = None,
                  batch: Optional[Union[np.ndarray, list, int, str]] = None):
         self.__based_ann_data = based_ann_data
-        super(AnnBasedCell, self).__init__(cell_name, cell_border, batch)
+        super().__init__(cell_name, cell_border, batch)
 
     def __setattr__(self, key, value):
         object.__setattr__(self, key, value)
@@ -189,6 +189,12 @@ class AnnBasedCell(Cell):
 
     def __repr__(self):
         return self.__str__()
+
+    def __getitem__(self, item):
+        return self.__based_ann_data.obs[item]
+
+    def __contains__(self, item):
+        return item in self.__based_ann_data.obs.columns
 
     @property
     def cell_name(self) -> np.ndarray:
@@ -237,3 +243,6 @@ class AnnBasedCell(Cell):
     def n_genes_by_counts(self, new_n_genes_by_counts):
         if new_n_genes_by_counts is not None:
             self.__based_ann_data.obs['n_genes_by_counts'] = new_n_genes_by_counts
+
+    def to_df(self):
+        return self.__based_ann_data.obs

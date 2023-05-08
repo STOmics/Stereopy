@@ -9,7 +9,7 @@ import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
 from sklearn.cluster import DBSCAN
 
-from interp import generate_linear_interp_points, generate_cubic_interp_points
+from .interp import generate_linear_interp_points, generate_cubic_interp_points
 
 
 class Traj:
@@ -377,7 +377,7 @@ class Traj:
         patches = [mpatches.Patch(color=colors[i], label=uni_ele[i]) for i in range(len(colors))]  # nan excluded:  if not np.isnan(uni_ele[i])
 
         ncols = len(patches) // (num_legend_per_col + 1) + 1
-        plt.legend(handles=patches, loc='center left', bbox_to_anchor=(1, 0.5), ncols=ncols,
+        plt.legend(handles=patches, loc='center left', bbox_to_anchor=(1, 0.5), ncol=ncols,
                    framealpha=0)  # loc和bbox_to_anchor组合，loc表示legend的锚点，bbox_to_anchor表示锚点相对图的位置
 
         # set ticks
