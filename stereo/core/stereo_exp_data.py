@@ -81,7 +81,9 @@ class StereoExpData(Data):
         self._exp_matrix = exp_matrix
         self._genes = genes if isinstance(genes, Gene) else Gene(gene_name=genes)
         self._cells = cells if isinstance(cells, Cell) else Cell(cell_name=cells)
+        self._raw_position = None
         self._position = position
+        self._position_z = np.repeat(0, repeats=self.cells.cell_name.shape[0])
         self._position_offset = None
         self._bin_type = bin_type
         self.bin_size = bin_size
@@ -342,6 +344,14 @@ class StereoExpData(Data):
         """
         self.bin_type_check(b_type)
         self._bin_type = b_type
+    
+    @property
+    def raw_position(self):
+        return self._raw_position
+
+    @raw_position.setter
+    def raw_position(self, pos):
+        self._raw_position = pos
 
     @property
     def position(self):
@@ -361,6 +371,14 @@ class StereoExpData(Data):
         :return:
         """
         self._position = pos
+    
+    @property
+    def position_z(self):
+        return self._position_z
+    
+    @position_z.setter
+    def position_z(self, position_z):
+        self._position_z = position_z
 
     @property
     def position_offset(self):

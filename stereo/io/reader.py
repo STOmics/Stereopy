@@ -465,7 +465,8 @@ def read_ann_h5ad(
         file_path: str,
         spatial_key: Optional[str] = "spatial",
         bin_type: str = None,
-        bin_size: int = None
+        bin_size: int = None,
+        resolution: Optional[int] = 500
 ):
     """
     Read the H5ad file in Anndata format of Scanpy, and generate the StereoExpData object.
@@ -480,6 +481,8 @@ def read_ann_h5ad(
         the bin type includes `'bins'` or `'cell_bins'`, default to `'bins'`.
     bin_size
         the size of bin to merge, when `bin_type` is set to `'bins'`.	
+    resolution
+        the resolution of chip, default 500nm.
     Returns
     ---------------
     An object of StereoExpData.
@@ -519,18 +522,25 @@ def read_ann_h5ad(
             elif k == 'obsm':
                 if spatial_key is not None:
                     if isinstance(f[k], h5py.Group):
-                        data.position = h5ad.read_group(f[k])[spatial_key]
+                        position = h5ad.read_group(f[k])[spatial_key]
                     else:
-                        data.position = h5ad.read_dataset(f[k])[spatial_key]
+                        position = h5ad.read_dataset(f[k])[spatial_key]
+                    data.position = position[:, [0, 1]]
+                    if position.shape[1] >= 3:
+                        data.position_z = position[:, 2]
             else:  # Base case
                 pass
+
+    data.attr = {'resolution': resolution}
+
     return data
 
 
 def anndata_to_stereo(
         andata: AnnData,
         use_raw: bool = False,
-        spatial_key: Optional[str] = None
+        spatial_key: Optional[str] = None,
+        resolution: Optional[int] = 500
 ):
     """
     Transform the Anndata object into StereoExpData format.
@@ -543,6 +553,8 @@ def anndata_to_stereo(
         use `anndata.raw.X` if True, otherwise `anndata.X`.
     spatial_key
         use `.obsm['spatial_key']` as coordiante information.
+    resolution
+        the resolution of chip, default 500nm.
     Returns
     ---------------------
     An object of StereoExpData.
@@ -562,6 +574,7 @@ def anndata_to_stereo(
     data.genes.n_counts = andata.var['n_counts'] if 'n_counts' in andata.var.columns.tolist() else None
     # position
     data.position = andata.obsm[spatial_key] if spatial_key is not None else None
+    data.attr = {'resolution': resolution}
     return data
 
 
