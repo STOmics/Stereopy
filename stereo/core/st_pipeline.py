@@ -195,7 +195,7 @@ class StPipeline(object):
     def filter_genes(self,
                      min_cell: Optional[int] = None,
                      max_cell: Optional[int] = None,
-                     gene_list: Optional[list] = None,
+                     gene_list: Optional[Union[list, np.ndarray]] = None,
                      mean_umi_gt: float = None,
                      inplace: bool = True):
         """

@@ -67,11 +67,14 @@ def get_top_marker(g_name: str, marker_res: dict, sort_key: str, ascend: bool = 
     return top_res
 
 
-def merge(data1: StereoExpData = None, 
-          data2: StereoExpData = None, 
-          *args, 
-          reorganize_coordinate: Union[bool,int]=2,
-          coordinate_offset_additional: Union[bool,int]=0):
+def merge(
+    data1: StereoExpData = None, 
+    data2: StereoExpData = None, 
+    *args, 
+    reorganize_coordinate: Union[bool,int]=2,
+    coordinate_offset_additional: Union[bool,int]=0,
+    space_between: Optional[str]='0'
+):
     """
     Merge two or more batches of data.
 
@@ -95,6 +98,30 @@ def merge(data1: StereoExpData = None,
     assert data1 is not None, 'the first parameter `data1` must be input'
     if data2 is None:
         return data1
+    
+    def _parse_space_between(space_between: str):
+        import re
+        if space_between == '0':
+            return 0.0
+        pattern = r"^\d+(\.\d)*(nm|um|mm|cm|dm|m)$"
+        match = re.match(pattern, space_between)
+        if match is None:
+            raise ValueError(f"Invalid space between: '{space_between}'")
+        unit = match.groups()[1]
+        space_between = float(space_between.replace(unit, ''))
+        if unit == 'um':
+            space_between *= 1e3
+        elif unit == 'mm':
+            space_between *= 1e6
+        elif unit == 'cm':
+            space_between *= 1e7
+        elif unit == 'dm':
+            space_between *= 1e8
+        elif unit == 'm':
+            space_between *= 1e9
+        return space_between
+    
+    space_between = _parse_space_between(space_between)
     datas = [data1, data2]
     if len(args) > 0:
         datas.extend(args)
@@ -107,6 +134,7 @@ def merge(data1: StereoExpData = None,
         position_column_count = reorganize_coordinate
         max_xs = [0] * (position_column_count + 1)
         max_ys = [0] * (position_row_count + 1)
+    last_position_z = 0
     for i in range(data_count):
         data: StereoExpData = datas[i]
         data.cells.batch = i
@@ -118,6 +146,7 @@ def merge(data1: StereoExpData = None,
             new_data.cells = Cell(cell_name=cell_names, cell_border=data.cells.cell_border, batch=data.cells.batch)
             new_data.genes = Gene(gene_name=data.gene_names)
             new_data.position = data.position
+            new_data.position_z = np.repeat(0, repeats=data.position.shape[0]).astype(data.position.dtype)
             new_data.bin_type = data.bin_type
             new_data.bin_size = data.bin_size
             new_data.offset_x = data.offset_x
@@ -128,6 +157,8 @@ def merge(data1: StereoExpData = None,
             if new_data.cell_borders is not None and data.cell_borders is not None:
                 new_data.cells.cell_border = np.concatenate([new_data.cells.cell_border, data.cells.cell_border])
             new_data.position = np.concatenate([new_data.position, data.position])
+            last_position_z += space_between / data.attr['resolution']
+            new_data.position_z = np.concatenate([new_data.position_z, np.repeat(last_position_z, repeats=data.position.shape[0])]) 
             new_data.genes.gene_name, ind1, ind2 = np.intersect1d(new_data.genes.gene_name, data.genes.gene_name, return_indices=True)
             new_data.exp_matrix = sp.vstack([new_data.exp_matrix[:, ind1], data.exp_matrix[:, ind2]])
             if new_data.offset_x is not None and data.offset_x is not None:

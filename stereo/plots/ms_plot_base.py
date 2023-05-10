@@ -1,4 +1,5 @@
 from abc import ABCMeta
+from stereo.core.ms_data import MSData
 
 
 class MSDataPlotBase(metaclass=ABCMeta):
@@ -6,7 +7,7 @@ class MSDataPlotBase(metaclass=ABCMeta):
 
     def __init__(self, ms_data, pipeline_res=None):
         # common object variable
-        self.ms_data = ms_data
+        self.ms_data: MSData = ms_data
         self.pipeline_res = pipeline_res
 
     @classmethod

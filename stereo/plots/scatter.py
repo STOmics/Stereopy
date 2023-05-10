@@ -36,6 +36,7 @@ def base_scatter(
         color_bar_reverse: bool = False,
         bad_color: str = "lightgrey",
         dot_size: int = None,
+        marker: str = 's',
         palette: Optional[Union[str, list]] = 'stereo',
         invert_y: bool = True,
         legend_ncol=2,
@@ -95,7 +96,7 @@ def base_scatter(
         cmap = ListedColormap(colors)
         cmap.set_bad(bad_color)
 
-        sns.scatterplot(x=x, y=y, hue=hue, ax=ax, palette=cmap, size=hue, linewidth=0, marker="s",
+        sns.scatterplot(x=x, y=y, hue=hue, ax=ax, palette=cmap, size=hue, linewidth=0, marker=marker,
                         sizes=(dot_size, dot_size), vmin=vmin, vmax=vmax)
         if vmin is None and vmax is None:
             norm = plt.Normalize(hue.min(), hue.max())
@@ -111,7 +112,7 @@ def base_scatter(
             g = hue_order
         colors = stereo_conf.get_colors(palette)
         color_dict = collections.OrderedDict(dict([(g[i], colors[i]) for i in range(len(g))]))
-        sns.scatterplot(x=x, y=y, hue=hue, hue_order=g, linewidth=0, marker="s",
+        sns.scatterplot(x=x, y=y, hue=hue, hue_order=g, linewidth=0, marker=marker,
                         palette=color_dict, size=hue, sizes=(dot_size, dot_size), ax=ax)
         handles, labels = ax.get_legend_handles_labels()
         ax.legend_.remove()

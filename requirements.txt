@@ -68,3 +68,4 @@ fbpca>=1.0
 geosketch>=1.2
 pyscenic>=0.12.1
 onnxruntime==1.14.1
+POT==0.8.1.0
