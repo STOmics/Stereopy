@@ -202,7 +202,10 @@ def _read_stereo_h5ad_from_group(f, data, use_raw, use_result):
         elif k == 'genes':
             data.genes = h5ad.read_group(f[k])
         elif k == 'position':
-            data.position = h5ad.read_dataset(f[k])
+            position = h5ad.read_dataset(f[k])
+            data.position = position[:, [0, 1]]
+            if position.shape[1] >= 3:
+                data.position_z = position[:, 2]
         elif k == 'bin_type':
             data.bin_type = h5ad.read_dataset(f[k])
         elif k == 'bin_size':
@@ -240,7 +243,10 @@ def _read_stereo_h5ad_from_group(f, data, use_raw, use_result):
         else:
             data.tl.raw.genes = deepcopy(data.genes)
         if 'position@raw' in f.keys():
-            data.tl.raw.position = h5ad.read_dataset(f['position@raw'])
+            position = h5ad.read_dataset(f['position@raw'])
+            data.tl.raw.position = position[:, [0, 1]]
+            if position.shape[1] >= 3:
+                data.tl.raw.position_z = position[:, 2]
         else:
             data.tl.raw.position = deepcopy(data.position)
 
@@ -573,7 +579,11 @@ def anndata_to_stereo(
     data.genes.n_cells = andata.var['n_cells'] if 'n_cells' in andata.var.columns.tolist() else None
     data.genes.n_counts = andata.var['n_counts'] if 'n_counts' in andata.var.columns.tolist() else None
     # position
-    data.position = andata.obsm[spatial_key] if spatial_key is not None else None
+    if spatial_key is not None:
+        position = andata.obsm[spatial_key]
+        data.position = position[:, [0, 1]]
+        if position.shape[1] >= 3:
+            data.position_z = position[:, 2]
     data.attr = {'resolution': resolution}
     return data
 
@@ -620,16 +630,14 @@ def stereo_to_anndata(
                 boutput = f"{name}-{d.sn}{ext}"
             else:
                 boutput = None
-            adata = stereo_to_anndata(d, flavor=flavor, sample_id=sample_id, reindex=reindex, output=boutput,
-                                      split_batches=False)
+            adata = stereo_to_anndata(d, flavor=flavor, sample_id=sample_id, reindex=reindex, output=boutput, split_batches=False)
             adata_list.append(adata)
         return adata_list
 
     from scipy.sparse import issparse
 
     if data.tl.raw is None:
-        logger.error('convert to AnnData should have raw data')
-        raise Exception
+        raise Exception('convert to AnnData should have raw data')
 
     exp = data.exp_matrix if issparse(data.exp_matrix) else csr_matrix(data.exp_matrix)
 
@@ -647,11 +655,15 @@ def stereo_to_anndata(
     adata.obs['orig.ident'] = pd.Categorical([sample_id] * adata.obs.shape[0], categories=[sample_id])
     if data.position is not None:
         logger.info(f"Adding data.position as adata.obsm['spatial'] .")
-        adata.obsm['spatial'] = data.position
-        # adata.obsm['X_spatial'] = data.position
+        if data.position_z is not None:
+            adata.obsm['spatial'] = np.concatenate([data.position, data.position_z.reshape(-1, 1)], axis=1)
+        else:
+            adata.obsm['spatial'] = data.position
         logger.info(f"Adding data.position as adata.obs['x'] and adata.obs['y'] .")
         adata.obs['x'] = pd.DataFrame(data.position[:, 0], index=data.cell_names.astype('str'))
         adata.obs['y'] = pd.DataFrame(data.position[:, 1], index=data.cell_names.astype('str'))
+        if data.position_z is not None:
+            adata.obs['z'] = pd.DataFrame(data.position_z, index=data.cell_names.astype('str'))
 
     if data.sn is not None:
         if isinstance(data.sn, str):

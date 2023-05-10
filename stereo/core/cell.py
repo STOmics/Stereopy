@@ -119,9 +119,8 @@ class Cell(object):
         if batch is None:
             return None
 
-        if not isinstance(batch, np.ndarray) and not isinstance(batch, list) and not isinstance(batch,
-                                                                                                int) and not isinstance(
-            batch, str):
+        if not isinstance(batch, np.ndarray) and not isinstance(batch, list) \
+            and not isinstance(batch,int) and not isinstance(batch, str):
             raise TypeError('batch must be np.ndarray or list or int or str')
 
         if isinstance(batch, int):

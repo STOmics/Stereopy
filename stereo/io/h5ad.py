@@ -228,10 +228,12 @@ def _to_hdf5_vlen_strings(value: np.ndarray) -> np.ndarray:
 
 
 def read_dataframe(group) -> pd.DataFrame:
-    # columns = list(group.attrs['column-order'])
-    columns = [c for c in group.attrs['column-order'] if group[c] is h5py.Dataset]
-    idx_key = group.attrs['_index']
     save_as_matrix = group.attrs.get('save-as-matrix', default=False)
+    if save_as_matrix:
+        columns = list(group.attrs['column-order'])
+    else:
+        columns = [c for c in group.attrs['column-order'] if group[c] is h5py.Dataset]
+    idx_key = group.attrs['_index']
     df = pd.DataFrame(
         {k: read_series(group[k]) for k in columns} if not save_as_matrix else read_dataset(group['values']),
         index=read_series(group[idx_key]),
