@@ -138,7 +138,8 @@ def merge(
     for i in range(data_count):
         data: StereoExpData = datas[i]
         data.cells.batch = i
-        cell_names = np.array([f"{cell_name}-{i}" for cell_name in data.cells.cell_name])
+        # cell_names = np.array([f"{cell_name}-{i}" for cell_name in data.cells.cell_name])
+        cell_names = np.char.add(data.cells.cell_name, f"-{i}")
         data.array2sparse()
         new_data.sn[str(i)] = data.sn
         if i == 0:
@@ -153,7 +154,9 @@ def merge(
             new_data.offset_y = data.offset_y
             new_data.attr = data.attr
         else:
-            new_data.cells._obs = pd.concat([new_data.cells._obs, data.cells._obs])
+            current_obs = data.cells._obs.copy()
+            current_obs.index = cell_names
+            new_data.cells._obs = pd.concat([new_data.cells._obs, current_obs])
             if new_data.cell_borders is not None and data.cell_borders is not None:
                 new_data.cells.cell_border = np.concatenate([new_data.cells.cell_border, data.cells.cell_border])
             new_data.position = np.concatenate([new_data.position, data.position])
