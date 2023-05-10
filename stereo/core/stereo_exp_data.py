@@ -34,6 +34,7 @@ class StereoExpData(Data):
             genes: Optional[Union[np.ndarray, Gene]] = None,
             cells: Optional[Union[np.ndarray, Cell]] = None,
             position: Optional[np.ndarray] = None,
+            position_z: Optional[np.ndarray] = None,
             output: Optional[str] = None,
             partitions: Optional[int] = 1,
             offset_x: Optional[str] = None,
@@ -83,7 +84,7 @@ class StereoExpData(Data):
         self._cells = cells if isinstance(cells, Cell) else Cell(cell_name=cells)
         self._raw_position = None
         self._position = position
-        self._position_z = np.repeat(0, repeats=self.cells.cell_name.shape[0])
+        self._position_z = position_z
         self._position_offset = None
         self._bin_type = bin_type
         self.bin_size = bin_size
