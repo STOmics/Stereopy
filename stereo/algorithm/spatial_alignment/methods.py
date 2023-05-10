@@ -91,7 +91,7 @@ def pairwise_align(
     # check if slices are valid
     for s in [sliceA, sliceB]:
         if s.shape[0] == 0 or s.shape[1] == 0:
-            raise ValueError(f"Found empty `StereoExpData`:\n{sliceA}.")
+            raise ValueError(f"Found empty `StereoExpData`:\n{s}.")
 
     
     # Backend

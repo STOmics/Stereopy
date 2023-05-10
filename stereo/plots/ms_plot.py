@@ -154,7 +154,7 @@ class MSPlot(MSDataPlotBase):
                     dot_size=dot_size,
                     marker='.',
                     ax=axes[i],
-                    title=f"center slice and {slice_name}",
+                    title=f"center slice and slice {slice_name}",
                     width=width,
                     height=height,
                     legend_ncol=1,
