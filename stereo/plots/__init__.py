@@ -15,3 +15,5 @@ from .interact_plot.annotation_cluster import interact_spatial_cluster_annotatio
 from .interact_plot.interactive_scatter import InteractiveScatter
 from .interact_plot.poly_selection import PolySelection
 from .ms_plot import MSPlot
+from .plot_cluster_traj import PlotClusterTraj
+from .plot_vec import PlotVec

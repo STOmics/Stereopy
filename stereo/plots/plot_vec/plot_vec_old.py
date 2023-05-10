@@ -1,19 +1,17 @@
-import os
 import time
 
 import numpy as np
-import matplotlib.pyplot as plt
 
 from stereo.plots.plot_vec.vec import Vec
-from stereo.plots.plot_base import PlotBase
 
 
-class PlotVec(PlotBase):
+class PlotVec():
 
+    # FIXME:  继承
     # TODO：加入输入的边界条件
     # TODO: 把画图的代码单独取出, 其余的结构性代码作为main，放在plot_vec中
 
-    def plot_vec(
+    def main(
             self,
             x_raw,
             y_raw,
@@ -69,23 +67,6 @@ class PlotVec(PlotBase):
                       line_len_co, vec_alpha, line_width, density,
                       tick_step, dpi_val, fig_dir, fig_name)
 
-    def plot_time_scatter(self, group='leiden', fig_dir="./", fig_name="test_plot_time_scatter.tif"):
-        data = self.stereo_exp_data
-        x_raw = data.position[:, 0]
-        y_raw = data.position[:, 1]
-        # x_raw = adata.obsm['spatial_stereoseq']['X'].to_numpy()
-        # y_raw = adata.obsm['spatial_stereoseq']['Y'].to_numpy()
-
-        data.cells[group] = data.cells[group].astype('category')
-        ptime = data.tl.result['dpt_pseudotime']
-
-        plt.figure()
-        plt.scatter(x_raw, y_raw, s=1, c=ptime, linewidths=0, cmap='rainbow')
-        plt.colorbar()
-        plt.gca().set_aspect('equal', adjustable='box')
-        plt.savefig(os.path.join(fig_dir, fig_name), dpi=2000)
-        plt.close()
-
     def test(self):
         def preprocess_data(adata, use_rep):
             """获取用于画图的数据"""
@@ -100,69 +81,40 @@ class PlotVec(PlotBase):
         import numpy as np
 
         # E16.5鼠胚胎 整张
-        # path = 'D:\projects\stereopy_dev\demo_data\PRO000000271_EPT000000272_SPT000000097\PRO000000271_EPT000000272_SPT000000097.h5ad'
-        # use_rep = 'X_pca'
-        # group = 'celltype'
-        # fig_dir = 'D:\projects\stereopy_dev\demo_data\PRO000000271_EPT000000272_SPT000000097'
-
-        # path = 'D:\projects\stereopy_dev\demo_data\SS200000135TL_D1\SS200000135TL_D1.tissue.h5ad'
-        # data = AnnBasedStereoExpData(path)
-        # use_rep = 'X_pca'
-        # group = 'leiden'
-        # fig_dir = 'D:\projects\stereopy_dev\demo_data\SS200000135TL_D1'
-
-        # path = "/mnt/d/projects/stereopy_dev/demo_data/SS200000135TL_D1/SS200000135TL_D1.tissue.h5ad"
-        # data = AnnBasedStereoExpData(path)
-
-        path = "/mnt/d/projects/stereopy_dev/demo_data/SS200000135TL_D1/SS200000135TL_D1.tissue.gef"
-        import stereo as st
-        data = st.io.read_gef(path)
-        data.tl.normalize_total(target_sum=1e4)
-        data.tl.log1p()
-        data.tl.highly_variable_genes(
-            min_mean=0.0125, max_mean=3, min_disp=0.5, res_key='highly_variable_genes', n_top_genes=None
-        )
-        data.tl.scale(zero_center=False)
-        data.tl.pca(use_highly_genes=True, hvg_res_key='highly_variable_genes', n_pcs=20, res_key='pca',
-                    svd_solver='arpack')
-        data.tl.neighbors(pca_res_key='pca', n_pcs=30, res_key='neighbors', n_jobs=2)
-        data.tl.leiden(neighbors_res_key='neighbors', res_key='leiden')
-
+        path = '/mnt/d/projects/stereopy_dev/demo_data/PRO000000271_EPT000000272_SPT000000097/PRO000000271_EPT000000272_SPT000000097.h5ad'
         use_rep = 'X_pca'
-        group = 'leiden'
-        fig_dir = '/mnt/d/projects/stereopy_dev/demo_data/SS200000135TL_D1/'
+        group = 'celltype'
+        fig_dir = '/mnt/d/projects/stereopy_dev/demo_data/PRO000000271_EPT000000272_SPT000000097/'
 
         # 生成需要的数据，先用adata的形式
-        # adata = anndata.read_h5ad(path)
+        adata = anndata.read_h5ad(path)
         print('read in')
 
         # adata = preprocess_data(adata, use_rep)
-        print(data.exp_matrix.shape)
+        print(adata.X.shape)
 
         # 计算用于画图的基本数据类型：坐标,类型和伪时序
-        x_raw = data.position[:, 0]
-        y_raw = data.position[:, 1]
-        # x_raw = adata.obsm['spatial_stereoseq']['X'].to_numpy()
-        # y_raw = adata.obsm['spatial_stereoseq']['Y'].to_numpy()
+        # x_raw = adata.obsm['spatial'][:, 0]
+        # y_raw = adata.obsm['spatial'][:, 1]
+        x_raw = adata.obsm['spatial_stereoseq']['X'].to_numpy()
+        y_raw = adata.obsm['spatial_stereoseq']['Y'].to_numpy()
 
-        data.cells[group] = data.cells[group].astype('category')
-        ty_raw = data.cells[group].to_numpy()
+        adata.obs[group] = adata.obs[group].astype('category')
+        ty_raw = adata.obs[group].to_numpy()
         # 肺癌：'0' # 鼠胚胎：'Spinal cord neuron',100  # 发育鼠脑：'Forebrain radial glia',100 # 鼠脑：'DGGRC2', 100
         # 需要尝试不同的细胞索引
-        data.tl.result['iroot'] = np.flatnonzero(data.cells[group] == '1')[100]
+        adata.uns['iroot'] = np.flatnonzero(adata.obs[group] == 'Spinal cord neuron')[100]
         from stereo.algorithm.dpt import dpt
 
-        dpt(data, n_branchings=0)
-        ptime = data.tl.result['dpt_pseudotime']
-
-        import os
+        dpt(adata, n_branchings=0)
+        ptime = adata.obs['dpt_pseudotime'].to_numpy()
 
         # # 画伪时序图
         # plt.figure()
-        # plt.scatter(x_raw, y_raw, s=1, c=ptime, linewidths=0, cmap='rainbow')
+        # plt.scatter(x_raw, y_raw, s=0.1, c=ptime, linewidths=0, cmap='rainbow')
         # plt.colorbar()
         # plt.gca().set_aspect('equal', adjustable='box')
-        # plt.savefig(os.path.join(fig_dir, 'test_2.tif'), dpi=2000)
+        # plt.savefig(os.path.join(fig_dir, 'test.tif'), dpi=2000)
         # plt.close()
 
         self.main(x_raw, y_raw, ty_raw, ptime,
@@ -192,3 +144,7 @@ if __name__ == '__main__':
 
     t = t1 - t0
     print('t', t)
+
+# ##
+# import scanpy
+# scanpy.pl.spatial

@@ -4,7 +4,6 @@ from stereo.core.stereo_exp_data import AnnBasedStereoExpData
 from stereo.io.reader import read_gef
 from stereo.utils._download import _download
 from settings import TEST_DATA_PATH, DEMO_DATA_URL, DEMO_H5AD_URL, TEST_IMAGE_PATH
-import stereo.plots.plot_cluster_traj
 
 
 class TestPlotClusterTraj(unittest.TestCase):
@@ -29,7 +28,7 @@ class TestPlotClusterTraj(unittest.TestCase):
         data.cells['leiden'] = data.cells['leiden'].astype('category')
         data.tl.paga(groups='leiden')
 
-    def test_plot_cluster_traj_gef(self):
+    def test_plot_cluster_traj_h5ad(self):
         data = AnnBasedStereoExpData(self.file_h5ad_path)
         self._preprocess(data)
         data.plt.plot_cluster_traj(data.tl.result['paga']['connectivities_tree'].todense(), data.position[:, 0],
@@ -37,7 +36,7 @@ class TestPlotClusterTraj(unittest.TestCase):
                                    'test_plot_cluster_traj_gef.tif', lower_thresh_not_equal=0.95, num_legend_per_col=20,
                                    count_thresh=100, seed_val=1, eps_co=30, check_surr_co=20, type_traj='curve')
 
-    def test_plot_cluster_traj_h5ad(self):
+    def test_plot_cluster_traj_gef(self):
         data = read_gef(self.file_gef_path)
         self._preprocess(data)
         data.plt.plot_cluster_traj(data.tl.result['paga']['connectivities_tree'].todense(), data.position[:, 0],

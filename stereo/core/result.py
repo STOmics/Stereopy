@@ -5,7 +5,8 @@ from anndata import AnnData
 
 
 class _BaseResult(object):
-    CLUSTER_NAMES = {'leiden', 'louvain', 'phenograph', 'annotation', 'leiden_from_bins', 'louvain_from_bins', 'phenograph_from_bins', 'annotation_from_bins'}
+    CLUSTER_NAMES = {'leiden', 'louvain', 'phenograph', 'annotation', 'leiden_from_bins', 'louvain_from_bins',
+                     'phenograph_from_bins', 'annotation_from_bins'}
     CONNECTIVITY_NAMES = {'neighbors'}
     REDUCE_NAMES = {'umap', 'pca', 'tsne'}
     HVG_NAMES = {'highly_variable_genes', 'hvg'}
@@ -219,8 +220,7 @@ class AnnBasedResult(_BaseResult, object):
         if obs_obj is not None:
             return True
         uns_obj = self.__based_ann_data.uns.get(item, None)
-        if uns_obj and 'params' in uns_obj and 'connectivities_key' in uns_obj['params'] and 'distances_key' in uns_obj[
-            'params']:
+        if uns_obj is not None:
             return True
         return False
 
@@ -255,14 +255,14 @@ class AnnBasedResult(_BaseResult, object):
             return pd.DataFrame(self.__based_ann_data.obs[name].values, columns=['group'],
                                 index=self.__based_ann_data.obs_names)
         uns_obj = self.__based_ann_data.uns.get(name, None)
-        if uns_obj and 'params' in uns_obj and 'connectivities_key' in uns_obj['params'] and 'distances_key' in uns_obj[
-            'params']:
+        if uns_obj is not None and type(uns_obj) is dict and 'params' in uns_obj and \
+                'connectivities_key' in uns_obj['params'] and 'distances_key' in uns_obj['params']:
             return {
                 'neighbor': None,  # TODO really needed?
                 'connectivities': self.__based_ann_data.obsp[uns_obj['params']['connectivities_key']],
                 'nn_dist': self.__based_ann_data.obsp[uns_obj['params']['distances_key']],
             }
-        elif uns_obj:
+        elif uns_obj is not None:
             return uns_obj
         raise Exception
 
