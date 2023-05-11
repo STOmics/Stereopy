@@ -179,9 +179,13 @@ class AnnBasedCell(Cell):
                  batch: Optional[Union[np.ndarray, list, int, str]] = None):
         self.__based_ann_data = based_ann_data
         super().__init__(cell_name, cell_border, batch)
+        self._obs = self.__based_ann_data.obs
 
     def __setattr__(self, key, value):
-        object.__setattr__(self, key, value)
+        if key == 'batch':
+            self.__based_ann_data.obs[key] = self._set_batch(value)
+        else:
+            object.__setattr__(self, key, value)
 
     def __str__(self):
         return str(self.__based_ann_data.obs)

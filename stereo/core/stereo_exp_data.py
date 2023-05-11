@@ -93,7 +93,7 @@ class StereoExpData(Data):
         self.raw = None
         self._offset_x = offset_x
         self._offset_y = offset_y
-        self._attr = attr
+        self._attr = attr if attr is not None else {'resolution': 500}
         self._merged = merged
         self._sn = self.get_sn_from_path(file_path)
 
@@ -184,7 +184,6 @@ class StereoExpData(Data):
                 index = np.isin(self.gene_names, gene_name)
             new_exp_matrix = new_exp_matrix[:, index]
         return new_exp_matrix
-            
 
     def check(self):
         """
@@ -345,7 +344,7 @@ class StereoExpData(Data):
         """
         self.bin_type_check(b_type)
         self._bin_type = b_type
-    
+
     @property
     def raw_position(self):
         return self._raw_position
@@ -372,11 +371,11 @@ class StereoExpData(Data):
         :return:
         """
         self._position = pos
-    
+
     @property
     def position_z(self):
         return self._position_z
-    
+
     @position_z.setter
     def position_z(self, position_z):
         self._position_z = position_z
@@ -550,7 +549,7 @@ class AnnBasedStereoExpData(StereoExpData):
             based_ann_data = kwargs.pop('based_ann_data')
         else:
             based_ann_data = None
-        super(AnnBasedStereoExpData, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         import anndata
         if based_ann_data:
             assert type(based_ann_data) is anndata.AnnData
@@ -612,11 +611,20 @@ class AnnBasedStereoExpData(StereoExpData):
     @property
     def position(self):
         if 'spatial' in self._ann_data.obsm:
-            return self._ann_data.obsm['spatial']
+            return self._ann_data.obsm['spatial'][:, [0, 1]]
         elif {'x', 'y'} - set(self._ann_data.obs.columns.values):
             self._ann_data.obs.loc[:, ['x', 'y']] = \
                 np.array(list(self._ann_data.obs.index.str.split('-', expand=True)), dtype=np.uint32)
         return self._ann_data.obs.loc[:, ['x', 'y']].values
+
+    @property
+    def position_z(self):
+        if 'spatial' in self._ann_data.obsm:
+            return self._ann_data.obsm['spatial'][:, [2]]
+        elif {'z'} - set(self._ann_data.obs.columns.values):
+            self._ann_data.obs.loc[:, ['z']] = \
+                np.array(list(self._ann_data.obs.index.str.split('-', expand=True)), dtype=np.uint32)
+        return self._ann_data.obs.loc[:, ['z']].values
 
     def sub_by_name(self, cell_name: Optional[Union[np.ndarray, list]] = None,
                     gene_name: Optional[Union[np.ndarray, list]] = None):
