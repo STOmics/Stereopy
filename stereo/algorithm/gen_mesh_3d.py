@@ -3,10 +3,14 @@
 """
 import os
 import gc
-import itertools
 import math
 import numpy as np
-import open3d as o3d
+
+try:
+    import open3d_cpu as o3d
+except ImportError:
+    import open3d as o3d  # 420.5 MB
+
 import pyvista as pv
 import pymeshfix as mf
 import pyacvd
@@ -45,7 +49,8 @@ class ThreeDimGroup():
             # todo: 是否有必要：增加前处理：全部点云作为整体，去除异常值？郭力东老师建议：不要增加此步骤，以免掩盖tissue cut不到位出现的问题
             scatter_li = [{'x': np.array(self.xli), 'y': np.array(self.yli), 'z': np.array(self.zli), 'ty': 'all'}]
         else:
-            scatter_li = self._select_split_and_remove_outlier(eps_val, min_samples, thresh_num)  # list, length equals to number of spatial clusters of this type
+            scatter_li = self._select_split_and_remove_outlier(eps_val, min_samples,
+                                                               thresh_num)  # list, length equals to number of spatial clusters of this type
 
         self.scatter_li = scatter_li
 
@@ -190,8 +195,10 @@ class ThreeDimGroup():
                     _args['density_threshold'] = density_threshold
 
                 mesh = self._create_mesh_poisson_surface(scatter,
-                                                         depth=_args['depth'], width=_args['width'], scale=_args['scale'],
-                                                         linear_fit=_args['linear_fit'], density_threshold=_args['density_threshold'])
+                                                         depth=_args['depth'], width=_args['width'],
+                                                         scale=_args['scale'],
+                                                         linear_fit=_args['linear_fit'],
+                                                         density_threshold=_args['density_threshold'])
 
             elif method in ['delaunay', 'delaunay_3d']:
                 _args = {'alpha': 0, 'tol': 0.01}
@@ -290,7 +297,7 @@ class ThreeDimGroup():
     def plt_3d(xyz, xyz_min, xyz_max):
         fig = plt.figure()
         ax = fig.add_subplot(projection='3d')
-        ax.scatter(xyz[:,0], xyz[:,1], xyz[:,2])
+        ax.scatter(xyz[:, 0], xyz[:, 1], xyz[:, 2])
         ax.set_xlim(xyz_min[0], xyz_max[0])
         ax.set_ylim(xyz_min[1], xyz_max[1])
         ax.set_zlim(xyz_min[2], xyz_max[2])
@@ -315,6 +322,7 @@ class ThreeDimGroup():
                           position, described above.
         :return: coor_repre, NpArray of x, y and z coordinate of representing position.
         """
+
         def dic2arr(dic):
             return np.concatenate([np.expand_dims(dic['x'], axis=1),
                                    np.expand_dims(dic['y'], axis=1),
@@ -338,13 +346,15 @@ class ThreeDimGroup():
         li_sort_z = list(xyz[:, 2])
         li_sort_z.sort()
         # list of candidate z, considering spots along z are sampled with intervals
-        z_med_li = list(set([li_sort_z[math.floor((len(li_sort_z)-1)/2)], li_sort_z[math.ceil((len(li_sort_z)-1)/2)]]))
+        z_med_li = list(
+            set([li_sort_z[math.floor((len(li_sort_z) - 1) / 2)], li_sort_z[math.ceil((len(li_sort_z) - 1) / 2)]]))
         xyz_sel = xyz[np.isin(xyz[:, 2], z_med_li)]  # (n, 3)
         # self.plt_3d(xyz_sel, xyz_min, xyz_max)
 
         # 4. Find out the cluster of above points with the biggest approximate volume
         scatter_li = self._split_and_remove_outlier_append([], xyz_sel[:, 0], xyz_sel[:, 1], xyz_sel[:, 2],
-                                                           self.ty_name, self.eps_val, self.min_samples, self.thresh_num)
+                                                           self.ty_name, self.eps_val, self.min_samples,
+                                                           self.thresh_num)
         len_arr = np.array([scatter['x'].shape[0] for scatter in scatter_li])
         ind_max_po = np.argmax(len_arr)
         scatter_max_clus = scatter_li[ind_max_po]  # {'x':, 'y':, 'z':, 'ty'}
@@ -354,12 +364,14 @@ class ThreeDimGroup():
         xyz = dic2arr(scatter_max_clus)
         # self.plt_3d(xyz, xyz_min, xyz_max)
         xyz_sel = xyz[(xyz[:, 0] >= (x_mean - x_ran_sin)) & (xyz[:, 0] <= (x_mean + x_ran_sin))]  # (n, 3)
-        assert xyz_sel.shape[0] >= 1, "No points fall into [x_mean - x_ran_sin, x_mean + x_ran_sin] range, try increasing x_ran_sin"
+        assert xyz_sel.shape[
+                   0] >= 1, "No points fall into [x_mean - x_ran_sin, x_mean + x_ran_sin] range, try increasing x_ran_sin"
 
         # self.plt_3d(xyz_sel, xyz_min, xyz_max)
         # 6. Find out the cluster of above points with the biggest approximate volume
         scatter_li = self._split_and_remove_outlier_append([], xyz_sel[:, 0], xyz_sel[:, 1], xyz_sel[:, 2],
-                                                           self.ty_name, self.eps_val, self.min_samples, self.thresh_num)
+                                                           self.ty_name, self.eps_val, self.min_samples,
+                                                           self.thresh_num)
         len_arr = np.array([scatter['x'].shape[0] for scatter in scatter_li])
         ind_max_po = np.argmax(len_arr)
         scatter_max_clus = scatter_li[ind_max_po]  # dict
@@ -372,11 +384,6 @@ class ThreeDimGroup():
         return coor_repre
 
     def _create_mesh_alpha_shape(self, scatter, alpha):
-        try:
-            import open3d
-        except ImportError:
-            raise ImportError("Need to install open3d")
-
         pcd = self._gen_o3d_pc(scatter)
 
         # if uniform_pc:
@@ -422,8 +429,8 @@ class ThreeDimGroup():
 
         pcd.estimate_normals()
         mesh, density = o3d.geometry.TriangleMesh.create_from_point_cloud_poisson(pcd,
-                                                                                    depth=depth, width=width, scale=scale,
-                                                                                    linear_fit=linear_fit)
+                                                                                  depth=depth, width=width, scale=scale,
+                                                                                  linear_fit=linear_fit)
         if len(mesh.vertices) == 0:
             raise ValueError(
                 f"The point cloud cannot generate a surface mesh with `poisson` method and depth == {depth}.")
@@ -673,7 +680,7 @@ class ThreeDimGroup():
         max_dist = np.nanmin(dist, axis=1).max()  # the maximum neighbor-wise distance
         mc_sf = max_dist * mc_scale_factor  # so that mc_scale_factor times of maximum neighbor-wise distance equals to width of one voxel
 
-        scale_pc = scale_model(model=pc, scale_factor=1/mc_sf)
+        scale_pc = scale_model(model=pc, scale_factor=1 / mc_sf)
         scale_pc_points = np.ceil(np.asarray(scale_pc.points)).astype(np.int64)
         scale_pc.points = scale_pc_points
 
@@ -870,7 +877,7 @@ class ThreeDimGroup():
 
         return scatter_li
 
-    def _select_split_and_remove_outlier(self,  eps_val, min_samples, thresh_num=10):
+    def _select_split_and_remove_outlier(self, eps_val, min_samples, thresh_num=10):
         """
         Generate inner volumes of the selected type to be visualized.
         :param ty_name: List of types
@@ -905,7 +912,8 @@ class ThreeDimGroup():
         z_arr = np.array(self.zli)[ty_idx]
         ty_arr = np.array(self.tyli)[ty_idx]
 
-        scatter_li = self._split_and_remove_outlier_append([], x_arr, y_arr, z_arr, ty_arr[0], eps_val=eps_val, min_samples=min_samples, thresh_num=thresh_num)
+        scatter_li = self._split_and_remove_outlier_append([], x_arr, y_arr, z_arr, ty_arr[0], eps_val=eps_val,
+                                                           min_samples=min_samples, thresh_num=thresh_num)
         return scatter_li
 
     @staticmethod
@@ -928,7 +936,8 @@ class ThreeDimGroup():
         return o3d_pcd
 
 
-def gen_mesh(adata, xli, yli, zli, tyli, ty_name_li=None, method='march', eps_val=2, min_samples=5, thresh_num=10, key_name='mesh',
+def gen_mesh(adata, xli, yli, zli, tyli, ty_name_li=None, method='march', eps_val=2, min_samples=5, thresh_num=10,
+             key_name='mesh',
              alpha=None, radii=None, depth=None, width=None, scale=None, linear_fit=None, density_threshold=None,
              mc_scale_factor=None, levelset=None, tol=None):
     # todo: 在 __init__中暴露出去
@@ -1065,7 +1074,8 @@ def gen_mesh(adata, xli, yli, zli, tyli, ty_name_li=None, method='march', eps_va
     for ty_name in ty_name_li:
         print(ty_name)
         try:
-            tdg = ThreeDimGroup(xli, yli, zli, tyli, ty_name=ty_name, eps_val=eps_val,  min_samples=min_samples, thresh_num=thresh_num)  # 1.5, 8
+            tdg = ThreeDimGroup(xli, yli, zli, tyli, ty_name=ty_name, eps_val=eps_val, min_samples=min_samples,
+                                thresh_num=thresh_num)  # 1.5, 8
             # print([(ele['ty'], ele['x'].shape[0]) for ele in tdg.scatter_li])
             # ty_set = set([dic['ty'] for dic in mesh.scatter_li])
             # ty_id = dict(zip(ty_set, range(len(ty_set))))
@@ -1115,9 +1125,11 @@ def gen_mesh(adata, xli, yli, zli, tyli, ty_name_li=None, method='march', eps_va
             #                  go.Scatter3d(x=scatter['x'], y=scatter['y'], z=scatter['z'], marker=dict(size=2))))
             # fig.show()
             adata.uns['mesh'][key_name][ty_name] = {}
-            adata.uns['mesh'][key_name][ty_name]['points'] = np.ndarray(shape=mesh.points.shape, dtype=mesh.points.dtype, buffer=mesh.points)
+            adata.uns['mesh'][key_name][ty_name]['points'] = np.ndarray(shape=mesh.points.shape,
+                                                                        dtype=mesh.points.dtype, buffer=mesh.points)
             mfaces = mesh.faces.reshape(-1, 4)
-            adata.uns['mesh'][key_name][ty_name]['faces'] = np.ndarray(shape=mfaces.shape, dtype=mfaces.dtype, buffer=mfaces)
+            adata.uns['mesh'][key_name][ty_name]['faces'] = np.ndarray(shape=mfaces.shape, dtype=mfaces.dtype,
+                                                                       buffer=mfaces)
 
         except Exception as e:
             print(e)
@@ -1195,8 +1207,10 @@ def _test():
     # pl = pv.Plotter()
 
     # 2. 计算mesh
-    adata = gen_mesh(adata, xli, yli, zli, tyli, method='delaunay', tol=1.5, eps_val=2, min_samples=5, thresh_num=10, key_name='delaunay_3d')
-    adata = gen_mesh(adata, xli, yli, zli, tyli, method='march', mc_scale_factor=1.5, eps_val=2, min_samples=5, thresh_num=10, key_name='march_cubes')
+    adata = gen_mesh(adata, xli, yli, zli, tyli, method='delaunay', tol=1.5, eps_val=2, min_samples=5, thresh_num=10,
+                     key_name='delaunay_3d')
+    adata = gen_mesh(adata, xli, yli, zli, tyli, method='march', mc_scale_factor=1.5, eps_val=2, min_samples=5,
+                     thresh_num=10, key_name='march_cubes')
 
     print(adata.uns['mesh'])
     adata.X = scipy.sparse.csr_matrix(adata.X)
@@ -1205,7 +1219,6 @@ def _test():
 
 if __name__ == '__main__':
     _test()
-
 
 # import pyvista
 # import numpy as np

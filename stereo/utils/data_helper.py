@@ -146,6 +146,7 @@ def merge(
             new_data.exp_matrix = data.exp_matrix.copy()
             new_data.cells = Cell(cell_name=cell_names, cell_border=data.cells.cell_border, batch=data.cells.batch)
             new_data.genes = Gene(gene_name=data.gene_names)
+            new_data.cells._obs = data.cells._obs
             new_data.position = data.position
             new_data.position_z = np.repeat(0, repeats=data.position.shape[0]).astype(data.position.dtype)
             new_data.bin_type = data.bin_type

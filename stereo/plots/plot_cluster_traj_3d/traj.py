@@ -1,15 +1,9 @@
 import numpy as np
 import itertools
-import os
-import math
+
 from collections import Counter
-import matplotlib as mpl
 
-import matplotlib.pyplot as plt
-import matplotlib.patches as mpatches
-from sklearn.cluster import DBSCAN
-
-from plot_cluster_traj_3d.interp import generate_linear_interp_points, generate_cubic_interp_points
+from .interp import generate_linear_interp_points, generate_cubic_interp_points
 
 
 class Traj:
