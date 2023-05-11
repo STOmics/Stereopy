@@ -34,9 +34,10 @@ The plot collection for StereoExpData object.
    plots.PlotCollection.interact_cluster
    plots.PlotCollection.interact_spatial_scatter
    plots.PlotCollection.interact_annotation_cluster
-   plots.PlotCollection.marker_gene_volcano
+   plots.PlotCollection.marker_genes_volcano
    plots.PlotCollection.marker_genes_heatmap
    plots.PlotCollection.marker_genes_text
+   plots.PlotCollection.marker_genes_scatter
    plots.PlotCollection.spatial_scatter
    plots.PlotCollection.spatial_scatter_by_gene
    plots.PlotCollection.umap
