@@ -3,7 +3,6 @@ import unittest
 
 import pytest
 
-from stereo.algorithm.gen_mesh_3d import gen_mesh
 from stereo.core.stereo_exp_data import AnnBasedStereoExpData
 from stereo.utils.data_helper import merge
 
@@ -90,6 +89,7 @@ class TestMerge3DData(unittest.TestCase):
         # pl = pv.Plotter()
 
         # 2. 计算mesh
+        from stereo.algorithm.gen_mesh_3d import gen_mesh
         merged_data = gen_mesh(merged_data, xli, yli, zli, tyli, method='delaunay', tol=1.5, eps_val=2, min_samples=5,
                          thresh_num=10, key_name='delaunay_3d')
         merged_data = gen_mesh(merged_data, xli, yli, zli, tyli, method='march', mc_scale_factor=1.5, eps_val=2, min_samples=5,
