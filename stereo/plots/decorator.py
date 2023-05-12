@@ -38,8 +38,8 @@ def download(func):
             dpi = kwargs['out_dpi']
             del kwargs['out_dpi']
         fig: Figure = func(*args, **kwargs)
-        if fig is None:
-            return None
+        if type(fig) is not Figure:
+            return fig
         if out_path is None:
             pn.extension()
             file_name_input = pn.widgets.TextInput(name='file name', placeholder='Enter a file name...', width=200)

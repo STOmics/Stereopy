@@ -6,6 +6,8 @@ import gc
 import math
 import numpy as np
 
+# TODO open3d pyvista pymeshfix pyacvd mcubes is optional pypi
+
 try:
     import open3d_cpu as o3d
 except ImportError:
@@ -936,14 +938,14 @@ class ThreeDimGroup():
         return o3d_pcd
 
 
-def gen_mesh(adata, xli, yli, zli, tyli, ty_name_li=None, method='march', eps_val=2, min_samples=5, thresh_num=10,
+def gen_mesh(stereo_exp_data, xli, yli, zli, tyli, ty_name_li=None, method='march', eps_val=2, min_samples=5, thresh_num=10,
              key_name='mesh',
              alpha=None, radii=None, depth=None, width=None, scale=None, linear_fit=None, density_threshold=None,
              mc_scale_factor=None, levelset=None, tol=None):
     # todo: 在 __init__中暴露出去
     """
 
-    :param adata: adata to be add mesgh result on
+    :param stereo_exp_data: stereo_exp_data to be add mesh result on
     :param xli: List of x, with the same order of cells / bins as other iterable inputs
     :param yli: List of y, with the same order of cells / bins as other iterable inputs
     :param zli: List of z, with the same order of cells / bins as other iterable inputs
@@ -1054,7 +1056,7 @@ def gen_mesh(adata, xli, yli, zli, tyli, ty_name_li=None, method='march', eps_va
     :param levelset: If method in 'march' and 'march_cubes', this is the iso value when generating the iso surfaces.
     :param tol: If method in 'delaunay', 'delaunay_3d', cells smaller than this will be degenerated and merged.
 
-    :return: adata, mesh written in adata.uns['mesh']
+    :return: adata, mesh written in stereo_exp_data.tl.result['mesh']
     """
 
     def scatter2xyz(scatter):
@@ -1063,9 +1065,9 @@ def gen_mesh(adata, xli, yli, zli, tyli, ty_name_li=None, method='march', eps_va
                               np.expand_dims(scatter['z'], axis=1)], axis=1)
         return xyz
 
-    if not 'mesh' in adata.uns.keys():
-        adata.uns['mesh'] = {}
-    adata.uns['mesh'][key_name] = {}
+    if not 'mesh' in stereo_exp_data.tl.result.keys():
+        stereo_exp_data.tl.result['mesh'] = {}
+    stereo_exp_data.tl.result['mesh'][key_name] = {}
 
     if ty_name_li is None:
         ty_name_li = list(dict.fromkeys(tyli).keys())
@@ -1124,104 +1126,14 @@ def gen_mesh(adata, xli, yli, zli, tyli, ty_name_li=None, method='march', eps_va
             #                            i=triangles[:, 1], j=triangles[:, 2], k=triangles[:, 3]),
             #                  go.Scatter3d(x=scatter['x'], y=scatter['y'], z=scatter['z'], marker=dict(size=2))))
             # fig.show()
-            adata.uns['mesh'][key_name][ty_name] = {}
-            adata.uns['mesh'][key_name][ty_name]['points'] = np.ndarray(shape=mesh.points.shape,
+            stereo_exp_data.tl.result['mesh'][key_name][ty_name] = {}
+            stereo_exp_data.tl.result['mesh'][key_name][ty_name]['points'] = np.ndarray(shape=mesh.points.shape,
                                                                         dtype=mesh.points.dtype, buffer=mesh.points)
             mfaces = mesh.faces.reshape(-1, 4)
-            adata.uns['mesh'][key_name][ty_name]['faces'] = np.ndarray(shape=mfaces.shape, dtype=mfaces.dtype,
+            stereo_exp_data.tl.result['mesh'][key_name][ty_name]['faces'] = np.ndarray(shape=mfaces.shape, dtype=mfaces.dtype,
                                                                        buffer=mfaces)
 
         except Exception as e:
             print(e)
 
-    return adata
-
-
-def _test():
-    def _read_and_parse_sep(dir, spatial_col, ty_col):
-        """
-        读入，预处理，把所有片的x, y, z, ty放在一起
-        :param dir:
-        :param spatial_col:
-        :param ty_col:
-        :return:
-        """
-        import anndata
-
-        fnames = os.listdir(dir)
-        xli = []
-        yli = []
-        zli = []
-        tyli = []
-        for fname in fnames:
-            path = os.path.join(dir, fname)
-            adata = anndata.read(path)
-
-            x = adata.obsm[spatial_col][:, 0].tolist()
-            y = adata.obsm[spatial_col][:, 1].tolist()
-            z = adata.obsm[spatial_col][:, 2].tolist()
-            ty = adata.obs[ty_col].tolist()
-            del adata
-            gc.collect()
-
-            xli = xli + x
-            del x
-            gc.collect()
-
-            yli = yli + y
-            del y
-            gc.collect()
-
-            zli = zli + z
-            del z
-            gc.collect()
-
-            tyli = tyli + ty
-            del ty
-            gc.collect()
-        return xli, yli, zli, tyli
-
-    def _read_and_parse_con(path, spatial_col, ty_col):
-        import anndata
-
-        adata = anndata.read(path)
-
-        x = adata.obsm[spatial_col][:, 0].tolist()
-        y = adata.obsm[spatial_col][:, 1].tolist()
-        z = adata.obsm[spatial_col][:, 2].tolist()
-        ty = adata.obs[ty_col].tolist()
-        return x, y, z, ty, adata
-
-    # 1. 读入，预处理成输入要求格式
-    # dir = 'E:/REGISTRATION_SOFTWARE/algorithm/cell_level_regist/paste_based/data/fruitfly_embryo/bin_recons_spot_level/seperate'
-    # spatial_col = 'spatial_elas'
-    # ty_col = 'annotation'
-    # xli, yli, zli, tyli = _read_and_parse_sep(dir, spatial_col, ty_col)
-
-    path = 'E:/REGISTRATION_SOFTWARE/algorithm/cell_level_regist/paste_based/data/fruitfly_embryo/bin_recons_spot_level/concat/3d.h5ad'
-    spatial_col = 'spatial_elas'
-    ty_col = 'annotation'
-    xli, yli, zli, tyli, adata = _read_and_parse_con(path, spatial_col, ty_col)
-
-    # print(set(tyli))
-    # pl = pv.Plotter()
-
-    # 2. 计算mesh
-    adata = gen_mesh(adata, xli, yli, zli, tyli, method='delaunay', tol=1.5, eps_val=2, min_samples=5, thresh_num=10,
-                     key_name='delaunay_3d')
-    adata = gen_mesh(adata, xli, yli, zli, tyli, method='march', mc_scale_factor=1.5, eps_val=2, min_samples=5,
-                     thresh_num=10, key_name='march_cubes')
-
-    print(adata.uns['mesh'])
-    adata.X = scipy.sparse.csr_matrix(adata.X)
-    adata.write(path.replace('3d.h5ad', '3d_with_mesh.h5ad'), compression='gzip')
-
-
-if __name__ == '__main__':
-    _test()
-
-# import pyvista
-# import numpy as np
-#
-# plt_dic = adata.uns['mesh']['march_cubes']['CNS']
-# mesh = pyvista.PolyData(plt_dic['points'], np.hstack(plt_dic['faces']))
+    return stereo_exp_data
