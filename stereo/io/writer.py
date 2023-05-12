@@ -95,7 +95,11 @@ def _write_one_h5ad(f, data: StereoExpData, use_raw=False, use_result=True, key_
         h5ad.write(sn_data, f, 'sn', save_as_matrix=True)
     h5ad.write(data.genes, f, 'genes')
     h5ad.write(data.cells, f, 'cells')
-    h5ad.write(data.position, f, 'position')
+    if data.position_z is None:
+        position = data.position
+    else:
+        position = np.concatenate([data.position, data.position_z.reshape(-1, 1)], axis=1)
+    h5ad.write(position, f, 'position')
     if issparse(data.exp_matrix):
         sp_format = 'csr' if isinstance(data.exp_matrix, csr_matrix) else 'csc'
         h5ad.write(data.exp_matrix, f, 'exp_matrix', sp_format)
@@ -107,7 +111,7 @@ def _write_one_h5ad(f, data: StereoExpData, use_raw=False, use_result=True, key_
 
     if use_raw is True:
         same_genes = np.array_equal(data.tl.raw.gene_names, data.gene_names)
-        same_cells = np.array_equal(data.tl.raw.gene_names, data.gene_names)
+        same_cells = np.array_equal(data.tl.raw.cell_names, data.cell_names)
         if not same_genes:
             # if raw genes differ from genes
             h5ad.write(data.tl.raw.genes, f, 'genes@raw')
@@ -116,7 +120,11 @@ def _write_one_h5ad(f, data: StereoExpData, use_raw=False, use_result=True, key_
             h5ad.write(data.tl.raw.cells, f, 'cells@raw')
         if not (same_genes | same_cells):
             # if either raw genes or raw cells are different
-            h5ad.write(data.tl.raw.position, f, 'position@raw')
+            if data.tl.raw.position_z is None:
+                position = data.tl.raw.position
+            else:
+                position = np.concatenate([data.tl.raw.position, data.tl.raw.position_z.reshape(-1, 1)], axis=1)
+            h5ad.write(position, f, 'position@raw')
         # save raw exp_matrix
         if issparse(data.tl.raw.exp_matrix):
             sp_format = 'csr' if isinstance(data.tl.raw.exp_matrix, csr_matrix) else 'csc'

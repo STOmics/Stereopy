@@ -5,7 +5,8 @@ from anndata import AnnData
 
 
 class _BaseResult(object):
-    CLUSTER_NAMES = {'leiden', 'louvain', 'phenograph', 'annotation', 'leiden_from_bins', 'louvain_from_bins', 'phenograph_from_bins', 'annotation_from_bins'}
+    CLUSTER_NAMES = {'leiden', 'louvain', 'phenograph', 'annotation', 'leiden_from_bins', 'louvain_from_bins',
+                     'phenograph_from_bins', 'annotation_from_bins'}
     CONNECTIVITY_NAMES = {'neighbors'}
     REDUCE_NAMES = {'umap', 'pca', 'tsne'}
     HVG_NAMES = {'highly_variable_genes', 'hvg'}
@@ -32,57 +33,70 @@ class Result(_BaseResult, dict):
     def __contains__(self, item):
         if item in self.__stereo_exp_data.genes:
             return True
+        elif item in self.__stereo_exp_data.genes_matrix:
+            return True
+        elif item in self.__stereo_exp_data.genes_pairwise:
+            return True
         elif item in self.__stereo_exp_data.cells:
+            return True
+        elif item in self.__stereo_exp_data.cells_matrix:
+            return True
+        elif item in self.__stereo_exp_data.cells_pairwise:
             return True
         return dict.__contains__(self, item)
 
     def __getitem__(self, name):
         genes = self.__stereo_exp_data.genes
         cells = self.__stereo_exp_data.cells
-        if name in genes:
-            if name in genes._var:
-                warn(
-                    f'{name} will be moved from `StereoExpData.tl.result` to `StereoExpData.genes` in the '
-                    f'future, make sure your code access the property correctly.',
-                    category=FutureWarning
+        if name in genes._var:
+            warn(
+                f'{name} will be moved from `StereoExpData.tl.result` to `StereoExpData.genes` in the '
+                f'future, make sure your code access the property correctly.',
+                category=FutureWarning
+            )
+            return genes._var[name]
+        elif name in genes._matrix:
+            warn(
+                f'FutureWarning: {name} will be moved from `StereoExpData.tl.result` to `StereoExpData.genes_matrix` in the '
+                f'future, make sure your code access the property correctly.',
+                category=FutureWarning
+            )
+            return genes._matrix[name]
+        elif name in genes._pairwise:
+            warn(
+                f'FutureWarning: {name} will be moved from `StereoExpData.tl.result` to `StereoExpData.genes_pairwise` in the '
+                f'future, make sure your code access the property correctly.',
+                category=FutureWarning
+            )
+            return genes._pairwise[name]
+        elif name in cells._obs.columns:
+            warn(
+                f'FutureWarning: {name} will be moved from `StereoExpData.tl.result` to `StereoExpData.cells` in the '
+                f'future, make sure your code access the property correctly. ',
+                category=FutureWarning
+            )
+            if name in Result.CLUSTER_NAMES:
+                return pd.DataFrame(
+                    {
+                        'bins': cells.cell_name,
+                        'group': cells._obs[name].values
+                    }
                 )
-                return genes._var[name]
-            elif name in genes._matrix:
-                warn(
-                    f'FutureWarning: {name} will be moved from `StereoExpData.tl.result` to `StereoExpData.genes_matrix` in the '
-                    f'future, make sure your code access the property correctly.',
-                    category=FutureWarning
-                )
-                return genes._matrix[name]
-        elif name in cells:
-            if name in cells._obs.columns:
-                warn(
-                    f'FutureWarning: {name} will be moved from `StereoExpData.tl.result` to `StereoExpData.cells` in the '
-                    f'future, make sure your code access the property correctly. ',
-                    category=FutureWarning
-                )
-                if name in Result.CLUSTER_NAMES:
-                    return pd.DataFrame(
-                        {
-                            'bins': cells.cell_name,
-                            'group': cells._obs[name].values
-                        }
-                    )
-                return cells._obs[name]
-            elif name in cells._matrix:
-                warn(
-                    f'FutureWarning: {name} will be moved from `StereoExpData.tl.result` to `StereoExpData.cells_matrix` in the '
-                    f'future, make sure your code access the property correctly. ',
-                    category=FutureWarning
-                )
-                return cells._matrix[name]
-            elif name in cells._pairwise:
-                warn(
-                    f'FutureWarning: {name} will be moved from `StereoExpData.tl.result` to `StereoExpData.cells_pairwise` in the '
-                    f'future, make sure your code access the property correctly. ',
-                    category=FutureWarning
-                )
-                return cells._pairwise[name]
+            return cells._obs[name]
+        elif name in cells._matrix:
+            warn(
+                f'FutureWarning: {name} will be moved from `StereoExpData.tl.result` to `StereoExpData.cells_matrix` in the '
+                f'future, make sure your code access the property correctly. ',
+                category=FutureWarning
+            )
+            return cells._matrix[name]
+        elif name in cells._pairwise:
+            warn(
+                f'FutureWarning: {name} will be moved from `StereoExpData.tl.result` to `StereoExpData.cells_pairwise` in the '
+                f'future, make sure your code access the property correctly. ',
+                category=FutureWarning
+            )
+            return cells._pairwise[name]
         return dict.__getitem__(self, name)
 
     def _real_set_item(self, type, key, value):
@@ -192,6 +206,9 @@ class AnnBasedResult(_BaseResult, object):
         elif item.startswith('gene_exp_'):
             if item in self.__based_ann_data.uns:
                 return True
+        elif item.startswith('paga'):
+            if item in self.__based_ann_data.uns:
+                return True
 
         obsm_obj = self.__based_ann_data.obsm.get(f'X_{item}', None)
         if obsm_obj is not None:
@@ -203,8 +220,7 @@ class AnnBasedResult(_BaseResult, object):
         if obs_obj is not None:
             return True
         uns_obj = self.__based_ann_data.uns.get(item, None)
-        if uns_obj and 'params' in uns_obj and 'connectivities_key' in uns_obj['params'] and 'distances_key' in uns_obj[
-            'params']:
+        if uns_obj is not None:
             return True
         return False
 
@@ -239,13 +255,15 @@ class AnnBasedResult(_BaseResult, object):
             return pd.DataFrame(self.__based_ann_data.obs[name].values, columns=['group'],
                                 index=self.__based_ann_data.obs_names)
         uns_obj = self.__based_ann_data.uns.get(name, None)
-        if uns_obj and 'params' in uns_obj and 'connectivities_key' in uns_obj['params'] and 'distances_key' in uns_obj[
-            'params']:
+        if uns_obj is not None and type(uns_obj) is dict and 'params' in uns_obj and \
+                'connectivities_key' in uns_obj['params'] and 'distances_key' in uns_obj['params']:
             return {
                 'neighbor': None,  # TODO really needed?
                 'connectivities': self.__based_ann_data.obsp[uns_obj['params']['connectivities_key']],
                 'nn_dist': self.__based_ann_data.obsp[uns_obj['params']['distances_key']],
             }
+        elif uns_obj is not None:
+            return uns_obj
         raise Exception
 
     def _real_set_item(self, type, key, value):
@@ -292,7 +310,7 @@ class AnnBasedResult(_BaseResult, object):
                 self._set_connectivities_res(key, value)
                 return
 
-        raise KeyError
+        self.__based_ann_data.uns[key] = value
 
     def _set_cluster_res(self, key, value):
         assert type(value) is pd.DataFrame and 'group' in value.columns.values, f"this is not cluster res"

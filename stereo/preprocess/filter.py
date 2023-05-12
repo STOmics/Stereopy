@@ -99,7 +99,7 @@ def filter_genes(data, min_cell=None, max_cell=None, gene_list=None, mean_umi_gt
     if max_cell:
         gene_subset = data.genes.n_cells <= max_cell
         data.sub_by_index(gene_index=gene_subset)
-    if gene_list:
+    if gene_list is not None:
         gene_subset = np.isin(data.gene_names, gene_list)
         data.sub_by_index(gene_index=gene_subset)
     if mean_umi_gt is not None:
