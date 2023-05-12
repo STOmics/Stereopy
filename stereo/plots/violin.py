@@ -10,7 +10,7 @@ import matplotlib.pyplot as plt
 import seaborn
 
 
-def violin_distribution(data):  # Violin Statistics Chart
+def violin_distribution(data, width=None, height=None):  # Violin Statistics Chart
     """
     violin plot showing quality control index distribution
 
@@ -18,7 +18,13 @@ def violin_distribution(data):  # Violin Statistics Chart
 
     :return: None
     """
-    fig, axs = plt.subplots(1, 3, figsize=(18, 4))
+    if width is None or height is None:
+        figsize = (18, 4)
+    else:
+        width = width / 100 if width >= 100 else 18
+        height = height / 100 if height >= 100 else 4
+        figsize = (width, height)
+    fig, axs = plt.subplots(1, 3, figsize=figsize)
     # plt.ylabel("total_counts")
     seaborn.violinplot(y=data.cells.get_property('total_counts'), ax=axs[0])
     # plt.ylabel("n_genes_by_counts")

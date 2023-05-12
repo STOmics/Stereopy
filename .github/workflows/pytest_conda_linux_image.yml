@@ -1,0 +1,47 @@
+name: CPU PyTest in Conda Dev/Work Branch Image
+
+on:
+  push:
+    branches:
+      - 'dev'
+      - 'work'
+    paths-ignore:
+      - '.github/workflows/**'
+      - 'docs/**'
+
+jobs:
+  build-linux-and-start-pytest:
+    runs-on: cpu
+    steps:
+      - uses: actions/checkout@v3
+      - name: Add conda to system path
+        run: |
+          # $CONDA is an environment variable pointing to the root of the miniconda directory
+          echo $CONDA/bin >> $GITHUB_PATH
+      - name: Install dependencies
+        run: |
+          conda env update --file tests/workflows_conf/environment_linux_py38.yml --name test_image -q
+      - name: Install Stereopy dependencies
+        run: |
+          conda init bash
+          source ~/.bashrc
+          conda activate test_image
+
+          pip install -r requirements.txt -q
+          # TODO temporarily not install `tests/extra_requirements.txt`
+          pip install -r tests/image_requirements.txt -q
+          pip install pathlib -q
+
+          ~/anaconda3/envs/test_image/bin/python setup.py develop
+      - name: Show Env Info
+        run: |
+          conda init bash
+          source ~/.bashrc
+          conda activate test_image
+          which python
+          conda info
+          env
+          pip list
+      - name: Test with pytest
+        run: |
+          ~/anaconda3/envs/test_image/bin/python -m pytest -m "cell_cut_env" --durations=0

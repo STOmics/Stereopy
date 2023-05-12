@@ -37,14 +37,18 @@ class PolySelection(object):
         self.height = height
         self.bgcolor = bgcolor
         # self.poly_annotate = hv.annotate.instance()
+        if self.data.cells.total_counts is None:
+            total_counts = self.data.exp_matrix.sum(axis=1).T.A[0] if self.data.issparse() else self.data.exp_matrix.sum(axis=1).T
+        else:
+            total_counts = self.data.cells.total_counts
         self.scatter_df = pd.DataFrame({
             # 'cell': self.data.cell_names,
             'x': self.data.position[:, 0],
             'y': self.data.position[:, 1] * -1,
             # 'count': np.array(self.data.exp_matrix.sum(axis=1))[:, 0],
-            'count': np.array(self.data.exp_matrix.sum(axis=1))[:,
-                                                                0] if self.data.cells.total_counts is None else self.data.cells.total_counts
-        }).reset_index()
+            'count': total_counts
+        })
+        self.scatter_df.reset_index(inplace=True)
         self.scatter = self._plot()
         self.download = pn.widgets.Button(
             name='export',

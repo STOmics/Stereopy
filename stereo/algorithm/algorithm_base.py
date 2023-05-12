@@ -24,7 +24,7 @@ class AlgorithmBase(metaclass=ABCMeta):
     """
 
     # common object variable
-    stereo_exp_data: StereoExpData
+    stereo_exp_data: StereoExpData = None
     pipeline_res: dict = None
 
     _steps_order_by_name = list()
@@ -52,7 +52,7 @@ class AlgorithmBase(metaclass=ABCMeta):
             logger.debug(f'start to run {f_name}.')
             ret_code = f(self, **{key: value for key, value in kwargs.items() if key in f_args_name})
             if type(ret_code) is int and ret_code != ErrorCode.Success:
-                logger.warn(f'{f_name} failed with ret_code: {ret_code}')
+                logger.warning(f'{f_name} failed with ret_code: {ret_code}')
                 return ErrorCode.Failed
             logger.debug(f'{f_name} end, cost: {round(time.time() - step_start_time, 4)} seconds')
         logger.info(f'{self.__class__.__name__} end, cost: {round(time.time() - the_very_beginning_time, 4)} seconds')
@@ -63,13 +63,16 @@ class AlgorithmBase(metaclass=ABCMeta):
         for f_name, f, _ in self._steps_order_by_name:
             ret_code = f(self, *args, **kwargs)
             if type(ret_code) is int and ret_code != ErrorCode.Success:
-                logger.warn(f'{f_name} failed with ret_code: {ret_code}')
+                logger.warning(f'{f_name} failed with ret_code: {ret_code}')
                 return ErrorCode.Failed
             yield ErrorCode.Success
 
     @final
-    def test_memory_profile(self, stream=sys.stdout, **kwargs):
-        from memory_profiler import profile
+    def memory_profile(self, stream=sys.stdout, **kwargs):
+        try:
+            from memory_profiler import profile
+        except ImportError:
+            raise ImportError
         # these cost some `io` and `cpu` to profile memory
         if self._steps_order_by_name:
             for f_name, f, f_args_name in self._steps_order_by_name:
@@ -91,9 +94,9 @@ class AlgorithmBase(metaclass=ABCMeta):
         # num of subclasses may be like 100-200 at most
         for sub_cls in AlgorithmBase.__subclasses__():
             sub_cls_name = _camel_to_snake(sub_cls.__name__.split(".")[-1])
-            if sub_cls_name == item:
+            if sub_cls_name == item and sub_cls.__name__ != 'ms_data_algorithm_base':
                 # snake_cls_name as method name in pipeline
-                sub_obj = sub_cls(stereo_exp_data, res)
+                sub_obj = sub_cls(stereo_exp_data=stereo_exp_data, pipeline_res=res)
                 return sub_obj.main
         return None
 

@@ -1,10 +1,11 @@
 import os
 import traceback
-import cv2
 import holoviews as hv
 import hvplot.pandas
+import hvplot.xarray
 import spatialpandas as spd
 import pandas as pd
+import xarray as xr
 import panel as pn
 from bokeh.models import HoverTool
 import numpy as np
@@ -14,11 +15,11 @@ from collections import OrderedDict
 # from selenium import webdriver
 # from chromedriver_py import binary_path
 from stereo.stereo_config import stereo_conf
-
+# from stereo.log_manager import file_logger
 
 
 class PlotCells:
-    def __init__(self, data, cluster_res_key='cluster', bgcolor='#2F2F4F', figure_size=500, fg_alpha=0.8, base_image=None):
+    def __init__(self, data, cluster_res_key='cluster', bgcolor='#2F2F4F', width=None, height=None, fg_alpha=0.5, base_image=None):
         self.data = data
         if cluster_res_key in self.data.tl.result:
             res = self.data.tl.result[cluster_res_key]
@@ -32,44 +33,72 @@ class PlotCells:
             self.cluster_id = []
         
         self.bgcolor = bgcolor
-        self.figure_size = figure_size
+        # self.figure_size = figure_size
+        # self.width = width
+        # self.height = height
+        self.width, self.height = self._set_width_and_height(width, height)
         self.fg_alpha = fg_alpha
         self.base_image = base_image
 
-        if self.figure_size < 500:
-            self.figure_size = 500
-        elif self.figure_size > 1000:
-            self.figure_size = 1000
+        # if self.figure_size < 500:
+        #     self.figure_size = 500
+        # elif self.figure_size > 1000:
+        #     self.figure_size = 1000
         
-        if self.fg_alpha < 0.5:
-            self.fg_alpha = 0.5
+        if self.fg_alpha < 0:
+            self.fg_alpha = 0.3
         elif self.fg_alpha > 1:
             self.fg_alpha = 1
         
         if self.base_image is None:
             self.fg_alpha = 1
         
-        if self.fg_alpha > 0.5:
-            self.hover_fg_alpha = 0.5
-        else:
-            self.hover_fg_alpha = self.fg_alpha - 0.1 if self.fg_alpha > 0.2 else self.fg_alpha
+        self.hover_fg_alpha = self.fg_alpha / 2
+        # if self.fg_alpha > 0.5:
+        #     self.hover_fg_alpha = 0.5
+        # else:
+        #     self.hover_fg_alpha = self.fg_alpha - 0.1 if self.fg_alpha > 0.2 else self.fg_alpha
 
         self.figure_polygons = None
         self.figure_points = None
+    
+    def _set_width_and_height(self, width, height):
+        if width is None or height is None:
+            width = 500
+            min_position = np.min(self.data.position, axis=0)
+            max_position = np.max(self.data.position, axis=0)
+            p_width, p_height = max_position - min_position
+            height = int(np.ceil(width / (p_width / p_height)))
+            return width, height
+        return width, height
+
+    def _get_base_image_boundary(self, image_data: np.ndarray):
+        min_x, max_x, min_y, max_y = -1, -1, -1, -1
+        col_sum = image_data.sum(axis=0)
+        nonzero_idx = np.nonzero(col_sum)[0]
+        if nonzero_idx.size > 0:
+            min_x, max_x = np.min(nonzero_idx), np.max(nonzero_idx)
+        
+        row_sum = image_data.sum(axis=1)
+        nonzero_idx = np.nonzero(row_sum)[0]
+        if nonzero_idx.size > 0:
+            min_y, max_y = np.min(nonzero_idx), np.max(nonzero_idx)
+
+        return min_x, max_x, min_y, max_y
 
 
-    def _create_base_image_points(self):
+    def _create_base_image_xarray(self):
         assert os.path.exists(self.base_image), f'{self.base_image} is not exists!'
 
         image_data = tif.imread(self.base_image)
-        y, x = np.nonzero(image_data)
-        data = image_data[y, x]
-        points_detail = pd.DataFrame({
-            'x': x,
-            'y': y,
-            'value': data
-        }, dtype='uint32')
-        return points_detail
+        min_x, max_x, min_y, max_y = self._get_base_image_boundary(image_data)
+        if min_x == -1 or max_x == -1 or min_y == -1 or max_y == -1:
+            raise Exception("the base image is empty.")
+        max_x += 1
+        max_y += 1
+        image_data = image_data[min_y:max_y, min_x:max_x]
+        image_xarray = xr.DataArray(data=image_data, coords=[range(min_y, max_y), range(min_x, max_x)], dims=['y', 'x'])
+        return image_xarray
     
     def _create_polygons(self, color_by):
         polygons = []
@@ -160,17 +189,17 @@ class PlotCells:
         #     file_logger.error(exception)
         # finally:
         #     self.export.loading = False
+        # file_logger.info("start to export")
         # self.export.loading = True
         # try:
-        #     file_logger.info("start to export")
         #     hv.save(self.figure_polygons, 'aaa.png', fmt='png', backend='matplotlib', toolbar=False)
         #     # hv.save(self.figure_polygons, 'aaa.png', fmt='png', backend='bokeh', toolbar=False)
-        #     file_logger.info("exporting finished")
         # except:
         #     exception = traceback.format_exc()
         #     file_logger.error(exception)
         # finally:
         #     self.export.loading = False
+        # file_logger.info("exporting ended")
 
     def show(self):
         assert self.data.cells.cell_border is not None
@@ -225,8 +254,8 @@ class PlotCells:
                     cnorm='eq_hist',
                     cmap=cmap,
                     colorbar=False,
-                    width=self.figure_size,
-                    height=self.figure_size,
+                    width=self.width,
+                    height=self.height,
                     xaxis='bare',
                     yaxis='bare',
                     invert_yaxis=True,
@@ -239,16 +268,16 @@ class PlotCells:
                     # tools=[hover_tool, 'lasso_select']
                     tools=[hover_tool]
                 )
+            
             if self.base_image is not None:
-                base_image_points_detail = self._create_base_image_points()
-                self.figure_points = base_image_points_detail.hvplot.scatter(
-                    x='x', y='y',
-                    c='value', cmap='gray', cnorm='eq_hist',
+                base_image_points_detail = self._create_base_image_xarray()
+                self.figure_points = base_image_points_detail.hvplot(
+                    cmap='gray', cnorm='eq_hist',
                     datashade=True, dynspread=True
                     ).opts(
                         bgcolor=self.bgcolor,
-                        width=self.figure_size,
-                        height=self.figure_size,
+                        width=self.width,
+                        height=self.height,
                         xaxis='bare',
                         yaxis='bare',
                         invert_yaxis=True
