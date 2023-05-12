@@ -60,7 +60,7 @@ class PlotClusterTraj3D(PlotBase):
                 n_per_inter)
             com_tra_wei_li = traj.compute_weight_on_com_tra_li()
             print(com_tra_wei_li)
-            self._show_curve(x_unknown_li_all_tra, y_unknown_li_all_tra, z_unknown_li_all_tra, traj.com_tra_li,
+            return self._show_curve(x_unknown_li_all_tra, y_unknown_li_all_tra, z_unknown_li_all_tra, traj.com_tra_li,
                             com_tra_wei_li)
 
         else:
@@ -69,14 +69,15 @@ class PlotClusterTraj3D(PlotBase):
             print([[traj.ty_all_no_dup_same_ord[i] for i in li] for li in traj.com_tra_li])
             x_li, y_li, z_li = traj.cal_position_param_straight()
             wei_li = traj.compute_weight_on_pairs()
-            self._show_straight(x_li, y_li, z_li, traj.com_tra_li, wei_li)
+            return self._show_straight(x_li, y_li, z_li, traj.com_tra_li, wei_li)
 
     def _plot_line(self, x_unknown, y_unknown, z_unknown, ax, wei):
         ax.plot(x_unknown, y_unknown, z_unknown, linewidth=wei * 3, c='b')
         return
 
     def _show_curve(self, x_unknown_li_all_tra, y_unknown_li_all_tra, z_unknown_li_all_tra, com_tra_li, com_tra_wei_li):
-        ax = plt.figure().add_subplot(projection='3d')
+        figure = plt.figure()
+        ax = figure.add_subplot(projection='3d')
         # 画轨迹连线
         # self.com_tra_li: [[1, 18, 10], [2, 12, 18], [3, 16, 0, 15, 12], [6, 7, 8, 19], [8, 11], [13, 4, 7, 9, 5, 17, 16], [9, 14]]
         for i, sin_tra in enumerate(com_tra_li):  # 对每条完整的轨迹
@@ -86,13 +87,14 @@ class PlotClusterTraj3D(PlotBase):
                                 z_unknown_li_all_tra[i][j],
                                 ax,
                                 com_tra_wei_li[i][j])
-        return
+        return figure
 
     def _show_straight(self, x_li, y_li, z_li, con_pair, wei_li):
-        ax = plt.figure().add_subplot(projection='3d')
+        figure = plt.figure()
+        ax = figure.add_subplot(projection='3d')
         for i in range(con_pair.shape[0]):
             self._plot_line([x_li[i][0], x_li[i][1]],
                             [y_li[i][0], y_li[i][1]],
                             [z_li[i][0], z_li[i][1]],
                             ax, wei_li[i])
-        return
+        return figure
