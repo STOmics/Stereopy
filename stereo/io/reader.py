@@ -890,7 +890,12 @@ def read_gef(
     An object of StereoExpData.
     """
     logger.info(f'read_gef begin ...')
+    from gefpy.utils import gef_is_cell_bin
+    is_cell_bin = gef_is_cell_bin(file_path)
     if bin_type == 'cell_bins':
+        if not is_cell_bin:
+            raise Exception('This file is not the type of CellBin.')
+        
         data = StereoExpData(file_path=file_path, bin_type=bin_type, bin_size=bin_size)
         from gefpy.cgef_reader_cy import CgefR
         gef = CgefR(file_path)
@@ -931,6 +936,9 @@ def read_gef(
             'resolution': read_gef_info(file_path)['resolution']
         }
     else:
+        if is_cell_bin:
+            raise Exception('This file is not the type of SquareBin.')
+        
         from gefpy.bgef_reader_cy import BgefR
         gef = BgefR(file_path, bin_size, 4)
 
