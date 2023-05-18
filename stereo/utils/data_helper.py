@@ -72,26 +72,27 @@ def merge(
     data2: StereoExpData = None, 
     *args, 
     reorganize_coordinate: Union[bool,int]=2,
-    coordinate_offset_additional: Union[bool,int]=0,
+    horizontal_offset_additional: Union[int, float]=0,
+    vertical_offset_additional: Union[int, float]=0,
     space_between: Optional[str]='0'
 ):
     """
-    Merge two or more batches of data.
+    Merge several slices of data.
 
     :param data1: the first data object to be merged.
     :param data2: the second data object to be merged. More than two datas could be input.
     :param reorganize_coordinate: whether to reorganize the coordinates of the obs(cells), 
-        if set it to a number, like 2, the coordinates will be reorganized to 2 columns as below:
-                        ---------------
-                        | data1 data2
-                        | data3 data4
-                        | data5 ...  
-                        | ...   ...  
-                        ---------------
-                if set to `False`, the coordinates maybe overlap between datas.
-    :param coordinate_offset_additional: the offset value on up/down/left/right 
-        after reorganizing the coordinates, between a pair of adjacent datas, for example, data1 & data2, 
-        data1 & data3, data2 & data4, ... which would be ignored if set to `False`.
+            if set it to a number, like 2, the coordinates will be reorganized to 2 columns on coordinate system as below:
+                            ---------------
+                            | data1 data2
+                            | data3 data4
+                            | data5 ...  
+                            | ...   ...  
+                            ---------------
+            if set to `False`, the coordinates maybe overlap between slices.
+    :param horizontal_offset_additional: the additional offset between each slice on horizontal direction while reorganizing coordinates.
+    :param vertical_offset_additional: the additional offset between each slice on vertical direction while reorganizing coordinates.
+    :param space_between: the distance between each slice, like '10nm', '1um', ..., it will be used for calculating the z-coordinate of each slice.
 
     :return: A merged StereoExpData object.
     """
@@ -191,7 +192,8 @@ def merge(
             if max_y > max_ys[position_row_number + 1]:
                 max_ys[position_row_number + 1] = max_y
     if reorganize_coordinate:
-        coordinate_offset_additional = 0 if coordinate_offset_additional < 0 else coordinate_offset_additional
+        horizontal_offset_additional = 0 if horizontal_offset_additional < 0 else horizontal_offset_additional
+        vertical_offset_additional = 0 if vertical_offset_additional < 0 else vertical_offset_additional
         batches = np.unique(new_data.cells.batch).tolist()
         batches.sort(key=lambda x: int(x))
         for i, bno in enumerate(batches):
@@ -201,11 +203,12 @@ def merge(
             x_add = max_xs[position_column_number]
             y_add = max_ys[position_row_number]
             if position_column_number > 0:
-                x_add += sum(max_xs[0:position_column_number]) + coordinate_offset_additional * position_column_number
+                x_add += sum(max_xs[0:position_column_number]) + horizontal_offset_additional * position_column_number
             if position_row_number > 0:
-                y_add += sum(max_ys[0:position_row_number]) + coordinate_offset_additional * position_row_number
+                y_add += sum(max_ys[0:position_row_number]) + vertical_offset_additional * position_row_number
             # position_offset = np.repeat([[x_add, y_add]], repeats=len(idx), axis=0).astype(np.uint32)
-            position_offset = np.array([x_add, y_add], dtype=np.uint32)
+            # position_offset = np.array([x_add, y_add], dtype=np.uint32)
+            position_offset = np.array([x_add, y_add])
             new_data.position[idx] += position_offset
             if new_data.position_offset is None:
                 new_data.position_offset = {bno: position_offset}
