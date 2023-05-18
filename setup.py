@@ -21,7 +21,7 @@ setup(
     long_description=Path('README.md').read_text('utf-8'),
     long_description_content_type="text/markdown",
     url='https://github.com/STOmics/Stereopy',
-    author='BGIResearch',
+    author='STOmics',
     author_email='xujunhao@genomics.cn',
     python_requires='>=3.8,<3.9',
     install_requires=[

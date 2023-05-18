@@ -82,7 +82,7 @@ class CellTypeAnno(ToolBase):
         """
         set reference directory which must exist two file ref_sample_epx.csv and cell_map.csv
         """
-        git_ref = 'https://github.com/BGIResearch/stereopy/raw/data/FANTOM5/ref_sample_epx.csv'
+        git_ref = 'https://github.com/STOmics/stereopy/raw/data/FANTOM5/ref_sample_epx.csv'
         if ref_dir is None:
             logger.info(f'reference file not found, download from {git_ref}')
             ref_dir = os.path.join(stereo_conf.data_dir, 'ref_db', 'FANTOM5')
@@ -257,7 +257,7 @@ def parse_ref_data(ref_dir):
     logger.info(f'loading ref data')
     ref_sample_path = os.path.join(ref_dir, 'ref_sample_epx.csv')
     if not os.path.exists(ref_sample_path):
-        raise ValueError('can not load reference file, download from https://github.com/BGIResearch/stereopy')
+        raise ValueError('can not load reference file, download from https://github.com/STOmics/stereopy')
     ref_db = pd.read_csv(ref_sample_path, index_col=0, header=0)
     ref_db = ref_db.fillna(0)
     # remove duplicate indices

@@ -137,7 +137,7 @@ Class Plotting(data):
   3. 变量命名采用小写，应该尽可能有意义，避免采用无意的命名，如：a=1， b=2等等
   4. 注释信息要完善，每个函数应该编写其注释信息
   5. 建议使用pycharm进行编辑，编辑器可自动检查编写的代码是否符合规范，且有相关提示。其他编辑器也可以借助安装相关插件来检查。
-       ![image](https://raw.githubusercontent.com/BGIResearch/stereopy/dev/docs/source/code_format.png)
+       ![image](https://raw.githubusercontent.com/STOmics/stereopy/dev/docs/source/code_format.png)
      
 
 #### 以下各模块开发说明文档均为v1版的，v2版待更新
