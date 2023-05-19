@@ -17,7 +17,7 @@ from pyscenic.rss import regulon_specificity_scores
 from stereo.log_manager import logger
 from stereo.plots.plot_base import PlotBase
 from stereo.plots.scatter import base_scatter
-from stereo.plots.decorator import plot_scale
+from stereo.plots.decorator import plot_scale, download, reorganize_coordinate
 
 class PlotRegulatoryNetwork(PlotBase):
     """
@@ -62,6 +62,8 @@ class PlotRegulatoryNetwork(PlotBase):
             reg_ct_avg_exp = np.mean(g_ct_exp['total'])
             return round(reg_ct_percent,2), round(reg_ct_avg_exp,2)
 
+    @download
+    @plot_scale
     def grn_dotplot(self,
                        meta: pd.DataFrame,
                        regulon_names: Union[str, list] = None,
@@ -162,6 +164,8 @@ class PlotRegulatoryNetwork(PlotBase):
         ax.set_ylabel('Cell type')
         return fig
 
+    @download
+    @plot_scale
     def auc_heatmap(
             self, 
             network_res_key = 'regulatory_network_inference', 
@@ -191,7 +195,9 @@ class PlotRegulatoryNetwork(PlotBase):
         
         return fig
 
+    @download
     @plot_scale
+    @reorganize_coordinate
     def spatial_scatter_by_regulon(
             self, 
             network_res_key: str='regulatory_network_inference', 
@@ -283,6 +289,8 @@ class PlotRegulatoryNetwork(PlotBase):
         plt.savefig(f'{reg_name.split("(")[0]}.png')
         plt.close()
 
+    @download
+    @plot_scale
     def auc_heatmap_by_group(self,
                     network_res_key: str = 'regulatory_network_inference', 
                     celltype_res_key: str = 'leiden',
