@@ -165,7 +165,6 @@ class PlotRegulatoryNetwork(PlotBase):
         return fig
 
     @download
-    @plot_scale
     def auc_heatmap(
             self, 
             network_res_key = 'regulatory_network_inference', 
@@ -290,7 +289,6 @@ class PlotRegulatoryNetwork(PlotBase):
         plt.close()
 
     @download
-    @plot_scale
     def auc_heatmap_by_group(self,
                     network_res_key: str = 'regulatory_network_inference', 
                     celltype_res_key: str = 'leiden',
