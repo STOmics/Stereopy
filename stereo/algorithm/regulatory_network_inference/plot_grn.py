@@ -63,7 +63,6 @@ class PlotRegulatoryNetwork(PlotBase):
             return round(reg_ct_percent,2), round(reg_ct_avg_exp,2)
 
     @download
-    @plot_scale
     def grn_dotplot(self,
                        meta: pd.DataFrame,
                        regulon_names: Union[str, list] = None,
