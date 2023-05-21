@@ -1,12 +1,3 @@
-#!/usr/bin/env python3
-# coding: utf-8
-"""
-@file: __init__.py
-@description: 
-@author: Lidong Guo 
-@email: guolidong@genomics.cn
-@last modified by: Lidong Guo
+# stereopy_browser
 
-change log:
-    2023/04/28  init folder.
-"""
+from stereopy_3D_browser import launch

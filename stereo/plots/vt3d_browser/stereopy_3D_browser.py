@@ -1,12 +1,3 @@
-#!/usr/bin/env python3
-# coding: utf-8
-"""
-@author: Lidong Guo guolidong@genomics.cn
-@last modified by: Lidong Guo
-@file: stereopy_3D_browser.py
-@time:2023/04.28
-"""
-
 import re,os,time
 from http.server import BaseHTTPRequestHandler, HTTPServer
 import json
@@ -23,6 +14,28 @@ class my_json_encoder(json.JSONEncoder):
         if isinstance(obj, np.float64) or isinstance(obj, np.float32):
             return float(obj)
         return json.JSONEncoder.default(self, obj)
+
+def getPAGACurves(adata,ty_col='annotation', choose_ty=None, trim=True):
+    from PAGA_traj import cal_plt_param_traj_clus_from_adata
+    x_unknown_li_all_tra, y_unknown_li_all_tra, z_unknown_li_all_tra, com_tra_li, com_tra_wei_li = cal_plt_param_traj_clus_from_adata(adata,ty_col='annotation',choose_ty=choose_ty,trim=trim)
+    traj_all = []
+    traj_names = []
+    traj_lines = []
+    traj_widths = []
+    for i, sin_tra in enumerate(com_tra_li):  # 对每条完整的轨迹
+        for j in range(len(sin_tra) - 1):  # 对于这条轨迹每一个截断
+            traj_name = f'{sin_tra[j]}_{sin_tra[j+1]}'
+            traj_names.append(traj_name)
+            traj_x = x_unknown_li_all_tra[i][j].tolist()
+            traj_y = y_unknown_li_all_tra[i][j].tolist()
+            traj_z = z_unknown_li_all_tra[i][j].tolist()
+            traj_line  = []
+            for m in range(len(traj_x)):
+                traj_line.append([traj_x[m],traj_y[m],traj_z[m]])
+            traj_lines.append(traj_line)
+            traj_W = com_tra_wei_li[i][j]
+            traj_widths.append(traj_W)
+    return [traj_names,traj_lines,traj_widths]
 
 class Meshes:
     def __init__(self):
@@ -267,7 +280,13 @@ class Stereo3DWebCache:
             return json.dumps(self._meshes.data,cls=my_json_encoder)
         else:
             return ''
-
+            
+    def get_paga(self):
+        """
+        return the paga.json
+        """
+        return json.dumps(getPAGACurves(self._data,ty_col=self._annokey))
+        
     def get_anno(self):
         """
         return the Anno/xxxanno.json
@@ -386,6 +405,8 @@ class DynamicRequstHander(BaseHTTPRequestHandler):
             self._ret_jsonstr(ServerInstance.data_hook.get_genenames())
         elif self.path == '/meshes.json':
             self._ret_jsonstr(ServerInstance.data_hook.get_meshes())
+        elif self.path == '/paga.json':
+            self._ret_jsonstr(ServerInstance.data_hook.get_paga())
         elif self.path == '/test.json':  #handle json requst in the root path
             self._ret_jsonstr('{"test01":1.1, "test02":[1.1,3,2]}')
         elif self.path == '/conf.json':

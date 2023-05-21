@@ -1,5 +1,14 @@
 # test_stereopy_3D_browser
 
+## dependences
+
+```
+json
+anndata>=0.8.0
+numpy
+pandas
+```
+
 ## loading data
 ```
 import anndata as ad
