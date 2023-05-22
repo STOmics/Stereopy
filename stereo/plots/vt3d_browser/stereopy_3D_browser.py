@@ -17,7 +17,8 @@ class my_json_encoder(json.JSONEncoder):
 
 def getPAGACurves(adata,ty_col='annotation', choose_ty=None, trim=True):
     from PAGA_traj import cal_plt_param_traj_clus_from_adata
-    x_unknown_li_all_tra, y_unknown_li_all_tra, z_unknown_li_all_tra, com_tra_li, com_tra_wei_li = cal_plt_param_traj_clus_from_adata(adata,ty_col='annotation',choose_ty=choose_ty,trim=trim)
+    x_unknown_li_all_tra, y_unknown_li_all_tra, z_unknown_li_all_tra, com_tra_li, com_tra_wei_li = \
+        cal_plt_param_traj_clus_from_adata(adata,ty_col=ty_col,choose_ty=choose_ty,trim=trim,type_traj='curve')
     traj_all = []
     traj_names = []
     traj_lines = []
@@ -35,6 +36,24 @@ def getPAGACurves(adata,ty_col='annotation', choose_ty=None, trim=True):
             traj_lines.append(traj_line)
             traj_W = com_tra_wei_li[i][j]
             traj_widths.append(traj_W)
+    return [traj_names,traj_lines,traj_widths]
+
+def getPAGALines(adata,ty_col='annotation',choose_ty=None, trim=True):
+    from PAGA_traj import cal_plt_param_traj_clus_from_adata
+    x_unknown_li_all_tra, y_unknown_li_all_tra, z_unknown_li_all_tra, com_tra_li, com_tra_wei_li =\
+        cal_plt_param_traj_clus_from_adata(adata,ty_col=ty_col,choose_ty=choose_ty,trim=trim,type_traj='line')
+    traj_all = []
+    traj_names = []
+    traj_lines = []
+    traj_widths = []
+    for i, tnames in enumerate(com_tra_li):  # 对每条完整的轨迹
+        traj_name = f'{tnames[0]}_{tnames[1]}'
+        traj_names.append(traj_name)
+        traj_line  = [[x_unknown_li_all_tra[i][0] , y_unknown_li_all_tra[i][0], z_unknown_li_all_tra[i][0] ],
+                        [x_unknown_li_all_tra[i][1] , y_unknown_li_all_tra[i][1], z_unknown_li_all_tra[i][1] ]]
+        traj_lines.append(traj_line)
+        traj_W = com_tra_wei_li[i]
+        traj_widths.append(traj_W)
     return [traj_names,traj_lines,traj_widths]
 
 class Meshes:
@@ -281,6 +300,12 @@ class Stereo3DWebCache:
         else:
             return ''
             
+    def get_paga_line(self):
+        """
+        return the paga_line.json
+        """
+        return json.dumps(getPAGALines(self._data,ty_col=self._annokey))
+        
     def get_paga(self):
         """
         return the paga.json
@@ -407,6 +432,8 @@ class DynamicRequstHander(BaseHTTPRequestHandler):
             self._ret_jsonstr(ServerInstance.data_hook.get_meshes())
         elif self.path == '/paga.json':
             self._ret_jsonstr(ServerInstance.data_hook.get_paga())
+        elif self.path == '/paga_line.json':
+            self._ret_jsonstr(ServerInstance.data_hook.get_paga_line())
         elif self.path == '/test.json':  #handle json requst in the root path
             self._ret_jsonstr('{"test01":1.1, "test02":[1.1,3,2]}')
         elif self.path == '/conf.json':

@@ -432,16 +432,17 @@ def cal_plt_param_traj_clus_from_arr(con, x_raw, y_raw, z_raw, ty,
     else:
         traj.compute_com_traj_li()
         # print(traj.com_tra_li)
+        ctnames = [[traj.ty_all_no_dup_same_ord[i[0]],traj.ty_all_no_dup_same_ord[i[1]]] for i in traj.con_pair] 
         print([[traj.ty_all_no_dup_same_ord[i] for i in li] for li in traj.com_tra_li])
         x_li, y_li, z_li = traj.cal_position_param_straight()
         wei_li = traj.compute_weight_on_pairs()
-        return x_li, y_li, z_li, traj.con_pair, wei_li
+        return x_li, y_li, z_li,ctnames , wei_li
 
 
 # In[7]:
 
 
-def cal_plt_param_traj_clus_from_adata(adata, ty_col, choose_ty=None, trim=True):
+def cal_plt_param_traj_clus_from_adata(adata, ty_col, choose_ty=None, trim=True,type_traj='curve'):
     """
     to calculate plotting parameters from adata
 
@@ -477,9 +478,10 @@ def cal_plt_param_traj_clus_from_adata(adata, ty_col, choose_ty=None, trim=True)
 
     # 2 calculate parameters for plotting cluster-to-cluster trajectory
     x_unknown_li_all_tra, y_unknown_li_all_tra, z_unknown_li_all_tra, com_tra_li, com_tra_wei_li \
-        = cal_plt_param_traj_clus_from_arr(con_plt, x_raw, y_raw, z_raw, ty, choose_ty, ty_repre_xyz, type_traj='curve')
+        = cal_plt_param_traj_clus_from_arr(con_plt, x_raw, y_raw, z_raw, ty, choose_ty, ty_repre_xyz, type_traj=type_traj)
 
     return x_unknown_li_all_tra, y_unknown_li_all_tra, z_unknown_li_all_tra, com_tra_li, com_tra_wei_li
+
 
 
 # In[9]:
