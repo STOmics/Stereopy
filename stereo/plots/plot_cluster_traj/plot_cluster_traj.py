@@ -28,7 +28,7 @@ class PlotClusterTraj(PlotBase):
             uni_lwidth=False,
             text_size=5,
             n_per_inter=100,
-            dpi_save=500):
+            dpi_save=1000):
 
         # TODO: 描述
         # TODO: 对输入进行断言
@@ -50,7 +50,7 @@ class PlotClusterTraj(PlotBase):
         traj.get_con_pairs(lower_thresh_not_equal)
 
         # plotting
-        plt.figure()
+        figure = plt.figure()
 
         if show_scatter:
             traj.show_scatter(spot_size, spot_alpha, seed_val, num_legend_per_col, tick_step, mask_keep)
@@ -78,4 +78,4 @@ class PlotClusterTraj(PlotBase):
         ax.set_aspect('equal', adjustable='box')
         import os
         plt.savefig(os.path.join(save_dir, save_na), dpi=dpi_save, bbox_inches='tight')
-        plt.close()
+        return figure

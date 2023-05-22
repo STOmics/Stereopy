@@ -48,7 +48,7 @@ If you want to use the latest version of dev branch on GitHub, you need to clone
 
 .. code:: bash
 
-    git clone -b dev https://github.com/BGIResearch/stereopy.git
+    git clone -b dev https://github.com/STOmics/stereopy.git
 
     cd stereopy
 

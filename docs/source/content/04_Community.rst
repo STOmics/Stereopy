@@ -5,10 +5,10 @@ Community
 all aspects of your proposal. We hope future input will be given by both 
 users and developers. 
 
-Discussion on `GitHub <https://github.com/BGIResearch/stereopy>`_
+Discussion on `GitHub <https://github.com/STOmics/stereopy>`_
 ----------------------------------------------------------------
 
-Please use GitHub `issues <https://github.com/BGIResearch/stereopy/issues>`_ tracker for reports and discussions of:
+Please use GitHub `issues <https://github.com/STOmics/stereopy/issues>`_ tracker for reports and discussions of:
 
 * Bug reports
 * Document and data issues

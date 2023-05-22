@@ -63,7 +63,7 @@ class PlotVec(PlotBase):
         u[mask_nan] = np.nan
         v[mask_nan] = np.nan
 
-        vec.plot_line(x_raw, y_raw, ty_raw, plt_common_ty, u, v,
+        return vec.plot_line(x_raw, y_raw, ty_raw, plt_common_ty, u, v,
                       type, background, background_alpha, scatter_s,
                       seed_val, num_legend_per_col,
                       line_len_co, vec_alpha, line_width, density,
@@ -79,12 +79,13 @@ class PlotVec(PlotBase):
         data.cells[group] = data.cells[group].astype('category')
         ptime = data.tl.result['dpt_pseudotime']
 
-        plt.figure()
-        plt.scatter(x_raw, y_raw, s=1, c=ptime, linewidths=0, cmap='rainbow')
+        figure = plt.figure()
+        plt.scatter(x_raw, y_raw, s=4, c=ptime, linewidths=0, cmap='rainbow')
         plt.colorbar()
         plt.gca().set_aspect('equal', adjustable='box')
         plt.savefig(os.path.join(fig_dir, fig_name), dpi=2000)
-        plt.close()
+        # plt.close()
+        return figure
 
     def test(self):
         def preprocess_data(adata, use_rep):

@@ -20,7 +20,7 @@ from stereo.core.stereo_exp_data import StereoExpData
 from stereo.stereo_config import stereo_conf
 from stereo.log_manager import logger
 from .plot_base import PlotBase
-from .decorator import plot_scale, download
+from .decorator import plot_scale, download, reorganize_coordinate
 
 pn.param.ParamMethod.loading_indicator = True
 
@@ -63,6 +63,7 @@ class PlotCollection:
             f'{item} not existed, please check the function name you called!'
         )
 
+    @reorganize_coordinate
     def interact_cluster(
             self,
             res_key: str='cluster', 
@@ -77,6 +78,17 @@ class PlotCollection:
         :param inline: show in notebook.
         :param width: the figure width.
         :param height: the figure height.
+        :param reorganize_coordinate: if the data is merged from several slices, whether to reorganize the coordinates of the obs(cells), 
+                if set it to a number, like 2, the coordinates will be reorganized to 2 columns on coordinate system as below:
+                                ---------------
+                                | data1 data2
+                                | data3 data4
+                                | data5 ...  
+                                | ...   ...  
+                                ---------------
+                if set it to `False`, the coordinates will not be changed.
+        :param horizontal_offset_additional: the additional offset between each slice on horizontal direction while reorganizing coordinates.
+        :param vertical_offset_additional: the additional offset between each slice on vertical direction while reorganizing coordinates.
 
         """
         res = self.check_res_key(res_key)
@@ -92,6 +104,7 @@ class PlotCollection:
             fig.show()
         return fig
 
+    @reorganize_coordinate
     def interact_annotation_cluster(
             self,
             res_cluster_key='cluster',
@@ -110,6 +123,17 @@ class PlotCollection:
         :param inline: show in notebook.
         :param width: the figure width.
         :param height: the figure height.
+        :param reorganize_coordinate: if the data is merged from several slices, whether to reorganize the coordinates of the obs(cells), 
+                if set it to a number, like 2, the coordinates will be reorganized to 2 columns on coordinate system as below:
+                                ---------------
+                                | data1 data2
+                                | data3 data4
+                                | data5 ...  
+                                | ...   ...  
+                                ---------------
+                if set it to `False`, the coordinates will not be changed.
+        :param horizontal_offset_additional: the additional offset between each slice on horizontal direction while reorganizing coordinates.
+        :param vertical_offset_additional: the additional offset between each slice on vertical direction while reorganizing coordinates.
 
         """
         res = self.check_res_key(res_cluster_key)
@@ -140,6 +164,8 @@ class PlotCollection:
         :param res_key: the result key of highly variable genes.
         :param width: the figure width in pixels.
         :param height: the figure height in pixels.
+        :param out_path: the path to save the figure.
+        :param out_dpi: the dpi when the figure is saved.
 
         """
         res = self.check_res_key(res_key)
@@ -182,6 +208,8 @@ class PlotCollection:
         :param cut_off_logFC: cut off of log2fc to define gene type.
         :param width: the figure width in pixels.
         :param height: the figure height in pixels.
+        :param out_path: the path to save the figure.
+        :param out_dpi: the dpi when the figure is saved.
 
         """
         res = self.check_res_key(res_key)[group_name]
@@ -221,6 +249,8 @@ class PlotCollection:
         :param dot_size: the dot size.
         :param width: the figure width in pixels.
         :param height: the figure height in pixels.
+        :param out_path: the path to save the figure.
+        :param out_dpi: the dpi when the figure is saved.
 
         """
         import math
@@ -260,8 +290,9 @@ class PlotCollection:
             )
         return fig
 
-    @plot_scale
     @download
+    @plot_scale
+    @reorganize_coordinate
     def spatial_scatter(
             self,
             cells_key: list = ["total_counts", "n_genes_by_counts"],
@@ -282,7 +313,20 @@ class PlotCollection:
         :param palette: the color theme.
         :param width: the figure width in pixels.
         :param height: the figure height in pixels.
-        :param show_plotting_scale: wheter to show the scale.
+        :param show_plotting_scale: wheter to display the plotting scale.
+        :param out_path: the path to save the figure.
+        :param out_dpi: the dpi when the figure is saved.
+        :param reorganize_coordinate: if the data is merged from several slices, whether to reorganize the coordinates of the obs(cells), 
+                if set it to a number, like 2, the coordinates will be reorganized to 2 columns on coordinate system as below:
+                                ---------------
+                                | data1 data2
+                                | data3 data4
+                                | data5 ...  
+                                | ...   ...  
+                                ---------------
+                if set it to `False`, the coordinates will not be changed.
+        :param horizontal_offset_additional: the additional offset between each slice on horizontal direction while reorganizing coordinates.
+        :param vertical_offset_additional: the additional offset between each slice on vertical direction while reorganizing coordinates.
 
         """
         from .scatter import multi_scatter
@@ -300,14 +344,13 @@ class PlotCollection:
             color_bar=True,
             width=width,
             height=height,
-            # show_plotting_scale=show_plotting_scale,
-            # data_resolution=self.data.attr['resolution'] if self.data.bin_type == 'cell_bins' else self.data.attr['resolution'] * self.data.bin_size,
             **kwargs
         )
         return fig
     
-    @plot_scale
     @download
+    @plot_scale
+    @reorganize_coordinate
     def spatial_scatter_by_gene(
             self,
             gene_name: Union[str, list, np.ndarray]=None,
@@ -325,7 +368,20 @@ class PlotCollection:
         :param palette: the color theme, defaults to `'CET_L4'`.
         :param width: the figure width in pixels.
         :param height: the figure height in pixels.
-        :param show_plotting_scale: wheter to show the scale.
+        :param show_plotting_scale: wheter to display the plotting scale.
+        :param out_path: the path to save the figure.
+        :param out_dpi: the dpi when the figure is saved.
+        :param reorganize_coordinate: if the data is merged from several slices, whether to reorganize the coordinates of the obs(cells), 
+                if set it to a number, like 2, the coordinates will be reorganized to 2 columns on coordinate system as below:
+                                ---------------
+                                | data1 data2
+                                | data3 data4
+                                | data5 ...  
+                                | ...   ...  
+                                ---------------
+                if set it to `False`, the coordinates will not be changed.
+        :param horizontal_offset_additional: the additional offset between each slice on horizontal direction while reorganizing coordinates.
+        :param vertical_offset_additional: the additional offset between each slice on vertical direction while reorganizing coordinates.
 
         """
 
@@ -358,8 +414,9 @@ class PlotCollection:
         
         return fig
     
-    @plot_scale
     @download
+    @plot_scale
+    @reorganize_coordinate
     def gaussian_smooth_scatter_by_gene(
             self,
             gene_name: str=None,
@@ -378,6 +435,20 @@ class PlotCollection:
         :param palette: Color theme, defaults to `'CET_L4'`.
         :param width: the figure width in pixels.
         :param height: the figure height in pixels.
+        :param show_plotting_scale: wheter to display the plotting scale.
+        :param out_path: the path to save the figure.
+        :param out_dpi: the dpi when the figure is saved.
+        :param reorganize_coordinate: if the data is merged from several slices, whether to reorganize the coordinates of the obs(cells), 
+                if set it to a number, like 2, the coordinates will be reorganized to 2 columns on coordinate system as below:
+                                ---------------
+                                | data1 data2
+                                | data3 data4
+                                | data5 ...  
+                                | ...   ...  
+                                ---------------
+                if set it to `False`, the coordinates will not be changed.
+        :param horizontal_offset_additional: the additional offset between each slice on horizontal direction while reorganizing coordinates.
+        :param vertical_offset_additional: the additional offset between each slice on vertical direction while reorganizing coordinates.
 
         """
         # self.data.tl.raw.sparse2array()
@@ -421,12 +492,15 @@ class PlotCollection:
         Violin plot to show index distribution of quality control.
         :param width: the figure width in pixels.
         :param height: the figure height in pixels.
+        :param out_path: the path to save the figure.
+        :param out_dpi: the dpi when the figure is saved.
 
         """
         from .violin import violin_distribution
         fig = violin_distribution(self.data, width=width, height=height)
         return fig
 
+    @reorganize_coordinate
     def interact_spatial_scatter(
             self, 
             inline: bool=True,
@@ -442,6 +516,17 @@ class PlotCollection:
         :param width: the figure width in pixels.
         :param height: the figure height in pixels.
         :param bgcolor: set background color.
+        :param reorganize_coordinate: if the data is merged from several slices, whether to reorganize the coordinates of the obs(cells), 
+                if set it to a number, like 2, the coordinates will be reorganized to 2 columns on coordinate system as below:
+                                ---------------
+                                | data1 data2
+                                | data3 data4
+                                | data5 ...  
+                                | ...   ...  
+                                ---------------
+                if set it to `False`, the coordinates will not be changed.
+        :param horizontal_offset_additional: the additional offset between each slice on horizontal direction while reorganizing coordinates.
+        :param vertical_offset_additional: the additional offset between each slice on vertical direction while reorganizing coordinates.
 
         """
         from .interact_plot.interactive_scatter import InteractiveScatter
@@ -571,6 +656,8 @@ class PlotCollection:
         :param colors: the color list.
         :param width: the figure width in pixels.
         :param height: the figure height in pixels.
+        :param out_path: the path to save the figure.
+        :param out_dpi: the dpi when the figure is saved.
 
         """
         res = self.check_res_key(res_key)
@@ -611,8 +698,9 @@ class PlotCollection:
                 **kwargs
             )
 
-    @plot_scale
     @download
+    @plot_scale
+    @reorganize_coordinate
     def cluster_scatter(
             self,
             res_key='cluster',
@@ -640,6 +728,20 @@ class PlotCollection:
         :param invert_y: whether to invert y-axis.
         :param width: the figure width in pixels.
         :param height: the figure height in pixels.
+        :param show_plotting_scale: wheter to display the plotting scale.
+        :param out_path: the path to save the figure.
+        :param out_dpi: the dpi when the figure is saved.
+        :param reorganize_coordinate: if the data is merged from several slices, whether to reorganize the coordinates of the obs(cells), 
+                if set it to a number, like 2, the coordinates will be reorganized to 2 columns on coordinate system as below:
+                                ---------------
+                                | data1 data2
+                                | data3 data4
+                                | data5 ...  
+                                | ...   ...  
+                                ---------------
+                if set it to `False`, the coordinates will not be changed.
+        :param horizontal_offset_additional: the additional offset between each slice on horizontal direction while reorganizing coordinates.
+        :param vertical_offset_additional: the additional offset between each slice on vertical direction while reorganizing coordinates.
 
         :return: Spatial scatter distribution of clusters.
         """
@@ -705,6 +807,8 @@ class PlotCollection:
         :param sharey: share scale or not.
         :param width: the figure width in pixels.
         :param height: the figure height in pixels.
+        :param out_path: the path to save the figure.
+        :param out_dpi: the dpi when the figure is saved.
 
         """
         from .marker_genes import marker_genes_text
@@ -761,6 +865,8 @@ class PlotCollection:
         :param do_log: perform normalization if log1p before plotting, or not.
         :param width: the figure width in pixels.
         :param height: the figure height in pixels.
+        :param out_path: the path to save the figure.
+        :param out_dpi: the dpi when the figure is saved.
 
         """
         from .marker_genes import marker_genes_heatmap
@@ -824,6 +930,8 @@ class PlotCollection:
                         available values include: [scores, logfoldchanges, pvalues, pvalues_adj, log10_pvalues, log10_pvalues_adj].
         :param sort_by: specify the value which sort by when select top N markers, defaults to 'scores'
                         available values include: [scores, logfoldchanges, pvalues, pvalues_adj].
+        :param out_path: the path to save the figure.
+        :param out_dpi: the dpi when the figure is saved.
         """
         from .marker_genes import MarkerGenesScatterPlot
         marker_genes_res = self.check_res_key(res_key)
@@ -865,6 +973,8 @@ class PlotCollection:
         :param res_key: the result key of spatial hotspot.
         :param width: the figure width in pixels.
         :param height: the figure height in pixels.
+        :param out_path: the path to save the figure.
+        :param out_dpi: the dpi when the figure is saved.
         """
         res = self.check_res_key(res_key)
         if width is None or height is None:
@@ -896,6 +1006,8 @@ class PlotCollection:
         :param res_key: the result key of spatial hotspot.
         :param width: the figure width in pixels.
         :param height: the figure height in pixels.
+        :param out_path: the path to save the figure.
+        :param out_dpi: the dpi when the figure is saved.
 
         """
         res = self.check_res_key(res_key)
@@ -972,18 +1084,47 @@ class PlotCollection:
         sns.clustermap(auc_mtx, figsize=(12, 12))
         plt.show()
 
-    def cells_plotting(self, cluster_res_key='cluster', bgcolor='#2F2F4F', width=None, height=None, fg_alpha=0.5, base_image=None):
+    @reorganize_coordinate
+    def cells_plotting(
+        self,
+        cluster_res_key='cluster',
+        bgcolor='#2F2F4F',
+        width=None,
+        height=None,
+        fg_alpha=0.5,
+        base_image=None
+    ):
         """Plot the cells.
 
         :param cluster_res_key: result key of clustering, defaults to `'cluster'`
                 color by cluster result if cluster result is not None, or by `total_counts`.
-        :param figure_size: the figure size is figure_size * figure_size, defaults to 500.
-        :param fg_alpha: the alpha of foreground image, between 0 and 1, defaults to 0.8
+        :param width: the figure width in pixels.
+        :param height: the figure height in pixels.
+        :param fg_alpha: the alpha of foreground image, between 0 and 1, defaults to 0.5
                             this is the colored image of the cells.
         :param base_image: the path of the ssdna image after calibration, defaults to None
                             it will be located behide the image of the cells.
+        :param reorganize_coordinate: if the data is merged from several slices, whether to reorganize the coordinates of the obs(cells), 
+                if set it to a number, like 2, the coordinates will be reorganized to 2 columns on coordinate system as below:
+                                ---------------
+                                | data1 data2
+                                | data3 data4
+                                | data5 ...  
+                                | ...   ...  
+                                ---------------
+                if set it to `False`, the coordinates will not be changed.
+        :param horizontal_offset_additional: the additional offset between each slice on horizontal direction while reorganizing coordinates.
+        :param vertical_offset_additional: the additional offset between each slice on vertical direction while reorganizing coordinates.
         :return: Cells distribution figure.
         """
         from .plot_cells import PlotCells
-        pc = PlotCells(self.data, cluster_res_key=cluster_res_key, bgcolor=bgcolor, width=width, height=height, fg_alpha=fg_alpha, base_image=base_image)
+        pc = PlotCells(
+            self.data,
+            cluster_res_key=cluster_res_key,
+            bgcolor=bgcolor,
+            width=width,
+            height=height,
+            fg_alpha=fg_alpha,
+            base_image=base_image
+        )
         return pc.show()

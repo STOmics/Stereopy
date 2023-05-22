@@ -308,8 +308,8 @@ class Vec():
         plt.gca().set_aspect('equal', adjustable='box')
 
         plt.savefig(os.path.join(fig_dir, fig_name), dpi=dpi_val, bbox_inches='tight')
-        plt.close()
-        return
+        # plt.close()
+        return plt.figure()
 
 
 

@@ -20,15 +20,19 @@ class Gene(object):
         self._var = pd.DataFrame(index=gene_name if gene_name is None else gene_name.astype('U'))
         self._matrix = dict()
         self._pairwise = dict()
+        self.loc = self._var.loc
 
     def __contains__(self, item):
         return item in self._var.columns
 
     def __setattr__(self, key, value):
-        if key in {'_var', '_matrix', '_pairwise', 'gene_name'}:
+        if key in {'_var', '_matrix', '_pairwise', 'gene_name', 'loc'}:
             object.__setattr__(self, key, value)
         else:
             self._var[key] = value
+
+    def __setitem__(self, key, value):
+        self._var[key] = value
 
     @property
     def n_cells(self):
@@ -116,6 +120,7 @@ class AnnBasedGene(Gene):
     def __init__(self, based_ann_data: AnnData, gene_name: Optional[np.ndarray]):
         self.__based_ann_data = based_ann_data
         super().__init__(gene_name)
+        self._var = self.__based_ann_data.var
 
     def __setattr__(self, key, value):
         object.__setattr__(self, key, value)
