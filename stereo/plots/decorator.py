@@ -109,7 +109,7 @@ def reorganize_coordinate(func):
                 max_ys = [0] * (position_row_count + 1)
                 for i, bno in enumerate(batches):
                     idx = np.where(data.cells.batch == bno)[0]
-                    data.position[idx] -= data.position_offset[bno]
+                    data.position[idx] -= data.position_offset[bno] if data.position_offset is not None else 0
                     position_row_number = i // reorganize_coordinate
                     position_column_number = i % reorganize_coordinate
                     max_x = data.position[idx][:, 0].max()
@@ -119,6 +119,7 @@ def reorganize_coordinate(func):
                     if max_y > max_ys[position_row_number + 1]:
                         max_ys[position_row_number + 1] = max_y
                 
+                data.position_offset = {}
                 for i, bno in enumerate(batches):
                     idx = np.where(data.cells.batch == bno)[0]
                     position_row_number = i // reorganize_coordinate

@@ -541,6 +541,14 @@ class StereoExpData(Data):
         """
         return issparse(self.exp_matrix)
 
+    def reset_position(self):
+        if self.position_offset is not None:
+            batches = np.unique(self.cells.batch)
+            for bno in batches:
+                idx = np.where(self.cells.batch == bno)[0]
+                self.position[idx] -= self.position_offset[bno]
+        self.position_offset = None
+
 
 class AnnBasedStereoExpData(StereoExpData):
 

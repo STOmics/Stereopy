@@ -136,7 +136,7 @@ def base_scatter(
         ax_left, ax_right = ax.get_xlim()
         ax_bottom, ax_top = ax.get_ylim()
 
-        plotting_scale_height = 200
+        plotting_scale_height = plotting_scale_width / 10
 
         horizontal_start_x = min_x
         bin_count = plotting_scale_width // data_bin_offset
