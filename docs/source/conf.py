@@ -109,6 +109,7 @@ nbsphinx_thumbnails = {
     "Tutorials/High_Resolution_Export": "_static/box_select.gif",
     "Tutorials/scTransform":"_static/variance_sct.png",
 	"Tutorials/Cell_Cell_Communication":"_static/cell_cell_communication.png",
+    "Tutorials/3D_Cell_Cell_Communication":"_static/cell_cell_communication.png",
     "Tutorials/SingleR":"_static/singleR.png",
     "Tutorials/Gene_Regulatory_Network":"_static/gene_regulatory_network.png"
 }
