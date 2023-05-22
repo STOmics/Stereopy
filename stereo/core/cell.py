@@ -25,6 +25,7 @@ class Cell(object):
             batch: Optional[Union[np.ndarray, list, int, str]] = None
     ):
         self._obs = pd.DataFrame(index=cell_name if cell_name is None else cell_name.astype('U'))
+        self.loc = self._obs.loc
         self._matrix = dict()
         self._pairwise = dict()
         if batch is not None:
@@ -35,7 +36,7 @@ class Cell(object):
         return item in self._obs.columns
 
     def __setattr__(self, key, value):
-        if key in {'_obs', '_matrix', '_pairwise', '_cell_border', 'cell_name', 'cell_border'}:
+        if key in {'_obs', '_matrix', '_pairwise', '_cell_border', 'cell_name', 'cell_border', 'loc'}:
             object.__setattr__(self, key, value)
         elif key == 'batch':
             self._obs[key] = self._set_batch(value)
@@ -180,6 +181,7 @@ class AnnBasedCell(Cell):
         self.__based_ann_data = based_ann_data
         super().__init__(cell_name, cell_border, batch)
         self._obs = self.__based_ann_data.obs
+        self.loc = self._obs.loc
 
     def __setattr__(self, key, value):
         if key == 'batch':

@@ -5,6 +5,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 
 from stereo.algorithm.algorithm_base import AlgorithmBase
+from stereo.plots.plot_base import PlotBase
 
 
 class TimeSeriesAnalysis(AlgorithmBase):
@@ -12,25 +13,178 @@ class TimeSeriesAnalysis(AlgorithmBase):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-    def boxplot_transit_gene(self, adata, use_col, branch, genes, layer=None, vmax=None, vmin=None):
+    def main(self, run_method="tvg_marker", use_col='timepoint', branch=None, p_val_combination='FDR'):
+        if run_method == 'tvg_marker':
+            self.TVG_marker(
+                self.stereo_exp_data,
+                use_col=use_col,
+                branch=branch,
+                p_val_combination=p_val_combination
+            )
+        else:
+            self.fuzzy_C_gene_pattern_cluster(self.stereo_exp_data)
+
+    def TVG_marker(self, stereo_exp_data, use_col, branch, p_val_combination='fisher'):
         """
-        show a boxplot of a specific gene expression in branch of use_col
-        :param adata: anndata object to analysis
+        Calculate time variable gene based on expression of celltypes in branch
+        :param stereo_exp_data: stereo_exp_data object to analysis
         :param use_col: the col in obs representing celltype or clustering
         :param branch: celltypes order in use_col
-        :param genes: specific gene or gene list to plot 
-        :param layer: layer in adata.layers[layer] to get expression, default None means use adata.X
+        :param p_val_combination: p_value combination method to use, choosing from ['fisher', 'mean', 'FDR']
+        :return: stereo_exp_data contains Time Variabel Gene marker result
+        """
+        from scipy.stats import ttest_ind
+        from scipy import sparse
+        from scipy import stats
+        label2exp = {}
+        for x in branch:
+            cell_list = stereo_exp_data.cells.loc[stereo_exp_data.cells[use_col] == x,].index
+            test_exp_data = stereo_exp_data.sub_by_name(cell_name=cell_list.to_list())
+            if sparse.issparse(test_exp_data.exp_matrix):
+                label2exp[x] = test_exp_data.exp_matrix.todense()
+            else:
+                label2exp[x] = np.mat(test_exp_data.exp_matrix)
+        # result_df = {}
+        logFC = []
+        less_pvalue = []
+        greater_pvalue = []
+        scores = []
+        for i in range(len(branch) - 1):
+            score, pvalue = ttest_ind(label2exp[branch[i + 1]], label2exp[branch[i]], axis=0, alternative='less')
+            # np.nan_to_num(score, nan=0, copy = False)
+            less_pvalue.append(np.nan_to_num(pvalue, nan=1, copy=False))
+            score, pvalue = ttest_ind(label2exp[branch[i + 1]], label2exp[branch[i]], axis=0, alternative='greater')
+            greater_pvalue.append(np.nan_to_num(pvalue, nan=1, copy=False))
+            logFC.append(np.array(np.log2(
+                (np.mean(label2exp[branch[i + 1]], axis=0) + 1e-9) / (np.mean(label2exp[branch[i]], axis=0) + 1e-9)))[
+                             0])
+            scores.append(score)
+        stereo_exp_data.genes_matrix['scores'] = np.array(scores).T
+        stereo_exp_data.genes_matrix['scores'] = np.nan_to_num(stereo_exp_data.genes_matrix['scores'])
+        stereo_exp_data.genes_matrix['greater_p'] = np.array(greater_pvalue).T
+        stereo_exp_data.genes_matrix['less_p'] = np.array(less_pvalue).T
+        logFC = np.array(logFC).T
+        # return logFC
+        stereo_exp_data.genes_matrix['logFC'] = logFC
+        logFC = np.mean(logFC, axis=1)
+
+        if p_val_combination == 'mean':
+            less_pvalue = np.mean(np.array(less_pvalue), axis=0)
+            greater_pvalue = np.mean(np.array(greater_pvalue), axis=0)
+        elif p_val_combination == 'fisher':
+            tmp = stereo_exp_data.genes_matrix['less_p'].copy()
+            tmp[tmp == 0] = np.min(tmp[tmp != 0])
+            tmp = np.sum(-2 * np.log(tmp), axis=1)
+            less_pvalue = 1 - stats.chi2.cdf(tmp, stereo_exp_data.genes_matrix['less_p'].shape[1])
+            tmp = stereo_exp_data.genes_matrix['greater_p'].copy()
+            tmp[tmp == 0] = np.min(tmp[tmp != 0])
+            tmp = np.sum(-2 * np.log(tmp), axis=1)
+            greater_pvalue = 1 - stats.chi2.cdf(tmp, stereo_exp_data.genes_matrix['greater_p'].shape[1])
+        elif p_val_combination == 'FDR':
+            less_pvalue = 1 - np.prod(1 - stereo_exp_data.genes_matrix['less_p'], axis=1)
+            greater_pvalue = 1 - np.prod(1 - stereo_exp_data.genes_matrix['greater_p'], axis=1)
+        # result_df['logFC'] = less_FC
+        # result_df['less_pvalue'] = less_pvalue
+        # result_df['greater_pvalue'] = greater_pvalue
+        # result_df = pd.DataFrame(result_df)
+        stereo_exp_data.genes['less_pvalue'] = less_pvalue
+        stereo_exp_data.genes['greater_pvalue'] = greater_pvalue
+        stereo_exp_data.genes['logFC'] = logFC
+        return stereo_exp_data
+
+    def fuzzy_C(self, data, cluster_number, MAX=10000, m=2, Epsilon=1e-7):
+        """
+        fuzzy C means algorithm to cluster, helper function used in fuzzy_C_gene_pattern_cluster
+        :param data: pd.DataFrame object for fuzzy C means cluster, each col represent a feature, each row represent a obsversion
+        :param cluster_number: number of cluster
+        :param MAX: max value to random initialize
+        :param m: degree of membership, default = 2
+        :param Epsilon: max value to finish iteration
+        :return: fuzzy C means cluster result
+        """
+        assert m > 1
+        import time
+        import copy
+        from scipy import spatial
+        U = np.random.randint(1, int(MAX), (len(data), cluster_number))
+        U = U / np.sum(U, axis=1, keepdims=True)
+        epoch = 0
+        tik = time.time()
+        while True:
+            epoch += 1
+            U_old = copy.deepcopy(U)
+            U1 = U ** m
+            U2 = np.expand_dims(U1, axis=2)
+            U2 = np.repeat(U2, data.shape[1], axis=2)
+            data1 = np.expand_dims(data, axis=1)
+            data1 = np.repeat(data1, cluster_number, axis=1)
+            dummy_sum_num = np.sum(U2 * data1, axis=0)
+            dummy_sum_dum = np.sum(U1, axis=0)
+            C = (dummy_sum_num.T / dummy_sum_dum).T
+
+            # initializing distance matrix
+            distance_matrix = spatial.distance_matrix(data, C)
+
+            # update U
+            distance_matrix_1 = np.expand_dims(distance_matrix, axis=1)
+            distance_matrix_1 = np.repeat(distance_matrix_1, cluster_number, axis=1)
+            distance_matrix_2 = np.expand_dims(distance_matrix, axis=2)
+            distance_matrix_2 = np.repeat(distance_matrix_2, cluster_number, axis=2)
+
+            U = np.sum((distance_matrix_1 / distance_matrix_2) ** (2 / (m - 1)), axis=1)
+            U = 1 / U
+            if epoch % 100 == 0:
+                print('epoch {} : time cosumed{:.4f}s, loss:{}'.format(epoch, time.time() - tik,
+                                                                       np.max(np.abs(U - U_old))))
+                tik = time.time()
+            if np.max(np.abs(U - U_old)) < Epsilon:
+                break
+        return U
+
+    def fuzzy_C_gene_pattern_cluster(self, stereo_exp_data, use_col=None, branch=None):
+        """
+        Use fuzzy C means cluster method to cluster genes based on 1-p_value of celltypes in branch
+        :param stereo_exp_data: anndata object to analysis
+        :param use_col: the col in obs representing celltype or clustering
+        :param branch: celltypes order in use_col
+        :return: stereo_exp_data contains fuzzy_C_result
+        """
+        if ('greater_p' not in stereo_exp_data.genes_matrix) or ('less_p' not in stereo_exp_data.genes_matrix):
+            if use_col == None:
+                print('greater_p and less_p not in stereo_exp_data.genes_matrix, you should run get_gene_pattern first')
+            else:
+                self.TVG_marker(stereo_exp_data, use_col=use_col, branch=branch)
+        sig = ((1 - stereo_exp_data.genes_matrix['greater_p']) >= (1 - stereo_exp_data.genes_matrix['less_p'])).astype(
+            int)
+        sig[sig == 0] = -1
+        stereo_exp_data.genes_matrix['feature_p'] = np.max(
+            [(1 - stereo_exp_data.genes_matrix['greater_p']), (1 - stereo_exp_data.genes_matrix['less_p'])],
+            axis=0) * sig
+        stereo_exp_data.genes_matrix['fuzzy_C_weight'] = self.fuzzy_C(stereo_exp_data.genes_matrix['feature_p'], 6,
+                                                                      Epsilon=1e-7)
+        stereo_exp_data.genes['fuzzy_C_result'] = np.argmax(stereo_exp_data.genes_matrix['fuzzy_C_weight'], axis=1)
+
+
+class PlotTimeSeriesAnalysis(PlotBase):
+
+    def boxplot_transit_gene(self, stereo_exp_data, use_col, branch, genes, vmax=None, vmin=None):
+        """
+        show a boxplot of a specific gene expression in branch of use_col
+        :param stereo_exp_data: anndata object to analysis
+        :param use_col: the col in obs representing celltype or clustering
+        :param branch: celltypes order in use_col
+        :param genes: specific gene or gene list to plot
         :param vmax, vmin: max and min value to plot, default None means auto calculate
         :return: a boxplot fig of one or several gene expression in branch of use_col
         """
+
         branch2exp = defaultdict(dict)
+
         for x in branch:
-            celllist = adata.obs.loc[adata.obs[use_col] == x, :].index
+            celllist = stereo_exp_data.cells.loc[stereo_exp_data.cells[use_col] == x, :].index
+            tmp_exp_data = stereo_exp_data.sub_by_name(cell_name=celllist)
             for gene in genes:
-                if not layer:
-                    branch2exp[gene][x] = adata[celllist, gene].X.toarray().flatten()
-                else:
-                    branch2exp[gene][x] = adata[celllist, gene].layers[layer].toarray().flatten()
+                branch2exp[gene][x] = tmp_exp_data.sub_by_name(gene_name=gene).exp_matrix.toarray().flatten()
 
         fig = plt.figure(figsize=(4 * len(genes), 6))
         ax = fig.subplots(1, len(genes))
@@ -57,96 +211,22 @@ class TimeSeriesAnalysis(AlgorithmBase):
             # plt.show()
             return fig
 
-    def TVG_marker(self, adata, use_col, branch, layer=None, p_val_combination='fisher'):
-        """
-        Calculate time variable gene based on expression of celltypes in branch
-        :param adata: anndata object to analysis
-        :param use_col: the col in obs representing celltype or clustering
-        :param branch: celltypes order in use_col
-        :param layer: layer in adata.layers[layer] to get expression, default None means use adata.X
-        :param p_val_combination: p_value combination method to use, choosing from ['fisher', 'mean', 'FDR']
-        :return: adata contains Time Variabel Gene marker result
-        """
-        from scipy.stats import ttest_ind
-        from scipy import sparse
-        from scipy import stats
-        label2exp = {}
-        for x in branch:
-            celllist = adata.obs.loc[adata.obs[use_col] == x,].index
-            if layer in adata.layers:
-                if sparse.issparse(adata.layers[layer]):
-                    label2exp[x] = adata[celllist, :].layers[layer].todense()
-                else:
-                    label2exp[x] = adata[celllist, :].layers[layer]
-            else:
-                if sparse.issparse(adata.X):
-                    label2exp[x] = adata[celllist, :].X.todense()
-                else:
-                    label2exp[x] = adata[celllist, :].X
-        # result_df = {}
-        logFC = []
-        less_pvalue = []
-        greater_pvalue = []
-        scores = []
-        for i in range(len(branch) - 1):
-            score, pvalue = ttest_ind(label2exp[branch[i + 1]], label2exp[branch[i]], axis=0, alternative='less')
-            # np.nan_to_num(score, nan=0, copy = False)
-            less_pvalue.append(np.nan_to_num(pvalue, nan=1, copy=False))
-            score, pvalue = ttest_ind(label2exp[branch[i + 1]], label2exp[branch[i]], axis=0, alternative='greater')
-            greater_pvalue.append(np.nan_to_num(pvalue, nan=1, copy=False))
-            logFC.append(np.array(np.log2(
-                (np.mean(label2exp[branch[i + 1]], axis=0) + 1e-9) / (np.mean(label2exp[branch[i]], axis=0) + 1e-9)))[
-                             0])
-            scores.append(score)
-        adata.varm['scores'] = np.array(scores).T
-        adata.varm['scores'] = np.nan_to_num(adata.varm['scores'])
-        adata.varm['greater_p'] = np.array(greater_pvalue).T
-        adata.varm['less_p'] = np.array(less_pvalue).T
-        logFC = np.array(logFC).T
-        # return logFC
-        adata.varm['logFC'] = logFC
-        logFC = np.mean(logFC, axis=1)
-
-        if p_val_combination == 'mean':
-            less_pvalue = np.mean(np.array(less_pvalue), axis=0)
-            greater_pvalue = np.mean(np.array(greater_pvalue), axis=0)
-        elif p_val_combination == 'fisher':
-            tmp = adata.varm['less_p'].copy()
-            tmp[tmp == 0] = np.min(tmp[tmp != 0])
-            tmp = np.sum(-2 * np.log(tmp), axis=1)
-            less_pvalue = 1 - stats.chi2.cdf(tmp, adata.varm['less_p'].shape[1])
-            tmp = adata.varm['greater_p'].copy()
-            tmp[tmp == 0] = np.min(tmp[tmp != 0])
-            tmp = np.sum(-2 * np.log(tmp), axis=1)
-            greater_pvalue = 1 - stats.chi2.cdf(tmp, adata.varm['greater_p'].shape[1])
-        elif p_val_combination == 'FDR':
-            less_pvalue = 1 - np.prod(1 - adata.varm['less_p'], axis=1)
-            greater_pvalue = 1 - np.prod(1 - adata.varm['greater_p'], axis=1)
-        # result_df['logFC'] = less_FC
-        # result_df['less_pvalue'] = less_pvalue
-        # result_df['greater_pvalue'] = greater_pvalue
-        # result_df = pd.DataFrame(result_df)
-        adata.var['less_pvalue'] = less_pvalue
-        adata.var['greater_pvalue'] = greater_pvalue
-        adata.var['logFC'] = logFC
-
-        return adata
-
-    def TVG_volcano_plot(self, adata, use_col, branch):
+    def TVG_volcano_plot(self, stereo_exp_data, use_col, branch):
         """
         Use fuzzy C means cluster method to cluster genes based on 1-p_value of celltypes in branch
-        :param adata: anndata object to analysis
+        :param stereo_exp_data: anndata object to analysis
         :param use_col: the col in obs representing celltype or clustering
         :param branch: celltypes order in use_col
         :return: a volcano plot display time variable gene(TVG)
         """
         N_branch = len(branch)
-        df = adata.var.copy()
+        df = stereo_exp_data.genes.to_df()
         df['_log_pvalue'] = -np.log10(np.min(df[['less_pvalue', 'greater_pvalue']], axis=1))
         label2meam_exp = {}
         for x in branch:
-            celllist = adata.obs.loc[adata.obs[use_col] == x,].index
-            label2meam_exp[x] = np.array(np.mean(adata[celllist].X, axis=0)).flatten()
+            celllist = stereo_exp_data.cells.loc[stereo_exp_data.cells[use_col] == x,].index
+            label2meam_exp[x] = np.array(
+                np.mean(stereo_exp_data.sub_by_name(cell_name=celllist).exp_matrix, axis=0)).flatten()
         label2meam_exp = pd.DataFrame(label2meam_exp)
         label2meam_exp = label2meam_exp[branch]
         rate = 30 / (np.max(np.percentile(label2meam_exp, 99.99)))
@@ -190,74 +270,6 @@ class TimeSeriesAnalysis(AlgorithmBase):
         ax.legend(fontsize=20)
 
         return fig
-
-    def fuzzy_C(self, data, cluster_number, MAX=10000, m=2, Epsilon=1e-7):
-        """
-        fuzzy C means algorithm to cluster, helper function used in fuzzy_C_gene_pattern_cluster
-        :param data: pd.DataFrame object for fuzzy C means cluster, each col represent a feature, each row represent a obsversion
-        :param cluster_number: number of cluster 
-        :param MAX: max value to random initialize
-        :param m: degree of membership, default = 2
-        :param Epsilon: max value to finish iteration
-        :return: fuzzy C means cluster result
-        """
-        assert m > 1
-        import time
-        import copy
-        from scipy import spatial
-        U = np.random.randint(1, int(MAX), (len(data), cluster_number))
-        U = U / np.sum(U, axis=1, keepdims=True)
-        epoch = 0
-        tik = time.time()
-        while (True):
-            epoch += 1
-            U_old = copy.deepcopy(U)
-            U1 = U ** m
-            U2 = np.expand_dims(U1, axis=2)
-            U2 = np.repeat(U2, data.shape[1], axis=2)
-            data1 = np.expand_dims(data, axis=1)
-            data1 = np.repeat(data1, cluster_number, axis=1)
-            dummy_sum_num = np.sum(U2 * data1, axis=0)
-            dummy_sum_dum = np.sum(U1, axis=0)
-            C = (dummy_sum_num.T / dummy_sum_dum).T
-
-            # initializing distance matrix
-            distance_matrix = spatial.distance_matrix(data, C)
-
-            # update U
-            distance_matrix_1 = np.expand_dims(distance_matrix, axis=1)
-            distance_matrix_1 = np.repeat(distance_matrix_1, cluster_number, axis=1)
-            distance_matrix_2 = np.expand_dims(distance_matrix, axis=2)
-            distance_matrix_2 = np.repeat(distance_matrix_2, cluster_number, axis=2)
-
-            U = np.sum((distance_matrix_1 / distance_matrix_2) ** (2 / (m - 1)), axis=1)
-            U = 1 / U
-            if epoch % 100 == 0:
-                print('epoch {} : time cosumed{:.4f}s, loss:{}'.format(epoch, time.time() - tik,
-                                                                       np.max(np.abs(U - U_old))))
-                tik = time.time()
-            if np.max(np.abs(U - U_old)) < Epsilon:
-                break
-        return U
-
-    def fuzzy_C_gene_pattern_cluster(self, adata, use_col=None, branch=None):
-        """
-        Use fuzzy C means cluster method to cluster genes based on 1-p_value of celltypes in branch
-        :param adata: anndata object to analysis
-        :param use_col: the col in obs representing celltype or clustering
-        :param branch: celltypes order in use_col
-        :return: adata contains fuzzy_C_result 
-        """
-        if ('greater_p' not in adata.varm) or ('less_p' not in adata.varm):
-            if use_col == None:
-                print('greater_p and less_p not in adata.varm, you should run get_gene_pattern first')
-            else:
-                self.TVG_marker(adata, use_col=use_col, branch=branch)
-        sig = ((1 - adata.varm['greater_p']) >= (1 - adata.varm['less_p'])).astype(int)
-        sig[sig == 0] = -1
-        adata.varm['feature_p'] = np.max([(1 - adata.varm['greater_p']), (1 - adata.varm['less_p'])], axis=0) * sig
-        adata.varm['fuzzy_C_weight'] = self.fuzzy_C(adata.varm['feature_p'], 6, Epsilon=1e-7)
-        adata.var['fuzzy_C_result'] = np.argmax(adata.varm['fuzzy_C_weight'], axis=1)
 
     def bezierpath(self, rs, re, qs, qe, ry, qy, v=True, col='green', alpha=0.2, label='', lw=0, zorder=0):
         """
@@ -307,12 +319,12 @@ class TimeSeriesAnalysis(AlgorithmBase):
         patch = patches.PathPatch(path, facecolor=col, lw=lw, alpha=alpha, label=label, edgecolor=col, zorder=zorder)
         return patch
 
-    def paga_time_series_plot(self, adata, use_col='celltype', batch_col='sample_name',
+    def paga_time_series_plot(self, stereo_exp_data, use_col='celltype', batch_col='sample_name',
                               groups=None, fig_height=10, fig_width=0, palette='tab20',
                               link_alpha=0.5, spot_size=1, dpt_col='dpt_pseudotime'):
         """
         spatial trajectory plot for paga in time_series multiple slice dataset
-        :param adata: anndata object of multiple slice
+        :param stereo_exp_data: anndata object of multiple slice
         :param use_col: the col in obs representing celltype or clustering
         :param batch_col: the col in obs representing different slice of time series
         :param groups: the particular celltype that will show, default None means show all the celltype in use_col
@@ -326,40 +338,33 @@ class TimeSeriesAnalysis(AlgorithmBase):
         """
 
         import networkx as nx
-        import random
-        import seaborn as sns
-        from matplotlib.patches import Polygon
-
-        from collections import defaultdict
-        from scipy import spatial
-        import random
-        from itertools import cycle
         import seaborn as sns
         from scipy import stats
 
         # 细胞类型的列表
-        ct_list = list(adata.obs[use_col].astype('category').cat.categories)
+        ct_list = list(stereo_exp_data.cells[use_col].astype('category').cat.categories)
         # 多篇数据存储分片信息的列表
-        bc_list = list(adata.obs[batch_col].astype('category').cat.categories)
+        bc_list = list(stereo_exp_data.cells[batch_col].astype('category').cat.categories)
         # bc_list = ['E9.5_E1S1', 'E10.5_E1S1', 'E11.5_E1S1', 'E12.5_E1S1', 'E13.5_E1S1', 'E14.5_E1S1']
 
         # 生成每个细胞类型的颜色对应
         colors = sns.color_palette(palette, len(ct_list))
         ct2color = dict(zip(ct_list, colors))
-        adata.obs['tmp'] = adata.obs[use_col].astype(str) + '|' + adata.obs[batch_col].astype(str)
+        stereo_exp_data.cells['tmp'] = stereo_exp_data.cells[use_col].astype(str) + '|' + stereo_exp_data.cells[
+            batch_col].astype(str)
 
         # 读取paga结果
-        G = pd.DataFrame(adata.uns['paga']['connectivities_tree'].todense())
+        G = pd.DataFrame(stereo_exp_data.tl.result['paga']['connectivities_tree'].todense())
         G.index, G.columns = ct_list, ct_list
         # 转化为对角矩阵
         for i, x in enumerate(ct_list):
             for y in ct_list[i + 1:]:
                 G[x][y] = G[y][x] = G[x][y] + G[y][x]
         # 利用伪时序计算结果推断方向
-        if dpt_col in adata.obs:
+        if dpt_col in stereo_exp_data.cells:
             ct2dpt = {}
 
-            for x, y in adata.obs.groupby(use_col):
+            for x, y in stereo_exp_data.cells.groupby(use_col):
                 ct2dpt[x] = y[dpt_col].to_numpy()
 
             from collections import defaultdict
@@ -388,10 +393,12 @@ class TimeSeriesAnalysis(AlgorithmBase):
 
         # 创建画布
         if fig_height != None:
-            fig_width_0 = fig_height * np.ptp(adata.obsm['spatial'][:, 0]) / np.ptp(adata.obsm['spatial'][:, 1])
+            fig_width_0 = fig_height * np.ptp(stereo_exp_data.position[:, 0]) / np.ptp(
+                stereo_exp_data.position[:, 1])
             fig_height_0 = 0
         if fig_width > 0:
-            fig_height_0 = fig_width * np.ptp(adata.obsm['spatial'][:, 1]) / np.ptp(adata.obsm['spatial'][:, 0])
+            fig_height_0 = fig_width * np.ptp(stereo_exp_data.position[:, 1]) / np.ptp(
+                stereo_exp_data.position[:, 0])
         if fig_height > fig_height_0:
             fig_width = fig_width_0
         else:
@@ -405,8 +412,8 @@ class TimeSeriesAnalysis(AlgorithmBase):
         min_vertex_right = {}
         max_vertex_left = {}
         max_vertex_right = {}
-        for x in adata.obs.groupby('tmp'):
-            tmp = adata[x[1].index, :].obsm['spatial']
+        for x in stereo_exp_data.cells.to_df().groupby('tmp'):
+            tmp = stereo_exp_data.sub_by_name(cell_name=x[1].index).position
             # ax.scatter(tmp[:, 0], 0-tmp[:, 1], label=x[0].split('|')[0], color = ct2color[x[0].split('|')[0]], s =s )
             ### --*-- to infer the 4 point to plot Polygon
             tmp_left = tmp[(np.percentile(tmp[:, 0], 40) <= tmp[:, 0]) & (tmp[:, 0] <= np.percentile(tmp[:, 0], 60))]
@@ -427,8 +434,8 @@ class TimeSeriesAnalysis(AlgorithmBase):
             # break
 
         # 细胞散点元素
-        for x in adata.obs.groupby(use_col):
-            tmp = adata[x[1].index, :].obsm['spatial']
+        for x in stereo_exp_data.cells.to_df().groupby(use_col):
+            tmp = stereo_exp_data.sub_by_name(cell_name=x[1].index).position
             ax.scatter(tmp[:, 0], 0 - tmp[:, 1], label=x[0], color=ct2color[x[0]], s=spot_size)
         ## all arrow
 
@@ -463,15 +470,15 @@ class TimeSeriesAnalysis(AlgorithmBase):
                     if (edge0 in median_center) and (edge1 in median_center):
                         # tmp_vertex = [max_vertex_right[edge0],min_vertex_right[edge0], min_vertex_left[edge1], max_vertex_left[edge1]]
                         # p = Polygon(tmp_vertex, color=ct2color[g], ec=None, alpha = 0.1)
-                        p = self.bezierpath(min_vertex_right[edge0][1], max_vertex_right[edge0][1], \
-                                            min_vertex_left[edge1][1], max_vertex_right[edge1][1], \
+                        p = self.bezierpath(min_vertex_right[edge0][1], max_vertex_right[edge0][1],
+                                            min_vertex_left[edge1][1], max_vertex_right[edge1][1],
                                             min_vertex_right[edge0][0], min_vertex_left[edge1][0], True,
                                             col=ct2color[g], alpha=link_alpha)
                         ax.add_patch(p)
 
         # 显示时期的label
-        for x in adata.obs.groupby(batch_col):
-            tmp = adata[x[1].index, :].obsm['spatial']
+        for x in stereo_exp_data.cells.to_df().groupby(batch_col):
+            tmp = stereo_exp_data.sub_by_name(cell_name=x[1].index).position
             ax.text(np.mean(tmp[:, 0]), 0 - np.min(tmp[:, 1]) + 1, s=x[0], c='black', fontsize=20, ha='center',
                     va='bottom')  # , bbox=dict(facecolor='red', alpha=0.1))
 
