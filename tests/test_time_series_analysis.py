@@ -1,10 +1,13 @@
+import pytest
 import unittest
+
 
 class TestTimeSeriesAnalysis(unittest.TestCase):
 
+    @pytest.mark.heavy
     def test_time_series_analysis(self):
         from stereo.core.stereo_exp_data import AnnBasedStereoExpData
-        data = AnnBasedStereoExpData('/mnt/d/projects/stereopy_dev/demo_data/forebrain.h5ad')
+        data = AnnBasedStereoExpData('/mnt/d/projects/stereopy_dev/demo_data/forebrain.anndata_075.repair2.h5ad')
         data.tl.normalize_total()
         data.tl.log1p()
         data.tl.pca(svd_solver='arpack', n_pcs=20)
