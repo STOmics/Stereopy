@@ -416,8 +416,6 @@ class PlotRegulatoryNetwork(PlotBase):
         plt.colorbar(sc, shrink=0.35)
         plt.savefig(fn, format='pdf')
 
-        return fig
-
     
 def get_n_hls_colors(num):
     import random
