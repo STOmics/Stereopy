@@ -350,8 +350,9 @@ class PlotRegulatoryNetwork(PlotBase):
         network_res_key: str = 'regulatory_network_inference',
         reg_name: str = None,
         fn: str = None,
-        view_vertical: int=222,
-        view_horizontal: int=-80,
+        view_vertical: int=0,
+        view_horizontal: int=0,
+        show_axis: bool=False,
         **kwargs):
         """
         Plot genes of one regulon on a 3D map
@@ -377,7 +378,7 @@ class PlotRegulatoryNetwork(PlotBase):
             fn = f'{reg_name.strip("(+)")}.pdf'
 
         # prepare plotting data
-        arr2 = self.stereo_exp_data.position_z.reshape(-1, 1)
+        arr2 = self.stereo_exp_data.position_z
         position_3D = np.concatenate((self.stereo_exp_data.position, arr2), axis=1)
 
         cell_coor = position_3D
@@ -409,13 +410,13 @@ class PlotRegulatoryNetwork(PlotBase):
         zscale = zlen / xlen
         ax.get_proj = lambda: np.dot(Axes3D.get_proj(ax), np.diag([1, yscale, zscale, 1]))
 
-        plt.box(False)
-        plt.axis('off')
+        if not show_axis:
+            plt.box(False)
+            plt.axis('off')
         plt.colorbar(sc, shrink=0.35)
         plt.savefig(fn, format='pdf')
-        plt.close()
 
-        return sc
+        return fig
 
     
 def get_n_hls_colors(num):
