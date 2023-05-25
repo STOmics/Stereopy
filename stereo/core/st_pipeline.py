@@ -13,7 +13,7 @@ change log:
 
 import copy
 from functools import wraps
-from typing import Optional, Union
+from typing import Optional, Union, List
 from multiprocessing import cpu_count
 from typing_extensions import Literal
 
@@ -253,6 +253,38 @@ class StPipeline(object):
         from ..preprocess.filter import filter_coordinates
         data = filter_coordinates(self.data, min_x, max_x, min_y, max_y, inplace)
         return data
+
+    @logit
+    def filter_by_clusters(
+        self,
+        cluster_res_key: str = 'cluster',
+        groups: Union[str, np.ndarray, List[str]] = None,
+        excluded: bool = False,
+        inplace: bool = True
+    ):
+        """
+        Filter cells based on clustering result.
+
+        Parameters
+        -----------------
+        cluster_res_key
+            - the key of clustering to get corresponding result from `self.result`.
+        groups
+            - the groups in clustering result which will be filtered.
+        inplace
+            - whether to inplace the previous data or return a new data.
+
+        Returns
+        --------------------
+        An object of StereoExpData.
+        Depending on `inplace`, if `True`, the data will be replaced by those filtered.
+        """
+        from ..preprocess.filter import filter_by_clusters
+
+        if cluster_res_key not in self.result:
+            raise Exception(f'{cluster_res_key} is not in the result, please check and run the func of cluster.')
+        
+        return filter_by_clusters(self.data, self.result[cluster_res_key], groups, excluded, inplace)
 
     @logit
     def log1p(self,
@@ -1037,9 +1069,9 @@ class StPipeline(object):
                         n_neighbors: int = 10,
                         smooth_threshold: int = 90,
                         pca_res_key: str = 'pca',
-                        res_key: str = 'gaussian_smooth',
                         n_jobs: int = -1,
-                        inplace: bool = True):
+                        inplace: bool = True
+        ):
         """
         Smooth the express matrix by the algorithm of Gaussian smoothing [Shen22]_.
 
@@ -1048,9 +1080,8 @@ class StPipeline(object):
         :param smooth_threshold: the threshold that indicates Gaussian variance with a value between 20 and 100. 
             Also too high value may cause overfitting, and low value may cause poor smoothing effect.
         :param pca_res_key: the key of PCA to get targeted result from `self.result`.
-        :param res_key: the key for storing result of Gaussian smoothing, defaults to 'gaussian_smooth'.
         :param n_jobs: the number of parallel jobs to run for searching neighbors, if `-1`, all CPUs will be used.
-        :param inplace: whether to inplace the previous express matrix or get a new one.
+        :param inplace: whether to inplace the previous express matrix or get a new StereoExpData object with the new express matrix.
 
         :return: An object of StereoExpData with the express matrix processed by Gaussian smooting.
         """
@@ -1059,24 +1090,32 @@ class StPipeline(object):
         assert n_neighbors > 0, 'n_neighbors must be greater than 0'
         assert smooth_threshold >= 20 and smooth_threshold <= 100, 'smooth_threshold must be between 20 and 100'
 
-        pca_exp_matrix = self.result[pca_res_key].values
-        raw_exp_matrix = self.raw.exp_matrix.toarray() if issparse(self.raw.exp_matrix) else self.raw.exp_matrix
+        pca_exp_matrix = self.result[pca_res_key].to_numpy()
+        # raw_exp_matrix = self.raw.exp_matrix.toarray() if issparse(self.raw.exp_matrix) else self.raw.exp_matrix
+        raw_exp_matrix = self.raw.exp_matrix if self.raw.issparse() else self.raw.array2sparse()
 
         if pca_exp_matrix.shape[0] != raw_exp_matrix.shape[0]:
             raise Exception(
-                f"The first dimension of pca_exp_matrix not equals to raw_exp_matrix's, may be because of running raw_checkpoint before filter cells and/or genes.")
+                """
+                The first dimension of pca matrix not equals to raw express matrix's,
+                it may be because of running data.tl.raw_checkpoint before filtering cells and/or filtering genes.
+                """
+            )
 
         # logger.info(f"raw exp matrix size: {raw_exp_matrix.shape}")
         from ..algorithm.gaussian_smooth import gaussian_smooth
-        result = gaussian_smooth(pca_exp_matrix, raw_exp_matrix, self.data.position, n_neighbors=n_neighbors,
-                                 smooth_threshold=smooth_threshold, n_jobs=n_jobs)
+        result = gaussian_smooth(
+            pca_exp_matrix,
+            raw_exp_matrix,
+            self.data.position,
+            n_neighbors=n_neighbors,
+            smooth_threshold=smooth_threshold,
+            n_jobs=n_jobs
+        )
         # logger.info(f"smoothed exp matrix size: {result.shape}")
-        if inplace:
-            self.data.exp_matrix = result
-            from ..preprocess.qc import cal_qc
-            cal_qc(self.data)
-        else:
-            self.result[res_key] = result
+        data = self.data if inplace else copy.deepcopy(self.data)
+        data.exp_matrix = result
+        return data
 
     def lr_score(
             self,

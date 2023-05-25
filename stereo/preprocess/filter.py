@@ -10,10 +10,23 @@
 change log:
     2021/07/06  create file.
 """
+from typing import Union, List
+import pandas as pd
 import numpy as np
 import copy
-from .qc import cal_total_counts, cal_pct_counts_mt, cal_n_genes_by_counts, cal_n_cells_by_counts, cal_n_cells, \
-    cal_gene_mean_umi, cal_per_gene_counts
+from .qc import (
+    cal_qc,
+    cal_cells_indicators,
+    cal_genes_indicators,
+    cal_total_counts,
+    cal_pct_counts_mt,
+    cal_n_genes_by_counts,
+    cal_n_cells_by_counts,
+    cal_n_cells,
+    cal_gene_mean_umi,
+    cal_per_gene_counts
+)
+from stereo.core.stereo_exp_data import StereoExpData
 
 
 def filter_cells(
@@ -42,9 +55,7 @@ def filter_cells(
     if min_gene is None and max_gene is None and cell_list is None and min_n_genes_by_counts is None \
             and max_n_genes_by_counts is None and pct_counts_mt is None:
         raise ValueError('At least one filter must be set.')
-    if data.cells.total_counts is None:
-        total_counts = cal_total_counts(data.exp_matrix)
-        data.cells.total_counts = total_counts
+    cal_cells_indicators(data)
     if min_gene:
         cell_subset = data.cells.total_counts >= min_gene
         data.sub_by_index(cell_index=cell_subset)
@@ -52,23 +63,18 @@ def filter_cells(
         cell_subset = data.cells.total_counts <= max_gene
         data.sub_by_index(cell_index=cell_subset)
     if min_n_genes_by_counts:
-        if data.cells.n_genes_by_counts is None:
-            data.cells.n_genes_by_counts = cal_n_genes_by_counts(data.exp_matrix)
         cell_subset = data.cells.n_genes_by_counts >= min_n_genes_by_counts
         data.sub_by_index(cell_index=cell_subset)
     if max_n_genes_by_counts:
-        if data.cells.n_genes_by_counts is None:
-            data.cells.n_genes_by_counts = cal_n_genes_by_counts(data.exp_matrix)
         cell_subset = data.cells.n_genes_by_counts <= max_n_genes_by_counts
         data.sub_by_index(cell_index=cell_subset)
     if pct_counts_mt:
-        if data.cells.pct_counts_mt is None:
-            data.cells.pct_counts_mt = cal_pct_counts_mt(data, data.exp_matrix, data.cells.total_counts)
         cell_subset = data.cells.pct_counts_mt <= pct_counts_mt
         data.sub_by_index(cell_index=cell_subset)
     if cell_list is not None:
         cell_subset = np.isin(data.cells.cell_name, cell_list)
         data.sub_by_index(cell_index=cell_subset)
+    cal_genes_indicators(data)
     return data
 
 
@@ -87,12 +93,7 @@ def filter_genes(data, min_cell=None, max_cell=None, gene_list=None, mean_umi_gt
     data = data if inplace else copy.deepcopy(data)
     if min_cell is None and max_cell is None and gene_list is None and mean_umi_gt is None:
         raise ValueError('please set any of `min_cell` or `max_cell` or `gene_list` or `mean_umi_gt`')
-    if data.genes.n_cells is None:
-        data.genes.n_cells = cal_n_cells(data.exp_matrix)
-    if data.genes.n_counts is None:
-        data.genes.n_counts = cal_per_gene_counts(data.exp_matrix)
-    if data.genes.mean_umi is None:
-        data.genes.mean_umi = cal_gene_mean_umi(data)
+    cal_genes_indicators(data)
     if min_cell:
         gene_subset = data.genes.n_cells >= min_cell
         data.sub_by_index(gene_index=gene_subset)
@@ -105,6 +106,7 @@ def filter_genes(data, min_cell=None, max_cell=None, gene_list=None, mean_umi_gt
     if mean_umi_gt is not None:
         gene_subset = data.genes.mean_umi > mean_umi_gt
         data.sub_by_index(gene_index=gene_subset)
+    cal_cells_indicators(data)
     return data
 
 
@@ -135,5 +137,30 @@ def filter_coordinates(data, min_x=None, max_x=None, min_y=None, max_y=None, inp
     if max_y:
         obs_subset &= pos[:, 1] <= max_y
     data.sub_by_index(cell_index=obs_subset)
-    data.genes.n_cells = cal_n_cells(data.exp_matrix)
+    cal_genes_indicators(data)
+    return data
+
+def filter_by_clusters(
+    data: StereoExpData,
+    cluster_res: pd.DataFrame,
+    groups: Union[str, np.ndarray, List[str]],
+    excluded: bool = False,
+    inplace: bool = True
+) -> StereoExpData:
+    """_summary_
+
+    :param data: StereoExpData object.
+    :param cluster_res: clustering result.
+    :param groups: the groups in clustering result which will be filtered.
+    :param inplace: whether inplace the original data or return a new data.
+    :return: StereoExpData object
+    """
+    data = data if inplace else copy.deepcopy(data)
+    all_groups = cluster_res['group']
+    if isinstance(groups, str):
+        groups = [groups]
+    is_in_bool = all_groups.isin(groups)
+    if excluded:
+        is_in_bool = ~is_in_bool
+    data.sub_by_index(cell_index=is_in_bool)
     return data
