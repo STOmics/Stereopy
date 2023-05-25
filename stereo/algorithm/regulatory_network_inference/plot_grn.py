@@ -378,7 +378,7 @@ class PlotRegulatoryNetwork(PlotBase):
             fn = f'{reg_name.strip("(+)")}.pdf'
 
         # prepare plotting data
-        arr2 = self.stereo_exp_data.position_z.reshape(-1, 1)
+        arr2 = self.stereo_exp_data.position_z
         position_3D = np.concatenate((self.stereo_exp_data.position, arr2), axis=1)
 
         cell_coor = position_3D

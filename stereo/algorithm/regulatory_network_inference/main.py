@@ -201,7 +201,7 @@ class RegulatoryNetworkInference(AlgorithmBase):
         hotspot_data = RegulatoryNetworkInference.input_hotspot(data)
 
         if ThreeD_slice:
-            arr2 = data.position_z.reshape(-1, 1)
+            arr2 = data.position_z
             position_3D = np.concatenate((data.position, arr2), axis=1)
             hotspot_data['position'] = position_3D
 
