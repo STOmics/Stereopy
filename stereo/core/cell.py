@@ -142,11 +142,11 @@ class Cell(object):
         if self.cell_border is not None:
             self.cell_border = self.cell_border[index]
         if type(index) is list:
-            self._obs = self._obs.iloc[index]
+            self._obs = self._obs.iloc[index].copy()
         elif index.dtype == bool:
-            self._obs = self._obs[index]
+            self._obs = self._obs[index].copy()
         else:
-            self._obs = self._obs.iloc[index]
+            self._obs = self._obs.iloc[index].copy()
         return self
 
     def get_property(self, name):

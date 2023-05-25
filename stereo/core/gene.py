@@ -93,11 +93,11 @@ class Gene(object):
         :return: the subset of Gene object.
         """
         if type(index) is list:
-            self._var = self._var.iloc[index]
+            self._var = self._var.iloc[index].copy()
         elif index.dtype == bool:
-            self._var = self._var[index]
+            self._var = self._var[index].copy()
         else:
-            self._var = self._var.iloc[index]
+            self._var = self._var.iloc[index].copy()
         return self
 
     def to_df(self):

@@ -12,24 +12,32 @@ from .stereo_config import stereo_conf
 
 
 class LogManager(object):
-    def __init__(self, log_path=None, level=None):
-        self.level_map = {'debug': logging.DEBUG,
-                          'info': logging.INFO,
-                          'warning': logging.WARNING,
-                          'error': logging.ERROR,
-                          'critical': logging.CRITICAL}
+    __instance = None
+
+    def __init__(self, log_path=None, level=None, only_log_to_file=False):
+        self.level_map = {
+            'debug': logging.DEBUG,
+            'info': logging.INFO,
+            'warning': logging.WARNING,
+            'error': logging.ERROR,
+            'critical': logging.CRITICAL
+        }
         self.format = stereo_conf.log_format
         self.formatter = logging.Formatter(self.format, "%Y-%m-%d %H:%M:%S")
         self.log_path = log_path
+        self.only_log_to_file = only_log_to_file
         self.level = level.lower() if level else stereo_conf.log_level.lower()
-        if self.log_path:
-            self.file_handler = logging.FileHandler(self.log_path)
-            self.file_handler.setLevel(self.level_map[self.level])
-            self.file_handler.setFormatter(self.formatter)
-        else:
-            self.stream_handler = logging.StreamHandler()
-            self.stream_handler.setLevel(self.level_map[self.level])
-            self.stream_handler.setFormatter(self.formatter)
+        self.file_handler = None
+        self.stream_handler = None
+        # if self.log_path:
+        #     self.file_handler = logging.FileHandler(self.log_path)
+        #     self.file_handler.setLevel(self.level_map[self.level])
+        #     self.file_handler.setFormatter(self.formatter)
+        # else:
+        #     self.stream_handler = logging.StreamHandler()
+        #     self.stream_handler.setLevel(self.level_map[self.level])
+        #     self.stream_handler.setFormatter(self.formatter)
+        # self._set_handler()
 
     def get_logger(self, name="Stereo"):
         """
@@ -42,17 +50,62 @@ class LogManager(object):
         alogger.setLevel(self.level_map[self.level])
         self._add_handler(alogger)
         return alogger
+    
+    def _set_handler(self):
+        if self.log_path:
+            self.file_handler = logging.FileHandler(self.log_path)
+            self.file_handler.setLevel(self.level_map[self.level])
+            self.file_handler.setFormatter(self.formatter)
+        if self.log_path is None or not self.only_log_to_file:
+            self.stream_handler = logging.StreamHandler()
+            self.stream_handler.setLevel(self.level_map[self.level])
+            self.stream_handler.setFormatter(self.formatter)
 
-    def _add_handler(self, alogger):
+    def _add_handler(self, alogger: logging.Logger):
         """
         add handler of logger
         :param alogger: logger object
         :return:
         """
+        if self.stream_handler is not None:
+            alogger.removeHandler(self.stream_handler)
+        if self.file_handler is not None:
+            alogger.removeHandler(self.file_handler)
+
+        self._set_handler()
         if self.log_path:
             alogger.addHandler(self.file_handler)
-        else:
+        if self.log_path is None or not self.only_log_to_file:
             alogger.addHandler(self.stream_handler)
+    
+    @staticmethod
+    def get_instance(log_path=None, level=None, only_log_to_file=False):
+        if LogManager.__instance is None:
+            LogManager.__instance = LogManager(log_path=log_path, level=level, only_log_to_file=only_log_to_file)
+        return LogManager.__instance
+    
+    @staticmethod
+    def logger(name='Stereo'):
+        return LogManager.get_instance().get_logger(name=name)
+    
+    @staticmethod
+    def set_level(level='info'):
+        global logger
+        level = level.lower()
+        if level not in ['info', 'warning', 'debug', 'error', 'critical']:
+            raise ValueError("Invalid log level, available values are ['info', 'warning', 'debug', 'error', 'critical'].")
+        log_manager = LogManager.get_instance()
+        log_manager.level = level
+        logger = log_manager.get_logger(name='Stereo')
+    
+    @staticmethod
+    def log_to_file(log_path=None, only_log_to_file=False):
+        global logger
+        log_manager = LogManager.get_instance()
+        log_manager.log_path = log_path
+        log_manager.only_log_to_file = only_log_to_file
+        logger = log_manager.get_logger(name='Stereo')
 
 
-logger = LogManager().get_logger(name='Stereo')
+# logger = LogManager().get_logger(name='Stereo')
+logger = LogManager.logger()
