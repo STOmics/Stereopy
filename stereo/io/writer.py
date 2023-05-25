@@ -98,7 +98,7 @@ def _write_one_h5ad(f, data: StereoExpData, use_raw=False, use_result=True, key_
     if data.position_z is None:
         position = data.position
     else:
-        position = np.concatenate([data.position, data.position_z.reshape(-1, 1)], axis=1)
+        position = np.concatenate([data.position, data.position_z], axis=1)
     h5ad.write(position, f, 'position')
     if issparse(data.exp_matrix):
         sp_format = 'csr' if isinstance(data.exp_matrix, csr_matrix) else 'csc'
@@ -123,7 +123,7 @@ def _write_one_h5ad(f, data: StereoExpData, use_raw=False, use_result=True, key_
             if data.tl.raw.position_z is None:
                 position = data.tl.raw.position
             else:
-                position = np.concatenate([data.tl.raw.position, data.tl.raw.position_z.reshape(-1, 1)], axis=1)
+                position = np.concatenate([data.tl.raw.position, data.tl.raw.position_z], axis=1)
             h5ad.write(position, f, 'position@raw')
         # save raw exp_matrix
         if issparse(data.tl.raw.exp_matrix):

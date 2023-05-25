@@ -135,7 +135,7 @@ def merge(
         position_column_count = reorganize_coordinate
         max_xs = [0] * (position_column_count + 1)
         max_ys = [0] * (position_row_count + 1)
-    last_position_z = 0
+    current_position_z = 0
     for i in range(data_count):
         data: StereoExpData = datas[i]
         data.cells.batch = i
@@ -149,7 +149,7 @@ def merge(
             new_data.genes = Gene(gene_name=data.gene_names)
             new_data.cells._obs = data.cells._obs
             new_data.position = data.position
-            new_data.position_z = np.repeat(0, repeats=data.position.shape[0]).astype(data.position.dtype)
+            new_data.position_z = np.repeat([[0]], repeats=data.position.shape[0], axis=0).astype(data.position.dtype)
             new_data.bin_type = data.bin_type
             new_data.bin_size = data.bin_size
             new_data.offset_x = data.offset_x
@@ -162,8 +162,8 @@ def merge(
             if new_data.cell_borders is not None and data.cell_borders is not None:
                 new_data.cells.cell_border = np.concatenate([new_data.cells.cell_border, data.cells.cell_border])
             new_data.position = np.concatenate([new_data.position, data.position])
-            last_position_z += space_between / data.attr['resolution']
-            new_data.position_z = np.concatenate([new_data.position_z, np.repeat(last_position_z, repeats=data.position.shape[0])]) 
+            current_position_z += space_between / data.attr['resolution']
+            new_data.position_z = np.concatenate([new_data.position_z, np.repeat([[current_position_z]], repeats=data.position.shape[0], axis=0)]) 
             new_data.genes.gene_name, ind1, ind2 = np.intersect1d(new_data.genes.gene_name, data.genes.gene_name, return_indices=True)
             new_data.exp_matrix = sp.vstack([new_data.exp_matrix[:, ind1], data.exp_matrix[:, ind2]])
             if new_data.offset_x is not None and data.offset_x is not None:
