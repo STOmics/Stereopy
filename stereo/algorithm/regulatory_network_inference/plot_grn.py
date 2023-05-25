@@ -345,13 +345,14 @@ class PlotRegulatoryNetwork(PlotBase):
         return g
     
     @download
-    def spatial_scatter_by_regulon_3D(self,
-                    network_res_key: str = 'regulatory_network_inference',
-                    reg_name: str,
-                    fn: str,
-                    view_vertical=222,
-                    view_horizontal=-80,
-                    **kwargs):
+    def spatial_scatter_by_regulon_3D(
+        self,
+        network_res_key: str = 'regulatory_network_inference',
+        reg_name: str = None,
+        fn: str = None,
+        view_vertical: int=222,
+        view_horizontal: int=-80,
+        **kwargs):
         """
         Plot genes of one regulon on a 3D map
         :param network_res_key: the key which specifies inference regulatory network result
