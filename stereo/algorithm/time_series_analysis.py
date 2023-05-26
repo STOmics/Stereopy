@@ -144,7 +144,7 @@ class TimeSeriesAnalysis(AlgorithmBase):
     def fuzzy_C_gene_pattern_cluster(self, stereo_exp_data, use_col=None, branch=None):
         """
         Use fuzzy C means cluster method to cluster genes based on 1-p_value of celltypes in branch
-        :param stereo_exp_data: anndata object to analysis
+        :param stereo_exp_data: stereo_exp_data object to analysis
         :param use_col: the col in obs representing celltype or clustering
         :param branch: celltypes order in use_col
         :return: stereo_exp_data contains fuzzy_C_result
@@ -170,7 +170,7 @@ class PlotTimeSeriesAnalysis(PlotBase):
     def boxplot_transit_gene(self, stereo_exp_data, use_col, branch, genes, vmax=None, vmin=None):
         """
         show a boxplot of a specific gene expression in branch of use_col
-        :param stereo_exp_data: anndata object to analysis
+        :param stereo_exp_data: stereo_exp_data object to analysis
         :param use_col: the col in obs representing celltype or clustering
         :param branch: celltypes order in use_col
         :param genes: specific gene or gene list to plot
@@ -184,7 +184,7 @@ class PlotTimeSeriesAnalysis(PlotBase):
             celllist = stereo_exp_data.cells.loc[stereo_exp_data.cells[use_col] == x, :].index
             tmp_exp_data = stereo_exp_data.sub_by_name(cell_name=celllist)
             for gene in genes:
-                branch2exp[gene][x] = tmp_exp_data.sub_by_name(gene_name=gene).exp_matrix.toarray().flatten()
+                branch2exp[gene][x] = tmp_exp_data.sub_by_name(gene_name=[gene]).exp_matrix.toarray().flatten()
 
         fig = plt.figure(figsize=(4 * len(genes), 6))
         ax = fig.subplots(1, len(genes))
@@ -214,7 +214,7 @@ class PlotTimeSeriesAnalysis(PlotBase):
     def TVG_volcano_plot(self, stereo_exp_data, use_col, branch):
         """
         Use fuzzy C means cluster method to cluster genes based on 1-p_value of celltypes in branch
-        :param stereo_exp_data: anndata object to analysis
+        :param stereo_exp_data: stereo_exp_data object to analysis
         :param use_col: the col in obs representing celltype or clustering
         :param branch: celltypes order in use_col
         :return: a volcano plot display time variable gene(TVG)
@@ -324,7 +324,7 @@ class PlotTimeSeriesAnalysis(PlotBase):
                               link_alpha=0.5, spot_size=1, dpt_col='dpt_pseudotime'):
         """
         spatial trajectory plot for paga in time_series multiple slice dataset
-        :param stereo_exp_data: anndata object of multiple slice
+        :param stereo_exp_data: stereo_exp_data object of multiple slice
         :param use_col: the col in obs representing celltype or clustering
         :param batch_col: the col in obs representing different slice of time series
         :param groups: the particular celltype that will show, default None means show all the celltype in use_col

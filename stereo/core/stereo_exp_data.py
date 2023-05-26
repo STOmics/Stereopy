@@ -637,7 +637,7 @@ class AnnBasedStereoExpData(StereoExpData):
 
     def sub_by_name(self, cell_name: Optional[Union[np.ndarray, list]] = None,
                     gene_name: Optional[Union[np.ndarray, list]] = None):
-        data = copy.deepcopy(self)
+        data = AnnBasedStereoExpData(self.file, based_ann_data=self._ann_data.copy())
         data._ann_data.obs_names_make_unique()
         data._ann_data.var_names_make_unique()
         if cell_name is not None:
