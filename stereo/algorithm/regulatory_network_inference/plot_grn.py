@@ -63,7 +63,6 @@ class PlotRegulatoryNetwork(PlotBase):
             reg_ct_avg_exp = np.mean(g_ct_exp['total'])
             return round(reg_ct_percent,2), round(reg_ct_avg_exp,2)
 
-    @download
     def grn_dotplot(self,
                        meta: pd.DataFrame,
                        regulon_names: Union[str, list] = None,
@@ -164,7 +163,6 @@ class PlotRegulatoryNetwork(PlotBase):
         ax.set_ylabel('Cell type')
         return fig
 
-    @download
     def auc_heatmap(
             self, 
             network_res_key = 'regulatory_network_inference', 
@@ -194,7 +192,6 @@ class PlotRegulatoryNetwork(PlotBase):
         
         return fig
 
-    @download
     @plot_scale
     @reorganize_coordinate
     def spatial_scatter_by_regulon(
@@ -288,7 +285,6 @@ class PlotRegulatoryNetwork(PlotBase):
         plt.savefig(f'{reg_name.split("(")[0]}.png')
         plt.close()
 
-    @download
     def auc_heatmap_by_group(self,
                     network_res_key: str = 'regulatory_network_inference', 
                     celltype_res_key: str = 'leiden',
@@ -344,7 +340,6 @@ class PlotRegulatoryNetwork(PlotBase):
 
         return g
     
-    @download
     def spatial_scatter_by_regulon_3D(
         self,
         network_res_key: str = 'regulatory_network_inference',
