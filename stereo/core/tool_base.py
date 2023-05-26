@@ -110,6 +110,8 @@ class ToolBase(object):
                 logger.info(f'read group information, grouping by {groups.columns[0]} column.')
                 return groups
             else:
+                # TODO: choose the first column as cells, this may be less adaptability,
+                #  which mean group result should follow this rule
                 cells = groups.iloc[:, 0].values
                 if not list(cells) == list(self.data.cell_names):
                     raise ValueError(f'cell index is not match')

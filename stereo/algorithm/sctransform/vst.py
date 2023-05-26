@@ -50,12 +50,12 @@ def vst(
 ):
     # TODO: `vst.flavor` not completed
     if vst_flavor is not None:
-        logger.warn("`vst.flavor` not completed")
+        logger.warning("`vst.flavor` not completed")
         raise NotImplementedError
 
     # TODO: `method` not completed, only `poisson`
     if method != 'poisson':
-        logger.warn("`method` not completed, only `poisson`")
+        logger.warning("`method` not completed, only `poisson`")
         raise NotImplementedError
 
     res_clip_range = res_clip_range(umi)
@@ -96,7 +96,7 @@ def vst(
     # TODO: `do_regularize` and `exclude_poisson` is True have some code to do something
     #    find over-dispersive genes, this is not default, will be finished
     if do_regularize and exclude_poisson:
-        logger.warn(f'finding over-dispersive genes has not finished yet')
+        logger.warning(f'finding over-dispersive genes has not finished yet')
         raise NotImplementedError
 
     if n_genes and n_genes < len(genes_step1):

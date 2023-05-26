@@ -43,7 +43,7 @@ class Data(object):
     @property
     def output(self):
         """
-        the path of output.
+        Get the path to ouput file.
 
         :return:
         """
@@ -57,7 +57,7 @@ class Data(object):
     @staticmethod
     def output_check(path):
         """
-        check if the output dir is exists. It will be created if not exists.
+        Check whether the output directory exists.
 
         :param path:
         :return:
@@ -74,7 +74,7 @@ class Data(object):
     @staticmethod
     def file_check(file):
         """
-        Check if the file exists.
+        Check whether the file exists.
 
         :param file: the Path of file.
         :return:
@@ -85,7 +85,7 @@ class Data(object):
 
     def format_check(self, f_format):
         """
-        Check whether the file format is in the range.
+        Check whether the file format is in specific range.
 
         :param f_format: the format of file.
         :return:
@@ -96,7 +96,7 @@ class Data(object):
     @property
     def file(self):
         """
-        get the file property
+        Get the file property.
 
         :return:
         """
@@ -124,7 +124,7 @@ class Data(object):
     @property
     def file_format(self):
         """
-        get the file_format property
+        Get the file format.
 
         :return:
         """
@@ -144,7 +144,7 @@ class Data(object):
     @property
     def partitions(self):
         """
-        get the partitions property
+        Get the partitions property.
 
         :return:
         """

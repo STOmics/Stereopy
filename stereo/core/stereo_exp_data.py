@@ -9,16 +9,18 @@
 change log:
     2021/08/12  add to_andata function , by wuyiran.
 """
+import copy
+from warnings import warn
+from typing import Optional, Union
 
-from .data import Data
 import pandas as pd
 import numpy as np
-from typing import Optional, Union
 from scipy.sparse import spmatrix, issparse, csr_matrix
+
+from .data import Data
 from .cell import Cell, AnnBasedCell
 from .gene import Gene, AnnBasedGene
 from ..log_manager import logger
-import copy
 
 
 class StereoExpData(Data):
@@ -27,13 +29,14 @@ class StereoExpData(Data):
             file_path: Optional[str] = None,
             file_format: Optional[str] = None,
             bin_type: Optional[str] = None,
-            bin_size: int = 100,
+            bin_size: Optional[int] = 100,
             exp_matrix: Optional[Union[np.ndarray, spmatrix]] = None,
             genes: Optional[Union[np.ndarray, Gene]] = None,
             cells: Optional[Union[np.ndarray, Cell]] = None,
             position: Optional[np.ndarray] = None,
+            position_z: Optional[np.ndarray] = None,
             output: Optional[str] = None,
-            partitions: int = 1,
+            partitions: Optional[int] = 1,
             offset_x: Optional[str] = None,
             offset_y: Optional[str] = None,
             attr: Optional[dict] = None,
@@ -41,30 +44,47 @@ class StereoExpData(Data):
     ):
 
         """
-        a Data designed for express matrix of spatial omics. It can directly set the corresponding properties
-        information to initialize the data. If the file path is not None, we will read the file information to
-        initialize the properties.
+        The core data object is designed for expression matrix of spatial omics, which can be set 
+        corresponding properties directly to initialize the data. 
 
-        :param file_path: the path of express matrix file.
-        :param file_format: the file format of the file_path.
-        :param bin_type: the type of bin, if file format is stereo-seq file. `bins` or `cell_bins`.
-        :param bin_size: size of bin to merge if bin type is 'bins'.
-        :param exp_matrix: the express matrix.
-        :param genes: the gene object which contain some info of gene.
-        :param cells: the cell object which contain some info of cell.
-        :param position: the spatial location.
-        :param output: the path of output.
-        :param partitions: the number of multi-process cores, used when processing files in parallel.
-        :param offset_x: the x of the offset.
-        :param offset_y: the y of the offset.
-        :param attr: attributions from gef file.
+        Parameters
+        -------------------
+        file_path
+            the path to input file of expression matrix.
+        file_format
+            the format of input file.
+        bin_type
+            the type of bin, if the file format is Stereo-seq file including `'bins'` or `'cell_bins'`.
+        bin_size
+            the size of the bin to merge, when `bin_type` is `'bins'`.
+        exp_matrix
+            the expression matrix.
+        genes
+            the gene object which contains information of gene level.
+        cells
+            the cell object which contains information of cell level.
+        position
+            spatial location information.
+        output
+            the path to output file.
+        partitions
+            the number of multi-process cores, used when processing files in parallel.
+        offset_x
+            the x value of the offset . 
+        offset_y
+            the y value of the offset .
+        attr
+            attribute information from GEF file.
+
         """
         super(StereoExpData, self).__init__(file_path=file_path, file_format=file_format,
                                             partitions=partitions, output=output)
         self._exp_matrix = exp_matrix
         self._genes = genes if isinstance(genes, Gene) else Gene(gene_name=genes)
         self._cells = cells if isinstance(cells, Cell) else Cell(cell_name=cells)
+        self._raw_position = None
         self._position = position
+        self._position_z = position_z
         self._position_offset = None
         self._bin_type = bin_type
         self.bin_size = bin_size
@@ -73,11 +93,14 @@ class StereoExpData(Data):
         self.raw = None
         self._offset_x = offset_x
         self._offset_y = offset_y
-        self._attr = attr
+        self._attr = attr if attr is not None else {'resolution': 500}
         self._merged = merged
         self._sn = self.get_sn_from_path(file_path)
 
     def get_sn_from_path(self, file_path):
+        """
+        Get the SN information of input file.
+        """
         if file_path is None:
             return None
 
@@ -86,6 +109,9 @@ class StereoExpData(Data):
 
     @property
     def plt(self):
+        """
+        Call the visualization module.        
+        """
         if self._plt is None:
             from ..plots.plot_collection import PlotCollection
             self._plt = PlotCollection(self)
@@ -93,6 +119,9 @@ class StereoExpData(Data):
 
     @property
     def tl(self):
+        """
+        call StPipeline method.
+        """
         if self._tl is None:
             from .st_pipeline import StPipeline
             self._tl = StPipeline(self)
@@ -100,7 +129,7 @@ class StereoExpData(Data):
 
     def sub_by_index(self, cell_index=None, gene_index=None):
         """
-        get sub data by cell index or gene index list.
+        Get data subset by indexl list of cells or genes.
 
         :param cell_index: a list of cell index.
         :param gene_index: a list of gene index.
@@ -109,6 +138,7 @@ class StereoExpData(Data):
         if cell_index is not None:
             self.exp_matrix = self.exp_matrix[cell_index, :]
             self.position = self.position[cell_index, :] if self.position is not None else None
+            self.position_z = self.position_z[cell_index] if self.position_z is not None else None
             self.cells = self.cells.sub_set(cell_index)
         if gene_index is not None:
             self.exp_matrix = self.exp_matrix[:, gene_index]
@@ -118,7 +148,7 @@ class StereoExpData(Data):
     def sub_by_name(self, cell_name: Optional[Union[np.ndarray, list]] = None,
                     gene_name: Optional[Union[np.ndarray, list]] = None):
         """
-        get sub data by cell name list or gene name list.
+        Get data subset by name list of cells or genes.
 
         :param cell_name: a list of cell name.
         :param gene_name: a list of gene name.
@@ -131,9 +161,34 @@ class StereoExpData(Data):
                       gene_name] if gene_name is not None else None
         return data.sub_by_index(cell_index, gene_index)
 
+    def sub_exp_matrix_by_name(
+            self,
+            cell_name: Optional[Union[np.ndarray, list, str, int]] = None,
+            gene_name: Optional[Union[np.ndarray, list, str]] = None,
+            order_preserving: bool = True
+    ) -> Union[np.ndarray, spmatrix]:
+        new_exp_matrix = self.exp_matrix
+        if cell_name is not None:
+            if isinstance(cell_name, str) or isinstance(cell_name, int):
+                cell_name = [cell_name]
+            if order_preserving:
+                index = [np.argwhere(self.cell_names == c)[0][0] for c in cell_name]
+            else:
+                index = np.isin(self.cell_names, cell_name)
+            new_exp_matrix = new_exp_matrix[index]
+        if gene_name is not None:
+            if isinstance(gene_name, str):
+                gene_name = [gene_name]
+            if order_preserving:
+                index = [np.argwhere(self.gene_names == g)[0][0] for g in gene_name]
+            else:
+                index = np.isin(self.gene_names, gene_name)
+            new_exp_matrix = new_exp_matrix[:, index]
+        return new_exp_matrix
+
     def check(self):
         """
-        checking whether the params is in the range.
+        Check whether the parameters meet the requirement.
 
         :return:
         """
@@ -143,7 +198,7 @@ class StereoExpData(Data):
     @staticmethod
     def bin_type_check(bin_type):
         """
-        check whether the bin type is in range.
+        Check whether the bin type is from specific options.
 
         :param bin_type: bin type value, 'bins' or 'cell_bins'.
         :return:
@@ -154,12 +209,17 @@ class StereoExpData(Data):
 
     @property
     def shape(self):
+        """
+        Get the shape of expression matrix.
+
+        :return:
+        """
         return self.exp_matrix.shape
 
     @property
     def gene_names(self):
         """
-        get the gene names.
+        Get the gene names.
 
         :return:
         """
@@ -168,7 +228,7 @@ class StereoExpData(Data):
     @property
     def cell_names(self):
         """
-        get the cell names.
+        Get the cell names.
 
         :return:
         """
@@ -176,12 +236,15 @@ class StereoExpData(Data):
 
     @property
     def cell_borders(self):
-        return self.cells.cell_boder
+        """
+        Get the cell borders.
+        """
+        return self.cells.cell_border
 
     @property
     def genes(self):
         """
-        get the value of self._genes.
+        Get the gene object.
 
         :return:
         """
@@ -198,9 +261,23 @@ class StereoExpData(Data):
         self._genes = gene
 
     @property
+    def genes_matrix(self):
+        """
+        Get the genes matrix.
+        """
+        return self._genes._matrix
+
+    @property
+    def genes_pairwise(self):
+        """
+        Get the genes pairwise.
+        """
+        return self._genes._pairwise
+
+    @property
     def cells(self):
         """
-        get the value of self._cells
+        Get the cell object.
 
         :return:
         """
@@ -217,9 +294,23 @@ class StereoExpData(Data):
         self._cells = cell
 
     @property
-    def exp_matrix(self):
+    def cells_matrix(self):
         """
-        get the value of self._exp_matrix.
+        Get the cells matrix.
+        """
+        return self._cells._matrix
+
+    @property
+    def cells_pairwise(self):
+        """
+        Get the cells pairwise.
+        """
+        return self._cells._pairwise
+
+    @property
+    def exp_matrix(self) -> Union[np.ndarray, spmatrix]:
+        """
+        Get the expression matrix.
 
         :return:
         """
@@ -238,7 +329,7 @@ class StereoExpData(Data):
     @property
     def bin_type(self):
         """
-        get the value of self._bin_type.
+        Get the bin type.
 
         :return:
         """
@@ -256,9 +347,17 @@ class StereoExpData(Data):
         self._bin_type = b_type
 
     @property
+    def raw_position(self):
+        return self._raw_position
+
+    @raw_position.setter
+    def raw_position(self, pos):
+        self._raw_position = pos
+
+    @property
     def position(self):
         """
-        get the value of self._position.
+        Get the information of spatial location.
 
         :return:
         """
@@ -275,7 +374,19 @@ class StereoExpData(Data):
         self._position = pos
 
     @property
+    def position_z(self):
+        return self._position_z
+
+    @position_z.setter
+    def position_z(self, position_z):
+        self._position_z = position_z
+
+    @property
     def position_offset(self):
+        """
+        Get the offset of position in gef.
+
+        """
         return self._position_offset
 
     @position_offset.setter
@@ -285,7 +396,7 @@ class StereoExpData(Data):
     @property
     def offset_x(self):
         """
-        get the x of self._offset_x.
+        Get the x value of the offset.
 
         :return:
         """
@@ -303,7 +414,7 @@ class StereoExpData(Data):
     @property
     def offset_y(self):
         """
-        get the offset_y of self._offset_y.
+        Get the y value of the offset.
 
         :return:
         """
@@ -321,7 +432,7 @@ class StereoExpData(Data):
     @property
     def attr(self):
         """
-        get the attr of self._attr.
+        Get the attribute information.
 
         :return:
         """
@@ -338,6 +449,9 @@ class StereoExpData(Data):
 
     @property
     def merged(self):
+        """
+        Get the flag whether merged.
+        """
         return self._merged
 
     @merged.setter
@@ -346,6 +460,9 @@ class StereoExpData(Data):
 
     @property
     def sn(self):
+        """
+        Get the sample name.
+        """
         return self._sn
 
     @sn.setter
@@ -354,7 +471,7 @@ class StereoExpData(Data):
 
     def to_df(self):
         """
-        transform StereoExpData to pd.DataFrame.
+        Transform StereoExpData object to pd.DataFrame.
 
         :return:
         """
@@ -367,7 +484,7 @@ class StereoExpData(Data):
 
     def sparse2array(self):
         """
-        transform expression matrix to array if it is parse matrix.
+        Transform expression matrix to array if it is parse matrix.
 
         :return:
         """
@@ -377,7 +494,7 @@ class StereoExpData(Data):
 
     def array2sparse(self):
         """
-        transform expression matrix to sparse matrix if it is ndarray
+        Transform expression matrix to sparse matrix if it is ndarray.
 
         :return:
         """
@@ -392,30 +509,26 @@ class StereoExpData(Data):
             format_str += f"\n{'bin_size: %d' % self.bin_size}"
         format_str += f"\noffset_x = {self.offset_x}"
         format_str += f"\noffset_y = {self.offset_y}"
-        format_cells = []
-        for attr_name in [('_cell_name', 'cell_name'), 'total_counts', 'n_genes_by_counts', 'pct_counts_mt']:
-            if type(attr_name) is tuple:
-                real_name, show_name = attr_name[0], attr_name[1]
-            else:
-                real_name = show_name = attr_name
-            # `is not None` is ugly but object in __dict__ may be a pandas.DataFrame
-            if self.cells.__dict__.get(real_name, None) is not None:
-                format_cells.append(show_name)
-        if format_cells:
-            format_str += f"\ncells: {format_cells}"
-        format_genes = []
-        for attr_name in [('_gene_name', 'gene_name'), 'n_counts', 'n_cells']:
-            if type(attr_name) is tuple:
-                real_name, show_name = attr_name[0], attr_name[1]
-            else:
-                real_name = show_name = attr_name
-            if self.genes.__dict__.get(real_name, None) is not None:
-                format_genes.append(show_name)
-        if format_genes:
-            format_str += f"\ngenes: {format_genes}"
-        # TODO: no decide yet
-        # format_str += "\nposition: T"
-        format_key_record = {key: value for key, value in self.tl.key_record.items() if value}
+        format_str += str(self.cells)
+        format_str += str(self.genes)
+        if self.cells_matrix:
+            format_str += f"\ncells_matrix = {list(self.cells_matrix.keys())}"
+        if self.genes_matrix:
+            format_str += f"\ngenes_matrix = {list(self.cells_matrix.keys())}"
+        if self.cells_pairwise:
+            format_str += f"\ncells_pairwise = {list(self.cells._pairwise.keys())}"
+        if self.genes_pairwise:
+            format_str += f"\ngenes_pairwise = {list(self.genes._pairwise.keys())}"
+        format_key_record = {
+            key: value
+            for key, value in self.tl.key_record.items() if value
+        }
+        warn(
+            'FutureWarning: `pca`, `neighbors`, `cluster`, `umap` will be inaccessible in result in future version.'
+            '\nMake sure your code access result from the right property, such as `pca` and `umap` will be in the '
+            '`StereoExpData.cells_matrix`.',
+            category=FutureWarning
+        )
         if format_key_record:
             format_str += f"\nkey_record: {format_key_record}"
         return format_str
@@ -424,17 +537,36 @@ class StereoExpData(Data):
         return self.__str__()
 
     def issparse(self):
+        """
+        Check whether the matrix is sparse matrix type.
+        """
         return issparse(self.exp_matrix)
+
+    def reset_position(self):
+        if self.position_offset is not None:
+            batches = np.unique(self.cells.batch)
+            for bno in batches:
+                idx = np.where(self.cells.batch == bno)[0]
+                self.position[idx] -= self.position_offset[bno]
+        self.position_offset = None
 
 
 class AnnBasedStereoExpData(StereoExpData):
 
     def __init__(self, h5ad_file_path: str, *args, **kwargs):
-        super(AnnBasedStereoExpData, self).__init__(*args, **kwargs)
+        if 'based_ann_data' in kwargs:
+            based_ann_data = kwargs.pop('based_ann_data')
+        else:
+            based_ann_data = None
+        super().__init__(*args, **kwargs)
         import anndata
-        self._ann_data = anndata.read_h5ad(h5ad_file_path)
-        self._genes = AnnBasedGene(self._ann_data, self._genes._gene_name)
-        self._cells = AnnBasedCell(self._ann_data, self._cells._cell_name)
+        if based_ann_data:
+            assert type(based_ann_data) is anndata.AnnData
+            self._ann_data = based_ann_data
+        else:
+            self._ann_data = anndata.read_h5ad(h5ad_file_path)
+        self._genes = AnnBasedGene(self._ann_data, self._genes.gene_name)
+        self._cells = AnnBasedCell(self._ann_data, self._cells.cell_name)
         from .st_pipeline import AnnBasedStPipeline
         self._tl = AnnBasedStPipeline(self._ann_data, self)
 
@@ -470,6 +602,9 @@ class AnnBasedStereoExpData(StereoExpData):
 
     @property
     def plt(self):
+        """
+        Call the visualization module. 
+        """
         if self._plt is None:
             from ..plots.plot_collection import PlotCollection
             self._plt = PlotCollection(self)
@@ -477,13 +612,36 @@ class AnnBasedStereoExpData(StereoExpData):
 
     @property
     def tl(self):
+        """
+        call StPipeline method.
+        """
         return self._tl
 
     @property
     def position(self):
-        if {'x', 'y'} - set(self._ann_data.obs.columns.values):
+        if 'spatial' in self._ann_data.obsm:
+            return self._ann_data.obsm['spatial'][:, [0, 1]]
+        elif {'x', 'y'} - set(self._ann_data.obs.columns.values):
             self._ann_data.obs.loc[:, ['x', 'y']] = \
                 np.array(list(self._ann_data.obs.index.str.split('-', expand=True)), dtype=np.uint32)
         return self._ann_data.obs.loc[:, ['x', 'y']].values
 
+    @property
+    def position_z(self):
+        if 'spatial' in self._ann_data.obsm:
+            return self._ann_data.obsm['spatial'][:, [2]]
+        elif {'z'} - set(self._ann_data.obs.columns.values):
+            self._ann_data.obs.loc[:, ['z']] = \
+                np.array(list(self._ann_data.obs.index.str.split('-', expand=True)), dtype=np.uint32)
+        return self._ann_data.obs.loc[:, ['z']].values
 
+    def sub_by_name(self, cell_name: Optional[Union[np.ndarray, list]] = None,
+                    gene_name: Optional[Union[np.ndarray, list]] = None):
+        data = AnnBasedStereoExpData(self.file, based_ann_data=self._ann_data.copy())
+        data._ann_data.obs_names_make_unique()
+        data._ann_data.var_names_make_unique()
+        if cell_name is not None:
+            data._ann_data._inplace_subset_obs(cell_name)
+        if gene_name is not None:
+            data._ann_data._inplace_subset_var(gene_name)
+        return data

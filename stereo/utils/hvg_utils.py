@@ -10,7 +10,6 @@ import pandas as pd
 import numpy as np
 from typing import Optional, Union, Tuple
 from functools import singledispatch
-from ..core.stereo_result import StereoResult
 from scipy.sparse import spmatrix, csr_matrix, issparse, csc_matrix
 import numba
 from ..log_manager import logger

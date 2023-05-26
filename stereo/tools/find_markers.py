@@ -50,9 +50,12 @@ class FindMarker(ToolBase):
             method: str = 't_test',
             case_groups: Union[str, np.ndarray, list, tuple] = 'all',
             control_groups: str = 'rest',
-            corr_method: str = 'bonferroni',
+            corr_method: str = 'benjamini-hochberg',
             tie_term: bool = False,
-            raw_data=None
+            raw_data=None,
+            sort_by='scores',
+            n_genes: Union[str, int] = 'all',
+            ascending: bool = False
     ):
         super(FindMarker, self).__init__(data=data, groups=groups, method=method)
         self.corr_method = corr_method.lower()
@@ -60,6 +63,9 @@ class FindMarker(ToolBase):
         self.control_groups = control_groups
         self.tie_term = tie_term
         self.raw_data = raw_data
+        self.sort_by = sort_by
+        self.n_genes = n_genes
+        self.ascending = ascending
         self.fit()
 
     @ToolBase.method.setter
@@ -78,11 +84,11 @@ class FindMarker(ToolBase):
             raise ValueError(f'{self.corr_method} is out of range, please check.')
         else:
             self._corr_method = corr_method
-    
+
     @property
     def control_groups(self):
         return self._control_groups
-    
+
     @control_groups.setter
     def control_groups(self, control_groups):
         if isinstance(control_groups, str):
@@ -94,11 +100,11 @@ class FindMarker(ToolBase):
             self._control_groups = [str(g) if isinstance(g, int) else g for g in control_groups]
         else:
             raise TypeError("The type of control_groups must be one of str, int, numpy.ndarray, list or tuple")
-    
+
     @property
     def case_groups(self):
         return self._case_groups
-    
+
     @case_groups.setter
     def case_groups(self, case_groups):
         if isinstance(case_groups, str):
@@ -116,6 +122,10 @@ class FindMarker(ToolBase):
         """
         run
         """
+        if self.n_genes == 0 or self.n_genes is None:
+            raise ValueError('self.n_genes can not be zero')
+        if self.sort_by not in {'scores', 'log2fc'}:
+            raise ValueError('sort_by must be in {\'scores\', \'log2fc\'}')
         if self.method == 'wilcoxon_test':
             self.data.sparse2array()
         if self.groups is None:
@@ -139,11 +149,13 @@ class FindMarker(ToolBase):
             if self.tie_term:
                 tie_term = mannwhitneyu.cal_tie_term(ranks)
             self.logger.info('cal tie_term end')
-        
+
         logres_score = None
         if self.case_groups == 'all' and self.control_groups == 'rest' and self.method == 'logreg':
             logres_score = self.logres_score()
-        
+
+        self.result['pct'], self.result['pct_rest'] = self.calc_pct_and_pct_rest()
+
         for g in tqdm(case_groups, desc='Find marker gene: '):
             if self.control_groups == 'rest':
                 other_g = all_groups.copy()
@@ -168,9 +180,21 @@ class FindMarker(ToolBase):
                     tie_term = mannwhitneyu.cal_tie_term(ranks)
                 result = statistics.wilcoxon(g_data, other_data, self.corr_method, ranks, tie_term, g_index)
             result['genes'] = self.data.gene_names
+            result.sort_values(by=self.sort_by, ascending=self.ascending, inplace=True)
+
+
+            if self.n_genes != 'all':
+                if self.n_genes == 'auto':
+                    to = int(10000 / len(case_groups) ** 2)
+                else:
+                    to = self.n_genes
+                to = min(max(to, 1), 50)
+                result = result[:to]
+
             self.result[f"{g}.vs.{control_str}"] = result
-        self.result['pct'], self.result['pct_rest'] = self.calc_pct_and_pct_rest()
-    
+            self.result[f"{g}.vs.{control_str}"]['pct'] = self.result['pct'].iloc[result.index][g].values
+            self.result[f"{g}.vs.{control_str}"]['pct_rest'] = self.result['pct_rest'].iloc[result.index][g].values
+
     @log_consumed_time
     def calc_pct_and_pct_rest(self):
         self.raw_data.array2sparse()
