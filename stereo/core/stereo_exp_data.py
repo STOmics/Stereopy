@@ -138,6 +138,7 @@ class StereoExpData(Data):
         if cell_index is not None:
             self.exp_matrix = self.exp_matrix[cell_index, :]
             self.position = self.position[cell_index, :] if self.position is not None else None
+            self.position_z = self.position_z[cell_index] if self.position_z is not None else None
             self.cells = self.cells.sub_set(cell_index)
         if gene_index is not None:
             self.exp_matrix = self.exp_matrix[:, gene_index]
@@ -541,6 +542,14 @@ class StereoExpData(Data):
         """
         return issparse(self.exp_matrix)
 
+    def reset_position(self):
+        if self.position_offset is not None:
+            batches = np.unique(self.cells.batch)
+            for bno in batches:
+                idx = np.where(self.cells.batch == bno)[0]
+                self.position[idx] -= self.position_offset[bno]
+        self.position_offset = None
+
 
 class AnnBasedStereoExpData(StereoExpData):
 
@@ -628,7 +637,7 @@ class AnnBasedStereoExpData(StereoExpData):
 
     def sub_by_name(self, cell_name: Optional[Union[np.ndarray, list]] = None,
                     gene_name: Optional[Union[np.ndarray, list]] = None):
-        data = copy.deepcopy(self)
+        data = AnnBasedStereoExpData(self.file, based_ann_data=self._ann_data.copy())
         data._ann_data.obs_names_make_unique()
         data._ann_data.var_names_make_unique()
         if cell_name is not None:

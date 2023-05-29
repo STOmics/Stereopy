@@ -1,13 +1,18 @@
-import os
+import pytest
 import unittest
 
-import pytest
-
 from stereo.core.stereo_exp_data import AnnBasedStereoExpData
+from stereo.utils._download import _download
 from stereo.utils.data_helper import merge
+from settings import DEMO_3D_SLICE_0_15_URLS_LIST, TEST_DATA_PATH
 
 
 class TestMerge3DData(unittest.TestCase):
+
+    def setUp(self) -> None:
+        self._demo_3d_file_list = []
+        for demo_url in DEMO_3D_SLICE_0_15_URLS_LIST:
+            self._demo_3d_file_list.append(_download(demo_url, dir_str=TEST_DATA_PATH))
 
     def _preprocess(self, data):
         data.tl.normalize_total(target_sum=1e4)
@@ -23,9 +28,9 @@ class TestMerge3DData(unittest.TestCase):
     @pytest.mark.heavy
     def test_merge_3d_data(self):
         slices = []
-        for slice_path in os.listdir("/mnt/d/projects/stereopy_dev/demo_data/3d/"):
-            slices.append(AnnBasedStereoExpData("/mnt/d/projects/stereopy_dev/demo_data/3d/" + slice_path))
-        merged_data = merge(*slices, space_between='10nm')
+        for slice_path in self._demo_3d_file_list:
+            slices.append(AnnBasedStereoExpData(slice_path))
+        merged_data = merge(*slices, space_between='0.7um', reorganize_coordinate=False)
 
         print(merged_data)
         self._preprocess(merged_data)
@@ -35,7 +40,7 @@ class TestMerge3DData(unittest.TestCase):
 
         x_raw = merged_data.position[:, 0]
         y_raw = merged_data.position[:, 1]
-        z_raw = merged_data.position_z
+        z_raw = merged_data.position_z.reshape(1, -1)[0]
 
         ty = merged_data.cells[ty_col].to_numpy()
         con = merged_data.tl.result['paga']['connectivities'].todense()  # arr (n_clus, n_clus)
@@ -71,14 +76,18 @@ class TestMerge3DData(unittest.TestCase):
     def test_merge_3d_data_vec(self):
         # 1.1 读入，预处理数据
         slices = []
-        for slice_path in os.listdir("/mnt/d/projects/stereopy_dev/demo_data/3d/"):
-            slices.append(AnnBasedStereoExpData("/mnt/d/projects/stereopy_dev/demo_data/3d/" + slice_path))
-        merged_data = merge(*slices, space_between='10nm')
+        for slice_path in self._demo_3d_file_list:
+            slices.append(AnnBasedStereoExpData(slice_path))
+        merged_data = merge(*slices, space_between='1um', reorganize_coordinate=False)
+
+        import os
+
+        # merged_data = AnnBasedStereoExpData("/mnt/d/projects/stereopy_dev/demo_data/3d.h5ad")
 
         ty_col = 'annotation'
         x_raw = merged_data.position[:, 0]
         y_raw = merged_data.position[:, 1]
-        z_raw = merged_data.position_z
+        z_raw = merged_data.position_z.reshape(1, -1)[0]
 
         xli = x_raw.tolist()
         yli = y_raw.tolist()
@@ -91,9 +100,9 @@ class TestMerge3DData(unittest.TestCase):
         # 2. 计算mesh
         from stereo.algorithm.gen_mesh_3d import gen_mesh
         merged_data = gen_mesh(merged_data, xli, yli, zli, tyli, method='delaunay', tol=1.5, eps_val=2, min_samples=5,
-                         thresh_num=10, key_name='delaunay_3d')
-        merged_data = gen_mesh(merged_data, xli, yli, zli, tyli, method='march', mc_scale_factor=1.5, eps_val=2, min_samples=5,
-                         thresh_num=10, key_name='march_cubes')
+                               thresh_num=10, key_name='delaunay_3d')
+        merged_data = gen_mesh(merged_data, xli, yli, zli, tyli, method='march', mc_scale_factor=1.5, eps_val=2,
+                               min_samples=5, thresh_num=10, key_name='march_cubes')
 
         print('test data ready.')
 
@@ -106,9 +115,6 @@ class TestMerge3DData(unittest.TestCase):
         merged_data.tl.dpt(n_branchings=0)
 
         ptime = merged_data.tl.result['dpt_pseudotime']
-
-
-
 
         # 2 画图：目前只包括数据准备
 
@@ -137,4 +143,3 @@ class TestMerge3DData(unittest.TestCase):
         # ax.set_aspect('equal')  # error： not supported by matplotlib
         ax.set_box_aspect([1, 1, 1])  # neglected by matplotlib
         ax.quiver(xm, ym, zm, ux, uy, uz, length=0.5)
-

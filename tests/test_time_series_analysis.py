@@ -1,10 +1,18 @@
+import pytest
 import unittest
+
+from stereo.utils import _download
+from stereo.utils._download import _download
+from settings import DEMO_FORE_BRAIN_DATA_URL, TEST_DATA_PATH
 
 class TestTimeSeriesAnalysis(unittest.TestCase):
 
+    @pytest.mark.heavy
     def test_time_series_analysis(self):
+        self._demo_fore_brain_data_file_path = _download(DEMO_FORE_BRAIN_DATA_URL, dir_str=TEST_DATA_PATH)
+
         from stereo.core.stereo_exp_data import AnnBasedStereoExpData
-        data = AnnBasedStereoExpData('/mnt/d/projects/stereopy_dev/demo_data/forebrain.h5ad')
+        data = AnnBasedStereoExpData(self._demo_fore_brain_data_file_path)
         data.tl.normalize_total()
         data.tl.log1p()
         data.tl.pca(svd_solver='arpack', n_pcs=20)

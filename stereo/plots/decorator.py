@@ -18,7 +18,8 @@ def plot_scale(func):
             data = pc_object.stereo_exp_data
         if data:
             if (data.attr is None) or \
-                ('resolution' not in data.attr) or (data.attr['resolution'] <= 0):
+                ('resolution' not in data.attr) or (data.attr['resolution'] <= 0) or \
+                (data.bin_size is None) or (data.bin_size <= 0):
                 kwargs['show_plotting_scale'] = False
             else:
                 kwargs.setdefault('show_plotting_scale', True)
@@ -109,7 +110,7 @@ def reorganize_coordinate(func):
                 max_ys = [0] * (position_row_count + 1)
                 for i, bno in enumerate(batches):
                     idx = np.where(data.cells.batch == bno)[0]
-                    data.position[idx] -= data.position_offset[bno]
+                    data.position[idx] -= data.position_offset[bno] if data.position_offset is not None else 0
                     position_row_number = i // reorganize_coordinate
                     position_column_number = i % reorganize_coordinate
                     max_x = data.position[idx][:, 0].max()
@@ -119,6 +120,7 @@ def reorganize_coordinate(func):
                     if max_y > max_ys[position_row_number + 1]:
                         max_ys[position_row_number + 1] = max_y
                 
+                data.position_offset = {}
                 for i, bno in enumerate(batches):
                     idx = np.where(data.cells.batch == bno)[0]
                     position_row_number = i // reorganize_coordinate

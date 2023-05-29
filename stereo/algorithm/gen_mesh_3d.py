@@ -1065,7 +1065,7 @@ def gen_mesh(stereo_exp_data, xli, yli, zli, tyli, ty_name_li=None, method='marc
                               np.expand_dims(scatter['z'], axis=1)], axis=1)
         return xyz
 
-    if not 'mesh' in stereo_exp_data.tl.result.keys():
+    if not 'mesh' in stereo_exp_data.tl.result:
         stereo_exp_data.tl.result['mesh'] = {}
     stereo_exp_data.tl.result['mesh'][key_name] = {}
 
@@ -1074,7 +1074,6 @@ def gen_mesh(stereo_exp_data, xli, yli, zli, tyli, ty_name_li=None, method='marc
     else:
         ty_name_li = list(dict.fromkeys(ty_name_li).keys())  # remove duplicates just in case
     for ty_name in ty_name_li:
-        print(ty_name)
         try:
             tdg = ThreeDimGroup(xli, yli, zli, tyli, ty_name=ty_name, eps_val=eps_val, min_samples=min_samples,
                                 thresh_num=thresh_num)  # 1.5, 8
@@ -1128,11 +1127,12 @@ def gen_mesh(stereo_exp_data, xli, yli, zli, tyli, ty_name_li=None, method='marc
             # fig.show()
             stereo_exp_data.tl.result['mesh'][key_name][ty_name] = {}
             stereo_exp_data.tl.result['mesh'][key_name][ty_name]['points'] = np.ndarray(shape=mesh.points.shape,
-                                                                        dtype=mesh.points.dtype, buffer=mesh.points)
+                                                                                        dtype=mesh.points.dtype,
+                                                                                        buffer=mesh.points)
             mfaces = mesh.faces.reshape(-1, 4)
-            stereo_exp_data.tl.result['mesh'][key_name][ty_name]['faces'] = np.ndarray(shape=mfaces.shape, dtype=mfaces.dtype,
-                                                                       buffer=mfaces)
-
+            stereo_exp_data.tl.result['mesh'][key_name][ty_name]['faces'] = np.ndarray(shape=mfaces.shape,
+                                                                                       dtype=mfaces.dtype,
+                                                                                       buffer=mfaces)
         except Exception as e:
             print(e)
 

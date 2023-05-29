@@ -205,7 +205,7 @@ def _read_stereo_h5ad_from_group(f, data, use_raw, use_result):
             position = h5ad.read_dataset(f[k])
             data.position = position[:, [0, 1]]
             if position.shape[1] >= 3:
-                data.position_z = position[:, 2]
+                data.position_z = position[:, [2]]
         elif k == 'bin_type':
             data.bin_type = h5ad.read_dataset(f[k])
         elif k == 'bin_size':
@@ -246,7 +246,7 @@ def _read_stereo_h5ad_from_group(f, data, use_raw, use_result):
             position = h5ad.read_dataset(f['position@raw'])
             data.tl.raw.position = position[:, [0, 1]]
             if position.shape[1] >= 3:
-                data.tl.raw.position_z = position[:, 2]
+                data.tl.raw.position_z = position[:, [2]]
         else:
             data.tl.raw.position = deepcopy(data.position)
 
@@ -533,7 +533,7 @@ def read_ann_h5ad(
                         position = h5ad.read_dataset(f[k])[spatial_key]
                     data.position = position[:, [0, 1]]
                     if position.shape[1] >= 3:
-                        data.position_z = position[:, 2]
+                        data.position_z = position[:, [2]]
             else:  # Base case
                 pass
 
@@ -583,7 +583,7 @@ def anndata_to_stereo(
         position = andata.obsm[spatial_key]
         data.position = position[:, [0, 1]]
         if position.shape[1] >= 3:
-            data.position_z = position[:, 2]
+            data.position_z = position[:, [2]]
     data.attr = {'resolution': resolution}
     return data
 
@@ -656,7 +656,7 @@ def stereo_to_anndata(
     if data.position is not None:
         logger.info(f"Adding data.position as adata.obsm['spatial'] .")
         if data.position_z is not None:
-            adata.obsm['spatial'] = np.concatenate([data.position, data.position_z.reshape(-1, 1)], axis=1)
+            adata.obsm['spatial'] = np.concatenate([data.position, data.position_z], axis=1)
         else:
             adata.obsm['spatial'] = data.position
         logger.info(f"Adding data.position as adata.obs['x'] and adata.obs['y'] .")
