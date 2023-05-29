@@ -442,7 +442,7 @@ def cal_plt_param_traj_clus_from_arr(con, x_raw, y_raw, z_raw, ty,
 # In[7]:
 
 
-def cal_plt_param_traj_clus_from_adata(adata, ty_col, choose_ty=None, trim=True,type_traj='curve'):
+def cal_plt_param_traj_clus_from_adata(data, ty_col, choose_ty=None, trim=True,type_traj='curve'):
     """
     to calculate plotting parameters from adata
 
@@ -453,12 +453,12 @@ def cal_plt_param_traj_clus_from_adata(adata, ty_col, choose_ty=None, trim=True,
     :return: parameters for plotting
     """
     # 1. acquire relevant parameter from adata
-    x_raw = adata.obsm['spatial_elas'][:, 0]  # key name of coordinates, as regulated by registration process
-    y_raw = adata.obsm['spatial_elas'][:, 1]
-    z_raw = adata.obsm['spatial_elas'][:, 2]
-    ty = adata.obs[ty_col].to_numpy()
-    con = adata.uns['paga']['connectivities'].todense()  # arr (n_clus, n_clus)
-    con_tree = adata.uns['paga']['connectivities_tree'].todense()
+    x_raw = data.position[:, 0]  # key name of coordinates, as regulated by registration process
+    y_raw = data.position[:, 1]
+    z_raw = data.position_z
+    ty = data.cells[ty_col].to_numpy()
+    con = data.tl.result['paga']['connectivities'].todense()  # arr (n_clus, n_clus)
+    con_tree = data.tl.result['paga']['connectivities_tree'].todense()
     if trim:
         con_plt = con_tree
     else:
@@ -467,10 +467,10 @@ def cal_plt_param_traj_clus_from_adata(adata, ty_col, choose_ty=None, trim=True,
     if choose_ty is None:
         choose_ty = list(set(ty))
     ty_repre_xyz = {}
-    key_name = list(adata.uns['mesh'].keys())[0]  # sort of 'randomly' assign a type of algorithm result to generate representing point coordinate
+    key_name = list(data.tl.result['mesh'].keys())[0]  # sort of 'randomly' assign a type of algorithm result to generate representing point coordinate
     for ty_name in choose_ty:
         try:
-            xyz_repre = adata.uns['mesh'][key_name][ty_name]['repre']
+            xyz_repre = data.tl.result['mesh'][key_name][ty_name]['repre']
         except:
             xyz_repre = np.array(
                 [x_raw[ty == ty_name].mean(), y_raw[ty == ty_name].mean(), z_raw[ty == ty_name].mean()])
