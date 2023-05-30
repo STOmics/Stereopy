@@ -1,15 +1,19 @@
 import matplotlib.pyplot as plt
 
 from .traj import Traj
+# TODO: change to our scatter method
+# from ..decorator import plot_scale
 from ..plot_base import PlotBase
 
 
 class PlotClusterTraj(PlotBase):
+
     def plot_cluster_traj(
             self,
-            con, x_raw, y_raw, ty,
-            save_dir,
-            save_na,
+            con,
+            x_raw,
+            y_raw,
+            ty,
             count_thresh=0,
             eps_co=3,
             check_surr_co=0.75,  # 0.75
@@ -28,10 +32,36 @@ class PlotClusterTraj(PlotBase):
             uni_lwidth=False,
             text_size=5,
             n_per_inter=100,
-            dpi_save=1000):
+            dpi_save=1000
+    ):
+        """
+        TODO not finished
 
-        # TODO: 描述
-        # TODO: 对输入进行断言
+        :param con:
+        :param x_raw:
+        :param y_raw:
+        :param ty:
+        :param count_thresh:
+        :param eps_co:
+        :param check_surr_co:
+        :param choose_ty:
+        :param type_traj:
+        :param lower_thresh_not_equal:
+        :param show_scatter:
+        :param seed_val:
+        :param num_legend_per_col:
+        :param tick_step:
+        :param spot_alpha:
+        :param spot_size:
+        :param line_alpha:
+        :param line_width_co:
+        :param line_color:
+        :param uni_lwidth:
+        :param text_size:
+        :param n_per_inter:
+        :param dpi_save:
+        :return:
+        """
 
         # generating data for plotting
         traj = Traj(con, x_raw, y_raw, ty)
@@ -50,7 +80,7 @@ class PlotClusterTraj(PlotBase):
         traj.get_con_pairs(lower_thresh_not_equal)
 
         # plotting
-        figure = plt.figure()
+        figure = plt.figure(dpi=dpi_save)
 
         if show_scatter:
             traj.show_scatter(spot_size, spot_alpha, seed_val, num_legend_per_col, tick_step, mask_keep)
@@ -76,6 +106,6 @@ class PlotClusterTraj(PlotBase):
 
         ax = plt.gca()
         ax.set_aspect('equal', adjustable='box')
-        import os
-        plt.savefig(os.path.join(save_dir, save_na), dpi=dpi_save, bbox_inches='tight')
+        # import os
+        # plt.savefig(os.path.join(save_dir, save_na), dpi=dpi_save, bbox_inches='tight')
         return figure

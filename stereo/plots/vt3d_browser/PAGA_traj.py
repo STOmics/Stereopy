@@ -37,7 +37,8 @@ def _cal_knot_dis_on_path(x_known, y_known, z_known):
     path_len = 0
     path_knot_len_li = [path_len]
     for i in range(len(x_known) - 1):
-        inter_len = math.sqrt((x_known[i + 1] - x_known[i]) ** 2 + (y_known[i + 1] - y_known[i]) ** 2 + (z_known[i + 1] - z_known[i]) ** 2)
+        inter_len = math.sqrt((x_known[i + 1] - x_known[i]) ** 2 + (y_known[i + 1] - y_known[i]) ** 2 + (
+                z_known[i + 1] - z_known[i]) ** 2)
         path_len += inter_len
         path_knot_len_li.append(path_len)
     return path_knot_len_li
@@ -105,7 +106,8 @@ import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
 from sklearn.cluster import DBSCAN
 
-#from interp import generate_linear_interp_points, generate_cubic_interp_points
+
+# from interp import generate_linear_interp_points, generate_cubic_interp_points
 
 
 class Traj:
@@ -298,14 +300,16 @@ class Traj:
                     y_known = np.insert(y_known, 1, (y_known[0] + y_known[1]) / 2)
                     z_known = np.insert(z_known, 1, (z_known[0] + z_known[1]) / 2)
 
-                    x_unknown_li, y_unknown_li, z_unknown_li = generate_cubic_interp_points(x_known, y_known, z_known, n_per_inter)  # [arr, arr, ...]
+                    x_unknown_li, y_unknown_li, z_unknown_li = generate_cubic_interp_points(x_known, y_known, z_known,
+                                                                                            n_per_inter)  # [arr, arr, ...]
 
                     # 将多引入导致的两段，重新合并在一起
                     x_unknown_li = [np.concatenate((x_unknown_li[0], x_unknown_li[1]))] + x_unknown_li[2:]
                     y_unknown_li = [np.concatenate((y_unknown_li[0], y_unknown_li[1]))] + y_unknown_li[2:]
                     z_unknown_li = [np.concatenate((z_unknown_li[0], z_unknown_li[1]))] + z_unknown_li[2:]
                 else:
-                    x_unknown_li, y_unknown_li, z_unknown_li = generate_cubic_interp_points(x_known, y_known, z_known, n_per_inter)  # [arr, arr, ...]
+                    x_unknown_li, y_unknown_li, z_unknown_li = generate_cubic_interp_points(x_known, y_known, z_known,
+                                                                                            n_per_inter)  # [arr, arr, ...]
 
             x_unknown_li_all_tra.append(x_unknown_li)  # [[arr, arr, ...], [arr, arr, ...], ]
             y_unknown_li_all_tra.append(y_unknown_li)
@@ -374,13 +378,12 @@ class Traj:
 
 
 def cal_plt_param_traj_clus_from_arr(con, x_raw, y_raw, z_raw, ty,
-         choose_ty, ty_repre_xyz,
-         count_thresh=0,
-         type_traj='curve',
-         lower_thresh_not_equal=0.5,
-         n_per_inter=100,
-         ):
-
+                                     choose_ty, ty_repre_xyz,
+                                     count_thresh=0,
+                                     type_traj='curve',
+                                     lower_thresh_not_equal=0.5,
+                                     n_per_inter=100,
+                                     ):
     """
     Visualize PAGA result in 3D.
 
@@ -426,28 +429,28 @@ def cal_plt_param_traj_clus_from_arr(con, x_raw, y_raw, z_raw, ty,
         x_unknown_li_all_tra, y_unknown_li_all_tra, z_unknown_li_all_tra = traj.cal_position_param_curve(n_per_inter)
         com_tra_wei_li = traj.compute_weight_on_com_tra_li()
         # print(com_tra_wei_li)
-        #traj.com_tra_li, 
-        return x_unknown_li_all_tra, y_unknown_li_all_tra, z_unknown_li_all_tra,ctnames, com_tra_wei_li
+        # traj.com_tra_li,
+        return x_unknown_li_all_tra, y_unknown_li_all_tra, z_unknown_li_all_tra, ctnames, com_tra_wei_li
 
     else:
         traj.compute_com_traj_li()
         # print(traj.com_tra_li)
-        ctnames = [[traj.ty_all_no_dup_same_ord[i[0]],traj.ty_all_no_dup_same_ord[i[1]]] for i in traj.con_pair] 
+        ctnames = [[traj.ty_all_no_dup_same_ord[i[0]], traj.ty_all_no_dup_same_ord[i[1]]] for i in traj.con_pair]
         print([[traj.ty_all_no_dup_same_ord[i] for i in li] for li in traj.com_tra_li])
         x_li, y_li, z_li = traj.cal_position_param_straight()
         wei_li = traj.compute_weight_on_pairs()
-        return x_li, y_li, z_li,ctnames , wei_li
+        return x_li, y_li, z_li, ctnames, wei_li
 
 
 # In[7]:
 
 
-def cal_plt_param_traj_clus_from_adata(data, ty_col, choose_ty=None, trim=True,type_traj='curve'):
+def cal_plt_param_traj_clus_from_adata(data, ty_col, choose_ty=None, trim=True, type_traj='curve'):
     """
-    to calculate plotting parameters from adata
+    to calculate plotting parameters from stereo_exp_data
 
-    :param adata: scanpy.adata
-    :param ty_col: name of column from adata.obs, that stores cell type data
+    :param stereo_exp_data
+    :param ty_col: name of column from stereo_exp_data.cells, that stores cell type data
     :param choose_ty: cell types to plot, chosen by users
     :param trim: to use connectivities_tree (trim=True) or just connectivities (trim=False), by paga
     :return: parameters for plotting
@@ -467,7 +470,8 @@ def cal_plt_param_traj_clus_from_adata(data, ty_col, choose_ty=None, trim=True,t
     if choose_ty is None:
         choose_ty = list(set(ty))
     ty_repre_xyz = {}
-    key_name = list(data.tl.result['mesh'].keys())[0]  # sort of 'randomly' assign a type of algorithm result to generate representing point coordinate
+    key_name = list(data.tl.result['mesh'].keys())[
+        0]  # sort of 'randomly' assign a type of algorithm result to generate representing point coordinate
     for ty_name in choose_ty:
         try:
             xyz_repre = data.tl.result['mesh'][key_name][ty_name]['repre']
@@ -478,10 +482,10 @@ def cal_plt_param_traj_clus_from_adata(data, ty_col, choose_ty=None, trim=True,t
 
     # 2 calculate parameters for plotting cluster-to-cluster trajectory
     x_unknown_li_all_tra, y_unknown_li_all_tra, z_unknown_li_all_tra, com_tra_li, com_tra_wei_li \
-        = cal_plt_param_traj_clus_from_arr(con_plt, x_raw, y_raw, z_raw, ty, choose_ty, ty_repre_xyz, type_traj=type_traj)
+        = cal_plt_param_traj_clus_from_arr(con_plt, x_raw, y_raw, z_raw, ty, choose_ty, ty_repre_xyz,
+                                           type_traj=type_traj)
 
     return x_unknown_li_all_tra, y_unknown_li_all_tra, z_unknown_li_all_tra, com_tra_li, com_tra_wei_li
-
 
 
 # In[9]:
@@ -490,6 +494,8 @@ def cal_plt_param_traj_clus_from_adata(data, ty_col, choose_ty=None, trim=True,t
 def _plot_line(x_unknown, y_unknown, z_unknown, ax, wei):
     ax.plot(x_unknown, y_unknown, z_unknown, linewidth=wei * 3, c='b')
     return
+
+
 def _show_curve(x_unknown_li_all_tra, y_unknown_li_all_tra, z_unknown_li_all_tra, com_tra_li, com_tra_wei_li):
     ax = plt.figure().add_subplot(projection='3d')
     # 画轨迹连线

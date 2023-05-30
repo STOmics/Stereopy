@@ -60,46 +60,21 @@ def _get_sparse_from_igraph(graph, weight_attr=None):
 class Paga(AlgorithmBase):
 
     def main(self, groups: Optional[str] = None, use_rna_velocity: bool = False, model='v1.2',
-             neighbors_key: Optional[str] = None, copy: bool = False, **kwargs):
+             neighbors_key: Optional[str] = "neighbors", copy: bool = False, **kwargs):
         """
-        Mapping out the coarse-grained connectivity structures of complex manifolds [Wolf19]_.
-
-        By quantifying the connectivity of partitions (groups, clusters) of the
-        single-cell graph, partition-based graph abstraction (PAGA) generates a much
-        simpler abstracted graph (*PAGA graph*) of partitions, in which edge weights
-        represent confidence in the presence of connections. By tresholding this
-        confidence in :func:`~scanpy.pl.paga`, a much simpler representation of the
-        manifold data is obtained, which is nonetheless faithful to the topology of
-        the manifold.
-
-        The confidence should be interpreted as the ratio of the actual versus the
-        expected value of connetions under the null model of randomly connecting
-        partitions. We do not provide a p-value as this null model does not
-        precisely capture what one would consider "connected" in real data, hence it
-        strongly overestimates the expected value. See an extensive discussion of
-        this in [Wolf19]_.
-
-        .. note::
-            Note that you can use the result of :func:`~scanpy.pl.paga` in
-            :func:`~scanpy.tl.umap` and :func:`~scanpy.tl.draw_graph` via
-            `init_pos='paga'` to get single-cell embeddings that are typically more
-            faithful to the global topology.
+        Partition-based graph abstraction, shorted as PAGA, is an algorithm which provides an interpretable graph-like
+        map of the arising data manifold, based on estimating connectivity of manifold partitions.
 
         Parameters
         ----------
-        stereo_exp_data
-            An annotated data matrix.
         groups
             Key for categorical in `stereo_exp_data.obs`. You can pass your predefined groups
             by choosing any categorical annotation of observations. Default:
             The first present key of `'leiden'` or `'louvain'`.
         use_rna_velocity
-            Use RNA velocity to orient edges in the abstracted graph and estimate
-            transitions. Requires that `stereo_exp_data.cells_pairwise` contains a directed single-cell
-            graph with key `['velocity_graph']`. This feature might be subject
-            to change in the future.
+            TODO : not finished yet
         model
-            The PAGA connectivity model.
+            Default to `v1.2`. The `PAGA` connectivity model.
         neighbors_key
             If not specified, paga looks `.uns['neighbors']` for neighbors settings
             and `.obsp['connectivities']`, `.obsp['distances']` for connectivities and
@@ -114,20 +89,7 @@ class Paga(AlgorithmBase):
 
         Returns
         -------
-        **connectivities** : :class:`numpy.ndarray` (stereo_exp_data.cells_pairwise['connectivities'])
-            The full adjacency matrix of the abstracted graph, weights correspond to
-            confidence in the connectivities of partitions.
-        **connectivities_tree** : :class:`scipy.sparse.csr_matrix` (stereo_exp_data.cells_pairwise['connectivities_tree'])
-            The adjacency matrix of the tree-like subgraph that best explains
-            the topology.
-
-        Notes
-        -----
-        Together with a random walk-based distance measure
-        (e.g. :func:`scanpy.tl.dpt`) this generates a partial coordinatization of
-        data useful for exploring and explaining its variation.
-
-        .. currentmodule:: scanpy
+            return `stereo_exp_data` if `copy` is `True`, or `None` if `copy` is `False`.
         """
 
         if groups is None:
@@ -172,14 +134,14 @@ class Paga(AlgorithmBase):
         paga_res_dict['groups'] = groups
         stereo_exp_data.tl.result['paga'] = paga_res_dict
 
-        if use_rna_velocity:
-            logger.info('    finished\n'
-                        + ' \'paga/transitions_confidence\', connectivities adjacency (stereo_exp_data.cells_pairwise)\n'
-                        + '\'paga/connectivities_tree\', connectivities subtree (stereo_exp_data.cells_pairwise)')
-        else:
-            logger.info('    finished\n'
-                        + ' \'paga/connectivities\', connectivities adjacency (stereo_exp_data.cells_pairwise)\n'
-                        + '\'paga/connectivities_tree\', connectivities subtree (stereo_exp_data.cells_pairwise)')
+        # if use_rna_velocity:
+        #     logger.info('    finished\n'
+        #                 + ' \'paga/transitions_confidence\', connectivities adjacency (stereo_exp_data.cells_pairwise)\n'
+        #                 + '\'paga/connectivities_tree\', connectivities subtree (stereo_exp_data.cells_pairwise)')
+        # else:
+        #     logger.info('    finished\n'
+        #                 + ' \'paga/connectivities\', connectivities adjacency (stereo_exp_data.cells_pairwise)\n'
+        #                 + '\'paga/connectivities_tree\', connectivities subtree (stereo_exp_data.cells_pairwise)')
 
         return stereo_exp_data if copy else None
 
@@ -199,6 +161,7 @@ class PAGA:
         }
         self._model = model
         self._groups_key = groups
+        self._stereo_exp_data.cells[self._groups_key] = self._stereo_exp_data.cells[self._groups_key].astype('category')
 
     def compute_connectivities(self):
         if self._model == 'v1.2':
