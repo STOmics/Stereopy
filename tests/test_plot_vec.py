@@ -103,5 +103,6 @@ class TestPlotVec(unittest.TestCase):
             density=2,
             seed_val=0,
             num_legend_per_col=20,
-            dpi_val=2000
+            dpi_val=2000,
+            out_path=TEST_IMAGE_PATH + "test_plot_vec_h5ad.tif"
         )

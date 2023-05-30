@@ -33,13 +33,13 @@ class TestPlotClusterTraj(unittest.TestCase):
         self._preprocess(data)
         data.plt.plot_cluster_traj(data.tl.result['paga']['connectivities_tree'].todense(), data.position[:, 0],
                                    data.position[:, 1], data.cells['leiden'].to_numpy(), lower_thresh_not_equal=0.95,
-                                   num_legend_per_col=20, count_thresh=100, seed_val=1, eps_co=30, check_surr_co=20,
-                                   type_traj='curve', out_path=TEST_IMAGE_PATH + 'test_plot_cluster_traj_gef.tif')
+                                   count_thresh=100, eps_co=30, check_surr_co=20, type_traj='curve',
+                                   out_path=TEST_IMAGE_PATH + 'test_plot_cluster_traj_gef.tif')
 
     def test_plot_cluster_traj_gef(self):
         data = read_gef(self.file_gef_path)
         self._preprocess(data)
         data.plt.plot_cluster_traj(data.tl.result['paga']['connectivities_tree'].todense(), data.position[:, 0],
                                    data.position[:, 1], data.cells['leiden'].to_numpy(), lower_thresh_not_equal=0.95,
-                                   num_legend_per_col=20, count_thresh=100, seed_val=1, eps_co=30, check_surr_co=20,
-                                   type_traj='curve', out_path=TEST_IMAGE_PATH + 'test_plot_cluster_traj_h5ad.tif', )
+                                   count_thresh=100, eps_co=30, check_surr_co=20, type_traj='curve',
+                                   out_path=TEST_IMAGE_PATH + 'test_plot_cluster_traj_h5ad.tif', )

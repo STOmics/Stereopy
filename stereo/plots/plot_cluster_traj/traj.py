@@ -403,7 +403,6 @@ class Traj:
             plt_ty = [ele for ele in choose_ty if ele in keep_ty]
 
         # print(self.ty_rep)
-
         for i in range(self.x_rep.shape[0]):
             if not plt_ty is None:  # types were selected
                 if not self.ty_rep[i] in plt_ty:

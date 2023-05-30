@@ -1,9 +1,6 @@
-import os
-import time
-
 import numpy as np
-import matplotlib.pyplot as plt
 
+from stereo.plots.decorator import plot_scale
 from stereo.plots.plot_vec.vec import Vec
 from stereo.plots.plot_base import PlotBase
 
@@ -67,20 +64,25 @@ class PlotVec(PlotBase):
                              line_len_co, vec_alpha, line_width, density,
                              tick_step, dpi_val)
 
-    def plot_time_scatter(self, group='leiden', dpi_val=2000):
+    @plot_scale
+    def plot_time_scatter(self, group='leiden', **kwargs):
         data = self.stereo_exp_data
-        x_raw = data.position[:, 0]
-        y_raw = data.position[:, 1]
-        # x_raw = adata.obsm['spatial_stereoseq']['X'].to_numpy()
-        # y_raw = adata.obsm['spatial_stereoseq']['Y'].to_numpy()
 
         data.cells[group] = data.cells[group].astype('category')
         ptime = data.tl.result['dpt_pseudotime']
 
-        figure = plt.figure(dpi=dpi_val)
-        plt.scatter(x_raw, y_raw, s=4, c=ptime, linewidths=0, cmap='rainbow')
-        plt.colorbar()
-        plt.gca().set_aspect('equal', adjustable='box')
-        # plt.savefig(os.path.join(fig_dir, fig_name), dpi=2000)
-        # plt.close()
-        return figure
+        from ..scatter import multi_scatter
+
+        fig = multi_scatter(
+            x=data.position[:, 0],
+            y=data.position[:, 1],
+            hue=[ptime],
+            x_label=['spatial1'],
+            y_label=['spatial2'],
+            title=['dpt_pseudotime'],
+            color_bar=True,
+            width=None,
+            height=None,
+            **kwargs
+        )
+        return fig

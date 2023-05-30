@@ -14,6 +14,8 @@ from scipy.ndimage import gaussian_filter as gauss_fil
 from scipy.ndimage import convolve as conv
 from collections import Counter
 
+from stereo.plots import base_scatter
+
 
 class Vec():
     def __init__(self):
@@ -239,8 +241,8 @@ class Vec():
         cmap_val = mpl.colors.ListedColormap(np.random.rand(256, 3))
 
         # prepare dictionary that maps types to int
-        undup = collections.Counter(
-            ty_raw).keys()  # ty_raw unique values are as rich as, or richer than plt_common_ty # None表示空pixel
+        # ty_raw unique values are as rich as, or richer than plt_common_ty # None表示空pixel
+        undup = collections.Counter(ty_raw).keys()
         ty_val_dict = dict(zip(undup, np.arange(len(undup))))  # 生成从str映射到int的字典
         ty_val_dict[None] = np.nan  # 字典中，None对应nan
 
@@ -303,15 +305,25 @@ class Vec():
             plt.streamplot(X, Y, line_len_co * (-u), line_len_co * (-v), color='k', linewidth=line_width,
                            density=density)  # start_points=start_p,
 
-        x_tick_la = np.arange(np.floor(x_raw.min() / tick_step) * tick_step,
-                              np.ceil(x_raw.max() / tick_step) * tick_step, step=tick_step).astype(np.int32)
-        y_tick_la = np.arange(np.floor(y_raw.min() / tick_step) * tick_step,
-                              np.ceil(y_raw.max() / tick_step) * tick_step, step=tick_step).astype(np.int32)
+        x_tick_la = np.arange(
+            np.floor(x_raw.min() / tick_step) * tick_step,
+            np.ceil(x_raw.max() / tick_step) * tick_step,
+            step=tick_step
+        ).astype(np.int32)
+
+        y_tick_la = np.arange(
+            np.floor(y_raw.min() / tick_step) * tick_step,
+            np.ceil(y_raw.max() / tick_step) * tick_step,
+            step=tick_step
+        ).astype(np.int32)
+
         x_tick_po, y_tick_po = self._apply_trans(x_tick_la, y_tick_la)
         plt.xticks(ticks=x_tick_po, labels=x_tick_la)
         plt.yticks(ticks=y_tick_po, labels=y_tick_la)
 
         plt.gca().set_aspect('equal', adjustable='box')
+        # in order to fit `StereoPy` original point
+        plt.gca().invert_yaxis()
 
         # plt.savefig(os.path.join(fig_dir, fig_name), dpi=dpi_val, bbox_inches='tight')
         # plt.close()

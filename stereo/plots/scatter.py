@@ -37,7 +37,7 @@ def base_scatter(
         bad_color: str = "lightgrey",
         dot_size: int = None,
         marker: str = 's',
-        palette: Optional[Union[str, list]] = 'stereo',
+        palette: Optional[Union[str, list]] = 'stereo_30',
         invert_y: bool = True,
         legend_ncol=2,
         show_legend=True,
