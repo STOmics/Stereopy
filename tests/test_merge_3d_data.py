@@ -30,9 +30,7 @@ class TestMerge3DData(unittest.TestCase):
         slices = []
         for slice_path in self._demo_3d_file_list:
             slices.append(AnnBasedStereoExpData(slice_path))
-        merged_data = merge(*slices, space_between='2.0um', reorganize_coordinate=False)
-
-        merged_data1 = merge(*slices, space_between='2um', reorganize_coordinate=False)
+        merged_data = merge(*slices, space_between='0.7um', reorganize_coordinate=False)
 
         self._preprocess(merged_data)
         ty_col = 'annotation'
