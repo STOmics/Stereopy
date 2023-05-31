@@ -1,23 +1,32 @@
 """
 仅包括mesh的计算，不包括画图。计算和画图放在不同模块中
 """
-import os
-import gc
 import math
 import numpy as np
 
-# TODO open3d pyvista pymeshfix pyacvd mcubes is optional pypi
-
 try:
-    import open3d_cpu as o3d
-except ImportError:
-    import open3d as o3d  # 420.5 MB
+    try:
+        import open3d_cpu as o3d
+    except ImportError:
+        import open3d as o3d  # 420.5 MB
+    import pyvista as pv
+    import pymeshfix as mf
+    import pyacvd
 
-import pyvista as pv
-import pymeshfix as mf
-import pyacvd
+except ImportError as e:
+    errmsg = """
+************************************************
+* Some necessary modules may not be installed. *
+* Please install them by:                      *
+*   pip install pyvista                        *
+*   pip install pymeshfix                      *
+*   pip install pyacvd                         *
+*   pip install open3d # or open3d-cpu         *
+************************************************
+    """
+    raise ImportError(errmsg)
+
 import scipy
-
 import matplotlib.pyplot as plt
 from sklearn.cluster import DBSCAN
 
@@ -938,7 +947,8 @@ class ThreeDimGroup():
         return o3d_pcd
 
 
-def gen_mesh(stereo_exp_data, xli, yli, zli, tyli, ty_name_li=None, method='march', eps_val=2, min_samples=5, thresh_num=10,
+def gen_mesh(stereo_exp_data, xli, yli, zli, tyli, ty_name_li=None, method='march', eps_val=2, min_samples=5,
+             thresh_num=10,
              key_name='mesh',
              alpha=None, radii=None, depth=None, width=None, scale=None, linear_fit=None, density_threshold=None,
              mc_scale_factor=None, levelset=None, tol=None):
