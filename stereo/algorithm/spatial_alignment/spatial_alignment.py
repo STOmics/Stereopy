@@ -15,6 +15,13 @@ class SpatialAlignment(MSDataAlgorithmBase):
         *args,
         **kwargs
     ):
+        """
+        Calculates and returns optimal alignment of two slices or computes center alignment of slices.
+
+        :param method: pairwise or center, defaults to 'pairwise'
+        :param initial_slice: slice to use as the initialization for center alignment, defaults to None
+        :param slices: list of slices to align, defaults to None
+        """
         if method not in ('pairwise', 'center'):
             raise ValueError(f'Error method({method}), it must be one of pairwise and center')
         
@@ -40,12 +47,9 @@ class SpatialAlignment(MSDataAlgorithmBase):
             if initial_slice is None:
                 initial_slice = deepcopy(slices[0])
             else:
-                initial_slice = self.ms_data[initial_slice]
+                initial_slice = deepcopy(self.ms_data[initial_slice])
             center_slice, pis = center_align(initial_slice, slices, *args, **kwargs)
             stack_slices_center(center_slice, slices, pis)
             self.ms_data.center_slice = center_slice
         
         return self.ms_data
-        # new_position = np.concatenate(new_slices_position)
-        # self.ms_data.obs['x_aligned'] = new_position[:, 0]
-        # self.ms_data.obs['y_aligned'] = new_position[:, 1]
