@@ -41,6 +41,7 @@ This sections contains various cases for additional functionalities.
     RNA_Velocity
     Batches_Integration
     Gene_Regulatory_Network
+    Gene_Regulatory_Network_3D
 
 
 Interactive Visualization
