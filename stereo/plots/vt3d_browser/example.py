@@ -7,7 +7,7 @@ from ..plot_base import PlotBase
 
 class Plot3DBrowser(PlotBase):
 
-    def start_vt3d_browser(self):
+    def start_vt3d_browser(self, port=7654):
         pid = _daemonize()
         if not pid:
             from .stereopy_3D_browser import launch
