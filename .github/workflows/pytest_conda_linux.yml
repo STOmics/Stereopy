@@ -46,3 +46,18 @@ jobs:
         run: |
           # TODO ~/anaconda3/envs/test/bin/python -m pytest -m "not gpu and not heavy and not cell_cut_env" --durations=0
           ~/anaconda3/envs/test/bin/python -m pytest -m "not gpu and not cell_cut_env" --durations=0
+
+          ~/anaconda3/envs/test/bin/python setup.py develop
+      - name: Show Env Info
+        run: |
+          conda init bash
+          source ~/.bashrc
+          conda activate test
+          which python
+          conda info
+          env
+          pip list
+      - name: Test with pytest
+        run: |
+          # TODO ~/anaconda3/envs/test/bin/python -m pytest -m "not gpu and not heavy and not cell_cut_env" --durations=0
+          ~/anaconda3/envs/test/bin/python -m pytest -m "not gpu and not cell_cut_env" --durations=0

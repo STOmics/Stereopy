@@ -5,8 +5,7 @@ from anndata import AnnData
 
 
 class _BaseResult(object):
-    CLUSTER_NAMES = {'leiden', 'louvain', 'phenograph', 'annotation', 'leiden_from_bins', 'louvain_from_bins',
-                     'phenograph_from_bins', 'annotation_from_bins'}
+    CLUSTER_NAMES = {'leiden', 'louvain', 'phenograph', 'annotation', 'leiden_from_bins', 'louvain_from_bins', 'phenograph_from_bins', 'annotation_from_bins'}
     CONNECTIVITY_NAMES = {'neighbors'}
     REDUCE_NAMES = {'umap', 'pca', 'tsne'}
     HVG_NAMES = {'highly_variable_genes', 'hvg'}
