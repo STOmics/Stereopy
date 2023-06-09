@@ -124,10 +124,12 @@ class GetMicroEnvs:
                     sample_points = np.vstack([sample['coord_x'].to_numpy(), sample['coord_y'].to_numpy()])
                 if dimension == 3:
                     sample_points = np.vstack([sample['coord_x'].to_numpy(), sample['coord_y'].to_numpy(), sample['coord_z'].to_numpy()])
+                sample_points = self._check_coordinates(sample_points)
                 if not sample.empty:
                     kde = stats.gaussian_kde(sample_points)  # Calculate kernel
                     kde_at_grid = kde(grid_points.T)  # Calculate kde at the grid points
-                    kde_at_grid = kde_at_grid/np.sum(kde_at_grid)
+                    if np.any(kde_at_grid > 0):
+                        kde_at_grid = kde_at_grid/np.sum(kde_at_grid)
                     kde_at_grid[kde_at_grid < eps] = eps  # fill zeros to avoid inf kl divergence
                 else:
                     kde_at_grid = np.array([eps]*n_grid_points)
@@ -168,6 +170,15 @@ class GetMicroEnvs:
             write_to_file(subgroups_by_thrshold, 'split_by_different_threshold', output_path=output_path, output_format='csv')
 
         return all_mst, final_mst, pairwise_kl_df, subgroups_by_thrshold
+    
+    def _check_coordinates(self, coordinates: np.ndarray):
+        for coord in coordinates:
+            if np.all(coord == coord[0]):
+                if coord[0] == 0:
+                    coord[0] = 0.01
+                else:
+                    coord[0] *= 1.01
+        return coordinates
 
     # FIXME: change the default output path
     def generate_micro_envs(

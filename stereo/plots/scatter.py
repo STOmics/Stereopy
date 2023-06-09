@@ -103,7 +103,8 @@ def base_scatter(
             sm = plt.cm.ScalarMappable(cmap=cmap, norm=norm)
             sm.set_array([])
             ax.figure.colorbar(sm)
-        ax.legend_.remove()
+        if ax.legend_ is not None:
+            ax.legend_.remove()
     else:
         from natsort import natsorted
         import collections
