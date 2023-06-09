@@ -33,7 +33,7 @@ Meanwhile, we are still working on the improvement of performance and calculatio
 
 
 * Get quickly started by browsing `Usage Principles <https://stereopy.readthedocs.io/en/latest/index.html>`_, `Tutorials <https://stereopy.readthedocs.io/en/latest/Tutorials/Examples.html>`_ or `API <https://stereopy.readthedocs.io/en/latest/api/index.html>`_.
-* Open to discuss and provide feedback on `Github <https://github.com/BGIResearch/stereopy>`_.
+* Open to discuss and provide feedback on `Github <https://github.com/STOmics/stereopy>`_.
 * Follow changes in `Release Notes <https://stereopy.readthedocs.io/en/latest/release_note.html>`_.
 
 
@@ -109,8 +109,8 @@ Version 0.11.0
     :target: https://stereopy.readthedocs.io/en/latest/index.html
     :alt: docs
 
-.. |stars| image:: https://img.shields.io/github/stars/BGIResearch/stereopy?logo=GitHub&color=yellow
-    :target: https://github.com/BGIResearch/stereopy
+.. |stars| image:: https://img.shields.io/github/stars/STOmics/stereopy?logo=GitHub&color=yellow
+    :target: https://github.com/STOmics/stereopy
     :alt: stars
 
 .. |downloads| image:: https://static.pepy.tech/personalized-badge/stereopy?period=total&units=international_system&left_color=grey&right_color=blue&left_text=downloads

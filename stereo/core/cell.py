@@ -25,6 +25,7 @@ class Cell(object):
             batch: Optional[Union[np.ndarray, list, int, str]] = None
     ):
         self._obs = pd.DataFrame(index=cell_name if cell_name is None else cell_name.astype('U'))
+        self.loc = self._obs.loc
         self._matrix = dict()
         self._pairwise = dict()
         if batch is not None:
@@ -32,10 +33,10 @@ class Cell(object):
         self._cell_border = cell_border
 
     def __contains__(self, item):
-        return item in self._obs.columns or item in self._matrix or item in self._pairwise
+        return item in self._obs.columns
 
     def __setattr__(self, key, value):
-        if key in {'_obs', '_matrix', '_pairwise', '_cell_border', 'cell_name', 'cell_border'}:
+        if key in {'_obs', '_matrix', '_pairwise', '_cell_border', 'cell_name', 'cell_border', 'loc'}:
             object.__setattr__(self, key, value)
         elif key == 'batch':
             self._obs[key] = self._set_batch(value)
@@ -119,9 +120,8 @@ class Cell(object):
         if batch is None:
             return None
 
-        if not isinstance(batch, np.ndarray) and not isinstance(batch, list) and not isinstance(batch,
-                                                                                                int) and not isinstance(
-            batch, str):
+        if not isinstance(batch, np.ndarray) and not isinstance(batch, list) \
+            and not isinstance(batch,int) and not isinstance(batch, str):
             raise TypeError('batch must be np.ndarray or list or int or str')
 
         if isinstance(batch, int):
@@ -142,11 +142,11 @@ class Cell(object):
         if self.cell_border is not None:
             self.cell_border = self.cell_border[index]
         if type(index) is list:
-            self._obs = self._obs.iloc[index]
+            self._obs = self._obs.iloc[index].copy()
         elif index.dtype == bool:
-            self._obs = self._obs[index]
+            self._obs = self._obs[index].copy()
         else:
-            self._obs = self._obs.iloc[index]
+            self._obs = self._obs.iloc[index].copy()
         return self
 
     def get_property(self, name):
@@ -179,7 +179,15 @@ class AnnBasedCell(Cell):
                  cell_border: Optional[np.ndarray] = None,
                  batch: Optional[Union[np.ndarray, list, int, str]] = None):
         self.__based_ann_data = based_ann_data
-        super(AnnBasedCell, self).__init__(cell_name, cell_border, batch)
+        super().__init__(cell_name, cell_border, batch)
+        self._obs = self.__based_ann_data.obs
+        self.loc = self._obs.loc
+
+    def __setattr__(self, key, value):
+        if key == 'batch':
+            self.__based_ann_data.obs[key] = self._set_batch(value)
+        else:
+            object.__setattr__(self, key, value)
 
     def __setattr__(self, key, value):
         object.__setattr__(self, key, value)
@@ -189,6 +197,12 @@ class AnnBasedCell(Cell):
 
     def __repr__(self):
         return self.__str__()
+
+    def __getitem__(self, item):
+        return self.__based_ann_data.obs[item]
+
+    def __contains__(self, item):
+        return item in self.__based_ann_data.obs.columns
 
     @property
     def cell_name(self) -> np.ndarray:
@@ -237,3 +251,6 @@ class AnnBasedCell(Cell):
     def n_genes_by_counts(self, new_n_genes_by_counts):
         if new_n_genes_by_counts is not None:
             self.__based_ann_data.obs['n_genes_by_counts'] = new_n_genes_by_counts
+
+    def to_df(self):
+        return self.__based_ann_data.obs

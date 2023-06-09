@@ -59,3 +59,8 @@ class InvalidSpecies(Exception):
         else:
             description = f"Species {species.upper()} is invalid, please choose from HUMAN and MOUSE."
         super(InvalidSpecies, self).__init__(description)
+
+class InvalidMicroEnvInput(Exception):
+    def __init__(self, description: str = None):
+        super(InvalidMicroEnvInput, self).__init__(description)
+        self.description = description

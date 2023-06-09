@@ -36,7 +36,8 @@ def base_scatter(
         color_bar_reverse: bool = False,
         bad_color: str = "lightgrey",
         dot_size: int = None,
-        palette: Optional[Union[str, list]] = 'stereo',
+        marker: str = 's',
+        palette: Optional[Union[str, list]] = 'stereo_30',
         invert_y: bool = True,
         legend_ncol=2,
         show_legend=True,
@@ -95,14 +96,15 @@ def base_scatter(
         cmap = ListedColormap(colors)
         cmap.set_bad(bad_color)
 
-        sns.scatterplot(x=x, y=y, hue=hue, ax=ax, palette=cmap, size=hue, linewidth=0, marker="s",
+        sns.scatterplot(x=x, y=y, hue=hue, ax=ax, palette=cmap, size=hue, linewidth=0, marker=marker,
                         sizes=(dot_size, dot_size), vmin=vmin, vmax=vmax)
         if vmin is None and vmax is None:
             norm = plt.Normalize(hue.min(), hue.max())
             sm = plt.cm.ScalarMappable(cmap=cmap, norm=norm)
             sm.set_array([])
             ax.figure.colorbar(sm)
-        ax.legend_.remove()
+        if ax.legend_ is not None:
+            ax.legend_.remove()
     else:
         from natsort import natsorted
         import collections
@@ -111,7 +113,7 @@ def base_scatter(
             g = hue_order
         colors = stereo_conf.get_colors(palette)
         color_dict = collections.OrderedDict(dict([(g[i], colors[i]) for i in range(len(g))]))
-        sns.scatterplot(x=x, y=y, hue=hue, hue_order=g, linewidth=0, marker="s",
+        sns.scatterplot(x=x, y=y, hue=hue, hue_order=g, linewidth=0, marker=marker,
                         palette=color_dict, size=hue, sizes=(dot_size, dot_size), ax=ax)
         handles, labels = ax.get_legend_handles_labels()
         ax.legend_.remove()
@@ -135,7 +137,7 @@ def base_scatter(
         ax_left, ax_right = ax.get_xlim()
         ax_bottom, ax_top = ax.get_ylim()
 
-        plotting_scale_height = 200
+        plotting_scale_height = plotting_scale_width / 10
 
         horizontal_start_x = min_x
         bin_count = plotting_scale_width // data_bin_offset

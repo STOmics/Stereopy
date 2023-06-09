@@ -47,14 +47,13 @@ def generate_cell_and_dnb(adjusted_data: np.ndarray):
 
 class CellCorrect(object):
 
-    def __init__(self, gem_path=None, bgef_path=None, raw_cgef_path=None, mask_path=None, tissue_mask_path=None, out_dir=None,):
+    def __init__(self, gem_path=None, bgef_path=None, raw_cgef_path=None, mask_path=None, out_dir=None,):
         self.tc = TimeConsume()
         self.gem_path = gem_path
         self.bgef_path = bgef_path
         self.raw_cgef_path = raw_cgef_path
         self.mask_path = mask_path
         self.new_mask_path = None
-        self.tissue_mask_path = tissue_mask_path
         self.out_dir = out_dir
         self.cad = cgef_adjust_cy.CgefAdjust()
         self.gene_names = None
@@ -245,8 +244,6 @@ class CellCorrect(object):
         process_count = self.__set_processes_count(process_count, fast)
         if fast is False or fast == 'v1':
             genes, raw_data = self.generate_raw_data(sample_n)
-            if self.tissue_mask_path is not None:
-                raw_data = gem_filter(self.tissue_mask_path, raw_data)
         if fast is False:
             correction = CellCorrection(self.mask_path, raw_data, threshold, process_count, err_log_dir=self.out_dir)
             adjusted_data = correction.cell_correct()
@@ -263,11 +260,6 @@ class CellCorrect(object):
             new_mask_path = cell_correction_fast_by_mask.main(self.mask_path, n_jobs=process_count, out_path=self.out_dir, **new_kwargs)
             cgef_file_adjusted = self.generate_cgef_with_mask(new_mask_path, 'adjusted')
             gem_file_adjusted = self.cgef_to_gem(cgef_file_adjusted)
-            # gem_file_adjusted = self.bgef_to_gem(new_mask_path)
-            # genes, adjusted_data_dirty = self.get_data_from_bgef_and_cgef(self.bgef_path, new_cgef_path)
-            # logger.info(f"adjusted_data_dirty.shape = {adjusted_data_dirty.shape}")
-            # adjusted_data = adjusted_data_dirty[adjusted_data_dirty['label'] != 0]
-            # logger.info(f"adjusted_data.shape = {adjusted_data.shape}")
         else:
             raise ValueError(f"Unexpected value({fast}) for parameter fast, available values include [False, 'v1', 'v2'].")
 
@@ -291,24 +283,16 @@ def cell_correct(out_dir: str,
                 bgef_path: str=None,
                 raw_cgef_path: str=None,
                 mask_path: str=None,
-                image_path: str=None,
-                model_path: str=None,
-                mask_save: bool=True,
-                model_type: str='deep-learning',
-				gpu: str='-1',
                 process_count: int=None,
                 only_save_result: bool=False,
                 fast: Union[bool, str]='v2',
-                tissue_mask_path: str=None,
                 **kwargs
 ):
 
     """
     Correct cells using one of file conbinations as following:
         * GEM and mask
-        * GEM and ssDNA image
         * BGEF and mask
-        * BGEF and ssDNA image
         * GEM and raw CGEF (not have been corrected)
         * BGEF and raw CGEF (not have been corrected)
 
@@ -319,44 +303,17 @@ def cell_correct(out_dir: str,
     :param bgef_path: the path to BGEF file.
     :param raw_cgef_path: the path to CGEF file which not has been corrected.
     :param mask_path: the path to mask file.
-    :param image_path: the path to ssDNA image file.
-    :param model_path: the path to model file.
-    :param mask_save: whether to save mask file after correction, generated from ssDNA image.
-    :param model_type: the type of model to generate mask, whcih only could be set to deep learning model and deep cell model.
-	:param gpu: specify gpu id to predict when generate mask, if `'-1'`, cpu is used.
-    :param process_count: the count of the process will be started when correct cells, defaults to None
-                by default, it will be set to 10 when `fast` is set to False and will be set to 1 when `fast` is set to True, v1 or v2.
+    :param process_count: the count of the processes or threads will be started when correct cells, defaults to None
+                by default, it will be set to 10 when `fast` is set to False and will be set to 1 when `fast` is set to v1 or v2.
                 if it is set to -1, all of the cores will be used.
 	:param only_save_result: if `True`, only save result to disk; if `False`, return an StereoExpData object.
     :param fast: specify the version of algorithm, available values include [False, v1, v2], defaults to v2.
                     False: the oldest and slowest version, it will uses multiprocessing if set `process_count` to more than 1.
                     v1: the first fast version, it olny uses single process and single threading.
                     v2: default and recommended algorithm, the latest fast version, faster and more accurate than v1, it will uses multithreading if set `process_count` to more than 1.
-    :param tissue_mask_path: the path of tissue mask, default to None.
-                    if it is set, the data will be filterd by tissue_mask, unavailable if set the `fast` to v2.
-    :param deep_cro_size: deep crop size.
-    :param overlap: overlap size.
 
     :return: An StereoExpData object if `only_save_result` is set to `False`, otherwise none.
     """
-    do_mask_generating = False
-    if mask_path is None and image_path is not None:
-        from .cell_segment import CellSegment
-        do_mask_generating = True
-        deep_cro_size = kwargs.get('deep_cro_size', 20000)
-        overlap = kwargs.get('overlap', 100)
-        if 'deep_cro_size' in kwargs:
-            del kwargs['deep_cro_size']
-        if 'overlap' in kwargs:
-            del kwargs['overlap']
-        cell_segment = CellSegment(image_path, gpu, out_dir)
-        logger.info(f"there is no cell mask file, generate it by model {model_path}")
-        cell_segment.generate_mask(model_path, model_type, deep_cro_size, overlap)
-        mask_path = cell_segment.get_mask_files()[0]
-        logger.info(f"the generated cell mask file {mask_path}")
-        
-    cc = CellCorrect(gem_path=gem_path, bgef_path=bgef_path, raw_cgef_path=raw_cgef_path, mask_path=mask_path, tissue_mask_path=tissue_mask_path, out_dir=out_dir)
-    adjusted_data = cc.correcting(threshold=threshold, process_count=process_count, only_save_result=only_save_result, fast=fast, **kwargs)
-    if do_mask_generating and not mask_save:
-        cell_segment.remove_all_mask_files()
-    return adjusted_data
+
+    cc = CellCorrect(gem_path=gem_path, bgef_path=bgef_path, raw_cgef_path=raw_cgef_path, mask_path=mask_path, out_dir=out_dir)
+    return cc.correcting(threshold=threshold, process_count=process_count, only_save_result=only_save_result, fast=fast, **kwargs)

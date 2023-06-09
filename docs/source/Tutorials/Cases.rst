@@ -36,10 +36,12 @@ This sections contains various cases for additional functionalities.
     scTransform
     SingleR
     Cell_Cell_Communication
+    3D_Cell_Cell_Communication
     Spatial_Hotspot
     RNA_Velocity
     Batches_Integration
     Gene_Regulatory_Network
+    Gene_Regulatory_Network_3D
 
 
 Interactive Visualization

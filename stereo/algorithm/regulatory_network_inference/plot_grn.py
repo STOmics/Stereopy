@@ -10,6 +10,7 @@ import pandas as pd
 import numpy as np
 import seaborn as sns
 import matplotlib.pyplot as plt
+from mpl_toolkits.mplot3d import Axes3D
 from pyscenic.rss import regulon_specificity_scores
 
 
@@ -17,7 +18,7 @@ from pyscenic.rss import regulon_specificity_scores
 from stereo.log_manager import logger
 from stereo.plots.plot_base import PlotBase
 from stereo.plots.scatter import base_scatter
-from stereo.plots.decorator import plot_scale
+from stereo.plots.decorator import plot_scale, download, reorganize_coordinate
 
 class PlotRegulatoryNetwork(PlotBase):
     """
@@ -192,6 +193,7 @@ class PlotRegulatoryNetwork(PlotBase):
         return fig
 
     @plot_scale
+    @reorganize_coordinate
     def spatial_scatter_by_regulon(
             self, 
             network_res_key: str='regulatory_network_inference', 
@@ -337,6 +339,78 @@ class PlotRegulatoryNetwork(PlotBase):
         )
 
         return g
+    
+    def spatial_scatter_by_regulon_3D(
+        self,
+        network_res_key: str = 'regulatory_network_inference',
+        reg_name: str = None,
+        fn: str = None,
+        view_vertical: int=0,
+        view_horizontal: int=0,
+        show_axis: bool=False,
+        **kwargs):
+        """
+        Plot genes of one regulon on a 3D map
+        :param network_res_key: the key which specifies inference regulatory network result
+             in data.tl.result, defaults to 'regulatory_network_inference'
+        :param reg_name: specify the regulon you want to draw, defaults to None, if none, will select randomly.
+        :param fn: specify the file name of the output figure, defaults to None, if none, will use regulon name.
+        :param view_vertical: vertical angle to view to the 3D object
+        :param view_horizontal: horizontal angle to view the 3D object
+        :return: 
+        Example:
+            data.plt.plot_3d_reg('regulatory_network_inference', 'Zfp354c', view_vertical=30, view_horizontal=-30)
+        """
+
+
+        if reg_name is None:
+            regulon_dict = self.pipeline_res[network_res_key]['regulons']
+            reg_name = list(regulon_dict.keys())[0]
+        elif '(+)' not in reg_name:
+            reg_name = reg_name + '(+)'
+
+        if fn is None:
+            fn = f'{reg_name.strip("(+)")}.pdf'
+
+        # prepare plotting data
+        arr2 = self.stereo_exp_data.position_z
+        position_3D = np.concatenate((self.stereo_exp_data.position, arr2), axis=1)
+
+        cell_coor = position_3D
+        assert cell_coor.shape[1]==3  # TODO: ensure position is 3D
+
+        auc_mtx = self.pipeline_res[network_res_key]['auc_matrix']
+
+        auc_zscore = cal_zscore(auc_mtx)
+        sub_zscore = auc_zscore[reg_name]
+
+        # plot
+        fig = plt.figure()
+        ax = Axes3D(fig)
+        sc = ax.scatter(cell_coor[:, 0],
+                        cell_coor[:, 1],
+                        cell_coor[:, 2],
+                        c=sub_zscore,
+                        marker='.',
+                        edgecolors='none',
+                        cmap='plasma',
+                        lw=0, **kwargs)
+        # set view angle
+        ax.view_init(view_vertical, view_horizontal)
+        # scale axis
+        xlen = cell_coor[:, 0].max() - cell_coor[:, 0].min()
+        ylen = cell_coor[:, 1].max() - cell_coor[:, 1].min()
+        zlen = cell_coor[:, 2].max() - cell_coor[:, 2].min()
+        yscale = ylen / xlen
+        zscale = zlen / xlen
+        ax.get_proj = lambda: np.dot(Axes3D.get_proj(ax), np.diag([1, yscale, zscale, 1]))
+
+        if not show_axis:
+            plt.box(False)
+            plt.axis('off')
+        plt.colorbar(sc, shrink=0.35)
+        plt.savefig(fn, format='pdf')
+
     
 def get_n_hls_colors(num):
     import random

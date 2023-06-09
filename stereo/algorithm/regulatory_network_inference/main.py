@@ -14,6 +14,7 @@ change log:
 
 # python core modules
 import os
+import traceback
 import csv
 from typing import Union
 
@@ -22,6 +23,7 @@ import json
 import glob
 import hotspot
 import pandas as pd
+import numpy as np
 from arboreto.utils import load_tf_names
 from multiprocessing import cpu_count
 from pyscenic.export import export2loom
@@ -56,7 +58,10 @@ class RegulatoryNetworkInference(AlgorithmBase):
              cache: bool = False,
              cache_res_key: str = 'regulatory_network_inference',
              save: bool=True,
-             method: str='grnboost'):
+             method: str='grnboost',
+             ThreeD_slice: bool=False,
+             prune_kwargs: dict={}
+             ):
         """
         Enables researchers to infer transcription factors (TFs) and gene regulatory networks.
 
@@ -72,6 +77,8 @@ class RegulatoryNetworkInference(AlgorithmBase):
         :param cache: whether to use cache files. Need to provide adj.csv, motifs.csv and auc.csv.
         :param save: whether to save the result as a file.
         :param method: the method to inference GRN, 'grnboost' or 'hotspot'.
+        :param ThreeD_slice: whether to use 3D slice data.
+        :param prune_kwargs: dict, others parameters of pyscenic.prune.prune2df
         :return: Computation result of inference regulatory network is stored in self.result where the result key is 'regulatory_network_inference'.
         """
         matrix = self.stereo_exp_data.to_df()
@@ -95,15 +102,21 @@ class RegulatoryNetworkInference(AlgorithmBase):
 
         # 2. load the ranking database
         dbs = self.load_database(database)
+
+        # 2.5 check if data is 3D slice
+        if ThreeD_slice:
+            logger.info('If data belongs to 3D, it only can be runned as hotspot method now')
+            method = 'hotspot'
+
         # 3. GRN inference
         if method == 'grnboost':
             adjacencies = self.grn_inference(matrix, genes=target_genes, tf_names=tfsf, num_workers=num_workers, seed=seed, cache=cache, cache_res_key=cache_res_key)
         elif method == 'hotspot':
-            adjacencies = self.hotspot_matrix(tf_list=tfsf, jobs=num_workers, cache=cache, cache_res_key=cache_res_key)
+            adjacencies = self.hotspot_matrix(tf_list=tfsf, jobs=num_workers, cache=cache, cache_res_key=cache_res_key, ThreeD_slice=ThreeD_slice)
         
         modules = self.get_modules(adjacencies, df)
         # 4. Regulons prediction aka cisTarget
-        regulons = self.prune_modules(modules, dbs, motif_anno, num_workers, cache=cache, cache_res_key=cache_res_key)
+        regulons, motifs = self.prune_modules(modules, dbs, motif_anno, num_workers, cache=cache, cache_res_key=cache_res_key, **prune_kwargs)
         self.regulon_dict = get_regulon_dict(regulons)
         # 5: Cellular enrichment (aka AUCell)
         auc_matrix = self.auc_activity_level(df, regulons, auc_threshold, num_workers, seed=seed, cache=cache, cache_res_key=cache_res_key)
@@ -112,7 +125,8 @@ class RegulatoryNetworkInference(AlgorithmBase):
         self.pipeline_res[res_key] = {
             'regulons': self.regulon_dict, 
             'auc_matrix': auc_matrix, 
-            'adjacencies': adjacencies
+            'adjacencies': adjacencies,
+            'motifs': motifs
             }
         self.stereo_exp_data.tl.reset_key_record('regulatory_network_inference', res_key)
 
@@ -150,6 +164,7 @@ class RegulatoryNetworkInference(AlgorithmBase):
                        jobs=None,
                        cache: bool = True,
                        cache_res_key: str = 'regulatory_network_inference',
+                       ThreeD_slice: bool = False,
                        **kwargs) -> pd.DataFrame:
         """
         Inference of co-expression modules via hotspot method
@@ -174,6 +189,7 @@ class RegulatoryNetworkInference(AlgorithmBase):
         :param fdr_threshold: Correlation theshold at which to stop assigning genes to modules
         :param tf_list: predefined TF names
         :param jobs: Number of parallel jobs to run
+        :paran ThreeD_slice: whether to use 3D slice data.
         :return: A dataframe, local correlation Z-scores between genes (shape is genes x genes)
         """
 
@@ -188,6 +204,12 @@ class RegulatoryNetworkInference(AlgorithmBase):
         global hs
         data = self.stereo_exp_data
         hotspot_data = RegulatoryNetworkInference.input_hotspot(data)
+
+        if ThreeD_slice:
+            arr2 = data.position_z
+            position_3D = np.concatenate((data.position, arr2), axis=1)
+            hotspot_data['position'] = position_3D
+
         hs = hotspot.Hotspot.legacy_init(hotspot_data['counts'],
                                             model=model,
                                             latent=hotspot_data['position'],
@@ -400,7 +422,7 @@ class RegulatoryNetworkInference(AlgorithmBase):
 
         # alternative way of getting regulon_list, without creating df first
         # regulon_list = prune(dbs, modules, motif_anno)
-        return regulon_list
+        return regulon_list, df
 
     def auc_activity_level(self,
                            matrix,

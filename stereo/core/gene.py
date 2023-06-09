@@ -20,15 +20,19 @@ class Gene(object):
         self._var = pd.DataFrame(index=gene_name if gene_name is None else gene_name.astype('U'))
         self._matrix = dict()
         self._pairwise = dict()
+        self.loc = self._var.loc
 
     def __contains__(self, item):
-        return item in self._var.columns or item in self._matrix or item in self._pairwise
+        return item in self._var.columns
 
     def __setattr__(self, key, value):
-        if key in {'_var', '_matrix', '_pairwise', 'gene_name'}:
+        if key in {'_var', '_matrix', '_pairwise', 'gene_name', 'loc'}:
             object.__setattr__(self, key, value)
         else:
             self._var[key] = value
+
+    def __setitem__(self, key, value):
+        self._var[key] = value
 
     @property
     def n_cells(self):
@@ -89,11 +93,11 @@ class Gene(object):
         :return: the subset of Gene object.
         """
         if type(index) is list:
-            self._var = self._var.iloc[index]
+            self._var = self._var.iloc[index].copy()
         elif index.dtype == bool:
-            self._var = self._var[index]
+            self._var = self._var[index].copy()
         else:
-            self._var = self._var.iloc[index]
+            self._var = self._var.iloc[index].copy()
         return self
 
     def to_df(self):
@@ -116,6 +120,7 @@ class AnnBasedGene(Gene):
     def __init__(self, based_ann_data: AnnData, gene_name: Optional[np.ndarray]):
         self.__based_ann_data = based_ann_data
         super().__init__(gene_name)
+        self._var = self.__based_ann_data.var
 
     def __setattr__(self, key, value):
         object.__setattr__(self, key, value)
@@ -125,6 +130,12 @@ class AnnBasedGene(Gene):
 
     def __repr__(self):
         return self.__str__()
+
+    def __getitem__(self, item):
+        return self.__based_ann_data.var[item]
+
+    def __contains__(self, item):
+        return item in self.__based_ann_data.var.columns
 
     @property
     def gene_name(self) -> np.ndarray:
@@ -146,3 +157,6 @@ class AnnBasedGene(Gene):
         if not isinstance(name, np.ndarray):
             raise TypeError('gene name must be a np.ndarray object.')
         self.__based_ann_data._inplace_subset_var(name)
+
+    def to_df(self):
+        return self.__based_ann_data.var
