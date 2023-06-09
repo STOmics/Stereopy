@@ -1,9 +1,8 @@
+import atexit
 import os
 import sys
-import atexit
 
 from ..plot_base import PlotBase
-from multiprocessing import Lock
 
 
 class Plot3DBrowser(PlotBase):
@@ -12,9 +11,8 @@ class Plot3DBrowser(PlotBase):
         pid = _daemonize()
         if not pid:
             from .stereopy_3D_browser import launch
-            import anndata as ad
             launch(self.stereo_exp_data, meshes=self.stereo_exp_data.tl.result['mesh']['delaunay_3d'],
-                   cluster_label='annotation', spatial_label='spatial_rigid')
+                   cluster_label='annotation', spatial_label='spatial_rigid', port=7654)
 
     def display_3d_mesh(self, width=1400, height=1200):
         import IPython
