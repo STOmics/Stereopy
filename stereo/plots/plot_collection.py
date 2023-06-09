@@ -290,7 +290,6 @@ class PlotCollection:
             )
         return fig
 
-    @plot_scale
     @download
     @plot_scale
     @reorganize_coordinate
@@ -349,7 +348,6 @@ class PlotCollection:
         )
         return fig
     
-    @plot_scale
     @download
     @plot_scale
     @reorganize_coordinate
@@ -416,7 +414,6 @@ class PlotCollection:
         
         return fig
     
-    @plot_scale
     @download
     @plot_scale
     @reorganize_coordinate
@@ -701,7 +698,6 @@ class PlotCollection:
                 **kwargs
             )
 
-    @plot_scale
     @download
     @plot_scale
     @reorganize_coordinate

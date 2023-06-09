@@ -630,8 +630,7 @@ def stereo_to_anndata(
                 boutput = f"{name}-{d.sn}{ext}"
             else:
                 boutput = None
-            adata = stereo_to_anndata(d, flavor=flavor, sample_id=sample_id, reindex=reindex, output=boutput,
-                                      split_batches=False)
+            adata = stereo_to_anndata(d, flavor=flavor, sample_id=sample_id, reindex=reindex, output=boutput, split_batches=False)
             adata_list.append(adata)
         return adata_list
 

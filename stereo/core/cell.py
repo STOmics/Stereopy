@@ -189,9 +189,6 @@ class AnnBasedCell(Cell):
         else:
             object.__setattr__(self, key, value)
 
-    def __setattr__(self, key, value):
-        object.__setattr__(self, key, value)
-
     def __str__(self):
         return str(self.__based_ann_data.obs)
 
