@@ -14,9 +14,9 @@ class Plot3DBrowser(PlotBase):
             launch(self.stereo_exp_data, meshes=self.stereo_exp_data.tl.result['mesh']['delaunay_3d'],
                    cluster_label='annotation', spatial_label='spatial_rigid', port=port)
 
-    def display_3d_mesh(self, width=1400, height=1200):
+    def display_3d_mesh(self, width=1400, height=1200, port=7654):
         import IPython
-        return IPython.display.IFrame(src="http://127.0.0.1:7654", width=width, height=height)
+        return IPython.display.IFrame(src=f"http://127.0.0.1:{port}", width=width, height=height)
 
 
 def _daemonize():
