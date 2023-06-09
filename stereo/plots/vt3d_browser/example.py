@@ -12,7 +12,7 @@ class Plot3DBrowser(PlotBase):
         if not pid:
             from .stereopy_3D_browser import launch
             launch(self.stereo_exp_data, meshes=self.stereo_exp_data.tl.result['mesh']['delaunay_3d'],
-                   cluster_label='annotation', spatial_label='spatial_rigid', port=7654)
+                   cluster_label='annotation', spatial_label='spatial_rigid', port=port)
 
     def display_3d_mesh(self, width=1400, height=1200):
         import IPython
