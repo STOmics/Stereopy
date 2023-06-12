@@ -11,7 +11,7 @@ try:
     except ImportError:
         try:
             import open3d as o3d  # 420.5 MB
-        except ImportError:
+        except Exception:
             # in order to use other method, don't raise Exception
             o3d = None
 
