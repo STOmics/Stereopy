@@ -2,13 +2,19 @@
 仅包括mesh的计算，不包括画图。计算和画图放在不同模块中
 """
 import math
+
 import numpy as np
 
 try:
     try:
         import open3d_cpu as o3d
     except ImportError:
-        import open3d as o3d  # 420.5 MB
+        try:
+            import open3d as o3d  # 420.5 MB
+        except Exception:
+            # in order to use other method, don't raise Exception
+            o3d = None
+
     import pyvista as pv
     import pymeshfix as mf
     import pyacvd
@@ -26,7 +32,6 @@ except ImportError as e:
     """
     raise ImportError(errmsg)
 
-import scipy
 import matplotlib.pyplot as plt
 from sklearn.cluster import DBSCAN
 

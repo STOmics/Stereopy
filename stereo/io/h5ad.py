@@ -232,7 +232,7 @@ def read_dataframe(group) -> pd.DataFrame:
     if save_as_matrix:
         columns = list(group.attrs['column-order'])
     else:
-        columns = [c for c in group.attrs['column-order'] if group[c] is h5py.Dataset]
+        columns = [c for c in group.attrs['column-order'] if isinstance(group[c], h5py.Dataset)]
     idx_key = group.attrs['_index']
     df = pd.DataFrame(
         {k: read_series(group[k]) for k in columns} if not save_as_matrix else read_dataset(group['values']),
@@ -360,7 +360,7 @@ def read_group(group: h5py.Group) -> Union[dict, pd.DataFrame, sparse.spmatrix, 
         raise ValueError(f'Unfamiliar `encoding-type`: {encoding_type}.')
     d = dict()
     for sub_key, sub_value in group.items():
-        d[sub_key] = read_dataset(sub_value)
+        d[sub_key] = read_dataset(sub_value) if isinstance(sub_value, h5py.Dataset) else read_group(sub_value)
     return d
 
 
