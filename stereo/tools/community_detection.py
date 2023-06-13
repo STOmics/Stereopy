@@ -29,6 +29,17 @@ class CommunityDetection():
         """
         Initialize the CommunityDetection object.
 
+        Example:
+        import scanpy as sc
+        from community_detection import CommunityDetection
+        files = ... # List of input .h5ad file paths
+        slices = []
+        for file in files:
+            adata = sc.read(file)
+            slices.append(adata)
+        cd = CommunityDetection(slices, **vars(args))
+        cd.run()
+
         Parameters:
         - slices (List[AnnData]): A list of AnnData objects representing the slices of a tissue.
         - annotation (str): The annotation string.
