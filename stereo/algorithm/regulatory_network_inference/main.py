@@ -14,7 +14,6 @@ change log:
 
 # python core modules
 import os
-import traceback
 import csv
 from typing import Union
 

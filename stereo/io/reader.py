@@ -274,8 +274,12 @@ def _read_stereo_h5ad_from_group(f, data, use_raw, use_result):
                     gene_cluster_res_key = f'gene_exp_{res_key}'
                     if ('gene_exp_cluster' not in data.tl.key_record) or (
                             gene_cluster_res_key not in data.tl.key_record['gene_exp_cluster']):
-                        data.tl.result[gene_cluster_res_key] = cell_cluster_to_gene_exp_cluster(data.tl, res_key)
-                        data.tl.reset_key_record('gene_exp_cluster', gene_cluster_res_key)
+                        # data.tl.result[gene_cluster_res_key] = cell_cluster_to_gene_exp_cluster(data.tl, res_key)
+                        # data.tl.reset_key_record('gene_exp_cluster', gene_cluster_res_key)
+                        gene_cluster_res = cell_cluster_to_gene_exp_cluster(data.tl, res_key)
+                        if gene_cluster_res is not False:
+                            data.tl.result[gene_cluster_res_key] = gene_cluster_res
+                            data.tl.reset_key_record('gene_exp_cluster', gene_cluster_res_key)
                 if analysis_key == 'sct':
                     data.tl.result[res_key] = [
                         {
@@ -518,8 +522,7 @@ def read_ann_h5ad(
                 data.cells.cell_name = cells_df.index.values
                 data.cells.total_counts = cells_df['total_counts'] if 'total_counts' in cells_df.keys() else None
                 data.cells.pct_counts_mt = cells_df['pct_counts_mt'] if 'pct_counts_mt' in cells_df.keys() else None
-                data.cells.n_genes_by_counts = cells_df[
-                    'n_genes_by_counts'] if 'n_genes_by_counts' in cells_df.keys() else None
+                data.cells.n_genes_by_counts = cells_df['n_genes_by_counts'] if 'n_genes_by_counts' in cells_df.keys() else None
             elif k == "var":
                 genes_df = h5ad.read_dataframe(f[k])
                 data.genes.gene_name = genes_df.index.values
