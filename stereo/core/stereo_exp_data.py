@@ -645,3 +645,10 @@ class AnnBasedStereoExpData(StereoExpData):
         if gene_name is not None:
             data._ann_data._inplace_subset_var(gene_name)
         return data
+
+    def sub_by_index(self, cell_index=None, gene_index=None):
+        if cell_index is not None:
+            self._ann_data._inplace_subset_obs(cell_index)
+        if gene_index is not None:
+            self._ann_data._inplace_subset_var(gene_index)
+        return self
