@@ -24,7 +24,7 @@ from scipy.sparse import issparse
 
 from ..log_manager import logger
 from .result import Result, AnnBasedResult
-from .stereo_exp_data import StereoExpData
+from .stereo_exp_data import StereoExpData, AnnBasedStereoExpData
 from ..utils.time_consume import TimeConsume
 from ..algorithm.algorithm_base import AlgorithmBase
 
@@ -45,15 +45,15 @@ def logit(func):
 
 class StPipeline(object):
 
-    def __init__(self, data: StereoExpData):
+    def __init__(self, data: Union[StereoExpData, AnnBasedStereoExpData]):
         """
         A analysis tool sets for StereoExpData. include preprocess, filter, cluster, plot and so on.
 
         :param data: StereoExpData object.
         """
-        self.data: StereoExpData = data
+        self.data: Union[StereoExpData, AnnBasedStereoExpData] = data
         self.result = Result(data)
-        self._raw: StereoExpData = None
+        self._raw: Union[StereoExpData, AnnBasedStereoExpData] = None
         self.key_record = {'hvg': [], 'pca': [], 'neighbors': [], 'umap': [], 'cluster': [], 'marker_genes': []}
 
     def __getattr__(self, item):
@@ -76,7 +76,7 @@ class StPipeline(object):
         )
 
     @property
-    def raw(self) -> StereoExpData:
+    def raw(self) -> Union[StereoExpData, AnnBasedStereoExpData]:
         """
         get the StereoExpData whose exp_matrix is raw count.
 
@@ -957,7 +957,7 @@ class StPipeline(object):
             dat = pd.concat(
                 [
                     pd.DataFrame(
-                        {group.split(".")[0] + "_" + key: result[group][key].values}
+                        {group.split(".vs.")[0] + "_" + key: result[group][key].values}
                     ) for group in groups for key in show_cols
                 ],
                 axis=1
@@ -1279,7 +1279,7 @@ class StPipeline(object):
             if '.vs.' not in key:
                 continue
             new_res = res.copy()
-            group_name = key.split('.')[0]
+            group_name = key.split('.vs.')[0]
             if not compare_abs:
                 gene_set_1 = res[res['log2fc'] < min_fold_change]['genes'].values if min_fold_change is not None else []
             else:
@@ -1303,7 +1303,7 @@ class StPipeline(object):
             dat = pd.concat(
                 [
                     pd.DataFrame(
-                        {group.split(".")[0] + "_" + key: result[group][key].values}
+                        {group.split(".vs.")[0] + "_" + key: result[group][key].values}
                     ) for group in groups for key in show_cols
                 ],
                 axis=1
@@ -1338,13 +1338,13 @@ class StPipeline(object):
 
 class AnnBasedStPipeline(StPipeline):
 
-    def __init__(self, based_ann_data: AnnData, data):
+    def __init__(self, based_ann_data: AnnData, data: AnnBasedStereoExpData):
         super().__init__(data)
         self.__based_ann_data = based_ann_data
         self.result = AnnBasedResult(based_ann_data)
 
     def subset_by_hvg(self, hvg_res_key, use_raw=False, inplace=True):
-        data = self.data if inplace else copy.deepcopy(self.data)
+        data: AnnBasedStereoExpData = self.data if inplace else copy.deepcopy(self.data)
         if hvg_res_key not in self.result:
             raise Exception(f'{hvg_res_key} is not in the result, please check and run the normalization func.')
         df = self.result[hvg_res_key]
