@@ -8,7 +8,7 @@ class _BaseResult(object):
     CLUSTER_NAMES = {'leiden', 'louvain', 'phenograph', 'annotation', 'leiden_from_bins', 'louvain_from_bins', 'phenograph_from_bins', 'annotation_from_bins'}
     CONNECTIVITY_NAMES = {'neighbors'}
     REDUCE_NAMES = {'umap', 'pca', 'tsne'}
-    HVG_NAMES = {'highly_variable_genes', 'hvg'}
+    HVG_NAMES = {'highly_variable_genes', 'hvg', 'highly_variable'}
     MARKER_GENES_NAMES = {'marker_genes', 'rank_genes_groups'}
 
     RENAME_DICT = {'highly_variable_genes': 'hvg', 'marker_genes': 'rank_genes_groups'}
@@ -225,8 +225,12 @@ class AnnBasedResult(_BaseResult, object):
 
     def __getitem__(self, name):
         if name in AnnBasedResult.CLUSTER_NAMES:
-            return pd.DataFrame(self.__based_ann_data.obs[name].values, columns=['group'],
-                                index=self.__based_ann_data.obs_names)
+            # return pd.DataFrame(self.__based_ann_data.obs[name].values, columns=['group'],
+            #                     index=self.__based_ann_data.obs_names)
+            return pd.DataFrame({
+                'bins': self.__based_ann_data.obs_names,
+                'group': self.__based_ann_data.obs[name].values
+            })
         elif name in AnnBasedResult.CONNECTIVITY_NAMES:
             return {
                 'neighbor': None,  # TODO really needed?
@@ -251,8 +255,12 @@ class AnnBasedResult(_BaseResult, object):
             return pd.DataFrame(obsm_obj)
         obs_obj = self.__based_ann_data.obs.get(name, None)
         if obs_obj is not None:
-            return pd.DataFrame(self.__based_ann_data.obs[name].values, columns=['group'],
-                                index=self.__based_ann_data.obs_names)
+            # return pd.DataFrame(self.__based_ann_data.obs[name].values, columns=['group'],
+            #                     index=self.__based_ann_data.obs_names)
+            return pd.DataFrame({
+                'bins': self.__based_ann_data.obs_names,
+                'group': self.__based_ann_data.obs[name].values
+            })
         uns_obj = self.__based_ann_data.uns.get(name, None)
         if uns_obj is not None and type(uns_obj) is dict and 'params' in uns_obj and \
                 'connectivities_key' in uns_obj['params'] and 'distances_key' in uns_obj['params']:

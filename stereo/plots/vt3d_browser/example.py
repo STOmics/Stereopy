@@ -7,12 +7,12 @@ from ..plot_base import PlotBase
 
 class Plot3DBrowser(PlotBase):
 
-    def start_vt3d_browser(self, port=7654):
+    def start_vt3d_browser(self, port=7654, cluster_label='annotation', spatial_label='spatial_rigid', mesh_method='delaunay_3d'):
         pid = _daemonize()
         if not pid:
             from .stereopy_3D_browser import launch
-            launch(self.stereo_exp_data, meshes=self.stereo_exp_data.tl.result['mesh']['delaunay_3d'],
-                   cluster_label='annotation', spatial_label='spatial_rigid', port=port)
+            launch(self.stereo_exp_data, meshes=self.stereo_exp_data.tl.result['mesh'][mesh_method],
+                   cluster_label=cluster_label, spatial_label=spatial_label, port=port)
 
     def display_3d_mesh(self, width=1400, height=1200, port=7654):
         import IPython
