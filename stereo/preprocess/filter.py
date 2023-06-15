@@ -74,7 +74,6 @@ def filter_cells(
     if cell_list is not None:
         cell_subset = np.isin(data.cells.cell_name, cell_list)
         data.sub_by_index(cell_index=cell_subset)
-    cal_genes_indicators(data)
     return data
 
 
@@ -106,7 +105,6 @@ def filter_genes(data, min_cell=None, max_cell=None, gene_list=None, mean_umi_gt
     if mean_umi_gt is not None:
         gene_subset = data.genes.mean_umi > mean_umi_gt
         data.sub_by_index(gene_index=gene_subset)
-    cal_cells_indicators(data)
     return data
 
 
