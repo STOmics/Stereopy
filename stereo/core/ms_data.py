@@ -484,6 +484,10 @@ class MSData(_MSDataStruct):
             self._plt = PLT(self)
         return self._plt
 
+    @property
+    def mss(self):
+        return self.tl.result
+
     def merge_for_batching_integrate(self, **kwargs):
         from stereo.utils.data_helper import merge
         self.merged_data = merge(*self.data_list, **kwargs)
@@ -502,7 +506,7 @@ obs: {self.obs.columns.to_list()}
 var: {self.var.columns.to_list()}
 relationship: {self.relationship}
 var_type: {self._var_type} to {len(self.var.index)}
-tl.result: {[key + ":" + str(list(self.tl.result[key].keys())) for key in self.tl.result.keys()]}
+mss: {[key + ":" + str(list(self.tl.result[key].keys())) for key in self.tl.result.keys()]}
 '''
 
     def __repr__(self):
