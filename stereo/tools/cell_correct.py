@@ -236,7 +236,7 @@ class CellCorrect(object):
 
 
     @log_consumed_time
-    def correcting(self, threshold=20, process_count=None, only_save_result=False, sample_n=-1, fast=True, **kwargs):
+    def correcting(self, threshold=20, process_count=None, only_save_result=False, sample_n=-1, fast=True, distance=10, **kwargs):
         if isinstance(fast, bool) and fast:
             fast = 'v2'
         elif isinstance(fast, str):
@@ -250,14 +250,8 @@ class CellCorrect(object):
         elif fast == 'v1':
             adjusted_data = cell_correction_fast.cell_correct(raw_data, self.mask_path)
         elif fast == 'v2':
-            new_kwargs = {}
-            if 'n_split_data_jobs' in kwargs:
-                new_kwargs['n_split_data_jobs'] = kwargs['n_split_data_jobs']
-                del kwargs['n_split_data_jobs']
-            if 'distance' in kwargs:
-                new_kwargs['distance'] = kwargs['distance']
-                del kwargs['distance']
-            new_mask_path = cell_correction_fast_by_mask.main(self.mask_path, n_jobs=process_count, out_path=self.out_dir, **new_kwargs)
+            n_split_data_jobs = kwargs.get('n_split_data_jobs', -1)
+            new_mask_path = cell_correction_fast_by_mask.main(self.mask_path, n_jobs=process_count, distance=distance, out_path=self.out_dir, n_split_data_jobs=n_split_data_jobs)
             cgef_file_adjusted = self.generate_cgef_with_mask(new_mask_path, 'adjusted')
             gem_file_adjusted = self.cgef_to_gem(cgef_file_adjusted)
         else:
@@ -286,6 +280,7 @@ def cell_correct(out_dir: str,
                 process_count: int=None,
                 only_save_result: bool=False,
                 fast: Union[bool, str]='v2',
+                distance: int=10,
                 **kwargs
 ):
 
@@ -311,9 +306,10 @@ def cell_correct(out_dir: str,
                     False: the oldest and slowest version, it will uses multiprocessing if set `process_count` to more than 1.
                     v1: the first fast version, it olny uses single process and single threading.
                     v2: default and recommended algorithm, the latest fast version, faster and more accurate than v1, it will uses multithreading if set `process_count` to more than 1.
+    :param distance: outspread distance based on cellular contor of cell segmentation image, in pixels, only available for v2 algorithm.
 
     :return: An StereoExpData object if `only_save_result` is set to `False`, otherwise none.
     """
 
     cc = CellCorrect(gem_path=gem_path, bgef_path=bgef_path, raw_cgef_path=raw_cgef_path, mask_path=mask_path, out_dir=out_dir)
-    return cc.correcting(threshold=threshold, process_count=process_count, only_save_result=only_save_result, fast=fast, **kwargs)
+    return cc.correcting(threshold=threshold, process_count=process_count, only_save_result=only_save_result, fast=fast, distance=distance, **kwargs)
