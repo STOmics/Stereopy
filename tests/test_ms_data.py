@@ -1,12 +1,12 @@
 import copy
 import unittest
+
 import pytest
 
+from settings import TEST_DATA_PATH, TEST_IMAGE_PATH, DEMO_DATA_URL, DEMO_DATA_135_TISSUE_GEM_GZ_URL, DEMO_H5AD_URL
 from stereo.core.ms_data import MSData
 from stereo.io.reader import read_gef
 from stereo.utils._download import _download
-
-from settings import TEST_DATA_PATH, TEST_IMAGE_PATH, DEMO_DATA_URL, DEMO_DATA_135_TISSUE_GEM_GZ_URL, DEMO_H5AD_URL
 
 
 class MSDataTestCases(unittest.TestCase):
@@ -127,16 +127,16 @@ class MSDataTestCases(unittest.TestCase):
         self.assertIn(self.obj2, self.ms_data)
 
     def test_tl_method(self):
-        self.ms_data.tl.log1p()
+        self.ms_data.tl.log1p(mode="isolated")
 
     def test_tl_method_algorithm_base(self):
-        self.ms_data.tl.log1p_fake()
+        self.ms_data.tl.log1p_fake(mode="isolated")
 
     def test_tl_ms_data_method_algorithm_base(self):
         self.ms_data.tl.ms_log1p_fake()
 
     def test_plt(self):
-        self.ms_data.tl.cal_qc()
+        self.ms_data.tl.cal_qc(mode="isolated")
         self.ms_data.plt.violin()
         self.ms_data.plt.violin(
             out_paths=[TEST_IMAGE_PATH + "ms_data_violin1.png", TEST_IMAGE_PATH + "ms_data_violin2.png"])
@@ -164,19 +164,26 @@ class MSDataTestCases(unittest.TestCase):
         self.assertIs(test_slice._data_list[0], self.ms_data['a'])
         self.assertIs(test_slice._data_list[1], self.ms_data['0'])
 
-        test_slice.tl.log1p()
+        test_slice.tl.log1p(mode="isolated")
 
     def test_clustering(self):
-        self.ms_data.tl.cal_qc()
-        self.ms_data.tl.filter_cells(min_gene=200, min_n_genes_by_counts=3, max_n_genes_by_counts=7000, pct_counts_mt=8,
+        from stereo.core.ms_pipeline import slice_generator as sg
+        self.ms_data.merge_for_batching_integrate()
+        self.ms_data.tl.cal_qc(mode="integrate")
+        self.ms_data.tl.filter_cells(mode="integrate", min_gene=200, min_n_genes_by_counts=3,
+                                     max_n_genes_by_counts=7000, pct_counts_mt=8,
                                      inplace=False)
-        self.ms_data.tl.log1p()
-        self.ms_data.tl.normalize_total(target_sum=1e4)
-        self.ms_data.tl.pca(use_highly_genes=False, hvg_res_key='highly_variable_genes', n_pcs=20, res_key='pca',
-                            svd_solver='arpack')
-        self.ms_data.tl.neighbors(pca_res_key='pca', n_pcs=30, res_key='neighbors', n_jobs=8)
-        self.ms_data.tl.umap(pca_res_key='pca', neighbors_res_key='neighbors', res_key='umap', init_pos='spectral')
-        self.ms_data.tl.leiden(neighbors_res_key='neighbors', res_key='leiden')
+        self.ms_data.tl.log1p(mode="integrate")
+        self.ms_data.tl.normalize_total(mode="integrate", target_sum=1e4)
+        self.ms_data.tl.pca(scope=sg[:1], mode="integrate", use_highly_genes=False, hvg_res_key='highly_variable_genes',
+                            n_pcs=20,
+                            res_key='pca', svd_solver='arpack')
+        self.ms_data.tl.neighbors(scope=sg[:1], mode="integrate", pca_res_key='pca', n_pcs=30, res_key='neighbors',
+                                  n_jobs=8)
+        self.ms_data.tl.umap(scope=sg[:1], mode="integrate", pca_res_key='pca', neighbors_res_key='neighbors',
+                             res_key='umap',
+                             init_pos='spectral')
+        self.ms_data.tl.leiden(scope=sg[:1], mode="integrate", neighbors_res_key='neighbors', res_key='leiden')
 
 
 if __name__ == "__main__":

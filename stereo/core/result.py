@@ -5,7 +5,8 @@ from anndata import AnnData
 
 
 class _BaseResult(object):
-    CLUSTER_NAMES = {'leiden', 'louvain', 'phenograph', 'annotation', 'leiden_from_bins', 'louvain_from_bins', 'phenograph_from_bins', 'annotation_from_bins'}
+    CLUSTER_NAMES = {'leiden', 'louvain', 'phenograph', 'annotation', 'leiden_from_bins', 'louvain_from_bins',
+                     'phenograph_from_bins', 'annotation_from_bins'}
     CONNECTIVITY_NAMES = {'neighbors'}
     REDUCE_NAMES = {'umap', 'pca', 'tsne'}
     HVG_NAMES = {'highly_variable_genes', 'hvg', 'highly_variable'}
@@ -28,8 +29,15 @@ class Result(_BaseResult, dict):
     def __init__(self, stereo_exp_data):
         super().__init__()
         self.__stereo_exp_data = stereo_exp_data
+        self.set_item_callback = None
+        self.get_item_method = None
+        self.contain_method = None
 
     def __contains__(self, item):
+        if self.contain_method:
+            if self.contain_method(item):
+                return True
+            # TODO: when get item in ms_data[some_idx].tl.result, if name match the ms_data rule, it is very confused
         if item in self.__stereo_exp_data.genes:
             return True
         elif item in self.__stereo_exp_data.genes_matrix:
@@ -45,6 +53,12 @@ class Result(_BaseResult, dict):
         return dict.__contains__(self, item)
 
     def __getitem__(self, name):
+        if self.get_item_method:
+            item = self.get_item_method(name)
+            if item is not None:
+                return item
+            # TODO: when get item in ms_data[some_idx].tl.result, if name match the ms_data rule, it is very confused
+
         genes = self.__stereo_exp_data.genes
         cells = self.__stereo_exp_data.cells
         if name in genes._var:
@@ -114,6 +128,9 @@ class Result(_BaseResult, dict):
         return True
 
     def __setitem__(self, key, value):
+        if self.set_item_callback:
+            self.set_item_callback(key, value)
+            return
         for name_type, name_dict in Result.TYPE_NAMES_DICT.items():
             if key in name_dict and self._real_set_item(name_type, key, value):
                 return

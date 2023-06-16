@@ -1,12 +1,10 @@
-from collections import defaultdict
-from typing import List, Dict, Union
 from dataclasses import dataclass, field
+from typing import List, Dict, Union
 
 import pandas as pd
-from joblib import Parallel, cpu_count, delayed
 
-from ..log_manager import logger
 from . import StPipeline, StereoExpData
+from .ms_pipeline import MSDataPipeLine
 from ..plots.plot_collection import PlotCollection
 
 
@@ -19,8 +17,28 @@ def _default_idx() -> int:
 class _MSDataView(object):
     _names: List[str] = field(default_factory=list)
     _data_list: List[StereoExpData] = field(default_factory=list)
+    _merged_data: StereoExpData = None
     _tl = None
     _plt = None
+
+    def __getitem__(self, key: Union[slice]):
+        if type(key) is not slice:
+            raise TypeError(f'{key} should be slice')
+        data_list = []
+        names = []
+        if type(key.start) is tuple or type(key.start) is list:
+            for obj_key in key.start:
+                data_list.append(self._data_list[self._names.index(obj_key)])
+                names.append(obj_key)
+        elif type(key.start) is int or type(key.stop) is int or type(key.step) is int:
+            data_list = self._data_list[key]
+            names = self._names[key]
+        elif key == slice(None):
+            data_list = self._data_list[key]
+            names = self._names[key]
+        else:
+            raise TypeError(f'{key} is slice but not in rules')
+        return _MSDataView(_data_list=data_list, _names=names)
 
     @property
     def tl(self):
@@ -40,6 +58,24 @@ class _MSDataView(object):
 
     def __str__(self):
         return f'''data_list: {len(self._data_list)}'''
+
+    @property
+    def merged_data(self):
+        return self._merged_data
+
+    def merge_for_batching_integrate(self, **kwargs):
+        from stereo.utils.data_helper import merge
+        if "result" not in kwargs:
+            raise Exception("_MSDataView.merge_for_batching_integrate requires a upstream ms_data.tl.result object")
+
+        self.tl.result = kwargs["result"]
+        del kwargs["result"]
+
+        if len(self._data_list) > 1:
+            self._merged_data = merge(*self.data_list, **kwargs)
+        else:
+            from copy import deepcopy
+            self._merged_data = deepcopy(self._data_list[0])
 
 
 _NON_EDITABLE_ATTRS = {'data_list', 'names', '_obs', '_var', '_relationship', '_relationship_info'}
@@ -170,7 +206,6 @@ class _MSDataStruct(object):
     _name_dict: Dict[str, StereoExpData] = field(default_factory=dict)
     _data_dict: Dict[int, str] = field(default_factory=dict)
     __idx_generator: int = _default_idx()
-    __reconstruct: set = field(default_factory=set)
 
     def __post_init__(self) -> object:
         while len(self._data_list) > len(self._names):
@@ -239,7 +274,10 @@ class _MSDataStruct(object):
                 for obj_key in key.start:
                     data_list.append(self._name_dict[obj_key])
                     names.append(obj_key)
-            elif type(key.start) or int and type(key.stop) is int or type(key.step) is int:
+            elif type(key.start) is int or type(key.stop) is int or type(key.step) is int:
+                data_list = self._data_list[key]
+                names = self._names[key]
+            elif key == slice(None):
                 data_list = self._data_list[key]
                 names = self._names[key]
             else:
@@ -289,8 +327,6 @@ class _MSDataStruct(object):
         self._names.remove(name)
         self._data_dict.pop(id(obj))
         self._data_list.remove(obj)
-        self.__reconstruct.add('var')
-        self.__reconstruct.add('obs')
 
     def __delitem__(self, key):
         self.del_data(key)
@@ -353,50 +389,19 @@ class _MSDataStruct(object):
         self._data_dict[id(obj)] = key
         self._names.append(key)
         self._data_list.append(obj)
-        self.__reconstruct.add('var')
-        self.__reconstruct.add('obs')
         return self
-
-    def __obs_indexes(self) -> pd.Index:
-        indexes = '0_' + pd.Index(self._data_list[0].cell_names).astype('str')
-        for idx in range(1, len(self._data_list)):
-            indexes = indexes.append(
-                f'{idx}_' + pd.Index(self._data_list[idx].cell_names).astype('str')
-            )
-        return indexes
 
     @property
     def obs(self) -> pd.DataFrame:
-        if not self._data_list:
-            raise Exception('`MSData` object with no data')
-        if self._obs is None or 'obs' in self.__reconstruct:
-            # TODO reconstruct may remove old data
-            self._obs = pd.DataFrame(index=self.__obs_indexes(), columns=['test_obs_1'])
-            self._obs['test_obs_1'] = 0
-            if 'obs' in self.__reconstruct:
-                self.__reconstruct.remove('obs')
-        return self._obs
-
-    def __var_indexes(self) -> set:
-        if self._var_type == 'intersect':
-            res = set(self._data_list[0].gene_names)
-            for obj in self._data_list[1:]:
-                res = res & set(obj.gene_names)
-            return res
-        else:
-            raise NotImplementedError
+        if self._merged_data:
+            return self._merged_data.cells.to_df()
+        return pd.DataFrame()
 
     @property
     def var(self) -> pd.DataFrame:
-        if not self._data_list:
-            raise Exception('`MSData` object with no data')
-        if self._var is None or 'var' in self.__reconstruct:
-            # TODO reconstruct may remove old data
-            self._var = pd.DataFrame(index=list(self.__var_indexes()), columns=['test_var_1'])
-            self._var['test_var_1'] = 0
-            if 'var' in self.__reconstruct:
-                self.__reconstruct.remove('var')
-        return self._var
+        if self.merged_data:
+            return self._merged_data.genes.to_df()
+        return pd.DataFrame()
 
     def var_percent(self):
         percent_list = []
@@ -460,122 +465,6 @@ class _MSDataStruct(object):
         return self
 
 
-class MsDataResult(object):
-
-    def __init__(self):
-        self.result = dict()
-        self._key_records = defaultdict(list)
-
-    def set_result(self, res_key, res, type_key: str = None):
-        self.result[res_key] = res
-        if type_key:
-            self._key_records[type_key].append(res_key)
-
-    @property
-    def key_records(self):
-        return self._key_records
-
-    def __str__(self):
-        return str(self.key_records)
-
-    def __repr__(self):
-        return str(self.key_records)
-
-    def __getitem__(self, item):
-        return self.result[item]
-
-
-class MSDataPipeLine(object):
-    ATTR_NAME = 'tl'
-    BASE_CLASS = StPipeline
-
-    def __init__(self, _ms_data):
-        super().__init__()
-        self.ms_data = _ms_data
-        self._result = MsDataResult()
-
-    @property
-    def result(self):
-        return self._result
-
-    def __getattr__(self, item):
-        dict_attr = self.__dict__.get(item, None)
-        if dict_attr:
-            return dict_attr
-
-        # start with __ may not be our algorithm function, and will cause import problem
-        if item.startswith('__'):
-            raise AttributeError
-
-        if self.__class__.ATTR_NAME == "tl":
-            new_attr = self.__class__.BASE_CLASS.__dict__.get(item)
-            if new_attr and item != 'batches_integrate':
-                def log_delayed_task(idx, *arg, **kwargs):
-                    logger.info(f'data_obj(idx={idx}) in ms_data start to run {item}')
-                    new_attr(*arg, **kwargs)
-
-                def temp(*args, **kwargs):
-                    Parallel(n_jobs=min(len(self.ms_data.data_list), cpu_count()), backend='threading', verbose=100)(
-                        delayed(log_delayed_task)(idx, obj.__getattribute__(self.__class__.ATTR_NAME), *args, **kwargs)
-                        for idx, obj in enumerate(self.ms_data.data_list)
-                    )
-
-                return temp
-
-            from ..algorithm.algorithm_base import AlgorithmBase
-            delayed_list = []
-            for exp_obj in self.ms_data.data_list:
-                obj_method = AlgorithmBase.get_attribute_helper(item, exp_obj.tl.data, exp_obj.tl.result)
-                if obj_method:
-                    def log_delayed_task(idx, *arg, **kwargs):
-                        logger.info(f'index-{idx} in ms_data start to run {item}')
-                        obj_method(*arg, **kwargs)
-
-                    delayed_list.append(log_delayed_task)
-
-            if delayed_list:
-                def temp(*args, **kwargs):
-                    # TODO need multiprocessing?
-                    Parallel(n_jobs=min(len(self.ms_data.data_list), cpu_count()), backend='threading', verbose=100)(
-                        delayed(one_job)(idx, *args, **kwargs)
-                        for idx, one_job in enumerate(delayed_list)
-                    )
-
-                return temp
-
-            from ..algorithm.ms_algorithm_base import MSDataAlgorithmBase
-            ms_data_method = MSDataAlgorithmBase.get_attribute_helper(item, self.ms_data, self._result)
-            if ms_data_method:
-                return ms_data_method
-
-        else:
-            new_attr = self.__class__.BASE_CLASS.__dict__.get(item)
-            if new_attr:
-                def temp(*args, **kwargs):
-                    out_paths = kwargs.get('out_paths', None)
-                    if out_paths:
-                        del kwargs['out_paths']
-                        assert len(self.ms_data.data_list) == len(out_paths)
-                    for idx, obj in enumerate(self.ms_data.data_list):
-                        logger.info(f'data_obj(idx={idx}) in ms_data start to run {item}')
-                        if out_paths:
-                            kwargs['out_path'] = out_paths[idx]
-                        new_attr(obj.__getattribute__(self.__class__.ATTR_NAME), *args, **kwargs)
-
-                return temp
-
-            from ..plots.ms_plot_base import MSDataPlotBase
-            ms_data_method = MSDataPlotBase.get_attribute_helper(item, self.ms_data, self._result)
-            if ms_data_method:
-                return ms_data_method
-
-        raise AttributeError
-
-
-TL = type('TL', (MSDataPipeLine,), {'ATTR_NAME': 'tl', "BASE_CLASS": StPipeline})
-PLT = type('PLT', (MSDataPipeLine,), {'ATTR_NAME': 'plt', "BASE_CLASS": PlotCollection})
-
-
 @dataclass
 class MSData(_MSDataStruct):
     __doc__ = _MSDataStruct.__doc__
@@ -603,6 +492,7 @@ class MSData(_MSDataStruct):
         from stereo.utils.data_helper import split
         self._data_list = split(self.merged_data)
         self.reset_name(default_key=False)
+        self.merged_data = None
 
     def __str__(self):
         return f'''ms_data: {self.shape}
@@ -612,8 +502,12 @@ obs: {self.obs.columns.to_list()}
 var: {self.var.columns.to_list()}
 relationship: {self.relationship}
 var_type: {self._var_type} to {len(self.var.index)}
-tl.result: {self.tl.result.key_records}
+tl.result: {[key + ":" + str(list(self.tl.result[key].keys())) for key in self.tl.result.keys()]}
 '''
 
     def __repr__(self):
         return self.__str__()
+
+
+TL = type('TL', (MSDataPipeLine,), {'ATTR_NAME': 'tl', "BASE_CLASS": StPipeline})
+PLT = type('PLT', (MSDataPipeLine,), {'ATTR_NAME': 'plt', "BASE_CLASS": PlotCollection})
