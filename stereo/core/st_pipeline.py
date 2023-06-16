@@ -167,13 +167,13 @@ class StPipeline(object):
         Parameters
         ----------------------
         min_gene
-            minimum number of genes expressed required for a cell to pass fitlering.
+            minimum number of counts required for a cell to pass fitlering.
         max_gene
-            maximum number of genes expressed required for a cell to pass fitlering.
+            maximum number of counts required for a cell to pass fitlering.
         min_n_genes_by_counts
-            minimum number of counts required for a cell to pass filtering.
+            minimum number of genes expressed required for a cell to pass filtering.
         max_n_genes_by_counts
-            maximum number of counts required for a cell to pass filtering.
+            maximum number of genes expressed required for a cell to pass filtering.
         pct_counts_mt
             maximum number of `pct_counts_mt` required for a cell to pass filtering.
         cell_list
