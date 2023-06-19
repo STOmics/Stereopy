@@ -225,6 +225,13 @@ class AnnBasedResult(_BaseResult, object):
         elif item.startswith('paga'):
             if item in self.__based_ann_data.uns:
                 return True
+        elif item.startswith('regulatory_network_inference'):
+            if f'{item}_regulons' in self.__based_ann_data.uns:
+                return True
+            elif f'{item}_auc_matrix' in self.__based_ann_data.uns:
+                return True
+            elif f'{item}_adjacencies' in self.__based_ann_data.uns:
+                return True
 
         obsm_obj = self.__based_ann_data.obsm.get(f'X_{item}', None)
         if obsm_obj is not None:
@@ -262,6 +269,8 @@ class AnnBasedResult(_BaseResult, object):
         elif name in AnnBasedResult.MARKER_GENES_NAMES:
             return self.__based_ann_data.uns[name]
         elif name.startswith('gene_exp_'):
+            return self.__based_ann_data.uns[name]
+        elif name.startswith('regulatory_network_inference'):
             return self.__based_ann_data.uns[name]
 
         obsm_obj = self.__based_ann_data.obsm.get(f'X_{name}', None)
@@ -314,6 +323,12 @@ class AnnBasedResult(_BaseResult, object):
             for like_name in name_dict:
                 if not key.startswith('gene_exp_') and like_name in key and self._real_set_item(name_type, key, value):
                     return
+
+        if key == "regulatory_network_inference":
+            self.__based_ann_data.uns[f'{key}_regulons'] = value['regulons']
+            self.__based_ann_data.uns[f'{key}_auc_matrix'] = value['auc_matrix']
+            self.__based_ann_data.uns[f'{key}_adjacencies'] = value['adjacencies']
+            return
 
         if type(value) is pd.DataFrame:
             if 'bins' in value.columns.values and 'group' in value.columns.values:
