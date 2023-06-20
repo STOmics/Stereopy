@@ -55,7 +55,7 @@ todo_include_todos = False
 api_dir = HERE / 'api'  # function_images
 # print(api_dir)
 # The master toctree document.
-language = None
+language = 'en'
 
 #If you want to include a notebook without outputs and yet don’t want nbsphinx to execute it for you, you can explicitly disable this feature.
 nbsphinx_execute = 'never'
