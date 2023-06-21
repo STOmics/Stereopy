@@ -7,7 +7,7 @@ Version 0.12.1
 ---------------------
 0.12.1 : 2023-06-21
 ~~~~~~~~~~~~~~~~~~~~~~~~
-1. Addition the pretreatment of calculating quality control metrics at the start of st.tl.filter_genes and st.tl.filter_cells.
+1. Addition of the pretreatment of calculating quality control metrics at the start of st.tl.filter_genes and st.tl.filter_cells.
 2. Fixed the bug that loaded data from GEF file had the same expression matrix but in different row order, through updating gefpy package to v0.6.24.
 3. Fixed the bug that scale.data had np.nan value in st.tl.sctransform , caused by data type limitation.
 4. Fixed the bug that dot symbol ( '.' ) caused identification error of cluster name  in .csv output, when doing st.tl.find_marker_genes.
