@@ -32,9 +32,9 @@ More analysis will be added here, either from other popular tools or developed b
 Meanwhile, we are still working on the improvement of performance and calculation efficiency.
 
 
-* Get quickly started by browsing `Usage Principles <https://stereopy.readthedocs.io/en/latest/index.html>`_, `Tutorials <https://stereopy.readthedocs.io/en/latest/Tutorials/Examples.html>`_ or `API <https://stereopy.readthedocs.io/en/latest/api/index.html>`_.
+* Get quickly started by browsing `Usage Principles <https://stereopy.readthedocs.io/en/latest/index.html>`_, `Tutorials <https://stereopy.readthedocs.io/en/latest/Tutorials/Cases.html>`_ or `API <https://stereopy.readthedocs.io/en/latest/content/03_API.html>`_.
 * Open to discuss and provide feedback on `Github <https://github.com/STOmics/stereopy>`_.
-* Follow changes in `Release Notes <https://stereopy.readthedocs.io/en/latest/release_note.html>`_.
+* Follow changes in `Release Notes <https://stereopy.readthedocs.io/en/latest/content/06_Release_notes.html>`_.
 
 
 Highlights
