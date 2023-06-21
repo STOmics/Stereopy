@@ -84,3 +84,28 @@ DEMO_CELL_SEGMENTATION_TIF_URL = "https://pan.genomics.cn/ucdisk/api/2.0/share/l
 DEMO_CELL_SEGMENTATION_V3_MODEL_URL = "https://pan.genomics.cn/ucdisk/api/2.0/share/link/download?" \
                                       "shareEventId=share_2022928142945896_010df2aa7d344d97a610557de7bad81b&" \
                                       "nodeId=8a80804a86ed7f8501879db1c1b84496&code="
+
+# demo 3d slice 0-15 AnnData 0.8.0
+DEMO_3D_SLICE_0_15_URLS_LIST = [
+    "https://pan.genomics.cn/ucdisk/api/2.0/share/link/download?shareEventId=share_2022928142945896_010df2aa7d344d97a610557de7bad81b&nodeId=8a80804a86ed7f85018769d7dfda0317&code=",
+    "https://pan.genomics.cn/ucdisk/api/2.0/share/link/download?shareEventId=share_2022928142945896_010df2aa7d344d97a610557de7bad81b&nodeId=8a80804a86ed7f85018769d7eae9031b&code=",
+    "https://pan.genomics.cn/ucdisk/api/2.0/share/link/download?shareEventId=share_2022928142945896_010df2aa7d344d97a610557de7bad81b&nodeId=8a80804a86ed7f85018769d7f792031d&code=",
+    "https://pan.genomics.cn/ucdisk/api/2.0/share/link/download?shareEventId=share_2022928142945896_010df2aa7d344d97a610557de7bad81b&nodeId=8a80804a86ed7f85018769d80616031f&code=",
+    "https://pan.genomics.cn/ucdisk/api/2.0/share/link/download?shareEventId=share_2022928142945896_010df2aa7d344d97a610557de7bad81b&nodeId=8a80804a86ed7f85018769d814ff0321&code=",
+    "https://pan.genomics.cn/ucdisk/api/2.0/share/link/download?shareEventId=share_2022928142945896_010df2aa7d344d97a610557de7bad81b&nodeId=8a80804a86ed7f85018769d8242e0325&code=",
+    "https://pan.genomics.cn/ucdisk/api/2.0/share/link/download?shareEventId=share_2022928142945896_010df2aa7d344d97a610557de7bad81b&nodeId=8a80804a86ed7f85018769d835c30327&code=",
+    "https://pan.genomics.cn/ucdisk/api/2.0/share/link/download?shareEventId=share_2022928142945896_010df2aa7d344d97a610557de7bad81b&nodeId=8a80804a86ed7f85018769d84e430329&code=",
+    "https://pan.genomics.cn/ucdisk/api/2.0/share/link/download?shareEventId=share_2022928142945896_010df2aa7d344d97a610557de7bad81b&nodeId=8a80804a86ed7f85018769d866e4032b&code=",
+    "https://pan.genomics.cn/ucdisk/api/2.0/share/link/download?shareEventId=share_2022928142945896_010df2aa7d344d97a610557de7bad81b&nodeId=8a80804a86ed7f85018769d87ebf032d&code=",
+    "https://pan.genomics.cn/ucdisk/api/2.0/share/link/download?shareEventId=share_2022928142945896_010df2aa7d344d97a610557de7bad81b&nodeId=8a80804a86ed7f85018769d893a8032f&code=",
+    "https://pan.genomics.cn/ucdisk/api/2.0/share/link/download?shareEventId=share_2022928142945896_010df2aa7d344d97a610557de7bad81b&nodeId=8a80804a86ed7f85018769d8ab160331&code=",
+    "https://pan.genomics.cn/ucdisk/api/2.0/share/link/download?shareEventId=share_2022928142945896_010df2aa7d344d97a610557de7bad81b&nodeId=8a80804a86ed7f85018769d8be880333&code=",
+    "https://pan.genomics.cn/ucdisk/api/2.0/share/link/download?shareEventId=share_2022928142945896_010df2aa7d344d97a610557de7bad81b&nodeId=8a80804a86ed7f85018769d8d3530335&code=",
+    "https://pan.genomics.cn/ucdisk/api/2.0/share/link/download?shareEventId=share_2022928142945896_010df2aa7d344d97a610557de7bad81b&nodeId=8a80804a86ed7f85018769d8eb4b0337&code=",
+    "https://pan.genomics.cn/ucdisk/api/2.0/share/link/download?shareEventId=share_2022928142945896_010df2aa7d344d97a610557de7bad81b&nodeId=8a80804a86ed7f85018769d90078033b&code="
+]
+
+# mouse_forebrain.anndata_075.h5ad
+DEMO_FORE_BRAIN_DATA_URL = "https://pan.genomics.cn/ucdisk/api/2.0/share/link/download?" \
+                           "shareEventId=share_2022928142945896_010df2aa7d344d97a610557de7bad81b&" \
+                           "nodeId=8a8080438842c12f0188522965a23618&code="

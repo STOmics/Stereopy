@@ -126,3 +126,17 @@ class TestSCTransform(unittest.TestCase):
     #                          -2.4594538, -2.3130193, -2.4594538, -2.2035720, -2.3130193,
     #                          -2.4113126, -2.4594538, -2.3130193, -2.2548757, -2.2548757])))
     #     print(bwSJ(np.array([1.0, 2.0, 3.0])))
+
+    # def test_nan(self):
+    #     import stereo as st
+    #     data = st.io.read_gef(file_path='/mnt/d/projects/stereopy_dev/demo_data/SS200000139BL_D5.gef', bin_size=50)
+    #     data.tl.cal_qc()
+    #     data.tl.filter_genes(min_cell=3, max_cell=100, gene_list=None, inplace=True)
+    #     data.tl.cal_qc()
+    #     data.tl.filter_cells(min_gene=1, min_n_genes_by_counts=1, max_n_genes_by_counts=2541, pct_counts_mt=100, inplace=True)
+    #     data.tl.cal_qc()
+    #     import numpy as np
+    #     np.seterr(all="raise")
+    #     data.tl.sctransform(n_cells=5000, n_genes=2000, filter_hvgs=False, var_features_n=None, inplace=True,
+    #                         res_key='sctransform', exp_matrix_key="counts", seed_use=1448145, do_correct_umi=True)
+    #     print(data.tl.result['sctransform'][0]['scale.data'])

@@ -55,7 +55,7 @@ class FindMarker(ToolBase):
             raw_data=None,
             sort_by='scores',
             n_genes: Union[str, int] = 'all',
-            ascending: Union[bool] = False
+            ascending: bool = False
     ):
         super(FindMarker, self).__init__(data=data, groups=groups, method=method)
         self.corr_method = corr_method.lower()

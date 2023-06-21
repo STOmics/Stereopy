@@ -33,7 +33,7 @@ Meanwhile, we are still working on the improvement of performance and calculatio
 
 
 * Get quickly started by browsing `Usage Principles <https://stereopy.readthedocs.io/en/latest/index.html>`_, `Tutorials <https://stereopy.readthedocs.io/en/latest/Tutorials/Examples.html>`_ or `API <https://stereopy.readthedocs.io/en/latest/api/index.html>`_.
-* Open to discuss and provide feedback on `Github <https://github.com/BGIResearch/stereopy>`_.
+* Open to discuss and provide feedback on `Github <https://github.com/STOmics/stereopy>`_.
 * Follow changes in `Release Notes <https://stereopy.readthedocs.io/en/latest/release_note.html>`_.
 
 
@@ -58,6 +58,15 @@ Workflow
 Latest Additions
 ------------------
 
+Version 0.12.1
+~~~~~~~~~~~~~~
+0.12.1 : 2023-06-21
+
+1. Addition the pretreatment of calculating quality control metrics at the start of st.tl.filter_genes and st.tl.filter_cells.
+2. Fixed the bug that loaded data from GEF file had the same expression matrix but in different row order, through updating gefpy package to v0.6.24.
+3. Fixed the bug that scale.data had np.nan value in st.tl.sctransform , caused by data type limitation.
+4. Fixed the bug that dot symbol ( '.' ) caused identification error of cluster name  in.csv output, when doingst.tl.find_marker_genes.
+
 Version 0.12.0
 ~~~~~~~~~~~~~~
 0.12.0 : 2023-04-27
@@ -68,25 +77,6 @@ Version 0.12.0
 4. Optimized required memory while plotting UMAP embedding via data.plt.umap and cell distribution via data.plt.cells_plotting.
 5. Fixed bug that input parameter of var_features_n was invalid, in data.tl.scTransform.
 6. Updated requirements.txt.
-
-Version 0.11.0
-~~~~~~~~~~~~~~
-0.11.0 : 2023-04-04
-
-1. Addition of Cell-cell Communication analysis.
-2. Addition of Gene Regulatory Network analysis.
-3. Addition of SingleR function for automatic annotation.
-4. Addition of `v2` algorithm fast cell correction.
-5. Addition of dot plot to display gene-level results.
-6. Addition of the sorting function and the limitation of output genes in `data.tl.find_marker_genes`.
-7. Added `pct` and `pct_rest` to the output files of marker genes.
-8. Addition of the parameter `mean_uni_gt` in `data.tl.filter_genes` to filter genes on average expression.
-9. Fixed the bug that `adata.X` to output AnnData was the raw matrix.
-10. Fixed the failed compatibility to analysis results from `.h5ad` (version <= 0.9.0).
-11. Updated the tissue segmentation algorithm in the module of cell segmentation to avoid the lack of tissue.
-12. Reconstructed the manual of Stereopy.
-13. Updated requirements.txt.
-
 
 
 
@@ -109,8 +99,8 @@ Version 0.11.0
     :target: https://stereopy.readthedocs.io/en/latest/index.html
     :alt: docs
 
-.. |stars| image:: https://img.shields.io/github/stars/BGIResearch/stereopy?logo=GitHub&color=yellow
-    :target: https://github.com/BGIResearch/stereopy
+.. |stars| image:: https://img.shields.io/github/stars/STOmics/stereopy?logo=GitHub&color=yellow
+    :target: https://github.com/STOmics/stereopy
     :alt: stars
 
 .. |downloads| image:: https://static.pepy.tech/personalized-badge/stereopy?period=total&units=international_system&left_color=grey&right_color=blue&left_text=downloads
