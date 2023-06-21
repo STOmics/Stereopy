@@ -141,7 +141,7 @@ def merge(
             new_data.exp_matrix = data.exp_matrix.copy()
             new_data.cells = Cell(cell_name=cell_names, cell_border=data.cells.cell_border, batch=data.cells.batch)
             new_data.genes = Gene(gene_name=data.gene_names)
-            new_data.cells._obs = data.cells._obs
+            new_data.cells._obs = data.cells._obs.copy(deep=True)
             new_data.cells._obs.index = cell_names
             new_data.position = data.position
             if data.position_z is None:

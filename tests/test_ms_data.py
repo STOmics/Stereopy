@@ -173,8 +173,8 @@ class MSDataTestCases(unittest.TestCase):
         self.ms_data.tl.filter_cells(mode="integrate", min_gene=200, min_n_genes_by_counts=3,
                                      max_n_genes_by_counts=7000, pct_counts_mt=8,
                                      inplace=False)
-        self.ms_data.tl.log1p(mode="integrate")
         self.ms_data.tl.normalize_total(mode="integrate", target_sum=1e4)
+        self.ms_data.tl.log1p(mode="integrate")
         self.ms_data.tl.pca(scope=sg[:1], mode="integrate", use_highly_genes=False, hvg_res_key='highly_variable_genes',
                             n_pcs=20,
                             res_key='pca', svd_solver='arpack')
@@ -185,6 +185,55 @@ class MSDataTestCases(unittest.TestCase):
                              init_pos='spectral')
         self.ms_data.tl.leiden(scope=sg[:1], mode="integrate", neighbors_res_key='neighbors', res_key='leiden')
 
+    def test_clustering_integrate(self):
+        from stereo.core.ms_pipeline import slice_generator as sg
+        self.ms_data.merge_for_batching_integrate()
+        self.ms_data.tl.cal_qc(mode="isolated")
+        self.ms_data.tl.filter_cells(mode="isolated", min_gene=200, min_n_genes_by_counts=3,
+                                     max_n_genes_by_counts=7000, pct_counts_mt=8,
+                                     inplace=False)
+        self.ms_data.tl.normalize_total(mode="isolated", target_sum=1e4)
+        self.ms_data.tl.log1p(mode="isolated")
+        self.ms_data.tl.highly_variable_genes(
+            mode="isolated", min_mean=0.0125, max_mean=3, min_disp=0.5, res_key='highly_variable_genes', n_top_genes=None
+        )
+        self.ms_data.tl.pca(scope=sg[:], mode="isolated", use_highly_genes=True, hvg_res_key='highly_variable_genes',
+                            n_pcs=20,
+                            res_key='pca', svd_solver='arpack')
+        self.ms_data.tl.neighbors(scope=sg[:], mode="isolated", pca_res_key='pca', n_pcs=30, res_key='neighbors',
+                                  n_jobs=8)
+        self.ms_data.tl.umap(scope=sg[:], mode="isolated", pca_res_key='pca', neighbors_res_key='neighbors',
+                             res_key='umap',
+                             init_pos='spectral')
+        self.ms_data.tl.leiden(scope=sg[:], mode="isolated", neighbors_res_key='neighbors', res_key='leiden')
+        self.ms_data.to_integrate(scope=sg[:1], res_key='leiden', _from=sg[:1], type='obs', item=['leiden'])
+        print(self.ms_data.merged_data.cells._obs)
+        print(self.ms_data)
+
+    def test_clustering_isolated(self):
+        from stereo.core.ms_pipeline import slice_generator as sg
+        self.ms_data.merge_for_batching_integrate()
+        self.ms_data.tl.cal_qc(mode="isolated")
+        self.ms_data.tl.filter_cells(mode="isolated", min_gene=200, min_n_genes_by_counts=3,
+                                     max_n_genes_by_counts=7000, pct_counts_mt=8,
+                                     inplace=False)
+        self.ms_data.tl.normalize_total(mode="isolated", target_sum=1e4)
+        self.ms_data.tl.log1p(mode="isolated")
+        self.ms_data.tl.highly_variable_genes(
+            mode="integrate", min_mean=0.0125, max_mean=3, min_disp=0.5, res_key='highly_variable_genes', n_top_genes=None
+        )
+        self.ms_data.tl.pca(scope=sg[:], mode="integrate", use_highly_genes=False, hvg_res_key='highly_variable_genes',
+                            n_pcs=20,
+                            res_key='pca', svd_solver='arpack')
+        self.ms_data.tl.neighbors(scope=sg[:], mode="integrate", pca_res_key='pca', n_pcs=30, res_key='neighbors',
+                                  n_jobs=8)
+        self.ms_data.tl.umap(scope=sg[:], mode="integrate", pca_res_key='pca', neighbors_res_key='neighbors',
+                             res_key='umap',
+                             init_pos='spectral')
+        self.ms_data.tl.leiden(scope=sg[:], mode="integrate", neighbors_res_key='neighbors', res_key='leiden')
+        self.ms_data.to_isolated(scope=sg[:], res_key='highly_variable_genes', to=sg[:], type='var', item=['highly_variable_genes', 'highly_variable_genes'])
+        print(self.ms_data[0].genes.to_df())
+        print(self.ms_data[1].genes.to_df())
 
 if __name__ == "__main__":
     unittest.main()

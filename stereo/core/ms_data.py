@@ -1,6 +1,7 @@
 from dataclasses import dataclass, field
-from typing import List, Dict, Union
+from typing import List, Dict, Union, Literal, Optional
 
+import numpy as np
 import pandas as pd
 
 from . import StPipeline, StereoExpData
@@ -497,6 +498,93 @@ class MSData(_MSDataStruct):
         self._data_list = split(self.merged_data)
         self.reset_name(default_key=False)
         self.merged_data = None
+
+    def to_integrate(
+            self,
+            scope: slice,
+            res_key: str,
+            _from: slice,
+            type: Literal['obs', 'var'] = 'obs',
+            item: Optional[list] = None,
+            fill=np.NaN
+    ):
+        assert self.merged_data, f"`to_integrate` need running function `integrate`"
+        assert self._names[scope] == self._names[_from], f"`scope`: {scope} should equal with _from: {_from}"
+        assert len(item) == len(self._names[_from]), f"`item`'s length not equal to _from"
+        scope_names = self._names[scope]
+        res_list = []
+        for idx, stereo_exp_data in enumerate(self._data_list[scope]):
+            if type == 'obs':
+                res = stereo_exp_data.cells._obs[item[idx]]
+                sample_idx = self._names.index(scope_names[idx])
+                new_index = res.index.astype('str') + f'-{sample_idx}'
+                res.index = new_index
+                res_list.append(res.to_frame())
+            elif type == 'var':
+                # res = stereo_exp_data.genes._var[res_key]
+                # res_list.append(res.to_frame())
+                raise NotImplementedError
+            else:
+                raise Exception(f"`type`: {type} not in ['obs', 'var'], this should not happens!")
+        if type == 'obs':
+            res_sum = pd.concat(res_list)
+            merged_bool_list = np.isin(self.merged_data.cells._obs.index.values, res_sum.index.values, invert=True)
+            self.merged_data.cells._obs.insert(0, res_key, pd.concat(res_list))
+            if fill is not np.NaN:
+                self.merged_data.cells._obs[merged_bool_list][res_key] = fill
+            scope_key_name = "scope_[" + ",".join([str(self._names.index(name)) for name in scope_names]) + "]"
+            self.tl.result.setdefault(scope_key_name, {})
+            self.tl.result[scope_key_name][res_key] = self.merged_data.cells._obs[res_key].to_frame()
+        elif type == 'var':
+            # self.merged_data.genes._var.insert(0, res_key, pd.concat(res_list))
+            # self.tl.result[scope][res_key] = self.merged_data.genes._var[res_key].to_frame()
+            raise NotImplementedError
+        else:
+            raise Exception(f"`type`: {type} not in ['obs', 'var'], this should not happens!")
+
+    def to_isolated(
+            self,
+            scope: slice,
+            res_key: str,
+            to: slice,
+            type: Literal['obs', 'var'] = 'obs',
+            item: Optional[list] = None,
+            fill=np.NaN
+    ):
+        assert self.merged_data, f"`to_integrate` need running function `integrate`"
+        assert self._names[scope] == self._names[to], f"`scope`: {scope} should equal with to: {to}"
+        assert len(item) == len(self._names[to]), f"`item`'s length not equal to `to`"
+
+        scope_names = self._names[scope]
+        scope_key_name = "scope_[" + ",".join([str(self._names.index(name)) for name in scope_names]) + "]"
+        merged_res = self.tl.result[scope_key_name][res_key].copy(deep=True)
+        if type == "obs":
+            # TODO: only support cluster data
+            if "bins" in merged_res.columns:
+                merged_res.index = merged_res["bins"]
+                del merged_res["bins"]
+        elif type == "var":
+            # TODO: only support hvg data
+            if res_key == "highly_variable_genes":
+                res_key = 'highly_variable'
+                merged_res = merged_res[res_key].to_frame()
+
+        for idx, stereo_exp_data in enumerate(self._data_list[scope]):
+            if type == 'obs':
+                sample_idx = self._names.index(scope_names[idx])
+                new_index = stereo_exp_data.cells._obs.index.astype('str') + f'-{sample_idx}'
+                bak_index = stereo_exp_data.cells._obs.index
+                stereo_exp_data.cells._obs.index = new_index
+                obs_bool_list = np.isin(merged_res.index.values, new_index.values)
+                stereo_exp_data.cells._obs.insert(0, item[idx], merged_res[obs_bool_list])
+                stereo_exp_data.cells._obs.index = bak_index
+            elif type == 'var':
+                obs_bool_list = np.isin(merged_res.index.values, stereo_exp_data.genes._var.index.values)
+                stereo_exp_data.genes._var.insert(0, item[idx], merged_res[obs_bool_list])
+                if fill is not np.NaN:
+                    stereo_exp_data.genes._var[stereo_exp_data.genes._var[res_key].values == np.NaN] = fill
+            else:
+                raise Exception(f"`type`: {type} not in ['obs', 'var'], this should not happens!")
 
     def __str__(self):
         return f'''ms_data: {self.shape}
