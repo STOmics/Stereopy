@@ -72,3 +72,7 @@ geosketch>=1.2
 pyscenic>=0.12.1
 onnxruntime==1.14.1
 POT==0.8.1.0
+distinctipy>=1.2.2
+joypy>=0.2.6
+lxml>=4.8.0
+fastcluster>=1.2.6

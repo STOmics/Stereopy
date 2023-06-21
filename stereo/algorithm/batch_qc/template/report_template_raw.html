@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>BatchQC-Raw</title>
+    <style>
+        .div-title {
+            width: 100%;
+            background-color: #EBEBEB;
+            height: 200px;
+        }
+
+        .div-parent {
+            width: 100%;
+        }
+
+        .bold-line {
+            background-color: #EBEBEB;
+            height: 5px;
+            border: None;
+        }
+
+        .thin-line {
+            background-color: #EBEBEB;
+            height: 2px;
+            border: None;
+        }
+    </style>
+</head>
+<body>
+<div class="div-title">
+    <h1 class="name" align="center">Batch Effect QC Report</h1>
+    <h4 class="username" align="center"></h4>
+    <h5 class="runtime" align="center"></h5>
+</div>
+<hr class="bold-line">
+<div class="div-info">
+    <h1>Data Information</h1>
+    <h2>Basic Describe</h2>
+    <div>
+        <h4 class="describe" align="left">
+            · Number of samples in each Batch and Condition
+        </h4>
+        <h4 class="f-test" align="left">
+            · Variation Analysis (F Test) of Each Data
+        </h4>
+        <h4 class="ks-test" align="left">
+            · K-S Test of Each Pair Batch
+        </h4>
+        <h4 class="domain-score" align="left">
+            · Domain Variance Score
+        </h4>
+        <h4 class="confound" align="left">
+            · Measures of confounding between Batch and Condition
+        </h4>
+        <hr class="thin-line">
+        <div class="div-parent">
+            <h4 class="div-visualization" align="left">
+                · Distribution Visualization
+            </h4>
+            <div class="curve"></div>
+            <div class="plot"></div>
+        </div>
+    </div>
+</div>
+<hr class="thin-line">
+<hr class="bold-line">
+<div class="div-metric">
+    <h2>Metric Score</h2>
+    <div>
+        <h3>Raw</h3>
+        <div class="div-kbet">
+            <h4 class="kbet" align="left">· K Nearest Neighbor Batch Effects Test</h4>
+        </div>
+        <div class="div-lisi">
+            <h4 class="lisi" align="left">· Local Inverse Simpson's Index</h4>
+        </div>
+        <div class="div-ksim">
+            <h4 class="ksim" align="left">· K Nearest Neighbor Similarity</h4>
+        </div>
+    </div>
+</div>
+<hr class="thin-line">
+<hr class="bold-line">
+<div class="div-visualization">
+    <h2>Visualization</h2>
+    <div>
+        <h4 class="sample">· Sample</h4>
+        <h4 class="dist-qq">· Q-Q Cross Fit</h4>
+        <h4 class="dist-norm">· Q-Q Fit Norm & Histogram</h4>
+    </div>
+</div>
+<hr class="thin-line">
+<hr class="bold-line">
+<div class="div-conclusion">
+    <h2>Summary</h2>
+    <h4 class="conclusion"></h4>
+</div>
+<hr class="thin-line">
+<hr class="bold-line">
+</body>
+</html>

@@ -29,15 +29,6 @@ class LogManager(object):
         self.level = level.lower() if level else stereo_conf.log_level.lower()
         self.file_handler = None
         self.stream_handler = None
-        # if self.log_path:
-        #     self.file_handler = logging.FileHandler(self.log_path)
-        #     self.file_handler.setLevel(self.level_map[self.level])
-        #     self.file_handler.setFormatter(self.formatter)
-        # else:
-        #     self.stream_handler = logging.StreamHandler()
-        #     self.stream_handler.setLevel(self.level_map[self.level])
-        #     self.stream_handler.setFormatter(self.formatter)
-        # self._set_handler()
 
     def get_logger(self, name="Stereo"):
         """
@@ -48,10 +39,13 @@ class LogManager(object):
         alogger = logging.getLogger(name)
         alogger.propagate = 0
         alogger.setLevel(self.level_map[self.level])
+        self._set_handler()
+        self._remove_handler(alogger)
         self._add_handler(alogger)
         return alogger
     
     def _set_handler(self):
+        self.file_handler, self.stream_handler = None, None
         if self.log_path:
             self.file_handler = logging.FileHandler(self.log_path)
             self.file_handler.setLevel(self.level_map[self.level])
@@ -60,6 +54,9 @@ class LogManager(object):
             self.stream_handler = logging.StreamHandler()
             self.stream_handler.setLevel(self.level_map[self.level])
             self.stream_handler.setFormatter(self.formatter)
+    
+    def _remove_handler(self, alogger: logging.Logger):
+        alogger.handlers.clear()
 
     def _add_handler(self, alogger: logging.Logger):
         """
@@ -67,15 +64,12 @@ class LogManager(object):
         :param alogger: logger object
         :return:
         """
-        if self.stream_handler is not None:
-            alogger.removeHandler(self.stream_handler)
-        if self.file_handler is not None:
-            alogger.removeHandler(self.file_handler)
+        # self._remove_handler(alogger)
 
-        self._set_handler()
-        if self.log_path:
+        # self._set_handler()
+        if self.file_handler is not None:
             alogger.addHandler(self.file_handler)
-        if self.log_path is None or not self.only_log_to_file:
+        if self.stream_handler is not None:
             alogger.addHandler(self.stream_handler)
     
     @staticmethod
@@ -92,7 +86,7 @@ class LogManager(object):
     def set_level(level='info'):
         global logger
         level = level.lower()
-        if level not in ['info', 'warning', 'debug', 'error', 'critical']:
+        if level not in ['debug', 'info', 'warning', 'error', 'critical']:
             raise ValueError("Invalid log level, available values are ['info', 'warning', 'debug', 'error', 'critical'].")
         log_manager = LogManager.get_instance()
         log_manager.level = level
@@ -105,6 +99,18 @@ class LogManager(object):
         log_manager.log_path = log_path
         log_manager.only_log_to_file = only_log_to_file
         logger = log_manager.get_logger(name='Stereo')
+    
+    @staticmethod
+    def stop_logging():
+        global logger
+        log_manager = LogManager.get_instance()
+        log_manager._remove_handler(logger)
+
+    @staticmethod
+    def start_logging():
+        global logger
+        log_manager = LogManager.get_instance()
+        log_manager._add_handler(logger)
 
 
 # logger = LogManager().get_logger(name='Stereo')
