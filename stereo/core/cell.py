@@ -41,10 +41,12 @@ class Cell(object):
         elif key == 'batch':
             self._obs[key] = self._set_batch(value)
         else:
-            self._obs[key] = value
+            if value is not None:
+                self._obs[key] = value
 
     def __setitem__(self, key, value):
-        self._obs[key] = value
+        if value is not None:
+            self._obs[key] = value
 
     def __getitem__(self, key):
         return self._obs[key]
@@ -164,7 +166,10 @@ class Cell(object):
 
         :return: a dataframe of Cell.
         """
-        return self._obs.copy(deep=True)
+        obs = self._obs.copy(deep=True)
+        if 'batch' in obs.columns:
+            obs['batch'] = obs['batch'].astype('category')
+        return obs
 
     def __str__(self):
         format_cells = ['cell_name']
@@ -186,6 +191,7 @@ class AnnBasedCell(Cell):
     def __setattr__(self, key, value):
         if key == 'batch':
             self.__based_ann_data.obs[key] = self._set_batch(value)
+            self.__based_ann_data.obs[key] = self.__based_ann_data.obs[key].astype('category')
         else:
             object.__setattr__(self, key, value)
 

@@ -18,12 +18,12 @@ def plot_scale(func):
             data = pc_object.stereo_exp_data
         if data:
             if (data.attr is None) or \
-                ('resolution' not in data.attr) or (data.attr['resolution'] <= 0) or \
+                (data.resolution is None) or (data.resolution <= 0) or \
                 (data.bin_size is None) or (data.bin_size <= 0):
                 kwargs['show_plotting_scale'] = False
             else:
                 kwargs.setdefault('show_plotting_scale', True)
-                data_resolution = data.attr['resolution'] if data.bin_type == 'cell_bins' else data.attr['resolution'] * data.bin_size
+                data_resolution = data.resolution if data.bin_type == 'cell_bins' else data.resolution * data.bin_size
                 data_bin_offset = 1 if data.bin_type == 'cell_bins' else data.bin_size
                 kwargs.setdefault('data_resolution', data_resolution)
                 kwargs.setdefault('data_bin_offset', data_bin_offset)
@@ -132,7 +132,7 @@ def reorganize_coordinate(func):
                     if position_row_number > 0:
                         y_add += sum(max_ys[0:position_row_number]) + vertical_offset_additional * position_row_number
                     # position_offset = np.repeat([[x_add, y_add]], repeats=len(idx), axis=0).astype(np.uint32)
-                    position_offset = np.array([x_add, y_add])
+                    position_offset = np.array([x_add, y_add], dtype=data.position.dtype)
                     data.position[idx] += position_offset
                     data.position_offset[bno] = position_offset
         return func(*args, **kwargs)

@@ -13,6 +13,7 @@ import copy
 from warnings import warn
 from typing import Optional, Union
 
+import anndata
 import pandas as pd
 import numpy as np
 from scipy.sparse import spmatrix, issparse, csr_matrix
@@ -20,6 +21,7 @@ from scipy.sparse import spmatrix, issparse, csr_matrix
 from .data import Data
 from .cell import Cell, AnnBasedCell
 from .gene import Gene, AnnBasedGene
+from .constants import CHIP_RESOLUTION
 from ..log_manager import logger
 
 
@@ -87,10 +89,10 @@ class StereoExpData(Data):
         self._position_z = position_z
         self._position_offset = None
         self._bin_type = bin_type
-        self.bin_size = bin_size
+        self._bin_size = bin_size
         self._tl = None
         self._plt = None
-        self.raw = None
+        # self.raw = None
         self._offset_x = offset_x
         self._offset_y = offset_y
         self._attr = attr if attr is not None else {'resolution': 500}
@@ -157,8 +159,8 @@ class StereoExpData(Data):
         data = copy.deepcopy(self)
         cell_index = [np.argwhere(data.cells.cell_name == i)[0][0] for i in cell_name] \
             if cell_name is not None else None
-        gene_index = [np.argwhere(data.genes.gene_name == i)[0][0] for i in
-                      gene_name] if gene_name is not None else None
+        gene_index = [np.argwhere(data.genes.gene_name == i)[0][0] for i in gene_name] \
+            if gene_name is not None else None
         return data.sub_by_index(cell_index, gene_index)
 
     def sub_exp_matrix_by_name(
@@ -345,6 +347,14 @@ class StereoExpData(Data):
         """
         self.bin_type_check(b_type)
         self._bin_type = b_type
+    
+    @property
+    def bin_size(self):
+        return self._bin_size
+    
+    @bin_size.setter
+    def bin_size(self, bin_size):
+        self._bin_size = bin_size
 
     @property
     def raw_position(self):
@@ -468,6 +478,17 @@ class StereoExpData(Data):
     @sn.setter
     def sn(self, sn):
         self._sn = sn
+    
+    @property
+    def raw(self):
+        return self.tl.raw
+    
+    @property
+    def resolution(self):
+        if self.attr is not None and 'resolution' in self.attr:
+            return self.attr['resolution']
+        else:
+            return None
 
     def to_df(self):
         """
@@ -553,13 +574,18 @@ class StereoExpData(Data):
 
 class AnnBasedStereoExpData(StereoExpData):
 
-    def __init__(self, h5ad_file_path: str, *args, **kwargs):
-        if 'based_ann_data' in kwargs:
-            based_ann_data = kwargs.pop('based_ann_data')
-        else:
-            based_ann_data = None
+    def __init__(
+        self,
+        h5ad_file_path: str = None,
+        based_ann_data: anndata.AnnData = None,
+        *args,
+        **kwargs
+    ):
+        # if 'based_ann_data' in kwargs:
+        #     based_ann_data = kwargs.pop('based_ann_data')
+        # else:
+        #     based_ann_data = None
         super().__init__(*args, **kwargs)
-        import anndata
         if based_ann_data:
             assert type(based_ann_data) is anndata.AnnData
             self._ann_data = based_ann_data
@@ -567,14 +593,27 @@ class AnnBasedStereoExpData(StereoExpData):
             self._ann_data = anndata.read_h5ad(h5ad_file_path)
         self._genes = AnnBasedGene(self._ann_data, self._genes.gene_name)
         self._cells = AnnBasedCell(self._ann_data, self._cells.cell_name)
+
+        if 'resolution' in self._ann_data.uns:
+            self.attr = {'resolution': self._ann_data.uns['resolution']}
+
         from .st_pipeline import AnnBasedStPipeline
         self._tl = AnnBasedStPipeline(self._ann_data, self)
+
+        if self._ann_data.raw:
+            self._tl._raw = AnnBasedStereoExpData(based_ann_data=self._ann_data.raw.to_adata())
 
     def __str__(self):
         return str(self._ann_data)
 
     def __repr__(self):
         return self.__str__()
+    
+    def __getattr__(self, name):
+        if hasattr(self._ann_data, name):
+            return getattr(self._ann_data, name)
+        else:
+            return None
 
     @property
     def exp_matrix(self):
@@ -635,6 +674,36 @@ class AnnBasedStereoExpData(StereoExpData):
                 np.array(list(self._ann_data.obs.index.str.split('-', expand=True)), dtype=np.uint32)
         return self._ann_data.obs.loc[:, ['z']].values
 
+    @property
+    def bin_type(self):
+        return self._ann_data.uns.get('bin_type', None)
+    
+    @property
+    def bin_size(self):
+        return self._ann_data.uns.get('bin_size', None)
+    
+    @property
+    def sn(self):
+        sn = None
+        if 'sn' in self._ann_data.uns:
+            sn_data: pd.DataFrame = self._ann_data.uns['sn']
+            if sn_data.shape[0] == 1:
+                sn = sn_data.iloc[0]['sn']
+            else:
+                sn = {}
+                for _, row in sn_data.iterrows():
+                    sn[row['batch']] = row['sn']
+        return sn
+
+    def sub_by_index(self, cell_index=None, gene_index=None):
+        if cell_index is not None:
+            self._ann_data._inplace_subset_obs(cell_index)
+        if gene_index is not None:
+            self._ann_data._inplace_subset_var(gene_index)
+        if self._ann_data.raw:
+            self.tl.raw = AnnBasedStereoExpData(based_ann_data=self._ann_data.raw.to_adata())
+        return self
+
     def sub_by_name(self, cell_name: Optional[Union[np.ndarray, list]] = None,
                     gene_name: Optional[Union[np.ndarray, list]] = None):
         data = AnnBasedStereoExpData(self.file, based_ann_data=self._ann_data.copy())
@@ -644,11 +713,12 @@ class AnnBasedStereoExpData(StereoExpData):
             data._ann_data._inplace_subset_obs(cell_name)
         if gene_name is not None:
             data._ann_data._inplace_subset_var(gene_name)
+        if data._ann_data.raw:
+            data.tl.raw = AnnBasedStereoExpData(based_ann_data=data._ann_data.raw.to_adata())
         return data
 
-    def sub_by_index(self, cell_index=None, gene_index=None):
-        if cell_index is not None:
-            self._ann_data._inplace_subset_obs(cell_index)
-        if gene_index is not None:
-            self._ann_data._inplace_subset_var(gene_index)
-        return self
+    @staticmethod
+    def merge(*data, batch_key='batch'):
+        from anndata import concat
+        ann_data = concat([d._ann_data for d in data], axis=0, merge='same', label=batch_key, index_unique='-')
+        return AnnBasedStereoExpData(based_ann_data=ann_data)

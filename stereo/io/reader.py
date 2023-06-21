@@ -26,7 +26,7 @@ from typing_extensions import Literal
 from stereo.core.cell import Cell
 from stereo.core.constants import CHIP_RESOLUTION
 from stereo.core.gene import Gene
-from stereo.core.stereo_exp_data import StereoExpData
+from stereo.core.stereo_exp_data import StereoExpData, AnnBasedStereoExpData
 from stereo.io import h5ad
 from stereo.log_manager import logger
 from stereo.utils.read_write_utils import ReadWriteUtils
@@ -549,13 +549,50 @@ def read_ann_h5ad(
                     data.position = position[:, [0, 1]]
                     if position.shape[1] >= 3:
                         data.position_z = position[:, [2]]
+            elif k == 'uns':
+                uns = h5ad.read_group(f[k])
+                if 'bin_type' in uns:
+                    bin_type = uns['bin_type']
+                if 'bin_size' in uns:
+                    bin_size = uns['bin_size']
+                if 'resolution' in uns:
+                    resolution = uns['resolution']
+                if 'sn' in uns:
+                    sn_data = uns['sn']
+                    if sn_data.shape[0] == 1:
+                        data.sn = str(sn_data['sn'][0])
+                    else:
+                        data.sn = {}
+                        for _, row in sn_data.iterrows():
+                            batch, sn = row[0], row[1]
+                            data.sn[str(batch)] = str(sn)
             else:  # Base case
                 pass
 
+    data.bin_type = bin_type
+    data.bin_size = bin_size
     data.attr = {'resolution': resolution}
 
     return data
 
+@ReadWriteUtils.check_file_exists
+def read_h5ad(
+    file_path: str,
+    flavor: str = 'scanpy',
+    **kwargs
+):
+    flavor = flavor.lower()
+
+    if flavor == 'stereopy':
+        if use_raw is None:
+            use_raw = True
+        return read_stereo_h5ad(file_path, **kwargs)
+    elif flavor == 'scanpy':
+        if use_raw is None:
+            use_raw = False
+        return AnnBasedStereoExpData(file_path)
+    else:
+        raise ValueError("Invalid value for 'flavor'")
 
 def anndata_to_stereo(
         andata: AnnData,
@@ -599,6 +636,12 @@ def anndata_to_stereo(
         data.position = position[:, [0, 1]]
         if position.shape[1] >= 3:
             data.position_z = position[:, [2]]
+    if 'bin_type' in andata.uns:
+        data.bin_type = andata.uns['bin_type']
+    if 'bin_size' in andata.uns:
+        data.bin_size = andata.uns['bin_size']
+    if 'resolution' in andata.uns:
+        resolution = andata.uns['resolution']
     data.attr = {'resolution': resolution}
     return data
 
@@ -655,14 +698,16 @@ def stereo_to_anndata(
     if data.tl.raw is None:
         raise Exception('convert to AnnData should have raw data')
 
-    exp = data.exp_matrix if issparse(data.exp_matrix) else csr_matrix(data.exp_matrix)
+    # exp = data.exp_matrix if issparse(data.exp_matrix) else csr_matrix(data.exp_matrix)
+    if not data.issparse():
+        data.array2sparse()
 
     cells = data.cells.to_df()
     cells.dropna(axis=1, how='all', inplace=True)
     genes = data.genes.to_df()
     genes.dropna(axis=1, how='all', inplace=True)
 
-    adata = AnnData(X=exp, dtype=np.float64, obs=cells, var=genes)
+    adata = AnnData(X=data.exp_matrix, dtype=np.float64, obs=cells, var=genes)
     adata.raw = AnnData(X=data.tl.raw.exp_matrix, dtype=np.float64, obs=data.tl.raw.cells.to_df(),
                         var=data.tl.raw.genes.to_df())
 
@@ -680,6 +725,13 @@ def stereo_to_anndata(
         adata.obs['y'] = pd.DataFrame(data.position[:, 1], index=data.cell_names.astype('str'))
         if data.position_z is not None:
             adata.obs['z'] = pd.DataFrame(data.position_z, index=data.cell_names.astype('str'))
+    
+    if data.bin_type is not None:
+        adata.uns['bin_type'] = data.bin_type
+    if data.bin_size is not None:
+        adata.uns['bin_size'] = 1 if data.bin_type == 'cell_bins' else data.bin_size
+    if data.attr is not None and 'resolution' in data.attr:
+        adata.uns['resolution'] = data.attr['resolution']
 
     if data.sn is not None:
         if isinstance(data.sn, str):
