@@ -117,7 +117,6 @@ Interactive Plot
    :toctree: .
 
    plots.interact_spatial_cluster
-   plots.interact_annotation_cluster
    plots.InteractiveScatter
 
 
