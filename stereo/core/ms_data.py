@@ -496,7 +496,7 @@ class MSData(_MSDataStruct):
         """
         if self._var_type not in {"union", "intersect"}:
             raise Exception("Please specify the operation on samples with the parameter '_var_type'")
-        self.merged_data = merge(*self.data_list, **kwargs)
+        self.merged_data = merge(*self.data_list, var_type=self._var_type, **kwargs)
 
     def split_after_batching_integrate(self):
         if self._var_type == "union":
