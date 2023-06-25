@@ -6,17 +6,17 @@
 @file: data_helper.py
 @time: 2021/3/14 16:11
 """
+from typing import Optional
+from typing import Union
+
+import numpy as np
+import pandas as pd
 # from scipy.sparse import issparse
 import scipy.sparse as sp
-import pandas as pd
-import numpy as np
-import numba as nb
-from typing import Optional, Union
-from ..core.stereo_exp_data import StereoExpData
-from typing import Optional, Iterable
-from datetime import datetime
+
 from stereo.core.cell import Cell
 from stereo.core.gene import Gene
+from ..core.stereo_exp_data import StereoExpData
 
 
 def select_group(st_data, groups, cluster):
@@ -68,12 +68,32 @@ def get_top_marker(g_name: str, marker_res: dict, sort_key: str, ascend: bool = 
     return top_res
 
 
+def _union_merge(arr1: np.ndarray, arr2: np.ndarray, new_col: np.ndarray, old_col1: np.ndarray, old_col2: np.ndarray):
+    """
+    Merge two array:
+               a  b        b  c
+            0  1  3     0  1  3
+            1  2  4     1  2  4
+
+    To:  a  b  c
+       [[1. 3. 0.]
+       [2. 4. 0.]
+       [0. 1. 3.]
+       [0. 2. 4.]]
+    """
+    merged_arr = np.zeros([arr1.shape[0] + arr2.shape[0], len(new_col)])
+    merged_arr[:arr1.shape[0], np.where(old_col1 == new_col[:, None])[0]] = arr1
+    merged_arr[arr1.shape[0]:arr1.shape[0] + arr2.shape[0], np.where(old_col2 == new_col[:, None])[0]] = arr2
+    return merged_arr
+
+
 def merge(
-    *data_list: StereoExpData,
-    reorganize_coordinate: Union[bool,int]=2,
-    horizontal_offset_additional: Union[int, float]=0,
-    vertical_offset_additional: Union[int, float]=0,
-    space_between: Optional[str]='0'
+        *data_list: StereoExpData,
+        reorganize_coordinate: Union[bool, int] = 2,
+        horizontal_offset_additional: Union[int, float] = 0,
+        vertical_offset_additional: Union[int, float] = 0,
+        space_between: Optional[str] = '0',
+        var_type="intersect",
 ):
     """
     Merge several slices of data.
@@ -96,7 +116,7 @@ def merge(
     """
     if data_list is None or len(data_list) < 2:
         raise Exception("At least two slices of data need to be input.")
-    
+
     def _parse_space_between(space_between: str):
         import re
         if space_between == '0':
@@ -118,7 +138,7 @@ def merge(
         elif unit == 'm':
             space_between *= 1e9
         return space_between
-    
+
     space_between = _parse_space_between(space_between)
     data_count = len(data_list)
     new_data = StereoExpData(merged=True)
@@ -145,7 +165,8 @@ def merge(
             new_data.cells._obs.index = cell_names
             new_data.position = data.position
             if data.position_z is None:
-                new_data.position_z = np.repeat([[0]], repeats=data.position.shape[0], axis=0).astype(data.position.dtype)
+                new_data.position_z = np.repeat([[0]], repeats=data.position.shape[0], axis=0).astype(
+                    data.position.dtype)
             else:
                 new_data.position_z = data.position_z
             new_data.bin_type = data.bin_type
@@ -162,11 +183,23 @@ def merge(
             new_data.position = np.concatenate([new_data.position, data.position])
             if data.position_z is None:
                 current_position_z += space_between / data.attr['resolution']
-                new_data.position_z = np.concatenate([new_data.position_z, np.repeat([[current_position_z]], repeats=data.position.shape[0], axis=0)])
+                new_data.position_z = np.concatenate(
+                    [new_data.position_z, np.repeat([[current_position_z]], repeats=data.position.shape[0], axis=0)])
             else:
                 new_data.position_z = np.concatenate([new_data.position_z, data.position_z])
-            new_data.genes.gene_name, ind1, ind2 = np.intersect1d(new_data.genes.gene_name, data.genes.gene_name, return_indices=True)
-            new_data.exp_matrix = sp.vstack([new_data.exp_matrix[:, ind1], data.exp_matrix[:, ind2]])
+            if var_type == "intersect":
+                new_data.genes.gene_name, ind1, ind2 = np.intersect1d(new_data.genes.gene_name, data.genes.gene_name,
+                                                                      return_indices=True)
+                new_data.exp_matrix = sp.vstack([new_data.exp_matrix[:, ind1], data.exp_matrix[:, ind2]])
+            elif var_type == "union":
+                old_gene_name = new_data.genes.gene_name
+                new_data.genes.gene_name = np.union1d(new_data.genes.gene_name, data.genes.gene_name)
+                new_data.exp_matrix = _union_merge(
+                    new_data.exp_matrix.toarray(), data.exp_matrix.toarray(), new_data.genes.gene_name, old_gene_name,
+                    data.genes.gene_name
+                )
+            else:
+                raise Exception(f"got an unexpected var_type: {var_type}")
             if new_data.offset_x is not None and data.offset_x is not None:
                 new_data.offset_x = min(new_data.offset_x, data.offset_x)
             if new_data.offset_y is not None and data.offset_y is not None:
@@ -242,7 +275,8 @@ def split(data: StereoExpData = None):
     for bno in batch:
         cell_idx = np.where(data.cells.batch == bno)[0]
         cell_names = data.cell_names[cell_idx]
-        new_data = StereoExpData(bin_type=data.bin_type, bin_size=data.bin_size, cells=deepcopy(data.cells), genes=deepcopy(data.genes))
+        new_data = StereoExpData(bin_type=data.bin_type, bin_size=data.bin_size, cells=deepcopy(data.cells),
+                                 genes=deepcopy(data.genes))
         new_data.cells = new_data.cells.sub_set(cell_idx)
         if data.position_offset is not None:
             new_data.position = data.position[cell_idx] - data.position_offset[bno]

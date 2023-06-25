@@ -168,7 +168,7 @@ class MSDataTestCases(unittest.TestCase):
 
     def test_clustering(self):
         from stereo.core.ms_pipeline import slice_generator as sg
-        self.ms_data.merge_for_batching_integrate()
+        self.ms_data.integrate()
         self.ms_data.tl.cal_qc(mode="integrate")
         self.ms_data.tl.filter_cells(mode="integrate", min_gene=200, min_n_genes_by_counts=3,
                                      max_n_genes_by_counts=7000, pct_counts_mt=8,
@@ -187,7 +187,7 @@ class MSDataTestCases(unittest.TestCase):
 
     def test_clustering_integrate(self):
         from stereo.core.ms_pipeline import slice_generator as sg
-        self.ms_data.merge_for_batching_integrate()
+        self.ms_data.integrate()
         self.ms_data.tl.cal_qc(mode="isolated")
         self.ms_data.tl.filter_cells(mode="isolated", min_gene=200, min_n_genes_by_counts=3,
                                      max_n_genes_by_counts=7000, pct_counts_mt=8,
@@ -212,7 +212,7 @@ class MSDataTestCases(unittest.TestCase):
 
     def test_clustering_isolated(self):
         from stereo.core.ms_pipeline import slice_generator as sg
-        self.ms_data.merge_for_batching_integrate()
+        self.ms_data.integrate()
         self.ms_data.tl.cal_qc(mode="isolated")
         self.ms_data.tl.filter_cells(mode="isolated", min_gene=200, min_n_genes_by_counts=3,
                                      max_n_genes_by_counts=7000, pct_counts_mt=8,

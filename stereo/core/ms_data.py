@@ -67,7 +67,7 @@ class _MSDataView(object):
     def merge_for_batching_integrate(self, **kwargs):
         from stereo.utils.data_helper import merge
         if "result" not in kwargs:
-            raise Exception("_MSDataView.merge_for_batching_integrate requires a upstream ms_data.tl.result object")
+            raise Exception("_MSDataView.integrate requires a upstream ms_data.tl.result object")
 
         self.tl.result = kwargs["result"]
         del kwargs["result"]
@@ -489,11 +489,18 @@ class MSData(_MSDataStruct):
     def mss(self):
         return self.tl.result
 
-    def merge_for_batching_integrate(self, **kwargs):
+    def integrate(self, **kwargs):
         from stereo.utils.data_helper import merge
+        f"""
+        {merge.__doc__}
+        """
+        if self._var_type not in {"union", "intersect"}:
+            raise Exception("Please specify the operation on samples with the parameter '_var_type'")
         self.merged_data = merge(*self.data_list, **kwargs)
 
     def split_after_batching_integrate(self):
+        if self._var_type == "union":
+            raise NotImplementedError("Split a union data not implemented yet")
         from stereo.utils.data_helper import split
         self._data_list = split(self.merged_data)
         self.reset_name(default_key=False)

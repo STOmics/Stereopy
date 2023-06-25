@@ -42,7 +42,7 @@ class MSDataPipeLine(object):
         else:
             ms_data_view = self.ms_data[kwargs["scope"]]
         if not ms_data_view.merged_data:
-            ms_data_view.merge_for_batching_integrate(result=self.ms_data.tl.result)
+            ms_data_view.integrate(result=self.ms_data.tl.result)
 
         new_attr = self.__class__.BASE_CLASS.__dict__.get(item, None)
         if new_attr is None:
@@ -157,7 +157,7 @@ class MSDataPipeLine(object):
                             self._use_integrate_method(item, *args, **kwargs)
                         else:
                             raise Exception(
-                                "`mode` integrate should merge first, using `ms_data.merge_for_batching_integrate`"
+                                "`mode` integrate should merge first, using `ms_data.integrate`"
                             )
                     elif kwargs["mode"] == "isolated":
                         self._run_isolated_method(item, *args, **kwargs)
@@ -168,7 +168,7 @@ class MSDataPipeLine(object):
                         self._use_integrate_method(item, *args, **kwargs)
                     else:
                         raise Exception(
-                            "`mode` integrate should merge first, using `ms_data.merge_for_batching_integrate`"
+                            "`mode` integrate should merge first, using `ms_data.integrate`"
                         )
 
             return temp
