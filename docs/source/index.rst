@@ -32,9 +32,9 @@ More analysis will be added here, either from other popular tools or developed b
 Meanwhile, we are still working on the improvement of performance and calculation efficiency.
 
 
-* Get quickly started by browsing `Usage Principles <https://stereopy.readthedocs.io/en/latest/index.html>`_, `Tutorials <https://stereopy.readthedocs.io/en/latest/Tutorials/Examples.html>`_ or `API <https://stereopy.readthedocs.io/en/latest/api/index.html>`_.
+* Get quickly started by browsing `Usage Principles <https://stereopy.readthedocs.io/en/latest/index.html>`_, `Tutorials <https://stereopy.readthedocs.io/en/latest/Tutorials/Cases.html>`_ or `API <https://stereopy.readthedocs.io/en/latest/content/03_API.html>`_.
 * Open to discuss and provide feedback on `Github <https://github.com/STOmics/stereopy>`_.
-* Follow changes in `Release Notes <https://stereopy.readthedocs.io/en/latest/release_note.html>`_.
+* Follow changes in `Release Notes <https://stereopy.readthedocs.io/en/latest/content/06_Release_notes.html>`_.
 
 
 Highlights
@@ -62,10 +62,10 @@ Version 0.12.1
 ~~~~~~~~~~~~~~
 0.12.1 : 2023-06-21
 
-1. Addition the pretreatment of calculating quality control metrics at the start of st.tl.filter_genes and st.tl.filter_cells.
+1. Addition of the pretreatment of calculating quality control metrics at the start of st.tl.filter_genes and st.tl.filter_cells.
 2. Fixed the bug that loaded data from GEF file had the same expression matrix but in different row order, through updating gefpy package to v0.6.24.
 3. Fixed the bug that scale.data had np.nan value in st.tl.sctransform , caused by data type limitation.
-4. Fixed the bug that dot symbol ( '.' ) caused identification error of cluster name  in.csv output, when doingst.tl.find_marker_genes.
+4. Fixed the bug that dot symbol ( '.' ) caused identification error of cluster name  in .csv output, when doing st.tl.find_marker_genes.
 
 Version 0.12.0
 ~~~~~~~~~~~~~~
