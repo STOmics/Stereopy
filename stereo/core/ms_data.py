@@ -491,9 +491,6 @@ class MSData(_MSDataStruct):
 
     def integrate(self, **kwargs):
         from stereo.utils.data_helper import merge
-        f"""
-        {merge.__doc__}
-        """
         if self._var_type not in {"union", "intersect"}:
             raise Exception("Please specify the operation on samples with the parameter '_var_type'")
         self.merged_data = merge(*self.data_list, var_type=self._var_type, **kwargs)
