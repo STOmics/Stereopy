@@ -7,50 +7,23 @@
 import os.path
 from typing import Optional, Union, Sequence, Literal
 from functools import partial, wraps
+from natsort import natsorted
 # import colorcet as cc
 import panel as pn
 import matplotlib.pyplot as plt
 from matplotlib import gridspec
+from matplotlib.figure import Figure
 import numpy as np
 from random import randint
 from .scatter import base_scatter, multi_scatter, marker_gene_volcano, highly_variable_genes
+from stereo.core.stereo_exp_data import StereoExpData
 from stereo.stereo_config import stereo_conf
 from stereo.log_manager import logger
 from .plot_base import PlotBase
+from .decorator import plot_scale, download, reorganize_coordinate
 
 pn.param.ParamMethod.loading_indicator = True
 
-def download(func):
-    @wraps(func)
-    def wrapped(*args, **kwargs):
-        out_path = None
-        if 'out_path' in kwargs:
-            out_path = kwargs['out_path']
-            del kwargs['out_path']
-        fig = func(*args, **kwargs)
-        if fig is None:
-            return None
-        if out_path is None:
-            pn.extension()
-            file_name_input = pn.widgets.TextInput(placeholder='Enter a file name...', width=200)
-            export_button = pn.widgets.Button(name='download', button_type="primary", width=100)
-            static_text = pn.widgets.StaticText(width=800)
-            def _action(_, figure):
-                export_button.loading = True
-                try:
-                    out_path = file_name_input.value
-                    if out_path is not None and len(out_path) > 0:
-                        out_path = f"{out_path}_{func.__name__}.png"
-                        figure.savefig(out_path, bbox_inches='tight')
-                        static_text.value = f'the plot has alrady been saved in the same path as this notebook and named as <font color="red"><b>{out_path}</b></font>'
-                finally:
-                    export_button.loading = False
-            action = partial(_action, figure=fig)
-            export_button.on_click(action)
-            return pn.Row(file_name_input, export_button, static_text)
-        else:
-            fig.savefig(out_path, bbox_inches='tight')
-    return wrapped
 
 class PlotCollection:
     """
@@ -65,10 +38,11 @@ class PlotCollection:
 
     def __init__(
             self,
-            data
+            data: StereoExpData
     ):
-        self.data = data
-        self.result = self.data.tl.result
+        self.data: StereoExpData = data
+        self.result: dict = self.data.tl.result
+        self.marker_gene_volcano = self.marker_genes_volcano
 
     def __getattr__(self, item):
         dict_attr = self.__dict__.get(item, None)
@@ -89,6 +63,7 @@ class PlotCollection:
             f'{item} not existed, please check the function name you called!'
         )
 
+    @reorganize_coordinate
     def interact_cluster(
             self,
             res_key: str='cluster', 
@@ -103,6 +78,17 @@ class PlotCollection:
         :param inline: show in notebook.
         :param width: the figure width.
         :param height: the figure height.
+        :param reorganize_coordinate: if the data is merged from several slices, whether to reorganize the coordinates of the obs(cells), 
+                if set it to a number, like 2, the coordinates will be reorganized to 2 columns on coordinate system as below:
+                                ---------------
+                                | data1 data2
+                                | data3 data4
+                                | data5 ...  
+                                | ...   ...  
+                                ---------------
+                if set it to `False`, the coordinates will not be changed.
+        :param horizontal_offset_additional: the additional offset between each slice on horizontal direction while reorganizing coordinates.
+        :param vertical_offset_additional: the additional offset between each slice on vertical direction while reorganizing coordinates.
 
         """
         res = self.check_res_key(res_key)
@@ -118,13 +104,15 @@ class PlotCollection:
             fig.show()
         return fig
 
+    @reorganize_coordinate
     def interact_annotation_cluster(
             self,
             res_cluster_key='cluster',
             res_marker_gene_key='marker_genes',
             res_key = 'annotation',
             inline=True,
-            width=700, height=500
+            width=700,
+            height=500
     ):
         """
         Interactive spatial scatter after clustering.
@@ -135,6 +123,17 @@ class PlotCollection:
         :param inline: show in notebook.
         :param width: the figure width.
         :param height: the figure height.
+        :param reorganize_coordinate: if the data is merged from several slices, whether to reorganize the coordinates of the obs(cells), 
+                if set it to a number, like 2, the coordinates will be reorganized to 2 columns on coordinate system as below:
+                                ---------------
+                                | data1 data2
+                                | data3 data4
+                                | data5 ...  
+                                | ...   ...  
+                                ---------------
+                if set it to `False`, the coordinates will not be changed.
+        :param horizontal_offset_additional: the additional offset between each slice on horizontal direction while reorganizing coordinates.
+        :param vertical_offset_additional: the additional offset between each slice on vertical direction while reorganizing coordinates.
 
         """
         res = self.check_res_key(res_cluster_key)
@@ -153,18 +152,27 @@ class PlotCollection:
         return fig
 
     @download
-    def highly_variable_genes(self, res_key='highly_variable_genes'):
+    def highly_variable_genes(
+        self,
+        res_key='highly_variable_genes',
+        width=None,
+        height=None
+    ):
         """
         Scatter of highly variable genes
 
         :param res_key: the result key of highly variable genes.
+        :param width: the figure width in pixels.
+        :param height: the figure height in pixels.
+        :param out_path: the path to save the figure.
+        :param out_dpi: the dpi when the figure is saved.
 
         """
         res = self.check_res_key(res_key)
-        return highly_variable_genes(res)
+        return highly_variable_genes(res, width=width, height=height)
 
     @download
-    def marker_gene_volcano(
+    def marker_genes_volcano(
             self,
             group_name: str,
             res_key: str='marker_genes',
@@ -177,7 +185,10 @@ class PlotCollection:
             y_label: str='-log10(pvalue)',
             vlines: bool=True,
             cut_off_pvalue: float=0.01,
-            cut_off_logFC: int=1
+            cut_off_logFC: int=1,
+            width=None,
+            height=None,
+            **kwargs
     ):
         """
         Volcano plot of maker genes.
@@ -195,6 +206,10 @@ class PlotCollection:
         :param cut_off_pvalue: cut off of p-value to define gene type, p-values < cut_off and log2fc > cut_off_logFC
         define as up genes, p-values < cut_off and log2fc < -cut_off_logFC define as down genes.
         :param cut_off_logFC: cut off of log2fc to define gene type.
+        :param width: the figure width in pixels.
+        :param height: the figure height in pixels.
+        :param out_path: the path to save the figure.
+        :param out_dpi: the dpi when the figure is saved.
 
         """
         res = self.check_res_key(res_key)[group_name]
@@ -207,7 +222,10 @@ class PlotCollection:
             palette=colors,
             alpha=alpha, s=dot_size,
             x_label=x_label, y_label=y_label,
-            vlines=vlines
+            vlines=vlines,
+            width=width,
+            height=height,
+            **kwargs
         )
         return fig
 
@@ -218,7 +236,8 @@ class PlotCollection:
             y=["pct_counts_mt", "n_genes_by_counts"],
             ncols: int=2,
             dot_size: int=None,
-            out_path: str=None,
+            width=None,
+            height=None,
             **kwargs
     ):
         """
@@ -228,7 +247,10 @@ class PlotCollection:
         :param y: list of y label.
         :param ncols: the number of columns.
         :param dot_size: the dot size.
-        :param out_path: path of output file. If `None`, do not save the plot.
+        :param width: the figure width in pixels.
+        :param height: the figure height in pixels.
+        :param out_path: the path to save the figure.
+        :param out_dpi: the dpi when the figure is saved.
 
         """
         import math
@@ -237,8 +259,11 @@ class PlotCollection:
         x = [x] if isinstance(x, str) else x
         y = [y] if isinstance(y, str) else y
 
-        width = 20
-        height = 10
+        if width is None or height is None:
+            width, height = 12, 6
+        else:
+            width = width / 100 if width >= 100 else 12
+            height = height / 100 if height >= 100 else 6
         nrows = math.ceil(len(x) / ncols)
         fig = plt.figure(figsize=(width, height))
         axs = gridspec.GridSpec(
@@ -266,6 +291,8 @@ class PlotCollection:
         return fig
 
     @download
+    @plot_scale
+    @reorganize_coordinate
     def spatial_scatter(
             self,
             cells_key: list = ["total_counts", "n_genes_by_counts"],
@@ -273,6 +300,8 @@ class PlotCollection:
             dot_size: int=None,
             palette: str='stereo',
             # invert_y=True,
+            width: int=None,
+            height: int=None,
             **kwargs
     ):
         """
@@ -282,6 +311,22 @@ class PlotCollection:
         :param ncols: the number of plot columns.
         :param dot_size: the dot size.
         :param palette: the color theme.
+        :param width: the figure width in pixels.
+        :param height: the figure height in pixels.
+        :param show_plotting_scale: wheter to display the plotting scale.
+        :param out_path: the path to save the figure.
+        :param out_dpi: the dpi when the figure is saved.
+        :param reorganize_coordinate: if the data is merged from several slices, whether to reorganize the coordinates of the obs(cells), 
+                if set it to a number, like 2, the coordinates will be reorganized to 2 columns on coordinate system as below:
+                                ---------------
+                                | data1 data2
+                                | data3 data4
+                                | data5 ...  
+                                | ...   ...  
+                                ---------------
+                if set it to `False`, the coordinates will not be changed.
+        :param horizontal_offset_additional: the additional offset between each slice on horizontal direction while reorganizing coordinates.
+        :param vertical_offset_additional: the additional offset between each slice on vertical direction while reorganizing coordinates.
 
         """
         from .scatter import multi_scatter
@@ -297,78 +342,89 @@ class PlotCollection:
             dot_size=dot_size,
             palette=palette,
             color_bar=True,
+            width=width,
+            height=height,
             **kwargs
         )
         return fig
     
     @download
+    @plot_scale
+    @reorganize_coordinate
     def spatial_scatter_by_gene(
             self,
-            gene_name: str=None,
+            gene_name: Union[str, list, np.ndarray]=None,
             dot_size: int=None,
             palette: str='CET_L4',
-            ignore_no_expression=False,
+            color_bar_reverse: bool=True,
+            width: int=None,
+            height: int=None,
             **kwargs
     ):
         """Draw the spatial distribution of expression quantity of the gene specified by gene names.
 
-        :param gene_name: specify the gene you want to draw, if `None` by default, will select randomly.
+        :param gene_name: a gene or a list of genes you want to show.
         :param dot_size: the dot size, defaults to `None`.
         :param palette: the color theme, defaults to `'CET_L4'`.
-        :param ignore_no_expression: whether to ignore the cells without expression, default to `False`.
+        :param width: the figure width in pixels.
+        :param height: the figure height in pixels.
+        :param show_plotting_scale: wheter to display the plotting scale.
+        :param out_path: the path to save the figure.
+        :param out_dpi: the dpi when the figure is saved.
+        :param reorganize_coordinate: if the data is merged from several slices, whether to reorganize the coordinates of the obs(cells), 
+                if set it to a number, like 2, the coordinates will be reorganized to 2 columns on coordinate system as below:
+                                ---------------
+                                | data1 data2
+                                | data3 data4
+                                | data5 ...  
+                                | ...   ...  
+                                ---------------
+                if set it to `False`, the coordinates will not be changed.
+        :param horizontal_offset_additional: the additional offset between each slice on horizontal direction while reorganizing coordinates.
+        :param vertical_offset_additional: the additional offset between each slice on vertical direction while reorganizing coordinates.
+
         """
 
-        # self.data.sparse2array()
         self.data.array2sparse()
         if gene_name is None:
-            idx = randint(0, len(self.data.gene_names))
-            gene_name = self.data.gene_names[idx]
-        else:
-            gene_names = self.data.gene_names.tolist()
-            if gene_name not in gene_names:
-                raise Exception(f'gene {gene_name} do not exist in expression matrix')
-            idx = gene_names.index(gene_name)
 
-        exp_data = self.data.exp_matrix[:, idx]
-        if ignore_no_expression:
-            nonezero_idx = np.nonzero(exp_data)
-            x = self.data.position[:, 0][nonezero_idx]
-            y = self.data.position[:, 1][nonezero_idx]
-            hue = exp_data[nonezero_idx]
-        else:
-            x = self.data.position[:, 0]
-            y = self.data.position[:, 1]
-            hue = exp_data
-        
-        hue = np.squeeze(hue.toarray())
-        
-        if 'color_bar_reverse' in kwargs:
-            color_bar_reverse = kwargs['color_bar_reverse']
-            del kwargs['color_bar_reverse']
-        else:
-            color_bar_reverse = True
-        fig = base_scatter(
-            x=x,
-            y=y,
+            raise Exception("The gene_name can not be None.")
+
+        if isinstance(gene_name, str):
+            gene_name = [gene_name]
+        gene_idx = [np.argwhere(self.data.gene_names == gn)[0][0] for gn in gene_name]
+        hue = self.data.exp_matrix[:, gene_idx].T
+
+        fig = multi_scatter(
+            x=self.data.position[:, 0],
+            y=self.data.position[:, 1],
             hue=hue,
+            x_label=['spatial1'] * len(gene_name),
+            y_label=['spatial2'] * len(gene_name),
             title=gene_name,
-            x_label='spatial1',
-            y_label='spatial2',
+            ncols=2,
             dot_size=dot_size,
             palette=palette,
             color_bar=True,
             color_bar_reverse=color_bar_reverse,
+            width=width,
+            height=height,
             **kwargs
         )
+        
         return fig
     
     @download
+    @plot_scale
+    @reorganize_coordinate
     def gaussian_smooth_scatter_by_gene(
             self,
             gene_name: str=None,
             dot_size: int=None,
             palette: str='CET_L4',
             color_bar_reverse: bool=True,
+            width: int=None,
+            height: int=None,
             **kwargs
     ):
         """Draw the spatial distribution of expression quantity of the gene specified by gene names,
@@ -377,20 +433,38 @@ class PlotCollection:
         :param gene_name: specify the gene you want to draw, if `None` by default, will select randomly.
         :param dot_size: marker sizemarker size, defaults to `None`.
         :param palette: Color theme, defaults to `'CET_L4'`.
+        :param width: the figure width in pixels.
+        :param height: the figure height in pixels.
+        :param show_plotting_scale: wheter to display the plotting scale.
+        :param out_path: the path to save the figure.
+        :param out_dpi: the dpi when the figure is saved.
+        :param reorganize_coordinate: if the data is merged from several slices, whether to reorganize the coordinates of the obs(cells), 
+                if set it to a number, like 2, the coordinates will be reorganized to 2 columns on coordinate system as below:
+                                ---------------
+                                | data1 data2
+                                | data3 data4
+                                | data5 ...  
+                                | ...   ...  
+                                ---------------
+                if set it to `False`, the coordinates will not be changed.
+        :param horizontal_offset_additional: the additional offset between each slice on horizontal direction while reorganizing coordinates.
+        :param vertical_offset_additional: the additional offset between each slice on vertical direction while reorganizing coordinates.
+
         """
-        self.data.tl.raw.sparse2array()
-        self.data.sparse2array()
+        # self.data.tl.raw.sparse2array()
+        # self.data.sparse2array()
         if gene_name is None:
             idx = randint(0, len(self.data.tl.raw.gene_names) - 1)
             gene_name = self.data.gene_names[idx]
         else:
-            gene_names = self.data.gene_names.tolist()
-            if gene_name not in gene_names:
+            # gene_names = self.data.gene_names.tolist()
+            if gene_name not in self.data.gene_names:
                 raise Exception(f'gene {gene_name} do not exist in expression matrix')
-            idx = gene_names.index(gene_name)
+            # idx = gene_names.index(gene_name)
+            idx = np.argwhere(self.data.gene_names == gene_name)[0][0]
 
-        raw_exp_data = self.data.tl.raw.exp_matrix[:, idx]
-        exp_data = self.data.exp_matrix[:, idx]
+        raw_exp_data = self.data.tl.raw.exp_matrix[:, idx].T
+        exp_data = self.data.exp_matrix[:, idx].T
         hue_list = [raw_exp_data, exp_data]
         titles = [f'{gene_name}(raw)', f'{gene_name}(smoothed)']
 
@@ -406,20 +480,27 @@ class PlotCollection:
             palette=palette,
             color_bar=True,
             color_bar_reverse=color_bar_reverse,
+            width=width,
+            height=height,
             **kwargs
         )
         return fig
 
     @download
-    def violin(self):
+    def violin(self, width: int=None, height: int=None):
         """
         Violin plot to show index distribution of quality control.
+        :param width: the figure width in pixels.
+        :param height: the figure height in pixels.
+        :param out_path: the path to save the figure.
+        :param out_dpi: the dpi when the figure is saved.
 
         """
         from .violin import violin_distribution
-        fig = violin_distribution(self.data)
+        fig = violin_distribution(self.data, width=width, height=height)
         return fig
 
+    @reorganize_coordinate
     def interact_spatial_scatter(
             self, 
             inline: bool=True,
@@ -432,9 +513,20 @@ class PlotCollection:
         Interactive spatial distribution.
 
         :param inline: show in notebook.
-        :param width: the figure width.
-        :param height: the figure height.
+        :param width: the figure width in pixels.
+        :param height: the figure height in pixels.
         :param bgcolor: set background color.
+        :param reorganize_coordinate: if the data is merged from several slices, whether to reorganize the coordinates of the obs(cells), 
+                if set it to a number, like 2, the coordinates will be reorganized to 2 columns on coordinate system as below:
+                                ---------------
+                                | data1 data2
+                                | data3 data4
+                                | data5 ...  
+                                | ...   ...  
+                                ---------------
+                if set it to `False`, the coordinates will not be changed.
+        :param horizontal_offset_additional: the additional offset between each slice on horizontal direction while reorganizing coordinates.
+        :param vertical_offset_additional: the additional offset between each slice on vertical direction while reorganizing coordinates.
 
         """
         from .interact_plot.interactive_scatter import InteractiveScatter
@@ -455,7 +547,9 @@ class PlotCollection:
             x_label: str = 'umap1',
             y_label: str = 'umap2',
             dot_size: int = 1,
-            colors: Optional[Union[str, list]] = 'stereo_30'
+            colors: Optional[Union[str, list]] = 'stereo_30',
+            width: int = None,
+            height: int = None
         ):
         import holoviews as hv
         import hvplot.pandas
@@ -465,6 +559,15 @@ class PlotCollection:
         hv.extension('bokeh')
         
         assert self.data.cells.batch is not None, "there is no batches number list"
+        if width is None or height is None:
+            main_width, main_height = 500, 500
+            sub_width, sub_height = 200, 200
+        else:
+            main_width = width
+            main_height = height
+            sub_width = np.ceil(width * 0.4).astype(np.int32)
+            sub_height = np.ceil(height * 0.4).astype(np.int32)
+        
         umap_res = self.check_res_key(res_key)
         umap_res = umap_res.rename(columns={0: 'x', 1: 'y'})
         umap_res['batch'] = self.data.cells.batch.astype(np.uint16)
@@ -476,8 +579,8 @@ class PlotCollection:
             c='batch', cmap=cmap, cnorm='eq_hist',
             # datashade=True, dynspread=True
         ).opts(
-            width=500,
-            height=500,
+            width=main_width,
+            height=main_height,
             invert_yaxis=True,
             xlabel=x_label,
             ylabel=y_label, 
@@ -500,8 +603,8 @@ class PlotCollection:
                 c='batch', color=c, cnorm='eq_hist',
                 # datashade=True, dynspread=True
             ).opts(
-                width=200,
-                height=200,
+                width=sub_width,
+                height=sub_height,
                 xaxis=None,
                 yaxis=None,
                 invert_yaxis=True,
@@ -528,7 +631,7 @@ class PlotCollection:
     @download
     def umap(
             self,
-            gene_names: Optional[list] = None,
+            gene_names: Optional[Union[list, np.ndarray, str]] = None,
             res_key: str='umap',
             cluster_key=None,
             title: Optional[Union[str, list]] = None,
@@ -536,6 +639,8 @@ class PlotCollection:
             y_label: Optional[Union[str, list]] = 'umap2',
             dot_size: int = None,
             colors: Optional[Union[str, list]] = 'stereo',
+            width: int = None,
+            height: int = None,
             **kwargs
     ):
         """
@@ -549,6 +654,10 @@ class PlotCollection:
         :param y_label: the y label.
         :param dot_size: the dot size.
         :param colors: the color list.
+        :param width: the figure width in pixels.
+        :param height: the figure height in pixels.
+        :param out_path: the path to save the figure.
+        :param out_dpi: the dpi when the figure is saved.
 
         """
         res = self.check_res_key(res_key)
@@ -558,45 +667,44 @@ class PlotCollection:
             return base_scatter(
                 res.values[:, 0],
                 res.values[:, 1],
-                hue=np.array(cluster_res['group']),
+                # hue=np.array(cluster_res['group']),
+                hue=cluster_res['group'],
                 palette=stereo_conf.get_colors('stereo_30' if colors == 'stereo' else colors, n),
                 title=cluster_key if title is None else title,
                 x_label=x_label, y_label=y_label, dot_size=dot_size,
                 color_bar=False,
+                width=width, height=height,
                 **kwargs)
         else:
-            self.data.sparse2array()
+            # self.data.sparse2array()
+            self.data.array2sparse()
             if gene_names is None:
                 raise ValueError(f'gene name must be set if cluster_key is None')
-            if len(gene_names) > 1:
-                return multi_scatter(
-                    res.values[:, 0],
-                    res.values[:, 1],
-                    hue=np.array(self.data.sub_by_name(gene_name=gene_names).exp_matrix).T,
-                    palette=colors,
-                    title=gene_names if title is None else title,
-                    x_label=[x_label for i in range(len(gene_names))],
-                    y_label=[y_label for i in range(len(gene_names))],
-                    dot_size=dot_size,
-                    color_bar=True,
-                    **kwargs
-                )
-            else:
-                return base_scatter(
-                    res.values[:, 0],
-                    res.values[:, 1],
-                    hue=np.array(self.data.sub_by_name(gene_name=gene_names).exp_matrix[:, 0]),
-                    palette=colors,
-                    title=title, x_label=x_label, y_label=y_label, dot_size=dot_size,
-                    color_bar=True,
-                    **kwargs
-                )
+            if isinstance(gene_names, str):
+                gene_names = [gene_names]
+            return multi_scatter(
+                res.values[:, 0],
+                res.values[:, 1],
+                # hue=np.array(self.data.sub_by_name(gene_name=gene_names).exp_matrix).T,
+                hue=self.data.sub_exp_matrix_by_name(gene_name=gene_names).T,
+                palette=colors,
+                title=gene_names if title is None else title,
+                x_label=[x_label for i in range(len(gene_names))],
+                y_label=[y_label for i in range(len(gene_names))],
+                dot_size=dot_size,
+                color_bar=True,
+                width=width,
+                height=height,
+                **kwargs
+            )
 
     @download
+    @plot_scale
+    @reorganize_coordinate
     def cluster_scatter(
             self,
             res_key='cluster',
-            group_id: str = None,
+            groups: Union[str, list, np.ndarray] = None,
             title: Optional[str] = None,
             x_label: Optional[str] = None,
             y_label: Optional[str] = None,
@@ -604,6 +712,8 @@ class PlotCollection:
             colors='stereo_30',
             invert_y: bool = True,
             hue_order: set=None,
+            width: int=None,
+            height: int=None,
             **kwargs
     ):
         """
@@ -616,19 +726,44 @@ class PlotCollection:
         :param dot_size: dot size.
         :param colors: color list.
         :param invert_y: whether to invert y-axis.
+        :param width: the figure width in pixels.
+        :param height: the figure height in pixels.
+        :param show_plotting_scale: wheter to display the plotting scale.
+        :param out_path: the path to save the figure.
+        :param out_dpi: the dpi when the figure is saved.
+        :param reorganize_coordinate: if the data is merged from several slices, whether to reorganize the coordinates of the obs(cells), 
+                if set it to a number, like 2, the coordinates will be reorganized to 2 columns on coordinate system as below:
+                                ---------------
+                                | data1 data2
+                                | data3 data4
+                                | data5 ...  
+                                | ...   ...  
+                                ---------------
+                if set it to `False`, the coordinates will not be changed.
+        :param horizontal_offset_additional: the additional offset between each slice on horizontal direction while reorganizing coordinates.
+        :param vertical_offset_additional: the additional offset between each slice on vertical direction while reorganizing coordinates.
 
         :return: Spatial scatter distribution of clusters.
         """
         res = self.check_res_key(res_key)
-        group_list = np.array(res['group'])
-        n = len(set(group_list))
+        group_list = res['group'].to_numpy()
+        n = np.unique(group_list).size
         palette = stereo_conf.get_colors(colors, n=n)
-        if group_id is not None:
-            if not isinstance(group_id, str):
-                group_id = str(group_id)
-            group_list = np.where(group_list == group_id, group_id, 0)
-            palette = ['#B3CDE3', '#FF7F00']
-            kwargs['show_legend'] = False
+        if groups is not None:
+            # if not isinstance(groups, str):
+            #     groups = str(groups)
+            if isinstance(groups, str):
+                groups = [groups]
+            isin = np.in1d(group_list, groups)
+            if not np.all(isin):
+                group_list[~isin] = 'others'
+                n = np.unique(group_list).size
+                palette = palette[0:n - 1] + ['#828282']
+                hue_order =  natsorted(np.unique(group_list[isin])) + ['others']
+                # palette = ['#B3CDE3', '#FF7F00']
+                # kwargs['show_legend'] = False
+
+        
             
         fig = base_scatter(
             self.data.position[:, 0],
@@ -637,6 +772,7 @@ class PlotCollection:
             palette=palette,
             title=title, x_label=x_label, y_label=y_label, dot_size=dot_size, invert_y=invert_y,
             hue_order=hue_order,
+            width=width, height=height,
             **kwargs
         )
         return fig
@@ -654,6 +790,8 @@ class PlotCollection:
             fontsize: int = 8,
             ncols: int = 4,
             sharey: bool = True,
+            width: int = None,
+            height: int = None,
             **kwargs
     ):
         """
@@ -667,6 +805,10 @@ class PlotCollection:
         :param fontsize: the font size.
         :param ncols: number of plot columns.
         :param sharey: share scale or not.
+        :param width: the figure width in pixels.
+        :param height: the figure height in pixels.
+        :param out_path: the path to save the figure.
+        :param out_dpi: the dpi when the figure is saved.
 
         """
         from .marker_genes import marker_genes_text
@@ -680,6 +822,8 @@ class PlotCollection:
             fontsize=fontsize,
             ncols=ncols,
             sharey=sharey,
+            width=width,
+            height=height,
             **kwargs
         )
         return fig
@@ -695,11 +839,13 @@ class PlotCollection:
             show_labels: bool = True,
             show_group: bool = True,
             show_group_txt: bool = True,
-            cluster_colors_array: bool=None,
-            min_value: int=None,
-            max_value: int=None,
-            gene_list: list=None,
-            do_log: bool=True
+            cluster_colors_array: bool = None,
+            min_value: int = None,
+            max_value: int = None,
+            gene_list: list = None,
+            do_log: bool = True,
+            width: int = None,
+            height: int = None
     ):
         """
         Heatmap plot of maker genes.
@@ -717,10 +863,15 @@ class PlotCollection:
         :param max_value: maximum value of scale.
         :param gene_list: gene name list.
         :param do_log: perform normalization if log1p before plotting, or not.
+        :param width: the figure width in pixels.
+        :param height: the figure height in pixels.
+        :param out_path: the path to save the figure.
+        :param out_dpi: the dpi when the figure is saved.
 
         """
         from .marker_genes import marker_genes_heatmap
         maker_res = self.check_res_key(res_key)
+        cluster_res_key = maker_res['parameters']['cluster_res_key']        
         cluster_res = self.check_res_key(cluster_res_key)
         cluster_res = cluster_res.set_index(['bins'])
         fig = marker_genes_heatmap(
@@ -737,7 +888,9 @@ class PlotCollection:
             min_value=min_value,
             max_value=max_value,
             gene_list=gene_list,
-            do_log=do_log
+            do_log=do_log,
+            width=width,
+            height=height
         )
         return fig
 
@@ -763,7 +916,9 @@ class PlotCollection:
             'logfoldchanges',
             'pvalues',
             'pvalues_adj'
-        ] = 'scores'
+        ] = 'scores',
+        width: int = None,
+        height: int = None
     ):
         """Scatter of marker genes
 
@@ -775,6 +930,8 @@ class PlotCollection:
                         available values include: [scores, logfoldchanges, pvalues, pvalues_adj, log10_pvalues, log10_pvalues_adj].
         :param sort_by: specify the value which sort by when select top N markers, defaults to 'scores'
                         available values include: [scores, logfoldchanges, pvalues, pvalues_adj].
+        :param out_path: the path to save the figure.
+        :param out_dpi: the dpi when the figure is saved.
         """
         from .marker_genes import MarkerGenesScatterPlot
         marker_genes_res = self.check_res_key(res_key)
@@ -784,7 +941,9 @@ class PlotCollection:
             genes=genes,
             groups=groups,
             values_to_plot=values_to_plot,
-            sort_by=sort_by
+            sort_by=sort_by,
+            width=width,
+            height=height
         )
 
     def check_res_key(self, res_key):
@@ -802,25 +961,42 @@ class PlotCollection:
             raise ValueError(f'{res_key} result not found, please run tool before plot')
 
     @download
-    def hotspot_local_correlations(self, res_key='spatial_hotspot', ):
+    def hotspot_local_correlations(
+        self,
+        res_key: str='spatial_hotspot',
+        width: int=None,
+        height: int=None
+    ):
         """
         Visualize module scores with spatial position.
 
         :param res_key: the result key of spatial hotspot.
+        :param width: the figure width in pixels.
+        :param height: the figure height in pixels.
+        :param out_path: the path to save the figure.
+        :param out_dpi: the dpi when the figure is saved.
         """
         res = self.check_res_key(res_key)
-        plt.rcParams['figure.figsize'] = (15.0, 12.0)
+        if width is None or height is None:
+            width, height = 15, 12
+        else:
+            width = width / 100 if width >= 100 else 15
+            height = height / 100 if height >= 100 else 12
         res.plot_local_correlations()
-        return plt.gcf()
+        fig = plt.gcf()
+        fig.set_size_inches(width, height)
+        return fig
 
     @download
     def hotspot_modules(
             self,
-            res_key="spatial_hotspot",
-            ncols=2,
-            dot_size=None,
-            palette='stereo',
-            ** kwargs
+            res_key: str="spatial_hotspot",
+            ncols: int=2,
+            dot_size: int=None,
+            palette: str='stereo',
+            width: str=None,
+            height: str=None,
+            **kwargs
     ):
         """
         Plot hotspot modules
@@ -828,6 +1004,10 @@ class PlotCollection:
         :param ncols: the number of columns.
         :param dot_size: the dot size.
         :param res_key: the result key of spatial hotspot.
+        :param width: the figure width in pixels.
+        :param height: the figure height in pixels.
+        :param out_path: the path to save the figure.
+        :param out_dpi: the dpi when the figure is saved.
 
         """
         res = self.check_res_key(res_key)
@@ -847,6 +1027,8 @@ class PlotCollection:
             color_bar=True,
             vmin=vmin,
             vmax=vmax,
+            width=width,
+            height=height,
             **kwargs
         )
         return fig
@@ -902,18 +1084,47 @@ class PlotCollection:
         sns.clustermap(auc_mtx, figsize=(12, 12))
         plt.show()
 
-    def cells_plotting(self, cluster_res_key='cluster', figure_size=500, fg_alpha=0.8, base_image=None):
+    @reorganize_coordinate
+    def cells_plotting(
+        self,
+        cluster_res_key='cluster',
+        bgcolor='#2F2F4F',
+        width=None,
+        height=None,
+        fg_alpha=0.5,
+        base_image=None
+    ):
         """Plot the cells.
 
         :param cluster_res_key: result key of clustering, defaults to `'cluster'`
                 color by cluster result if cluster result is not None, or by `total_counts`.
-        :param figure_size: the figure size is figure_size * figure_size, defaults to 500.
-        :param fg_alpha: the alpha of foreground image, between 0 and 1, defaults to 0.8
+        :param width: the figure width in pixels.
+        :param height: the figure height in pixels.
+        :param fg_alpha: the alpha of foreground image, between 0 and 1, defaults to 0.5
                             this is the colored image of the cells.
         :param base_image: the path of the ssdna image after calibration, defaults to None
                             it will be located behide the image of the cells.
+        :param reorganize_coordinate: if the data is merged from several slices, whether to reorganize the coordinates of the obs(cells), 
+                if set it to a number, like 2, the coordinates will be reorganized to 2 columns on coordinate system as below:
+                                ---------------
+                                | data1 data2
+                                | data3 data4
+                                | data5 ...  
+                                | ...   ...  
+                                ---------------
+                if set it to `False`, the coordinates will not be changed.
+        :param horizontal_offset_additional: the additional offset between each slice on horizontal direction while reorganizing coordinates.
+        :param vertical_offset_additional: the additional offset between each slice on vertical direction while reorganizing coordinates.
         :return: Cells distribution figure.
         """
         from .plot_cells import PlotCells
-        pc = PlotCells(self.data, cluster_res_key=cluster_res_key, figure_size=figure_size, fg_alpha=fg_alpha, base_image=base_image)
+        pc = PlotCells(
+            self.data,
+            cluster_res_key=cluster_res_key,
+            bgcolor=bgcolor,
+            width=width,
+            height=height,
+            fg_alpha=fg_alpha,
+            base_image=base_image
+        )
         return pc.show()

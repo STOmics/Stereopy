@@ -62,43 +62,65 @@ def exp_matrix2df(data: StereoExpData, cell_name: Optional[np.ndarray] = None, g
 
 
 def get_top_marker(g_name: str, marker_res: dict, sort_key: str, ascend: bool = False, top_n: int = 10):
-    result = marker_res[g_name]
-    top_res = result.sort_values(by=sort_key, ascending=ascend).head(top_n).dropna(axis=0, how='any')
+    result: pd.DataFrame = marker_res[g_name]
+    # top_res = result.sort_values(by=sort_key, ascending=ascend).head(top_n).dropna(axis=0, how='any')
+    top_res = result.sort_values(by=sort_key, ascending=ascend).head(top_n).dropna(axis=0, subset=[sort_key])
     return top_res
 
 
-def merge(data1: StereoExpData = None, 
-          data2: StereoExpData = None, 
-          *args, 
-          reorganize_coordinate: Union[bool,int]=2,
-          coordinate_offset_additional: Union[bool,int]=0):
+def merge(
+    *data_list: StereoExpData,
+    reorganize_coordinate: Union[bool,int]=2,
+    horizontal_offset_additional: Union[int, float]=0,
+    vertical_offset_additional: Union[int, float]=0,
+    space_between: Optional[str]='0'
+):
     """
-    Merge two or more batches of data.
+    Merge several slices of data.
 
-    :param data1: the first data object to be merged.
-    :param data2: the second data object to be merged. More than two datas could be input.
+    :param data_list: several slices of data to be merged, at least two slices. 
     :param reorganize_coordinate: whether to reorganize the coordinates of the obs(cells), 
-        if set it to a number, like 2, the coordinates will be reorganized to 2 columns as below:
-                        ---------------
-                        | data1 data2
-                        | data3 data4
-                        | data5 ...  
-                        | ...   ...  
-                        ---------------
-                if set to `False`, the coordinates maybe overlap between datas.
-    :param coordinate_offset_additional: the offset value on up/down/left/right 
-        after reorganizing the coordinates, between a pair of adjacent datas, for example, data1 & data2, 
-        data1 & data3, data2 & data4, ... which would be ignored if set to `False`.
+            if set it to a number, like 2, the coordinates will be reorganized to 2 columns on coordinate system as below:
+                            ---------------
+                            | data1 data2
+                            | data3 data4
+                            | data5 ...  
+                            | ...   ...  
+                            ---------------
+            if set to `False`, the coordinates maybe overlap between slices.
+    :param horizontal_offset_additional: the additional offset between each slice on horizontal direction while reorganizing coordinates.
+    :param vertical_offset_additional: the additional offset between each slice on vertical direction while reorganizing coordinates.
+    :param space_between: the distance between each slice, like '10nm', '1um', ..., it will be used for calculating the z-coordinate of each slice.
 
     :return: A merged StereoExpData object.
     """
-    assert data1 is not None, 'the first parameter `data1` must be input'
-    if data2 is None:
-        return data1
-    datas = [data1, data2]
-    if len(args) > 0:
-        datas.extend(args)
-    data_count = len(datas)
+    if data_list is None or len(data_list) < 2:
+        raise Exception("At least two slices of data need to be input.")
+    
+    def _parse_space_between(space_between: str):
+        import re
+        if space_between == '0':
+            return 0.0
+        pattern = r"^\d+(\.\d)*(nm|um|mm|cm|dm|m)$"
+        match = re.match(pattern, space_between)
+        if match is None:
+            raise ValueError(f"Invalid space between: '{space_between}'")
+        unit = match.groups()[1]
+        space_between = float(space_between.replace(unit, ''))
+        if unit == 'um':
+            space_between *= 1e3
+        elif unit == 'mm':
+            space_between *= 1e6
+        elif unit == 'cm':
+            space_between *= 1e7
+        elif unit == 'dm':
+            space_between *= 1e8
+        elif unit == 'm':
+            space_between *= 1e9
+        return space_between
+    
+    space_between = _parse_space_between(space_between)
+    data_count = len(data_list)
     new_data = StereoExpData(merged=True)
     new_data.sn = {}
     if reorganize_coordinate:
@@ -107,28 +129,42 @@ def merge(data1: StereoExpData = None,
         position_column_count = reorganize_coordinate
         max_xs = [0] * (position_column_count + 1)
         max_ys = [0] * (position_row_count + 1)
+    current_position_z = 0
     for i in range(data_count):
-        data: StereoExpData = datas[i]
+        data: StereoExpData = data_list[i]
         data.cells.batch = i
-        cell_names = np.array([f"{cell_name}-{i}" for cell_name in data.cells.cell_name])
+        # cell_names = np.array([f"{cell_name}-{i}" for cell_name in data.cells.cell_name])
+        cell_names = np.char.add(data.cells.cell_name, f"-{i}")
         data.array2sparse()
         new_data.sn[str(i)] = data.sn
         if i == 0:
             new_data.exp_matrix = data.exp_matrix.copy()
-            new_data.cells = Cell(cell_name=cell_names, cell_border=data.cells.cell_boder, batch=data.cells.batch)
+            new_data.cells = Cell(cell_name=cell_names, cell_border=data.cells.cell_border, batch=data.cells.batch)
             new_data.genes = Gene(gene_name=data.gene_names)
+            new_data.cells._obs = data.cells._obs
+            new_data.cells._obs.index = cell_names
             new_data.position = data.position
+            if data.position_z is None:
+                new_data.position_z = np.repeat([[0]], repeats=data.position.shape[0], axis=0).astype(data.position.dtype)
+            else:
+                new_data.position_z = data.position_z
             new_data.bin_type = data.bin_type
             new_data.bin_size = data.bin_size
             new_data.offset_x = data.offset_x
             new_data.offset_y = data.offset_y
             new_data.attr = data.attr
         else:
-            new_data.cells.cell_name = np.concatenate([new_data.cells.cell_name, cell_names])
-            new_data.cells.batch = np.concatenate([new_data.cells.batch, data.cells.batch])
+            current_obs = data.cells._obs.copy()
+            current_obs.index = cell_names
+            new_data.cells._obs = pd.concat([new_data.cells._obs, current_obs])
             if new_data.cell_borders is not None and data.cell_borders is not None:
-                new_data.cells.cell_boder = np.concatenate([new_data.cells.cell_boder, data.cells.cell_boder])
+                new_data.cells.cell_border = np.concatenate([new_data.cells.cell_border, data.cells.cell_border])
             new_data.position = np.concatenate([new_data.position, data.position])
+            if data.position_z is None:
+                current_position_z += space_between / data.attr['resolution']
+                new_data.position_z = np.concatenate([new_data.position_z, np.repeat([[current_position_z]], repeats=data.position.shape[0], axis=0)])
+            else:
+                new_data.position_z = np.concatenate([new_data.position_z, data.position_z])
             new_data.genes.gene_name, ind1, ind2 = np.intersect1d(new_data.genes.gene_name, data.genes.gene_name, return_indices=True)
             new_data.exp_matrix = sp.vstack([new_data.exp_matrix[:, ind1], data.exp_matrix[:, ind2]])
             if new_data.offset_x is not None and data.offset_x is not None:
@@ -136,15 +172,17 @@ def merge(data1: StereoExpData = None,
             if new_data.offset_y is not None and data.offset_y is not None:
                 new_data.offset_y = min(new_data.offset_y, data.offset_y)
             if new_data.attr is not None and data.attr is not None:
-                new_data.attr = {
-                    'minX': min(new_data.attr['minX'], data.attr['minX']),
-                    'minY': min(new_data.attr['minY'], data.attr['minY']),
-                    'maxX': max(new_data.attr['maxX'], data.attr['maxX']),
-                    'maxY': max(new_data.attr['maxY'], data.attr['maxY']),
-                    'minExp': new_data.exp_matrix.min(),
-                    'maxExp': new_data.exp_matrix.min(),
-                    'resolution': 0,
-                }
+                for key, value in data.attr.items():
+                    if key in ('minX', 'minY'):
+                        new_data.attr[key] = min(new_data.attr[key], value)
+                    elif key in ('maxX', 'maxY'):
+                        new_data.attr[key] = max(new_data.attr[key], value)
+                    elif key == 'minExp':
+                        new_data.attr['minExp'] = new_data.exp_matrix.min()
+                    elif key == 'maxExp':
+                        new_data.attr['maxExp'] = new_data.exp_matrix.max()
+                    elif key == 'resolution':
+                        new_data.attr['resolution'] = value
         if reorganize_coordinate:
             position_row_number = i // reorganize_coordinate
             position_column_number = i % reorganize_coordinate
@@ -155,7 +193,8 @@ def merge(data1: StereoExpData = None,
             if max_y > max_ys[position_row_number + 1]:
                 max_ys[position_row_number + 1] = max_y
     if reorganize_coordinate:
-        coordinate_offset_additional = 0 if coordinate_offset_additional < 0 else coordinate_offset_additional
+        horizontal_offset_additional = 0 if horizontal_offset_additional < 0 else horizontal_offset_additional
+        vertical_offset_additional = 0 if vertical_offset_additional < 0 else vertical_offset_additional
         batches = np.unique(new_data.cells.batch).tolist()
         batches.sort(key=lambda x: int(x))
         for i, bno in enumerate(batches):
@@ -165,11 +204,12 @@ def merge(data1: StereoExpData = None,
             x_add = max_xs[position_column_number]
             y_add = max_ys[position_row_number]
             if position_column_number > 0:
-                x_add += sum(max_xs[0:position_column_number]) + coordinate_offset_additional * position_column_number
+                x_add += sum(max_xs[0:position_column_number]) + horizontal_offset_additional * position_column_number
             if position_row_number > 0:
-                y_add += sum(max_ys[0:position_row_number]) + coordinate_offset_additional * position_row_number
+                y_add += sum(max_ys[0:position_row_number]) + vertical_offset_additional * position_row_number
             # position_offset = np.repeat([[x_add, y_add]], repeats=len(idx), axis=0).astype(np.uint32)
-            position_offset = np.array([x_add, y_add], dtype=np.uint32)
+            # position_offset = np.array([x_add, y_add], dtype=np.uint32)
+            position_offset = np.array([x_add, y_add], dtype=new_data.position.dtype)
             new_data.position[idx] += position_offset
             if new_data.position_offset is None:
                 new_data.position_offset = {bno: position_offset}
@@ -204,7 +244,11 @@ def split(data: StereoExpData = None):
         cell_names = data.cell_names[cell_idx]
         new_data = StereoExpData(bin_type=data.bin_type, bin_size=data.bin_size, cells=deepcopy(data.cells), genes=deepcopy(data.genes))
         new_data.cells = new_data.cells.sub_set(cell_idx)
-        new_data.position = data.position[cell_idx] - data.position_offset[bno]
+        if data.position_offset is not None:
+            new_data.position = data.position[cell_idx] - data.position_offset[bno]
+        else:
+            new_data.position = data.position[cell_idx]
+        new_data.position_z = data.position_z[cell_idx]
         new_data.exp_matrix = data.exp_matrix[cell_idx]
         new_data.tl.key_record = deepcopy(data.tl.key_record)
         new_data.sn = data.sn[bno]

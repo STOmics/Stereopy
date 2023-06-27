@@ -4,7 +4,7 @@
 @author: Junhao Xu  xujunhao@genomics.cn
 @last modified by: Junhao Xu
 @file:setup.py
-@time:2023/02/22
+@time:2023/04/28
 """
 from setuptools import setup, find_packages
 import sys
@@ -15,13 +15,13 @@ if sys.version_info < (3, 8):
 
 setup(
     name='stereopy',
-    version='0.11.0',
-    setup_requires=['setuptools_scm', 'numpy==1.21.4', 'panel', 'pytest', 'quilt3', 'scipy', 'phenograph'],
+    version='0.12.1',
+    setup_requires=['setuptools_scm', 'numpy==1.21.6', 'panel', 'pytest', 'quilt3', 'scipy', 'phenograph'],
     description='Spatial transcriptomic analysis in python.',
     long_description=Path('README.md').read_text('utf-8'),
     long_description_content_type="text/markdown",
-    url='https://github.com/BGIResearch/stereopy',
-    author='BGIResearch',
+    url='https://github.com/STOmics/Stereopy',
+    author='STOmics',
     author_email='xujunhao@genomics.cn',
     python_requires='>=3.8,<3.9',
     install_requires=[

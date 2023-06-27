@@ -18,19 +18,23 @@ def cal_qc(data):
     :param data: the StereoExpData object.
     :return: StereoExpData object storing quality control results.
     """
-    exp_matrix = data.exp_matrix
-    total_count = cal_total_counts(exp_matrix)
-    n_gene_by_count = cal_n_genes_by_counts(exp_matrix)
-    pct_counts_mt = cal_pct_counts_mt(data, exp_matrix, total_count)
-    data.cells.total_counts = total_count
-    data.cells.pct_counts_mt = pct_counts_mt
-    data.cells.n_genes_by_counts = n_gene_by_count
+    cal_cells_indicators(data)
+    cal_genes_indicators(data)
+    return data
 
+def cal_cells_indicators(data):
+    exp_matrix = data.exp_matrix
+    data.cells.total_counts = cal_total_counts(exp_matrix)
+    data.cells.n_genes_by_counts = cal_n_genes_by_counts(exp_matrix)
+    data.cells.pct_counts_mt = cal_pct_counts_mt(data)
+    return data
+
+def cal_genes_indicators(data):
+    exp_matrix = data.exp_matrix
     data.genes.n_cells = cal_n_cells(exp_matrix)
     data.genes.n_counts = cal_per_gene_counts(exp_matrix)
     data.genes.mean_umi = cal_gene_mean_umi(data)
     return data
-
 
 def cal_total_counts(exp_matrix):
     """
@@ -57,7 +61,6 @@ def cal_per_gene_counts(exp_matrix):
 def cal_n_cells_by_counts(exp_matrix):
     """
     total counts of each gene.
-
     :param exp_matrix: the express matrix.
     :return:
     """
@@ -90,10 +93,14 @@ def cal_n_genes_by_counts(exp_matrix):
     return n_genes_by_counts
 
 
-def cal_pct_counts_mt(data, exp_matrix, total_count):
-    if total_count is None:
-        total_count = cal_total_counts(exp_matrix)
+def cal_pct_counts_mt(data):
+    old_settings = np.seterr(divide='ignore', invalid='ignore')
+    if data.cells.total_counts is None:
+        data.cells.total_counts = cal_total_counts(data.exp_matrix)
     mt_index = np.char.startswith(np.char.lower(data.gene_names), prefix='mt-')
-    mt_count = np.array(exp_matrix[:, mt_index].sum(1)).reshape(-1)
-    pct_counts_mt = mt_count / total_count * 100
+    mt_count = np.array(data.exp_matrix[:, mt_index].sum(1)).reshape(-1)
+    pct_counts_mt = mt_count / data.cells.total_counts * 100
+    flag = np.isnan(pct_counts_mt) | np.isinf(pct_counts_mt)
+    pct_counts_mt[flag] = 0
+    np.seterr(**old_settings)
     return pct_counts_mt

@@ -51,7 +51,7 @@ class _TissueCut(object):
         # FIXME: `RNA` can not use seg_method `DEEP`
         if src_img_type == RNA and seg_method == DEEP:
             seg_method = INTENSITY
-            logger.warn("`RNA` type image can not use deep-learning segmentation method, auto change to `INTENSITY`")
+            logger.warning("`RNA` type image can not use deep-learning segmentation method, auto change to `INTENSITY`")
         elif seg_method == DEEP and not model_path:
             raise Exception("Found no `model path`, please assign `model_path` to your local h5df model path")
         self.src_img_path = src_img_path

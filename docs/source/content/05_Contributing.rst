@@ -5,14 +5,14 @@ Contributing
 Project Structure
 -----------------
 
-- `stereo <https://github.com/BGIResearch/stereopy/tree/main/stereo>`_: the root of the package.
-- `stereo/core <https://github.com/BGIResearch/stereopy/tree/main/stereo/core>`_: the core code of stereo which contains the base classes and data structure of Stereopy.
-- `stereo/algorithm <https://github.com/BGIResearch/stereopy/tree/main/stereo/algorithm>`_: the algorithm module, containing main analysis and implementation algorithms which deals with methodology realization.
-- `stereo/image <https://github.com/BGIResearch/stereopy/tree/main/stereo/image>`_: the image module which deals with analysis related to the image file, such as cell segmentation, etc.
-- `stereo/io <https://github.com/BGIResearch/stereopy/tree/main/stereo/io>`_: the io module which deals with reading, writing and format conversion of different data structures, between StereoExpData and AnnData, etc.
-- `stereo/plots <https://github.com/BGIResearch/stereopy/tree/main/stereo/plots>`_: the plotting module which contains all plotting functions for visualization.
-- `stereo/utils <https://github.com/BGIResearch/stereopy/tree/main/stereo/utils>`_: the common processing scripts.
-- `stereo/tests <https://github.com/BGIResearch/stereopy/tree/main/tests>`_: the test module which contains all test scripts.
+- `stereo <https://github.com/STOmics/stereopy/tree/main/stereo>`_: the root of the package.
+- `stereo/core <https://github.com/STOmics/stereopy/tree/main/stereo/core>`_: the core code of stereo which contains the base classes and data structure of Stereopy.
+- `stereo/algorithm <https://github.com/STOmics/stereopy/tree/main/stereo/algorithm>`_: the algorithm module, containing main analysis and implementation algorithms which deals with methodology realization.
+- `stereo/image <https://github.com/STOmics/stereopy/tree/main/stereo/image>`_: the image module which deals with analysis related to the image file, such as cell segmentation, etc.
+- `stereo/io <https://github.com/STOmics/stereopy/tree/main/stereo/io>`_: the io module which deals with reading, writing and format conversion of different data structures, between StereoExpData and AnnData, etc.
+- `stereo/plots <https://github.com/STOmics/stereopy/tree/main/stereo/plots>`_: the plotting module which contains all plotting functions for visualization.
+- `stereo/utils <https://github.com/STOmics/stereopy/tree/main/stereo/utils>`_: the common processing scripts.
+- `stereo/tests <https://github.com/STOmics/stereopy/tree/main/tests>`_: the test module which contains all test scripts.
 
 
 Contributing Guide
@@ -23,7 +23,7 @@ Contributing Guide
 
 3. **Add new functions** or **fix bugs** in your codebase, don't forget to follow the rules of `Code Style`_.
 
-4. After completing **code work**, we strongly recommend contributors to add `{your_work_tutorial}.ipynb`, whose style like `Spatial hotSpot tutorial <https://stereopy.readthedocs.io/en/latest/Tutorials/hotspot.html>`_, into `stereopy/docs/source/Tutorials/`.
+4. After completing **code work**, we strongly recommend contributors to add `{your_work_tutorial}.ipynb`, whose style like `Spatial hotSpot tutorial <https://stereopy.readthedocs.io/en/latest/Tutorials/Spatial_Hotspot.html>`_, into `stereopy/docs/source/Tutorials/`.
 
 5. **Run all tests**, and read `Test`_ for more details.
 
@@ -114,7 +114,7 @@ Test
 -----
 For each function module, a corresponding test script should be created to ensure that the developed function is normal.
 
-All test files are unified in the `tests <https://github.com/BGIResearch/stereopy/tree/main/tests>`_ directory.
+All test files are unified in the `tests <https://github.com/STOmics/stereopy/tree/main/tests>`_ directory.
 
 .. code:: bash
 

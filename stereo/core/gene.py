@@ -1,5 +1,3 @@
-#!/usr/bin/env python3
-# coding: utf-8
 """
 @file: gene.py
 @description: 
@@ -11,6 +9,7 @@ change log:
     2021/06/29  create file.
 """
 from typing import Optional
+
 import numpy as np
 import pandas as pd
 from anndata import AnnData
@@ -18,10 +17,55 @@ from anndata import AnnData
 
 class Gene(object):
     def __init__(self, gene_name: Optional[np.ndarray]):
-        self._gene_name = gene_name if gene_name is None else gene_name.astype('U')
-        self.n_cells = None
-        self.n_counts = None
-        self.mean_umi = None
+        self._var = pd.DataFrame(index=gene_name if gene_name is None else gene_name.astype('U'))
+        self._matrix = dict()
+        self._pairwise = dict()
+        self.loc = self._var.loc
+
+    def __contains__(self, item):
+        return item in self._var.columns
+
+    def __setattr__(self, key, value):
+        if key in {'_var', '_matrix', '_pairwise', 'gene_name', 'loc'}:
+            object.__setattr__(self, key, value)
+        else:
+            self._var[key] = value
+
+    def __setitem__(self, key, value):
+        self._var[key] = value
+
+    @property
+    def n_cells(self):
+        if 'n_cells' not in self._var.columns:
+            return None
+        return self._var['n_cells'].to_numpy()
+
+    @n_cells.setter
+    def n_cells(self, values):
+        if values is not None:
+            self._var['n_cells'] = values
+
+    @property
+    def n_counts(self):
+        if 'n_counts' not in self._var.columns:
+            return None
+        return self._var['n_counts'].to_numpy()
+
+    @n_counts.setter
+    def n_counts(self, values):
+        if values is not None:
+            self._var['n_counts'] = values
+
+    @property
+    def mean_umi(self):
+        if 'mean_umi' not in self._var.columns:
+            return None
+        return self._var['mean_umi'].to_numpy()
+
+    @mean_umi.setter
+    def mean_umi(self, values):
+        if values is not None:
+            self._var['mean_umi'] = values
 
     @property
     def gene_name(self):
@@ -30,7 +74,7 @@ class Gene(object):
 
         :return: genes name.
         """
-        return self._gene_name
+        return self._var.index.to_numpy().astype('U')
 
     @gene_name.setter
     def gene_name(self, name: np.ndarray):
@@ -42,7 +86,7 @@ class Gene(object):
         """
         if not isinstance(name, np.ndarray):
             raise TypeError('gene name must be a np.ndarray object.')
-        self._gene_name = name.astype('U')
+        self._var = self._var.reindex(name)
 
     def sub_set(self, index):
         """
@@ -51,14 +95,12 @@ class Gene(object):
         :param index: a numpy array of index info.
         :return: the subset of Gene object.
         """
-        if self.gene_name is not None:
-            self.gene_name = self.gene_name[index]
-        if self.n_cells is not None:
-            self.n_cells = self.n_cells[index]
-        if self.n_counts is not None:
-            self.n_counts = self.n_counts[index]
-        if self.mean_umi is not None:
-            self.mean_umi = self.mean_umi[index]
+        if type(index) is list:
+            self._var = self._var.iloc[index].copy()
+        elif index.dtype == bool:
+            self._var = self._var[index].copy()
+        else:
+            self._var = self._var.iloc[index].copy()
         return self
 
     def to_df(self):
@@ -67,26 +109,36 @@ class Gene(object):
 
         :return: a dataframe of Gene.
         """
-        attributes = {
-            'n_counts': self.n_counts,
-            'n_cells': self.n_cells,
-            'mean_umi': self.mean_umi
-        }
-        df = pd.DataFrame(attributes, index=self.gene_name)
-        return df
+        return self._var.copy(deep=True)
+
+    def __str__(self):
+        format_genes = ['gene_name']
+        for attr_name in self._var.columns:
+            format_genes.append(attr_name)
+        return f"\ngenes: {format_genes}" if format_genes else ""
 
 
 class AnnBasedGene(Gene):
 
     def __init__(self, based_ann_data: AnnData, gene_name: Optional[np.ndarray]):
         self.__based_ann_data = based_ann_data
-        super(AnnBasedGene, self).__init__(gene_name)
+        super().__init__(gene_name)
+        self._var = self.__based_ann_data.var
+
+    def __setattr__(self, key, value):
+        object.__setattr__(self, key, value)
 
     def __str__(self):
         return str(self.__based_ann_data.var)
 
     def __repr__(self):
         return self.__str__()
+
+    def __getitem__(self, item):
+        return self.__based_ann_data.var[item]
+
+    def __contains__(self, item):
+        return item in self.__based_ann_data.var.columns
 
     @property
     def gene_name(self) -> np.ndarray:
@@ -108,3 +160,6 @@ class AnnBasedGene(Gene):
         if not isinstance(name, np.ndarray):
             raise TypeError('gene name must be a np.ndarray object.')
         self.__based_ann_data._inplace_subset_var(name)
+
+    def to_df(self):
+        return self.__based_ann_data.var

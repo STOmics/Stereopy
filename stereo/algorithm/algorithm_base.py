@@ -52,7 +52,7 @@ class AlgorithmBase(metaclass=ABCMeta):
             logger.debug(f'start to run {f_name}.')
             ret_code = f(self, **{key: value for key, value in kwargs.items() if key in f_args_name})
             if type(ret_code) is int and ret_code != ErrorCode.Success:
-                logger.warn(f'{f_name} failed with ret_code: {ret_code}')
+                logger.warning(f'{f_name} failed with ret_code: {ret_code}')
                 return ErrorCode.Failed
             logger.debug(f'{f_name} end, cost: {round(time.time() - step_start_time, 4)} seconds')
         logger.info(f'{self.__class__.__name__} end, cost: {round(time.time() - the_very_beginning_time, 4)} seconds')
@@ -63,7 +63,7 @@ class AlgorithmBase(metaclass=ABCMeta):
         for f_name, f, _ in self._steps_order_by_name:
             ret_code = f(self, *args, **kwargs)
             if type(ret_code) is int and ret_code != ErrorCode.Success:
-                logger.warn(f'{f_name} failed with ret_code: {ret_code}')
+                logger.warning(f'{f_name} failed with ret_code: {ret_code}')
                 return ErrorCode.Failed
             yield ErrorCode.Success
 

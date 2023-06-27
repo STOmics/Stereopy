@@ -132,5 +132,7 @@ dmypy.json
 
 h5config.json
 test_data/
+tests/test_image/
+tests/test_data/
 
 .vscode/

@@ -1,6 +1,6 @@
 # python core module
 import os
-from typing import Tuple
+from typing import Tuple, Union
 from pathlib import Path
 
 # third part module
@@ -48,7 +48,7 @@ class CellCellCommunication(AlgorithmBase):
             self,
             analysis_type: str = 'statistical',
             cluster_res_key: str = 'cluster',
-            micro_envs: pd.DataFrame = None,
+            micro_envs: Union[pd.DataFrame, str] = None,
             species: str = "HUMAN",
             database: str = 'cellphonedb',
             homogene_path: str = None,
@@ -78,14 +78,16 @@ class CellCellCommunication(AlgorithmBase):
 
         :param analysis_type: type of analysis: "simple", "statistical".
         :param cluster_res_key: the key which specifies the clustering result in data.tl.result.
-        :param micro_envs: two columns, column names should be "cell_type" and "microenvironment".
+        :param micro_envs: a datafram or a string:
+                        if a datafram, it has two columns, column names should be "cell_type" and "microenvironment".
+                        if a string, it is a key which specifies the `gen_ccc_micro_envs` result in data.tl.result.
         :param species: 'HUMAN' or 'MOUSE'
         :param database: if species is HUMAN, choose from 'cellphonedb' or 'liana';
                         if MOUSE, use 'cellphonedb' or 'liana' or 'celltalkdb';
                         you can also specify the path of a database.
         :param homogene_path: path to the file storing mouse-human homologous genes ralations.
                         if species is MOUSE but database is 'cellphonedb' or 'liana', we need to use the human
-        homologous genes for the input mouse genes.
+                        homologous genes for the input mouse genes.
         :param counts_identifiers: type of gene identifiers in the Counts data: "ensembl", "gene_name" or "hgnc_symbol".
         :param subsampling: flag of subsampling.
         :param subsampling_log: flag of doing log1p transformation before subsampling.
@@ -106,6 +108,7 @@ class CellCellCommunication(AlgorithmBase):
         :param significant_means_filename: name of the significant mean result file.
         :param deconvoluted_filename: name of the deconvoluted result file.
         :param output_format: format of result, 'txt', 'csv', 'tsv', 'tab'.
+        :param res_key: set a key to store the result to data.tl.result.
         :return:
         """
         if subsampling and pca_res_key is not None and pca_res_key not in self.pipeline_res:
@@ -151,6 +154,10 @@ class CellCellCommunication(AlgorithmBase):
         if micro_envs is None:
             micro_envs = pd.DataFrame()
         else:
+            if isinstance(micro_envs, str):
+                if micro_envs not in self.pipeline_res:
+                    raise PipelineResultInexistent(micro_envs)
+                micro_envs = self.pipeline_res[micro_envs]['micro_envs']
             micro_envs = self._check_microenvs_data(micro_envs, meta)
 
         # 1.5. preprocess and validate other parameters

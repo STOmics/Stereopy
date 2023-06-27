@@ -59,7 +59,7 @@ Use the latest version of dev branch on Github, you need to clone the repository
 
 .. code-block:: 
 
-    git clone -b dev https://github.com/BGIResearch/stereopy.git
+    git clone -b dev https://github.com/STOmics/stereopy.git
 
     cd stereopy
 

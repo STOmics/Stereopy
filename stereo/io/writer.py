@@ -11,24 +11,27 @@ change log:
     2021/07/05  create file.
     2022/02/09  save raw data and result
 """
-from stereo.core.stereo_exp_data import StereoExpData
-from stereo.log_manager import logger
-from scipy.sparse import csr_matrix, issparse
+
+from copy import deepcopy
+
 import h5py
-from stereo.io import h5ad
 import pickle
 import numpy as np
 import pandas as pd
-from copy import deepcopy
+from scipy.sparse import csr_matrix, issparse
+
+from stereo.io import h5ad
+from stereo.core.stereo_exp_data import StereoExpData
+from stereo.log_manager import logger
 
 
 def write_h5ad(
-        data: StereoExpData, 
-        use_raw: bool=True, 
-        use_result: bool=True, 
-        key_record: dict=None, 
-        output: str=None, 
-        split_batches: bool=True):
+        data: StereoExpData,
+        use_raw: bool = True,
+        use_result: bool = True,
+        key_record: dict = None,
+        output: str = None,
+        split_batches: bool = True):
     """
     Write the StereoExpData into a H5ad file.
 
@@ -64,7 +67,8 @@ def write_h5ad(
                 boutput = f"{name}-{d.sn}{ext}"
             else:
                 boutput = None
-            write_h5ad(d, use_raw=use_raw, use_result=use_result, key_record=key_record, output=boutput, split_batches=False)
+            write_h5ad(d, use_raw=use_raw, use_result=use_result, key_record=key_record, output=boutput,
+                       split_batches=False)
         return
 
     if output is not None:
@@ -75,7 +79,11 @@ def write_h5ad(
     with h5py.File(data.output, mode='w') as f:
         _write_one_h5ad(f, data, use_raw=use_raw, use_result=use_result, key_record=key_record)
 
-def _write_one_h5ad(f, data, use_raw=False, use_result=True, key_record=None):
+
+def _write_one_h5ad(f, data: StereoExpData, use_raw=False, use_result=True, key_record=None):
+    if data.attr is not None:
+        for key, value in data.attr.items():
+            f.attrs[key] = value
     if data.sn is not None:
         if isinstance(data.sn, str):
             sn_list = [['-1', data.sn]]
@@ -87,18 +95,23 @@ def _write_one_h5ad(f, data, use_raw=False, use_result=True, key_record=None):
         h5ad.write(sn_data, f, 'sn', save_as_matrix=True)
     h5ad.write(data.genes, f, 'genes')
     h5ad.write(data.cells, f, 'cells')
-    h5ad.write(data.position, f, 'position')
+    if data.position_z is None:
+        position = data.position
+    else:
+        position = np.concatenate([data.position, data.position_z], axis=1)
+    h5ad.write(position, f, 'position')
     if issparse(data.exp_matrix):
         sp_format = 'csr' if isinstance(data.exp_matrix, csr_matrix) else 'csc'
         h5ad.write(data.exp_matrix, f, 'exp_matrix', sp_format)
     else:
         h5ad.write(data.exp_matrix, f, 'exp_matrix')
     h5ad.write(data.bin_type, f, 'bin_type')
+    h5ad.write(data.bin_size, f, 'bin_size')
     h5ad.write(data.merged, f, 'merged')
 
     if use_raw is True:
         same_genes = np.array_equal(data.tl.raw.gene_names, data.gene_names)
-        same_cells = np.array_equal(data.tl.raw.gene_names, data.gene_names)
+        same_cells = np.array_equal(data.tl.raw.cell_names, data.cell_names)
         if not same_genes:
             # if raw genes differ from genes
             h5ad.write(data.tl.raw.genes, f, 'genes@raw')
@@ -107,7 +120,11 @@ def _write_one_h5ad(f, data, use_raw=False, use_result=True, key_record=None):
             h5ad.write(data.tl.raw.cells, f, 'cells@raw')
         if not (same_genes | same_cells):
             # if either raw genes or raw cells are different
-            h5ad.write(data.tl.raw.position, f, 'position@raw')
+            if data.tl.raw.position_z is None:
+                position = data.tl.raw.position
+            else:
+                position = np.concatenate([data.tl.raw.position, data.tl.raw.position_z], axis=1)
+            h5ad.write(position, f, 'position@raw')
         # save raw exp_matrix
         if issparse(data.tl.raw.exp_matrix):
             sp_format = 'csr' if isinstance(data.tl.raw.exp_matrix, csr_matrix) else 'csc'
@@ -124,7 +141,8 @@ def _write_one_h5ad(f, data, use_raw=False, use_result=True, key_record=None):
         for analysis_key in mykey_record_keys:
             if analysis_key not in supported_keys:
                 mykey_record.pop(analysis_key)
-                logger.info(f'key_name:{analysis_key} is not recongnized, try to select the name in {supported_keys} as your key_name.')
+                logger.info(
+                    f'key_name:{analysis_key} is not recongnized, try to select the name in {supported_keys} as your key_name.')
         h5ad.write_key_record(f, 'key_record', mykey_record)
 
         for analysis_key, res_keys in mykey_record.items():
@@ -176,12 +194,14 @@ def _write_one_h5ad(f, data, use_raw=False, use_result=True, key_record=None):
                         csr_matrix(data.tl.result[res_key][0]['data']), f, f'exp_matrix@{res_key}@sct_data', 'csr'
                     )
                     h5ad.write(
-                        csr_matrix(data.tl.result[res_key][0]['scale.data']), f, f'exp_matrix@{res_key}@sct_scale', 'csr'
+                        csr_matrix(data.tl.result[res_key][0]['scale.data']), f, f'exp_matrix@{res_key}@sct_scale',
+                        'csr'
                     )
                     h5ad.write(list(data.tl.result[res_key][1]['umi_genes']), f, f'genes@{res_key}@sct')
                     h5ad.write(list(data.tl.result[res_key][1]['umi_cells']), f, f'cells@{res_key}@sct')
                     h5ad.write(list(data.tl.result[res_key][1]['top_features']), f, f'genes@{res_key}@sct_top_features')
-                    h5ad.write(list(data.tl.result[res_key][0]['scale.data'].index), f,f'genes@{res_key}@sct_scale_genename')
+                    h5ad.write(list(data.tl.result[res_key][0]['scale.data'].index), f,
+                               f'genes@{res_key}@sct_scale_genename')
                     # TODO ignored other result of the sct
                 if analysis_key == 'spatial_hotspot':
                     # Hotspot object
@@ -189,7 +209,8 @@ def _write_one_h5ad(f, data, use_raw=False, use_result=True, key_record=None):
                 if analysis_key == 'cell_cell_communication':
                     for key, item in data.tl.result[res_key].items():
                         if key != 'parameters':
-                            h5ad.write(item, f, f'{res_key}@{key}@cell_cell_communication', save_as_matrix=False)  # -> dataframe
+                            h5ad.write(item, f, f'{res_key}@{key}@cell_cell_communication',
+                                       save_as_matrix=False)  # -> dataframe
                         else:
                             name, value = [], []
                             for pname, pvalue in item.items():
@@ -199,16 +220,18 @@ def _write_one_h5ad(f, data, use_raw=False, use_result=True, key_record=None):
                                 'name': name,
                                 'value': value
                             })
-                            h5ad.write(parameters_df, f, f'{res_key}@{key}@cell_cell_communication', save_as_matrix=False)  # -> dataframe
+                            h5ad.write(parameters_df, f, f'{res_key}@{key}@cell_cell_communication',
+                                       save_as_matrix=False)  # -> dataframe
                 if analysis_key == 'regulatory_network_inference':
                     for key, item in data.tl.result[res_key].items():
                         if key == 'regulons':
                             h5ad.write(str(item), f, f'{res_key}@{key}@regulatory_network_inference')  # -> str
                         else:
-                            h5ad.write(item, f, f'{res_key}@{key}@regulatory_network_inference', save_as_matrix=False)  # -> dataframe
+                            h5ad.write(item, f, f'{res_key}@{key}@regulatory_network_inference',
+                                       save_as_matrix=False)  # -> dataframe
 
 
-def write_h5ms(ms_data, output : str):
+def write_h5ms(ms_data, output: str):
     with h5py.File(output, mode='w') as f:
         f.create_group(f'slice')
         for idx, data in enumerate(ms_data._data_list):
@@ -226,9 +249,7 @@ def write_h5ms(ms_data, output : str):
         # h5ad.write(ms_data.relationship_info, f, 'relationship_info')
 
 
-def write_mid_gef(
-        data: StereoExpData, 
-        output: str):
+def write_mid_gef(data: StereoExpData, output: str):
     """
     Write the StereoExpData object into a GEF (.h5) file. 
 
@@ -307,10 +328,7 @@ def save_pkl(obj, output):
     f.close()
 
 
-def update_gef(
-        data: StereoExpData, 
-        gef_file: str, 
-        cluster_res_key: str):
+def update_gef(data: StereoExpData, gef_file: str, cluster_res_key: str):
     """
     Add cluster result into GEF (.h5) file and update the GEF file directly.
 
@@ -331,11 +349,12 @@ def update_gef(
     if cluster_res_key not in data.tl.result:
         raise Exception(f'{cluster_res_key} is not in the result, please check and run the func of cluster.')
     clu_result = data.tl.result[cluster_res_key]
-    for i,v in clu_result.iterrows():
-        cluster[v['bins']] = int(v['group'])+1
+    for i, v in clu_result.iterrows():
+        cluster[v['bins']] = int(v['group']) + 1
 
     h5f = h5py.File(gef_file, 'r+')
-    cell_names = np.bitwise_or(np.left_shift(h5f['cellBin']['cell']['x'].astype('uint64'), 32), h5f['cellBin']['cell']['y'])
+    cell_names = np.bitwise_or(np.left_shift(h5f['cellBin']['cell']['x'].astype('uint64'), 32),
+                               h5f['cellBin']['cell']['y'])
     celltid = np.zeros(h5f['cellBin']['cell'].shape, dtype='uint16')
     n = 0
     for cell_name in cell_names:

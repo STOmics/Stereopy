@@ -7,23 +7,17 @@ from stereo.io import read_gem
 from stereo.utils._download import _download
 from stereo.utils.data_helper import merge
 
+from settings import TEST_DATA_PATH, DEMO_132BR_A1_URL, DEMO_132BR_A2_URL, TEST_IMAGE_PATH
+
 
 class TestBatchIntegration(unittest.TestCase):
     DATA_A1: Union[StereoExpData, Any]
     DATA_A2: Union[StereoExpData, Any]
 
-    DEMO_132BR_A1_URL = 'https://pan.genomics.cn/ucdisk/api/2.0/share/link/download?' \
-                        'shareEventId=share_2022928142945896_010df2aa7d344d97a610557de7bad81b&' \
-                        'nodeId=8a80804a837dc46f01838302491a21e0&code='
-
-    DEMO_132BR_A2_URL = 'https://pan.genomics.cn/ucdisk/api/2.0/share/link/download?' \
-                        'shareEventId=share_2022928142945896_010df2aa7d344d97a610557de7bad81b&' \
-                        'nodeId=8a80804a837dc46f01838302df5b21e2&code='
-
     @classmethod
     def setUpClass(cls) -> None:
-        input_file_1 = _download(TestBatchIntegration.DEMO_132BR_A1_URL)
-        input_file_2 = _download(TestBatchIntegration.DEMO_132BR_A2_URL)
+        input_file_1 = _download(DEMO_132BR_A1_URL, dir_str=TEST_DATA_PATH)
+        input_file_2 = _download(DEMO_132BR_A2_URL, dir_str=TEST_DATA_PATH)
         data_a1 = read_gem(input_file_1)
         data_a1.tl.cal_qc()
         data_a1.tl.filter_cells(max_n_genes_by_counts=4000, pct_counts_mt=5, inplace=True)
@@ -47,7 +41,7 @@ class TestBatchIntegration(unittest.TestCase):
                           res_key='umap_integrated')
 
         self.DATA.tl.leiden(neighbors_res_key='neighbors_integrated', res_key='leiden')
-        self.DATA.plt.cluster_scatter(res_key='leiden', out_path="./image_path/batch_integrated_leiden.png")
+        self.DATA.plt.cluster_scatter(res_key='leiden', out_path=TEST_IMAGE_PATH + "batch_integrated_leiden.png")
 
     def test_ms_batches_integrate(self):
         self.MS_DATA.merge_for_batching_integrate()

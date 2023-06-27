@@ -21,16 +21,16 @@ function between StereoExpData and AnnData so that swithing between tools would 
 In output part, we support writing StereoExpData as h5ad file for storage.
 
 
-    StereoExpData
-    --------------------
+StereoExpData
+--------------------
 
-    The core data object is designed for expression matrix of spatial omics, which can be set 
-    corresponding properties directly to initialize the data. 
+The core data object is designed for expression matrix of spatial omics, which can be set 
+corresponding properties directly to initialize the data. 
 
-    .. autosummary::
-       :toctree: .
+.. autosummary::
+    :toctree: .
 
-        core.StereoExpData
+    core.StereoExpData
 
 
 .. autosummary::
@@ -117,7 +117,6 @@ Interactive Plot
    :toctree: .
 
    plots.interact_spatial_cluster
-   plots.interact_annotation_cluster
    plots.InteractiveScatter
 
 
@@ -144,6 +143,7 @@ Image parse module.
     image.pyramid.merge_pyramid
     image.pyramid.create_pyramid
     image.segmentation.segment.cell_seg
+    image.cellbin.modules.cell_segmentation.cell_seg_v3
     image.segmentation_deepcell.segment.cell_seg_deepcell
     image.tissue_cut.SingleStrandDNATissueCut
     image.tissue_cut.RNATissueCut
