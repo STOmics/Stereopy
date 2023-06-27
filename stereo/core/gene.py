@@ -29,7 +29,8 @@ class Gene(object):
         if key in {'_var', '_matrix', '_pairwise', 'gene_name', 'loc'}:
             object.__setattr__(self, key, value)
         else:
-            self._var[key] = value
+            if value is not None:
+                self._var[key] = value
 
     def __setitem__(self, key, value):
         self._var[key] = value
