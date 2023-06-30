@@ -29,7 +29,8 @@ class Gene(object):
         if key in {'_var', '_matrix', '_pairwise', 'gene_name', 'loc'}:
             object.__setattr__(self, key, value)
         else:
-            self._var[key] = value
+            if value is not None:
+                self._var[key] = value
 
     def __setitem__(self, key, value):
         self._var[key] = value
@@ -42,7 +43,8 @@ class Gene(object):
 
     @n_cells.setter
     def n_cells(self, values):
-        self._var['n_cells'] = values
+        if values is not None:
+            self._var['n_cells'] = values
 
     @property
     def n_counts(self):
@@ -52,7 +54,8 @@ class Gene(object):
 
     @n_counts.setter
     def n_counts(self, values):
-        self._var['n_counts'] = values
+        if values is not None:
+            self._var['n_counts'] = values
 
     @property
     def mean_umi(self):
@@ -62,7 +65,8 @@ class Gene(object):
 
     @mean_umi.setter
     def mean_umi(self, values):
-        self._var['mean_umi'] = values
+        if values is not None:
+            self._var['mean_umi'] = values
 
     @property
     def gene_name(self):

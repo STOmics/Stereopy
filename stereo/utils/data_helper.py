@@ -8,15 +8,19 @@
 """
 from typing import Optional
 from typing import Union
+from natsort import natsorted
+from math import ceil
 
+import numba as nb
 import numpy as np
 import pandas as pd
 # from scipy.sparse import issparse
 import scipy.sparse as sp
+import anndata
 
 from stereo.core.cell import Cell
 from stereo.core.gene import Gene
-from ..core.stereo_exp_data import StereoExpData
+from ..core.stereo_exp_data import StereoExpData, AnnBasedStereoExpData
 
 
 def select_group(st_data, groups, cluster):
@@ -86,6 +90,51 @@ def _union_merge(arr1: np.ndarray, arr2: np.ndarray, new_col: np.ndarray, old_co
     merged_arr[arr1.shape[0]:arr1.shape[0] + arr2.shape[0], np.where(old_col2 == new_col[:, None])[0]] = arr2
     return merged_arr
 
+def reorganize_data_coordinates(
+    cells_batch: np.ndarray,
+    data_position: np.ndarray,
+    data_position_offset: dict = None,
+    reorganize_coordinate: Union[bool, int] = 2,
+    horizontal_offset_additional: Union[int, float] = 0,
+    vertical_offset_additional: Union[int, float] = 0,
+):
+    if not reorganize_coordinate:
+        return data_position, data_position_offset
+    
+    batches = natsorted(np.unique(cells_batch))
+    data_count = len(batches)
+    position_row_count = ceil(data_count / reorganize_coordinate)
+    position_column_count = reorganize_coordinate
+    max_xs = [0] * (position_column_count + 1)
+    max_ys = [0] * (position_row_count + 1)
+    for i, bno in enumerate(batches):
+        idx = np.where(cells_batch == bno)[0]
+        data_position[idx] -= data_position_offset[bno] if data_position_offset is not None else 0
+        position_row_number = i // reorganize_coordinate
+        position_column_number = i % reorganize_coordinate
+        max_x = data_position[idx][:, 0].max() - data_position[idx][:, 0].min() + 1
+        max_y = data_position[idx][:, 1].max() - data_position[idx][:, 1].min() + 1
+        if max_x > max_xs[position_column_number + 1]:
+            max_xs[position_column_number + 1] = max_x
+        if max_y > max_ys[position_row_number + 1]:
+            max_ys[position_row_number + 1] = max_y
+    
+    data_position_offset = {}
+    for i, bno in enumerate(batches):
+        idx = np.where(cells_batch == bno)[0]
+        position_row_number = i // reorganize_coordinate
+        position_column_number = i % reorganize_coordinate
+        x_add = max_xs[position_column_number]
+        y_add = max_ys[position_row_number]
+        if position_column_number > 0:
+            x_add += sum(max_xs[0:position_column_number]) + horizontal_offset_additional * position_column_number
+        if position_row_number > 0:
+            y_add += sum(max_ys[0:position_row_number]) + vertical_offset_additional * position_row_number
+        # position_offset = np.repeat([[x_add, y_add]], repeats=len(idx), axis=0).astype(np.uint32)
+        position_offset = np.array([x_add, y_add], dtype=data_position.dtype)
+        data_position[idx] += position_offset
+        data_position_offset[bno] = position_offset
+    return data_position, data_position_offset
 
 def merge(
         *data_list: StereoExpData,
@@ -143,12 +192,12 @@ def merge(
     data_count = len(data_list)
     new_data = StereoExpData(merged=True)
     new_data.sn = {}
-    if reorganize_coordinate:
-        from math import ceil
-        position_row_count = ceil(data_count / reorganize_coordinate)
-        position_column_count = reorganize_coordinate
-        max_xs = [0] * (position_column_count + 1)
-        max_ys = [0] * (position_row_count + 1)
+    # if reorganize_coordinate:
+    #     from math import ceil
+    #     position_row_count = ceil(data_count / reorganize_coordinate)
+    #     position_column_count = reorganize_coordinate
+        # max_xs = [0] * (position_column_count + 1)
+        # max_ys = [0] * (position_row_count + 1)
     current_position_z = 0
     for i in range(data_count):
         data: StereoExpData = data_list[i]
@@ -188,8 +237,8 @@ def merge(
             else:
                 new_data.position_z = np.concatenate([new_data.position_z, data.position_z])
             if var_type == "intersect":
-                new_data.genes.gene_name, ind1, ind2 = np.intersect1d(new_data.genes.gene_name, data.genes.gene_name,
-                                                                      return_indices=True)
+                new_data.genes.gene_name, ind1, ind2 = \
+                    np.intersect1d(new_data.genes.gene_name, data.genes.gene_name, return_indices=True)
                 new_data.exp_matrix = sp.vstack([new_data.exp_matrix[:, ind1], data.exp_matrix[:, ind2]])
             elif var_type == "union":
                 old_gene_name = new_data.genes.gene_name
@@ -216,39 +265,44 @@ def merge(
                         new_data.attr['maxExp'] = new_data.exp_matrix.max()
                     elif key == 'resolution':
                         new_data.attr['resolution'] = value
-        if reorganize_coordinate:
-            position_row_number = i // reorganize_coordinate
-            position_column_number = i % reorganize_coordinate
-            max_x = data.position[:, 0].max()
-            max_y = data.position[:, 1].max()
-            if max_x > max_xs[position_column_number + 1]:
-                max_xs[position_column_number + 1] = max_x
-            if max_y > max_ys[position_row_number + 1]:
-                max_ys[position_row_number + 1] = max_y
     if reorganize_coordinate:
-        horizontal_offset_additional = 0 if horizontal_offset_additional < 0 else horizontal_offset_additional
-        vertical_offset_additional = 0 if vertical_offset_additional < 0 else vertical_offset_additional
-        batches = np.unique(new_data.cells.batch).tolist()
-        batches.sort(key=lambda x: int(x))
-        for i, bno in enumerate(batches):
-            idx = np.where(new_data.cells.batch == bno)[0]
-            position_row_number = i // reorganize_coordinate
-            position_column_number = i % reorganize_coordinate
-            x_add = max_xs[position_column_number]
-            y_add = max_ys[position_row_number]
-            if position_column_number > 0:
-                x_add += sum(max_xs[0:position_column_number]) + horizontal_offset_additional * position_column_number
-            if position_row_number > 0:
-                y_add += sum(max_ys[0:position_row_number]) + vertical_offset_additional * position_row_number
-            # position_offset = np.repeat([[x_add, y_add]], repeats=len(idx), axis=0).astype(np.uint32)
-            # position_offset = np.array([x_add, y_add], dtype=np.uint32)
-            position_offset = np.array([x_add, y_add], dtype=new_data.position.dtype)
-            new_data.position[idx] += position_offset
-            if new_data.position_offset is None:
-                new_data.position_offset = {bno: position_offset}
-            else:
-                # new_data.position_offset = np.concatenate([new_data.position_offset, position_offset])
-                new_data.position_offset[bno] = position_offset
+        new_data.position, new_data.position_offset = reorganize_data_coordinates(
+            new_data.cells.batch, new_data.position, new_data.position_offset, 
+            reorganize_coordinate, horizontal_offset_additional, vertical_offset_additional
+        )
+    #     if reorganize_coordinate:
+    #         position_row_number = i // reorganize_coordinate
+    #         position_column_number = i % reorganize_coordinate
+    #         max_x = data.position[:, 0].max()
+    #         max_y = data.position[:, 1].max()
+    #         if max_x > max_xs[position_column_number + 1]:
+    #             max_xs[position_column_number + 1] = max_x
+    #         if max_y > max_ys[position_row_number + 1]:
+    #             max_ys[position_row_number + 1] = max_y
+    # if reorganize_coordinate:
+    #     horizontal_offset_additional = 0 if horizontal_offset_additional < 0 else horizontal_offset_additional
+    #     vertical_offset_additional = 0 if vertical_offset_additional < 0 else vertical_offset_additional
+    #     batches = np.unique(new_data.cells.batch).tolist()
+    #     batches.sort(key=lambda x: int(x))
+    #     for i, bno in enumerate(batches):
+    #         idx = np.where(new_data.cells.batch == bno)[0]
+    #         position_row_number = i // reorganize_coordinate
+    #         position_column_number = i % reorganize_coordinate
+    #         x_add = max_xs[position_column_number]
+    #         y_add = max_ys[position_row_number]
+    #         if position_column_number > 0:
+    #             x_add += sum(max_xs[0:position_column_number]) + horizontal_offset_additional * position_column_number
+    #         if position_row_number > 0:
+    #             y_add += sum(max_ys[0:position_row_number]) + vertical_offset_additional * position_row_number
+    #         # position_offset = np.repeat([[x_add, y_add]], repeats=len(idx), axis=0).astype(np.uint32)
+    #         # position_offset = np.array([x_add, y_add], dtype=np.uint32)
+    #         position_offset = np.array([x_add, y_add], dtype=new_data.position.dtype)
+    #         new_data.position[idx] += position_offset
+    #         if new_data.position_offset is None:
+    #             new_data.position_offset = {bno: position_offset}
+    #         else:
+    #             # new_data.position_offset = np.concatenate([new_data.position_offset, position_offset])
+    #             new_data.position_offset[bno] = position_offset
 
     return new_data
 

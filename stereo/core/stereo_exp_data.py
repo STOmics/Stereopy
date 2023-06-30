@@ -609,11 +609,13 @@ class AnnBasedStereoExpData(StereoExpData):
     def __repr__(self):
         return self.__str__()
     
-    def __getattr__(self, name):
-        if hasattr(self._ann_data, name):
-            return getattr(self._ann_data, name)
-        else:
-            return None
+    # def __getattr__(self, name: str):
+    #     if name.startswith('__'):
+    #         raise AttributeError
+    #     if hasattr(self._ann_data, name):
+    #         return getattr(self._ann_data, name)
+    #     else:
+    #         return None
 
     @property
     def exp_matrix(self):
@@ -668,7 +670,10 @@ class AnnBasedStereoExpData(StereoExpData):
     @property
     def position_z(self):
         if 'spatial' in self._ann_data.obsm:
-            return self._ann_data.obsm['spatial'][:, [2]]
+            if self._ann_data.obsm['spatial'].shape[1] >= 3:
+                return self._ann_data.obsm['spatial'][:, [2]]
+            else:
+                return None
         elif {'z'} - set(self._ann_data.obs.columns.values):
             self._ann_data.obs.loc[:, ['z']] = \
                 np.array(list(self._ann_data.obs.index.str.split('-', expand=True)), dtype=np.uint32)

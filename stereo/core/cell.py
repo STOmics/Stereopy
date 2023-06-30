@@ -116,7 +116,7 @@ class Cell(object):
     def batch(self):
         if 'batch' not in self._obs.columns:
             return None
-        return self._obs['batch'].values
+        return self._obs['batch'].to_numpy()
 
     def _set_batch(self, batch: Union[np.ndarray, list, int]):
         if batch is None:

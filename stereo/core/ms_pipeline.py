@@ -2,6 +2,7 @@ from joblib import Parallel, delayed, cpu_count
 
 from stereo import logger
 from stereo.core import StPipeline
+from stereo.plots.decorator import download
 
 
 class _scope_slice(object):
@@ -31,31 +32,24 @@ class MSDataPipeLine(object):
     def _use_integrate_method(self, item, *args, **kwargs):
         if item == "batches_integrate":
             raise AttributeError
+        
+        if "mode" in kwargs:
+            del kwargs["mode"]
+
+        scope = kwargs.get("scope", slice(None))
+        del kwargs["scope"]
 
         if item in {"cal_qc", "filter_cells", "filter_genes", "sctransform", "log1p", "normalize_total",
-                    "scale"}:
-            if kwargs["scope"] != slice(None):
+                    "scale", "raw_checkpoint"}:
+            if scope != slice(None):
                 raise Exception(f'{item} use integrate should use all sample')
             ms_data_view = self.ms_data
-        elif kwargs["scope"] == slice(None):
+        elif scope == slice(None):
             ms_data_view = self.ms_data
         else:
-            ms_data_view = self.ms_data[kwargs["scope"]]
+            ms_data_view = self.ms_data[scope]
         if not ms_data_view.merged_data:
             ms_data_view.integrate(result=self.ms_data.tl.result)
-
-        new_attr = self.__class__.BASE_CLASS.__dict__.get(item, None)
-        if new_attr is None:
-            from stereo.algorithm.algorithm_base import AlgorithmBase
-            merged_data = ms_data_view.merged_data
-            new_attr = AlgorithmBase.get_attribute_helper(item, merged_data, merged_data.tl.result)
-            if new_attr:
-                logger.info(f'register algorithm {item} to {type(merged_data)}-{id(merged_data)}')
-                return new_attr
-
-        def log_delayed_task(idx, *arg, **kwargs):
-            logger.info(f'data_obj(idx={idx}) in ms_data start to run {item}')
-            new_attr(*arg, **kwargs)
 
         def callback_func(key, value):
             key_name = "scope_[" + ",".join(
@@ -72,8 +66,9 @@ class MSDataPipeLine(object):
             if scope_result is None:
                 raise KeyError
             method_result = scope_result.get(name, None)
-            if method_result is None:
-                raise KeyError
+            # if method_result is None:
+            #     raise KeyError
+            # return method_result
             return method_result
 
         ms_data_view._merged_data.tl.result.get_item_method = get_item_method
@@ -91,15 +86,40 @@ class MSDataPipeLine(object):
 
         ms_data_view._merged_data.tl.result.contain_method = contain_method
 
-        if "mode" in kwargs:
-            del kwargs["mode"]
-        del kwargs["scope"]
-        log_delayed_task(
-            0,
+        new_attr = self.__class__.BASE_CLASS.__dict__.get(item, None)
+        if new_attr is None:
+            if self.__class__.ATTR_NAME == "tl":
+                from stereo.algorithm.algorithm_base import AlgorithmBase
+                merged_data = ms_data_view.merged_data
+                new_attr = AlgorithmBase.get_attribute_helper(item, merged_data, merged_data.tl.result)
+                if new_attr:
+                    logger.info(f'register algorithm {item} to {type(merged_data)}-{id(merged_data)}')
+                    return new_attr(*args, **kwargs)
+            else:
+                from stereo.plots.plot_base import PlotBase
+                merged_data = ms_data_view.merged_data
+                new_attr = download(PlotBase.get_attribute_helper(item, merged_data, merged_data.tl.result))
+                if new_attr:
+                    logger.info(f'register plot_func {item} to {type(merged_data)}-{id(merged_data)}')
+                    return new_attr(*args, **kwargs)
+        
+        logger.info(f'data_obj(idx=0) in ms_data start to run {item}')
+        return new_attr(
             ms_data_view.merged_data.__getattribute__(self.__class__.ATTR_NAME),
             *args,
             **kwargs
         )
+
+        # def log_delayed_task(idx, *arg, **kwargs):
+        #     logger.info(f'data_obj(idx={idx}) in ms_data start to run {item}')
+        #     return new_attr(*arg, **kwargs)
+        
+        # return log_delayed_task(
+        #     0,
+        #     ms_data_view.merged_data.__getattribute__(self.__class__.ATTR_NAME),
+        #     *args,
+        #     **kwargs
+        # )
 
     def _run_isolated_method(self, item, *args, **kwargs):
         if "mode" in kwargs:
@@ -109,26 +129,35 @@ class MSDataPipeLine(object):
             del kwargs["scope"]
 
         new_attr = self.__class__.BASE_CLASS.__dict__.get(item, None)
+        if self.__class__.ATTR_NAME == 'tl':
+            n_jobs = min(len(ms_data_view.data_list), cpu_count())
+        else:
+            n_jobs = 1
         if new_attr:
             def log_delayed_task(idx, *arg, **kwargs):
                 logger.info(f'data_obj(idx={idx}) in ms_data start to run {item}')
                 new_attr(*arg, **kwargs)
 
-            Parallel(n_jobs=min(len(ms_data_view.data_list), cpu_count()), backend='threading', verbose=100)(
+            Parallel(n_jobs=n_jobs, backend='threading', verbose=100)(
                 delayed(log_delayed_task)(idx, obj.__getattribute__(self.__class__.ATTR_NAME), *args, **kwargs)
                 for idx, obj in enumerate(ms_data_view.data_list)
             )
         else:
-            from stereo.algorithm.algorithm_base import AlgorithmBase
+            if self.__class__.ATTR_NAME == 'tl':
+                from stereo.algorithm.algorithm_base import AlgorithmBase
+                base = AlgorithmBase
+            else:
+                from stereo.plots.plot_base import PlotBase
+                base = PlotBase
             def log_delayed_task(idx, obj, *arg, **kwargs):
                 logger.info(f'data_obj(idx={idx}) in ms_data start to run {item}')
-                new_attr = AlgorithmBase.get_attribute_helper(item, obj, obj.tl.result)
+                new_attr = base.get_attribute_helper(item, obj, obj.tl.result)
                 if new_attr:
                     new_attr(*arg, **kwargs)
                 else:
                     raise Exception
 
-            Parallel(n_jobs=min(len(ms_data_view.data_list), cpu_count()), backend='threading', verbose=100)(
+            Parallel(n_jobs=n_jobs, backend='threading', verbose=100)(
                 delayed(log_delayed_task)(idx, obj, *args, **kwargs)
                 for idx, obj in enumerate(ms_data_view.data_list)
             )
@@ -142,58 +171,30 @@ class MSDataPipeLine(object):
         if item.startswith('__'):
             raise AttributeError
 
-        if self.__class__.ATTR_NAME == "tl":
-            from ..algorithm.ms_algorithm_base import MSDataAlgorithmBase
-            run_method = MSDataAlgorithmBase.get_attribute_helper(item, self.ms_data, self._result)
-            if run_method:
-                return run_method
-
-            def temp(*args, **kwargs):
-                if "scope" not in kwargs:
-                    kwargs["scope"] = slice_generator[:]
-                if "mode" in kwargs:
-                    if kwargs["mode"] == "integrate":
-                        if self.ms_data.merged_data:
-                            self._use_integrate_method(item, *args, **kwargs)
-                        else:
-                            raise Exception(
-                                "`mode` integrate should merge first, using `ms_data.integrate`"
-                            )
-                    elif kwargs["mode"] == "isolated":
-                        self._run_isolated_method(item, *args, **kwargs)
-                    else:
-                        raise Exception("`mode` should be one of [`integrate`, `isolated`]")
-                else:
+        def temp(*args, **kwargs):
+            if "scope" not in kwargs:
+                kwargs["scope"] = slice_generator[:]
+            if "mode" in kwargs:
+                if kwargs["mode"] == "integrate":
                     if self.ms_data.merged_data:
-                        self._use_integrate_method(item, *args, **kwargs)
+                        return self._use_integrate_method(item, *args, **kwargs)
                     else:
                         raise Exception(
                             "`mode` integrate should merge first, using `ms_data.integrate`"
                         )
+                elif kwargs["mode"] == "isolated":
+                    self._run_isolated_method(item, *args, **kwargs)
+                else:
+                    raise Exception("`mode` should be one of [`integrate`, `isolated`]")
+            else:
+                if self.ms_data.merged_data:
+                    return self._use_integrate_method(item, *args, **kwargs)
+                else:
+                    raise Exception(
+                        "`mode` integrate should merge first, using `ms_data.integrate`"
+                    )
 
-            return temp
-        else:
-            new_attr = self.__class__.BASE_CLASS.__dict__.get(item)
-            if new_attr:
-                def temp(*args, **kwargs):
-                    out_paths = kwargs.get('out_paths', None)
-                    if out_paths:
-                        del kwargs['out_paths']
-                        assert len(self.ms_data.data_list) == len(out_paths)
-                    for idx, obj in enumerate(self.ms_data.data_list):
-                        logger.info(f'data_obj(idx={idx}) in ms_data start to run {item}')
-                        if out_paths:
-                            kwargs['out_path'] = out_paths[idx]
-                        new_attr(obj.__getattribute__(self.__class__.ATTR_NAME), *args, **kwargs)
-
-                return temp
-
-            from ..plots.ms_plot_base import MSDataPlotBase
-            ms_data_method = MSDataPlotBase.get_attribute_helper(item, self.ms_data, self._result)
-            if ms_data_method:
-                return ms_data_method
-
-        raise AttributeError
+        return temp
 
 
 slice_generator = _scope_slice()

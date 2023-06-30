@@ -1,12 +1,16 @@
 from warnings import warn
+from copy import deepcopy
 
 import pandas as pd
 from anndata import AnnData
 
 
 class _BaseResult(object):
-    CLUSTER_NAMES = {'leiden', 'louvain', 'phenograph', 'annotation', 'leiden_from_bins', 'louvain_from_bins',
-                     'phenograph_from_bins', 'annotation_from_bins'}
+    CLUSTER_NAMES = {
+        'leiden', 'louvain', 'phenograph', 'annotation',
+        'leiden_from_bins', 'louvain_from_bins', 'phenograph_from_bins', 'annotation_from_bins',
+        'celltype', 'cell_type'
+    }
     CONNECTIVITY_NAMES = {'neighbors'}
     REDUCE_NAMES = {'umap', 'pca', 'tsne'}
     HVG_NAMES = {'highly_variable_genes', 'hvg', 'highly_variable'}
@@ -23,6 +27,7 @@ class _BaseResult(object):
         MARKER_GENES: MARKER_GENES_NAMES
     }
 
+from  anndata import AnnData
 
 class Result(_BaseResult, dict):
 
@@ -32,6 +37,24 @@ class Result(_BaseResult, dict):
         self.set_item_callback = None
         self.get_item_method = None
         self.contain_method = None
+
+    # def __deepcopy__(self, memo=None, _nil=[]):
+    #     if memo is None:
+    #         memo = {}
+    #     d = id(self)
+    #     y = memo.get(d, _nil)
+    #     if y is not _nil:
+    #         return y
+        
+    #     cls = Result(None)
+    #     memo[d] = id(cls)
+    #     cls.__stereo_exp_data = deepcopy(self.__stereo_exp_data, memo)
+    #     cls.set_item_callback = deepcopy(self.set_item_callback, memo)
+    #     cls.get_item_method = deepcopy(self.get_item_method, memo)
+    #     cls.contain_method = deepcopy(self.contain_method, memo)
+    #     for key, value in self.items():
+    #         dict.__setitem__(cls, deepcopy(key, memo), deepcopy(value, memo))
+    #     return cls
 
     def __contains__(self, item):
         if self.contain_method:

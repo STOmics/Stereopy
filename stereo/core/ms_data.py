@@ -22,7 +22,7 @@ class _MSDataView(object):
     _tl = None
     _plt = None
 
-    def __getitem__(self, key: Union[slice]):
+    def __getitem__(self, key: slice):
         if type(key) is not slice:
             raise TypeError(f'{key} should be slice')
         data_list = []
@@ -64,7 +64,7 @@ class _MSDataView(object):
     def merged_data(self):
         return self._merged_data
 
-    def merge_for_batching_integrate(self, **kwargs):
+    def integrate(self, reorganize_coordinate=False, **kwargs):
         from stereo.utils.data_helper import merge
         if "result" not in kwargs:
             raise Exception("_MSDataView.integrate requires a upstream ms_data.tl.result object")
@@ -73,7 +73,7 @@ class _MSDataView(object):
         del kwargs["result"]
 
         if len(self._data_list) > 1:
-            self._merged_data = merge(*self.data_list, **kwargs)
+            self._merged_data = merge(*self.data_list, reorganize_coordinate=reorganize_coordinate, **kwargs)
         else:
             from copy import deepcopy
             self._merged_data = deepcopy(self._data_list[0])
@@ -489,11 +489,11 @@ class MSData(_MSDataStruct):
     def mss(self):
         return self.tl.result
 
-    def integrate(self, **kwargs):
+    def integrate(self, reorganize_coordinate=False, **kwargs):
         from stereo.utils.data_helper import merge
         if self._var_type not in {"union", "intersect"}:
             raise Exception("Please specify the operation on samples with the parameter '_var_type'")
-        self.merged_data = merge(*self.data_list, var_type=self._var_type, **kwargs)
+        self.merged_data = merge(*self.data_list, var_type=self._var_type, reorganize_coordinate=reorganize_coordinate, **kwargs)
 
     def split_after_batching_integrate(self):
         if self._var_type == "union":

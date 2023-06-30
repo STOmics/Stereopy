@@ -171,8 +171,8 @@ def filter_by_clusters(
     all_groups = cluster_res['group']
     if isinstance(groups, str):
         groups = [groups]
-    is_in_bool = all_groups.isin(groups)
+    is_in_bool = all_groups.isin(groups).to_numpy()
     if excluded:
         is_in_bool = ~is_in_bool
     data.sub_by_index(cell_index=is_in_bool)
-    return data
+    return data, cluster_res[is_in_bool]

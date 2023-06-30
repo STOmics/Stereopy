@@ -586,7 +586,7 @@ def read_h5ad(
     if flavor == 'stereopy':
         return read_stereo_h5ad(file_path, **kwargs)
     elif flavor == 'scanpy':
-        return AnnBasedStereoExpData(file_path)
+        return AnnBasedStereoExpData(file_path, **kwargs)
     else:
         raise ValueError("Invalid value for 'flavor'")
 
