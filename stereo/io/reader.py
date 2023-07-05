@@ -579,6 +579,9 @@ def read_ann_h5ad(
 def read_h5ad(
     file_path: str,
     flavor: str = 'scanpy',
+    bin_type: str = None,
+    bin_size: str = None,
+    *args,
     **kwargs
 ):
     flavor = flavor.lower()
@@ -586,7 +589,7 @@ def read_h5ad(
     if flavor == 'stereopy':
         return read_stereo_h5ad(file_path, **kwargs)
     elif flavor == 'scanpy':
-        return AnnBasedStereoExpData(file_path, **kwargs)
+        return AnnBasedStereoExpData(file_path, None, bin_type, bin_size, *args, **kwargs)
     else:
         raise ValueError("Invalid value for 'flavor'")
 

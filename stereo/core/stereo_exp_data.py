@@ -578,6 +578,8 @@ class AnnBasedStereoExpData(StereoExpData):
         self,
         h5ad_file_path: str = None,
         based_ann_data: anndata.AnnData = None,
+        bin_type: str = None,
+        bin_size: str = None,
         *args,
         **kwargs
     ):
@@ -586,6 +588,9 @@ class AnnBasedStereoExpData(StereoExpData):
         # else:
         #     based_ann_data = None
         super().__init__(*args, **kwargs)
+        if h5ad_file_path is None and based_ann_data is None:
+            raise Exception("Must to input the 'h5ad_file_path' or 'based_ann_data'.")
+        
         if based_ann_data:
             assert type(based_ann_data) is anndata.AnnData
             self._ann_data = based_ann_data
@@ -596,6 +601,12 @@ class AnnBasedStereoExpData(StereoExpData):
 
         if 'resolution' in self._ann_data.uns:
             self.attr = {'resolution': self._ann_data.uns['resolution']}
+
+        if bin_type is not None and 'bin_type' not in self._ann_data.uns:
+            self._ann_data.uns['bin_type'] = bin_type
+        
+        if bin_size is not None and 'bin_size' not in self._ann_data.uns:
+            self._ann_data.uns['bin_size'] = bin_size
 
         from .st_pipeline import AnnBasedStPipeline
         self._tl = AnnBasedStPipeline(self._ann_data, self)
@@ -681,11 +692,11 @@ class AnnBasedStereoExpData(StereoExpData):
 
     @property
     def bin_type(self):
-        return self._ann_data.uns.get('bin_type', None)
+        return self._ann_data.uns.get('bin_type', 'bins')
     
     @property
     def bin_size(self):
-        return self._ann_data.uns.get('bin_size', None)
+        return self._ann_data.uns.get('bin_size', 1)
     
     @property
     def sn(self):
