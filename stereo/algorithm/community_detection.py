@@ -39,7 +39,6 @@ class CommunityDetection(AlgorithmBase):
                 wget https://ftp.cngb.org/pub/SciRAID/stomics/STDS0000058/stomics/E16.5_E1S3_cell_bin_whole_brain.h5ad
 
             Execute:
-                import scanpy as sc
                 from community_detection import CommunityDetection
                 from stereo.core.stereo_exp_data import AnnBasedStereoExpData
                 adata = AnnBasedStereoExpData(data.h5ad')
