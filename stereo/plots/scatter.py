@@ -448,8 +448,8 @@ def highly_variable_genes(
         data: Optional[pd.DataFrame],
         width: int = None,
         height: int = None,
-        ax1_coordinates: list = None,
-        ax2_coordinates: list = None
+        xy_label: list = None,
+        xyII_label: list = None
 ):
     """
     scatter of highly variable genes
@@ -489,8 +489,8 @@ def highly_variable_genes(
                     s=15,
                     data=data, ax=ax2
                     )
-    ax1.set_xlabel(ax1_coordinates[0], fontsize=15)
-    ax1.set_ylabel(ax1_coordinates[1], fontsize=15)
-    ax2.set_xlabel(ax2_coordinates[0], fontsize=15)
-    ax2.set_ylabel(ax2_coordinates[1], fontsize=15)
+    ax1.set_xlabel(xy_label[0], fontsize=15)
+    ax1.set_ylabel(xy_label[1], fontsize=15)
+    ax2.set_xlabel(xyII_label[0], fontsize=15)
+    ax2.set_ylabel(xyII_label[1], fontsize=15)
     return fig

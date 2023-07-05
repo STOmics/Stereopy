@@ -155,8 +155,8 @@ class PlotCollection:
             res_key: str,
             width: Optional[int] = None,
             height: Optional[int] = None,
-            ax1_coordinates: Optional[list] = ['mean expression of genes', 'dispersions of genes (normalized)'],
-            ax2_coordinates: Optional[list] = ['mean expression of genes', 'dispersions of genes (not normalized)']
+            xy_label: Optional[list] = ['mean expression of genes', 'dispersions of genes (normalized)'],
+            xyII_label: Optional[list] = ['mean expression of genes', 'dispersions of genes (not normalized)']
     ):
         """
         Scatter of highly variable genes
@@ -166,13 +166,13 @@ class PlotCollection:
         :param height: the figure height in pixels.
         :param out_path: the path to save the figure.
         :param out_dpi: the dpi when the figure is saved.
-        :param ax1_coordinates: the x、y label of the first figure.
-        :param ax2_coordinates: the x、y label of the second figure.
+        :param xy_label: the x、y label of the first figure.
+        :param xyII_label: the x、y label of the second figure.
 
         """
         res = self.check_res_key(res_key)
-        return highly_variable_genes(res, width=width, height=height, ax1_coordinates=ax1_coordinates,
-                                     ax2_coordinates=ax2_coordinates)
+        return highly_variable_genes(res, width=width, height=height, xy_label=xy_label,
+                                     xyII_label=xyII_label)
 
     @download
     def marker_genes_volcano(
@@ -235,8 +235,8 @@ class PlotCollection:
     @download
     def genes_count(
             self,
-            x: Optional[list] = ["total_counts", "total_counts"],
-            y: Optional[list] = ["pct_counts_mt", "n_genes_by_counts"],
+            x_label: Optional[list] = ["total_counts", "total_counts"],
+            y_label: Optional[list] = ["pct_counts_mt", "n_genes_by_counts"],
             ncols: Optional[int] = 2,
             dot_size: Optional[int] = None,
             width: Optional[int] = None,
@@ -246,8 +246,8 @@ class PlotCollection:
         """
         Quality control index distribution visualization.
 
-        :param x: list of x label.
-        :param y: list of y label.
+        :param x_label: list of x label.
+        :param y_label: list of y label.
         :param ncols: the number of columns.
         :param dot_size: the dot size.
         :param width: the figure width in pixels.
@@ -260,13 +260,13 @@ class PlotCollection:
         import matplotlib.pyplot as plt
         from matplotlib import gridspec
         set_xy_empty = False
-        if x == y == '' or x == y == []:
+        if x_label == y_label == '' or x_label == y_label == []:
             set_xy_empty = True
             x = [TOTAL_COUNTS] * 2
             y = [PCT_COUNTS_MT, N_GENES_BY_COUNTS]
         else:
-            x = [x] if isinstance(x, str) else x
-            y = [y] if isinstance(y, str) else y
+            x = [x_label] if isinstance(x_label, str) else x_label
+            y = [y_label] if isinstance(y_label, str) else y_label
 
         if width is None or height is None:
             width, height = 12, 6
@@ -1092,7 +1092,6 @@ class PlotCollection:
         Plot scenic regulons
 
         :param res_key: result key.
-
         """
         res = self.check_res_key(res_key)
         regulons = res["regulons"]

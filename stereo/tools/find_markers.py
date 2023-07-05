@@ -207,7 +207,6 @@ class FindMarker(ToolBase):
 
     @log_consumed_time
     def calc_pct_and_pct_rest(self):
-        self.raw_data.array2sparse()
         raw_cells_isin_data = np.isin(self.raw_data.cell_names, self.data.cell_names)
         raw_genes_isin_data = np.isin(self.raw_data.gene_names, self.data.gene_names)
         raw_exp_matrix = self.raw_data.exp_matrix[raw_cells_isin_data][:, raw_genes_isin_data]
@@ -217,13 +216,19 @@ class FindMarker(ToolBase):
         cluster_result.reset_index(inplace=True)
         cluster_result.sort_values(by=['group', 'index'], inplace=True)
         group_index = cluster_result.groupby('group').agg(cell_index=('index', list))
+
         def _calc(a, exp_matrix_one_hot):
             cell_index = a[0]
-            sub_exp = exp_matrix_one_hot[cell_index].sum(axis=0).A[0]
-            sub_exp_rest = exp_matrix_one_hot.sum(axis=0).A[0] - sub_exp
+            if isinstance(exp_matrix_one_hot, np.ndarray):
+                sub_exp = exp_matrix_one_hot[cell_index].sum(axis=0)
+                sub_exp_rest = exp_matrix_one_hot.sum(axis=0) - sub_exp
+            else:
+                sub_exp = exp_matrix_one_hot[cell_index].sum(axis=0).A[0]
+                sub_exp_rest = exp_matrix_one_hot.sum(axis=0).A[0] - sub_exp
             sub_pct = sub_exp / len(cell_index)
             sub_pct_rest = sub_exp_rest / (self.data.cell_names.size - len(cell_index))
             return sub_pct, sub_pct_rest
+
         pct_all = np.apply_along_axis(_calc, 1, group_index.values, exp_matrix_one_hot)
         pct = pd.DataFrame(pct_all[:, 0], columns=self.data.gene_names, index=group_index.index).T
         pct_rest = pd.DataFrame(pct_all[:, 1], columns=self.data.gene_names, index=group_index.index).T
