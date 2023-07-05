@@ -41,11 +41,9 @@ class CommunityDetection(AlgorithmBase):
             Execute:
                 import scanpy as sc
                 from community_detection import CommunityDetection
-                
-                adata = sc.read('E16.5_E1S3_cell_bin_whole_brain.h5ad')
-                slices = [adata]  # The algorithm works for multiple slices, too.
-
-                cd = CommunityDetection(slices, 'sim anno')
+                from stereo.core.stereo_exp_data import AnnBasedStereoExpData
+                adata = AnnBasedStereoExpData(data.h5ad')
+                cd = CommunityDetection([adata], 'sim anno')  # The algorithm works for multiple slices, too.
                 cd.main()
 
         Parameters:
