@@ -20,6 +20,7 @@ from .reader import (
 from .writer import (
     write,
     write_h5ad,
+    write_h5ms,
     write_mid_gef,
     update_gef
 )
