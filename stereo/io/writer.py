@@ -85,14 +85,18 @@ def _write_one_h5ad(f, data: StereoExpData, use_raw=False, use_result=True, key_
         for key, value in data.attr.items():
             f.attrs[key] = value
     if data.sn is not None:
+        sn_list = []
         if isinstance(data.sn, str):
             sn_list = [['-1', data.sn]]
         else:
-            sn_list = []
             for bno, sn in data.sn.items():
+                if sn is None:
+                    sn_list = []
+                    break
                 sn_list.append([bno, sn])
-        sn_data = pd.DataFrame(sn_list, columns=['batch', 'sn'])
-        h5ad.write(sn_data, f, 'sn', save_as_matrix=True)
+        if len(sn_list) > 0:
+            sn_data = pd.DataFrame(sn_list, columns=['batch', 'sn'])
+            h5ad.write(sn_data, f, 'sn', save_as_matrix=True)
     h5ad.write(data.genes, f, 'genes')
     h5ad.write(data.cells, f, 'cells')
     if data.position_z is None:
@@ -260,7 +264,7 @@ def write_h5ms(ms_data, output: str):
                     o_key = r_key
                     if r_key in {'leiden', 'louvain', 'phenograph', 'annotation'}:
                         o_key = 'cluster'
-                    data.tl.reset_key_record(r_key, o_key)
+                    data.tl.reset_key_record(o_key, r_key)
                 mss_f.create_group(key)
                 _write_one_h5ad_result(data, mss_f[key], data.tl.key_record)
 

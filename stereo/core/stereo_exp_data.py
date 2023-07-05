@@ -587,7 +587,7 @@ class AnnBasedStereoExpData(StereoExpData):
         #     based_ann_data = kwargs.pop('based_ann_data')
         # else:
         #     based_ann_data = None
-        super().__init__(*args, **kwargs)
+        super(AnnBasedStereoExpData, self).__init__(*args, **kwargs)
         if h5ad_file_path is None and based_ann_data is None:
             raise Exception("Must to input the 'h5ad_file_path' or 'based_ann_data'.")
         
@@ -607,6 +607,11 @@ class AnnBasedStereoExpData(StereoExpData):
         
         if bin_size is not None and 'bin_size' not in self._ann_data.uns:
             self._ann_data.uns['bin_size'] = bin_size
+        
+        if h5ad_file_path is not None and 'sn' not in self._ann_data.uns:
+            sn = self.get_sn_from_path(h5ad_file_path)
+            if sn is not None:
+                self._ann_data.uns['sn'] = pd.DataFrame([[-1, sn]], columns=['batch', 'sn'])
 
         from .st_pipeline import AnnBasedStPipeline
         self._tl = AnnBasedStPipeline(self._ann_data, self)
