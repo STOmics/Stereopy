@@ -1,4 +1,3 @@
-import logging
 import os
 import multiprocessing as mp
 from collections import defaultdict
@@ -12,6 +11,8 @@ from tqdm.auto import tqdm
 
 from .utils import timeit
 from ccd import CommunityClusteringAlgo
+
+from stereo.log_manager import logger
 
 
 class SlidingWindow(CommunityClusteringAlgo):
@@ -93,21 +94,19 @@ class SlidingWindow(CommunityClusteringAlgo):
         # create centroids for each sliding step of windows
         # .obs data is assigned as pd.Series since sometimes the new column added to .obs Dataframe can have 'nan' values
         # if the index of data doesn't match the index of .obs
-        self.adata.obs['Centroid_X'] = pd.Series(((self.adata.obsm['spatial'][:, 0])/sliding_step).astype(int), index=self.adata.obs_names)
-        self.adata.obs['Centroid_Y'] = pd.Series(((self.adata.obsm['spatial'][:, 1])/sliding_step).astype(int), index=self.adata.obs_names)
+        self.adata.obs[f'Centroid_X_{win_size}'] = pd.Series(((self.adata.obsm['spatial'][:, 0])/sliding_step).astype(int), index=self.adata.obs_names)
+        self.adata.obs[f'Centroid_Y_{win_size}'] = pd.Series(((self.adata.obsm['spatial'][:, 1])/sliding_step).astype(int), index=self.adata.obs_names)
         # need to understand borders and padding
         # subwindows belonging to borders will not have a complete cell count
-        x_max = self.adata.obs['Centroid_X'].max()
-        y_max = self.adata.obs['Centroid_Y'].max()
+        x_max = self.adata.obs[f'Centroid_X_{win_size}'].max()
+        y_max = self.adata.obs[f'Centroid_Y_{win_size}'].max()
 
-
-        self.adata.obs['window_spatial'] = self.adata.obs['Centroid_X'].astype(str) +'_'+self.adata.obs['Centroid_Y'].astype(str) + '_' + str(self.slice_id) + '_' + str(win_size)
-        self.adata.obs[f'window_spatial_{win_size}'] = self.adata.obs['Centroid_X'].astype(str) +'_'+self.adata.obs['Centroid_Y'].astype(str) + '_' + str(self.slice_id) + '_' + str(win_size)
+        self.adata.obs[f'window_spatial_{win_size}'] = self.adata.obs[f'Centroid_X_{win_size}'].astype(str) +'_'+self.adata.obs[f'Centroid_Y_{win_size}'].astype(str) + '_' + str(self.slice_id) + '_' + str(win_size)
         
-        tmp = self.adata.obs[['window_spatial', self.annotation]]
+        tmp = self.adata.obs[[f'window_spatial_{win_size}', self.annotation]]
         ret = {}
         # calculate features for each subwindow
-        for sw_ind, sw_data in tmp.groupby('window_spatial'):
+        for sw_ind, sw_data in tmp.groupby(f'window_spatial_{win_size}'):
             templete_dic = {ct:0 for ct in self.unique_cell_type}
             for cell in sw_data[self.annotation]:
                 templete_dic[cell]+=1
@@ -166,11 +165,11 @@ class SlidingWindow(CommunityClusteringAlgo):
         sliding_step = (win_size/int((win_size/sliding_step))) if sliding_step!=None else win_size
         
         bin_slide_ratio = int(win_size/sliding_step)
-        x_min = self.adata.obs['Centroid_X'].min()
-        y_min = self.adata.obs['Centroid_Y'].min()
+        x_min = self.adata.obs[f'Centroid_X_{win_size}'].min()
+        y_min = self.adata.obs[f'Centroid_Y_{win_size}'].min()
 
         # max voting on cluster labels
-        subwindow_locations = np.unique(self.adata.obs['window_spatial'])
+        subwindow_locations = np.unique(self.adata.obs[f'window_spatial_{win_size}'])
         # variable for final subwindow labels
         cluster_max_vote = pd.Series(index=subwindow_locations, name=f'{self.cluster_algo}_max_vote', dtype=np.float64)
         for location in subwindow_locations:
@@ -191,10 +190,10 @@ class SlidingWindow(CommunityClusteringAlgo):
             cluster_max_vote.loc[location] = max(subwindow_labels, key=subwindow_labels.get) if subwindow_labels!={} else 'unknown'
 
         # copy clustering results from subwindows to cells of those subwindows in adata object
-        self.adata.obs.loc[:, f'tissue_{self.method_key}'] = list(cluster_max_vote.loc[self.adata.obs['window_spatial']])
+        self.adata.obs.loc[:, f'tissue_{self.method_key}'] = list(cluster_max_vote.loc[self.adata.obs[f'window_spatial_{win_size}']])
         self.adata.obs[f'tissue_{self.method_key}'] = self.adata.obs[f'tissue_{self.method_key}'].astype('category')
 
-        logging.info(f'Sliding window cell mixture calculation done. Added results to adata.obs["tissue_{self.method_key}"]')
+        logger.info(f'Sliding window cell mixture calculation done. Added results to adata.obs["tissue_{self.method_key}"]')
     
 
 class SlidingWindowMultipleSizes(SlidingWindow):
@@ -245,7 +244,7 @@ class SlidingWindowMultipleSizes(SlidingWindow):
             super().community_calling(self.win_sizes_list[0], self.sliding_steps_list[0])
         else:
             self.community_calling_multiple_window_sizes_per_cell_multiprocessing()
-            logging.info(f'Sliding window cell mixture calculation done. Added results to adata.obs["tissue_{self.method_key}"]')
+            logger.info(f'Sliding window cell mixture calculation done. Added results to adata.obs["tissue_{self.method_key}"]')
 
     @timeit
     def community_calling_multiple_window_sizes_per_cell_multiprocessing(self):
@@ -269,8 +268,6 @@ class SlidingWindowMultipleSizes(SlidingWindow):
         self.adata.obs[f'tissue_{self.method_key}'] = self.adata.obs[f'tissue_{self.method_key}'].astype('category')
 
     def community_calling_partial(self, df):
-        x_min = self.adata.obs['Centroid_X'].min()
-        y_min = self.adata.obs['Centroid_Y'].min()
         result = pd.Series(index=df.index, dtype='str')
         cache = {}
 
@@ -280,6 +277,10 @@ class SlidingWindowMultipleSizes(SlidingWindow):
             for win_size, sliding_step in zip(self.win_sizes_list, self.sliding_steps_list):
                 sliding_step = (win_size/int((win_size/sliding_step)))
                 bin_slide_ratio = int(win_size/sliding_step)
+
+                x_min = self.adata.obs[f'Centroid_X_{win_size}'].min()
+                y_min = self.adata.obs[f'Centroid_Y_{win_size}'].min()
+
                 cell_labels = defaultdict(int)
                 x_curr, y_curr, z_curr, w_size = [int(num) for num in cell[f'window_spatial_{win_size}'].split("_")]
 

@@ -1,9 +1,18 @@
-import time
-import scanpy as sc
+'''
+utils.py is created for wrappers, timeit decorator and
+everything else that should be globally accessible and does not belong
+to any specific class.
 
+'''
+import time
+import seaborn as sns
+
+from matplotlib import rcParams
 from matplotlib.axes import Axes
-from typing import List
 from functools import wraps
+
+
+import scanpy as sc
 
 def timeit(func):
     @wraps(func)
@@ -19,28 +28,38 @@ def timeit(func):
 @timeit
 def plot_spatial(
     adata,
-    color: List[str],
+    annotation,
     ax: Axes,
     spot_size: float,
-    img_key: str = None,
-    title: str = None,
-    groups = None,
-    palette: List[str] = None,
-    show: bool = False,
-    frameon: bool = False
+    palette = None,
+    title: str = "",
+    groups=None
 ):
     """
-    Scatter plot in spatial coordinates. A wrapper around scanpy's pl.spatial to correct inversion of y-axis. 
-    Standard plots have coordinates in 'lower left' while images are considered
-    to start from 'upper left'.scanpy assumes that we will always
-    plot some sort of staining image. if we do not provide image, scanpy
-    will flip yaxis for us to get back to the standard plot coordinates.
-    that causes inversion of our plotting figures so we wrapped scanpy's
-    pl.spatial. utils.py is created for such wrappers, timeit decorator and
-    everything else that should be globally accessible and does not belong
-    to any specific class.
+    Scatter plot in spatial coordinates.
+
+    Parameters:
+        - adata (AnnData): Annotated data object which represents the sample
+        - annotation (str): adata.obs column used for grouping
+        - ax (Axes): Axes object used for plotting
+        - spot_size (int): Size of the dot that represents a cell. We are passing it as a diameter of the spot, while the plotting library uses radius therefore it is multiplied by 0.5 
+        - palette (dict): Dictionary that represents a mapping between annotation categories and colors
+        - title (str): Title of the figure
+        - groups (list): If we want to plot only specific groups from annotation categories we will include only the categories present in groups parameter
 
     """
-    if img_key is None:
-        ax.invert_yaxis()
-    sc.pl.spatial(adata, color=color, spot_size=spot_size, ax=ax, show=show, frameon=frameon, title=title, palette=palette, groups=groups)
+    s = spot_size * 0.1  # TODO: Ugly: consider using only one of: matplotlib or seaborn plots to have same spot size
+    data = adata[adata.obs[annotation].isin(groups)] if groups else adata
+    ax = sns.scatterplot(data=data.obs, hue=annotation, x=data.obsm['spatial'][:, 0], y=data.obsm['spatial'][:, 1], ax=ax, s=s, linewidth=0, palette=palette, marker='.')
+    ax.set(yticklabels=[], xticklabels=[], title=title)
+    ax.tick_params(bottom=False, left=False)
+    ax.set_aspect("equal")
+    sns.despine(bottom=True, left=True, ax=ax)
+
+def set_figure_params(
+        dpi: int,
+        facecolor: str,
+):
+    rcParams['figure.facecolor'] = facecolor
+    rcParams['axes.facecolor'] = facecolor
+    rcParams["figure.dpi"] = dpi
