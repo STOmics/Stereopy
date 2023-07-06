@@ -579,7 +579,7 @@ class AnnBasedStereoExpData(StereoExpData):
         h5ad_file_path: str = None,
         based_ann_data: anndata.AnnData = None,
         bin_type: str = None,
-        bin_size: str = None,
+        bin_size: int = None,
         *args,
         **kwargs
     ):
@@ -738,8 +738,8 @@ class AnnBasedStereoExpData(StereoExpData):
             data.tl.raw = AnnBasedStereoExpData(based_ann_data=data._ann_data.raw.to_adata())
         return data
 
-    @staticmethod
-    def merge(*data, batch_key='batch'):
-        from anndata import concat
-        ann_data = concat([d._ann_data for d in data], axis=0, merge='same', label=batch_key, index_unique='-')
-        return AnnBasedStereoExpData(based_ann_data=ann_data)
+    # @staticmethod
+    # def merge(*data, batch_key='batch'):
+    #     from anndata import concat
+    #     ann_data = concat([d._ann_data for d in data], axis=0, merge='same', label=batch_key, index_unique='-')
+    #     return AnnBasedStereoExpData(based_ann_data=ann_data)

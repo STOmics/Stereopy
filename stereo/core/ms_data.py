@@ -77,6 +77,14 @@ class _MSDataView(object):
         else:
             from copy import deepcopy
             self._merged_data = deepcopy(self._data_list[0])
+        
+        obs_columns = self._merged_data.cells._obs.columns.tolist()
+        obs_columns.remove('batch')
+        if len(obs_columns) > 0:
+            self._merged_data.cells._obs.drop(columns=obs_columns, inplace=True)
+        var_columns = self._merged_data.genes._var.columns.tolist()
+        if len(var_columns) > 0:
+            self._merged_data.genes._var.drop(columns=var_columns, inplace=True)
 
 
 _NON_EDITABLE_ATTRS = {'data_list', 'names', '_obs', '_var', '_relationship', '_relationship_info'}
@@ -251,6 +259,13 @@ class _MSDataStruct(object):
     @property
     def relationship_info(self):
         return self._relationship_info
+    
+    def reset_position(self, mode='integrate'):
+        if mode == 'integrate' and self.merged_data:
+            self.merged_data.reset_position()
+        else:
+            for data in self.data_list:
+                data.reset_position()
 
     def __len__(self):
         return len(self._data_list)
@@ -494,6 +509,13 @@ class MSData(_MSDataStruct):
         if self._var_type not in {"union", "intersect"}:
             raise Exception("Please specify the operation on samples with the parameter '_var_type'")
         self.merged_data = merge(*self.data_list, var_type=self._var_type, reorganize_coordinate=reorganize_coordinate, **kwargs)
+        obs_columns = self.merged_data.cells._obs.columns.tolist()
+        obs_columns.remove('batch')
+        if len(obs_columns) > 0:
+            self.merged_data.cells._obs.drop(columns=obs_columns, inplace=True)
+        var_columns = self.merged_data.genes._var.columns.tolist()
+        if len(var_columns) > 0:
+            self.merged_data.genes._var.drop(columns=var_columns, inplace=True)
 
     def split_after_batching_integrate(self):
         if self._var_type == "union":

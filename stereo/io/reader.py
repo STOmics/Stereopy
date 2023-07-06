@@ -13,7 +13,7 @@ change log:
     2022/02/09  read raw data and result
 """
 from copy import deepcopy
-from typing import Optional
+from typing import Optional, Union
 
 import h5py
 import numpy as np
@@ -160,7 +160,9 @@ def to_interval(interval_string):
 def read_stereo_h5ad(
         file_path: str,
         use_raw: bool = True,
-        use_result: bool = True
+        use_result: bool = True,
+        bin_type: str = None,
+        bin_size: int = None
 ):
     """
     Read the H5ad file, and generate the StereoExpData object.
@@ -173,6 +175,10 @@ def read_stereo_h5ad(
         whether to read data of `self.raw`.
     use_result
         whether to read `result` and `res_key`.
+    bin_type
+        the bin type includes `'bins'` or `'cell_bins'`.
+    bin_size
+        the size of bin to merge, when `bin_type` is set to `'bins'`.
 
     Returns
     --------------------
@@ -184,12 +190,14 @@ def read_stereo_h5ad(
         logger.error('the input file is not exists, please check!')
         raise FileExistsError('the input file is not exists, please check!')
     with h5py.File(data.file, mode='r') as f:
-        data = _read_stereo_h5ad_from_group(f, data, use_raw, use_result)
+        data = _read_stereo_h5ad_from_group(f, data, use_raw, use_result, bin_type, bin_size)
     return data
 
 
-def _read_stereo_h5ad_from_group(f, data, use_raw, use_result):
+def _read_stereo_h5ad_from_group(f, data: StereoExpData, use_raw, use_result, bin_type, bin_size):
     # read data
+    data.bin_type = bin_type if bin_type is not None else 'bins'
+    data.bin_size = bin_size if bin_size is not None else 1
     if f.attrs is not None:
         data.attr = {}
         for key, value in f.attrs.items():
@@ -577,19 +585,42 @@ def read_ann_h5ad(
 
 @ReadWriteUtils.check_file_exists
 def read_h5ad(
-    file_path: str,
+    file_path: str = None,
     flavor: str = 'scanpy',
     bin_type: str = None,
-    bin_size: str = None,
-    *args,
+    bin_size: int = None,
     **kwargs
-):
+) -> Union[StereoExpData, AnnBasedStereoExpData]:
+    """
+    Read a h5ad file
+
+    Parameters
+    ------------------
+    file_path
+        the path of the h5ad file.
+    param flavor
+        the format of the h5ad file, defaults to `'scanpy'`.
+        `scanpy`: AnnData of scanpy
+        `stereopy`: h5ad format of stereopy
+    bin_type
+        the bin type includes `'bins'` or `'cell_bins'`.
+    bin_size
+        the size of bin to merge, when `bin_type` is set to `'bins'`.
+    Returns
+    ---------------
+    An object of StereoExpData while `flavor` is `'stereopy'` or an object of AnnBasedStereoExpData while `flavor` is `'scanpy'`
+
+    """
     flavor = flavor.lower()
 
     if flavor == 'stereopy':
+        if kwargs is None:
+            kwargs = {}
+        kwargs['bin_type'] = bin_type
+        kwargs['bin_size'] = bin_size
         return read_stereo_h5ad(file_path, **kwargs)
     elif flavor == 'scanpy':
-        return AnnBasedStereoExpData(file_path, None, bin_type, bin_size, *args, **kwargs)
+        return AnnBasedStereoExpData(h5ad_file_path=file_path, bin_type=bin_type, bin_size=bin_size, **kwargs)
     else:
         raise ValueError("Invalid value for 'flavor'")
 
