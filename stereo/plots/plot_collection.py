@@ -64,10 +64,10 @@ class PlotCollection:
     @reorganize_coordinate
     def interact_cluster(
             self,
-            res_key: str='cluster', 
-            inline: bool=True,
-            width: int=700, 
-            height: int=500
+            res_key: str,
+            inline: Optional[bool] = True,
+            width: Optional[int] = 700,
+            height: Optional[int] = 500
     ):
         """
         Interactive spatial scatter after clustering.
@@ -105,12 +105,12 @@ class PlotCollection:
     @reorganize_coordinate
     def interact_annotation_cluster(
             self,
-            res_cluster_key: str = 'cluster',
-            res_marker_gene_key: str = 'marker_genes',
-            res_key: str = 'annotation',
-            inline: bool = True,
-            width: int = 700,
-            height: int = 500,
+            res_cluster_key: str,
+            res_marker_gene_key: str,
+            res_key: str,
+            inline: Optional[bool] = True,
+            width: Optional[int] = 700,
+            height: Optional[int] = 500,
     ):
         """
         Interactive spatial scatter after clustering.
@@ -152,11 +152,11 @@ class PlotCollection:
     @download
     def highly_variable_genes(
             self,
-            res_key: str = 'highly_variable_genes',
-            width: int = None,
-            height: int = None,
-            ax1_coordinates: list = ['mean expression of genes', 'dispersions of genes (normalized)'],
-            ax2_coordinates: list = ['mean expression of genes', 'dispersions of genes (not normalized)']
+            res_key: str,
+            width: Optional[int] = None,
+            height: Optional[int] = None,
+            ax1_coordinates: Optional[list] = ['mean expression of genes', 'dispersions of genes (normalized)'],
+            ax2_coordinates: Optional[list] = ['mean expression of genes', 'dispersions of genes (not normalized)']
     ):
         """
         Scatter of highly variable genes
@@ -166,8 +166,8 @@ class PlotCollection:
         :param height: the figure height in pixels.
         :param out_path: the path to save the figure.
         :param out_dpi: the dpi when the figure is saved.
-        :param ax1_coordinates: the x、y label name of the first figure.
-        :param ax2_coordinates: the x、y label name of the second figure.
+        :param ax1_coordinates: the x、y label of the first figure.
+        :param ax2_coordinates: the x、y label of the second figure.
 
         """
         res = self.check_res_key(res_key)
@@ -178,19 +178,19 @@ class PlotCollection:
     def marker_genes_volcano(
             self,
             group_name: str,
-            res_key: str='marker_genes',
-            hue_order=('down', 'normal', 'up'),
-            colors: str=("#377EB8", "grey", "#E41A1C"),
-            alpha: int=1, 
-            dot_size: int=15,
+            res_key: Optional[str] = 'marker_genes',
+            hue_order: Optional[set] = ('down', 'normal', 'up'),
+            colors: Optional[str] = ("#377EB8", "grey", "#E41A1C"),
+            alpha: Optional[int] = 1,
+            dot_size: Optional[int] = 15,
             text_genes: Optional[list] = None,
-            x_label: str='log2(fold change)', 
-            y_label: str='-log10(pvalue)',
-            vlines: bool=True,
-            cut_off_pvalue: float=0.01,
-            cut_off_logFC: int=1,
-            width=None,
-            height=None,
+            x_label: Optional[str] = 'log2(fold change)',
+            y_label: Optional[str] = '-log10(pvalue)',
+            vlines: Optional[bool] = True,
+            cut_off_pvalue: Optional[float] = 0.01,
+            cut_off_logFC: Optional[int] = 1,
+            width: Optional[int] = None,
+            height: Optional[int] = None,
             **kwargs
     ):
         """
@@ -235,12 +235,12 @@ class PlotCollection:
     @download
     def genes_count(
             self,
-            x: list = ["total_counts", "total_counts"],
-            y: list = ["pct_counts_mt", "n_genes_by_counts"],
-            ncols: int = 2,
-            dot_size: int=None,
-            width=None,
-            height=None,
+            x: Optional[list] = ["total_counts", "total_counts"],
+            y: Optional[list] = ["pct_counts_mt", "n_genes_by_counts"],
+            ncols: Optional[int] = 2,
+            dot_size: Optional[int] = None,
+            width: Optional[int] = None,
+            height: Optional[int] = None,
             **kwargs
     ):
         """
@@ -304,16 +304,15 @@ class PlotCollection:
     @reorganize_coordinate
     def spatial_scatter(
             self,
-            cells_key: list = ["total_counts", "n_genes_by_counts"],
-            ncols: int=2,
-            dot_size: int=None,
-            palette: str='stereo',
-            # invert_y=True,
-            width: int=None,
-            height: int=None,
-            x_label: list=['spatial1', 'spatial1'],
-            y_label: list=['spatial2', 'spatial2'],
-            title: str=None,
+            cells_key: Optional[list] = ["total_counts", "n_genes_by_counts"],
+            ncols: Optional[int] = 2,
+            dot_size: Optional[int] = None,
+            palette: Optional[str] = 'stereo',
+            width: Optional[int] = None,
+            height: Optional[int] = None,
+            x_label: Optional[list] = ['spatial1', 'spatial1'],
+            y_label: Optional[list] = ['spatial2', 'spatial2'],
+            title: Optional[str] = None,
             **kwargs
     ):
         """
@@ -325,6 +324,9 @@ class PlotCollection:
         :param palette: the color theme.
         :param width: the figure width in pixels.
         :param height: the figure height in pixels.
+        :param x_label: list of x label.
+        :param y_label: list of y label.
+        :param title: the title label.
         :param show_plotting_scale: wheter to display the plotting scale.
         :param out_path: the path to save the figure.
         :param out_dpi: the dpi when the figure is saved.
@@ -339,9 +341,6 @@ class PlotCollection:
                 if set it to `False`, the coordinates will not be changed.
         :param horizontal_offset_additional: the additional offset between each slice on horizontal direction while reorganizing coordinates.
         :param vertical_offset_additional: the additional offset between each slice on vertical direction while reorganizing coordinates.
-        :param x_label: list of x label.
-        :param y_label: list of y label.
-        :param title: the title label.
 
         """
         from .scatter import multi_scatter
@@ -363,21 +362,21 @@ class PlotCollection:
             **kwargs
         )
         return fig
-    
+
     @download
     @plot_scale
     @reorganize_coordinate
     def spatial_scatter_by_gene(
             self,
-            gene_name: Union[str, list, np.ndarray]=None,
-            dot_size: int=None,
-            palette: str='CET_L4',
-            color_bar_reverse: bool=True,
-            width: int=None,
-            height: int=None,
-            x_label: str='spatial1',
-            y_label: str='spatial2',
-            title: str=None,
+            gene_name: Union[str, list, np.ndarray],
+            dot_size: Optional[int] = None,
+            palette: Optional[str] = 'CET_L4',
+            color_bar_reverse: Optional[bool] = True,
+            width: Optional[int] = None,
+            height: Optional[int] = None,
+            x_label: Optional[str] = 'spatial1',
+            y_label: Optional[str] = 'spatial2',
+            title: Optional[str] = None,
             **kwargs
     ):
         """Draw the spatial distribution of expression quantity of the gene specified by gene names.
@@ -385,6 +384,7 @@ class PlotCollection:
         :param gene_name: a gene or a list of genes you want to show.
         :param dot_size: the dot size, defaults to `None`.
         :param palette: the color theme, defaults to `'CET_L4'`.
+        :param color_bar_reverse: if True, reverse the color bar, defaults to False
         :param width: the figure width in pixels.
         :param height: the figure height in pixels.
         :param show_plotting_scale: wheter to display the plotting scale.
@@ -408,10 +408,6 @@ class PlotCollection:
         """
 
         self.data.array2sparse()
-        if gene_name is None:
-
-            raise Exception("The gene_name can not be None.")
-
         if isinstance(gene_name, str):
             gene_name = [gene_name]
         gene_idx = [np.argwhere(self.data.gene_names == gn)[0][0] for gn in gene_name]
@@ -423,7 +419,7 @@ class PlotCollection:
             hue=hue,
             x_label=[x_label] * len(gene_name),
             y_label=[y_label] * len(gene_name),
-            title= gene_name if title is None else title,
+            title=gene_name if title is None else title,
             ncols=2,
             dot_size=dot_size,
             palette=palette,
@@ -433,23 +429,23 @@ class PlotCollection:
             height=height,
             **kwargs
         )
-        
+
         return fig
-    
+
     @download
     @plot_scale
     @reorganize_coordinate
     def gaussian_smooth_scatter_by_gene(
             self,
-            gene_name: str=None,
-            dot_size: int=None,
-            palette: str='CET_L4',
-            color_bar_reverse: bool=True,
-            width: int=None,
-            height: int=None,
-            x_label: list=['spatial1', 'spatial1'],
-            y_label: list=['spatial2', 'spatial2'],
-            title: list=None,
+            gene_name: str = None,
+            dot_size: Optional[int] = None,
+            palette: Optional[str] = 'CET_L4',
+            color_bar_reverse: Optional[bool] = True,
+            width: Optional[int] = None,
+            height: Optional[int] = None,
+            x_label: Optional[list] = ['spatial1', 'spatial1'],
+            y_label: Optional[list] = ['spatial2', 'spatial2'],
+            title: Optional[list] = None,
             **kwargs
     ):
         """Draw the spatial distribution of expression quantity of the gene specified by gene names,
@@ -458,6 +454,7 @@ class PlotCollection:
         :param gene_name: specify the gene you want to draw, if `None` by default, will select randomly.
         :param dot_size: marker sizemarker size, defaults to `None`.
         :param palette: Color theme, defaults to `'CET_L4'`.
+        :param color_bar_reverse: if True, reverse the color bar, defaults to False
         :param width: the figure width in pixels.
         :param height: the figure height in pixels.
         :param x_label: list of x label.
@@ -516,8 +513,8 @@ class PlotCollection:
         return fig
 
     @download
-    def violin(self, width: int = None, height: int = None,
-               y_label: list = ['total counts', 'n genes by counts', 'pct counts mt']):
+    def violin(self, width: Optional[int] = None, height: Optional[int] = None,
+               y_label: Optional[list] = ['total counts', 'n genes by counts', 'pct counts mt']):
         """
         Violin plot to show index distribution of quality control.
 
@@ -525,7 +522,7 @@ class PlotCollection:
         :param height: the figure height in pixels.
         :param out_path: the path to save the figure.
         :param out_dpi: the dpi when the figure is saved.
-        :param y_labels: list of y label.
+        :param y_label: list of y label.
         """
         from .violin import violin_distribution
         fig = violin_distribution(self.data, width=width, height=height, y_label=y_label)
@@ -533,12 +530,12 @@ class PlotCollection:
 
     @reorganize_coordinate
     def interact_spatial_scatter(
-            self, 
-            inline: bool=True,
-            width: Optional[int] = 600, 
+            self,
+            inline: Optional[bool] = True,
+            width: Optional[int] = 600,
             height: Optional[int] = 600,
-            bgcolor: str='#2F2F4F',
-            poly_select: bool=False
+            bgcolor: Optional[str] = '#2F2F4F',
+            poly_select: Optional[bool] = False
     ):
         """
         Interactive spatial distribution.
@@ -547,7 +544,8 @@ class PlotCollection:
         :param width: the figure width in pixels.
         :param height: the figure height in pixels.
         :param bgcolor: set background color.
-        :param reorganize_coordinate: if the data is merged from several slices, whether to reorganize the coordinates of the obs(cells), 
+        :param poly_select: poly select or not.
+        :param reorganize_coordinate: if the data is merged from several slices, whether to reorganize the coordinates of the obs(cells),
                 if set it to a number, like 2, the coordinates will be reorganized to 2 columns on coordinate system as below:
                                 ---------------
                                 | data1 data2
@@ -570,25 +568,39 @@ class PlotCollection:
         if not inline:
             fig.figure.show()
         return fig
-    
+
     def batches_umap(
             self,
-            res_key='umap',
-            title: str = 'umap between batches',
-            x_label: str = 'umap1',
-            y_label: str = 'umap2',
-            dot_size: int = 1,
+            res_key: str,
+            title: Optional[str] = 'umap between batches',
+            x_label: Optional[str] = 'umap1',
+            y_label: Optional[str] = 'umap2',
+            bfig_title: Optional[str] = 'all batches',
+            dot_size: Optional[int] = 1,
             colors: Optional[Union[str, list]] = 'stereo_30',
-            width: int = None,
-            height: int = None
-        ):
+            width: Optional[int] = None,
+            height: Optional[int] = None
+    ):
+        """
+        Plot batch umap
+
+        :param res_key: the result key of UMAP.
+        :param title:  the plot titles.
+        :param x_label: the x label.
+        :param y_label: the y label.
+        :param bfig_title: the big figure title.
+        :param dot_size: the dot size.
+        :param colors: the color list.
+        :param width: the figure width in pixels.
+        :param height: the figure height in pixels.
+
+        """
         import holoviews as hv
-        import hvplot.pandas
         import panel as pn
         from bokeh.models import Title
         pn.extension()
         hv.extension('bokeh')
-        
+
         assert self.data.cells.batch is not None, "there is no batches number list"
         if width is None or height is None:
             main_width, main_height = 500, 500
@@ -598,7 +610,7 @@ class PlotCollection:
             main_height = height
             sub_width = np.ceil(width * 0.4).astype(np.int32)
             sub_height = np.ceil(height * 0.4).astype(np.int32)
-        
+
         umap_res = self.check_res_key(res_key)
         umap_res = umap_res.rename(columns={0: 'x', 1: 'y'})
         umap_res['batch'] = self.data.cells.batch.astype(np.uint16)
@@ -614,7 +626,7 @@ class PlotCollection:
             height=main_height,
             invert_yaxis=True,
             xlabel=x_label,
-            ylabel=y_label, 
+            ylabel=y_label,
             size=dot_size,
             toolbar='disable',
             colorbar=False,
@@ -624,7 +636,7 @@ class PlotCollection:
         bfig_all.axis.minor_tick_line_alpha = 0
         bfig_all.axis.major_label_text_alpha = 0
         bfig_all.axis.axis_line_alpha = 0
-        bfig_all.title = Title(text='all batches', align='center')
+        bfig_all.title = Title(text=bfig_title, align='center')
         bfig_batches = []
         pn_rows = []
         for i, bn, c in zip(range(batch_count), batch_number_unique, cmap):
@@ -663,15 +675,15 @@ class PlotCollection:
     def umap(
             self,
             gene_names: Optional[Union[list, np.ndarray, str]] = None,
-            res_key: str='umap',
-            cluster_key=None,
+            res_key: str = 'umap',
+            cluster_key: Optional[str] = None,
             title: Optional[Union[str, list]] = None,
             x_label: Optional[Union[str, list]] = 'umap1',
             y_label: Optional[Union[str, list]] = 'umap2',
-            dot_size: int = None,
+            dot_size: Optional[int] = None,
             colors: Optional[Union[str, list]] = 'stereo',
-            width: int = None,
-            height: int = None,
+            width: Optional[int] = None,
+            height: Optional[int] = None,
             **kwargs
     ):
         """
@@ -680,7 +692,7 @@ class PlotCollection:
         :param gene_names: the list of gene names.
         :param cluster_key: the result key of clustering.
         :param res_key: the result key of UMAP.
-        :param title: the plot titles.
+        :param title: the plot title.
         :param x_label: the x label.
         :param y_label: the y label.
         :param dot_size: the dot size.
@@ -736,29 +748,31 @@ class PlotCollection:
     @reorganize_coordinate
     def cluster_scatter(
             self,
-            res_key='cluster',
+            res_key: str,
             groups: Union[str, list, np.ndarray] = None,
             title: Optional[str] = None,
             x_label: Optional[str] = None,
             y_label: Optional[str] = None,
-            dot_size: int = None,
-            colors='stereo_30',
-            invert_y: bool = True,
-            hue_order: set=None,
-            width: int=None,
-            height: int=None,
+            dot_size: Optional[int] = None,
+            colors: Optional[str] = 'stereo_30',
+            invert_y: Optional[bool] = True,
+            hue_order: Optional[set] = None,
+            width: Optional[int] = None,
+            height: Optional[int] = None,
             **kwargs
     ):
         """
         Spatial distribution ofter scatter.
 
         :param res_key: cluster result key.
+        :param groups: the group names.
         :param title: the plot title.
-        :param x_label: x label.
-        :param y_label: y label.
-        :param dot_size: dot size.
-        :param colors: color list.
+        :param x_label: the x label.
+        :param y_label: the y label.
+        :param dot_size: the dot size.
+        :param colors: the color list.
         :param invert_y: whether to invert y-axis.
+        :param hue_order: the classification method.
         :param width: the figure width in pixels.
         :param height: the figure height in pixels.
         :param show_plotting_scale: wheter to display the plotting scale.
@@ -792,12 +806,10 @@ class PlotCollection:
                 group_list[~isin] = 'others'
                 n = np.unique(group_list).size
                 palette = palette[0:n - 1] + ['#828282']
-                hue_order =  natsorted(np.unique(group_list[isin])) + ['others']
+                hue_order = natsorted(np.unique(group_list[isin])) + ['others']
                 # palette = ['#B3CDE3', '#FF7F00']
                 # kwargs['show_legend'] = False
 
-        
-            
         fig = base_scatter(
             self.data.position[:, 0],
             self.data.position[:, 1],
@@ -815,16 +827,16 @@ class PlotCollection:
     @download
     def marker_genes_text(
             self,
-            res_key: str='marker_genes',
+            res_key: str,
             groups: Union[str, Sequence[str]] = 'all',
-            markers_num: int = 20,
-            sort_key: str = 'scores',
-            ascend: bool = False,
-            fontsize: int = 8,
-            ncols: int = 4,
-            sharey: bool = True,
-            width: int = None,
-            height: int = None,
+            markers_num: Optional[int] = 20,
+            sort_key: Optional[str] = 'scores',
+            ascend: Optional[bool] = False,
+            fontsize: Optional[int] = 8,
+            ncols: Optional[int] = 4,
+            sharey: Optional[bool] = True,
+            width: Optional[int] = None,
+            height: Optional[int] = None,
             **kwargs
     ):
         """
@@ -864,27 +876,26 @@ class PlotCollection:
     @download
     def marker_genes_heatmap(
             self,
-            res_key: str='marker_genes',
-            cluster_res_key: str='cluster',
-            markers_num: int = 5,
-            sort_key: str = 'scores',
-            ascend: bool = False,
-            show_labels: bool = True,
-            show_group: bool = True,
-            show_group_txt: bool = True,
-            cluster_colors_array: bool = None,
-            min_value: int = None,
-            max_value: int = None,
-            gene_list: list = None,
-            do_log: bool = True,
-            width: int = None,
-            height: int = None
+            res_key: str,
+            cluster_res_key: str = 'cluster',
+            markers_num: Optional[int] = 5,
+            sort_key: Optional[str] = 'scores',
+            ascend: Optional[bool] = False,
+            show_labels: Optional[bool] = True,
+            show_group: Optional[bool] = True,
+            show_group_txt: Optional[bool] = True,
+            cluster_colors_array: Optional[bool] = None,
+            min_value: Optional[int] = None,
+            max_value: Optional[int] = None,
+            gene_list: Optional[list] = None,
+            do_log: Optional[bool] = True,
+            width: Optional[int] = None,
+            height: Optional[int] = None
     ):
         """
         Heatmap plot of maker genes.
 
         :param res_key: the result key of marker genes.
-        :param cluster_res_key: the result key of clustering.
         :param markers_num: top N maker genes.
         :param sort_key: sorted by which key.
         :param ascend: whether to sort by ascending.
@@ -904,7 +915,7 @@ class PlotCollection:
         """
         from .marker_genes import marker_genes_heatmap
         maker_res = self.check_res_key(res_key)
-        cluster_res_key = maker_res['parameters']['cluster_res_key']        
+        cluster_res_key = maker_res['parameters']['cluster_res_key']
         cluster_res = self.check_res_key(cluster_res_key)
         cluster_res = cluster_res.set_index(['bins'])
         fig = marker_genes_heatmap(
@@ -929,29 +940,29 @@ class PlotCollection:
 
     @download
     def marker_genes_scatter(
-        self,
-        res_key: str = 'marker_genes',
-        markers_num: int = 10,
-        genes: Optional[Sequence[str]] = None,
-        groups: Optional[Sequence[str]] = None,
-        values_to_plot: Optional[
-            Literal[
+            self,
+            res_key: str,
+            markers_num: Optional[int] = 10,
+            genes: Optional[Sequence[str]] = None,
+            groups: Optional[Sequence[str]] = None,
+            values_to_plot: Optional[
+                Literal[
+                    'scores',
+                    'logfoldchanges',
+                    'pvalues',
+                    'pvalues_adj',
+                    'log10_pvalues',
+                    'log10_pvalues_adj',
+                ]
+            ] = None,
+            sort_by: Literal[
                 'scores',
                 'logfoldchanges',
                 'pvalues',
-                'pvalues_adj',
-                'log10_pvalues',
-                'log10_pvalues_adj',
-            ]
-        ] = None,
-        sort_by: Literal[
-            'scores',
-            'logfoldchanges',
-            'pvalues',
-            'pvalues_adj'
-        ] = 'scores',
-        width: int = None,
-        height: int = None
+                'pvalues_adj'
+            ] = 'scores',
+            width: Optional[int] = None,
+            height: Optional[int] = None
     ):
         """Scatter of marker genes
 
@@ -965,6 +976,8 @@ class PlotCollection:
                         available values include: [scores, logfoldchanges, pvalues, pvalues_adj].
         :param out_path: the path to save the figure.
         :param out_dpi: the dpi when the figure is saved.
+        :param width: the figure width in pixels.
+        :param height: the figure height in pixels.
         """
         from .marker_genes import MarkerGenesScatterPlot
         marker_genes_res = self.check_res_key(res_key)
@@ -995,10 +1008,10 @@ class PlotCollection:
 
     @download
     def hotspot_local_correlations(
-        self,
-        res_key: str='spatial_hotspot',
-        width: int=None,
-        height: int=None
+            self,
+            res_key: str,
+            width: Optional[int] = None,
+            height: Optional[int] = None
     ):
         """
         Visualize module scores with spatial position.
@@ -1023,21 +1036,22 @@ class PlotCollection:
     @download
     def hotspot_modules(
             self,
-            res_key: str="spatial_hotspot",
-            ncols: int=2,
-            dot_size: int=None,
-            palette: str='stereo',
-            width: str=None,
-            height: str=None,
-            title: str=None,
+            res_key: str,
+            ncols: Optional[int] = 2,
+            dot_size: Optional[int] = None,
+            palette: Optional[str] = 'stereo',
+            width: Optional[str] = None,
+            height: Optional[str] = None,
+            title: Optional[str] = None,
             **kwargs
     ):
         """
         Plot hotspot modules
 
+        :param res_key: the result key of spatial hotspot.
         :param ncols: the number of columns.
         :param dot_size: the dot size.
-        :param res_key: the result key of spatial hotspot.
+        :param palette: Color theme, defaults to `'CET_L4'`.
         :param width: the figure width in pixels.
         :param height: the figure height in pixels.
         :param out_path: the path to save the figure.
@@ -1049,7 +1063,8 @@ class PlotCollection:
         scores = [res.module_scores[module] for module in range(1, res.modules.max() + 1)]
         vmin = np.percentile(scores, 1)
         vmax = np.percentile(scores, 99)
-        title = [f"module {module}" for module in range(1, res.modules.max() + 1)] if title is None and title !='' else title
+        title = [f"module {module}" for module in
+                 range(1, res.modules.max() + 1)] if title is None and title != '' else title
         fig = multi_scatter(
             x=res.latent.iloc[:, 0],
             y=res.latent.iloc[:, 1],
@@ -1071,17 +1086,17 @@ class PlotCollection:
 
     def scenic_regulons(
             self,
-            res_key="scenic",
-            output=None,
+            res_key: str,
     ):
         """
         Plot scenic regulons
 
-        :return:
+        :param res_key: result key.
+
         """
         res = self.check_res_key(res_key)
-        regulons=res["regulons"]
-        auc_mtx=res["auc_mtx"]
+        regulons = res["regulons"]
+        auc_mtx = res["auc_mtx"]
         for tf in range(0, len(regulons)):
             scores = auc_mtx.iloc[:, tf]
 
@@ -1106,13 +1121,13 @@ class PlotCollection:
 
     def scenic_clustermap(
             self,
-            res_key="scenic",
-            output=None,
+            res_key: str,
     ):
         """
         Plot scenic cluster
 
-        :return:
+        :param res_key:  result key.
+
         """
         res = self.check_res_key(res_key)
         auc_mtx = res["auc_mtx"]
@@ -1122,18 +1137,19 @@ class PlotCollection:
 
     @reorganize_coordinate
     def cells_plotting(
-        self,
-        cluster_res_key='cluster',
-        bgcolor='#2F2F4F',
-        width=None,
-        height=None,
-        fg_alpha=0.5,
-        base_image=None
+            self,
+            cluster_res_key: str = 'cluster',
+            bgcolor: Optional[str] = '#2F2F4F',
+            width: Optional[int] = None,
+            height: Optional[int] = None,
+            fg_alpha: Optional[float] = 0.5,
+            base_image: Optional[str] = None
     ):
         """Plot the cells.
 
         :param cluster_res_key: result key of clustering, defaults to `'cluster'`
                 color by cluster result if cluster result is not None, or by `total_counts`.
+        :param bgcolor: set background color.
         :param width: the figure width in pixels.
         :param height: the figure height in pixels.
         :param fg_alpha: the alpha of foreground image, between 0 and 1, defaults to 0.5
