@@ -30,8 +30,8 @@ class MSDataPipeLine(object):
         self._result = new_result
 
     def _use_integrate_method(self, item, *args, **kwargs):
-        if item == "batches_integrate":
-            raise AttributeError
+        # if item == "batches_integrate":
+        #     raise AttributeError
         
         if "mode" in kwargs:
             del kwargs["mode"]
@@ -40,7 +40,7 @@ class MSDataPipeLine(object):
         del kwargs["scope"]
 
         if item in {"cal_qc", "filter_cells", "filter_genes", "sctransform", "log1p", "normalize_total",
-                    "scale", "raw_checkpoint"}:
+                    "scale", "raw_checkpoint", "batches_integrate"}:
             if scope != slice(None):
                 raise Exception(f'{item} use integrate should use all sample')
             ms_data_view = self.ms_data
@@ -170,6 +170,12 @@ class MSDataPipeLine(object):
         # start with __ may not be our algorithm function, and will cause import problem
         if item.startswith('__'):
             raise AttributeError
+        
+        if self.__class__.ATTR_NAME == 'tl':
+            from stereo.algorithm.ms_algorithm_base import MSDataAlgorithmBase
+            run_method = MSDataAlgorithmBase.get_attribute_helper(item, self.ms_data, self.result)
+            if run_method:
+                return run_method
 
         def temp(*args, **kwargs):
             if "scope" not in kwargs:

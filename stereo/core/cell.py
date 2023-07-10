@@ -51,7 +51,7 @@ class Cell(object):
     def __getitem__(self, key):
         if key not in self._obs.columns:
             return None
-        return self._obs[key].to_numpy()
+        return self._obs[key]
 
     @property
     def total_counts(self):
@@ -187,11 +187,14 @@ class AnnBasedCell(Cell):
                  batch: Optional[Union[np.ndarray, list, int, str]] = None):
         self.__based_ann_data = based_ann_data
         super().__init__(cell_name, cell_border, batch)
-        self._obs = self.__based_ann_data.obs
-        self.loc = self._obs.loc
+        # self._obs = self.__based_ann_data.obs
+        # self.loc = self._obs.loc
+        self.loc = self.__based_ann_data.obs.loc
 
     def __setattr__(self, key, value):
-        if key == 'batch':
+        if key == '_obs':
+            return
+        elif key == 'batch':
             self.__based_ann_data.obs[key] = self._set_batch(value)
             self.__based_ann_data.obs[key] = self.__based_ann_data.obs[key].astype('category')
         else:
@@ -206,10 +209,14 @@ class AnnBasedCell(Cell):
     def __getitem__(self, item):
         if item not in self.__based_ann_data.obs.columns:
             return None
-        return self.__based_ann_data.obs[item].to_numpy()
+        return self.__based_ann_data.obs[item]
 
     def __contains__(self, item):
         return item in self.__based_ann_data.obs.columns
+    
+    @property
+    def _obs(self):
+        return self.__based_ann_data.obs
 
     @property
     def cell_name(self) -> np.ndarray:

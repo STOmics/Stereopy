@@ -583,25 +583,29 @@ def read_ann_h5ad(
 
     return data
 
-@ReadWriteUtils.check_file_exists
+# @ReadWriteUtils.check_file_exists
 def read_h5ad(
     file_path: str = None,
+    anndata: AnnData = None,
     flavor: str = 'scanpy',
     bin_type: str = None,
     bin_size: int = None,
     **kwargs
 ) -> Union[StereoExpData, AnnBasedStereoExpData]:
     """
-    Read a h5ad file
+    Read a h5ad file or load a AnnData object
 
     Parameters
     ------------------
     file_path
         the path of the h5ad file.
+    anndata
+        the object of AnnData which to be loaded, only available while `flavor` is `'scanpy'`.
+        `file_path` and `anndata` only can input one of them.
     param flavor
         the format of the h5ad file, defaults to `'scanpy'`.
-        `scanpy`: AnnData of scanpy
-        `stereopy`: h5ad format of stereopy
+        `scanpy`: AnnData format of scanpy
+        `stereopy`: h5ad format of stereo
     bin_type
         the bin type includes `'bins'` or `'cell_bins'`.
     bin_size
@@ -614,13 +618,20 @@ def read_h5ad(
     flavor = flavor.lower()
 
     if flavor == 'stereopy':
+        if file_path is None:
+            raise ValueError("The 'file_path' must be input.")
         if kwargs is None:
             kwargs = {}
         kwargs['bin_type'] = bin_type
         kwargs['bin_size'] = bin_size
         return read_stereo_h5ad(file_path, **kwargs)
     elif flavor == 'scanpy':
-        return AnnBasedStereoExpData(h5ad_file_path=file_path, bin_type=bin_type, bin_size=bin_size, **kwargs)
+        if file_path is None and anndata is None:
+            raise Exception("Must to input the 'file_path' or 'anndata'.")
+        
+        if file_path is not None and anndata is not None:
+            raise Exception("'file_path' and 'anndata' only can input one of them")
+        return AnnBasedStereoExpData(h5ad_file_path=file_path, based_ann_data=anndata, bin_type=bin_type, bin_size=bin_size, **kwargs)
     else:
         raise ValueError("Invalid value for 'flavor'")
 

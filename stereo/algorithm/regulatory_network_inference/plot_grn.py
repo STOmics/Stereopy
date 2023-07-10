@@ -64,23 +64,23 @@ class PlotRegulatoryNetwork(PlotBase):
             return round(reg_ct_percent,2), round(reg_ct_avg_exp,2)
 
     def grn_dotplot(self,
-                       meta: pd.DataFrame,
-                       regulon_names: Union[str, list] = None,
-                       celltypes: Union[str, list] = None,
-                       groupby: str = 'group',
-                       cell_label: str = 'bins',
-                       network_res_key: str = 'regulatory_network_inference', 
-                       palette: str = 'Reds',
-                       width: int = None,
-                       height: int = None,
-                       **kwargs):
+                    cluster_res_key: str,
+                    regulon_names: Union[str, list] = None,
+                    celltypes: Union[str, list] = None,
+                    groupby: str = 'group',
+                    cell_label: str = 'bins',
+                    network_res_key: str = 'regulatory_network_inference', 
+                    palette: str = 'Reds',
+                    width: int = None,
+                    height: int = None,
+                    **kwargs):
         """
         Intuitive way of visualizing how feature expression changes across different
         identity classes (clusters). The size of the dot encodes the percentage of
         cells within a class, while the color encodes the AverageExpression level
         across all cells within a class (red is high).
 
-        :param meta: cell classification information.
+        :param cluster_res_key: the key which specifies the clustering result in data.tl.result.
         :param regulon_names: the regulon which would be shown on plot, defaults to None.
             If set it to None, it will be set to all regulon.
             1) string: only one cluster.
@@ -107,6 +107,14 @@ class PlotRegulatoryNetwork(PlotBase):
         dot_data = {'cell type': [], 'regulons': [], 'percentage': [], 'avg exp': []}
 
         regulon_dict = self.pipeline_res[network_res_key]['regulons']
+
+        if cluster_res_key in self.stereo_exp_data.cells._obs.columns:
+            meta = pd.DataFrame({
+                'bin': self.stereo_exp_data.cells.cell_name,
+                'group': self.stereo_exp_data.cells._obs[cluster_res_key].tolist()
+            })
+        else:
+            meta = self.pipeline_res[cluster_res_key]
 
         if celltypes is None:
             meta_new = meta.drop_duplicates(subset='group', inplace=False)

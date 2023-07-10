@@ -53,7 +53,7 @@ class TestMerge3DData(unittest.TestCase):
         mesh_each_ty = []  # each element: mesh of each type, element with the same order as choose_ty
 
         import numpy as np
-        from stereo.algorithm.gen_mesh_3d import ThreeDimGroup
+        from stereo.algorithm.gen_mesh import ThreeDimGroup
 
         for ty_name in choose_ty:
             tdg = ThreeDimGroup(list(x_raw), list(y_raw), list(z_raw), list(ty), ty_name=ty_name, eps_val=2,
@@ -97,10 +97,14 @@ class TestMerge3DData(unittest.TestCase):
         # pl = pv.Plotter()
 
         # 2. 计算mesh
-        from stereo.algorithm.gen_mesh_3d import gen_mesh
-        merged_data = gen_mesh(merged_data, xli, yli, zli, tyli, method='delaunay', tol=1.5, eps_val=2, min_samples=5,
+        # from stereo.algorithm.gen_mesh import gen_mesh
+        # merged_data = gen_mesh(merged_data, xli, yli, zli, tyli, method='delaunay', tol=1.5, eps_val=2, min_samples=5,
+        #                        thresh_num=10, key_name='delaunay_3d')
+        # merged_data = gen_mesh(merged_data, xli, yli, zli, tyli, method='march', mc_scale_factor=1.5, eps_val=2,
+        #                        min_samples=5, thresh_num=10, key_name='march_cubes')
+        merged_data = merged_data.tl.gen_mesh(cluster_res_key=ty_col, method='delaunay', tol=1.5, eps_val=2, min_samples=5,
                                thresh_num=10, key_name='delaunay_3d')
-        merged_data = gen_mesh(merged_data, xli, yli, zli, tyli, method='march', mc_scale_factor=1.5, eps_val=2,
+        merged_data = merged_data.tl.gen_mesh(cluster_res_key=ty_col, method='march', mc_scale_factor=1.5, eps_val=2,
                                min_samples=5, thresh_num=10, key_name='march_cubes')
 
         print('test data ready.')

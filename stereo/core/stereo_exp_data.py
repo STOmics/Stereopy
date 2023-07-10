@@ -591,6 +591,9 @@ class AnnBasedStereoExpData(StereoExpData):
         if h5ad_file_path is None and based_ann_data is None:
             raise Exception("Must to input the 'h5ad_file_path' or 'based_ann_data'.")
         
+        if h5ad_file_path is not None and based_ann_data is not None:
+            raise Exception("'h5ad_file_path' and 'based_ann_data' only can input one of them")
+        
         if based_ann_data:
             assert type(based_ann_data) is anndata.AnnData
             self._ann_data = based_ann_data
@@ -678,10 +681,9 @@ class AnnBasedStereoExpData(StereoExpData):
     def position(self):
         if 'spatial' in self._ann_data.obsm:
             return self._ann_data.obsm['spatial'][:, [0, 1]]
-        elif {'x', 'y'} - set(self._ann_data.obs.columns.values):
-            self._ann_data.obs.loc[:, ['x', 'y']] = \
-                np.array(list(self._ann_data.obs.index.str.split('-', expand=True)), dtype=np.uint32)
-        return self._ann_data.obs.loc[:, ['x', 'y']].values
+        elif 'x' in self._ann_data.obs.columns and 'y' in self._ann_data.obs.columns:
+            return self._ann_data.obs[['x', 'y']].to_numpy()
+        return None
 
     @property
     def position_z(self):
@@ -690,10 +692,33 @@ class AnnBasedStereoExpData(StereoExpData):
                 return self._ann_data.obsm['spatial'][:, [2]]
             else:
                 return None
-        elif {'z'} - set(self._ann_data.obs.columns.values):
-            self._ann_data.obs.loc[:, ['z']] = \
-                np.array(list(self._ann_data.obs.index.str.split('-', expand=True)), dtype=np.uint32)
-        return self._ann_data.obs.loc[:, ['z']].values
+        elif 'z' in self._ann_data.obs.columns:
+            return self._ann_data.obs[['z']].to_numpy()
+        return None
+    
+    @position.setter
+    def position(self, position: np.ndarray):
+        if len(position.shape) != 2:
+            raise ValueError("the shape of position must be 2 dimensions.")
+        if position.shape[1] != 2:
+            raise ValueError("the length of position's second dimension must be 2.")
+        if 'spatial' in self._ann_data.obsm:
+            self._ann_data.obsm['spatial'][:, [0, 1]] = position
+        elif 'x' in self._ann_data.obs.columns and 'y' in self._ann_data.obs.columns:
+            self._ann_data.obs['x'] = position[:, 0]
+            self._ann_data.obs['y'] = position[:, 1]
+        else:
+            self._ann_data.obsm['spatial'] = position
+    
+    @position_z.setter
+    def position_z(self, position_z: np.ndarray):
+        if (position_z.shape) == 1:
+            position_z = position_z.reshape(-1, 1)
+        if 'spatial' in self._ann_data.obsm:
+            self._ann_data.obsm['spatial'][:, 2] = np.concatenate([self._ann_data.obsm['spatial'][:, [0, 1]], position_z], axis=1)
+        else:
+            self._ann_data.obs['z'] = position_z
+
 
     @property
     def bin_type(self):
