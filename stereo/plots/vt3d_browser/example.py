@@ -2,6 +2,7 @@ import atexit
 import os
 import sys
 from time import sleep
+from threading import Thread
 
 from ..plot_base import PlotBase
 from .stereopy_3D_browser import launch
@@ -22,17 +23,31 @@ class Plot3DBrowser(PlotBase):
             meshes = self.stereo_exp_data.tl.result['mesh'][mesh_method]
         else:
             meshes = {}
-        pid = _daemonize()
-        if not pid:
-            launch(
-                self.stereo_exp_data,
-                meshes=meshes,
-                cluster_label=cluster_res_key,
-                paga_key=paga_res_key,
-                ccc_key=ccc_res_key,
-                grn_key=grn_res_key,
-                port=port
-            )
+        th = Thread(
+            target=launch,
+            args=(self.stereo_exp_data, ),
+            kwargs={
+                'meshes': meshes,
+                'cluster_label': cluster_res_key,
+                'paga_key': paga_res_key,
+                'ccc_key': ccc_res_key,
+                'grn_key': grn_res_key,
+                'port': port
+            }
+        )
+        th.setDaemon(True)
+        th.start()
+        # pid = _daemonize()
+        # if not pid:
+        #     launch(
+        #         self.stereo_exp_data,
+        #         meshes=meshes,
+        #         cluster_label=cluster_res_key,
+        #         paga_key=paga_res_key,
+        #         ccc_key=ccc_res_key,
+        #         grn_key=grn_res_key,
+        #         port=port
+        #     )
         # launch(
         #     self.stereo_exp_data,
         #     meshes=meshes,
