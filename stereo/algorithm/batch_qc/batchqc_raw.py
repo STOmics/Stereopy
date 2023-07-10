@@ -7,17 +7,16 @@
 # @Email   : zhangchao5@genomics.cn
 import os
 import os.path as osp
-import pkgutil
-import pwd
+# import pkgutil
+# import pwd
 import time
-import scanpy as sc
+# import scanpy as sc
 import pandas as pd
 from typing import Union
-from anndata import AnnData
+# from anndata import AnnData
 from lxml import etree
 from collections import defaultdict
 import matplotlib
-import pydf
 from .test import *
 from .module import domain_variance_score
 from .utils import pca_lowrank, embed_text, embed_tabel, embed_table_imgs, check_data
@@ -202,7 +201,7 @@ def generate_report(data_dict: dict, save_path: str, type: str = 'html') -> None
     # html = etree.HTML(pkgutil.get_data('.template', "report_template_raw.html").decode())
 
     # -------- set username & run time --------
-    embed_text(html, pos="h4", name="username", text=f"Report By: {pwd.getpwuid(os.getuid())[0]}")
+    embed_text(html, pos="h4", name="username", text=f"Report By: {os.getlogin()}")
     embed_text(html, pos="h5", name="runtime", text=f"Report Time: {time.strftime('%Y-%m-%d %H:%M:%S', time.localtime())}")
 
     # -------- insert table --------
