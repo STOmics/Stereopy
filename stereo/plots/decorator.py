@@ -109,7 +109,9 @@ def reorganize_coordinate(func):
                         data.cells.batch, data.position, data.position_offset,
                         reorganize_coordinate, horizontal_offset_additional, vertical_offset_additional
                     )
-        return func(*args, **kwargs)
+        res = func(*args, **kwargs)
+        data.reset_position()
+        return res
     return wrapped
 
 # def reorganize_coordinate(func):
