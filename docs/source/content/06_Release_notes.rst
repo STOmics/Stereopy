@@ -4,7 +4,7 @@ Release Notes
 .. role:: small
 
 Version 0.13.0b1 (Bata)
----------------------
+------------------------
 0.13.0b1 : 2023-07-11
 ~~~~~~~~~~~~~~~~~~~~~~~~
 Notice: this Beta version is specifically developed for multi-sample analysis. Major update points are listed below.

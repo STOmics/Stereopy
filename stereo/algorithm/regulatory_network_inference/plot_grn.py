@@ -363,14 +363,14 @@ class PlotRegulatoryNetwork(PlotBase):
         view_horizontal: int=0,
         show_axis: bool=False,
         **kwargs):
-        """
-        Plot genes of one regulon on a 3D map
+        """Plot genes of one regulon on a 3D map
+
         :param network_res_key: the key which specifies inference regulatory network result in data.tl.result, defaults to 'regulatory_network_inference'
         :param reg_name: specify the regulon you want to draw, defaults to None, if none, will select randomly.
         :param fn: specify the file name of the output figure, defaults to None, if none, will use regulon name.
         :param view_vertical: vertical angle to view to the 3D object
         :param view_horizontal: horizontal angle to view the 3D object
-        :return: 
+
         Example:
             data.plt.plot_3d_reg('regulatory_network_inference', 'Zfp354c', view_vertical=30, view_horizontal=-30)
         """
