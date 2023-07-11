@@ -278,7 +278,7 @@ class Stereo3DWebCache:
 
         self._summary['option'] = {
             'default': 'CellTypes',
-            "CellTypes": True,
+            "CellTypes": False,
             "GeneExpression": True,
             "Digital_in_situ": True,
             'PAGA_trajectory': False,
@@ -286,6 +286,8 @@ class Stereo3DWebCache:
             'Hotspot_Modules': False,
             'Cell_Cell_Communication': False,
         }
+        if self._cluster_label is not None:
+            self._summary['option']['CellTypes'] = True
         if  (self._paga_key is not None) and (self._paga_key in self._data.tl.result):
             self._summary['option']['PAGA_trajectory'] = True
             self._summary['option']['default'] = 'PAGA_trajectory'
@@ -299,7 +301,6 @@ class Stereo3DWebCache:
             self._data.tl.result[self._ccc_key]['visualization_data']['receptor'] = UpdateList(self._data.tl.result[self._ccc_key]['visualization_data']['receptor'])
         if (self._grn_key is not None) and (self._grn_key in self._data.tl.result):
             self._summary['option']['GRN_Regulons'] = True
-            self._summary['option']['CellTypes'] = False
             self._summary['option']['default'] = 'GRN_Regulons'
             self._data.tl.result[self._grn_key]['auc_matrix'].columns = UpdateList(self._data.tl.result[self._grn_key]['auc_matrix'].columns)
             

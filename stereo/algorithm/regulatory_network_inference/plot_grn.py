@@ -179,8 +179,7 @@ class PlotRegulatoryNetwork(PlotBase):
         ):
         """
         Plot heatmap for auc value for regulons
-        :param network_res_key: the key which specifies inference regulatory network result
-             in data.tl.result, defaults to 'regulatory_network_inference'
+        :param network_res_key: the key which specifies inference regulatory network result in data.tl.result, defaults to 'regulatory_network_inference'
         :param height: height of drawing
         :param width: width of drawing
 
@@ -295,29 +294,35 @@ class PlotRegulatoryNetwork(PlotBase):
 
     def auc_heatmap_by_group(self,
                     network_res_key: str = 'regulatory_network_inference', 
-                    celltype_res_key: str = 'leiden',
+                    cluster_res_key: str = None,
                     top_n_feature: int=5,
                     width: int=18,
                     height: int=28,
                     ):
-        """
-        Plot heatmap for Regulon specificity scores (RSS) value
-        :param auc_mtx: 
-        :param regulons:
-        :param meta:
-        :param save:
-        :param fn:
-        :return: 
+        """Plot heatmap for Regulon specificity scores (RSS) value
+
+        :param network_res_key: the key which specifies inference regulatory network result in data.tl.result, defaults to 'regulatory_network_inference'
+        :param cluster_res_key: the key which specifies the clustering result in data.tl.result, defaults to None
+        :param top_n_feature:
+        :param width:
+        :param height:
         """
     
         if network_res_key not in self.pipeline_res:
             logger.info(f"The result specified by {network_res_key} is not exists.")
-        elif celltype_res_key not in self.pipeline_res:
-            logger.info(f"The result specified by {celltype_res_key} is not exists.")
+        elif cluster_res_key not in self.pipeline_res:
+            logger.info(f"The result specified by {cluster_res_key} is not exists.")
 
         auc_mtx = self.pipeline_res[network_res_key]['auc_matrix']
+
+        if cluster_res_key in self.stereo_exp_data.cells._obs.columns:
+            meta = pd.DataFrame({
+                'bin': self.stereo_exp_data.cells.cell_name,
+                'group': self.stereo_exp_data.cells._obs[cluster_res_key].tolist()
+            })
+        else:
+            meta = self.pipeline_res[cluster_res_key].copy(deep=True)
         
-        meta = self.pipeline_res[celltype_res_key].copy(deep=True)
         # Regulon specificity scores (RSS) across predicted cell types
         rss_cellType = regulon_specificity_scores(auc_mtx, meta['group'])
         # rss_cellType.to_csv('regulon_specificity_scores.txt')
