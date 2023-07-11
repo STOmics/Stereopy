@@ -179,6 +179,7 @@ class PlotRegulatoryNetwork(PlotBase):
         ):
         """
         Plot heatmap for auc value for regulons
+
         :param network_res_key: the key which specifies inference regulatory network result in data.tl.result, defaults to 'regulatory_network_inference'
         :param height: height of drawing
         :param width: width of drawing
@@ -364,8 +365,7 @@ class PlotRegulatoryNetwork(PlotBase):
         **kwargs):
         """
         Plot genes of one regulon on a 3D map
-        :param network_res_key: the key which specifies inference regulatory network result
-             in data.tl.result, defaults to 'regulatory_network_inference'
+        :param network_res_key: the key which specifies inference regulatory network result in data.tl.result, defaults to 'regulatory_network_inference'
         :param reg_name: specify the regulon you want to draw, defaults to None, if none, will select randomly.
         :param fn: specify the file name of the output figure, defaults to None, if none, will use regulon name.
         :param view_vertical: vertical angle to view to the 3D object
