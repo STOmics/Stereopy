@@ -84,7 +84,7 @@ Notice: this Beta version is specifically developed for multi-sample analysis. M
 3. Addition of Trajectory Inference, including PAGA and DPT algorithms.
 4. Addition of Batch QC function for evaluation on batch effect.
 5. Addition of `st.io.read_h5ad` for improved compatibility with AnnData H5ad, we highly recommend that instead of `st.io.read_ann_h5ad`.
-6. Addition of analysis workflow tutorial based on multi-sample data, with assistant parameters scopeand mode.
+6. Addition of analysis workflow tutorial based on multi-sample data, with assistant parameters `scope` and `mode`.
 7. Addition of resetting the image order of multi-sample analysis results.
 8. Addition of 3D mesh visualization.
 9. Improved the performance of Gaussian Smoothing.
