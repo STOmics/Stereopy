@@ -38,8 +38,8 @@ Meanwhile, we are still working on the improvement of performance and calculatio
 
 About MSData
 -----------
-For multi-sample data analysis, we have recently launched a simple-to-use method that can distinguish single-sample data \
-and multi-sample one while work on the parallel processings, but the The results of the two parties can be interacted.
+For multi-sample data analysis, we have recently launched a simple-to-use method that can distinguish single-sample \
+and multi-sample when working on the parallel processings, but the results of two parties can be interacted.
 
 In order to adapt to the new parameters and concepts in MSData analysis, the current version is a Beta one, which means there are \
 inevitably a handful of BUGs. We sincerely hope to receive your feedback and suggestions for MSData.
