@@ -10,6 +10,7 @@ change log:
     2021/05/20 rst supplement. by: qindanhua.
     2021/06/20 adjust for restructure base class . by: qindanhua.
 """
+from natsort import natsorted
 import pandas as pd
 
 from ..utils.data_helper import select_group
@@ -100,6 +101,8 @@ class FindMarker(ToolBase):
             self._control_groups = [str(g) if isinstance(g, int) else g for g in control_groups]
         else:
             raise TypeError("The type of control_groups must be one of str, int, numpy.ndarray, list or tuple")
+        if isinstance(self._control_groups, list):
+            self._control_groups = natsorted(self._control_groups)
 
     @property
     def case_groups(self):
@@ -136,6 +139,7 @@ class FindMarker(ToolBase):
             case_groups = list(all_groups)
         else:
             case_groups = self.case_groups
+        case_groups = natsorted(case_groups)
         control_str = self.control_groups if isinstance(self.control_groups, str) else '-'.join(self.control_groups)
         self.result = {}
 
@@ -162,7 +166,11 @@ class FindMarker(ToolBase):
                 other_g.remove(g)
                 other_g = list(other_g)
             else:
-                other_g = self.control_groups
+                other_g = self.control_groups.copy()
+                if g in other_g:
+                    other_g.remove(g)
+            if len(other_g) <= 0:
+                continue
             # self.logger.info('start to select group')
             g_data, g_index = select_group(st_data=self.data, groups=g, cluster=group_info)
             other_data, _ = select_group(st_data=self.data, groups=other_g, cluster=group_info)
@@ -191,6 +199,8 @@ class FindMarker(ToolBase):
                 to = min(max(to, 1), 50)
                 result = result[:to]
 
+            if self.control_groups != 'rest':
+                control_str = '-'.join(other_g)
             self.result[f"{g}.vs.{control_str}"] = result
             self.result[f"{g}.vs.{control_str}"]['pct'] = self.result['pct'].iloc[result.index][g].values
             self.result[f"{g}.vs.{control_str}"]['pct_rest'] = self.result['pct_rest'].iloc[result.index][g].values
