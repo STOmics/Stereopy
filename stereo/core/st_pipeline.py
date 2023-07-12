@@ -286,6 +286,11 @@ class StPipeline(object):
         
         data, cluster_res = filter_by_clusters(self.data, self.result[cluster_res_key], groups, excluded, inplace)
         data.tl.result[cluster_res_key] = cluster_res
+        gene_exp_cluster_key = f'gene_exp_{cluster_res_key}'
+        if gene_exp_cluster_key in data.tl.result:
+            if isinstance(groups, str):
+                groups = [groups]
+            data.tl.result[gene_exp_cluster_key] = data.tl.result[gene_exp_cluster_key][groups]
         return data
 
     @logit
