@@ -32,8 +32,7 @@ def plot_spatial(
     ax: Axes,
     spot_size: float,
     palette = None,
-    title: str = "",
-    groups=None
+    title: str = ""
 ):
     """
     Scatter plot in spatial coordinates.
@@ -45,11 +44,9 @@ def plot_spatial(
         - spot_size (int): Size of the dot that represents a cell. We are passing it as a diameter of the spot, while the plotting library uses radius therefore it is multiplied by 0.5 
         - palette (dict): Dictionary that represents a mapping between annotation categories and colors
         - title (str): Title of the figure
-        - groups (list): If we want to plot only specific groups from annotation categories we will include only the categories present in groups parameter
 
     """
-    s = spot_size * 0.2  # TODO: Ugly: consider using only one of: matplotlib or seaborn plots to have same spot size
-    #data = adata[adata.obs[annotation].isin(groups)] if groups else adata
+    s = spot_size * 0.2
     data = adata
     ax = sns.scatterplot(data=data.obs, hue=annotation, x=data.obsm['spatial'][:, 0], y=data.obsm['spatial'][:, 1], ax=ax, s=s, linewidth=0, palette=palette, marker='.')
     ax.set(yticklabels=[], xticklabels=[], title=title)

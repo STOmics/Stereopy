@@ -155,11 +155,11 @@ def per_slice_content(path, plotting_level):
     content = ""
     for root, dirs, files in os.walk(path): 
         for name in dirs:
-            content += get_table_plots(os.path.join(root, name))
+            content += get_table_plots(os.path.join(root, name), plotting_level)
     return content
 
 
-def get_table_plots(path):
+def get_table_plots(path, plotting_level):
     """
     Get table plots for a given path.
 
@@ -198,14 +198,14 @@ def get_table_plots(path):
             </thead>
             <tbody>
             <tr>
-                <td class="pad20" style="width:40%"><img src={get_base64_encoded_img(celltype_table) if celltype_table != "" else ""}></td>
-                <td class="pad20"><img src={get_base64_encoded_img(cell_mixtures) if cell_mixtures != "" else ""}></td>
-                <td class="pad20" style="width:20%"><img src={get_base64_encoded_img(hist_cell_number) if hist_cell_number != "" else ""}></td>
+                <td class="pad20" style="width:40%"><a target="_blank" href="#" onClick='open_new_tab(this)'><img src={get_base64_encoded_img(celltype_table) if celltype_table != "" else ""}></a></td>
+                <td class="pad20"><a target="_blank" href="#" onClick='open_new_tab(this)'><img src={get_base64_encoded_img(cell_mixtures) if cell_mixtures != "" else ""}></a></td>
+                <td class="pad20" style="width:20%"><a target="_blank" href="#" onClick='open_new_tab(this)'></a><img title="Histogram of the number of cells in windows" src={get_base64_encoded_img(hist_cell_number) if hist_cell_number != "" else ""}></a></td>
             </tr>
             </tbody>
         </table>
         <div class="centeredCtPlot">
-            {make_table(ct_colorplots, columns=2, comment="Cell type colorplots")}
+            {make_table(ct_colorplots, columns=2, comment="Cell type colorplots") if plotting_level > 4 else ""}
         </div>
         <hr>
     '''
@@ -380,6 +380,14 @@ def generate_report(params):
         }}
     }}
 
+    function open_new_tab(element) {{
+        var newTab = window.open();
+        setTimeout(function() {{
+            newTab.document.body.innerHTML = element.innerHTML;
+        }}, 500);
+        return false;
+    }}
+
     function remove_elements(){{
 	let allEls = document.querySelectorAll('.testRemove')
 	allEls.forEach(el => {{
@@ -461,37 +469,49 @@ def generate_report(params):
                 <h3>Cell type annotation:</h3>
             </div>
             <div class="centered">
+                <a target="_blank" href="#" onClick='open_new_tab(this)'>
                 <img title="Annotation column in .obs of anndata object" src={get_base64_encoded_img(annotation_figure)}>
+                </a>
             </div>
             <div class="centered">
                 <h3>Communities obtained:</h3>
             </div>
             <div class="centered">
+                <a target="_blank" href="#" onClick='open_new_tab(this)'>
                 <img title="Result of CCD algorithm contained in .obs of anndata object" src={get_base64_encoded_img(communities_figure)}>
+                </a>
             </div>
             <div class="centered testRemove" data-value={"remove" if params['plotting'] < 3 else "keep"}>
                 <h3>Cell mixtures for all slices:</h3>
             </div>
             <div class="centered testRemove" data-value={"remove" if params['plotting'] < 3 else "keep"}>
+                <a target="_blank" href="#" onClick='open_new_tab(this)'>
                 <img title="Showing the percentage of each cell type within obtained community and corresponding sums" src={all_slices_get_figure(params['out_path'], "total_cell_mixtures_table.png", params['plotting'])}>
+                </a>
             </div>
             <div class="centered testRemove" data-value={"remove" if params['plotting'] < 3 else "keep"}>
                 <h3>Cell type abundance:</h3>
             </div>
             <div class="centered testRemove" data-value={"remove" if params['plotting'] < 3 else "keep"}>
+                <a target="_blank" href="#" onClick='open_new_tab(this)'>
                 <img title="Percentage of specific cell types per slice" src={all_slices_get_figure(params['out_path'], "cell_abundance_all_slices.png", params['plotting'])}>
+                </a>
             </div>
             <div class="centered testRemove" data-value={"remove" if params['plotting'] < 3 else "keep"}>
                 <h3>Communities abundance:</h3>
             </div>
             <div class="centered testRemove" data-value={"remove" if params['plotting'] < 3 else "keep"}>
+                <a target="_blank" href="#" onClick='open_new_tab(this)'>
                 <img title="Percentage of cells in each community per slice" src={all_slices_get_figure(params['out_path'], "cluster_abundance_all_slices.png", params['plotting'])}>
+                </a>
             </div>
             <div class="centered testRemove" data-value={"remove" if params['plotting'] < 4 else "keep"}>
                 <h3>Cell percentage in communities:</h3>
             </div class="centered testRemove">
             <div class="centered testRemove" data-value={"remove" if params['plotting'] < 4 else "keep"}>
+                <a target="_blank" href="#" onClick='open_new_tab(this)'>
                 <img title="Percentage of cells in each community per slice" src={all_slices_get_figure(params['out_path'], "cell_perc_in_community_per_slice.png", params['plotting'])}>
+                </a>
             </div>
             <br><hr>
             <div data-value={"remove" if params['plotting'] < 2 else "keep"}>
@@ -506,9 +526,6 @@ def generate_report(params):
             </div>
             <div class="centeredSmall" data-value={"remove" if params['plotting'] < 3 else "keep"}>
                 {per_community_content(params['out_path'], params['plotting'])}
-            </div>
-            <div style="background-color:#faf0de; width:100%" class="centered testRemove">
-                <h4> Execution time of CCD functions: {params["execution_time"]:.2f}s (input data reading time is not included)</h4>
             </div>
         </div>
         <footer><h4>Report created from commit: {commit_date}</h4></footer>
