@@ -260,7 +260,7 @@ class StPipeline(object):
         cluster_res_key: str = 'cluster',
         groups: Union[str, np.ndarray, List[str]] = None,
         excluded: bool = False,
-        inplace: bool = True
+        inplace: bool = False
     ):
         """
         Filter cells based on clustering result.
@@ -271,6 +271,8 @@ class StPipeline(object):
             - the key of clustering to get corresponding result from `self.result`.
         groups
             - the groups in clustering result which will be filtered.
+        excluded:
+            - set it to True to exclude the groups which specify by parameter `groups` while False to include.
         inplace
             - whether to inplace the previous data or return a new data.
 
