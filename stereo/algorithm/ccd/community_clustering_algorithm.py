@@ -150,7 +150,7 @@ class CommunityClusteringAlgo(ABC):
 
         """
 
-        figure, ax = plt.subplots()
+        figure, ax = plt.subplots(figsize=(10,6))
         plot_spatial(self.adata, annotation=self.annotation, spot_size=self.spot_size, palette=self.annotation_palette, ax=ax, title=f'{self.adata.uns["sample_name"]}')
         legend_ncols = 1 if len(self.unique_cell_type) <= 12 else 2
         plt.legend(loc='upper left', bbox_to_anchor=(1.04, 1), ncol=legend_ncols, prop = { "size": 6}, frameon=False)
@@ -219,7 +219,7 @@ class CommunityClusteringAlgo(ABC):
         # sc.pl.spatial(self.tissue, color=self.cluster_algo, spot_size=1)
         # # plot clustering after majority voting for each subwindow
         # sc.pl.spatial(self.tissue, color='f'{self.cluster_algo}_max_vote', spot_size=1)    
-        figure, ax = plt.subplots()
+        figure, ax = plt.subplots(figsize=(10,6))
         labels = np.unique(self.adata.obs[f'tissue_{self.method_key}'].values)
         if 'unknown' in labels:
             labels = labels[labels!='unknown']
@@ -321,7 +321,7 @@ class CommunityClusteringAlgo(ABC):
         sns.set(font_scale=1.5)
 
         ncols = len(stats.columns) # we want to separately print the total_counts column
-        fig, axes = plt.subplots(ncols=ncols, figsize=(16,16))
+        fig, axes = plt.subplots(ncols=ncols, figsize=(30,20))
 
         # no space between columns
         fig.subplots_adjust(wspace=0)
@@ -598,7 +598,7 @@ class CommunityClusteringAlgo(ABC):
         """Plot a table showing cell type abundance per cluster."""
 
         set_figure_params(dpi=self.dpi, facecolor='white')
-        sns.set(font_scale=0.5)
+        sns.set(font_scale=1)
 
         stats = self.tissue.uns['cell mixtures'].copy()
 
@@ -624,7 +624,7 @@ class CommunityClusteringAlgo(ABC):
 
         ncols = len(stats)
         # table will have a clumn for each cluster and first column for cell types
-        fig, axes = plt.subplots(nrows=1, ncols=ncols+1, figsize=(15,15))
+        fig, axes = plt.subplots(nrows=1, ncols=ncols+1, figsize=(30,25))
         # no space between columns
         fig.subplots_adjust(wspace=0, hspace=0)
 
@@ -646,6 +646,7 @@ class CommunityClusteringAlgo(ABC):
                 column_cmap[0] = cluster_color[stats.index[i-1]]
                 g = sns.heatmap(np.array(range(stats.shape[1]+1))[:, np.newaxis], linewidths=0.5, linecolor='gray', annot=table_annotation, cbar=False, cmap=column_cmap, ax=ax, fmt='', xticklabels=False, yticklabels=False, square=None)
         axes[i//2].set_title('Cell type abundance per cluster (and per cel type set)')
+        axes[i//2].title.set_size(20)
         fig.savefig(os.path.join(self.dir_path, f'celltype_table_{self.params_suffix}.png'), bbox_inches='tight')
         if not self.hide_plots:
             plt.show()
