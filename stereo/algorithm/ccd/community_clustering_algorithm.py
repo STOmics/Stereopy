@@ -392,11 +392,13 @@ class CommunityClusteringAlgo(ABC):
 
                 plot_spatial(self.adata, annotation=self.annotation, palette=ct_palette, spot_size=self.spot_size, ax=ax[0])
                 ax[0].set_title(f'Cell types')
-                ax[0].legend([f'{ind.get_text()} ({ct_perc[ind.get_text()]}%)' for ind in ax[0].get_legend().texts if ind.get_text() in ct_show], bbox_to_anchor=(1.0, 0.5), loc='center left', frameon=False, fontsize=8)
-                
+                handles, labels = ax[0].get_legend_handles_labels()
+                handles, labels = zip(*filter(lambda hl: hl[1] in ct_show, zip(handles, labels)))
+                labels = [f'{ctype} ({ct_perc[ctype]}%)' for ctype in labels]
+                ax[0].legend(handles=handles, labels=labels, bbox_to_anchor=(1.0, 0.5), loc='center left', frameon=False, fontsize=8)
                 cl_palette[cluster[0]] = cluster_palette[int(cluster[0])]
 
-                plot_spatial(self.adata, groups=[cluster[0]], annotation=f'tissue_{self.method_key}', palette=cl_palette, spot_size=self.spot_size, ax=ax[1])
+                plot_spatial(self.adata, annotation=f'tissue_{self.method_key}', palette=cl_palette, spot_size=self.spot_size, ax=ax[1])
                 ax[1].set_title(f'Cell community {cluster[0]} ({self.adata.uns["sample_name"]})')
                 ax[1].get_legend().remove()
                 #ax[1].legend([f'{ind.get_text()} ({stats.loc[ind.get_text(), "perc_of_all_cells"]}%)' for ind in ax[1].get_legend().texts[:-1]], bbox_to_anchor=(1.0, 0.5), loc='center left', frameon=False, fontsize=10)
