@@ -57,6 +57,7 @@ opencv-python>=4.5.4.58,<=4.5.5.64
 # tensorflow-io-gcs-filesystem==0.24.0
 protobuf<3.21.0a0,>=3.20.1
 hotspotsc==1.1.1
+# git+https://github.com/YosefLab/Hotspot.git
 distributed==2022.11.1
 keras==2.7.0
 pyarrow==8.0.0

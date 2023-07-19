@@ -1,5 +1,6 @@
 from natsort import natsorted
 import matplotlib.pylab as plt
+from matplotlib.axes import Axes
 import numpy as np
 import pandas as pd
 
@@ -7,6 +8,14 @@ from stereo.plots.plot_base import PlotBase
 
 
 class PlotCoOccurrence(PlotBase):
+
+    def _close_axis(self, axes):
+        if isinstance(axes, Axes):
+            axes.set_axis_off()
+        else:
+            for ax in axes:
+                self._close_axis(ax)
+
     def co_occurrence_plot(self, groups=[], res_key = 'co_occurrence'):
         '''
         Visualize the co-occurence by line plot; each subplot represent a celltype, each line in subplot represent the 
@@ -27,6 +36,7 @@ class PlotCoOccurrence(PlotBase):
         # print(nrow, ncol)
         fig = plt.figure(figsize=(5*ncol, 5*nrow))
         axs = fig.subplots(nrow, ncol)
+        self._close_axis(axs)
         # clust_unique = list(data.cells[cluster_res_key].astype('category').cat.categories)
         for i, g in enumerate(groups):
             interest = data.tl.result[res_key][g]
@@ -39,11 +49,8 @@ class PlotCoOccurrence(PlotBase):
                 ax = axs[int(i/ncol)][(i%ncol)]
             ax.plot(interest, label = interest.columns)
             ax.set_title(g)
+            ax.set_axis_on()
             ax.legend(fontsize = 7, ncol = max(1, nrow-1), loc='upper right')
-        # if savefig != None:
-        #     fig.savefig(savefig, dpi=300, bbox_inches='tight')
-        # else:
-        #     plt.show()
         return fig
 
 
@@ -71,8 +78,7 @@ class PlotCoOccurrence(PlotBase):
         # print(nrow, ncol)
         fig = plt.figure(figsize=(9*ncol,8*nrow))
         axs = fig.subplots(nrow,ncol)
-        for ax in axs:
-            ax.set_axis_off()
+        self._close_axis(axs)
         clust_unique = list(self.stereo_exp_data.cells[cluster_res_key].astype('category').cat.categories)
         for i, g in enumerate(groups):
             interest = pd.DataFrame({x: self.pipeline_res[res_key][x].T[g] for x in self.pipeline_res[res_key]})
@@ -91,8 +97,4 @@ class PlotCoOccurrence(PlotBase):
             ax.set_axis_on()
             ax.set_xticklabels(ax.get_xticklabels(), rotation=60, ha='right', va = 'top')
             #ax.legend(fontsize = 7, ncol = max(1, nrow-1), loc='upper right')
-        # if savefig != None:
-        #     fig.savefig(savefig, dpi=300, bbox_inches='tight')
-        # else:
-        #     plt.show()
         return fig

@@ -27,11 +27,21 @@ from stereo.algorithm.algorithm_base  import AlgorithmBase, ErrorCode
 ##----------------------------------------------##
 
 @nb.njit(cache=True, nogil=True)
-def _cal_distance(point: np.ndarray, vector: np.ndarray):
-    return np.sqrt(np.sum((vector - point)**2, axis=1))
+def _cal_distance(point: np.ndarray, points: np.ndarray):
+    return np.sqrt(np.sum((points - point)**2, axis=1))
+
+@nb.njit(cache=True, nogil=True, parallel=True)
+def _cal_pairwise_distances(points_a: np.ndarray, points_b: np.ndarray):
+    points_count_a = points_a.shape[0]
+    points_count_b = points_b.shape[0]
+    distance = np.zeros((points_count_a, points_count_b), dtype=np.float64)
+    for i in nb.prange(points_count_a):
+        distance[i] = _cal_distance(points_a[i], points_b)
+    return distance
+
 
 # @nb.njit(cache=True, nogil=True)
-def _co_occurrence_calculator(position, groups, group_codes_count, thresh_l, thresh_r, group_codes_id_map):
+def _coo_stereopy_calculator(position, groups, group_codes_count, thresh_l, thresh_r, group_codes_id_map):
     count = np.zeros(group_codes_count, dtype=np.uint64)
     ret = np.zeros((group_codes_count, group_codes_count), dtype=np.uint64)
     for i, g1 in enumerate(groups):
@@ -44,6 +54,33 @@ def _co_occurrence_calculator(position, groups, group_codes_count, thresh_l, thr
         count[g1_id] += 1
     return ret, count
     # return ret.T / count
+
+@nb.njit(cache=True, nogil=True, parallel=True)
+def _coo_squidpy_calculator(
+    data_position: np.ndarray,
+    group_codes: np.ndarray,
+    groups_idx: np.ndarray,
+    thresh: np.ndarray,
+):
+    num = group_codes.size
+    out = np.zeros((num, num, thresh.shape[0] - 1))
+    for ep in nb.prange(thresh.shape[0] - 1):
+        co_occur = np.zeros((num, num))
+        thresh_l, thresh_r = thresh[ep], thresh[ep+1]
+        for x in range(data_position.shape[0]):
+            dist = _cal_distance(data_position[x], data_position)
+            i = groups_idx[x]
+            y = groups_idx[(dist > thresh_l) & (dist <= thresh_r)]
+            for j in y:
+                co_occur[i, j] += 1
+
+        probs_matrix = co_occur / np.sum(co_occur)
+        probs = np.sum(probs_matrix, axis=1)
+
+        probs_con = (co_occur.T / np.sum(co_occur, axis=1) / probs).T
+
+        out[:, :, ep] = probs_con
+    return out
 
 class CoOccurrence(AlgorithmBase):
     """
@@ -63,26 +100,30 @@ class CoOccurrence(AlgorithmBase):
         res_key='co_occurrence'
     ):
         """
-        Co-occurence calculate the score or probability of a particular celltype or cluster of cells is co-occurence with 
-          another in spatial.  
+        Co-occurence calculate the score or probability of a particular celltype or cluster of cells is co-occurence with another in spatial.  
         We provided two method for co-occurence, 'squidpy' for method in squidpy, 'stereopy' for method in stereopy
+
+
         :param data: An instance of StereoExpData, data.position & data.tl.result[use_col] will be used.
-        :param cluster_res_key: The key of the cluster or annotation result of cells stored in data.tl.result which ought to be equal 
-                        to cells in length.
+        :param cluster_res_key: The key of the cluster or annotation result of cells stored in data.tl.result which ought to be equal to cells in length.
         :param method: The metrics to calculate co-occurence choose from ['stereopy', 'squidpy'], 'squidpy' by default.
         :param dist_thres: The max distance to measure co-occurence. Only used when method=='stereopy'
         :param steps: The steps to generate threshold to measure co-occurence, use along with dist_thres, i.e. default params 
-                      will generate [30,60,90......,270,300] as threshold. Only used when method=='stereopy'
+                        will generate [30,60,90......,270,300] as threshold. Only used when method=='stereopy'
         :param genelist: Calculate co-occurence between use_col & genelist if provided, otherwise calculate between clusters 
-                         in use_col. Only used when method=='stereopy'
+                        in use_col. Only used when method=='stereopy'
         :param gene_thresh: Threshold to determine whether a cell express the gene. Only used when method=='stereopy'
+
+
         :return: the input data with co_occurrence result in data.tl.result['co-occur']
         """
         if method == 'stereopy':
-            # res = self.co_occurrence(self.stereo_exp_data, cluster_res_key, dist_thres = dist_thres, steps = steps, genelist = genelist, gene_thresh = gene_thresh)
-            return self.co_occurrence(self.stereo_exp_data, cluster_res_key, dist_thres = dist_thres, steps = steps, genelist = genelist, gene_thresh = gene_thresh)
+            res = self.co_occurrence(self.stereo_exp_data, cluster_res_key, dist_thres = dist_thres, steps = steps, genelist = genelist, gene_thresh = gene_thresh)
+            # return self.co_occurrence(self.stereo_exp_data, cluster_res_key, dist_thres = dist_thres, steps = steps, genelist = genelist, gene_thresh = gene_thresh)
         elif method == 'squidpy':
             res = self.co_occurrence_squidpy(self.stereo_exp_data, cluster_res_key)
+        else:
+            raise ValueError("unavailable value for method, it only can be choosed from ['stereopy', 'squidpy'].")
         self.pipeline_res[res_key] = res
         return self.stereo_exp_data
 
@@ -99,38 +140,26 @@ class CoOccurrence(AlgorithmBase):
                         to cells in length.
         :return: co_occurrence result, also written in data.tl.result['co-occur']
         """
-        dist_ori = pairwise_distances(data.position, data.position, metric='euclidean')
-        #thresh_min, thresh_max = np.min(dist_ori), np.max(dist_ori)
+
         thresh_min, thresh_max = self._find_min_max(data.position)
         thresh = np.linspace(thresh_min, thresh_max, num=50)
-        clust_unique = list(data.cells[use_col].astype('category').cat.categories)
-        clust = list(data.cells[use_col].astype('category').cat.codes)
-        num = len(clust_unique)
-        out = np.zeros((num, num, thresh.shape[0] - 1))
-        for ep in range(thresh.shape[0] - 1):
-            co_occur = np.zeros((num, num))
-            probs_con = np.zeros((num, num))
-            thresh_l, thresh_r = thresh[ep], thresh[ep+1]
-            idx_x, idx_y = np.nonzero((dist_ori <= thresh_r) & (dist_ori > thresh_l))
-            x = data.cells[use_col].astype('category').cat.codes[idx_x]
-            y = data.cells[use_col].astype('category').cat.codes[idx_y]
-            for i, j in zip(x, y):
-                co_occur[i, j] += 1
-            probs_matrix = co_occur / np.sum(co_occur)
-            probs = np.sum(probs_matrix, axis=1)
-
-            for c,d in enumerate(clust_unique):
-                probs_conditional = co_occur[c] / np.sum(co_occur[c])
-                probs_con[c, :] = probs_conditional / probs
-
-            out[:, :, ep] = probs_con
+        if use_col in data.cells:
+            groups:pd.Series = data.cells[use_col].astype('category')
+        else:
+            groups:pd.Series = self.pipeline_res[use_col]['group'].astype('category')
+        group_codes = groups.cat.categories.to_numpy().astype('U')
+        out = _coo_squidpy_calculator(
+            data.position,
+            group_codes,
+            groups.cat.codes.to_numpy(),
+            thresh,
+        )
         ret = {}
-        for i, j in enumerate(clust_unique):
+        for i, j in enumerate(group_codes):
             tmp = pd.DataFrame(out[i]).T
-            tmp.columns = clust_unique
+            tmp.columns = group_codes
             tmp.index = thresh[1:]
             ret[j] = tmp
-        # data.tl.result['co-occur'] = ret
         return ret
 
     def _find_min_max(self, spatial):
@@ -143,8 +172,8 @@ class CoOccurrence(AlgorithmBase):
         min_idx, min_idx2 = np.argpartition(coord_sum, 2)[:2]
         max_idx = np.argmax(coord_sum)
         # fmt: off
-        thres_max = pairwise_distances(spatial[min_idx, :].reshape(1, -1), spatial[max_idx, :].reshape(1, -1))[0, 0] / 2.0
-        thres_min = pairwise_distances(spatial[min_idx, :].reshape(1, -1), spatial[min_idx2, :].reshape(1, -1))[0, 0]
+        thres_max = _cal_pairwise_distances(spatial[min_idx, :].reshape(1, -1), spatial[max_idx, :].reshape(1, -1))[0, 0] / 2.0
+        thres_min = _cal_pairwise_distances(spatial[min_idx, :].reshape(1, -1), spatial[min_idx2, :].reshape(1, -1))[0, 0]
         # fmt: on
         return thres_min, thres_max
 
@@ -174,8 +203,8 @@ class CoOccurrence(AlgorithmBase):
         '''
         #from collections import defaultdict
         #from scipy import sparse
-        # from sklearn.metrics import pairwise_distances
         # dist_ori = pairwise_distances(data.position, data.position, metric='euclidean')
+        distance = _cal_pairwise_distances(data.position, data.position)
         if isinstance(genelist, np.ndarray):
             genelist = list(genelist)
         elif isinstance(genelist, list):
@@ -192,64 +221,42 @@ class CoOccurrence(AlgorithmBase):
         else:
             groups:np.ndarray = self.pipeline_res[use_col]['group'].to_numpy()
         group_codes = natsorted(np.unique(groups))
-        group_codes_count = len(group_codes)
-        group_codes_id_map = {g: i for i, g in enumerate(group_codes)}
         for ep in range(thresh.shape[0] - 1):
             thresh_l, thresh_r = thresh[ep], thresh[ep+1]
-            print(f"thresh_l: {thresh_l}, thresh_r: {thresh_r}")
-            # dist = dist_ori.copy()
-            # dist[(dist>=thresh_l)&(dist<thresh_r)]=-1
-            # dist[dist>-1]=0
-            # dist[dist==-1]=1
-            # if genelist is None:
-            #     #df = data.obs[['Centroid_X', 'Centroid_Y', use_col]]
-            #     count = {x:0 for x in data.cells[use_col].unique()}
-            #     ret = defaultdict(dict)
-            #     for x in group_codes:
-            #         for y in group_codes:
-            #             ret[x][y]=0
-            #     for x, y in enumerate(data.cells[use_col]):
-            #         for z in np.unique(data.cells[use_col].to_numpy()[dist[x].astype(bool)]):
-            #             ret[y][z]+=1
-            #         count[y]+=1
-            #     ret=pd.DataFrame(ret)
-            #     ret=ret/count
-            #     out[thresh_r] = ret
             if genelist is None:
-                count = np.zeros(group_codes_count, dtype=np.uint64)
-                ret = np.zeros((group_codes_count, group_codes_count), dtype=np.uint64)
-                for i, g1 in enumerate(groups):
-                    dist = _cal_distance(data.position[i], data.position)
-                    groups_selected = np.unique(groups[(dist >= thresh_l) & (dist <= thresh_r)])
-                    g1_id = group_codes_id_map[g1]
-                    for g2 in groups_selected:
-                        g2_id = group_codes_id_map[g2]
-                        ret[g1_id][g2_id] += 1
-                    count[g1_id] += 1
-                    break
-                return ret, count, groups_selected
-                # return _co_occurrence_calculator(data.position, groups, group_codes_count, thresh_l, thresh_r, group_codes_id_map)
-                ret=pd.DataFrame(ret.T / count, columns=group_codes, index=group_codes)
+                #df = data.obs[['Centroid_X', 'Centroid_Y', use_col]]
+                count = {x: 0 for x in group_codes}
+                ret = defaultdict(dict)
+                for x in group_codes:
+                    for y in group_codes:
+                        ret[x][y] = 0
+                for x, y in enumerate(groups):
+                    for z in np.unique(groups[(distance[x] >= thresh_l) & (distance[x] < thresh_r)]):
+                        ret[y][z] += 1
+                    count[y] += 1
+                ret = pd.DataFrame(ret)
+                ret = ret / count
                 out[thresh_r] = ret
             else:
                 ret = defaultdict(dict)
                 for x in group_codes:
                     for y in genelist:
-                        ret[x][y]=0
-                count = {x:0 for x in group_codes}
-                gene_exp_dic ={}
+                        ret[x][y] = 0
+                count = {x: 0 for x in group_codes}
+                gene_exp_dic = {}
                 for z in genelist:
-                    if sparse.issparse(data.exp_matrix):
-                        gene_exp=data.exp_matrix[:, np.where(data.genes.gene_name==z)].copy().todense().flatten()
+                    if data.issparse():
+                        gene_exp=data.exp_matrix[:, np.isin(data.genes.gene_name, z)].toarray().flatten()
                     else:
-                        gene_exp=data.exp_matrix[:, np.where(data.genes.gene_name==z)].copy().flatten()
+                        gene_exp=data.exp_matrix[:, np.isin(data.genes.gene_name, z)].flatten()
                     gene_exp[gene_exp<gene_thresh] = 0
                     gene_exp_dic[z] = gene_exp
                 for x, y in enumerate(groups):
+                    flag = np.where((distance[x] >= thresh_l) & (distance[x] < thresh_r), 1, 0)
                     for z in genelist:
-                        if (gene_exp_dic[z]*dist[x]).sum()>0:
+                        if (gene_exp_dic[z] * flag).sum() > 0:
                             ret[y][z] += 1
-                    count[y]+=1
+                    count[y] += 1
                 ret=pd.DataFrame(ret)
                 ret=ret/count
                 out[thresh_r] = ret
