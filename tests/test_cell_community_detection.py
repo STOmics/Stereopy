@@ -8,8 +8,8 @@ import pandas as pd
 from matplotlib import pyplot as plt
 from sklearn.datasets import make_blobs
 
-from community_detection import CommunityDetection
-from ccd import *
+from stereo.algorithm import CommunityDetection
+from stereo.algorithm.ccd import *
 
 class TestCellCommunityDetection(unittest.TestCase):
 
