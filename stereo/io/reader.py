@@ -348,6 +348,14 @@ def _read_stereo_h5_result(key_record: dict, data, f):
                             data.tl.result[res_key][key] = ast.literal_eval(h5ad.read_dataset(f[full_key]))
                         else:
                             data.tl.result[res_key][key] = h5ad.read_group(f[full_key])
+            if analysis_key == 'co_occurrence':
+                data.tl.result[res_key] = {}
+                for full_key in f.keys():
+                    if not full_key.endswith(analysis_key):
+                        continue
+                    data_key = full_key.split('@')[1]
+                    data.tl.result[res_key][data_key] = h5ad.read_group(f[full_key])
+
 
 
 @ReadWriteUtils.check_file_exists
@@ -829,21 +837,24 @@ def stereo_to_anndata(
             elif key == 'cluster':
                 for res_key in data.tl.key_record[key]:
                     logger.info(f"Adding data.tl.result['{res_key}'] into adata.obs['{res_key}'] .")
-                    adata.obs[res_key] = pd.DataFrame(data.tl.result[res_key]['group'].values,
-                                                      index=data.cells.cell_name.astype('str'))
+                    adata.obs[res_key] = pd.DataFrame(data.tl.result[res_key]['group'].values, index=data.cells.cell_name.astype('str'))
             elif key in ('gene_exp_cluster', 'cell_cell_communication'):
                 for res_key in data.tl.key_record[key]:
                     logger.info(f"Adding data.tl.result['{res_key}'] into adata.uns['{key}@{res_key}']")
                     adata.uns[f"{key}@{res_key}"] = data.tl.result[res_key]
             elif key == 'regulatory_network_inference':
                 for res_key in data.tl.key_record[key]:
-                    logger.info(f"Adding data.tl.result['{res_key}'] in adata.uns['{res_key}'] .")
+                    logger.info(f"Adding data.tl.result['{res_key}'] into adata.uns['{res_key}'] .")
                     regulon_key = f'{res_key}_regulons'
                     adata.uns[regulon_key] = data.tl.result[res_key]['regulons']
                     auc_matrix_key = f'{res_key}_auc_matrix'
                     adata.uns[auc_matrix_key] = data.tl.result[res_key]['auc_matrix']
                     adjacencies_key = f'{res_key}_adjacencies'
                     adata.uns[adjacencies_key] = data.tl.result[res_key]['adjacencies']
+            elif key == 'co_occurrence':
+                for res_key in data.tl.key_record[key]:
+                    logger.info(f"Adding data.tl.result['{res_key}'] into adata.uns['{res_key}'] .")
+                    adata.uns[res_key] = data.tl.result[res_key]
             else:
                 continue
 

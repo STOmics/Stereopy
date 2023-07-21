@@ -40,20 +40,50 @@ def _cal_pairwise_distances(points_a: np.ndarray, points_b: np.ndarray):
     return distance
 
 
-# @nb.njit(cache=True, nogil=True)
-def _coo_stereopy_calculator(position, groups, group_codes_count, thresh_l, thresh_r, group_codes_id_map):
-    count = np.zeros(group_codes_count, dtype=np.uint64)
-    ret = np.zeros((group_codes_count, group_codes_count), dtype=np.uint64)
-    for i, g1 in enumerate(groups):
-        dist = _cal_distance(position[i], position)
-        groups_selected = np.unique(groups[(dist >= thresh_l) & (dist <= thresh_r)])
-        g1_id = group_codes_id_map[g1]
-        for g2 in groups_selected:
-            g2_id = group_codes_id_map[g2]
-            ret[g1_id][g2_id] += 1
-        count[g1_id] += 1
-    return ret, count
-    # return ret.T / count
+@nb.njit(cache=True, nogil=True, parallel=True)
+def _coo_stereopy_calculator(
+        data_position: np.ndarray,
+        group_codes: np.ndarray,
+        groups: np.ndarray,
+        groups_idx: np.ndarray,
+        thresh: np.ndarray,
+        genelist: np.ndarray = None,
+        gene_exp_matrix: np.ndarray = None,
+        gene_thresh: float = 0 
+    ):
+    count_list = np.zeros((thresh.size - 1, group_codes.size), dtype=np.uint64)
+    if genelist is None:
+        ret_list = np.zeros((thresh.size - 1, group_codes.size, group_codes.size), dtype=np.uint64)
+        out = np.zeros((thresh.size - 1, group_codes.size, group_codes.size), dtype=np.float64)
+    else:
+        ret_list = np.zeros((thresh.size - 1, group_codes.size, genelist.size), dtype=np.uint64)
+        out = np.zeros((thresh.size - 1, genelist.size, group_codes.size), dtype=np.float64)
+
+    for ep in nb.prange(thresh.size - 1):
+        thresh_l, thresh_r = thresh[ep], thresh[ep+1]
+        count = count_list[ep]
+        ret = ret_list[ep]
+        if genelist is None:
+            for i, gidx1 in enumerate(groups_idx):
+                dist = _cal_distance(data_position[i], data_position)
+                gidx2 = np.unique(groups_idx[(dist >= thresh_l) & (dist < thresh_r)])
+                ret[gidx1][gidx2] += np.uint64(1)
+                count[gidx1] += np.uint64(1)
+            ret = ret.T / count
+            out[ep, :, :] = ret
+        else:
+            for i, gidx in enumerate(groups_idx):
+                dist = _cal_distance(data_position[i], data_position)
+                flag = np.where((dist >= thresh_l) & (dist < thresh_r), 1, 0)
+                gene_exp_flag = np.where(gene_exp_matrix >= gene_thresh, 1, 0).astype(gene_exp_matrix.dtype)
+                gene_exp_flag = gene_exp_matrix * flag
+                gene_exp_flag = np.sum(gene_exp_flag, axis=1)
+                gene_exp_flag = np.where(gene_exp_flag > 0, 1, 0)
+                ret[gidx] += gene_exp_flag.astype(np.uint64)
+                count[gidx] += np.uint64(1)
+            ret=ret.T / count
+            out[ep, :, :] = ret
+    return out
 
 @nb.njit(cache=True, nogil=True, parallel=True)
 def _coo_squidpy_calculator(
@@ -125,6 +155,7 @@ class CoOccurrence(AlgorithmBase):
         else:
             raise ValueError("unavailable value for method, it only can be choosed from ['stereopy', 'squidpy'].")
         self.pipeline_res[res_key] = res
+        self.stereo_exp_data.tl.reset_key_record('co_occurrence', res_key)
         return self.stereo_exp_data
 
 
@@ -204,7 +235,7 @@ class CoOccurrence(AlgorithmBase):
         #from collections import defaultdict
         #from scipy import sparse
         # dist_ori = pairwise_distances(data.position, data.position, metric='euclidean')
-        distance = _cal_pairwise_distances(data.position, data.position)
+        # distance = _cal_pairwise_distances(data.position, data.position)
         if isinstance(genelist, np.ndarray):
             genelist = list(genelist)
         elif isinstance(genelist, list):
@@ -215,72 +246,36 @@ class CoOccurrence(AlgorithmBase):
             genelist = [genelist]
 
         thresh = np.linspace(0, dist_thres, num=steps+1)
-        out = {}
         if use_col in data.cells:
-            groups:np.ndarray = data.cells[use_col].to_numpy()
+            groups:pd.Series = data.cells[use_col].astype('category')
         else:
-            groups:np.ndarray = self.pipeline_res[use_col]['group'].to_numpy()
-        group_codes = natsorted(np.unique(groups))
-        for ep in range(thresh.shape[0] - 1):
-            thresh_l, thresh_r = thresh[ep], thresh[ep+1]
-            if genelist is None:
-                #df = data.obs[['Centroid_X', 'Centroid_Y', use_col]]
-                count = {x: 0 for x in group_codes}
-                ret = defaultdict(dict)
-                for x in group_codes:
-                    for y in group_codes:
-                        ret[x][y] = 0
-                for x, y in enumerate(groups):
-                    for z in np.unique(groups[(distance[x] >= thresh_l) & (distance[x] < thresh_r)]):
-                        ret[y][z] += 1
-                    count[y] += 1
-                ret = pd.DataFrame(ret)
-                ret = ret / count
-                out[thresh_r] = ret
-            else:
-                ret = defaultdict(dict)
-                for x in group_codes:
-                    for y in genelist:
-                        ret[x][y] = 0
-                count = {x: 0 for x in group_codes}
-                gene_exp_dic = {}
-                for z in genelist:
-                    if data.issparse():
-                        gene_exp=data.exp_matrix[:, np.isin(data.genes.gene_name, z)].toarray().flatten()
-                    else:
-                        gene_exp=data.exp_matrix[:, np.isin(data.genes.gene_name, z)].flatten()
-                    gene_exp[gene_exp<gene_thresh] = 0
-                    gene_exp_dic[z] = gene_exp
-                for x, y in enumerate(groups):
-                    flag = np.where((distance[x] >= thresh_l) & (distance[x] < thresh_r), 1, 0)
-                    for z in genelist:
-                        if (gene_exp_dic[z] * flag).sum() > 0:
-                            ret[y][z] += 1
-                    count[y] += 1
-                ret=pd.DataFrame(ret)
-                ret=ret/count
-                out[thresh_r] = ret
+            groups:pd.Series = self.pipeline_res[use_col]['group'].astype('category')
+        group_codes = groups.cat.categories.to_numpy().astype('U')
+        gene_exp_matrix = None
+        if genelist is not None:
+            genelist = np.array(genelist, dtype='U')
+            gene_idx = [np.argwhere(data.gene_names == gene_name)[0][0] for gene_name in genelist]
+            gene_exp_matrix = data.exp_matrix[:, gene_idx].toarray() if data.issparse() else data.exp_matrix[:, gene_idx]
+            gene_exp_matrix = gene_exp_matrix.T
+        out = _coo_stereopy_calculator(
+            data.position,
+            group_codes,
+            groups.to_numpy().astype('U'),
+            groups.cat.codes.to_numpy(),
+            thresh,
+            genelist,
+            gene_exp_matrix,
+            gene_thresh
+        )
         ret = {}
-        for x in out[thresh_r].index:
+        ret_key_list = group_codes if genelist is None else genelist
+        for i, ret_key in enumerate(ret_key_list):
             tmp = {}
-            for ep in out:
-                tmp[ep] = out[ep].T[x]
-            ret[x] = pd.DataFrame(tmp).T
-        # data.tl.result['co-occur'] = ret
+            for j, th in enumerate(thresh[1:]):
+                tmp[th] = out[j][i]
+            ret[ret_key] = pd.DataFrame(tmp, index=group_codes).T
         return ret
 
-    def test_co_occurrence(self):
-        '''
-        test fuction to chech codes 
-        '''
-        #mouse_data_path = 'data/SS200000135TL_D1.cellbin.gef'
-        #data = st.io.read_gef(file_path=mouse_data_path, bin_type='cell_bins')
-        mouse_data_path = '/jdfssz2/ST_BIOINTEL/P20Z10200N0039/06.groups/04.Algorithm_tools/caolei2/Stereopy/data/SS200000135TL_D1.cellbin.h5ad'
-        data = st.io.read_stereo_h5ad(file_path=mouse_data_path, use_raw=False, use_result=True)
-        self.co_occurrence(data, use_col='leiden')
-        self.co_occurrence_plot(data, use_col='leiden',groups=['1','2','3','4', '5'], savefig = './co_occurrence_plot.png')
-        self.co_occurrence_heatmap(data, use_col='leiden', dist_max=80, savefig = './co_occurrence_plot.png')
-        return data
 
     def ms_co_occur_integrate(self, ms_data, scope, use_col, use_key = 'co-occur'):
         from collections import Counter, defaultdict
@@ -332,7 +327,3 @@ class CoOccurrence(AlgorithmBase):
             merge_co_occur_ret = None
 
         return merge_co_occur_ret
-
-if __name__ == '__main__':
-    test = CoOccurrence()
-    data = test.test_co_occurrence()
