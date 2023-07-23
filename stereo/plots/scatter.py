@@ -37,7 +37,7 @@ def base_scatter(
         bad_color: str = "lightgrey",
         dot_size: int = None,
         marker: str = 's',
-        palette: Optional[Union[str, list]] = 'stereo',
+        palette: Optional[Union[str, list]] = 'stereo_30',
         invert_y: bool = True,
         legend_ncol=2,
         show_legend=True,
@@ -103,7 +103,8 @@ def base_scatter(
             sm = plt.cm.ScalarMappable(cmap=cmap, norm=norm)
             sm.set_array([])
             ax.figure.colorbar(sm)
-        ax.legend_.remove()
+        if ax.legend_ is not None:
+            ax.legend_.remove()
     else:
         from natsort import natsorted
         import collections
@@ -322,9 +323,9 @@ def multi_scatter(
         ax: Axes = fig.add_subplot(axs[i])  # ax = plt.subplot(axs[i]) || ax = fig.add_subplot(axs[1, 1]))
         base_scatter(x, y, cv,
                      ax=ax,
-                     title=title[i] if title is not None else None,
-                     x_label=x_label[i] if x_label is not None else None,
-                     y_label=y_label[i] if y_label is not None else None,
+                     title=title[i] if title is not None and title != '' else None,
+                     x_label=x_label[i] if x_label is not None and x_label != '' else None,
+                     y_label=y_label[i] if y_label is not None and y_label != '' else None,
                      color_bar=color_bar,
                      color_bar_reverse=color_bar_reverse,
                      bad_color=bad_color,
@@ -446,7 +447,9 @@ def marker_gene_volcano(
 def highly_variable_genes(
         data: Optional[pd.DataFrame],
         width: int = None,
-        height: int = None
+        height: int = None,
+        xy_label: list = None,
+        xyII_label: list = None
 ):
     """
     scatter of highly variable genes
@@ -486,8 +489,8 @@ def highly_variable_genes(
                     s=15,
                     data=data, ax=ax2
                     )
-    ax1.set_xlabel('mean expression of genes', fontsize=15)
-    ax1.set_ylabel('dispersions of genes (normalized)', fontsize=15)
-    ax2.set_xlabel('mean expression of genes', fontsize=15)
-    ax2.set_ylabel('dispersions of genes (not normalized)', fontsize=15)
+    ax1.set_xlabel(xy_label[0], fontsize=15)
+    ax1.set_ylabel(xy_label[1], fontsize=15)
+    ax2.set_xlabel(xyII_label[0], fontsize=15)
+    ax2.set_ylabel(xyII_label[1], fontsize=15)
     return fig

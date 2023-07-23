@@ -44,10 +44,8 @@ class TestPlotVec(unittest.TestCase):
             data.position[:, 1],
             data.cells['leiden'].to_numpy(),
             data.tl.result['dpt_pseudotime'],
-            TEST_IMAGE_PATH,
             type='stream',
             line_width=0.5,
-            fig_name='test_plot_vec_gef.tif',
             background='field',
             num_pix=50,
             filter_type='gauss',
@@ -57,7 +55,8 @@ class TestPlotVec(unittest.TestCase):
             density=2,
             seed_val=0,
             num_legend_per_col=20,
-            dpi_val=2000
+            dpi_val=2000,
+            out_path=TEST_IMAGE_PATH+"test_plot_vec_gef.tif"
         )
 
     def test_plot_time_scatter_gef(self):
@@ -68,7 +67,7 @@ class TestPlotVec(unittest.TestCase):
         data.tl.result['iroot'] = np.flatnonzero(data.cells['leiden'] == '1')[100]
         data.tl.dpt(n_branchings=0)
 
-        data.plt.plot_time_scatter(fig_dir=TEST_IMAGE_PATH, fig_name="test_plot_time_scatter_gef.tif")
+        data.plt.plot_time_scatter(out_path=TEST_IMAGE_PATH + "test_plot_time_scatter_gef.tif")
 
     def test_plot_time_scatter_h5ad(self):
         data = AnnBasedStereoExpData(self.file_h5ad_path)
@@ -78,7 +77,7 @@ class TestPlotVec(unittest.TestCase):
         data.tl.result['iroot'] = np.flatnonzero(data.cells['leiden'] == '1')[100]
         data.tl.dpt(n_branchings=0)
 
-        data.plt.plot_time_scatter(fig_dir=TEST_IMAGE_PATH, fig_name="test_plot_time_scatter_h5ad.tif")
+        data.plt.plot_time_scatter(out_path=TEST_IMAGE_PATH + "test_plot_time_scatter_h5ad.tif")
 
     def test_plot_vec_h5ad(self):
         data = AnnBasedStereoExpData(self.file_h5ad_path)
@@ -93,12 +92,10 @@ class TestPlotVec(unittest.TestCase):
             data.position[:, 1],
             data.cells['leiden'].to_numpy(),
             data.tl.result['dpt_pseudotime'],
-            TEST_IMAGE_PATH,
-            type='stream',
-            line_width=0.5,
-            fig_name='test_plot_vec_h5ad.tif',
-            background='field',
-            num_pix=50,
+            type='vec',
+            line_width=1,
+            background='scatter',
+            num_pix=1,
             filter_type='gauss',
             sigma_val=1,
             radius_val=3,
@@ -106,5 +103,6 @@ class TestPlotVec(unittest.TestCase):
             density=2,
             seed_val=0,
             num_legend_per_col=20,
-            dpi_val=2000
+            dpi_val=2000,
+            out_path=TEST_IMAGE_PATH + "test_plot_vec_h5ad.tif"
         )

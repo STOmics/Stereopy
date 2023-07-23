@@ -16,6 +16,17 @@ This section contains main preprocessing and analysis on single-cell data, inclu
     Performance
 
 
+Multi-sample
+----------------------
+This section is mainly related to basic analysis workflow and correlated functionalities, on multi samples.
+
+.. nbgallery::
+    
+    MSData_Clustering
+    3D_Cell_Cell_Communication
+    3D_Gene_Regulatory_Network
+    Batch_QC
+
 IO
 ----------------------
 This section contains basic input and output operations.
@@ -36,11 +47,11 @@ This sections contains various cases for additional functionalities.
     scTransform
     SingleR
     Cell_Cell_Communication
-    3D_Cell_Cell_Communication
     Spatial_Hotspot
     RNA_Velocity
     Batches_Integration
     Gene_Regulatory_Network
+    Trajectory_Analysis
 
 
 Interactive Visualization

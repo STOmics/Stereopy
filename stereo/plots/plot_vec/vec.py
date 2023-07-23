@@ -14,6 +14,8 @@ from scipy.ndimage import gaussian_filter as gauss_fil
 from scipy.ndimage import convolve as conv
 from collections import Counter
 
+from stereo.plots import base_scatter
+
 
 class Vec():
     def __init__(self):
@@ -81,7 +83,7 @@ class Vec():
 
         # get new array shape
         # new_arr_sh = (math.ceil(y_raw.max() * scale + 1), math.ceil(x_raw.max() * scale + 1))
-        new_arr_sh = (y_scaled.max()+1, x_scaled.max()+1)
+        new_arr_sh = (y_scaled.max() + 1, x_scaled.max() + 1)
 
         self.yx_scaled = yx_scaled
         self.uniq_yx_scaled = uniq_yx_scaled
@@ -126,7 +128,6 @@ class Vec():
         df = pd.DataFrame({'y': self.yx_scaled[:, 0], 'x': self.yx_scaled[:, 1], 'val': val_seq_for_mean})
         df = df.groupby(by=['y', 'x'], sort=False).agg({'y': 'mean', 'x': 'mean', 'val': 'mean'}).reset_index(drop=True)
         s_arr[df['y'].to_numpy(dtype='int'), df['x'].to_numpy(dtype='int')] = df['val']
-
         return s_arr
 
     def gen_arr_for_common(self, val_seq_for_common):
@@ -142,7 +143,8 @@ class Vec():
         """
 
         # initiate the new matrix filled with nan values
-        s_arr = np.empty(shape=(self.new_arr_sh), dtype=object)  # e.g. 2.1 * 2.6 + 1 = 6.46 -> 7, 支持0~6的索引  # element is None by default
+        s_arr = np.empty(shape=(self.new_arr_sh),
+                         dtype=object)  # e.g. 2.1 * 2.6 + 1 = 6.46 -> 7, 支持0~6的索引  # element is None by default
 
         # find mean of each group of (y_scaled, x_scaled)
         # 旧方案：已经测通，时间复杂度n^2,占用约10min
@@ -160,7 +162,8 @@ class Vec():
 
         df['val'] = val_seq_for_common
 
-        df = df.groupby(by=['y', 'x'], sort=False).agg({'y': 'mean', 'x': 'mean', 'val': lambda x: pd.Series.mode(x)[0]}).reset_index(drop=True)
+        df = df.groupby(by=['y', 'x'], sort=False).agg(
+            {'y': 'mean', 'x': 'mean', 'val': lambda x: pd.Series.mode(x)[0]}).reset_index(drop=True)
 
         s_arr[df['y'].to_numpy(dtype='int'), df['x'].to_numpy(dtype='int')] = df['val']
         return s_arr
@@ -179,7 +182,7 @@ class Vec():
         if type_val == 'gauss':
             arr_fil = gauss_fil(arr, sigma=sigma_val, mode='mirror')  # 0.5, 2
         elif type_val == 'mean':
-            d = 2*radius_val+1
+            d = 2 * radius_val + 1
             arr_fil = conv(arr, weights=np.ones((d, d) / d * d))
         else:
             arr_fil = arr.copy()
@@ -227,9 +230,9 @@ class Vec():
         return x_arr_re, y_arr_re
 
     def plot_line(self, x_raw, y_raw, ty_raw, plt_common_ty, u, v,
-                 type, background, background_alpha, scatter_s, seed_val, num_legend_per_col,
-                 line_len_co, vec_alpha, line_width, density,
-                 tick_step, dpi_val, fig_dir, fig_name):
+                  type, background, background_alpha, scatter_s, seed_val, num_legend_per_col,
+                  line_len_co, vec_alpha, line_width, density,
+                  tick_step, dpi_val):
 
         # prepare colormap
         # 试过不好，有些颜色过于接近：cmap_val = plt.cm.get_cmap('jet', uni_ele.shape[0])
@@ -238,12 +241,15 @@ class Vec():
         cmap_val = mpl.colors.ListedColormap(np.random.rand(256, 3))
 
         # prepare dictionary that maps types to int
-        undup = collections.Counter(ty_raw).keys()  # ty_raw unique values are as rich as, or richer than plt_common_ty # None表示空pixel
+        # ty_raw unique values are as rich as, or richer than plt_common_ty # None表示空pixel
+        undup = collections.Counter(ty_raw).keys()
         ty_val_dict = dict(zip(undup, np.arange(len(undup))))  # 生成从str映射到int的字典
         ty_val_dict[None] = np.nan  # 字典中，None对应nan
 
         scatter_corpus = ['scatter', 'cell', 'bin', 'spot']
         imshow_corpus = ['field']
+
+        figure = plt.figure(dpi=dpi_val)
         if background in scatter_corpus + imshow_corpus:
             if background in scatter_corpus:
                 # # generate a dictionary that maps types to int
@@ -285,7 +291,8 @@ class Vec():
                        framealpha=0)  # loc和bbox_to_anchor组合，loc表示legend的锚点，bbox_to_anchor表示锚点相对图的位置
 
         if type in ['vec', 'vector']:
-            plt.quiver(line_len_co * (-u), line_len_co * (-v), alpha=vec_alpha, width=line_width)  # 从小time指向大time # streamplot
+            plt.quiver(line_len_co * (-u), line_len_co * (-v), alpha=vec_alpha,
+                       width=line_width)  # 从小time指向大time # streamplot
 
         elif type in ['stream', 'streamplot']:
             x = np.arange(0, u.shape[1])
@@ -295,24 +302,31 @@ class Vec():
             # start_p_tup = np.where((np.absolute(u) > 0.01) | (np.absolute(v) > 0.01))
             # start_p = np.concatenate([np.expand_dims(start_p_tup[1], axis=-1), np.expand_dims(start_p_tup[0], axis=-1)], axis=-1)
 
-            plt.streamplot(X, Y, line_len_co * (-u), line_len_co * (-v),  color='k', linewidth=line_width, density=density)  # start_points=start_p,
+            plt.streamplot(X, Y, line_len_co * (-u), line_len_co * (-v), color='k', linewidth=line_width,
+                           density=density)  # start_points=start_p,
 
-        x_tick_la = np.arange(np.floor(x_raw.min() / tick_step) * tick_step,
-                              np.ceil(x_raw.max() / tick_step) * tick_step, step=tick_step).astype(np.int32)
-        y_tick_la = np.arange(np.floor(y_raw.min() / tick_step) * tick_step,
-                              np.ceil(y_raw.max() / tick_step) * tick_step, step=tick_step).astype(np.int32)
+        x_tick_la = np.arange(
+            np.floor(x_raw.min() / tick_step) * tick_step,
+            np.ceil(x_raw.max() / tick_step) * tick_step,
+            step=tick_step
+        ).astype(np.int32)
+
+        y_tick_la = np.arange(
+            np.floor(y_raw.min() / tick_step) * tick_step,
+            np.ceil(y_raw.max() / tick_step) * tick_step,
+            step=tick_step
+        ).astype(np.int32)
+
         x_tick_po, y_tick_po = self._apply_trans(x_tick_la, y_tick_la)
         plt.xticks(ticks=x_tick_po, labels=x_tick_la)
         plt.yticks(ticks=y_tick_po, labels=y_tick_la)
 
         plt.gca().set_aspect('equal', adjustable='box')
+        # in order to fit `StereoPy` original point
+        plt.gca().invert_yaxis()
 
-        plt.savefig(os.path.join(fig_dir, fig_name), dpi=dpi_val, bbox_inches='tight')
+        # plt.savefig(os.path.join(fig_dir, fig_name), dpi=dpi_val, bbox_inches='tight')
         # plt.close()
-        return plt.figure()
-
-
-
+        return figure
 
 # func3：画图
-

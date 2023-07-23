@@ -960,34 +960,19 @@ class DPT(AlgorithmBase):
             copy: bool = False,
     ):
         """\
-        Infer progression of cells through geodesic distance along the graph
-        [Haghverdi16]_ [Wolf19]_.
+        Infer progression of cells through geodesic distance along the graph.
 
         Reconstruct the progression of a biological process from snapshot
-        data. `Diffusion Pseudotime` has been introduced by [Haghverdi16]_ and
-        implemented within Scanpy [Wolf18]_. Here, we use a further developed
-        version, which is able to deal with disconnected graphs [Wolf19]_ and can
-        be run in a `hierarchical` mode by setting the parameter
-        `n_branchings>1`. We recommend, however, to only use
-        :func:`~scanpy.tl.dpt` for computing pseudotime (`n_branchings=0`) and
-        to detect branchings via :func:`~scanpy.tl.paga`. For pseudotime, you need
+        data. Here, we use a further developed version, which is able to deal with disconnected graphs [Wolf19]_ 
+        and can be run in a `hierarchical` mode by setting the parameter `n_branchings>1`. 
+        We recommend, however, to only use :func:`~stereo.tl.dpt` for computing pseudotime (`n_branchings=0`) and
+        to detect branchings via :func:`~stereo.tl.paga`. For pseudotime, you need
         to annotate your data with a root cell. For instance::
-
-            stereo_exp_data.tl.result['iroot'] = np.flatnonzero(stereo_exp_data.cells['cell_types'] == 'Stem')[0]
-
-        This requires to run :func:`~scanpy.pp.neighbors`, first. In order to
+        stereo_exp_data.tl.result['iroot'] = np.flatnonzero(stereo_exp_data.cells['cell_types'] == 'Stem')[0]
+        This requires to run :func:`~stereo.tl.neighbors`, first. In order to
         reproduce the original implementation of DPT, use `method=='gauss'` in
         this. Using the default `method=='umap'` only leads to minor quantitative
         differences, though.
-
-        .. versionadded:: 1.1
-
-        :func:`~scanpy.tl.dpt` also requires to run
-        :func:`~scanpy.tl.diffmap` first. As previously,
-        :func:`~scanpy.tl.dpt` came with a default parameter of ``n_dcs=10`` but
-        :func:`~scanpy.tl.diffmap` has a default parameter of ``n_comps=15``,
-        you need to pass ``n_comps=10`` in :func:`~scanpy.tl.diffmap` in order
-        to exactly reproduce previous :func:`~scanpy.tl.dpt` results.
 
         Parameters
         ----------
@@ -1008,35 +993,21 @@ class DPT(AlgorithmBase):
             stabilize the splitting.
         neighbors_key
             If not specified, dpt looks .tl.result['neighbors'] for neighbors settings
-            and .cellsp['connectivities'], .cellsp['distances'] for connectivities and
+            and stereo_exp_data.cells_pairwise['connectivities'], .cells_pairwise['distances'] for connectivities and
             distances respectively (default storage places for pp.neighbors).
             If specified, dpt looks .tl.result[neighbors_key] for neighbors settings and
-            .cellsp[.tl.result[neighbors_key]['connectivities_key']],
-            .cellsp[.tl.result[neighbors_key]['distances_key']] for connectivities and distances
-            respectively.
+            stereo_exp_data.cells_pairwise[stereo_exp_data.tl.result[neighbors_key]['connectivities_key']],
+            stereo_exp_data.cells_pairwise[stereo_exp_data.tl.result[neighbors_key]['distances_key']] for connectivities
+            and distances respectively.
         copy
-            Copy instance before computation and return a copy.
-            Otherwise, perform computation inplace and return `None`.
+            Copy `stereo_exp_data` before computation and return a copy. Otherwise, perform
+            computation inplace and return `None`.
 
         Returns
         -------
-        Depending on `copy`, returns or updates `stereo_exp_data` with the following fields.
+            return `stereo_exp_data` if `copy` is `True`, or `None` if `copy` is `False`.
 
-        If `n_branchings==0`, no field `dpt_groups` will be written.
-
-        `dpt_pseudotime` : :class:`pandas.Series` (`stereo_exp_data.cells`, dtype `float`)
-            Array of dim (number of samples) that stores the pseudotime of each
-            cell, that is, the DPT distance with respect to the root cell.
-        `dpt_groups` : :class:`pandas.Series` (`stereo_exp_data.cells`, dtype `category`)
-            Array of dim (number of samples) that stores the subgroup id ('0',
-            '1', ...) for each cell. The groups  typically correspond to
-            'progenitor cells', 'undecided cells' or 'branches' of a process.
-
-        Notes
-        -----
-        The tool is similar to the R package `destiny` of [Angerer16]_.
         """
-        # standard errors, warnings etc.
 
         stereo_exp_data = deepcopy(self.stereo_exp_data) if copy else self.stereo_exp_data
 

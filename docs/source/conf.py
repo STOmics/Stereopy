@@ -52,10 +52,10 @@ autosummary_generate = True
 autodoc_member_order = 'bysource'
 autodoc_default_flags = ['members']
 todo_include_todos = False
-api_dir = HERE / 'api'  # function_images
+# api_dir = HERE / 'api'  # function_images
 # print(api_dir)
 # The master toctree document.
-language = None
+language = 'en'
 
 #If you want to include a notebook without outputs and yet don’t want nbsphinx to execute it for you, you can explicitly disable this feature.
 nbsphinx_execute = 'never'
@@ -111,6 +111,7 @@ nbsphinx_thumbnails = {
 	"Tutorials/Cell_Cell_Communication":"_static/cell_cell_communication.png",
     "Tutorials/3D_Cell_Cell_Communication":"_static/cell_cell_communication.png",
     "Tutorials/SingleR":"_static/singleR.png",
-    "Tutorials/Gene_Regulatory_Network":"_static/gene_regulatory_network.png"
+    "Tutorials/Gene_Regulatory_Network":"_static/gene_regulatory_network.png",
+    "Tutorials/3D_Gene_Regulatory_Network":"_static/gene_regulatory_network.png"
 }
 

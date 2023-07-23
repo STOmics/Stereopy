@@ -28,7 +28,7 @@ class TestBatchIntegration(unittest.TestCase):
 
         cls.MS_DATA = MSData(_data_list=[data_a1, data_a2], _names=['a1', 'a2'])
 
-        cls.DATA = merge(data_a1, data_a2)
+        cls.DATA = merge(data_a1, data_a2, var_type="union")
         cls.DATA.tl.normalize_total()
         cls.DATA.tl.log1p()
         cls.DATA.tl.pca(use_highly_genes=False, n_pcs=50, res_key='pca')
@@ -44,7 +44,7 @@ class TestBatchIntegration(unittest.TestCase):
         self.DATA.plt.cluster_scatter(res_key='leiden', out_path=TEST_IMAGE_PATH + "batch_integrated_leiden.png")
 
     def test_ms_batches_integrate(self):
-        self.MS_DATA.merge_for_batching_integrate()
+        self.MS_DATA.integrate()
         self.MS_DATA.merged_data.tl.normalize_total()
         self.MS_DATA.merged_data.tl.log1p()
         self.MS_DATA.merged_data.tl.pca(use_highly_genes=False, n_pcs=50, res_key='pca')

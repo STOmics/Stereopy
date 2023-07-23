@@ -32,9 +32,24 @@ More analysis will be added here, either from other popular tools or developed b
 Meanwhile, we are still working on the improvement of performance and calculation efficiency.
 
 
-* Get quickly started by browsing `Usage Principles <https://stereopy.readthedocs.io/en/latest/index.html>`_, `Tutorials <https://stereopy.readthedocs.io/en/latest/Tutorials/Examples.html>`_ or `API <https://stereopy.readthedocs.io/en/latest/api/index.html>`_.
+* Get quickly started by browsing `Usage Principles <https://stereopy.readthedocs.io/en/latest/index.html>`_, `Tutorials <https://stereopy.readthedocs.io/en/latest/Tutorials/Cases.html>`_ or `API <https://stereopy.readthedocs.io/en/latest/content/03_API.html>`_.
 * Open to discuss and provide feedback on `Github <https://github.com/STOmics/stereopy>`_.
-* Follow changes in `Release Notes <https://stereopy.readthedocs.io/en/latest/release_note.html>`_.
+* Follow changes in `Release Notes <https://stereopy.readthedocs.io/en/latest/content/06_Release_notes.html>`_.
+
+About MSData
+-----------
+For multi-sample data analysis, we have recently launched a simple-to-use method that can distinguish single-sample \
+and multi-sample when working on the parallel processings, but the results of two parties can be interacted.
+
+In order to adapt to the new parameters and concepts in MSData analysis, the current version is a Beta one, which means there are \
+inevitably a handful of BUGs. We sincerely hope to receive your feedback and suggestions for MSData.
+
+
+Upcoming functions
+----------
+* Cell Co-occurrence
+* Cell Community
+* New algorithm for Batch Effect Correction
 
 
 Highlights
@@ -58,35 +73,41 @@ Workflow
 Latest Additions
 ------------------
 
+Version 0.13.0b1 (Beta)
+~~~~~~~~~~~~~~~~~~~~~~~~~
+0.13.0b1 : 2023-07-11
+
+Notice: this Beta version is specifically developed for multi-sample analysis. Major update points are listed below.
+
+1. Addition of 3D Cell-cell Communication.
+2. Addition of 3D Gene Regulatory Network.
+3. Addition of Trajectory Inference, including PAGA and DPT algorithms.
+4. Addition of Batch QC function for evaluation on batch effect.
+5. Addition of `st.io.read_h5ad` for improved compatibility with AnnData H5ad, we highly recommend that instead of `st.io.read_ann_h5ad`.
+6. Addition of analysis workflow tutorial based on multi-sample data, with assistant parameters `scope` and `mode`.
+7. Addition of resetting the image order of multi-sample analysis results.
+8. Addition of 3D mesh visualization.
+9. Improved the performance of Gaussian Smoothing.
+
+Version 0.12.1
+~~~~~~~~~~~~~~
+0.12.1 : 2023-06-21
+
+1. Addition of the pretreatment of calculating quality control metrics at the start of `st.tl.filter_genes` and `st.tl.filter_cells`.
+2. Fixed the bug that loaded data from GEF file had the same expression matrix but in different row order, through updating gefpy package to v0.6.24.
+3. Fixed the bug that `scale.data` had `np.nan` value in `st.tl.sctransform` , caused by data type limitation.
+4. Fixed the bug that dot symbol ( '.' ) caused identification error of cluster name in `.csv` output, when doing `st.tl.find_marker_genes`.
+
 Version 0.12.0
 ~~~~~~~~~~~~~~
 0.12.0 : 2023-04-27
 
 1. Addition of the algorithm of Cell Segmentation V3.0.
-2. Addition of method='hotspot' to data.tl.regulatory_network_inference, which takes spatial coordinate information into account to calculate the relative importance between TFs and their target genes.
+2. Addition of `method='hotspot'` to `st.tl.regulatory_network_inference`, which takes spatial coordinate information into account to calculate the relative importance between TFs and their target genes.
 3. Addition of dpi and width/height setting for visualization, and addition of plotting scale for displaying static plot.
-4. Optimized required memory while plotting UMAP embedding via data.plt.umap and cell distribution via data.plt.cells_plotting.
-5. Fixed bug that input parameter of var_features_n was invalid, in data.tl.scTransform.
+4. Optimized required memory while plotting UMAP embedding via `data.plt.umap` and cell distribution via `data.plt.cells_plotting`.
+5. Fixed bug that input parameter of `var_features_n` was invalid, in `data.tl.scTransform`.
 6. Updated requirements.txt.
-
-Version 0.11.0
-~~~~~~~~~~~~~~
-0.11.0 : 2023-04-04
-
-1. Addition of Cell-cell Communication analysis.
-2. Addition of Gene Regulatory Network analysis.
-3. Addition of SingleR function for automatic annotation.
-4. Addition of `v2` algorithm fast cell correction.
-5. Addition of dot plot to display gene-level results.
-6. Addition of the sorting function and the limitation of output genes in `data.tl.find_marker_genes`.
-7. Added `pct` and `pct_rest` to the output files of marker genes.
-8. Addition of the parameter `mean_uni_gt` in `data.tl.filter_genes` to filter genes on average expression.
-9. Fixed the bug that `adata.X` to output AnnData was the raw matrix.
-10. Fixed the failed compatibility to analysis results from `.h5ad` (version <= 0.9.0).
-11. Updated the tissue segmentation algorithm in the module of cell segmentation to avoid the lack of tissue.
-12. Reconstructed the manual of Stereopy.
-13. Updated requirements.txt.
-
 
 
 

@@ -63,25 +63,24 @@ class PlotRegulatoryNetwork(PlotBase):
             reg_ct_avg_exp = np.mean(g_ct_exp['total'])
             return round(reg_ct_percent,2), round(reg_ct_avg_exp,2)
 
-    @download
     def grn_dotplot(self,
-                       meta: pd.DataFrame,
-                       regulon_names: Union[str, list] = None,
-                       celltypes: Union[str, list] = None,
-                       groupby: str = 'group',
-                       cell_label: str = 'bins',
-                       network_res_key: str = 'regulatory_network_inference', 
-                       palette: str = 'Reds',
-                       width: int = None,
-                       height: int = None,
-                       **kwargs):
+                    cluster_res_key: str,
+                    regulon_names: Union[str, list] = None,
+                    celltypes: Union[str, list] = None,
+                    groupby: str = 'group',
+                    cell_label: str = 'bins',
+                    network_res_key: str = 'regulatory_network_inference', 
+                    palette: str = 'Reds',
+                    width: int = None,
+                    height: int = None,
+                    **kwargs):
         """
         Intuitive way of visualizing how feature expression changes across different
         identity classes (clusters). The size of the dot encodes the percentage of
         cells within a class, while the color encodes the AverageExpression level
         across all cells within a class (red is high).
 
-        :param meta: cell classification information.
+        :param cluster_res_key: the key which specifies the clustering result in data.tl.result.
         :param regulon_names: the regulon which would be shown on plot, defaults to None.
             If set it to None, it will be set to all regulon.
             1) string: only one cluster.
@@ -108,6 +107,14 @@ class PlotRegulatoryNetwork(PlotBase):
         dot_data = {'cell type': [], 'regulons': [], 'percentage': [], 'avg exp': []}
 
         regulon_dict = self.pipeline_res[network_res_key]['regulons']
+
+        if cluster_res_key in self.stereo_exp_data.cells._obs.columns:
+            meta = pd.DataFrame({
+                'bin': self.stereo_exp_data.cells.cell_name,
+                'group': self.stereo_exp_data.cells._obs[cluster_res_key].tolist()
+            })
+        else:
+            meta = self.pipeline_res[cluster_res_key]
 
         if celltypes is None:
             meta_new = meta.drop_duplicates(subset='group', inplace=False)
@@ -164,7 +171,6 @@ class PlotRegulatoryNetwork(PlotBase):
         ax.set_ylabel('Cell type')
         return fig
 
-    @download
     def auc_heatmap(
             self, 
             network_res_key = 'regulatory_network_inference', 
@@ -173,8 +179,8 @@ class PlotRegulatoryNetwork(PlotBase):
         ):
         """
         Plot heatmap for auc value for regulons
-        :param network_res_key: the key which specifies inference regulatory network result
-             in data.tl.result, defaults to 'regulatory_network_inference'
+
+        :param network_res_key: the key which specifies inference regulatory network result in data.tl.result, defaults to 'regulatory_network_inference'
         :param height: height of drawing
         :param width: width of drawing
 
@@ -194,7 +200,6 @@ class PlotRegulatoryNetwork(PlotBase):
         
         return fig
 
-    @download
     @plot_scale
     @reorganize_coordinate
     def spatial_scatter_by_regulon(
@@ -288,32 +293,37 @@ class PlotRegulatoryNetwork(PlotBase):
         plt.savefig(f'{reg_name.split("(")[0]}.png')
         plt.close()
 
-    @download
     def auc_heatmap_by_group(self,
                     network_res_key: str = 'regulatory_network_inference', 
-                    celltype_res_key: str = 'leiden',
+                    cluster_res_key: str = None,
                     top_n_feature: int=5,
                     width: int=18,
                     height: int=28,
                     ):
-        """
-        Plot heatmap for Regulon specificity scores (RSS) value
-        :param auc_mtx: 
-        :param regulons:
-        :param meta:
-        :param save:
-        :param fn:
-        :return: 
+        """Plot heatmap for Regulon specificity scores (RSS) value
+
+        :param network_res_key: the key which specifies inference regulatory network result in data.tl.result, defaults to 'regulatory_network_inference'
+        :param cluster_res_key: the key which specifies the clustering result in data.tl.result, defaults to None
+        :param top_n_feature:
+        :param width:
+        :param height:
         """
     
         if network_res_key not in self.pipeline_res:
             logger.info(f"The result specified by {network_res_key} is not exists.")
-        elif celltype_res_key not in self.pipeline_res:
-            logger.info(f"The result specified by {celltype_res_key} is not exists.")
+        elif cluster_res_key not in self.pipeline_res:
+            logger.info(f"The result specified by {cluster_res_key} is not exists.")
 
         auc_mtx = self.pipeline_res[network_res_key]['auc_matrix']
+
+        if cluster_res_key in self.stereo_exp_data.cells._obs.columns:
+            meta = pd.DataFrame({
+                'bin': self.stereo_exp_data.cells.cell_name,
+                'group': self.stereo_exp_data.cells._obs[cluster_res_key].tolist()
+            })
+        else:
+            meta = self.pipeline_res[cluster_res_key].copy(deep=True)
         
-        meta = self.pipeline_res[celltype_res_key].copy(deep=True)
         # Regulon specificity scores (RSS) across predicted cell types
         rss_cellType = regulon_specificity_scores(auc_mtx, meta['group'])
         # rss_cellType.to_csv('regulon_specificity_scores.txt')
@@ -344,7 +354,6 @@ class PlotRegulatoryNetwork(PlotBase):
 
         return g
     
-    @download
     def spatial_scatter_by_regulon_3D(
         self,
         network_res_key: str = 'regulatory_network_inference',
@@ -354,15 +363,14 @@ class PlotRegulatoryNetwork(PlotBase):
         view_horizontal: int=0,
         show_axis: bool=False,
         **kwargs):
-        """
-        Plot genes of one regulon on a 3D map
-        :param network_res_key: the key which specifies inference regulatory network result
-             in data.tl.result, defaults to 'regulatory_network_inference'
+        """Plot genes of one regulon on a 3D map
+
+        :param network_res_key: the key which specifies inference regulatory network result in data.tl.result, defaults to 'regulatory_network_inference'
         :param reg_name: specify the regulon you want to draw, defaults to None, if none, will select randomly.
         :param fn: specify the file name of the output figure, defaults to None, if none, will use regulon name.
         :param view_vertical: vertical angle to view to the 3D object
         :param view_horizontal: horizontal angle to view the 3D object
-        :return: 
+
         Example:
             data.plt.plot_3d_reg('regulatory_network_inference', 'Zfp354c', view_vertical=30, view_horizontal=-30)
         """

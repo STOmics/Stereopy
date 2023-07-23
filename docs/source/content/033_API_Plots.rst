@@ -42,3 +42,10 @@ The plot collection for StereoExpData object.
    plots.PlotCollection.spatial_scatter_by_gene
    plots.PlotCollection.umap
    plots.PlotCollection.violin
+   algorithm.cell_cell_communication.PlotCellCellCommunication.ccc_dot_plot
+   algorithm.cell_cell_communication.PlotCellCellCommunication.ccc_heatmap
+   algorithm.regulatory_network_inference.PlotRegulatoryNetwork.auc_heatmap_by_group
+   algorithm.regulatory_network_inference.PlotRegulatoryNetwork.auc_heatmap
+   algorithm.regulatory_network_inference.PlotRegulatoryNetwork.grn_dotplot
+   algorithm.regulatory_network_inference.PlotRegulatoryNetwork.spatial_scatter_by_regulon_3D
+   algorithm.regulatory_network_inference.PlotRegulatoryNetwork.spatial_scatter_by_regulon

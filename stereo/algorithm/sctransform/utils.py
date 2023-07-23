@@ -114,6 +114,9 @@ def qpois_reg(X, Y, tol, maxiters, minphi, returnfit):
 
     while dif > tol:
         yhat = np.matmul(x, b_old)
+        # TODO temporarily value
+        yhat = np.clip(yhat, -708, 709)
+
         m = np.exp(yhat)
         phi = y - m
         L1 = np.matmul(x_tr, phi)
@@ -130,6 +133,9 @@ def qpois_reg(X, Y, tol, maxiters, minphi, returnfit):
         if ij == maxiters:
             break
 
+    # TODO temporarily value
+    phi[(-1.64487933e-154 < phi) & (phi < 1.64487933e-154)] = 0
+
     p = np.sum(np.square(phi) / m) / (n - pcols)
     return {
         "coefficients": b_new.T[0],
@@ -139,7 +145,7 @@ def qpois_reg(X, Y, tol, maxiters, minphi, returnfit):
     }
 
 
-@numba.jit(cache=True, forceobj=True, nogil=True)
+# @numba.jit(cache=True, forceobj=True, nogil=True)
 def theta_ml(y, mu, limit=10, eps=0.0001220703):
     weights = np.ones(len(y))
     n = np.sum(weights)

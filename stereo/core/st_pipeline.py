@@ -24,7 +24,7 @@ from scipy.sparse import issparse
 
 from ..log_manager import logger
 from .result import Result, AnnBasedResult
-from .stereo_exp_data import StereoExpData
+from .stereo_exp_data import StereoExpData, AnnBasedStereoExpData
 from ..utils.time_consume import TimeConsume
 from ..algorithm.algorithm_base import AlgorithmBase
 
@@ -45,15 +45,15 @@ def logit(func):
 
 class StPipeline(object):
 
-    def __init__(self, data: StereoExpData):
+    def __init__(self, data: Union[StereoExpData, AnnBasedStereoExpData]):
         """
         A analysis tool sets for StereoExpData. include preprocess, filter, cluster, plot and so on.
 
         :param data: StereoExpData object.
         """
-        self.data: StereoExpData = data
+        self.data: Union[StereoExpData, AnnBasedStereoExpData] = data
         self.result = Result(data)
-        self._raw: StereoExpData = None
+        self._raw: Union[StereoExpData, AnnBasedStereoExpData] = None
         self.key_record = {'hvg': [], 'pca': [], 'neighbors': [], 'umap': [], 'cluster': [], 'marker_genes': []}
 
     def __getattr__(self, item):
@@ -76,7 +76,7 @@ class StPipeline(object):
         )
 
     @property
-    def raw(self) -> StereoExpData:
+    def raw(self) -> Union[StereoExpData, AnnBasedStereoExpData]:
         """
         get the StereoExpData whose exp_matrix is raw count.
 
@@ -167,13 +167,13 @@ class StPipeline(object):
         Parameters
         ----------------------
         min_gene
-            minimum number of genes expressed required for a cell to pass fitlering.
+            minimum number of counts required for a cell to pass fitlering.
         max_gene
-            maximum number of genes expressed required for a cell to pass fitlering.
+            maximum number of counts required for a cell to pass fitlering.
         min_n_genes_by_counts
-            minimum number of counts required for a cell to pass filtering.
+            minimum number of genes expressed required for a cell to pass filtering.
         max_n_genes_by_counts
-            maximum number of counts required for a cell to pass filtering.
+            maximum number of genes expressed required for a cell to pass filtering.
         pct_counts_mt
             maximum number of `pct_counts_mt` required for a cell to pass filtering.
         cell_list
@@ -260,7 +260,7 @@ class StPipeline(object):
         cluster_res_key: str = 'cluster',
         groups: Union[str, np.ndarray, List[str]] = None,
         excluded: bool = False,
-        inplace: bool = True
+        inplace: bool = False
     ):
         """
         Filter cells based on clustering result.
@@ -271,6 +271,8 @@ class StPipeline(object):
             - the key of clustering to get corresponding result from `self.result`.
         groups
             - the groups in clustering result which will be filtered.
+        excluded:
+            - set it to True to exclude the groups which specify by parameter `groups` while False to include.
         inplace
             - whether to inplace the previous data or return a new data.
 
@@ -284,7 +286,14 @@ class StPipeline(object):
         if cluster_res_key not in self.result:
             raise Exception(f'{cluster_res_key} is not in the result, please check and run the func of cluster.')
         
-        return filter_by_clusters(self.data, self.result[cluster_res_key], groups, excluded, inplace)
+        data, cluster_res = filter_by_clusters(self.data, self.result[cluster_res_key], groups, excluded, inplace)
+        data.tl.result[cluster_res_key] = cluster_res
+        gene_exp_cluster_key = f'gene_exp_{cluster_res_key}'
+        if gene_exp_cluster_key in data.tl.result:
+            if isinstance(groups, str):
+                groups = [groups]
+            data.tl.result[gene_exp_cluster_key] = data.tl.result[gene_exp_cluster_key][groups]
+        return data
 
     @logit
     def log1p(self,
@@ -957,7 +966,7 @@ class StPipeline(object):
             dat = pd.concat(
                 [
                     pd.DataFrame(
-                        {group.split(".")[0] + "_" + key: result[group][key].values}
+                        {group.split(".vs.")[0] + "_" + key: result[group][key].values}
                     ) for group in groups for key in show_cols
                 ],
                 axis=1
@@ -1279,7 +1288,7 @@ class StPipeline(object):
             if '.vs.' not in key:
                 continue
             new_res = res.copy()
-            group_name = key.split('.')[0]
+            group_name = key.split('.vs.')[0]
             if not compare_abs:
                 gene_set_1 = res[res['log2fc'] < min_fold_change]['genes'].values if min_fold_change is not None else []
             else:
@@ -1303,7 +1312,7 @@ class StPipeline(object):
             dat = pd.concat(
                 [
                     pd.DataFrame(
-                        {group.split(".")[0] + "_" + key: result[group][key].values}
+                        {group.split(".vs.")[0] + "_" + key: result[group][key].values}
                     ) for group in groups for key in show_cols
                 ],
                 axis=1
@@ -1338,23 +1347,27 @@ class StPipeline(object):
 
 class AnnBasedStPipeline(StPipeline):
 
-    def __init__(self, based_ann_data: AnnData, data):
+    def __init__(self, based_ann_data: AnnData, data: AnnBasedStereoExpData):
         super().__init__(data)
         self.__based_ann_data = based_ann_data
         self.result = AnnBasedResult(based_ann_data)
 
     def subset_by_hvg(self, hvg_res_key, use_raw=False, inplace=True):
-        data = self.data if inplace else copy.deepcopy(self.data)
+        data: AnnBasedStereoExpData = self.data if inplace else copy.deepcopy(self.data)
         if hvg_res_key not in self.result:
             raise Exception(f'{hvg_res_key} is not in the result, please check and run the normalization func.')
         df = self.result[hvg_res_key]
         data._ann_data._inplace_subset_var(df['highly_variable'].values)
         return data
 
+    # def raw_checkpoint(self):
+    #     from .stereo_exp_data import AnnBasedStereoExpData
+    #     if self.__based_ann_data.raw:
+    #         data = AnnBasedStereoExpData("", based_ann_data=self.__based_ann_data.raw.to_adata())
+    #     else:
+    #         data = AnnBasedStereoExpData("", based_ann_data=copy.deepcopy(self.__based_ann_data))
+    #     self.raw = data
+
     def raw_checkpoint(self):
-        from .stereo_exp_data import AnnBasedStereoExpData
-        if self.__based_ann_data.raw:
-            data = AnnBasedStereoExpData("", based_ann_data=self.__based_ann_data.raw.to_adata())
-        else:
-            data = AnnBasedStereoExpData("", based_ann_data=copy.deepcopy(self.__based_ann_data))
-        self.raw = data
+        super().raw_checkpoint()
+        self.data._ann_data.raw = self.data._ann_data

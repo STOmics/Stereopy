@@ -17,6 +17,7 @@ from stereo.log_manager import logger
 from stereo.stereo_config import stereo_conf
 from stereo.algorithm.algorithm_base import AlgorithmBase
 from stereo.algorithm.cell_cell_communication.utils.sqlalchemy_model import Base
+from stereo.algorithm.cell_cell_communication.utils.visualization_process import visualization_process
 from stereo.algorithm.cell_cell_communication.analysis_helper import (
     Subsampler,
     write_to_file,
@@ -141,11 +142,12 @@ class CellCellCommunication(AlgorithmBase):
         counts = self._counts_validations(counts, meta)
 
         # 1.3. if species is mouse, get the homologous genes.
+        human_genes_to_mouse = None
         if species.upper() == 'MOUSE' and (database == 'cellphonedb' or database == 'liana'):
             if homogene_path is None:
                 homogene_path = Path(stereo_conf.data_dir, 'algorithm/cell_cell_communication/database/mouse2human.csv').absolute().as_posix()
             genes_mouse = counts.index.tolist()
-            genes_human = mouse2human(genes_mouse, homogene_path)
+            genes_human, human_genes_to_mouse = mouse2human(genes_mouse, homogene_path)
             counts.index = genes_human
             counts = counts.drop('NotAvailable')
             counts = counts.groupby(counts.index, as_index=True).sum()
@@ -288,10 +290,13 @@ class CellCellCommunication(AlgorithmBase):
             lambda rank: rank if rank != 0 else (1 + max_rank))
         significant_means.sort_values('rank', inplace=True)  # min to max, 0s at the bottom
 
+        visualization_data = visualization_process(significant_means, separator_cluster, separator_interaction, human_genes_to_mouse)
+
         self.pipeline_res[res_key] = {
             'means': means_result,
             'significant_means': significant_means,
             'deconvoluted': deconvoluted_result,
+            'visualization_data': visualization_data
             # 'interactions_filtered': interactions_filtered,
             # 'interactions': interactions
         }

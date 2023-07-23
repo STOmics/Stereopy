@@ -58,7 +58,9 @@ class RegulatoryNetworkInference(AlgorithmBase):
              cache_res_key: str = 'regulatory_network_inference',
              save: bool=True,
              method: str='grnboost',
-             ThreeD_slice: bool=False):
+             ThreeD_slice: bool=False,
+             prune_kwargs: dict={}
+             ):
         """
         Enables researchers to infer transcription factors (TFs) and gene regulatory networks.
 
@@ -75,6 +77,7 @@ class RegulatoryNetworkInference(AlgorithmBase):
         :param save: whether to save the result as a file.
         :param method: the method to inference GRN, 'grnboost' or 'hotspot'.
         :param ThreeD_slice: whether to use 3D slice data.
+        :param prune_kwargs: dict, others parameters of pyscenic.prune.prune2df
         :return: Computation result of inference regulatory network is stored in self.result where the result key is 'regulatory_network_inference'.
         """
         matrix = self.stereo_exp_data.to_df()
@@ -112,7 +115,7 @@ class RegulatoryNetworkInference(AlgorithmBase):
         
         modules = self.get_modules(adjacencies, df)
         # 4. Regulons prediction aka cisTarget
-        regulons = self.prune_modules(modules, dbs, motif_anno, num_workers, cache=cache, cache_res_key=cache_res_key)
+        regulons, motifs = self.prune_modules(modules, dbs, motif_anno, num_workers, cache=cache, cache_res_key=cache_res_key, **prune_kwargs)
         self.regulon_dict = get_regulon_dict(regulons)
         # 5: Cellular enrichment (aka AUCell)
         auc_matrix = self.auc_activity_level(df, regulons, auc_threshold, num_workers, seed=seed, cache=cache, cache_res_key=cache_res_key)
@@ -121,7 +124,8 @@ class RegulatoryNetworkInference(AlgorithmBase):
         self.pipeline_res[res_key] = {
             'regulons': self.regulon_dict, 
             'auc_matrix': auc_matrix, 
-            'adjacencies': adjacencies
+            'adjacencies': adjacencies,
+            'motifs': motifs
             }
         self.stereo_exp_data.tl.reset_key_record('regulatory_network_inference', res_key)
 
@@ -417,7 +421,7 @@ class RegulatoryNetworkInference(AlgorithmBase):
 
         # alternative way of getting regulon_list, without creating df first
         # regulon_list = prune(dbs, modules, motif_anno)
-        return regulon_list
+        return regulon_list, df
 
     def auc_activity_level(self,
                            matrix,

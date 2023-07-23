@@ -10,7 +10,7 @@
 change log:
     2021/07/06  create file.
 """
-from typing import Union, List
+from typing import Union, List, Tuple
 import pandas as pd
 import numpy as np
 import copy
@@ -30,7 +30,7 @@ from stereo.core.stereo_exp_data import StereoExpData
 
 
 def filter_cells(
-        data,
+        data: StereoExpData,
         min_gene=None,
         max_gene=None,
         min_n_genes_by_counts=None,
@@ -74,11 +74,17 @@ def filter_cells(
     if cell_list is not None:
         cell_subset = np.isin(data.cells.cell_name, cell_list)
         data.sub_by_index(cell_index=cell_subset)
-    cal_genes_indicators(data)
     return data
 
 
-def filter_genes(data, min_cell=None, max_cell=None, gene_list=None, mean_umi_gt=None, inplace=True):
+def filter_genes(
+    data: StereoExpData,
+    min_cell=None,
+    max_cell=None,
+    gene_list=None,
+    mean_umi_gt=None,
+    inplace=True
+):
     """
     filter genes based on the numbers of cells.
 
@@ -106,11 +112,17 @@ def filter_genes(data, min_cell=None, max_cell=None, gene_list=None, mean_umi_gt
     if mean_umi_gt is not None:
         gene_subset = data.genes.mean_umi > mean_umi_gt
         data.sub_by_index(gene_index=gene_subset)
-    cal_cells_indicators(data)
     return data
 
 
-def filter_coordinates(data, min_x=None, max_x=None, min_y=None, max_y=None, inplace=True):
+def filter_coordinates(
+    data: StereoExpData,
+    min_x=None,
+    max_x=None,
+    min_y=None,
+    max_y=None,
+    inplace=True
+):
     """
     filter cells based on the coordinates of cells.
 
@@ -146,7 +158,7 @@ def filter_by_clusters(
     groups: Union[str, np.ndarray, List[str]],
     excluded: bool = False,
     inplace: bool = True
-) -> StereoExpData:
+) -> Tuple[StereoExpData, pd.DataFrame]:
     """_summary_
 
     :param data: StereoExpData object.
@@ -159,8 +171,8 @@ def filter_by_clusters(
     all_groups = cluster_res['group']
     if isinstance(groups, str):
         groups = [groups]
-    is_in_bool = all_groups.isin(groups)
+    is_in_bool = all_groups.isin(groups).to_numpy()
     if excluded:
         is_in_bool = ~is_in_bool
     data.sub_by_index(cell_index=is_in_bool)
-    return data
+    return data, cluster_res[is_in_bool]

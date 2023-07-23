@@ -191,7 +191,7 @@ def center_align(
     Computes center alignment of slices.
     
     Args:
-        A: Slice to use as the initialization for center alignment; Make sure to include gene expression and spatial information.
+        initial_slice: Slice to use as the initialization for center alignment; Make sure to include gene expression and spatial information.
         slices: List of slices to use in the center alignment.
         lmbda (array-like, optional): List of probability weights assigned to each slice; If ``None``, use uniform weights.
         alpha:  Alignment tuning parameter. Note: 0 <= alpha <= 1.

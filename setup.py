@@ -6,16 +6,34 @@
 @file:setup.py
 @time:2023/04/28
 """
-from setuptools import setup, find_packages
+import os
 import sys
+
 from pathlib import Path
+from setuptools import setup
+from setuptools import find_packages
 
 if sys.version_info < (3, 8):
     sys.exit('stereopy requires Python >= 3.8')
 
+
+def read(rel_path: str) -> str:
+    here = os.path.abspath(os.path.dirname(__file__))
+    with open(os.path.join(here, rel_path)) as fp:
+        return fp.read()
+
+
+def get_version(rel_path: str) -> str:
+    for line in read(rel_path).splitlines():
+        if line.startswith("version"):
+            delim = '"' if '"' in line else "'"
+            return line.split(delim)[1]
+    raise RuntimeError("Unable to find version string.")
+
+
 setup(
     name='stereopy',
-    version='0.12.0',
+    version=get_version("stereo/common.py"),
     setup_requires=['setuptools_scm', 'numpy==1.21.6', 'panel', 'pytest', 'quilt3', 'scipy', 'phenograph'],
     description='Spatial transcriptomic analysis in python.',
     long_description=Path('README.md').read_text('utf-8'),

@@ -3,15 +3,40 @@ Release Notes
 
 .. role:: small
 
+Version 0.13.0b1 (Bata)
+------------------------
+0.13.0b1 : 2023-07-11
+~~~~~~~~~~~~~~~~~~~~~~~~
+Notice: this Beta version is specifically developed for multi-sample analysis. Major update points are listed below.
+
+1. Addition of 3D Cell-cell Communication.
+2. Addition of 3D Gene Regulatory Network.
+3. Addition of Trajectory Inference, including PAGA and DPT algorithms.
+4. Addition of Batch QC function for evaluation on batch effect.
+5. Addition of `st.io.read_h5ad` for improved compatibility with AnnData H5ad, we highly recommend that instead of `st.io.read_ann_h5ad`.
+6. Addition of analysis workflow tutorial based on multi-sample data, with assistant parameters `scope` and `mode`.
+7. Addition of resetting the image order of multi-sample analysis results.
+8. Addition of 3D mesh visualization.
+9. Improved the performance of Gaussian Smoothing.
+
+Version 0.12.1
+---------------------
+0.12.1 : 2023-06-21
+~~~~~~~~~~~~~~~~~~~~~~~~
+1. Addition of the pretreatment of calculating quality control metrics at the start of `st.tl.filter_genes` and `st.tl.filter_cells`.
+2. Fixed the bug that loaded data from GEF file had the same expression matrix but in different row order, through updating gefpy package to v0.6.24.
+3. Fixed the bug that `scale.data` had `np.nan` value in `st.tl.sctransform` , caused by data type limitation.
+4. Fixed the bug that dot symbol ( '.' ) caused identification error of cluster name in `.csv` output, when doing `st.tl.find_marker_genes`.
+
 Version 0.12.0
 ---------------------
 0.12.0 : 2023-04-27
 ~~~~~~~~~~~~~~~~~~~~~~~~
 1. Addition of the algorithm of Cell Segmentation V3.0.
-2. Addition of method='hotspot' to data.tl.regulatory_network_inference, which takes spatial coordinate information into account to calculate the relative importance between TFs and their target genes.
+2. Addition of `method='hotspot'` to `st.tl.regulatory_network_inference`, which takes spatial coordinate information into account to calculate the relative importance between TFs and their target genes.
 3. Addition of dpi and width/height setting for visualization, and addition of plotting scale for displaying static plot.
-4. Optimized required memory while plotting UMAP embedding via data.plt.umap and cell distribution via data.plt.cells_plotting.
-5. Fixed bug that input parameter of var_features_n was invalid, in data.tl.scTransform.
+4. Optimized required memory while plotting UMAP embedding via `data.plt.umap` and cell distribution via `data.plt.cells_plotting`.
+5. Fixed bug that input parameter of `var_features_n` was invalid, in `data.tl.scTransform`.
 6. Updated requirements.txt.
 
 Version 0.11.0
@@ -38,7 +63,7 @@ Version 0.10.0
 ~~~~~~~~~~~~~~~~~~~~~
 1. Supported installation on Windows.
 2. Addition of displaying basic information of StereoExpData object when simply typing it.
-3. Addition of saving statistic results when plotting.
+3. Addition of saving static results plots.
 4. Addition of marker gene proportion (optional), in-group and out-of-group, in `data.tl.find_marker_genes`. Otherwise, supported filtering marker genes via `data.tl.filter_marker_genes`.
 5. Supported adapting to AnnData, to directly use data and results stored in AnnData for subsequent analysis.
 6. Addition of the matrix of gene count among clusters so that transformed output `.rds` file could be used for annotation by SingleR directly. 
@@ -96,8 +121,8 @@ Version 0.5.0
 ~~~~~~~~~~~~~~~~~~~~~
 1. Added fast-cell-correction algorithm.
 2. Updated gmm-cell-correction algorithm(slower version),  and fixed bug that genes in the same position(bin) were assigned to different cells.
-3. Added `plt.cells_plotting` method to display cell details.
-4. Added `tl.export_high_res_area` method to export high resolution matrix file(GEF) after lasso.
+3. Added `data.plt.cells_plotting` method to display cell details.
+4. Added `data.tl.export_high_res_area` method to export high resolution matrix file(GEF) after lasso.
 5. Increased tissue_extraction_to_bgef method to extract the tissue area.
 6. Updated algorithm of highly_variable_genes, umap and normalization.
 7. Updated requirements.txt.
@@ -107,8 +132,8 @@ Version 0.4.0
 0.4.0 : 2022-07-30
 ~~~~~~~~~~~~~~~~~~~~~
 1. Updated tissue segmentation algorithm.
-2. Added the `n_jobs` parameter in `tl.neighbors` and `tl.phenograph`.
-3. Added `io.read_gef` function filtered by the list of gene region.
+2. Added the `n_jobs` parameter in `st.tl.neighbors` and `st.tl.phenograph`.
+3. Added `st.io.read_gef` function filtered by the list of gene region.
 4. Updated requirements.txt.
 
 Version 0.3.1
@@ -116,8 +141,8 @@ Version 0.3.1
 0.3.1 : 2022-06-30
 ~~~~~~~~~~~~~~~~~~~~~
 1. Added gaussian smooth function.
-2. Added the `svd_solver` parameter in `tl.pca`.
-3. Added the `output` parameter in `io.write_h5ad`.
+2. Added the `svd_solver` parameter in `data.tl.pca`.
+3. Added the `output` parameter in `st.io.write_h5ad`.
 4. Updated requirements.txt.
 
 Version 0.3.0
@@ -125,7 +150,7 @@ Version 0.3.0
 0.3.0 : 2022-06-10
 ~~~~~~~~~~~~~~~~~~~~~
 1. Added cell bin correction function.
-2. Added `tl.scale` function in normalization.
+2. Added `data.tl.scale` function in normalization.
 3. Supported writing StereoExpData object into a GEF file.
 4. Fixed bug of scTransform, reading the GEF/GEM file and annh5ad2rds.R.
 5. Updated default cluster groups to start at 1.

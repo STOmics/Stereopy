@@ -9,8 +9,12 @@
 import matplotlib.pyplot as plt
 import seaborn
 
+from stereo.constant import TOTAL_COUNTS
+from stereo.constant import PCT_COUNTS_MT
+from stereo.constant import N_GENES_BY_COUNTS
 
-def violin_distribution(data, width=None, height=None):  # Violin Statistics Chart
+
+def violin_distribution(data, width=None, height=None, y_label=None):  # Violin Statistics Chart
     """
     violin plot showing quality control index distribution
 
@@ -25,15 +29,12 @@ def violin_distribution(data, width=None, height=None):  # Violin Statistics Cha
         height = height / 100 if height >= 100 else 4
         figsize = (width, height)
     fig, axs = plt.subplots(1, 3, figsize=figsize)
-    # plt.ylabel("total_counts")
-    seaborn.violinplot(y=data.cells.get_property('total_counts'), ax=axs[0])
-    # plt.ylabel("n_genes_by_counts")
-    seaborn.violinplot(y=data.cells.get_property('n_genes_by_counts'), ax=axs[1])
-    # plt.ylabel("pct_counts_mt")
-    seaborn.violinplot(y=data.cells.get_property('pct_counts_mt'), ax=axs[2])
-    axs[0].set_ylabel('total counts', fontsize=15)
-    axs[1].set_ylabel('n genes by counts', fontsize=15)
-    axs[2].set_ylabel('pct counts mt', fontsize=15)
+    seaborn.violinplot(y=data.cells.get_property(TOTAL_COUNTS), ax=axs[0])
+    seaborn.violinplot(y=data.cells.get_property(N_GENES_BY_COUNTS), ax=axs[1])
+    seaborn.violinplot(y=data.cells.get_property(PCT_COUNTS_MT), ax=axs[2])
+    axs[0].set_ylabel(y_label[0], fontsize=15)
+    axs[1].set_ylabel(y_label[1], fontsize=15)
+    axs[2].set_ylabel(y_label[2], fontsize=15)
     return fig
 
 

@@ -124,7 +124,8 @@ def marker_genes_text(
 
         # print the 'score' label only on the first panel per row.
         if count % n_panels_x == 0:
-            ax.set_ylabel('score')
+            # ax.set_ylabel('score')
+            ax.set_ylabel(sort_key)
 
     if (sharey is True) and (not np.isinf(ymin)) and (not np.isinf(ymax)):
         ymax += 0.3 * (ymax - ymin)
@@ -337,7 +338,7 @@ class MarkerGenesScatterPlot:
         marker_genes_group_keys = natsort.natsorted([key for key in self.marker_genes_res.keys() if '.vs.' in key])
         res_dict = {}
         for mg_key in marker_genes_group_keys:
-            group_name = mg_key.split('.')[0]
+            group_name = mg_key.split('.vs.')[0]
             res_dict[group_name] = self.marker_genes_res[mg_key]
         return res_dict
     
@@ -378,7 +379,7 @@ class MarkerGenesScatterPlot:
         if values_to_plot is None:
             group_names = np.asarray(natsort.natsorted(cluster_res['group'].unique()))
         else:
-            group_names = np.asarray(natsort.natsorted([key.split('.')[0] for key in self.marker_genes_res.keys() if '.vs.' in key]))
+            group_names = np.asarray(natsort.natsorted([key.split('.vs.')[0] for key in self.marker_genes_res.keys() if '.vs.' in key]))
         if group_names.size == 0:
             raise Exception('There is no group to show, please to check the parameter `groups`')
 
@@ -386,7 +387,7 @@ class MarkerGenesScatterPlot:
         if groups is not None:
             if isinstance(groups, str):
                 groups = [groups]
-            marker_genes_group_keys = [key for key in marker_genes_group_keys if key.split('.')[0] in groups]
+            marker_genes_group_keys = [key for key in marker_genes_group_keys if key.split('.vs.')[0] in groups]
         gene_names = []
         gene_intervals = []
         marker_genes_group_keys_to_show = []
@@ -444,7 +445,7 @@ class MarkerGenesScatterPlot:
             codes.append(Path.LINETO)
             codes.append(Path.LINETO)
             codes.append(Path.LINETO)
-            text = marker_genes_group_keys_to_show[i].split('.')[0]
+            text = marker_genes_group_keys_to_show[i].split('.vs.')[0]
             if len(text) > 4:
                 text_position = left + (right - left) / 3
                 rotation = 40

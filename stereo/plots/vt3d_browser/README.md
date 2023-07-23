@@ -1,47 +1,50 @@
 # test_stereopy_3D_browser
 
-## dependences
+## Installation
+
+**As an under-developing project, no pip or conda installation supports for now.**
 
 ```
-json
+git clone https://github.com/cchd0001/test_stereopy_3D_browser.git  your-local-folder
+```
+
+## dependences
+
+Except the python standard libraries, we also reley on below packages:
+
+```
 anndata>=0.8.0
 numpy
 pandas
 ```
 
-## loading data
+Try the below codes:
 ```
+sys.path.append('your-local-folder')
+from stereopy_3D_browser import launch,endServer
+```
+## Usage
+
+### Quick start for explore annotation and gene expression data
+
+```
+# import our code 
+import sys
+sys.path.append('your-local-folder')
+from stereopy_3D_browser import launch,endServer
+
+# import annconda and load input data
 import anndata as ad
-adata = ad.read_h5ad("D:/L3_b.h5ad")
-```
-## start a 3D atlas server without mesh
-```
-from stereopy_3D_browser import launch
-import anndata as ad
+adata = ad.read_h5ad("your-target-h5ad")
 
-adata = ad.read_h5ad("D:/L3_b.h5ad")
+# launch the browser now 
+launch(adata,meshes={},cluster_label=['annotation'] ,spatial_label='spatial',port=7654)
 
-launch(adata,meshes={},cluster_label='annotation',spatial_label='spatial')
+# now please interactive browse your data
+# if your need shutdown the server, run 
+endServer("127.0.0.1",7654) 
 ```
 
-## start a 3D atlas server with meshes
-```
-from stereopy_3D_browser import launch
-import anndata as ad
+### More examples:
 
-adata = ad.read_h5ad("D:/L3_b.h5ad")
-
-launch(adata,meshes={'shell':'D:/shell.obj','midgut':'D:/midgut.obj'},cluster_label='annotation',spatial_label='spatial')
-```
-
-## start a 3D atlas server with meshes and with a list of anndata ( one slice per h5ad)
-```
-from stereopy_3D_browser import launch
-import anndata as ad
-
-datas = []
-for i in range(16):
-    datas.append(ad.read_h5ad(f"D:/Flysta3D/Summer/{i}.h5ad"))
-
-launch(datas,meshes={'scene':'D:/Flysta3D/Summer/scene.obj'},cluster_label='annotation',spatial_label='spatial_rigid')
-```
+see the examples/xxx.ipynb for examples of mesh/GRN/CCC/PAGA functions.

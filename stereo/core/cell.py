@@ -41,19 +41,23 @@ class Cell(object):
         elif key == 'batch':
             self._obs[key] = self._set_batch(value)
         else:
-            self._obs[key] = value
+            if value is not None:
+                self._obs[key] = value
 
     def __setitem__(self, key, value):
-        self._obs[key] = value
+        if value is not None:
+            self._obs[key] = value
 
     def __getitem__(self, key):
+        if key not in self._obs.columns:
+            return None
         return self._obs[key]
 
     @property
     def total_counts(self):
         if 'total_counts' not in self._obs.columns:
             return None
-        return self._obs['total_counts'].values
+        return self._obs['total_counts'].to_numpy()
 
     @total_counts.setter
     def total_counts(self, value):
@@ -63,7 +67,7 @@ class Cell(object):
     def pct_counts_mt(self):
         if 'pct_counts_mt' not in self._obs.columns:
             return None
-        return self._obs['pct_counts_mt'].values
+        return self._obs['pct_counts_mt'].to_numpy()
 
     @pct_counts_mt.setter
     def pct_counts_mt(self, value):
@@ -73,7 +77,7 @@ class Cell(object):
     def n_genes_by_counts(self):
         if 'n_genes_by_counts' not in self._obs.columns:
             return None
-        return self._obs['n_genes_by_counts'].values
+        return self._obs['n_genes_by_counts'].to_numpy()
 
     @n_genes_by_counts.setter
     def n_genes_by_counts(self, value):
@@ -114,7 +118,7 @@ class Cell(object):
     def batch(self):
         if 'batch' not in self._obs.columns:
             return None
-        return self._obs['batch'].values
+        return self._obs['batch'].to_numpy()
 
     def _set_batch(self, batch: Union[np.ndarray, list, int]):
         if batch is None:
@@ -164,7 +168,10 @@ class Cell(object):
 
         :return: a dataframe of Cell.
         """
-        return self._obs.copy(deep=True)
+        obs = self._obs.copy(deep=True)
+        if 'batch' in obs.columns:
+            obs['batch'] = obs['batch'].astype('category')
+        return obs
 
     def __str__(self):
         format_cells = ['cell_name']
@@ -180,12 +187,16 @@ class AnnBasedCell(Cell):
                  batch: Optional[Union[np.ndarray, list, int, str]] = None):
         self.__based_ann_data = based_ann_data
         super().__init__(cell_name, cell_border, batch)
-        self._obs = self.__based_ann_data.obs
-        self.loc = self._obs.loc
+        # self._obs = self.__based_ann_data.obs
+        # self.loc = self._obs.loc
+        self.loc = self.__based_ann_data.obs.loc
 
     def __setattr__(self, key, value):
-        if key == 'batch':
+        if key == '_obs':
+            return
+        elif key == 'batch':
             self.__based_ann_data.obs[key] = self._set_batch(value)
+            self.__based_ann_data.obs[key] = self.__based_ann_data.obs[key].astype('category')
         else:
             object.__setattr__(self, key, value)
 
@@ -196,10 +207,16 @@ class AnnBasedCell(Cell):
         return self.__str__()
 
     def __getitem__(self, item):
+        if item not in self.__based_ann_data.obs.columns:
+            return None
         return self.__based_ann_data.obs[item]
 
     def __contains__(self, item):
         return item in self.__based_ann_data.obs.columns
+    
+    @property
+    def _obs(self):
+        return self.__based_ann_data.obs
 
     @property
     def cell_name(self) -> np.ndarray:
@@ -224,7 +241,9 @@ class AnnBasedCell(Cell):
 
     @property
     def total_counts(self):
-        return self.__based_ann_data.obs['total_counts']
+        if 'total_counts' not in self.__based_ann_data.obs.columns:
+            return None
+        return self.__based_ann_data.obs['total_counts'].to_numpy()
 
     @total_counts.setter
     def total_counts(self, new_total_counts):
@@ -233,7 +252,9 @@ class AnnBasedCell(Cell):
 
     @property
     def pct_counts_mt(self):
-        return self.__based_ann_data.obs['pct_counts_mt']
+        if 'pct_counts_mt' not in self.__based_ann_data.obs.columns:
+            return None
+        return self.__based_ann_data.obs['pct_counts_mt'].to_numpy()
 
     @pct_counts_mt.setter
     def pct_counts_mt(self, new_pct_counts_mt):
@@ -242,7 +263,9 @@ class AnnBasedCell(Cell):
 
     @property
     def n_genes_by_counts(self):
-        return self.__based_ann_data.obs['n_genes_by_counts']
+        if 'n_genes_by_counts' not in self.__based_ann_data.obs.columns:
+            return None
+        return self.__based_ann_data.obs['n_genes_by_counts'].to_numpy()
 
     @n_genes_by_counts.setter
     def n_genes_by_counts(self, new_n_genes_by_counts):
