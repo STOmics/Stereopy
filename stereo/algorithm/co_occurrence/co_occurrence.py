@@ -140,8 +140,8 @@ class CoOccurrence(AlgorithmBase):
         :param dist_thres: The max distance to measure co-occurence. Only used when method=='stereopy'
         :param steps: The steps to generate threshold to measure co-occurence, use along with dist_thres, i.e. default params 
                         will generate [30,60,90......,270,300] as threshold. Only used when method=='stereopy'
-        :param genelist: Calculate co-occurence between use_col & genelist if provided, otherwise calculate between clusters 
-                        in use_col. Only used when method=='stereopy'
+        :param genelist: Calculate co-occurence between clusters in cluster_res_key & genelist if provided, otherwise calculate between clusters 
+                        in cluster_res_key. Only used when method=='stereopy'
         :param gene_thresh: Threshold to determine whether a cell express the gene. Only used when method=='stereopy'
 
 
@@ -219,16 +219,17 @@ class CoOccurrence(AlgorithmBase):
     ):
         '''
         Stereopy mode to calculate co-occurence, the score of result['A']['B'] represent the probablity of 'B' occurence around 
-          'A' in distance of threshold
+        'A' in distance of threshold
+
         :param data: An instance of StereoExpData, data.position & data.tl.result[use_col] will be used.
         :param use_col: The key of the cluster or annotation result of cells stored in data.tl.result which ought to be equal 
                         to cells in length.
         :param method: The metrics to calculate co-occurence choose from ['stereopy', 'squidpy'], 'squidpy' by default.
         :param dist_thres: The max distance to measure co-occurence. 
         :param steps: The steps to generate threshold to measure co-occurence, use along with dist_thres, i.e. default params 
-                      will generate [30,60,90......,270,300] as threshold. 
+                        will generate [30,60,90......,270,300] as threshold. 
         :param genelist: Calculate co-occurence between use_col & genelist if provided, otherwise calculate between clusters 
-                         in use_col. 
+                        in use_col. 
         :param gene_thresh: Threshold to determine whether a cell express the gene. 
         :return: co_occurrence result, also written in data.tl.result['co-occur']
         '''
@@ -277,7 +278,7 @@ class CoOccurrence(AlgorithmBase):
         return ret
 
 
-    def ms_co_occur_integrate(self, ms_data, scope, use_col, use_key = 'co-occur'):
+    def ms_co_occur_integrate(self, ms_data, scope, use_col, res_key='co_occurrence'):
         from collections import Counter, defaultdict
         if use_col not in ms_data.obs:
             tmp_list = []
@@ -296,11 +297,11 @@ class CoOccurrence(AlgorithmBase):
             ct_count = pd.DataFrame(ct_count)
             ct_ratio = ct_count.div(ct_count.sum(axis=1), axis=0)
             ct_ratio = ct_ratio.loc[ms_data.obs[use_col].cat.categories]
-            merge_co_occur_ret = ms_data[slices[0]].tl.result[use_key].copy()
+            merge_co_occur_ret = ms_data[slices[0]].tl.result[res_key].copy()
             merge_co_occur_ret = {x:y[ms_data.obs[use_col].cat.categories] *0 for x, y  in merge_co_occur_ret.items()}
             for ct in merge_co_occur_ret:
                 for x in slices:
-                    merge_co_occur_ret[ct] += ms_data[x].tl.result[use_key][ct] * ct_ratio[x]
+                    merge_co_occur_ret[ct] += ms_data[x].tl.result[res_key][ct] * ct_ratio[x]
 
         elif len(slice_groups) == 2:
             ret = []
@@ -313,11 +314,11 @@ class CoOccurrence(AlgorithmBase):
                 ct_count = pd.DataFrame(ct_count)
                 ct_ratio = ct_count.div(ct_count.sum(axis=1), axis=0)
                 ct_ratio = ct_ratio.loc[ms_data.obs[use_col].cat.categories]
-                merge_co_occur_ret = ms_data[slices[0]].tl.result[use_key].copy()
+                merge_co_occur_ret = ms_data[slices[0]].tl.result[res_key].copy()
                 merge_co_occur_ret = {x:y[ms_data.obs[use_col].cat.categories] *0 for x, y  in merge_co_occur_ret.items()}
                 for ct in merge_co_occur_ret:
                     for x in slices:
-                        merge_co_occur_ret[ct] += ms_data[x].tl.result[use_key][ct] * ct_ratio[x]
+                        merge_co_occur_ret[ct] += ms_data[x].tl.result[res_key][ct] * ct_ratio[x]
                 ret.append(merge_co_occur_ret)
 
             merge_co_occur_ret = {ct:ret[0][ct]-ret[1][ct] for ct in merge_co_occur_ret}
