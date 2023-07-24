@@ -240,7 +240,7 @@ class CommunityDetection(AlgorithmBase):
         - merged_tissue (AnnBasedStereoExpData): AnnBasedStereoExpData object containin features of all slices
 
         """
-        merged_tissue = AnnBasedStereoExpData(h5ad_file_path="", based_ann_data=merged_tissue)
+        merged_tissue = AnnBasedStereoExpData(h5ad_file_path=None, based_ann_data=merged_tissue)
         if self.params['cluster_algo'] == 'leiden':
             merged_tissue._ann_data.obsm['X_pca_dummy'] = merged_tissue._ann_data.X
             merged_tissue.tl.neighbors(pca_res_key='X_pca_dummy', n_neighbors=15)
