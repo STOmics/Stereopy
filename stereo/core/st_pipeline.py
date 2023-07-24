@@ -177,7 +177,7 @@ class StPipeline(object):
         pct_counts_mt
             maximum number of `pct_counts_mt` required for a cell to pass filtering.
         cell_list
-            the list of cells to be filtered.
+            the list of cells to be retained.
         inplace
             whether to inplace the previous data or return a new data.
 
@@ -208,7 +208,7 @@ class StPipeline(object):
         max_cell
             maximum number of cells expressed required for a gene to pass filering.
         gene_list
-            the list of genes to be filtered.
+            the list of genes to be retained.
         inplace
             whether to inplace the previous data or return a new data.
         mean_umi_gt
@@ -270,7 +270,7 @@ class StPipeline(object):
         cluster_res_key
             - the key of clustering to get corresponding result from `self.result`.
         groups
-            - the groups in clustering result which will be filtered.
+            - the groups in clustering result which will be retained or filtered based on the value of `excluded`.
         excluded:
             - set it to True to exclude the groups which specify by parameter `groups` while False to include.
         inplace
