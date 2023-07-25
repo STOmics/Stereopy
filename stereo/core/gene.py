@@ -124,9 +124,11 @@ class AnnBasedGene(Gene):
     def __init__(self, based_ann_data: AnnData, gene_name: Optional[np.ndarray]):
         self.__based_ann_data = based_ann_data
         super().__init__(gene_name)
-        self._var = self.__based_ann_data.var
+        # self._var = self.__based_ann_data.var
 
     def __setattr__(self, key, value):
+        if key == '_var':
+            return
         object.__setattr__(self, key, value)
 
     def __str__(self):
@@ -140,6 +142,10 @@ class AnnBasedGene(Gene):
 
     def __contains__(self, item):
         return item in self.__based_ann_data.var.columns
+
+    @property
+    def _var(self):
+        return self.__based_ann_data.var
 
     @property
     def gene_name(self) -> np.ndarray:

@@ -284,7 +284,9 @@ class StPipeline(object):
         if cluster_res_key not in self.result:
             raise Exception(f'{cluster_res_key} is not in the result, please check and run the func of cluster.')
         
-        return filter_by_clusters(self.data, self.result[cluster_res_key], groups, excluded, inplace)
+        data, cluster_res = filter_by_clusters(self.data, self.result[cluster_res_key], groups, excluded, inplace)
+        data.tl.result[cluster_res_key] = cluster_res
+        return data
 
     @logit
     def log1p(self,
@@ -1351,10 +1353,14 @@ class AnnBasedStPipeline(StPipeline):
         data._ann_data._inplace_subset_var(df['highly_variable'].values)
         return data
 
+    # def raw_checkpoint(self):
+    #     from .stereo_exp_data import AnnBasedStereoExpData
+    #     if self.__based_ann_data.raw:
+    #         data = AnnBasedStereoExpData("", based_ann_data=self.__based_ann_data.raw.to_adata())
+    #     else:
+    #         data = AnnBasedStereoExpData("", based_ann_data=copy.deepcopy(self.__based_ann_data))
+    #     self.raw = data
+
     def raw_checkpoint(self):
-        from .stereo_exp_data import AnnBasedStereoExpData
-        if self.__based_ann_data.raw:
-            data = AnnBasedStereoExpData("", based_ann_data=self.__based_ann_data.raw.to_adata())
-        else:
-            data = AnnBasedStereoExpData("", based_ann_data=copy.deepcopy(self.__based_ann_data))
-        self.raw = data
+        super().raw_checkpoint()
+        self.data._ann_data.raw = self.data._ann_data

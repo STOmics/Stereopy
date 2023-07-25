@@ -118,4 +118,5 @@ def mouse2human(genes, ref_path):
     ref_df = ref_df.drop_duplicates(subset='genesymbol_source', keep='first')
     ref_dict = dict(ref_df.loc[:, ['genesymbol_source', 'genesymbol_target']].values)
     genes_human = [ref_dict[x] if x in ref_dict.keys() else 'NotAvailable' for x in genes]
-    return genes_human
+    human_genes_to_mouse = {ref_dict[x]: x for x in genes if x in ref_dict}
+    return genes_human, human_genes_to_mouse

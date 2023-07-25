@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>BatchQC-Adjust</title>
+    <style>
+        .div-title {
+            width: 100%;
+            background-color: #EBEBEB;
+            height: 200px;
+        }
+
+        .div-parent {
+            width: 100%;
+        }
+
+        .bold-line {
+            background-color: #EBEBEB;
+            height: 5px;
+            border: None;
+        }
+
+        .thin-line {
+            background-color: #EBEBEB;
+            height: 2px;
+            border: None;
+        }
+    </style>
+</head>
+<body>
+<div class="div-title">
+    <h1 class="name" align="center">Batch Effect QC Report</h1>
+    <h4 class="username" align="center"></h4>
+    <h5 class="runtime" align="center"></h5>
+</div>
+<hr class="thin-line">
+<hr class="bold-line">
+<div class="div-metric">
+    <h2>Metric Score</h2>
+    <div>
+        <h3 class="adj-name">Adjust</h3>
+        <div class="div-domain">
+            <h4 class="domain" align="left">. Domain Variance Score</h4>
+        </div>
+        <div class="div-kbet">
+            <h4 class="kbet" align="left">· K Nearest Neighbor Batch Effects Test</h4>
+        </div>
+        <div class="div-lisi">
+            <h4 class="lisi" align="left">· Local Inverse Simpson's Index</h4>
+        </div>
+        <div class="div-ksim">
+            <h4 class="ksim" align="left">· K Nearest Neighbor Similarity</h4>
+        </div>
+        <div class="div-pcr">
+            <h4 class="pcr" align="left">· PCA Regression</h4>
+        </div>
+    </div>
+</div>
+<hr class="thin-line">
+<hr class="bold-line">
+<div class="div-visualization">
+    <h2>Visualization</h2>
+    <div>
+        <h4 class="compare"></h4>
+    </div>
+</div>
+<div class="div-summary">
+    <h2>Summary</h2>
+    <h4 class="conclusion"></h4>
+</div>
+<hr class="thin-line">
+<hr class="bold-line">
+</body>
+</html>

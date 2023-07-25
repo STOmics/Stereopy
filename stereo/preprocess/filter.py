@@ -30,7 +30,7 @@ from stereo.core.stereo_exp_data import StereoExpData
 
 
 def filter_cells(
-        data,
+        data: StereoExpData,
         min_gene=None,
         max_gene=None,
         min_n_genes_by_counts=None,
@@ -77,7 +77,14 @@ def filter_cells(
     return data
 
 
-def filter_genes(data, min_cell=None, max_cell=None, gene_list=None, mean_umi_gt=None, inplace=True):
+def filter_genes(
+    data: StereoExpData,
+    min_cell=None,
+    max_cell=None,
+    gene_list=None,
+    mean_umi_gt=None,
+    inplace=True
+):
     """
     filter genes based on the numbers of cells.
 
@@ -108,7 +115,14 @@ def filter_genes(data, min_cell=None, max_cell=None, gene_list=None, mean_umi_gt
     return data
 
 
-def filter_coordinates(data, min_x=None, max_x=None, min_y=None, max_y=None, inplace=True):
+def filter_coordinates(
+    data: StereoExpData,
+    min_x=None,
+    max_x=None,
+    min_y=None,
+    max_y=None,
+    inplace=True
+):
     """
     filter cells based on the coordinates of cells.
 
@@ -157,8 +171,8 @@ def filter_by_clusters(
     all_groups = cluster_res['group']
     if isinstance(groups, str):
         groups = [groups]
-    is_in_bool = all_groups.isin(groups)
+    is_in_bool = all_groups.isin(groups).to_numpy()
     if excluded:
         is_in_bool = ~is_in_bool
     data.sub_by_index(cell_index=is_in_bool)
-    return data
+    return data, cluster_res[is_in_bool]

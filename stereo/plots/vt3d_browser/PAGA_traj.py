@@ -1,12 +1,18 @@
 #!/usr/bin/env python
 # coding: utf-8
-
-# In[4]:
-
-
 import numpy as np
 import math
 from scipy.interpolate import CubicSpline
+import itertools
+import os
+from collections import Counter
+import matplotlib as mpl
+
+import matplotlib.pyplot as plt
+import matplotlib.patches as mpatches
+from sklearn.cluster import DBSCAN
+
+from stereo.core.stereo_exp_data import StereoExpData
 
 
 def generate_linear_interp_points(x_known, y_known, z_known, n_per_inter):
@@ -90,24 +96,6 @@ def generate_cubic_interp_points(x_known, y_known, z_known, n_per_inter):
         y_unknown_li.append(y_unknown)
         z_unknown_li.append(z_unknown)
     return x_unknown_li, y_unknown_li, z_unknown_li
-
-
-# In[5]:
-
-
-import numpy as np
-import itertools
-import os
-import math
-from collections import Counter
-import matplotlib as mpl
-
-import matplotlib.pyplot as plt
-import matplotlib.patches as mpatches
-from sklearn.cluster import DBSCAN
-
-
-# from interp import generate_linear_interp_points, generate_cubic_interp_points
 
 
 class Traj:
@@ -374,9 +362,6 @@ class Traj:
         return wei_li
 
 
-# In[20]:
-
-
 def cal_plt_param_traj_clus_from_arr(con, x_raw, y_raw, z_raw, ty,
                                      choose_ty, ty_repre_xyz,
                                      count_thresh=0,
@@ -442,10 +427,7 @@ def cal_plt_param_traj_clus_from_arr(con, x_raw, y_raw, z_raw, ty,
         return x_li, y_li, z_li, ctnames, wei_li
 
 
-# In[7]:
-
-
-def cal_plt_param_traj_clus_from_adata(data, ty_col, choose_ty=None, trim=True, type_traj='curve'):
+def cal_plt_param_traj_clus_from_adata(data: StereoExpData, ty_col, choose_ty=None, trim=True, type_traj='curve', paga_key='paga', mesh_key='mesh'):
     """
     to calculate plotting parameters from stereo_exp_data
 
@@ -459,9 +441,12 @@ def cal_plt_param_traj_clus_from_adata(data, ty_col, choose_ty=None, trim=True, 
     x_raw = data.position[:, 0]  # key name of coordinates, as regulated by registration process
     y_raw = data.position[:, 1]
     z_raw = data.position_z
-    ty = data.cells[ty_col].to_numpy()
-    con = data.tl.result['paga']['connectivities'].todense()  # arr (n_clus, n_clus)
-    con_tree = data.tl.result['paga']['connectivities_tree'].todense()
+    if ty_col in data.cells._obs.columns:
+        ty = data.cells._obs[ty_col].to_numpy()
+    else:
+        ty = data.tl.result[ty_col]['group'].to_numpy()
+    con = data.tl.result[paga_key]['connectivities'].todense()  # arr (n_clus, n_clus)
+    con_tree = data.tl.result[paga_key]['connectivities_tree'].todense()
     if trim:
         con_plt = con_tree
     else:
@@ -470,11 +455,10 @@ def cal_plt_param_traj_clus_from_adata(data, ty_col, choose_ty=None, trim=True, 
     if choose_ty is None:
         choose_ty = list(set(ty))
     ty_repre_xyz = {}
-    key_name = list(data.tl.result['mesh'].keys())[
-        0]  # sort of 'randomly' assign a type of algorithm result to generate representing point coordinate
+    key_name = list(data.tl.result[mesh_key].keys())[0]  # sort of 'randomly' assign a type of algorithm result to generate representing point coordinate
     for ty_name in choose_ty:
         try:
-            xyz_repre = data.tl.result['mesh'][key_name][ty_name]['repre']
+            xyz_repre = data.tl.result[mesh_key][key_name][ty_name]['repre']
         except:
             xyz_repre = np.array(
                 [x_raw[ty == ty_name].mean(), y_raw[ty == ty_name].mean(), z_raw[ty == ty_name].mean()])
@@ -482,13 +466,9 @@ def cal_plt_param_traj_clus_from_adata(data, ty_col, choose_ty=None, trim=True, 
 
     # 2 calculate parameters for plotting cluster-to-cluster trajectory
     x_unknown_li_all_tra, y_unknown_li_all_tra, z_unknown_li_all_tra, com_tra_li, com_tra_wei_li \
-        = cal_plt_param_traj_clus_from_arr(con_plt, x_raw, y_raw, z_raw, ty, choose_ty, ty_repre_xyz,
-                                           type_traj=type_traj)
+        = cal_plt_param_traj_clus_from_arr(con_plt, x_raw, y_raw, z_raw, ty, choose_ty, ty_repre_xyz, type_traj=type_traj)
 
     return x_unknown_li_all_tra, y_unknown_li_all_tra, z_unknown_li_all_tra, com_tra_li, com_tra_wei_li
-
-
-# In[9]:
 
 
 def _plot_line(x_unknown, y_unknown, z_unknown, ax, wei):

@@ -1,20 +1,21 @@
 from dataclasses import dataclass
+from typing import Union
 
 from stereo.algorithm.algorithm_base import AlgorithmBase, _camel_to_snake
-from stereo.core.ms_data import MsDataResult, MSData
+from stereo.core.ms_data import MSData, _MSDataView
 
 
 @dataclass
 class MSDataAlgorithmBase(AlgorithmBase):
     ms_data: MSData = None
-    pipeline_res: MsDataResult = None
+    pipeline_res: dict = None
 
     @staticmethod
-    def get_attribute_helper(item, ms_data: MSData, res: MsDataResult):
+    def get_attribute_helper(item, ms_data: Union[MSData, _MSDataView], res: dict):
         try:
             __import__(f"stereo.algorithm.{item}")
         except:
-            raise AttributeError(f"No attribute named 'StPipeline.{item}'")
+            return None
 
         # TODO: this may be not the best way to get sub-class
         # num of subclasses may be like 100-200 at most

@@ -1,11 +1,16 @@
 from warnings import warn
+from copy import deepcopy
 
 import pandas as pd
 from anndata import AnnData
 
 
 class _BaseResult(object):
-    CLUSTER_NAMES = {'leiden', 'louvain', 'phenograph', 'annotation', 'leiden_from_bins', 'louvain_from_bins', 'phenograph_from_bins', 'annotation_from_bins'}
+    CLUSTER_NAMES = {
+        'leiden', 'louvain', 'phenograph', 'annotation',
+        'leiden_from_bins', 'louvain_from_bins', 'phenograph_from_bins', 'annotation_from_bins',
+        'celltype', 'cell_type'
+    }
     CONNECTIVITY_NAMES = {'neighbors'}
     REDUCE_NAMES = {'umap', 'pca', 'tsne'}
     HVG_NAMES = {'highly_variable_genes', 'hvg', 'highly_variable'}
@@ -22,14 +27,40 @@ class _BaseResult(object):
         MARKER_GENES: MARKER_GENES_NAMES
     }
 
+from  anndata import AnnData
 
 class Result(_BaseResult, dict):
 
     def __init__(self, stereo_exp_data):
         super().__init__()
         self.__stereo_exp_data = stereo_exp_data
+        self.set_item_callback = None
+        self.get_item_method = None
+        self.contain_method = None
+
+    # def __deepcopy__(self, memo=None, _nil=[]):
+    #     if memo is None:
+    #         memo = {}
+    #     d = id(self)
+    #     y = memo.get(d, _nil)
+    #     if y is not _nil:
+    #         return y
+        
+    #     cls = Result(None)
+    #     memo[d] = id(cls)
+    #     cls.__stereo_exp_data = deepcopy(self.__stereo_exp_data, memo)
+    #     cls.set_item_callback = deepcopy(self.set_item_callback, memo)
+    #     cls.get_item_method = deepcopy(self.get_item_method, memo)
+    #     cls.contain_method = deepcopy(self.contain_method, memo)
+    #     for key, value in self.items():
+    #         dict.__setitem__(cls, deepcopy(key, memo), deepcopy(value, memo))
+    #     return cls
 
     def __contains__(self, item):
+        if self.contain_method:
+            if self.contain_method(item):
+                return True
+            # TODO: when get item in ms_data[some_idx].tl.result, if name match the ms_data rule, it is very confused
         if item in self.__stereo_exp_data.genes:
             return True
         elif item in self.__stereo_exp_data.genes_matrix:
@@ -45,6 +76,12 @@ class Result(_BaseResult, dict):
         return dict.__contains__(self, item)
 
     def __getitem__(self, name):
+        if self.get_item_method:
+            item = self.get_item_method(name)
+            if item is not None:
+                return item
+            # TODO: when get item in ms_data[some_idx].tl.result, if name match the ms_data rule, it is very confused
+
         genes = self.__stereo_exp_data.genes
         cells = self.__stereo_exp_data.cells
         if name in genes._var:
@@ -114,6 +151,9 @@ class Result(_BaseResult, dict):
         return True
 
     def __setitem__(self, key, value):
+        if self.set_item_callback:
+            self.set_item_callback(key, value)
+            return
         for name_type, name_dict in Result.TYPE_NAMES_DICT.items():
             if key in name_dict and self._real_set_item(name_type, key, value):
                 return
@@ -208,6 +248,13 @@ class AnnBasedResult(_BaseResult, object):
         elif item.startswith('paga'):
             if item in self.__based_ann_data.uns:
                 return True
+        elif item.startswith('regulatory_network_inference'):
+            if f'{item}_regulons' in self.__based_ann_data.uns:
+                return True
+            elif f'{item}_auc_matrix' in self.__based_ann_data.uns:
+                return True
+            elif f'{item}_adjacencies' in self.__based_ann_data.uns:
+                return True
 
         obsm_obj = self.__based_ann_data.obsm.get(f'X_{item}', None)
         if obsm_obj is not None:
@@ -245,6 +292,8 @@ class AnnBasedResult(_BaseResult, object):
         elif name in AnnBasedResult.MARKER_GENES_NAMES:
             return self.__based_ann_data.uns[name]
         elif name.startswith('gene_exp_'):
+            return self.__based_ann_data.uns[name]
+        elif name.startswith('regulatory_network_inference'):
             return self.__based_ann_data.uns[name]
 
         obsm_obj = self.__based_ann_data.obsm.get(f'X_{name}', None)
@@ -297,6 +346,12 @@ class AnnBasedResult(_BaseResult, object):
             for like_name in name_dict:
                 if not key.startswith('gene_exp_') and like_name in key and self._real_set_item(name_type, key, value):
                     return
+
+        if key == "regulatory_network_inference":
+            self.__based_ann_data.uns[f'{key}_regulons'] = value['regulons']
+            self.__based_ann_data.uns[f'{key}_auc_matrix'] = value['auc_matrix']
+            self.__based_ann_data.uns[f'{key}_adjacencies'] = value['adjacencies']
+            return
 
         if type(value) is pd.DataFrame:
             if 'bins' in value.columns.values and 'group' in value.columns.values:

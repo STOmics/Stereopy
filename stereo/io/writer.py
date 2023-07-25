@@ -12,16 +12,16 @@ change log:
     2022/02/09  save raw data and result
 """
 
+import pickle
 from copy import deepcopy
 
 import h5py
-import pickle
 import numpy as np
 import pandas as pd
 from scipy.sparse import csr_matrix, issparse
 
-from stereo.io import h5ad
 from stereo.core.stereo_exp_data import StereoExpData
+from stereo.io import h5ad
 from stereo.log_manager import logger
 
 
@@ -85,14 +85,18 @@ def _write_one_h5ad(f, data: StereoExpData, use_raw=False, use_result=True, key_
         for key, value in data.attr.items():
             f.attrs[key] = value
     if data.sn is not None:
+        sn_list = []
         if isinstance(data.sn, str):
             sn_list = [['-1', data.sn]]
         else:
-            sn_list = []
             for bno, sn in data.sn.items():
+                if sn is None:
+                    sn_list = []
+                    break
                 sn_list.append([bno, sn])
-        sn_data = pd.DataFrame(sn_list, columns=['batch', 'sn'])
-        h5ad.write(sn_data, f, 'sn', save_as_matrix=True)
+        if len(sn_list) > 0:
+            sn_data = pd.DataFrame(sn_list, columns=['batch', 'sn'])
+            h5ad.write(sn_data, f, 'sn', save_as_matrix=True)
     h5ad.write(data.genes, f, 'genes')
     h5ad.write(data.cells, f, 'cells')
     if data.position_z is None:
@@ -133,113 +137,116 @@ def _write_one_h5ad(f, data: StereoExpData, use_raw=False, use_result=True, key_
             h5ad.write(data.tl.raw.exp_matrix, f, 'exp_matrix@raw')
 
     if use_result is True:
-        # write key_record
-        mykey_record = deepcopy(data.tl.key_record) if key_record is None else deepcopy(key_record)
-        mykey_record_keys = list(mykey_record.keys())
-        # supported_keys = ['hvg', 'pca', 'neighbors', 'umap', 'cluster', 'marker_genes', 'cell_cell_communication '] # 'sct', 'spatial_hotspot'
-        supported_keys = data.tl.key_record.keys()
-        for analysis_key in mykey_record_keys:
-            if analysis_key not in supported_keys:
-                mykey_record.pop(analysis_key)
-                logger.info(
-                    f'key_name:{analysis_key} is not recongnized, try to select the name in {supported_keys} as your key_name.')
-        h5ad.write_key_record(f, 'key_record', mykey_record)
+        _write_one_h5ad_result(data, f, key_record)
 
-        for analysis_key, res_keys in mykey_record.items():
-            for res_key in res_keys:
-                # check
-                if res_key not in data.tl.result:
-                    raise Exception(
-                        f'{res_key} is not in the result, please check and run the coordinated func.')
-                # write result[res_key]
-                if analysis_key == 'hvg':
-                    # interval to str
-                    hvg_df = deepcopy(data.tl.result[res_key])
-                    hvg_df.mean_bin = [str(interval) for interval in data.tl.result[res_key].mean_bin]
-                    h5ad.write(hvg_df, f, f'{res_key}@hvg')  # -> dataframe
-                if analysis_key in ['pca', 'umap']:
-                    h5ad.write(data.tl.result[res_key].values, f, f'{res_key}@{analysis_key}')  # -> array
-                if analysis_key == 'neighbors':
-                    for neighbor_key, value in data.tl.result[res_key].items():
-                        if issparse(value):
-                            sp_format = 'csr' if isinstance(value, csr_matrix) else 'csc'
-                            h5ad.write(value, f, f'{neighbor_key}@{res_key}@neighbors', sp_format)  # -> csr_matrix
-                        else:
-                            h5ad.write(value, f, f'{neighbor_key}@{res_key}@neighbors')  # -> Neighbors
-                if analysis_key == 'cluster':
-                    h5ad.write(data.tl.result[res_key], f, f'{res_key}@cluster')  # -> dataframe
-                if analysis_key == 'gene_exp_cluster':
-                    h5ad.write(data.tl.result[res_key], f, f'{res_key}@gene_exp_cluster', save_as_matrix=True)
-                if analysis_key == 'marker_genes':
-                    clusters = list(data.tl.result[res_key].keys())
-                    h5ad.write(clusters, f, f'clusters_record@{res_key}@marker_genes')  # -> list
-                    for cluster, df in data.tl.result[res_key].items():
-                        if cluster != 'parameters':
-                            h5ad.write(df, f, f'{cluster}@{res_key}@marker_genes')  # -> dataframe
-                        else:
-                            name, value = [], []
-                            for pname, pvalue in df.items():
-                                name.append(pname)
-                                value.append(pvalue)
-                            parameters_df = pd.DataFrame({
-                                'name': name,
-                                'value': value
-                            })
-                            h5ad.write(parameters_df, f, f'{cluster}@{res_key}@marker_genes')  # -> dataframe
-                if analysis_key == 'sct':
-                    h5ad.write(
-                        csr_matrix(data.tl.result[res_key][0]['counts']), f, f'exp_matrix@{res_key}@sct_counts', 'csr'
-                    )
-                    h5ad.write(
-                        csr_matrix(data.tl.result[res_key][0]['data']), f, f'exp_matrix@{res_key}@sct_data', 'csr'
-                    )
-                    h5ad.write(
-                        csr_matrix(data.tl.result[res_key][0]['scale.data']), f, f'exp_matrix@{res_key}@sct_scale',
-                        'csr'
-                    )
-                    h5ad.write(list(data.tl.result[res_key][1]['umi_genes']), f, f'genes@{res_key}@sct')
-                    h5ad.write(list(data.tl.result[res_key][1]['umi_cells']), f, f'cells@{res_key}@sct')
-                    h5ad.write(list(data.tl.result[res_key][1]['top_features']), f, f'genes@{res_key}@sct_top_features')
-                    h5ad.write(list(data.tl.result[res_key][0]['scale.data'].index), f,
-                               f'genes@{res_key}@sct_scale_genename')
-                    # TODO ignored other result of the sct
-                if analysis_key == 'spatial_hotspot':
-                    # Hotspot object
-                    pass
-                if analysis_key == 'cell_cell_communication':
-                    for key, item in data.tl.result[res_key].items():
-                        if key != 'parameters':
-                            h5ad.write(item, f, f'{res_key}@{key}@cell_cell_communication',
-                                       save_as_matrix=False)  # -> dataframe
-                        else:
-                            name, value = [], []
-                            for pname, pvalue in item.items():
-                                name.append(pname)
-                                value.append(pvalue)
-                            parameters_df = pd.DataFrame({
-                                'name': name,
-                                'value': value
-                            })
-                            h5ad.write(parameters_df, f, f'{res_key}@{key}@cell_cell_communication',
-                                       save_as_matrix=False)  # -> dataframe
-                if analysis_key == 'regulatory_network_inference':
-                    for key, item in data.tl.result[res_key].items():
-                        if key == 'regulons':
-                            h5ad.write(str(item), f, f'{res_key}@{key}@regulatory_network_inference')  # -> str
-                        else:
-                            h5ad.write(item, f, f'{res_key}@{key}@regulatory_network_inference',
-                                       save_as_matrix=False)  # -> dataframe
+
+def _write_one_h5ad_result(data, f, key_record):
+    # write key_record
+    mykey_record = deepcopy(data.tl.key_record) if key_record is None else deepcopy(key_record)
+    mykey_record_keys = list(mykey_record.keys())
+    # supported_keys = ['hvg', 'pca', 'neighbors', 'umap', 'cluster', 'marker_genes', 'cell_cell_communication '] # 'sct', 'spatial_hotspot'
+    supported_keys = data.tl.key_record.keys()
+    for analysis_key in mykey_record_keys:
+        if analysis_key not in supported_keys:
+            mykey_record.pop(analysis_key)
+            logger.info(
+                f'key_name:{analysis_key} is not recongnized, try to select the name in {supported_keys} as your key_name.')
+    h5ad.write_key_record(f, 'key_record', mykey_record)
+    for analysis_key, res_keys in mykey_record.items():
+        for res_key in res_keys:
+            # check
+            if res_key not in data.tl.result:
+                raise Exception(
+                    f'{res_key} is not in the result, please check and run the coordinated func.')
+            # write result[res_key]
+            if analysis_key == 'hvg':
+                # interval to str
+                hvg_df = deepcopy(data.tl.result[res_key])
+                hvg_df.mean_bin = [str(interval) for interval in data.tl.result[res_key].mean_bin]
+                h5ad.write(hvg_df, f, f'{res_key}@hvg')  # -> dataframe
+            if analysis_key in ['pca', 'umap']:
+                h5ad.write(data.tl.result[res_key].values, f, f'{res_key}@{analysis_key}')  # -> array
+            if analysis_key == 'neighbors':
+                for neighbor_key, value in data.tl.result[res_key].items():
+                    if issparse(value):
+                        sp_format = 'csr' if isinstance(value, csr_matrix) else 'csc'
+                        h5ad.write(value, f, f'{neighbor_key}@{res_key}@neighbors', sp_format)  # -> csr_matrix
+                    else:
+                        h5ad.write(value, f, f'{neighbor_key}@{res_key}@neighbors')  # -> Neighbors
+            if analysis_key == 'cluster':
+                h5ad.write(data.tl.result[res_key], f, f'{res_key}@cluster')  # -> dataframe
+            if analysis_key == 'gene_exp_cluster':
+                h5ad.write(data.tl.result[res_key], f, f'{res_key}@gene_exp_cluster', save_as_matrix=True)
+            if analysis_key == 'marker_genes':
+                clusters = list(data.tl.result[res_key].keys())
+                h5ad.write(clusters, f, f'clusters_record@{res_key}@marker_genes')  # -> list
+                for cluster, df in data.tl.result[res_key].items():
+                    if cluster != 'parameters':
+                        h5ad.write(df, f, f'{cluster}@{res_key}@marker_genes')  # -> dataframe
+                    else:
+                        name, value = [], []
+                        for pname, pvalue in df.items():
+                            name.append(pname)
+                            value.append(pvalue)
+                        parameters_df = pd.DataFrame({
+                            'name': name,
+                            'value': value
+                        })
+                        h5ad.write(parameters_df, f, f'{cluster}@{res_key}@marker_genes')  # -> dataframe
+            if analysis_key == 'sct':
+                h5ad.write(
+                    csr_matrix(data.tl.result[res_key][0]['counts']), f, f'exp_matrix@{res_key}@sct_counts', 'csr'
+                )
+                h5ad.write(
+                    csr_matrix(data.tl.result[res_key][0]['data']), f, f'exp_matrix@{res_key}@sct_data', 'csr'
+                )
+                h5ad.write(
+                    csr_matrix(data.tl.result[res_key][0]['scale.data']), f, f'exp_matrix@{res_key}@sct_scale',
+                    'csr'
+                )
+                h5ad.write(list(data.tl.result[res_key][1]['umi_genes']), f, f'genes@{res_key}@sct')
+                h5ad.write(list(data.tl.result[res_key][1]['umi_cells']), f, f'cells@{res_key}@sct')
+                h5ad.write(list(data.tl.result[res_key][1]['top_features']), f, f'genes@{res_key}@sct_top_features')
+                h5ad.write(list(data.tl.result[res_key][0]['scale.data'].index), f,
+                           f'genes@{res_key}@sct_scale_genename')
+                # TODO ignored other result of the sct
+            if analysis_key == 'spatial_hotspot':
+                # Hotspot object
+                pass
+            if analysis_key == 'cell_cell_communication':
+                for key, item in data.tl.result[res_key].items():
+                    if key != 'parameters':
+                        h5ad.write(item, f, f'{res_key}@{key}@cell_cell_communication',
+                                   save_as_matrix=False)  # -> dataframe
+                    else:
+                        name, value = [], []
+                        for pname, pvalue in item.items():
+                            name.append(pname)
+                            value.append(pvalue)
+                        parameters_df = pd.DataFrame({
+                            'name': name,
+                            'value': value
+                        })
+                        h5ad.write(parameters_df, f, f'{res_key}@{key}@cell_cell_communication',
+                                   save_as_matrix=False)  # -> dataframe
+            if analysis_key == 'regulatory_network_inference':
+                for key, item in data.tl.result[res_key].items():
+                    if key == 'regulons':
+                        h5ad.write(str(item), f, f'{res_key}@{key}@regulatory_network_inference')  # -> str
+                    else:
+                        h5ad.write(item, f, f'{res_key}@{key}@regulatory_network_inference',
+                                   save_as_matrix=False)  # -> dataframe
 
 
 def write_h5ms(ms_data, output: str):
     with h5py.File(output, mode='w') as f:
-        f.create_group(f'slice')
+        f.create_group('sample')
         for idx, data in enumerate(ms_data._data_list):
-            f['slice'].create_group(f'slice_{idx}')
-            _write_one_h5ad(f['slice'][f'slice_{idx}'], data)
+            f['sample'].create_group(f'sample_{idx}')
+            _write_one_h5ad(f['sample'][f'sample_{idx}'], data)
         if ms_data._merged_data:
-            f.create_group(f'slice_merged')
-            _write_one_h5ad(f['slice_merged'], ms_data._merged_data)
+            f.create_group(f'sample_merged')
+            _write_one_h5ad(f['sample_merged'], ms_data._merged_data)
         h5ad.write_list(f, 'names', ms_data.names)
         h5ad.write_dataframe(f, 'obs', ms_data.obs)
         h5ad.write_dataframe(f, 'var', ms_data.var)
@@ -247,6 +254,19 @@ def write_h5ms(ms_data, output: str):
         h5ad.write(ms_data.relationship, f, 'relationship')
         # TODO
         # h5ad.write(ms_data.relationship_info, f, 'relationship_info')
+        if ms_data.tl.result:
+            mss_f = f.create_group('mss')
+            for key, value in ms_data.tl.result.items():
+                data = StereoExpData()
+                data.tl.result = ms_data.tl.result[key]
+                # TODO only supported default name temporarily
+                for r_key in data.tl.result.keys():
+                    o_key = r_key
+                    if r_key in {'leiden', 'louvain', 'phenograph', 'annotation'}:
+                        o_key = 'cluster'
+                    data.tl.reset_key_record(o_key, r_key)
+                mss_f.create_group(key)
+                _write_one_h5ad_result(data, mss_f[key], data.tl.key_record)
 
 
 def write_mid_gef(data: StereoExpData, output: str):
