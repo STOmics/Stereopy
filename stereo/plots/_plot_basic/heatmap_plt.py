@@ -101,6 +101,8 @@ def plot_categories_as_colorblocks(
     for code, (label, value) in enumerate(
             obs_tidy.index.value_counts(sort=False).iteritems()
     ):
+        if value == 0:
+            continue
         ticks.append(value_sum + (value / 2))
         labels.append(label)
         value_sum += value
