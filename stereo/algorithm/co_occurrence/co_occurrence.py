@@ -4,6 +4,7 @@ from collections import defaultdict
 import time
 from natsort import natsorted
 from copy import deepcopy
+from multiprocessing import cpu_count
 
 # third part module
 import numba as nb
@@ -127,6 +128,7 @@ class CoOccurrence(AlgorithmBase):
         steps=10,
         genelist=None,
         gene_thresh=0,
+        n_jobs=-1,
         res_key='co_occurrence'
     ):
         """
@@ -142,14 +144,19 @@ class CoOccurrence(AlgorithmBase):
         :param genelist: Calculate co-occurence between clusters in cluster_res_key & genelist if provided, otherwise calculate between clusters 
                         in cluster_res_key. Only used when method=='stereopy'.
         :param gene_thresh: Threshold to determine whether a cell express the gene. Only used when method=='stereopy'.
-        :param res_key: the key to store the result in data.tl.result.
+        :param n_jobs: Set the number of threads to calculate co-occurence, default is the number of cores of the m.
+        :param res_key: The key to store the result in data.tl.result.
 
 
         :return: StereoExpData object with co_occurrence result in data.tl.result.
         """
+        if n_jobs <= 0 or n_jobs > cpu_count():
+            n_jobs = cpu_count()
+        
+        nb.set_num_threads(n_jobs)
+
         if method == 'stereopy':
             res = self.co_occurrence(self.stereo_exp_data, cluster_res_key, dist_thres = dist_thres, steps = steps, genelist = genelist, gene_thresh = gene_thresh)
-            # return self.co_occurrence(self.stereo_exp_data, cluster_res_key, dist_thres = dist_thres, steps = steps, genelist = genelist, gene_thresh = gene_thresh)
         elif method == 'squidpy':
             res = self.co_occurrence_squidpy(self.stereo_exp_data, cluster_res_key)
         else:
