@@ -55,9 +55,11 @@ def plot_spatial(
     sns.despine(bottom=True, left=True, ax=ax)
 
 def set_figure_params(
-        dpi: int,
-        facecolor: str,
+        dpi,
+        facecolor,
 ):
-    rcParams['figure.facecolor'] = facecolor
-    rcParams['axes.facecolor'] = facecolor
-    rcParams["figure.dpi"] = dpi
+    if facecolor:
+        rcParams['figure.facecolor'] = facecolor
+        rcParams['axes.facecolor'] = facecolor
+    if dpi:
+        rcParams["figure.dpi"] = dpi

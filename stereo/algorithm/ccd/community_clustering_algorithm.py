@@ -52,7 +52,7 @@ class CommunityClusteringAlgo(ABC):
         self.slice_id = slice_id
         for key, value in params.items():
             setattr(self, key, value)
-        
+
         self.dpi = params['dpi']
         set_figure_params(dpi=self.dpi, facecolor='white')
         self.adata = adata
@@ -69,10 +69,10 @@ class CommunityClusteringAlgo(ABC):
                 cell_over_limit.append(cell_tp)
             else:
                 logger.info(f'{cell_tp} cell type excluded, due to insufficient cells of that type: {cell_num} cells < {int(cell_count_limit)} ({self.min_count_per_type} % of {len(self.adata)})')
-        
+
+
         self.adata = self.adata[self.adata.obs[self.annotation].isin(cell_over_limit),:]
         self.unique_cell_type = list(sorted(self.adata.obs[self.annotation].unique()))
-
         self.annotation_palette = {ct : self.adata.uns[f'{self.annotation}_colors'][i] for i, ct in enumerate(self.unique_cell_type)}
 
     @abstractmethod
@@ -99,7 +99,7 @@ class CommunityClusteringAlgo(ABC):
 
         """
         return self.tissue
-    
+
     def get_adata(self):
         """
         Get the annotated data object which represents sample.
@@ -129,7 +129,7 @@ class CommunityClusteringAlgo(ABC):
 
         """
         return self.tissue.uns['cell mixtures']
-    
+
     def set_clustering_labels(self, labels):
         """
         Set the clustering labels.
@@ -145,7 +145,7 @@ class CommunityClusteringAlgo(ABC):
     def plot_annotation(self):
         """
         Plot cells using the info of their spatial coordinates and cell type annotations.
-        
+
         Saves the figure as 'cell_type_annotation.png' in the directory path.
 
         """
@@ -159,7 +159,7 @@ class CommunityClusteringAlgo(ABC):
         if not self.hide_plots:
             plt.show()
         plt.close()
-    
+
     def plot_histogram_cell_sum_window(self):
         """
         Plot a histogram of the number of cells in windows.
@@ -167,7 +167,7 @@ class CommunityClusteringAlgo(ABC):
         This method generates a histogram plot using the window cell sum values
         from the 'obs' column of the tissue object. The resulting plot is saved as
         an image file in the directory specified by 'dir_path'.
-        
+
         """
 
         figure, ax = plt.subplots(nrows=1, ncols=1)
@@ -176,12 +176,12 @@ class CommunityClusteringAlgo(ABC):
         if not self.hide_plots:
             plt.show()
         plt.close()
-   
+
     def cell_type_filtering(self):
         """
         Perform cell type filtering based on entropy and scatteredness thresholds.
 
-        This function filters the cells in `self.tissue` based on entropy and scatteredness thresholds. 
+        This function filters the cells in `self.tissue` based on entropy and scatteredness thresholds.
         The filtered cells are stored in `self.tissue` and the raw data is preserved in `self.tissue.raw`.
 
         """
@@ -189,36 +189,36 @@ class CommunityClusteringAlgo(ABC):
         var_use = self.tissue.var.loc[(self.tissue.var['entropy']<self.entropy_thres) & (self.tissue.var['scatteredness']<self.scatter_thres)].index
         self.tissue.raw = self.tissue
         self.tissue = self.tissue[:, var_use]
-    
+
 
     @timeit
     def plot_celltype_images(self):
         """
         Plot and save cell type images.
 
-        This method iterates over each cell type in the sample and plots cells of that type. 
+        This method iterates over each cell type in the sample and plots cells of that type.
         The figure is saved as a PNG file in the directory specified by 'dir_path'.
 
         """
-        
+
         for cell_t in self.unique_cell_type:
             plt.imsave(fname=os.path.join(self.dir_path, f'tissue_window_{cell_t}_{self.params_suffix}.png'), arr=self.tissue.uns['cell_t_images'][cell_t], vmin=0, vmax=1, cmap='gray', dpi=self.dpi)
-    
+
     @timeit
     def plot_clustering(self):
         """
         Plot results of the community detection algorithm.
 
-        This function generates a plot using the spatial coordinates of cells, 
+        This function generates a plot using the spatial coordinates of cells,
         where each cell belongs to a certain detected community.
         The plot is saved as an image file.
-        
+
         """
 
         # # plot initial clustering for each window
         # sc.pl.spatial(self.tissue, color=self.cluster_algo, spot_size=1)
         # # plot clustering after majority voting for each subwindow
-        # sc.pl.spatial(self.tissue, color='f'{self.cluster_algo}_max_vote', spot_size=1)    
+        # sc.pl.spatial(self.tissue, color='f'{self.cluster_algo}_max_vote', spot_size=1)
         figure, ax = plt.subplots(figsize=(10,6))
         labels = np.unique(self.adata.obs[f'tissue_{self.method_key}'].values)
         if 'unknown' in labels:
@@ -243,9 +243,9 @@ class CommunityClusteringAlgo(ABC):
     @timeit
     def calculate_cell_mixture_stats(self):
         """
-        Calculate cell type percentages per cluster - community and save it in pandas.DataFrame object. 
-        
-        Percentages are calculated globaly for all cells with single class label. 
+        Calculate cell type percentages per cluster - community and save it in pandas.DataFrame object.
+
+        Percentages are calculated globaly for all cells with single class label.
         This is saved in self.tissue.uns['cell mixtures'] for further use by plot fn.
         Columns of total cell count per class and percentage of tissue per cluster are added.
         Row of total cell type count is added. DataFrame with additional columns and row is saved in adata.uns['cell mixture stats']
@@ -268,7 +268,7 @@ class CommunityClusteringAlgo(ABC):
 
             # remove excluded cell types
             cell_type_dict = {k:cell_type_dict[k] for k in self.tissue.var.index.sort_values()}
-            
+
             # create a dictionary of cluster cell type distributions
             stats_table[label] = {k:cell_type_dict[k] for k in cell_type_dict}
 
@@ -337,11 +337,11 @@ class CommunityClusteringAlgo(ABC):
         # perf_of_all_cells column - perc of all tissue cells in each cluster
         sns.heatmap(pd.DataFrame(stats.iloc[:, -1]), annot=True, vmin=0, vmax=np.max(stats.iloc[:-1, -1]), linewidths=0, linecolor=None, cbar=False, \
             cmap='Greens', ax=axes[-1], fmt='4.0f', xticklabels=True, yticklabels=False, square=True)
-        
+
         # x axis on top
         for ax in axes:
             ax.set_xticklabels(ax.get_xticklabels(), rotation=70)
-            ax.xaxis.tick_top() 
+            ax.xaxis.tick_top()
         plt.savefig(os.path.join(self.dir_path, f'cell_mixture_table_{self.params_suffix}.png'), bbox_inches='tight', dpi=self.dpi)
         if not self.hide_plots:
             plt.show()
@@ -352,7 +352,7 @@ class CommunityClusteringAlgo(ABC):
         """
         Plot cell mixtures for each cluster (community). Only cell types which have more than min_perc_to_show abundance will be shown.
 
-        The cell mixtures are obtained from `self.tissue.uns['cell mixtures stats']`. 
+        The cell mixtures are obtained from `self.tissue.uns['cell mixtures stats']`.
         The resulting plots are saved as PNG files in the directory specified by `self.dir_path`.
 
         """
@@ -386,7 +386,7 @@ class CommunityClusteringAlgo(ABC):
                 for y in self.annotation_palette.keys():
                     if y not in ct_show:
                         ct_palette[y] = '#dcdcdc'
-                
+
                 fig, ax = plt.subplots(nrows=1, ncols=2, figsize=(15,8))
                 fig.subplots_adjust(wspace=0.35)
 
@@ -402,11 +402,12 @@ class CommunityClusteringAlgo(ABC):
                 ax[1].set_title(f'Cell community {cluster[0]} ({self.adata.uns["sample_name"]})')
                 ax[1].get_legend().remove()
                 #ax[1].legend([f'{ind.get_text()} ({stats.loc[ind.get_text(), "perc_of_all_cells"]}%)' for ind in ax[1].get_legend().texts[:-1]], bbox_to_anchor=(1.0, 0.5), loc='center left', frameon=False, fontsize=10)
-                fig.savefig(os.path.join(self.dir_path, f'cmixtures_{self.params_suffix}_c{cluster[0]}.png'), bbox_inches='tight')
-                if not self.hide_plots:
-                    plt.show()
-                plt.close()
+                # fig.savefig(os.path.join(self.dir_path, f'cmixtures_{self.params_suffix}_c{cluster[0]}.png'), bbox_inches='tight')
+                # if not self.hide_plots:
+                #     plt.show()
+                # plt.close()
                 cl_palette[cluster[0]] = '#dcdcdc'
+        return plt.figure()
 
     @timeit
     def boxplot_stats(self, cluster_index = None, stripplot=False):
@@ -416,7 +417,7 @@ class CommunityClusteringAlgo(ABC):
         Args:
             cluster_index (int, optional):
             stripplot (bool, optional): Whether to overlay a stripplot of specific percentage values.
-        
+
         """
 
         # box plot per cluster of cell type percentages distribution
@@ -445,12 +446,12 @@ class CommunityClusteringAlgo(ABC):
                     # Reshape data into long format
                     cell_type_distrib = pd.melt(win_cell_distrib_df, var_name='Cell Type', value_name='Percentage')
                     cell_type_distrib = cell_type_distrib.sort_values(by='Cell Type')
-                    
+
                     fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(15,6))
                     # plot boxplot of cell type percentages per mixture
                     ax = sns.boxplot(x='Cell Type', y='Percentage', data=cell_type_distrib, palette=self.annotation_palette)
                     if stripplot:
-                        # overlap with a plot of specific percentage values. 
+                        # overlap with a plot of specific percentage values.
                         # Jitter allows dots to move left and right for better visibility of all points
                         ax = sns.stripplot(x='Cell Type', y='Percentage', data=cell_type_distrib, jitter=True, color='black', size=2)
                     # remove top and right frame of the plot
@@ -458,15 +459,16 @@ class CommunityClusteringAlgo(ABC):
                     ax.set_title(f'Cell community {cluster} win size {window_size} step {sliding_step} ({self.adata.uns["sample_name"]})')
                     ax.set_xticklabels(ax.get_xticklabels(), rotation=90)
                     ax.xaxis.tick_bottom() # x axis on the bottom
-                    fig.savefig(os.path.join(self.dir_path, f'boxplot_c{cluster}_ws{window_size}.png'), bbox_inches='tight')
-                    if not self.hide_plots:
-                        plt.show()
-                    plt.close()
+                    # fig.savefig(os.path.join(self.dir_path, f'boxplot_c{cluster}_ws{window_size}.png'), bbox_inches='tight')
+                    # if not self.hide_plots:
+                    #     plt.show()
+                    # plt.close()
+                    return plt.figure()
 
     @timeit
     def colorplot_stats(self, color_system='rgb', cluster_index=None):
         """
-        For each cluster (community) plot percentage of cell types. Plotting is done on windows level. 
+        For each cluster (community) plot percentage of cell types. Plotting is done on windows level.
 
         Parameters:
         - color_system (str, optional): Color system to use. Supported values are 'hsv' and 'rgb'.
@@ -516,7 +518,7 @@ class CommunityClusteringAlgo(ABC):
                             wx = int(window[0].split("_")[0])
                             wy = int(window[0].split("_")[1])
                             mixture_image[int(wy*sliding_step-cy_min) : int(wy*sliding_step + window_size-cy_min), int(wx*sliding_step-cx_min) : int(wx*sliding_step + window_size-cx_min), :] = 1 - window[1].values.astype(np.float32)
-                        
+
                         # convert image of selected color representation to rgb
                         if color_system == 'hsv':
                             # if hsv display the 1 - percentage since the colors will be too dark
@@ -538,25 +540,26 @@ class CommunityClusteringAlgo(ABC):
                         plt.gca().invert_yaxis()
                         ax.grid(visible=False)
                         ax.set_title(f'{color_system.upper()} of community {cluster[0]} win size {window_size}, step {sliding_step} - top 3 cell types\n({self.adata.uns["sample_name"]})')
-                        
+
                         if color_system == 'hsv':
                             plane_names = ['H\'', 'S\'', 'V\'']
                         elif color_system == 'rgb':
                             plane_names = ['R\'', 'G\'', 'B\'']
-                        
+
                         ax.text(1.05, 0.5, f'{plane_names[0]} - {top_three_ct[0]} ({ct_perc[top_three_ct[0]]}%)\n{plane_names[1]} - {top_three_ct[1]} ({ct_perc[top_three_ct[1]]}%)\n{plane_names[2]} - {top_three_ct[2]} ({ct_perc[top_three_ct[2]]}%)', \
                                     transform=ax.transAxes, fontsize=12, va='center', ha='left')
-                        fig.savefig(os.path.join(self.dir_path, f'colorplot_{color_system}_c{cluster[0]}_ws{window_size}_ss{sliding_step}.png'), bbox_inches='tight', dpi=self.dpi)
-                        if not self.hide_plots:
-                            plt.show()
-                        plt.close()
+                        # fig.savefig(os.path.join(self.dir_path, f'colorplot_{color_system}_c{cluster[0]}_ws{window_size}_ss{sliding_step}.png'), bbox_inches='tight', dpi=self.dpi)
+                        # if not self.hide_plots:
+                        #     plt.show()
+                        # # plt.close()
+                        return plt.figure()
         else:
             logger.warning(f'Unsupported color system: {color_system}.')
 
     @timeit
     def colorplot_stats_per_cell_types(self):
         """
-        For each cell type plot its percentage in each window as the red channel of RGB. 
+        For each cell type plot its percentage in each window as the red channel of RGB.
         Green and blue channels values are 128.
 
         """
@@ -571,20 +574,20 @@ class CommunityClusteringAlgo(ABC):
             windows_mixture = self.tissue[self.tissue.obsm['spatial'][:,3] == window_size]
             data_df = pd.DataFrame(windows_mixture.X/self.total_cell_norm, columns=windows_mixture.var.index, index=windows_mixture.obs.index)
             rgb_image = np.zeros(shape=(cy_max-cy_min+1, cx_max-cx_min+1, 3), dtype=np.float32)
-            
+
             for cell_type in self.tissue.var.index:
                 for window in data_df.iterrows():
                     wx = int(window[0].split("_")[0])
                     wy = int(window[0].split("_")[1])
                     rgb_image[int(wy*sliding_step-cy_min) : int(wy*sliding_step + window_size-cy_min), int(wx*sliding_step-cx_min) : int(wx*sliding_step + window_size-cx_min), :] = [window[1][cell_type], 0.5, 0.5]
-                
+
                 fig, ax = plt.subplots(nrows=1, ncols=1)
                 plt.scatter(x = self.adata.obsm['spatial'][:,0]-cx_min, y=self.adata.obsm['spatial'][:,1]-cy_min, c='#CCCCCC', marker='.', s=0.5, zorder=1)
-                
+
                 window_mask = rgb_image[:,:,0] != 0
                 window_alpha = (window_mask==True).astype(int)[..., np.newaxis]
                 rgba_image = np.concatenate([rgb_image, window_alpha], axis=2)
-                        
+
                 plt.imshow(rgba_image, zorder=2)
                 plt.axis('off')
                 plt.gca().invert_yaxis()
@@ -594,7 +597,7 @@ class CommunityClusteringAlgo(ABC):
                 if not self.hide_plots:
                     plt.show()
                 plt.close()
-    
+
     @timeit
     def plot_celltype_table(self):
         """Plot a table showing cell type abundance per cluster."""
@@ -642,21 +645,22 @@ class CommunityClusteringAlgo(ABC):
             if i == 0:
                 g = sns.heatmap(np.array(range(len(stats.columns) + 1))[:,np.newaxis], linewidths=0.5, linecolor='gray', \
                                 annot=np.array([''] + [column for column in stats.columns])[:, np.newaxis], ax=ax, cbar=False, \
-                                      cmap=row_cmap, fmt="", xticklabels=False, yticklabels=False, square=None)        
+                                      cmap=row_cmap, fmt="", xticklabels=False, yticklabels=False, square=None)
             else:
                 table_annotation = np.array([f'cluster {stats.index[i-1]}'] + [f'{ct_perc_per_cluster.iloc[i-1, int(x)]}%\n({ct_perc_per_celltype.iloc[i-1, int(x)]}%)' for x in range(len(stats.columns))])[:, np.newaxis]
                 column_cmap[0] = cluster_color[stats.index[i-1]]
                 g = sns.heatmap(np.array(range(stats.shape[1]+1))[:, np.newaxis], linewidths=0.5, linecolor='gray', annot=table_annotation, cbar=False, cmap=column_cmap, ax=ax, fmt='', xticklabels=False, yticklabels=False, square=None)
         axes[i//2].set_title('Cell type abundance per cluster (and per cel type set)')
         axes[i//2].title.set_size(20)
-        fig.savefig(os.path.join(self.dir_path, f'celltype_table_{self.params_suffix}.png'), bbox_inches='tight')
-        if not self.hide_plots:
-            plt.show()
-        plt.close()
+        # fig.savefig(os.path.join(self.dir_path, f'celltype_table_{self.params_suffix}.png'), bbox_inches='tight')
+        # if not self.hide_plots:
+        #     plt.show()
+        # plt.close()
+        return plt.figure()
 
     def save_metrics(self):
         """Save metrics results in CSV format."""
-        
+
         self.tissue.var[['entropy', 'scatteredness']].to_csv(os.path.join(self.dir_path, f'spatial_metrics_{self.params_suffix}.csv'))
 
     def save_tissue(self, suffix=''):
@@ -667,7 +671,7 @@ class CommunityClusteringAlgo(ABC):
         - suffix (str): A suffix to add to the filename (default: '').
 
         """
-        
+
         self.tissue.write_h5ad(os.path.join(self.dir_path, f'tissue_{self.filename}{suffix}.h5ad'), compression="gzip")
 
         logger.info(f'Saved clustering result tissue_{self.filename}{suffix}.h5ad.')
@@ -678,13 +682,13 @@ class CommunityClusteringAlgo(ABC):
 
         Parameters:
         - suffix (str): A suffix to add to the filename (default: '').
-        
+
         """
         # save anndata file
         self.adata.write_h5ad(os.path.join(self.dir_path, f'{self.filename}{suffix}.h5ad'), compression="gzip")
 
         logger.info(f'Saved clustering result as a part of original anndata file {self.filename}{suffix}.h5ad.')
-    
+
     def save_community_labels(self):
         """Save community labels from anndata file."""
 
@@ -694,5 +698,5 @@ class CommunityClusteringAlgo(ABC):
 
     def save_mixture_stats(self):
         """Save cell mixture statistics, which contains number of cells of specific types per community."""
-        
+
         self.tissue.uns['cell mixtures'].to_csv(os.path.join(self.dir_path, f'cell_mixture_stats_{self.params_suffix}.csv'))

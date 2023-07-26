@@ -1,74 +1,31 @@
-import time
-import anndata as ad
-import numpy as np
-import matplotlib.ticker as mtick
+import copy
 import os
-import pandas as pd
-import seaborn as sns
-
-from functools import reduce
-from itertools import cycle
-from matplotlib import pyplot as plt
+import time
 from collections import defaultdict
+from typing import List
+
+import anndata as ad
 from sklearn.cluster import SpectralClustering, AgglomerativeClustering
 
 from stereo.core.stereo_exp_data import AnnBasedStereoExpData
-from stereo.log_manager import logger
-from stereo.algorithm.algorithm_base import AlgorithmBase
+from .ccd import *
+from .ms_algorithm_base import MSDataAlgorithmBase
 
-from typing import List
-from ccd import *
 
-class CommunityDetection(AlgorithmBase):
+class CommunityDetection(MSDataAlgorithmBase):
     """
     Class for performing community detection on a set of slices.
     """
 
-    def __init__(
-            self,
-            slices: List[AnnBasedStereoExpData],
-            annotation: str,
-            **kwargs) -> None:
+    @timeit
+    def main(self, annotation: str, **kwargs):
         """
-        Initialize the CommunityDetection object.
-
-        Example:
-            Download data (~700MB) with command:
-                wget https://ftp.cngb.org/pub/SciRAID/stomics/STDS0000058/stomics/E16.5_E1S3_cell_bin_whole_brain.h5ad
-
-            Execute:
-                from stereo.core.stereo_exp_data import AnnBasedStereoExpData
-                from community_detection import CommunityDetection
-                adata = AnnBasedStereoExpData('data.h5ad')
-                cd = CommunityDetection([adata], 'sim anno') # The algorithm can also be run for multiple slices.
-                cd.main()
+        Executes the community detection algorithm.
 
         Parameters:
         - slices (List[AnnBasedStereoExpData]): A list of AnnBasedStereoExpData objects representing the slices of a tissue.
         - annotation (str): The annotation string.
         - **kwargs: Additional keyword arguments (Check constants.py for the description of additional arguments)
-        """
-        self.params = { **COMMUNITY_DETECTION_DEFAULTS, **kwargs }
-        self.params['annotation'] = annotation
-        # self.stereo_data_slices = slices
-        self.slices = slices
-        for slice in self.slices:
-            if 'X_spatial' in slice._ann_data.obsm:
-                slice._ann_data.obsm['spatial'] = slice._ann_data.obsm['X_spatial'].copy()
-            elif 'spatial_stereoseq' in slice._ann_data.obsm:
-                slice._ann_data.obsm['spatial'] = np.array(slice._ann_data.obsm['spatial_stereoseq'].copy())
-                
-        self.file_names = [fname for fname in self.params['files'].split(',')] if 'files' in self.params else [f"Slice_{id}" for id in range(len(slices))]
-        if self.params['win_sizes'] == 'NA' or self.params['sliding_steps'] == 'NA':
-            logger.info("Window sizes and/or sliding steps not provided by user - proceeding to calculate optimal values")
-            self.params['win_sizes'], self.params['sliding_steps'] = self.calc_optimal_win_size_and_slide_step()
-        else:
-            self.log_win_size_full_info()
-        
-    @timeit
-    def main(self):
-        """
-        Executes the community detection algorithm.
 
         This method performs community detection using the specified parameters and data slices. It follows the following steps:
 
@@ -98,7 +55,7 @@ class CommunityDetection(AlgorithmBase):
         - Optionally plots the clustering results if the plotting level is greater than 0.
         - If the `skip_stats` flag is not active, calculates cell mixture statistics, saves them, and generates corresponding plots.
         - Optionally saves the final tissue with statistics.
-    
+
         6. Clustering Plotting:
         - If the plotting level is greater than 0 and there are multiple algorithm objects in `algo_list`, plots the clustering results for all slices together.
 
@@ -108,6 +65,25 @@ class CommunityDetection(AlgorithmBase):
         8. Report Generation:
         - Generates a HTML report o the results.
         """
+
+        self.params = {**COMMUNITY_DETECTION_DEFAULTS, **kwargs}
+        self.params['annotation'] = annotation
+        # self.stereo_data_slices = slices
+        self.slices = self.ms_data.data_list
+        for slice in self.slices:
+            if 'X_spatial' in slice._ann_data.obsm:
+                slice._ann_data.obsm['spatial'] = slice._ann_data.obsm['X_spatial'].copy()
+            elif 'spatial_stereoseq' in slice._ann_data.obsm:
+                slice._ann_data.obsm['spatial'] = np.array(slice._ann_data.obsm['spatial_stereoseq'].copy())
+
+        self.file_names = [fname for fname in self.params['files'].split(',')] if 'files' in self.params else [
+            f"Slice_{id}" for id in range(len(self.slices))]
+        if self.params['win_sizes'] == 'NA' or self.params['sliding_steps'] == 'NA':
+            logger.info(
+                "Window sizes and/or sliding steps not provided by user - proceeding to calculate optimal values")
+            self.params['win_sizes'], self.params['sliding_steps'] = self.calc_optimal_win_size_and_slide_step()
+        else:
+            self.log_win_size_full_info()
 
         start_time = time.perf_counter()
 
@@ -119,8 +95,10 @@ class CommunityDetection(AlgorithmBase):
         sliding_steps = "_".join([i for i in self.params['sliding_steps'].split(',')])
         self.params['project_name_orig'] = self.params['project_name']
         self.params['out_path_orig'] = self.params['out_path']
-        cluster_string = f"_r{self.params['resolution']}" if self.params['cluster_algo'] == 'leiden' else f"_nc{self.params['n_clusters']}"
-        self.params['project_name'] += f"_c{self.params['cluster_algo']}{cluster_string}_ws{win_sizes}_ss{sliding_steps}_sct{self.params['scatter_thres']}_dwr{self.params['downsample_rate']}_mcc{self.params['min_cells_coeff']}"
+        cluster_string = f"_r{self.params['resolution']}" if self.params[
+                                                                 'cluster_algo'] == 'leiden' else f"_nc{self.params['n_clusters']}"
+        self.params[
+            'project_name'] += f"_c{self.params['cluster_algo']}{cluster_string}_ws{win_sizes}_ss{sliding_steps}_sct{self.params['scatter_thres']}_dwr{self.params['downsample_rate']}_mcc{self.params['min_cells_coeff']}"
         self.params['out_path'] = os.path.join(self.params['out_path'], self.params['project_name'])
 
         if not os.path.exists(self.params['out_path']):
@@ -160,8 +138,8 @@ class CommunityDetection(AlgorithmBase):
             # add algo object for each slice to a list
             algo_list.append(algo)
         self.algo_list = algo_list
-        if self.params['plotting'] > 0 and len(algo_list) > 1:
-            self.plot_all_annotation()
+        # if self.params['plotting'] > 0 and len(algo_list) > 1:
+        #     self.plot_all_annotation()
 
         # MERGE TISSUE ANNDATA
         # each tissue has slice_id as 3rd coordinate in tissue.obsm['spatial']
@@ -207,25 +185,28 @@ class CommunityDetection(AlgorithmBase):
                     algo.colorplot_stats_per_cell_types()
                 # save final tissue with stats
                 algo.save_tissue(suffix='_stats')
-        
-        if self.params['plotting'] > 0 and len(algo_list) > 1:
-            self.plot_all_clustering()
-        if self.params['plotting'] > 2:
-            self.plot_celltype_mixtures_total([algo.get_cell_mixtures().to_dict() for algo in algo_list])
-            self.plot_cell_abundance_total()
-            self.plot_cluster_abundance_total()
-        if self.params['plotting'] > 3:
-            self.plot_cell_abundance_per_slice()
-            self.plot_cluster_abundance_per_slice()
-            self.plot_cell_perc_in_community_per_slice()
+
+        self.pipeline_res['ccd'] = {'algo_list': algo_list}
+        print(self.pipeline_res)
+
+        # if self.params['plotting'] > 0 and len(algo_list) > 1:
+        #     self.plot_all_clustering()
+        # if self.params['plotting'] > 2:
+        #     self.plot_celltype_mixtures_total([algo.get_cell_mixtures().to_dict() for algo in algo_list])
+        #     self.plot_cell_abundance_total()
+        #     self.plot_cluster_abundance_total()
+        # if self.params['plotting'] > 3:
+        #     self.plot_cell_abundance_per_slice()
+        #     self.plot_cluster_abundance_per_slice()
+        #     self.plot_cell_perc_in_community_per_slice()
 
         end_time = time.perf_counter()
 
         self.params['execution_time'] = end_time - start_time
-        generate_report(self.params)
-   
+        # generate_report(self.params)
+
     @timeit
-    def cluster(self, merged_tissue): # TODO, merged_tissue da bude AnnBasedStereoExpData
+    def cluster(self, merged_tissue):  # TODO, merged_tissue da bude AnnBasedStereoExpData
         """
         Perform clustering on merged tissue data from all slices.
         Supported clustering algorithms are:
@@ -240,11 +221,12 @@ class CommunityDetection(AlgorithmBase):
         - merged_tissue (AnnBasedStereoExpData): AnnBasedStereoExpData object containin features of all slices
 
         """
-        merged_tissue = AnnBasedStereoExpData(h5ad_file_path="", based_ann_data=merged_tissue)
+        merged_tissue = AnnBasedStereoExpData(based_ann_data=merged_tissue)
         if self.params['cluster_algo'] == 'leiden':
             merged_tissue._ann_data.obsm['X_pca_dummy'] = merged_tissue._ann_data.X
             merged_tissue.tl.neighbors(pca_res_key='X_pca_dummy', n_neighbors=15)
-            merged_tissue.tl.leiden(neighbors_res_key='neighbors', res_key='leiden', resolution=self.params['resolution'])
+            merged_tissue.tl.leiden(neighbors_res_key='neighbors', res_key='leiden',
+                                    resolution=self.params['resolution'])
             merged_tissue._ann_data.obs['leiden'] = merged_tissue._ann_data.obs['leiden'].astype('int')
             merged_tissue._ann_data.obs['leiden'] -= 1
             merged_tissue._ann_data.obs['leiden'] = merged_tissue._ann_data.obs['leiden'].astype('str')
@@ -252,23 +234,27 @@ class CommunityDetection(AlgorithmBase):
         elif self.params['cluster_algo'] == 'spectral':
             merged_tissue._ann_data.obsm['X_pca_dummy'] = merged_tissue._ann_data.X
             merged_tissue.tl.neighbors(pca_res_key='X_pca_dummy', n_neighbors=15)
-            spcl = SpectralClustering(n_clusters=self.params['n_clusters'], eigen_solver='arpack', random_state=0, affinity='precomputed', n_jobs=5)
-            merged_tissue._ann_data.obs[self.params['cluster_algo']] = (spcl.fit_predict(merged_tissue._ann_data.obsp['connectivities'])).astype('str')
+            spcl = SpectralClustering(n_clusters=self.params['n_clusters'], eigen_solver='arpack', random_state=0,
+                                      affinity='precomputed', n_jobs=5)
+            merged_tissue._ann_data.obs[self.params['cluster_algo']] = (
+                spcl.fit_predict(merged_tissue._ann_data.obsp['connectivities'])).astype('str')
         elif self.params['cluster_algo'] == 'agglomerative':
-            ac = AgglomerativeClustering(n_clusters=self.params['n_clusters'], affinity='euclidean', compute_full_tree=False, linkage='ward', distance_threshold=None)
-            merged_tissue._ann_data.obs[self.params['cluster_algo']] = (ac.fit_predict(merged_tissue._ann_data.X)).astype('str')
+            ac = AgglomerativeClustering(n_clusters=self.params['n_clusters'], affinity='euclidean',
+                                         compute_full_tree=False, linkage='ward', distance_threshold=None)
+            merged_tissue._ann_data.obs[self.params['cluster_algo']] = (
+                ac.fit_predict(merged_tissue._ann_data.X)).astype('str')
         else:
             logger.error('Unsupported clustering algorithm')
             raise ValueError("Unsupported clustering algorithm")
-    
+
     def log_win_size_full_info(self):
         for slice, fname in zip([slice._ann_data for slice in self.slices], self.file_names):
             x_min, x_max = np.min(slice.obsm['spatial'][:, 0]), np.max(slice.obsm['spatial'][:, 0])
             y_min, y_max = np.min(slice.obsm['spatial'][:, 1]), np.max(slice.obsm['spatial'][:, 1])
             x_range, y_range = abs(abs(x_max) - abs(x_min)), abs(abs(y_max) - abs(y_min))
-            for win_size, slide_step in zip([int(w) for w in self.params['win_sizes'].split(',')], [int(s) for s in self.params['sliding_steps'].split(',')]):
+            for win_size, slide_step in zip([int(w) for w in self.params['win_sizes'].split(',')],
+                                            [int(s) for s in self.params['sliding_steps'].split(',')]):
                 self.log_win_size_info_per_slice(slice, fname, win_size, slide_step, x_range, y_range)
-
 
     def log_win_size_info_per_slice(self, slice, fname, win_size, slide_step, x_range, y_range):
         """
@@ -286,7 +272,7 @@ class CommunityDetection(AlgorithmBase):
         cell_to_loc = defaultdict(int)
         for x, y in slice.obsm['spatial']:
             cell_to_loc[(x // win_size, y // win_size)] += 1
-        
+
         logger.info(f"""Window size info for slice: {fname}     
                      window size: {win_size}
                      sliding step: {slide_step}
@@ -308,9 +294,11 @@ class CommunityDetection(AlgorithmBase):
         MIN_COVERED = 30
         MAX_COVERED = 60
         AVG_COVERED_GOAL = (MAX_COVERED + MIN_COVERED) // 2
-        
-        x_min, x_max = np.min(self.slices[0]._ann_data.obsm['spatial'][:, 0]), np.max(self.slices[0]._ann_data.obsm['spatial'][:, 0])
-        y_min, y_max = np.min(self.slices[0]._ann_data.obsm['spatial'][:, 1]), np.max(self.slices[0]._ann_data.obsm['spatial'][:, 1])
+
+        x_min, x_max = np.min(self.slices[0]._ann_data.obsm['spatial'][:, 0]), np.max(
+            self.slices[0]._ann_data.obsm['spatial'][:, 0])
+        y_min, y_max = np.min(self.slices[0]._ann_data.obsm['spatial'][:, 1]), np.max(
+            self.slices[0]._ann_data.obsm['spatial'][:, 1])
         x_range, y_range = abs(abs(x_max) - abs(x_min)), abs(abs(y_max) - abs(y_min))
 
         win_size = int(x_range // 50 if x_range < y_range else y_range // 50)
@@ -323,319 +311,27 @@ class CommunityDetection(AlgorithmBase):
             cell_to_loc = defaultdict(int)
             for x, y in self.slices[0]._ann_data.obsm['spatial']:
                 cell_to_loc[(x // win_size, y // win_size)] += 1
-            
+
             # using median instead of mean because many windows can be empty (space is not fully occupied by tissue)
             avg_covered = np.median(list(cell_to_loc.values()))
-            
+
             if MIN_COVERED < avg_covered < MAX_COVERED:
                 break
 
             delta = np.sign(AVG_COVERED_GOAL - avg_covered) * (
                 AVG_COVERED_GOAL / avg_covered if AVG_COVERED_GOAL > avg_covered else avg_covered / AVG_COVERED_GOAL
-                ) * delta_multiplier
+            ) * delta_multiplier
             win_size += delta
             iters += 1
-        
-        #closest doubly even number so that sliding step is also even number
+
+        # closest doubly even number so that sliding step is also even number
         win_size = round(win_size)
         win_size = win_size + ((win_size & 0b11) ^ 0b11) + 1 if win_size & 0b11 else win_size
-        
+
         if iters == MAX_ITERS:
             logger.warning(f"Optimal window size not obtained in {MAX_ITERS} iterations.")
-        self.log_win_size_info_per_slice(self.slices[0]._ann_data, self.file_names[0], win_size, win_size // 2, x_range, y_range)
-        
+        self.log_win_size_info_per_slice(self.slices[0]._ann_data, self.file_names[0], win_size, win_size // 2, x_range,
+                                         y_range)
+
         return (str(win_size), str(win_size // 2))
-     
-    def plot_all_slices(self, img_name, clustering=False):
-        """
-        Plot all slices using the specified algorithms and annotations.
 
-        Parameters:
-        - img_name (str): The name of the output image file.
-        - clustering (bool, optional): Whether to plot clustering or cell type annotation. Defaults to False.
-
-        """
-        number_of_samples = len(self.algo_list)
-        number_of_rows = 2 if number_of_samples % 2 == 0 and number_of_samples > 2 else 1
-        number_of_columns = (number_of_samples // 2) if number_of_samples % 2 == 0 and number_of_samples > 2 else number_of_samples
-
-        figure, axes = plt.subplots(nrows=number_of_rows, ncols=number_of_columns, squeeze=False, layout='constrained', figsize=(10,6))
-        h_d = {}
-        unknown_label = []
-        for (algo, ax) in zip(self.algo_list, axes.flatten()):
-            palette = algo.cluster_palette if clustering else algo.annotation_palette
-            annotation = f'tissue_{self.algo_list[0].method_key}' if clustering else self.algo_list[0].annotation
-            plot_spatial(algo.adata, annotation=annotation, palette=palette, spot_size=algo.spot_size, ax=ax)
-            ax.get_legend().remove()
-            ax.set_title(f'{algo.filename}', fontsize=6, loc='center', wrap=True)
-            hands, labs = ax.get_legend_handles_labels()
-            for h, l in zip(hands, labs):
-                h._sizes = [11]
-                if l == 'unknown':
-                    unknown_label = np.array([[h, l]])
-                    continue
-                if l not in h_d.values():
-                    h_d[h] = l
-        try:
-            handles = np.array([[h, int(l)] for (h, l) in h_d.items()])
-        except:
-            handles = np.array([[h, l] for (h, l) in h_d.items()])
-
-        handles = handles[handles[:, 1].argsort()]
-        handles[:, 1] = handles[:, 1].astype('str')
-
-        if len(unknown_label)>0:
-            handles = np.concatenate((handles, unknown_label), axis=0) 
-        
-        legend_ncols = 1 if len(handles) <= 12 else 2
-        figure.legend(handles[:, 0], handles[:, 1], bbox_to_anchor=(1.15, 0.5), loc='center', fontsize=4, frameon=False, borderaxespad=0., ncol=legend_ncols, labelspacing=1, scatterpoints=10)
-        figure.savefig(f'{self.params["out_path"]}/{img_name}', dpi=self.params['dpi'], bbox_inches='tight')
-        if not self.params['hide_plots']:
-            plt.show()
-        plt.close()
-
-    @timeit
-    def plot_all_annotation(self):
-        self.plot_all_slices('cell_type_per_slice.png')
-
-    @timeit
-    def plot_all_clustering(self):
-        self.plot_all_slices('clustering_per_slice.png', True)
-
-    @timeit 
-    def plot_celltype_mixtures_total(self, cell_mixtures):
-        """
-        Plot the total cell type mixtures.
-
-        Parameters:
-        - cell_mixtures (list): A list of dictionaries containing cell type mixtures.
-
-        """
-        def merge_dicts(dict1, dict2):
-            return { cluster: dict1.get(cluster, 0) + dict2.get(cluster, 0) for cluster in set(dict1) | set(dict2) }
-        def merge_dicts_of_dicts(dict1, dict2):
-            return { celltype: merge_dicts(dict1.get(celltype, {}), dict2.get(celltype, {})) for celltype in set(dict1) | set(dict2) }
-
-        total_dict = reduce(merge_dicts_of_dicts, cell_mixtures)
-        total = pd.DataFrame(total_dict).fillna(0)
-
-        total['total_counts'] = np.array([sum(total.loc[row, :]) for row in total.index]).astype(int)
-
-        cell_type_counts = {ct:[int(sum(total[ct]))] for ct in total.columns}
-        total = pd.concat([total, pd.DataFrame(cell_type_counts, index=['total_cells'])])
-
-        total.iloc[:-1, :-1] = total.iloc[:-1, :-1].div(total['total_counts'][:-1], axis=0).mul(100)
-        total['perc_of_all_cells'] = np.around(total['total_counts'] / total['total_counts'][-1] * 100, decimals=1)
-        total = total.loc[sorted(total.index.values, key=lambda x: float(x) if x != "total_cells" else float('inf'))]
-
-        set_figure_params(dpi=self.params['dpi'], facecolor='white')
-        sns.set(font_scale=1.5)
-
-        ncols = len(total.columns)
-        fig, axes = plt.subplots(ncols=ncols, figsize=(30,20))
-        fig.subplots_adjust(wspace=0)
-
-        vmax_perc = np.max(np.ravel(total.iloc[:-1,:-2]))
-        for i, ax in enumerate(axes[:-2]):
-            sns.heatmap(pd.DataFrame(total.iloc[:, i]), vmin=0.0, vmax=vmax_perc, linewidths=0, linecolor=None, annot=True, cbar=False, ax=ax, \
-                            cmap="Greys", fmt='4.0f', xticklabels=True, yticklabels=True if i==0 else False, square=True)
-        sns.heatmap(pd.DataFrame(total.iloc[:, -2]), annot=True, vmin=0, vmax=np.max(total.iloc[:-1, -2]), linewidths=0, linecolor=None, \
-            cbar=False, cmap='Greens', ax=axes[-2], fmt='4.0f', xticklabels=True, yticklabels=False, square=True)
-        sns.heatmap(pd.DataFrame(total.iloc[:, -1]), annot=True, vmin=0, vmax=np.max(total.iloc[:-1, -1]), linewidths=0, linecolor=None, cbar=False, \
-            cmap='Greens', ax=axes[-1], fmt='4.0f', xticklabels=True, yticklabels=False, square=True)
-        
-        for ax in axes:
-            ax.set_xticklabels(ax.get_xticklabels(), rotation=70)
-            ax.xaxis.tick_top() 
-        
-        plt.savefig(os.path.join(self.params['out_path'], f'total_cell_mixtures_table.png'), bbox_inches='tight')
-        if not self.params['hide_plots']:
-            plt.show()
-        plt.close()
-
-
-    @timeit
-    def plot_cell_perc_in_community_per_slice(self):
-        """
-        Plots the percentage of cells in each community per slice.
-        """
-        cells_in_comm_per_slice = {algo.filename: algo.get_community_labels().value_counts(normalize=True).rename(algo.filename) for algo in self.algo_list}
-        df = pd.concat(cells_in_comm_per_slice.values(), axis=1).fillna(0).mul(100).T
-        df = df[sorted(df.columns.values, key=lambda x: float(x) if x != "unknown" else float('inf'))]
-        set_figure_params(dpi=self.params['dpi'], facecolor='white')
-        sns.set(font_scale=1.5)
-        plt.figure(figsize=(30,20))
-
-        ax = sns.heatmap(df, annot=True, fmt="4.0f", cmap="Greys", xticklabels=True, yticklabels=True, square=True, cbar=False)
-        ax.xaxis.tick_top()
-        ax.xaxis.set_label_position('top')
-
-        plt.savefig(os.path.join(self.params['out_path'], 'cell_perc_in_community_per_slice.png'), bbox_inches='tight')
-        if not self.params['hide_plots']:
-            plt.show()
-        plt.close()
-
-
-    @timeit
-    def plot_cell_abundance_total(self):
-        """
-        Plots the total cell abundance for each algorithm.
-        """
-        fig, ax = plt.subplots(figsize=(20,20))
-        fig.subplots_adjust(wspace=0)
-        set_figure_params(dpi=self.params['dpi'], facecolor='white')
-
-        greys=cycle(['darkgray','gray','dimgray','lightgray'])
-        colors = [next(greys) for _ in range(len(self.algo_list))]
-        cell_percentage_dfs = []
-        plot_columns = []
-        for algo in self.algo_list:
-            cell_percentage_dfs.append(pd.DataFrame(algo.get_adata().obs[algo.annotation].value_counts(normalize=True).mul(100).rename(algo.filename)))
-            plot_columns.append(algo.filename)
-
-        cummulative_df = pd.concat(cell_percentage_dfs, axis=1).fillna(0)
-        cummulative_df.plot(y=plot_columns, kind="bar", rot=70, ax=ax, xlabel="", color=colors)
-
-        ax.yaxis.set_major_formatter(mtick.PercentFormatter(decimals=0))
-        ax.grid(False)
-        ax.set_facecolor('white')
-        plt.legend(loc='upper left', bbox_to_anchor=(1.04, 1))
-
-        plt.savefig(os.path.join(self.params['out_path'], f'cell_abundance_all_slices.png'), bbox_inches='tight')
-        if not self.params['hide_plots']:
-            plt.show()
-        plt.close()
-
-
-    @timeit
-    def plot_cell_abundance_per_slice(self):
-        """
-        Plots the cell abundance for each algorithm per slice.
-        """
-        number_of_samples = len(self.algo_list)
-        if number_of_samples <=2:
-            number_of_rows = 1
-            number_of_columns = number_of_samples
-        else:
-            number_of_rows = 2 if number_of_samples % 2 == 0 else 1
-            number_of_columns = number_of_samples // 2 if number_of_samples % 2 == 0 else number_of_samples
-        fig, axes = plt.subplots(nrows=number_of_rows, ncols=number_of_columns, figsize=(20,20), squeeze=False)
-        axes = axes.ravel()
-        fig.subplots_adjust(wspace=0)
-        set_figure_params(dpi=self.params['dpi'], facecolor='white')
-
-        cell_percentage_dfs = []
-        plot_columns = []
-        for algo in self.algo_list:
-            cell_percentage_dfs.append(pd.DataFrame(algo.get_adata().obs[algo.annotation].value_counts(normalize=True).mul(100).rename(algo.filename)))
-            plot_columns.append(algo.filename)
-
-        cummulative_df = pd.concat(cell_percentage_dfs, axis=1).fillna(0)
-
-        for i in range(number_of_rows * number_of_columns):
-            axes[i].yaxis.set_major_formatter(mtick.PercentFormatter(decimals=0))
-            axes[i].set_facecolor('white')
-            axes[i].set_title(plot_columns[i])
-            cummulative_df.plot(y=plot_columns[i], kind="bar", rot=70, ax=axes[i], xlabel="", color="grey", legend=False)
-            axes[i].grid(False)
-
-        for ax in axes:
-            ax.grid(False)
-
-        plt.savefig(os.path.join(self.params['out_path'], f'cell_abundance_per_slice.png'), bbox_inches='tight')
-        if not self.params['hide_plots']:
-            plt.show()
-        plt.close()
-
-    @timeit 
-    def plot_cluster_abundance_total(self):
-        """
-        Plots the total cluster abundance for each algorithm.
-        """
-        fig, ax = plt.subplots(figsize=(20,20))
-        fig.subplots_adjust(wspace=0)
-        set_figure_params(dpi=self.params['dpi'], facecolor='white')
-
-        greys=cycle(['darkgray','gray','dimgray','lightgray'])
-        colors = [next(greys) for _ in range(len(self.algo_list))]
-        cell_percentage_dfs = []
-        plot_columns = []
-        for algo in self.algo_list:
-            cell_percentage_dfs.append(pd.DataFrame(algo.get_adata().obs[f'tissue_{algo.method_key}'].value_counts(normalize=True).mul(100).rename(algo.filename)))
-            plot_columns.append(algo.filename)
-
-        cummulative_df = pd.concat(cell_percentage_dfs, axis=1).fillna(0)
-        cummulative_df = cummulative_df.loc[sorted(cummulative_df.index.values, key=lambda x: float(x) if x != "unknown" else float('inf'))]
-        cummulative_df.plot(y=plot_columns, kind="bar", rot=0, ax=ax, xlabel="", color=colors)
-
-        ax.yaxis.set_major_formatter(mtick.PercentFormatter(decimals=0))
-        ax.grid(False)
-        ax.set_facecolor('white')
-        plt.legend(loc='upper left', bbox_to_anchor=(1.04, 1))
-
-        plt.savefig(os.path.join(self.params['out_path'], f'cluster_abundance_all_slices.png'), bbox_inches='tight')
-        if not self.params['hide_plots']:
-            plt.show()
-        plt.close()
-
-    @timeit
-    def plot_cluster_abundance_per_slice(self):
-        """
-        Plots the cluster abundance for each algorithm per slice.
-        """
-        number_of_samples = len(self.algo_list)
-        if number_of_samples <= 2:
-            number_of_rows = 1
-            number_of_columns = number_of_samples
-        else:
-            number_of_rows = 2 if number_of_samples % 2 == 0 else 1
-            number_of_columns = number_of_samples // 2 if number_of_samples % 2 == 0 else number_of_samples
-        fig, axes = plt.subplots(nrows=number_of_rows, ncols=number_of_columns, figsize=(20,20), squeeze=False)
-        axes = axes.ravel()
-        fig.subplots_adjust(wspace=0)
-        set_figure_params(dpi=self.params['dpi'], facecolor='white')
-
-        cell_percentage_dfs = []
-        plot_columns = []
-        for algo in self.algo_list:
-            cell_percentage_dfs.append(pd.DataFrame(algo.get_adata().obs[f'tissue_{algo.method_key}'].value_counts(normalize=True).mul(100).rename(algo.filename)))
-            plot_columns.append(algo.filename)
-
-        cummulative_df = pd.concat(cell_percentage_dfs, axis=1).fillna(0)
-        cummulative_df = cummulative_df.loc[sorted(cummulative_df.index.values, key=lambda x: float(x) if x != "unknown" else float('inf'))]
-
-        for i in range(number_of_rows * number_of_columns):
-            axes[i].yaxis.set_major_formatter(mtick.PercentFormatter(decimals=0))
-            axes[i].set_facecolor('white')
-            axes[i].set_title(plot_columns[i])
-            cummulative_df.plot(y=plot_columns[i], kind="bar", rot=0, ax=axes[i], xlabel="", color="grey", legend=False)
-            axes[i].grid(False)
-
-        for ax in axes:
-            ax.grid(False)
-            
-        plt.savefig(os.path.join(self.params['out_path'], f'cluster_abundance_per_slice.png'), bbox_inches='tight')
-        if not self.params['hide_plots']:
-            plt.show()
-        plt.close()
-    
-    def plot(self, function_ind : str, slice_id = 0, community_id = None):
-        if function_ind == "all_annotations": self.plot_all_annotation()
-        if function_ind == "all_clustering": self.plot_all_clustering()
-        if function_ind == "cell_type_mixtures_total": self.plot_celltype_mixtures_total([algo.get_cell_mixtures().to_dict() for algo in self.algo_list])
-        if function_ind == "cell_perc_in_community_per_slice": self.plot_cell_perc_in_community_per_slice()
-        if function_ind == "cell_abundance_total": self.plot_cell_abundance_total()
-        if function_ind == "cell_abundance_per_slice": self.plot_cell_abundance_per_slice()
-        if function_ind == "cluster_abundance_total": self.plot_cluster_abundance_total()
-        if function_ind == "cluster_abundance_per_slice": self.plot_cluster_abundance_per_slice()
-
-        if function_ind == "annotation": self.algo_list[slice_id].plot_annotation()
-        if function_ind == "clustering": self.algo_list[slice_id].plot_clustering()
-        if function_ind == "colorplot": self.algo_list[slice_id].colorplot_stats(self.params['color_plot_system'], community_id)
-        if function_ind == "colorplot_cell_type": self.algo_list[slice_id].colorplot_stats_per_cell_types()
-        if function_ind == "cell_types_table": self.algo_list[slice_id].plot_celltype_table()
-        if function_ind == "boxplot": self.algo_list[slice_id].boxplot_stats(community_id)
-        if function_ind == "cell_types_images": self.algo_list[slice_id].plot_celltype_images()
-        if function_ind == "histogram_cell_sums": self.algo_list[slice_id].plot_histogram_cell_sum_window()
-        if function_ind == "cluster_mixtures": self.algo_list[slice_id].plot_cluster_mixtures(community_id)
-        if function_ind == "cell_mixture_table": self.algo_list[slice_id].plot_stats()
