@@ -388,7 +388,7 @@ class CommunityDetection(AlgorithmBase):
             handles = np.concatenate((handles, unknown_label), axis=0) 
         
         legend_ncols = 1 if len(handles) <= 12 else 2
-        figure.legend(handles[:, 0], handles[:, 1], bbox_to_anchor=(1.15, 0.5), loc='center', fontsize=4, frameon=False, borderaxespad=0., ncol=legend_ncols, labelspacing=1, scatterpoints=10)
+        figure.legend(handles[:, 0], handles[:, 1], bbox_to_anchor=(1.15, 0.5), loc='center', fontsize=4, frameon=False, borderaxespad=0., ncol=legend_ncols, labelspacing=1)
         figure.savefig(f'{self.params["out_path"]}/{img_name}', dpi=self.params['dpi'], bbox_inches='tight')
         if not self.params['hide_plots']:
             plt.show()

@@ -74,6 +74,8 @@ class CommunityClusteringAlgo(ABC):
         self.unique_cell_type = list(sorted(self.adata.obs[self.annotation].unique()))
 
         self.annotation_palette = {ct : self.adata.uns[f'{self.annotation}_colors'][i] for i, ct in enumerate(self.unique_cell_type)}
+        self.cluster_palette = {str(i) : color for i, color in enumerate(cluster_palette)}
+        self.cluster_palette['unknown']='#CCCCCC'
 
     @abstractmethod
     def run(self):
@@ -223,8 +225,6 @@ class CommunityClusteringAlgo(ABC):
         labels = np.unique(self.adata.obs[f'tissue_{self.method_key}'].values)
         if 'unknown' in labels:
             labels = labels[labels!='unknown']
-        self.cluster_palette = {lab:cluster_palette[int(lab)] for lab in labels}
-        self.cluster_palette['unknown']='#CCCCCC'
         plot_spatial(self.adata, annotation=f'tissue_{self.method_key}', palette=self.cluster_palette, spot_size=self.spot_size, ax=ax, title=f'{self.adata.uns["sample_name"]}')
         handles, labels = ax.get_legend_handles_labels()
         order = [el[0] for el in sorted(enumerate(labels), key=lambda x: float(x[1]) if x[1] != "unknown" else float('inf'))]
