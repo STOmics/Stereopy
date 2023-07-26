@@ -19,7 +19,6 @@ class MSDataPlotBase(metaclass=ABCMeta):
     @staticmethod
     def get_attribute_helper(item, data, result):
         names = MSDataPlotBase.PLOT_NAME_TO_NAMES.get(item, None)
-        print(item, names)
         if not names:
             return None
 
@@ -28,7 +27,6 @@ class MSDataPlotBase(metaclass=ABCMeta):
         except:
             raise AttributeError(f"No module named '{names[0]}'")
 
-        print(id(result))
         for sub_cls in MSDataPlotBase.__subclasses__():
             sub_cls_name = sub_cls.__name__.split(".")[-1]
             if sub_cls_name == names[1]:
