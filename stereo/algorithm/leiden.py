@@ -133,7 +133,7 @@ def leiden_rapids(adjacency, resolution=1.0):
     leiden_parts, _ = cugraph.leiden(g, resolution=resolution)
 
     # Format output
-    clusters = leiden_parts.to_pandas().sort_values('vertex')[['partition']].to_numpy().ravel()
+    clusters = leiden_parts.to_pandas().sort_values('vertex')[['partition']].to_numpy().ravel().astype('U')
     clusters = pd.Categorical(clusters)
 
     return clusters
