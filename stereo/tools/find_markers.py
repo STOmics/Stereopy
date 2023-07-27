@@ -216,6 +216,9 @@ class FindMarker(ToolBase):
         cluster_result.reset_index(inplace=True)
         cluster_result.sort_values(by=['group', 'index'], inplace=True)
         group_index = cluster_result.groupby('group').agg(cell_index=('index', list))
+        group_check = group_index.apply(lambda x: 1 if len(x[0]) <= 0 else 0, axis=1, result_type='broadcast')
+        group_empty_index_list = group_check[group_check['cell_index'] == 1].index.tolist()
+        group_index.drop(index=group_empty_index_list, inplace=True)
 
         def _calc(a, exp_matrix_one_hot):
             cell_index = a[0]

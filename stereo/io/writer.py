@@ -207,8 +207,7 @@ def _write_one_h5ad_result(data, f, key_record):
                 h5ad.write(list(data.tl.result[res_key][1]['umi_genes']), f, f'genes@{res_key}@sct')
                 h5ad.write(list(data.tl.result[res_key][1]['umi_cells']), f, f'cells@{res_key}@sct')
                 h5ad.write(list(data.tl.result[res_key][1]['top_features']), f, f'genes@{res_key}@sct_top_features')
-                h5ad.write(list(data.tl.result[res_key][0]['scale.data'].index), f,
-                           f'genes@{res_key}@sct_scale_genename')
+                h5ad.write(list(data.tl.result[res_key][0]['scale.data'].index), f, f'genes@{res_key}@sct_scale_genename')
                 # TODO ignored other result of the sct
             if analysis_key == 'spatial_hotspot':
                 # Hotspot object
@@ -216,8 +215,7 @@ def _write_one_h5ad_result(data, f, key_record):
             if analysis_key == 'cell_cell_communication':
                 for key, item in data.tl.result[res_key].items():
                     if key != 'parameters':
-                        h5ad.write(item, f, f'{res_key}@{key}@cell_cell_communication',
-                                   save_as_matrix=False)  # -> dataframe
+                        h5ad.write(item, f, f'{res_key}@{key}@cell_cell_communication', save_as_matrix=False)  # -> dataframe
                     else:
                         name, value = [], []
                         for pname, pvalue in item.items():
@@ -227,15 +225,16 @@ def _write_one_h5ad_result(data, f, key_record):
                             'name': name,
                             'value': value
                         })
-                        h5ad.write(parameters_df, f, f'{res_key}@{key}@cell_cell_communication',
-                                   save_as_matrix=False)  # -> dataframe
+                        h5ad.write(parameters_df, f, f'{res_key}@{key}@cell_cell_communication', save_as_matrix=False)  # -> dataframe
             if analysis_key == 'regulatory_network_inference':
                 for key, item in data.tl.result[res_key].items():
                     if key == 'regulons':
                         h5ad.write(str(item), f, f'{res_key}@{key}@regulatory_network_inference')  # -> str
                     else:
-                        h5ad.write(item, f, f'{res_key}@{key}@regulatory_network_inference',
-                                   save_as_matrix=False)  # -> dataframe
+                        h5ad.write(item, f, f'{res_key}@{key}@regulatory_network_inference', save_as_matrix=False)  # -> dataframe
+            if analysis_key == 'co_occurrence':
+                for key, item in data.tl.result[res_key].items():
+                    h5ad.write(item, f, f'{res_key}@{key}@co_occurrence', save_as_matrix=True)
 
 
 def write_h5ms(ms_data, output: str):
