@@ -14,7 +14,6 @@ class MSDataPlotBase(metaclass=ABCMeta):
         for attr_name, attr in cls.__dict__.items():
             if callable(attr):
                 MSDataPlotBase.PLOT_NAME_TO_NAMES[attr_name] = (cls.__module__, cls.__name__)
-                print(cls.__module__, cls.__name__)
 
     @staticmethod
     def get_attribute_helper(item, data, result):
@@ -30,7 +29,6 @@ class MSDataPlotBase(metaclass=ABCMeta):
         for sub_cls in MSDataPlotBase.__subclasses__():
             sub_cls_name = sub_cls.__name__.split(".")[-1]
             if sub_cls_name == names[1]:
-                print(sub_cls)
                 sub_obj = sub_cls(data, result)
                 return sub_obj.__getattribute__(item)
         return None
