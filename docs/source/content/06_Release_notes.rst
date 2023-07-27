@@ -3,7 +3,7 @@ Release Notes
 
 .. role:: small
 
-Version 0.13.0b1 (Bata)
+Version 0.13.0b1 (Beta)
 ------------------------
 0.13.0b1 : 2023-07-11
 ~~~~~~~~~~~~~~~~~~~~~~~~
