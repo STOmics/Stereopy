@@ -153,16 +153,21 @@ class CoOccurrence(AlgorithmBase):
         if n_jobs <= 0 or n_jobs > cpu_count():
             n_jobs = cpu_count()
         
+        current_jobs = nb.get_num_threads()
         nb.set_num_threads(n_jobs)
 
-        if method == 'stereopy':
-            res = self.co_occurrence(self.stereo_exp_data, cluster_res_key, dist_thres = dist_thres, steps = steps, genelist = genelist, gene_thresh = gene_thresh)
-        elif method == 'squidpy':
-            res = self.co_occurrence_squidpy(self.stereo_exp_data, cluster_res_key)
-        else:
-            raise ValueError("unavailable value for method, it only can be choosed from ['stereopy', 'squidpy'].")
-        self.pipeline_res[res_key] = res
-        self.stereo_exp_data.tl.reset_key_record('co_occurrence', res_key)
+        try:
+            if method == 'stereopy':
+                res = self.co_occurrence(self.stereo_exp_data, cluster_res_key, dist_thres = dist_thres, steps = steps, genelist = genelist, gene_thresh = gene_thresh)
+            elif method == 'squidpy':
+                res = self.co_occurrence_squidpy(self.stereo_exp_data, cluster_res_key)
+            else:
+                raise ValueError("unavailable value for method, it only can be choosed from ['stereopy', 'squidpy'].")
+            self.pipeline_res[res_key] = res
+            self.stereo_exp_data.tl.reset_key_record('co_occurrence', res_key)
+        finally:
+            nb.set_num_threads(current_jobs)
+        
         return self.stereo_exp_data
 
 
