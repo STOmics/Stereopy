@@ -11,7 +11,7 @@ change log:
     2021/07/05  create file.
     2022/02/09  save raw data and result
 """
-
+from os import environ
 import pickle
 from copy import deepcopy
 
@@ -24,6 +24,7 @@ from stereo.core.stereo_exp_data import StereoExpData
 from stereo.io import h5ad
 from stereo.log_manager import logger
 
+environ['HDF5_USE_FILE_LOCKING'] = "FALSE"
 
 def write_h5ad(
         data: StereoExpData,
@@ -369,17 +370,15 @@ def update_gef(data: StereoExpData, gef_file: str, cluster_res_key: str):
         raise Exception(f'{cluster_res_key} is not in the result, please check and run the func of cluster.')
     clu_result = data.tl.result[cluster_res_key]
     for i, v in clu_result.iterrows():
-        cluster[v['bins']] = int(v['group']) + 1
+        cluster[str(v['bins'])] = int(v['group'])
 
     h5f = h5py.File(gef_file, 'r+')
-    cell_names = np.bitwise_or(np.left_shift(h5f['cellBin']['cell']['x'].astype('uint64'), 32),
-                               h5f['cellBin']['cell']['y'])
+    cell_names = np.bitwise_or(np.left_shift(h5f['cellBin']['cell']['x'].astype('uint64'), 32), h5f['cellBin']['cell']['y'].astype('uint64')).astype('U')
     celltid = np.zeros(h5f['cellBin']['cell'].shape, dtype='uint16')
-    n = 0
-    for cell_name in cell_names:
+    
+    for n, cell_name in enumerate(cell_names):
         if cell_name in cluster:
             celltid[n] = cluster[cell_name]
-        n += 1
 
     # h5f['cellBin']['cell']['cellTypeID'] = celltid
     h5f['cellBin']['cell']['clusterID'] = celltid
