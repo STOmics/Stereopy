@@ -775,12 +775,13 @@ def stereo_to_anndata(
         if data.position_z is not None:
             adata.obs['z'] = pd.DataFrame(data.position_z, index=data.cell_names.astype('str'))
     
-    if data.bin_type is not None:
-        adata.uns['bin_type'] = data.bin_type
-    if data.bin_size is not None:
-        adata.uns['bin_size'] = 1 if data.bin_type == 'cell_bins' else data.bin_size
-    if data.attr is not None and 'resolution' in data.attr:
-        adata.uns['resolution'] = data.attr['resolution']
+    if flavor != 'seurat':
+        if data.bin_type is not None:
+            adata.uns['bin_type'] = data.bin_type
+        if data.bin_size is not None:
+            adata.uns['bin_size'] = 1 if data.bin_type == 'cell_bins' else data.bin_size
+        if data.attr is not None and 'resolution' in data.attr:
+            adata.uns['resolution'] = data.attr['resolution']
 
     if data.sn is not None:
         if isinstance(data.sn, str):
