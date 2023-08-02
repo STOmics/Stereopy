@@ -21,3 +21,5 @@ from .plot_cluster_traj_3d import PlotClusterTraj3D
 from .plot_vec_3d import PlotVec3D
 from .vt3d_browser.example import Plot3DBrowser
 from .plot_ccd import PlotCCD
+from .plot_time_series import PlotTimeSeries
+from .plot_time_series import PlotTimeSeriesAnalysis

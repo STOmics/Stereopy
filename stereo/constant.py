@@ -6,7 +6,79 @@
 @file:constant.py
 @time:2023/07/03
 """
+from enum import Enum
 
-TOTAL_COUNTS = 'total_counts'
-N_GENES_BY_COUNTS = 'n_genes_by_counts'
-PCT_COUNTS_MT = 'pct_counts_mt'
+TMP = "tmp"
+PAGA = "paga"
+BATCH = "batch"
+GROUP = "group"
+INDEX = "index"
+LOG_FC = "logFC"
+LESS_P = "less_p"
+SCORES = "scores"
+SANKEY = "sankey"
+SIMPLE = "simple"
+CATEGORY = "category"
+GREATER_P = "greater_p"
+FEATURE_P = "feature_p"
+ANNOTATION = "annotation"
+LESS_PVALUE = "less_pvalue"
+_LOG_PVALUE = "_log_pvalue"
+TOTAL_COUNTS = "total_counts"
+CELLTYPE_STD = "celltype_std"
+PCT_COUNTS_MT = "pct_counts_mt"
+CELLTYPE_MEAN = "celltype_mean"
+FUZZY_C_WEIGHT = "fuzzy_C_weight"
+FUZZY_C_RESULT = "fuzzy_C_result"
+GREATER_PVALUE = "greater_pvalue"
+N_GENES_BY_COUNTS = "n_genes_by_counts"
+CELLTYPE_MEAN_SCALE = "celltype_mean_scale"
+CONNECTIVITIES_TREE = "connectivities_tree"
+
+
+class BatchColType(Enum):
+    sample_name = "sample_name"
+    timepoint = "timepoint"
+    time = 'time'
+
+
+class AlternativeType(Enum):
+    less = "less"
+    greater = "greater"
+
+
+class UseColType(Enum):
+    celltype = "celltype"
+    timepoint = "timepoint"
+
+
+class PaletteType(Enum):
+    tab20 = "tab20"
+
+
+class DptColType(Enum):
+    dpt_pseudotime = "dpt_pseudotime"
+
+
+class DirectionType(Enum):
+    left = "left"
+    right = "right"
+    center = 'center'
+    bottom = 'bottom'
+
+
+class PValCombinationType(Enum):
+    mean = "mean"
+    fdr = "FDR"
+    fisher = "fisher"
+
+
+class ColorType(Enum):
+    red = "red"
+    grey = "grey"
+    black = "black"
+    green = "green"
+
+
+class RunMethodType(Enum):
+    tvg_marker = "tvg_marker"
