@@ -26,3 +26,5 @@ from .plot_dendrogram import PlotDendrogram
 from .plot_clusters_dot import ClustersGenesDotPlot
 from .plot_clusters_heatmap import ClustersGenesHeatmap
 from .plot_paga import PlotPaga
+from .plot_time_series import PlotTimeSeries
+from .plot_time_series import PlotTimeSeriesAnalysis
