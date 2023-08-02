@@ -132,23 +132,23 @@ class CoOccurrence(AlgorithmBase):
         res_key='co_occurrence'
     ):
         """
-        Co-occurence calculate the score or probability of a particular celltype or cluster of cells is co-occurence with another in spatial.  
-        We provided two method for co-occurence, 'squidpy' for method in squidpy, 'stereopy' for method in stereopy.
+        Co-occurence calculates the score or probability of two or more cell types in spatial.  
+        Stereopy provided two method for co-occurence, 'squidpy' for method in squidpy, 'stereopy' for method in stereopy by default.
 
 
-        :param cluster_res_key: The key of the cluster or annotation result of cells stored in data.tl.result which ought to be equal to cells in length.
-        :param method: The metrics to calculate co-occurence choose from ['stereopy', 'squidpy'], 'stereopy' by default.
-        :param dist_thres: The max distance to measure co-occurence. Only used when method=='stereopy'.
+        :param cluster_res_key: The key of the cluster or annotation result of cells stored in `data.tl.result` which ought to be equal to cells in length.
+        :param method: The method to calculate co-occurence choose from `['stereopy', 'squidpy']`, `'stereopy'` by default.
+        :param dist_thres: The max distance to measure co-occurence. Only used when `method='stereopy'`.
         :param steps: The steps to generate threshold to measure co-occurence, use along with dist_thres, i.e. default params
-                        will generate [30,60,90......,270,300] as threshold. Only used when method=='stereopy'.
+                        will generate [30,60,90......,270,300] as threshold. Only used when `method='stereopy'`.
         :param genelist: Calculate co-occurence between clusters in cluster_res_key & genelist if provided, otherwise calculate between clusters 
-                        in cluster_res_key. Only used when method=='stereopy'.
-        :param gene_thresh: Threshold to determine whether a cell express the gene. Only used when method=='stereopy'.
-        :param n_jobs: Set the number of threads to calculate co-occurence, default is the number of cores of the m.
-        :param res_key: The key to store the result in data.tl.result.
+                        in cluster_res_key. Only used when `method='stereopy'`.
+        :param gene_thresh: Threshold to determine whether a cell expresses targeted gene. Only used when `method='stereopy'`.
+        :param n_jobs: The number of threads to calculate co-occurence, default to all cores of the machine.
+        :param res_key: The key to store the result in `data.tl.result`.
 
 
-        :return: StereoExpData object with co_occurrence result in data.tl.result.
+        :return: StereoExpData object with co_occurrence result in `data.tl.result`.
         """
         if n_jobs <= 0 or n_jobs > cpu_count():
             n_jobs = cpu_count()
