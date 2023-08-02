@@ -69,7 +69,10 @@ def cluster_bins_to_cellbins(
         cellbins_data: StereoExpData,
         bins_cluster_res_key: str,
 ):
-    """Mapping clustering result of bins to conresponding cellbins.
+    """
+    Mapping clustering result of bins to conresponding cellbins.
+    
+    The clustering of a cell will be mapped to the clustering of a bin if this cell's coordinate is within this bin.
 
     :param bins_data: StereoExpData object of bins.
     :param cellbins_data: StereoExpData object of cellbins.
@@ -107,8 +110,11 @@ def cluster_bins_to_cellbins(
         return cellbins_data
     if len(cells_filtered) > 0:
         logger.warning(f"{len(cells_filtered)} cells can not be located to any bins.")
-    cellbins_data.tl.filter_cells(cell_list=cells_located)
-    cells_groups = bins_data.tl.result[bins_cluster_res_key]['group'][cells_groups_idx].reset_index(drop=True)
+        cellbins_data.tl.filter_cells(cell_list=cells_located)
+    if bins_cluster_res_key in bins_data.cells._obs:
+        cells_groups = bins_data.cells._obs[bins_cluster_res_key][cells_groups_idx].reset_index(drop=True)
+    else:
+        cells_groups = bins_data.tl.result[bins_cluster_res_key]['group'][cells_groups_idx].reset_index(drop=True)
     cellbins_cluster_res_key = f'{bins_cluster_res_key}_from_bins'
     cellbins_cluster_result = pd.DataFrame(data={'bins': cellbins_data.cell_names, 'group': cells_groups})
     cellbins_data.tl.result[cellbins_cluster_res_key] = cellbins_cluster_result
