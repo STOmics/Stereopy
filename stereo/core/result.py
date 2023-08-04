@@ -111,14 +111,20 @@ class Result(_BaseResult, dict):
                 f'future, make sure your code access the property correctly. ',
                 category=FutureWarning
             )
-            if name in Result.CLUSTER_NAMES:
-                return pd.DataFrame(
-                    {
-                        'bins': cells.cell_name,
-                        'group': cells._obs[name].values
-                    }
-                )
-            return cells._obs[name]
+            # if name in Result.CLUSTER_NAMES:
+            #     return pd.DataFrame(
+            #         {
+            #             'bins': cells.cell_name,
+            #             'group': cells._obs[name].values
+            #         }
+            #     )
+            # return cells._obs[name]
+            return pd.DataFrame(
+                {
+                    'bins': cells.cell_name,
+                    'group': cells._obs[name].values
+                }
+            )
         elif name in cells._matrix:
             warn(
                 f'{name} will be moved from `StereoExpData.tl.result` to `StereoExpData.cells_matrix` in the '
@@ -142,7 +148,7 @@ class Result(_BaseResult, dict):
             self._set_connectivities_res(key, value)
         elif type == Result.REDUCE:
             self._set_reduce_res(key, value)
-        elif type == Result.HVG_NAMES:
+        elif type == Result.HVG:
             self._set_hvg_res(key, value)
         elif type == Result.MARKER_GENES:
             self._set_marker_genes_res(key, value)

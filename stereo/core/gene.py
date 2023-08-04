@@ -104,13 +104,13 @@ class Gene(object):
             self._var = self._var.iloc[index].copy()
         return self
 
-    def to_df(self):
+    def to_df(self, copy=False):
         """
         Transform StereoExpData object to pd.DataFrame.
 
         :return: a dataframe of Gene.
         """
-        return self._var.copy(deep=True)
+        return self._var.copy(deep=True) if copy else self._var
 
     def __str__(self):
         format_genes = ['gene_name']
