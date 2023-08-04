@@ -17,8 +17,9 @@ import pandas as pd
 
 
 def preprocess_significant_means_result(significant_means: pd.DataFrame):
-    drop_list = ['id_cp_interaction', 'partner_a', 'partner_b', 'gene_a', 'gene_b', 'secreted', 'receptor_a',
-                 'receptor_b', 'annotation_strategy', 'is_integrin', 'rank']
+    # drop_list = ['id_cp_interaction', 'partner_a', 'partner_b', 'gene_a', 'gene_b', 'secreted', 'receptor_a',
+    #              'receptor_b', 'annotation_strategy', 'is_integrin', 'rank']
+    drop_list = ['id_cp_interaction', 'gene_a', 'gene_b', 'secreted', 'receptor_a', 'receptor_b', 'annotation_strategy', 'is_integrin', 'rank']
     significant_means = significant_means.drop(drop_list, axis=1)
     significant_means = significant_means.dropna(subset=significant_means.columns.difference(['interacting_pair']), how='all')
     significant_means = significant_means.set_index('interacting_pair')
@@ -33,6 +34,10 @@ def preprocess_data(
     result = []
     for index, row in significant_means.iterrows():
         celltype_pair = row.dropna()
+        partner_a, partner_b = row['partner_a'], row['partner_b']
+        if partner_a.startswith('complex') or partner_b.startswith('complex'):
+            continue
+        celltype_pair = celltype_pair[2:]
         for pair in celltype_pair.index:
             current = pair.split(separator_cluster) + index.split(separator_interaction)
             result.append(current)

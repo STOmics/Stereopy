@@ -131,7 +131,7 @@ class RegulatoryNetworkInference(AlgorithmBase):
 
         if save:
             self.regulons_to_csv(regulons)
-            #self.regulons_to_json(regulons)
+            self.regulons_to_json(regulons)
             self.to_loom(df, auc_matrix, regulons)
             #self.to_cytoscape(regulons, adjacencies, 'Zfp354c')
 
