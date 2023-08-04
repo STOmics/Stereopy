@@ -47,6 +47,7 @@ def vst(
         fix_slope=False,
         scale_factor=None,
         vst_flavor=None,
+        seed_use=1448145
 ):
     # TODO: `vst.flavor` not completed
     if vst_flavor is not None:
@@ -102,7 +103,7 @@ def vst(
     if n_genes and n_genes < len(genes_step1):
         sampling_prob = dds(genes_log_gmean_step1)
         genes_step1 = np.array(
-            pd.DataFrame(genes_step1).sample(n_genes, weights=sampling_prob.T, random_state=np.random.RandomState())).T[
+            pd.DataFrame(genes_step1).sample(n_genes, weights=sampling_prob.T, random_state=np.random.RandomState(seed_use))).T[
             0]
         genes_step1_bool_list = np.isin(genes, genes_step1)
         if use_geometric_mean:
