@@ -306,7 +306,7 @@ def cell_correct(out_dir: str,
                     False: the oldest and slowest version, it will uses multiprocessing if set `process_count` to more than 1.
                     v1: the first fast version, it olny uses single process and single threading.
                     v2: default and recommended algorithm, the latest fast version, faster and more accurate than v1, it will uses multithreading if set `process_count` to more than 1.
-    :param distance: outspread distance based on cellular contor of cell segmentation image, in pixels, only available for v2 algorithm.
+    :param distance: outspread distance based on cellular contour of cell segmentation image, in pixels, only available for v2 algorithm.
 
     :return: An StereoExpData object if `only_save_result` is set to `False`, otherwise none.
     """
