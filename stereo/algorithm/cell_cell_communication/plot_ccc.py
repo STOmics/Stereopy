@@ -360,6 +360,7 @@ class PlotCellCellCommunication(PlotBase):
         receptors.sort()
         significant_pairs = significant_df['interacting_pair'].values
 
+        genes_mouse_obtained = None
         if homo_transfer:
             if homogene_path is None:
                 homogene_path = Path(stereo_conf.data_dir, 'algorithm/cell_cell_communication/database/mouse2human.csv').absolute().as_posix()
@@ -367,13 +368,23 @@ class PlotCellCellCommunication(PlotBase):
             genes_human, human_genes_to_mouse = mouse2human(genes_mouse, homogene_path)
             ligands = [human_genes_to_mouse[x] for x in ligands]
             receptors = [human_genes_to_mouse[x] for x in receptors]
-            significant_pairs = [
-                human_genes_to_mouse[lr.split(separator_interaction)[0]] + separator_interaction + human_genes_to_mouse[
-                    lr.split(separator_interaction)[1]] for lr in significant_pairs]
+            significant_pairs = []
+            genes_mouse_obtained = set()
+            for lr in significant_pairs:
+                interaction1, interaction2 = lr.split(separator_interaction)
+                if interaction1 not in human_genes_to_mouse or interaction2 not in human_genes_to_mouse:
+                    continue
+                significant_pairs.append(human_genes_to_mouse[interaction1] + separator_interaction + human_genes_to_mouse[interaction2])
+                genes_mouse_obtained.add(human_genes_to_mouse[interaction1])
+                genes_mouse_obtained.add(human_genes_to_mouse[interaction2])
+            genes_mouse_obtained = list(genes_mouse_obtained)
+            # significant_pairs = [
+            #     human_genes_to_mouse[lr.split(separator_interaction)[0]] + separator_interaction + human_genes_to_mouse[
+            #         lr.split(separator_interaction)[1]] for lr in significant_pairs]
 
         # Construct expressed weighted gene regulatory network
         # counts_receiver = counts[meta[meta['cell_type'] == receiver_cluster]['cell']]
-        counts_receiver = self._get_cell_counts(cluster_res_key, receiver_cluster)
+        counts_receiver = self._get_cell_counts(cluster_res_key, receiver_cluster, genes_mouse_obtained)
         expressed_genes_receiver = self._get_expressed_genes(counts_receiver, pct_expressed)
 
         weighted_network_lr_sig = pd.read_csv(weighted_network_path, sep='\t')
@@ -422,7 +433,7 @@ class PlotCellCellCommunication(PlotBase):
         # Generate final data for plotting
         label = ligands + receptors + tfs
         # counts_sender = counts[meta[meta['cell_type'] == sender_cluster]['cell']]
-        counts_sender = self._get_cell_counts(cluster_res_key, sender_cluster)
+        counts_sender = self._get_cell_counts(cluster_res_key, sender_cluster, genes_mouse_obtained)
         # counts_receiver = counts[meta[meta['cell_type'] == receiver_cluster]['cell']]
 
         # The left part of Ligand-Receptor interaction
@@ -471,18 +482,21 @@ class PlotCellCellCommunication(PlotBase):
                 link=link)
             ])
         fig.update_layout(height=880, width=600, font_size=12, font_family='Arial')
-        iplot(fig)
-        # fig.write_image(filename)
+        iplot(fig, image='png')
+        fig.write_image('./aaa.png')
         return fig
     
-    def _get_cell_counts(self, cluster_res_key, cluster):
+    def _get_cell_counts(self, cluster_res_key, cluster, genes_obtained=None):
         cluster_res: pd.DataFrame = self.pipeline_res[cluster_res_key]
-        isin = cluster_res['group'].isin(cluster).to_numpy()
+        isin = cluster_res['group'].isin([cluster]).to_numpy()
         cell_counts = self.stereo_exp_data.exp_matrix[isin]
+        cell_list = self.stereo_exp_data.cell_names[isin]
+        if genes_obtained is not None:
+            isin = np.isin(self.stereo_exp_data.gene_names, genes_obtained)
+            cell_counts = cell_counts[:, isin]
         if not self.stereo_exp_data.issparse():
             cell_counts = cell_counts.toarray()
         cell_counts = cell_counts.T
-        cell_list = self.stereo_exp_data.cell_names[isin]
         return pd.DataFrame(cell_counts, columns=cell_list, index=self.stereo_exp_data.gene_names)
 
     def _get_expressed_genes(self, count_df, pct):
