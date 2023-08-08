@@ -18,6 +18,7 @@ from stereo.algorithm.algorithm_base import AlgorithmBase
 
 from typing import List
 from ccd import *
+from ccd.community_clustering_algorithm import cluster_palette
 
 class CommunityDetection(AlgorithmBase):
     """
@@ -50,13 +51,23 @@ class CommunityDetection(AlgorithmBase):
         """
         self.params = { **COMMUNITY_DETECTION_DEFAULTS, **kwargs }
         self.params['annotation'] = annotation
-        # self.stereo_data_slices = slices
         self.slices = slices
+        self.cell_types = set([])
+        self.annotation_palette = None
+        missing_cell_type_palette = False
         for slice in self.slices:
+            # check for spatial data stored under labels 'X_spatial' and 'spatial_stereoseq'
             if 'X_spatial' in slice._ann_data.obsm:
                 slice._ann_data.obsm['spatial'] = slice._ann_data.obsm['X_spatial'].copy()
             elif 'spatial_stereoseq' in slice._ann_data.obsm:
                 slice._ann_data.obsm['spatial'] = np.array(slice._ann_data.obsm['spatial_stereoseq'].copy())
+            # create a set of existing cell types in all slices
+            self.cell_types = self.cell_types.union(set(slice._ann_data.obs[annotation].unique()))
+            # if any of the samples lacks the cell type palette, set the flag
+            if f'{annotation}_colors' not in slice._ann_data.uns_keys():
+                missing_cell_type_palette = True
+
+        self.cell_types = list(sorted(self.cell_types))
                 
         self.file_names = [fname for fname in self.params['files'].split(',')] if 'files' in self.params else [f"Slice_{id}" for id in range(len(slices))]
         if self.params['win_sizes'] == 'NA' or self.params['sliding_steps'] == 'NA':
@@ -64,6 +75,12 @@ class CommunityDetection(AlgorithmBase):
             self.params['win_sizes'], self.params['sliding_steps'] = self.calc_optimal_win_size_and_slide_step()
         else:
             self.log_win_size_full_info()
+
+        # if cell type palette is not available, create and add to each slice anndata object
+        if missing_cell_type_palette:
+            self.annotation_palette = {cellt: cluster_palette[-id-1] for id, cellt in enumerate(self.cell_types)}
+            for slice in self.slices:
+                slice._ann_data.uns[f'{annotation}_colors'] = [self.annotation_palette[cellt] for cellt in list(sorted(slice._ann_data.obs[annotation].unique()))]
         
     @timeit
     def main(self):
