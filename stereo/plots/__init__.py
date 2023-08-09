@@ -22,3 +22,4 @@ from .plot_vec_3d import PlotVec3D
 from .vt3d_browser.example import Plot3DBrowser
 from .plot_ccd import PlotCCD
 from .plot_coo import PlotCoOccurrence
+from .plot_dendrogram import PlotDendrogram
