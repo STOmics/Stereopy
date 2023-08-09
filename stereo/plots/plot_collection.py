@@ -51,7 +51,10 @@ class PlotCollection:
         if item.startswith('__'):
             raise AttributeError
 
-        new_attr = download(PlotBase.get_attribute_helper(item, self.data, self.result))
+        # new_attr = download(PlotBase.get_attribute_helper(item, self.data, self.result))
+        new_attr = PlotBase.get_attribute_helper(item, self.data, self.result)
+        if getattr(new_attr, '__download__', True):
+            new_attr = download(new_attr)
         if new_attr:
             self.__setattr__(item, new_attr)
             logger.info(f'register plot_func {item} to {self}')

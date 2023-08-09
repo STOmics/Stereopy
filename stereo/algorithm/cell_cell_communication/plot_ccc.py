@@ -1,5 +1,5 @@
 import os
-from typing import Union
+from typing import Union, List, Dict, Optional
 from pathlib import Path
 import natsort
 
@@ -13,6 +13,7 @@ import networkx as nx
 import json
 import plotly.graph_objects as go
 from plotly.offline import iplot
+from stereo.core.stereo_exp_data import StereoExpData, AnnBasedStereoExpData
 
 # module in self project
 from stereo.log_manager import logger
@@ -23,6 +24,10 @@ from stereo.algorithm.cell_cell_communication.exceptions import PipelineResultIn
 from stereo.algorithm.cell_cell_communication.analysis_helper import mouse2human
 
 class PlotCellCellCommunication(PlotBase):
+    def __init__(self, *args, **kwargs):
+        super(PlotCellCellCommunication, self).__init__(*args, **kwargs)
+        PlotCellCellCommunication.ccc_sankey_plot.__download__ = False
+
     # TODO: change default paths
     def ccc_dot_plot(
             self,
@@ -237,11 +242,6 @@ class PlotCellCellCommunication(PlotBase):
         :param res_key: the key which specifies the cell cell communication result in data.tl.result, defaults to 'cell_cell_communication'.
         """
         logger.info('Generating circos plot')
-        # self._ensure_path_exists(output_path)
-        # filename = os.path.join(output_path, output_name)
-
-        # significant_separator = get_separator(os.path.splitext(significant_path)[-1])
-        # significant_df = pd.read_csv(significant_path, sep=significant_separator)
 
         if res_key not in self.pipeline_res:
             PipelineResultInexistent(res_key)
@@ -283,20 +283,20 @@ class PlotCellCellCommunication(PlotBase):
 
     def ccc_sankey_plot(
             self,
-            # counts: pd.DataFrame,
             sender_cluster: str,
             receiver_cluster: str,
             homo_transfer: bool = False,
-            homogene_path: str = None,
-            # significant_path: str = r'E:\算法组SVN\Personal\liuxiaobin\Stereopy\Fig5素材\significant_means_statistical_liana_EC_test.csv',
+            homogene_path: Optional[str] = None,
             separator_cluster: str = '|',
-            separator_interaction: str = '-',
+            separator_interaction: str = '_',
             weighted_network_path: str = None,
-            regulons: Union[str, dict] = None,
+            regulons: Union[str, Dict[str, list]] = None,
+            tfs: Optional[List[str]] = None,
             pct_expressed: float = 0.05,
             max_path_length: int = 4,
-            # output_path: str = r'E:\Stereopy\out',
-            # output_name: str = r'sankey_plot.pdf',
+            width: int = 600,
+            height: int = 880,
+            out_path: Optional[str] = None,
             res_key: str = 'cell_cell_communication',
     ):
         """
@@ -313,16 +313,16 @@ class PlotCellCellCommunication(PlotBase):
         :param separator_interaction: separator used for LR interaction
         :param weighted_network_path: path to the weighted network
         :param regulons: path or dict to the spaGRN regulon output
-        :param pct_expressed: threshold used to detect expressed path between receptor and TF
-        :param max_path_length: the max path length between receptor and TF, 
+        :param tfs: list of TFs used in the Sankey plot, if it is gave, the parameter `regulons` is ignored.
+        :param pct_expressed: threshold used to detect expressed path between receptor and TF.
+        :param max_path_length: the max path length between receptor and TF,
                                 paths longer than max_path_length is not considered as a potential pathway
+        :param width: the figure width in pixels.
+        :param height: the figure height in pixels.
+        :param out_path: the path to save the plot.
         :param res_key: the key which specifies the cell cell communication result in data.tl.result, defaults to 'cell_cell_communication'.
         
         """
-        # filename = os.path.join(output_path, output_name)
-
-        # significant_separator = get_separator(os.path.splitext(significant_path)[-1])
-        # significant_df = pd.read_csv(significant_path, sep=significant_separator)
 
         if res_key not in self.pipeline_res:
             PipelineResultInexistent(res_key)
@@ -333,25 +333,31 @@ class PlotCellCellCommunication(PlotBase):
 
         assert weighted_network_path is not None
 
+        assert regulons is not None or tfs is not None
+
+        cluster_pair_key = sender_cluster + separator_cluster + receiver_cluster
         significant_df: pd.DataFrame = self.pipeline_res[res_key]['significant_means']
-        significant_df = significant_df[['interacting_pair', 'partner_a', 'partner_b', sender_cluster + separator_cluster + receiver_cluster]]
+        significant_df = significant_df[['interacting_pair', 'partner_a', 'partner_b', cluster_pair_key]]
 
-        significant_df.dropna(
-            how='all',
-            subset=significant_df.columns.drop('interacting_pair'),
-            inplace=True
-        )
-        # significant_df.reset_index(drop=True, inplace=True)
-
-        def __clean_significant_df(row):
+        def __clean_significant_df(row, cluster_pair_key):
             partner_a, partner_b = row['partner_a'], row['partner_b']
+            if row[cluster_pair_key] == -1:
+                row[cluster_pair_key] = pd.NaT
             if partner_a.startswith('complex') or partner_b.startswith('complex'):
                 return pd.NaT
             else:
                 return row
         
-        significant_df = significant_df.apply(__clean_significant_df, axis=1, result_type='broadcast')
-        significant_df.dropna(how='all', axis=0, inplace=True)
+        significant_df = significant_df.apply(__clean_significant_df, axis=1, result_type='broadcast', cluster_pair_key=cluster_pair_key)
+        significant_df.dropna(
+            how='any',
+            subset=['partner_a', 'partner_b', cluster_pair_key],
+            axis=0,
+            inplace=True
+        )
+
+        assert significant_df.size > 0, 'No significant LR pairs detected.'
+
         significant_df.reset_index(drop=True, inplace=True)
 
         ligands = list(set([lr.split('_')[0] for lr in significant_df['interacting_pair'].values]))
@@ -360,7 +366,6 @@ class PlotCellCellCommunication(PlotBase):
         receptors.sort()
         significant_pairs = significant_df['interacting_pair'].values
 
-        genes_mouse_obtained = None
         if homo_transfer:
             if homogene_path is None:
                 homogene_path = Path(stereo_conf.data_dir, 'algorithm/cell_cell_communication/database/mouse2human.csv').absolute().as_posix()
@@ -368,41 +373,39 @@ class PlotCellCellCommunication(PlotBase):
             genes_human, human_genes_to_mouse = mouse2human(genes_mouse, homogene_path)
             ligands = [human_genes_to_mouse[x] for x in ligands]
             receptors = [human_genes_to_mouse[x] for x in receptors]
-            significant_pairs = []
-            genes_mouse_obtained = set()
+            significant_pairs_tmp = []
             for lr in significant_pairs:
                 interaction1, interaction2 = lr.split(separator_interaction)
                 if interaction1 not in human_genes_to_mouse or interaction2 not in human_genes_to_mouse:
                     continue
-                significant_pairs.append(human_genes_to_mouse[interaction1] + separator_interaction + human_genes_to_mouse[interaction2])
-                genes_mouse_obtained.add(human_genes_to_mouse[interaction1])
-                genes_mouse_obtained.add(human_genes_to_mouse[interaction2])
-            genes_mouse_obtained = list(genes_mouse_obtained)
-            # significant_pairs = [
-            #     human_genes_to_mouse[lr.split(separator_interaction)[0]] + separator_interaction + human_genes_to_mouse[
-            #         lr.split(separator_interaction)[1]] for lr in significant_pairs]
+                significant_pairs_tmp.append(human_genes_to_mouse[interaction1] + separator_interaction + human_genes_to_mouse[interaction2])
+            significant_pairs = significant_pairs_tmp
 
         # Construct expressed weighted gene regulatory network
-        # counts_receiver = counts[meta[meta['cell_type'] == receiver_cluster]['cell']]
-        counts_receiver = self._get_cell_counts(cluster_res_key, receiver_cluster, genes_mouse_obtained)
+        counts_receiver = self._get_cell_counts(cluster_res_key, receiver_cluster)
         expressed_genes_receiver = self._get_expressed_genes(counts_receiver, pct_expressed)
 
         weighted_network_lr_sig = pd.read_csv(weighted_network_path, sep='\t')
         weighted_network_lr_sig_expressed = self._get_expressed_network(weighted_network_lr_sig, expressed_genes_receiver)
         weighted_network_lr_sig_expressed['distance'] = 1 / weighted_network_lr_sig_expressed['weight']
 
+        # return genes_mouse_obtained, counts_receiver, expressed_genes_receiver, weighted_network_lr_sig_expressed
+
         G = nx.DiGraph()
         for idx, row in weighted_network_lr_sig_expressed.iterrows():
             G.add_edge(row['from'], row['to'], weight=row['weight'], distance=row['distance'])
 
         # Get TFs from the json file of GRN analysis
-        if isinstance(regulons, dict):
-            regulon = regulons
-        else:
-            with open(regulons, 'r', encoding='utf-8') as f:
-                regulon = json.load(f)
-
-        tfs = [x[:-3] for x in regulon.keys()]
+        if tfs is None:
+            if isinstance(regulons, dict):
+                tfs = list(map(lambda x: x[:-3], regulons.keys()))
+            elif regulons.endswith('json'):
+                with open(regulons, 'r') as fp:
+                    rgl = json.load(fp)
+                tfs = list(map(lambda x: x[:-3], rgl.keys()))
+            elif regulons.endswith('csv'):
+                regulons_df = pd.read_csv(regulons, sep=',', header=0)
+                tfs = regulons_df['Regulons'].apply(lambda x: x[:-3]).tolist()
 
         # Get paths between Receptors and TFs
         source_rtf = []
@@ -430,22 +433,24 @@ class PlotCellCellCommunication(PlotBase):
         tfs = list(set(result_path['TF']))
         tfs.sort()
 
+        assert len(tfs) > 0, 'Can not find any path from Receptor to TF.'
+
         # Generate final data for plotting
         label = ligands + receptors + tfs
-        # counts_sender = counts[meta[meta['cell_type'] == sender_cluster]['cell']]
-        counts_sender = self._get_cell_counts(cluster_res_key, sender_cluster, genes_mouse_obtained)
-        # counts_receiver = counts[meta[meta['cell_type'] == receiver_cluster]['cell']]
+        counts_sender = self._get_cell_counts(cluster_res_key, sender_cluster)       
 
         # The left part of Ligand-Receptor interaction
         source_lr = []
         target_lr = []
         value_lr = []
-        for ligand in ligands:
-            for receptor in receptors:
+        for i, ligand in enumerate(ligands):
+            for j, receptor in enumerate(receptors):
                 current_pair = ligand + separator_interaction + receptor
                 if current_pair in significant_pairs:
-                    source_lr.append(label.index(ligand))
-                    target_lr.append(label.index(receptor))
+                    # source_lr.append(label.index(ligand))
+                    # target_lr.append(label.index(receptor))
+                    source_lr.append(i)
+                    target_lr.append(len(ligands) + j)
                     mean_expression = (self._calculate_mean_expression(counts_sender, ligand) +
                                        self._calculate_mean_expression(counts_receiver, receptor)) / 2
                     value_lr.append(mean_expression)
@@ -456,15 +461,17 @@ class PlotCellCellCommunication(PlotBase):
         source_rtf = []
         target_rtf = []
         value_rtf = []
-        for receptor in receptors:
+        for i, receptor in enumerate(receptors):
             # weight_r = []
-            for tf in tfs:
+            for j, tf in enumerate(tfs):
                 df = result_path[(result_path['receptor'] == receptor) & (result_path['TF'] == tf)]
                 if df.empty:
                     continue
                 else:
-                    source_rtf.append(label.index(receptor))
-                    target_rtf.append(label.index(tf))
+                    # source_rtf.append(label.index(receptor))
+                    # target_rtf.append(label.index(tf))
+                    source_rtf.append(len(ligands) + i)
+                    target_rtf.append(len(ligands) + len(receptors) + j)
                     mean_expression = (self._calculate_mean_expression(counts_receiver, receptor) +
                                        self._calculate_mean_expression(counts_receiver, tf)) / 2
                     value_rtf.append(mean_expression)
@@ -475,26 +482,26 @@ class PlotCellCellCommunication(PlotBase):
         node = dict(thickness=8, pad=2, label=label)
         link = dict(source=source_lr + source_rtf, target=target_lr + target_rtf, value=value_lr + value_rtf)
 
+        # fig = go.Figure(
         fig = go.Figure(
             data=[
                 go.Sankey(
                 node=node,
                 link=link)
             ])
-        fig.update_layout(height=880, width=600, font_size=12, font_family='Arial')
-        iplot(fig, image='png')
-        fig.write_image('./aaa.png')
+        fig.update_layout(height=height, width=width, font_size=12, font_family='Arial')
+        # iplot(fig, image='png')
+        # fig.show()
+        if out_path is not None:
+            fig.write_image(out_path)
         return fig
     
-    def _get_cell_counts(self, cluster_res_key, cluster, genes_obtained=None):
+    def _get_cell_counts(self, cluster_res_key, cluster):
         cluster_res: pd.DataFrame = self.pipeline_res[cluster_res_key]
         isin = cluster_res['group'].isin([cluster]).to_numpy()
         cell_counts = self.stereo_exp_data.exp_matrix[isin]
         cell_list = self.stereo_exp_data.cell_names[isin]
-        if genes_obtained is not None:
-            isin = np.isin(self.stereo_exp_data.gene_names, genes_obtained)
-            cell_counts = cell_counts[:, isin]
-        if not self.stereo_exp_data.issparse():
+        if self.stereo_exp_data.issparse():
             cell_counts = cell_counts.toarray()
         cell_counts = cell_counts.T
         return pd.DataFrame(cell_counts, columns=cell_list, index=self.stereo_exp_data.gene_names)
