@@ -693,7 +693,7 @@ class CommunityClusteringAlgo(ABC):
     def save_community_labels(self):
         """Save community labels from anndata file."""
 
-        self.adata.obs[f'tissue_{self.method_key}'].to_csv(os.path.join(self.dir_path, f'{self.filename}.csv'))
+        self.adata.obs[f'tissue_{self.method_key}'].to_csv(os.path.join(self.dir_path, f'{self.filename}_ccdlabels.csv'))
 
         logger.info(f'Saved community labels after clustering as a part of original anndata file to {self.filename}.csv')
 
