@@ -61,6 +61,8 @@ class CommunityDetection(AlgorithmBase):
                 slice._ann_data.obsm['spatial'] = slice._ann_data.obsm['X_spatial'].copy()
             elif 'spatial_stereoseq' in slice._ann_data.obsm:
                 slice._ann_data.obsm['spatial'] = np.array(slice._ann_data.obsm['spatial_stereoseq'].copy())
+            # annotation data must be of string type
+            slice._ann_data.obs[annotation] = slice._ann_data.obs[annotation].astype('str')
             # create a set of existing cell types in all slices
             self.cell_types = self.cell_types.union(set(slice._ann_data.obs[annotation].unique()))
             # if any of the samples lacks the cell type palette, set the flag

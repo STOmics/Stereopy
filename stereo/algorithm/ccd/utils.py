@@ -69,6 +69,7 @@ def csv_to_anndata(csv_file_path: str, annotation: str):
     """
     Convert csv data with cell ID, spatial coordinates (x and y), and cell type annotation
     to an Anndata object with empty X layer, for CCD analysis.
+    cell ID data should be converted to string type.
 
     Parameters:
         - csv_file_path (str): path to .csv file with sample data
@@ -76,8 +77,8 @@ def csv_to_anndata(csv_file_path: str, annotation: str):
 
     """
     df = pd.read_csv(csv_file_path)
-    adata = ad.AnnData(np.zeros(shape=(df.shape[0], 1)))
-    adata.obs_names = df.loc[:, 'cell_ID'].values.copy()
+    adata = ad.AnnData(np.zeros(shape=(df.shape[0], 1), dtype=np.float32), dtype=np.float32)
+    adata.obs_names = df.loc[:, 'cell_ID'].values.astype('str').copy()
     adata.obs[annotation] = df.loc[:, annotation].values.copy()
     adata.obsm['spatial'] = df.loc[:, ['x', 'y']].values.copy()
     del df

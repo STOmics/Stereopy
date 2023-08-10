@@ -92,8 +92,9 @@ class SlidingWindow(CommunityClusteringAlgo):
         bin_slide_ratio = int(win_size/sliding_step)
 
         # create centroids for each sliding step of windows
-        # .obs data is assigned as pd.Series since sometimes the new column added to .obs Dataframe can have 'nan' values
-        # if the index of data doesn't match the index of .obs
+        # dtype of obs DataFrame index column and annotation column should be 'str'
+        # to remove the warning for editing the view of self.adata.obs we reinit the .obs
+        self.adata.obs = self.adata.obs.copy()
         self.adata.obs[f'Centroid_X_{win_size}'] = pd.Series(((self.adata.obsm['spatial'][:, 0])/sliding_step).astype(int), index=self.adata.obs_names)
         self.adata.obs[f'Centroid_Y_{win_size}'] = pd.Series(((self.adata.obsm['spatial'][:, 1])/sliding_step).astype(int), index=self.adata.obs_names)
         # need to understand borders and padding
