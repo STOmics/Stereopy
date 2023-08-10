@@ -51,5 +51,5 @@ The plot collection for StereoExpData object.
    algorithm.regulatory_network_inference.PlotRegulatoryNetwork.grn_dotplot
    algorithm.regulatory_network_inference.PlotRegulatoryNetwork.spatial_scatter_by_regulon_3D
    algorithm.regulatory_network_inference.PlotRegulatoryNetwork.spatial_scatter_by_regulon
-   algorithm.co_occurrence.PlotCoOccurrence.co_occurrence_plot
-   algorithm.co_occurrence.PlotCoOccurrence.co_occurrence_heatmap
+   plots.PlotCoOccurrence.co_occurrence_plot
+   plots.PlotCoOccurrence.co_occurrence_heatmap
