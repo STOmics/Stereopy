@@ -23,15 +23,16 @@ class MSDataPipeLine(object):
 
     @property
     def result(self):
-        if self.ATTR_NAME == 'tl':
-            return self._result
-        else:
-            return self.ms_data.tl.result
+        return self._result
+
+    @result.setter
+    def result(self, new_result):
+        self._result = new_result
 
     def _use_integrate_method(self, item, *args, **kwargs):
         # if item == "batches_integrate":
         #     raise AttributeError
-
+        
         if "mode" in kwargs:
             del kwargs["mode"]
 
@@ -101,7 +102,7 @@ class MSDataPipeLine(object):
                 if new_attr:
                     logger.info(f'register plot_func {item} to {type(merged_data)}-{id(merged_data)}')
                     return new_attr(*args, **kwargs)
-
+        
         logger.info(f'data_obj(idx=0) in ms_data start to run {item}')
         return new_attr(
             ms_data_view.merged_data.__getattribute__(self.__class__.ATTR_NAME),
@@ -112,7 +113,7 @@ class MSDataPipeLine(object):
         # def log_delayed_task(idx, *arg, **kwargs):
         #     logger.info(f'data_obj(idx={idx}) in ms_data start to run {item}')
         #     return new_attr(*arg, **kwargs)
-
+        
         # return log_delayed_task(
         #     0,
         #     ms_data_view.merged_data.__getattribute__(self.__class__.ATTR_NAME),
@@ -148,7 +149,6 @@ class MSDataPipeLine(object):
             else:
                 from stereo.plots.plot_base import PlotBase
                 base = PlotBase
-
             def log_delayed_task(idx, obj, *arg, **kwargs):
                 logger.info(f'data_obj(idx={idx}) in ms_data start to run {item}')
                 new_attr = base.get_attribute_helper(item, obj, obj.tl.result)
@@ -170,20 +170,10 @@ class MSDataPipeLine(object):
         # start with __ may not be our algorithm function, and will cause import problem
         if item.startswith('__'):
             raise AttributeError
-
+        
         if self.__class__.ATTR_NAME == 'tl':
             from stereo.algorithm.ms_algorithm_base import MSDataAlgorithmBase
-            run_method = MSDataAlgorithmBase.get_attribute_helper(item, self.ms_data, self.ms_data.tl.result)
-            if run_method:
-                return run_method
-        elif self.__class__.ATTR_NAME == 'plt':
-            from stereo.plots.ms_plot_base import MSDataPlotBase
-            run_method = MSDataPlotBase.get_attribute_helper(item, self.ms_data, self.ms_data.tl.result)
-            if run_method:
-                return run_method
-        elif self.__class__.ATTR_NAME == 'plt':
-            from stereo.plots.ms_plot_base import MSDataPlotBase
-            run_method = MSDataPlotBase.get_attribute_helper(item, self.ms_data, self.result)
+            run_method = MSDataAlgorithmBase.get_attribute_helper(item, self.ms_data, self.result)
             if run_method:
                 return run_method
 
