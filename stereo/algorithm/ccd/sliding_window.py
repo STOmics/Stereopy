@@ -122,6 +122,9 @@ class SlidingWindow(CommunityClusteringAlgo):
             z_curr = int(subwindow.split("_")[2])
             w_curr = int(subwindow.split("_")[3])
 
+            # TODO: Hope this advice useful. May this code save string concat cost?
+            # tmp = f'{x_curr + slide_x}_{y_curr + slide_y}_{z_curr}_{w_curr}'
+            # and replace all the string concat places as argument `tmp`, they are not changed when looping
             for slide_x in range(0, np.min([bin_slide_ratio, x_max-x_curr+1])):
                 for slide_y in range(0, np.min([bin_slide_ratio, y_max-y_curr+1])):  # starts from 1 since values with coordinates (0,0) are already written by initializing with ret[subwindow]
                     if (f'{x_curr + slide_x}_{y_curr + slide_y}_{z_curr}_{w_curr}') in ret.keys():
@@ -130,15 +133,15 @@ class SlidingWindow(CommunityClusteringAlgo):
                                                     for k in set(feature_matrix[subwindow]).union(ret[f'{x_curr + slide_x}_{y_curr + slide_y}_{z_curr}_{w_curr}'])}
 
         feature_matrix = pd.DataFrame(feature_matrix).T
-        # feature_matrix is placd in AnnData object with specified spatial cooridnated of the sliding windows
+        # feature_matrix is placed in AnnData object with specified spatial coordinated of the sliding windows
         self.tissue = AnnData(feature_matrix.astype(np.float32), dtype=np.float32)
         # spatial coordinates are expanded with 3rd dimension with slice_id 
-        # this should enable calculation of multislice cell communities
+        # this should enable calculation of multi-slice cell communities
         self.tissue.obsm['spatial'] = np.array([x.split('_') for x in feature_matrix.index]).astype(int)
         self.tissue.obs['window_size'] = np.array([win_size for _ in feature_matrix.index])
         self.tissue.obs = self.tissue.obs.copy()
         self.tissue.obs['window_cell_sum'] = np.sum(self.tissue.X, axis=1)
-        # scale the feature vector by the total numer of cells in it
+        # scale the feature vector by the total number of cells in it
         self.tissue.X = ((self.tissue.X.T * self.total_cell_norm) / self.tissue.obs['window_cell_sum'].values).T
         # remove feature vectors which have less than a specified amount of cells
         mean_cell_sum = np.mean(self.tissue.obs['window_cell_sum'].values)
@@ -259,6 +262,16 @@ class SlidingWindowMultipleSizes(SlidingWindow):
         
         """
         # if cell batches are too small, caching is not efficient so we want at least 5000 cells per batch
+        # TODO: Hope this advice useful. In the real high performance machine, it will be very terrifying if you
+        #    choose to run process as the same number as cpu_count, may be hundreds of process will be started up.
+        #    Because what `mp` does is fork, it will copy all things in the main process after these process starting.
+        #    I experienced this before, and some of other processes and Mine were killed by the operating system. ~.~
+        #    this code may be more safe:
+        #       min(mp.cpu_count(), 16)
+        #    or which i think is:
+        #       num_cpus_used = min(mp.cpu_count() if mp.cpu_count() < self.num_threads else self.num_threads, 16)
+        #    16 only a example number, it map be adjusted after you test in the real use-cases, and choose a number
+        #    like which performs not bad.
         num_cpus_used = mp.cpu_count() if mp.cpu_count() < self.num_threads else self.num_threads
 
         with mp.Pool(processes=num_cpus_used) as pool:
@@ -289,6 +302,7 @@ class SlidingWindowMultipleSizes(SlidingWindow):
                     cell_labels = cache[(x_curr, y_curr, z_curr, w_size)]
                 else:
                     # index of cell is in the top left corner of the whole window
+                    # TODO: Look like the same as line 125, f'{x_curr - slide_x}_{y_curr - slide_y}_{z_curr}_{win_size}' as tmp
                     for slide_x in range(0, np.min([bin_slide_ratio, x_curr - x_min + 1])):
                         for slide_y in range(0, np.min([bin_slide_ratio, y_curr - y_min + 1])):
                             # check if location exist (spatial area is not complete)
