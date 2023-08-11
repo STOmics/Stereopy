@@ -17,8 +17,8 @@ from stereo.log_manager import logger
 from stereo.algorithm.algorithm_base import AlgorithmBase
 
 from typing import List
-from ccd import *
-from ccd.community_clustering_algorithm import cluster_palette
+from .ccd import *
+from .ccd.community_clustering_algorithm import cluster_palette
 
 class CommunityDetection(AlgorithmBase):
     """
@@ -29,7 +29,8 @@ class CommunityDetection(AlgorithmBase):
             self,
             slices: List[AnnBasedStereoExpData],
             annotation: str,
-            **kwargs) -> None:
+            **kwargs
+    ) -> None:
         """
         Initialize the CommunityDetection object.
 
