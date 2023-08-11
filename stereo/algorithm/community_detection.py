@@ -18,7 +18,7 @@ from .ccd import *
 from .ccd.community_clustering_algorithm import cluster_palette
 
 
-class CommunityDetection(AlgorithmBase):
+class _CommunityDetection:
     """
     Class for performing community detection on a set of slices.
     """
@@ -84,7 +84,7 @@ class CommunityDetection(AlgorithmBase):
                 slice._ann_data.uns[f'{annotation}_colors'] = [self.annotation_palette[cellt] for cellt in list(sorted(slice._ann_data.obs[annotation].unique()))]
         
     @timeit
-    def main(self, annotation="annotation", **kwargs):
+    def _main(self, slices, annotation="annotation", **kwargs):
         """
         Executes the community detection algorithm.
 
@@ -127,10 +127,7 @@ class CommunityDetection(AlgorithmBase):
         - Generates a HTML report o the results.
         """
         # only
-        assert type(self.stereo_exp_data) is AnnBasedStereoExpData, "this method can only run with AnnBasedStereoExpData temporarily"
-
-        ann_data = self.stereo_exp_data
-        self.params_init([ann_data], annotation, **kwargs)
+        self.params_init(slices, annotation, **kwargs)
 
         start_time = time.perf_counter()
 
@@ -662,3 +659,13 @@ class CommunityDetection(AlgorithmBase):
         if function_ind == "histogram_cell_sums": self.algo_list[slice_id].plot_histogram_cell_sum_window()
         if function_ind == "cluster_mixtures": self.algo_list[slice_id].plot_cluster_mixtures(community_id)
         if function_ind == "cell_mixture_table": self.algo_list[slice_id].plot_stats()
+
+
+class CommunityDetection(AlgorithmBase, _CommunityDetection):
+
+    def main(self, **kwargs):
+        assert type(self.stereo_exp_data) is AnnBasedStereoExpData, \
+            "this method can only run with AnnBasedStereoExpData temporarily"
+        self._main([self.stereo_exp_data], **kwargs)
+        return self
+
