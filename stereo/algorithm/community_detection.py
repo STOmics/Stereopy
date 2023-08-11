@@ -217,8 +217,14 @@ class _CommunityDetection:
                 algo.calculate_cell_mixture_stats()
                 algo.save_mixture_stats()
                 if self.params['plotting'] > 1:
-                    algo.plot_stats()
-                    algo.plot_celltype_table()
+                    try:
+                        algo.plot_stats()
+                    except Exception as e:
+                        print('plot_stats raise exception while running multi slice, err=%s', str(e))
+                    try:
+                        algo.plot_celltype_table()
+                    except Exception as e:
+                        print('plot_celltype_table raise exception while running multi slice, err=%s', str(e))
                 if self.params['plotting'] > 2:
                     algo.plot_cluster_mixtures()
                     algo.boxplot_stats()
