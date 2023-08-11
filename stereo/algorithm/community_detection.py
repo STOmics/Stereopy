@@ -1,38 +1,36 @@
-import time
-import anndata as ad
-import numpy as np
-import matplotlib.ticker as mtick
 import os
-import pandas as pd
-import seaborn as sns
-
+import time
+from collections import defaultdict
 from functools import reduce
 from itertools import cycle
+from typing import List
+
+import anndata as ad
+import matplotlib.ticker as mtick
+import seaborn as sns
 from matplotlib import pyplot as plt
-from collections import defaultdict
 from sklearn.cluster import SpectralClustering, AgglomerativeClustering
 
+from stereo.algorithm.algorithm_base import AlgorithmBase
 from stereo.core.stereo_exp_data import AnnBasedStereoExpData
 from stereo.log_manager import logger
-from stereo.algorithm.algorithm_base import AlgorithmBase
-
-from typing import List
 from .ccd import *
 from .ccd.community_clustering_algorithm import cluster_palette
+
 
 class CommunityDetection(AlgorithmBase):
     """
     Class for performing community detection on a set of slices.
     """
 
-    def __init__(
+    def params_init(
             self,
             slices: List[AnnBasedStereoExpData],
             annotation: str,
             **kwargs
     ) -> None:
         """
-        Initialize the CommunityDetection object.
+        Initialize the CommunityDetection object's params.
 
         Example:
             Download data (~700MB) with command:
@@ -86,7 +84,7 @@ class CommunityDetection(AlgorithmBase):
                 slice._ann_data.uns[f'{annotation}_colors'] = [self.annotation_palette[cellt] for cellt in list(sorted(slice._ann_data.obs[annotation].unique()))]
         
     @timeit
-    def main(self):
+    def main(self, annotation="annotation", **kwargs):
         """
         Executes the community detection algorithm.
 
@@ -128,6 +126,11 @@ class CommunityDetection(AlgorithmBase):
         8. Report Generation:
         - Generates a HTML report o the results.
         """
+        # only
+        assert type(self.stereo_exp_data) is AnnBasedStereoExpData, "this method can only run with AnnBasedStereoExpData temporarily"
+
+        ann_data = self.stereo_exp_data
+        self.params_init([ann_data], annotation, **kwargs)
 
         start_time = time.perf_counter()
 
