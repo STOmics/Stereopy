@@ -8,7 +8,7 @@ import pandas as pd
 from matplotlib import pyplot as plt
 from sklearn.datasets import make_blobs
 
-from stereo.algorithm import CommunityDetection
+from stereo.algorithm.community_detection import CommunityDetection
 from stereo.algorithm.ccd import *
 from stereo.algorithm.ccd.utils import csv_to_anndata
 
