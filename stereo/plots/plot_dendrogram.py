@@ -1,5 +1,6 @@
 from typing import Literal
 import matplotlib.pylab as plt
+from matplotlib.axes import Axes
 import numpy as np
 
 from stereo.log_manager import logger
@@ -12,13 +13,15 @@ class PlotDendrogram(PlotBase):
         orientation: Literal['top', 'bottom', 'left', 'right'] = 'top',
         remove_labels: bool = False,
         ticks = None,
+        title = None,
         width = None,
         height = None,
-        dendrogram_res_key: str = 'dendrogram',
+        ax: Axes = None,
+        res_key: str = 'dendrogram',
     ):
         """
         Plots a dendrogram using the precomputed dendrogram
-        information stored in `data.tl.result[dendrogram_res_key]`
+        information stored in `data.tl.result[res_key]`
         """
         def translate_pos(pos_list, new_ticks, old_ticks):
             if not isinstance(old_ticks, list):
@@ -42,14 +45,18 @@ class PlotDendrogram(PlotBase):
                 new_xs.append(new_x_val)
             return new_xs
         
-        fig, dendro_ax = plt.subplots()
+        if ax is None:
+            fig, dendro_ax = plt.subplots()
+        else:
+            dendro_ax = ax
+            fig = ax.get_figure()
 
         if width is not None:
             fig.set_figwidth(width)
         if height is not None:
             fig.set_figheight(height)
 
-        dendro_info = self.pipeline_res[dendrogram_res_key]['dendrogram_info']
+        dendro_info = self.pipeline_res[res_key]['dendrogram_info']
         leaves = dendro_info["ivl"]
         icoord = np.array(dendro_info['icoord'])
         dcoord = np.array(dendro_info['dcoord'])
@@ -100,5 +107,8 @@ class PlotDendrogram(PlotBase):
         dendro_ax.spines['top'].set_visible(False)
         dendro_ax.spines['left'].set_visible(False)
         dendro_ax.spines['bottom'].set_visible(False)
+
+        if title is not None:
+            dendro_ax.set_title(title)
 
         return fig

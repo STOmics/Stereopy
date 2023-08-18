@@ -35,6 +35,11 @@ class Gene(object):
     def __setitem__(self, key, value):
         self._var[key] = value
 
+    def __getitem__(self, key):
+        if key not in self._var.columns:
+            return None
+        return self._var[key]
+
     @property
     def n_cells(self):
         if 'n_cells' not in self._var.columns:

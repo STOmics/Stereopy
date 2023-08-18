@@ -23,3 +23,5 @@ from .vt3d_browser.example import Plot3DBrowser
 from .plot_ccd import PlotCCD
 from .plot_coo import PlotCoOccurrence
 from .plot_dendrogram import PlotDendrogram
+from .plot_clusters_dot import ClustersGenesDotPlot
+from .plot_clusters_heatmap import ClustersGenesHeatmap

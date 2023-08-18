@@ -14,7 +14,8 @@ class MSDataAlgorithmBase(AlgorithmBase):
         try:
             __import__(f"stereo.algorithm.{item}")
         except:
-            raise AttributeError(f"No attribute named 'StPipeline.{item}'")
+            # raise AttributeError(f"No attribute named 'StPipeline.{item}'")
+            return None
 
         # TODO: this may be not the best way to get sub-class
         # num of subclasses may be like 100-200 at most

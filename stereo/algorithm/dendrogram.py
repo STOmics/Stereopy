@@ -102,7 +102,7 @@ class Dendrogram(AlgorithmBase):
         if pca_res_key is not None:
             if pca_res_key not in self.pipeline_res:
                 raise ValueError(f"Can not get PCA result from data.tl.result by key '{pca_res_key}'.")
-            return self.pipeline_res[pca_res_key]
+            return self.pipeline_res[pca_res_key].copy()
         else:
             exp_matrix = self.stereo_exp_data.exp_matrix if not use_raw else self.stereo_exp_data.raw.exp_matrix
             return pd.DataFrame(exp_matrix.toarray())

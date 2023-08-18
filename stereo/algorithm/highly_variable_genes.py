@@ -156,7 +156,7 @@ def highly_variable_genes_seurat_v3(
         from skmisc.loess import loess
     except ImportError:
         raise ImportError(
-            'Please install skmisc package via `pip install --user scikit-misc'
+            'Please install skmisc package via `pip install --user scikit-misc==0.1.4'
         )
     df = pd.DataFrame()
     # df = pd.DataFrame(index=adata.var_names)
