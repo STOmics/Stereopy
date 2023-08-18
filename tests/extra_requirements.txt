@@ -1,2 +1,3 @@
-dynamo-release
-cdlib
+# dynamo-release
+# cdlib
+IPython
