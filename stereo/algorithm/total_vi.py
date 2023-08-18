@@ -3,8 +3,19 @@ from copy import deepcopy
 import anndata
 import numpy as np
 import pandas as pd
-import scvi
-import mudata
+try:
+    import scvi
+    import mudata
+except ImportError:
+    errmsg="""
+**************************************************
+* The scvi-tools and mudata may not be installed *
+* Please run the commands:                       *
+*     pip install scvi-tools==0.19.0             *
+*     pip install mudata==0.1.2                  *
+**************************************************
+"""
+    raise ImportError(errmsg)
 from scipy.sparse import issparse
 
 from stereo.algorithm.algorithm_base import AlgorithmBase
@@ -56,14 +67,14 @@ class TotalVi(MSDataAlgorithmBase):
         if rna_data.raw is None:
             raise Exception("Raw data is not exists, please run data.tl.raw_checkpoint before normalization.")
 
-        logger.debug(f'Before filtering, rna_data.shape: {rna_data.shape}, protein_data.shape: {protein_data.shape}')
-        if rna_data.shape != protein_data.shape:
-            filter_cells(rna_data, cell_list=protein_data.cell_names)
-            filter_cells(protein_data, cell_list=rna_data.cell_names)
-            filter_cells(rna_data.raw, cell_list=rna_data.cell_names)
-            if protein_data.raw:
-                filter_cells(protein_data.raw, cell_list=protein_data.cell_names)
-        logger.debug(f'After filtering, rna_data.shape: {rna_data.shape}, protein_data.shape: {protein_data.shape}')
+        # logger.debug(f'Before filtering, rna_data.shape: {rna_data.shape}, protein_data.shape: {protein_data.shape}')
+        # if rna_data.shape != protein_data.shape:
+        #     filter_cells(rna_data, cell_list=protein_data.cell_names)
+        #     filter_cells(protein_data, cell_list=rna_data.cell_names)
+        #     filter_cells(rna_data.raw, cell_list=rna_data.cell_names)
+        #     if protein_data.raw:
+        #         filter_cells(protein_data.raw, cell_list=protein_data.cell_names)
+        # logger.debug(f'After filtering, rna_data.shape: {rna_data.shape}, protein_data.shape: {protein_data.shape}')
 
         if not isinstance(rna_data, AnnBasedStereoExpData):
             LogManager.stop_logging()
@@ -95,7 +106,7 @@ class TotalVi(MSDataAlgorithmBase):
                 hvg_adata: anndata.AnnData = stereo_to_anndata(hvg_data, split_batches=False)
                 LogManager.start_logging()
             else:
-                hvg_adata: anndata.AnnData = hvg_data._ann_data
+                hvg_adata: anndata.AnnData = hvg_data._ann_data.copy()
             
             if issparse(hvg_adata.X):
                 hvg_adata.X = hvg_adata.X.toarray()
