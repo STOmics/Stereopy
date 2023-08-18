@@ -232,6 +232,40 @@ class StPipeline(object):
         if data.raw is not None and filter_raw:
             filter_genes(data.raw, min_cell, max_cell, gene_list, mean_umi_gt, True)
         return data
+    
+    @logit
+    def filter_by_hvgs(self,
+                       hvg_res_key: str='highly_variable_genes',
+                       filter_raw: bool = True,
+                       inplace: bool = False):
+        """
+        Filter genes based on the result of highly_variable_genes function.
+
+        Parameters
+        ---------------------
+        hvg_res_key
+            the key of highly variable genes to get corresponding result.
+        filter_raw
+            whether to filter raw data meanwhile.
+        inplace
+            whether to inplace the previous data or return a new data.
+        
+        Returns
+        --------------------
+        An object of StereoExpData.
+        Depending on `inplace`, if `True`, the data will be replaced by those filtered.
+        """
+        if hvg_res_key not in self.result:
+            raise KeyError(f'Can not find result of highly_variable_genes function by key {hvg_res_key}.')
+        
+        from ..preprocess import filter_genes
+        hvgs_flag = self.result[hvg_res_key]['highly_variable'].to_numpy()
+        hvgs = self.data.gene_names[hvgs_flag]
+        data = filter_genes(self.data, gene_list=hvgs, inplace=inplace)
+        if data.raw is not None and filter_raw:
+            filter_genes(data.raw, gene_list=hvgs, inplace=True)
+        data.tl.result[hvg_res_key] = data.tl.result[hvg_res_key][hvgs_flag]
+        return data
 
     @logit
     def filter_coordinates(self,
@@ -837,7 +871,7 @@ class StPipeline(object):
         self.reset_key_record(key, res_key)
         gene_cluster_res_key = f'gene_exp_{res_key}'
         from ..utils.pipeline_utils import cell_cluster_to_gene_exp_cluster
-        gene_exp_cluster_res = cell_cluster_to_gene_exp_cluster(self, res_key)
+        gene_exp_cluster_res = cell_cluster_to_gene_exp_cluster(self.data, res_key)
         if gene_exp_cluster_res is not False:
             self.result[gene_cluster_res_key] = gene_exp_cluster_res
             self.reset_key_record('gene_exp_cluster', gene_cluster_res_key)
@@ -880,7 +914,7 @@ class StPipeline(object):
         key = 'cluster'
         self.reset_key_record(key, res_key)
         gene_cluster_res_key = f'gene_exp_{res_key}'
-        gene_exp_cluster_res = cell_cluster_to_gene_exp_cluster(self, res_key)
+        gene_exp_cluster_res = cell_cluster_to_gene_exp_cluster(self.data, res_key)
         if gene_exp_cluster_res is not False:
             self.result[gene_cluster_res_key] = gene_exp_cluster_res
             self.reset_key_record('gene_exp_cluster', gene_cluster_res_key)
@@ -890,7 +924,8 @@ class StPipeline(object):
                    phenograph_k: int = 30,
                    pca_res_key: str = 'pca',
                    n_jobs: int = 10,
-                   res_key: str = 'phenograph'):
+                   res_key: str = 'phenograph',
+                   seed: int = 0):
         """
         Cluster cells into subgroups by Phenograph.
 
@@ -908,7 +943,7 @@ class StPipeline(object):
         from natsort import natsorted
         from ..utils.pipeline_utils import cell_cluster_to_gene_exp_cluster
         communities, _, _ = phe.cluster(self.result[pca_res_key], k=phenograph_k, clustering_algo='leiden',
-                                        n_jobs=n_jobs)
+                                        n_jobs=n_jobs, seed=seed)
         communities = communities + 1
         clusters = pd.Categorical(
             values=communities.astype('U'),
@@ -921,7 +956,7 @@ class StPipeline(object):
         key = 'cluster'
         self.reset_key_record(key, res_key)
         gene_cluster_res_key = f'gene_exp_{res_key}'
-        gene_exp_cluster_res = cell_cluster_to_gene_exp_cluster(self, res_key)
+        gene_exp_cluster_res = cell_cluster_to_gene_exp_cluster(self.data, res_key)
         if gene_exp_cluster_res is not False:
             self.result[gene_cluster_res_key] = gene_exp_cluster_res
             self.reset_key_record('gene_exp_cluster', gene_cluster_res_key)
@@ -1265,7 +1300,7 @@ class StPipeline(object):
 
         from ..utils.pipeline_utils import cell_cluster_to_gene_exp_cluster
         gene_cluster_res_key = f'gene_exp_{res_key}'
-        gene_exp_cluster_res = cell_cluster_to_gene_exp_cluster(self, res_key)
+        gene_exp_cluster_res = cell_cluster_to_gene_exp_cluster(self.data, res_key)
         if gene_exp_cluster_res is not False:
             self.result[gene_cluster_res_key] = gene_exp_cluster_res
             self.reset_key_record('gene_exp_cluster', gene_cluster_res_key)

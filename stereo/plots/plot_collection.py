@@ -9,6 +9,7 @@ from natsort import natsorted
 import panel as pn
 import matplotlib.pyplot as plt
 import numpy as np
+import seaborn as sns
 from random import randint
 from .scatter import base_scatter, multi_scatter, marker_gene_volcano, highly_variable_genes
 from stereo.core.stereo_exp_data import StereoExpData
@@ -1182,3 +1183,33 @@ class PlotCollection:
             base_image=base_image
         )
         return pc.show()
+    
+    @download
+    def correlation_heatmap(
+        self,
+        width: Optional[int] = None,
+        height: Optional[int] = None,
+        title: str = 'Correlation Heatmap',
+        x_label: str = 'x',
+        y_label: str = 'y',
+        cmap: str = 'coolwarm'
+    ):
+        df = self.data.to_df()
+        correlation_matrix = df.corr()
+        if width is None:
+            width = 6
+        if height is None:
+            height = 6
+        clustermap = sns.clustermap(
+            correlation_matrix,
+            dendrogram_ratio=0.00001,
+            cbar_pos=(1.05, 0.5, 0.05, 0.36),
+            figsize=(width, height),
+            vmax=1,
+            vmin=-1,
+            cmap=cmap
+        )
+        clustermap.ax_heatmap.set_title(title,  fontweight='bold', fontsize=13)
+        clustermap.ax_heatmap.set_xlabel(x_label,  fontweight='bold', fontsize=10)
+        clustermap.ax_heatmap.set_ylabel(y_label,  fontweight='bold', fontsize=10)
+        return clustermap.figure

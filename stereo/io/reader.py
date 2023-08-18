@@ -68,10 +68,18 @@ def read_gem(
         df.rename(columns={'MIDCount': 'UMICount'}, inplace=True)
     if 'CellID' in df.columns:
         df.rename(columns={'CellID': 'cell_id'}, inplace=True)
-    df.dropna(inplace=True)
+    if 'label' in df.columns:
+        df.rename(columns={'label': 'cell_id'}, inplace=True)
+    dropna_subset = ['geneID', 'x', 'y', 'UMICount']
+    if 'cell_id' in df.columns:
+        dropna_subset.append('cell_id')
+    df.dropna(
+        subset=dropna_subset,
+        axis=0,
+        inplace=True
+    )
     gdf = None
     if data.bin_type == 'cell_bins':
-        df.rename(columns={'label': 'cell_id'}, inplace=True)
         gdf = parse_cell_bin_coor(df)
     else:
         df = parse_bin_coor(df, bin_size)
@@ -274,7 +282,7 @@ def _read_stereo_h5_result(key_record: dict, data, f):
                 # str to interval
                 hvg_df['mean_bin'] = [to_interval(interval_string) for interval_string in hvg_df['mean_bin']]
                 data.tl.result[res_key] = hvg_df
-            if analysis_key in ['pca', 'umap']:
+            if analysis_key in ['pca', 'umap', 'totalVI']:
                 data.tl.result[res_key] = pd.DataFrame(h5ad.read_dataset(f[f'{res_key}@{analysis_key}']))
             if analysis_key == 'neighbors':
                 data.tl.result[res_key] = {
@@ -289,7 +297,7 @@ def _read_stereo_h5_result(key_record: dict, data, f):
                         gene_cluster_res_key not in data.tl.key_record['gene_exp_cluster']):
                     # data.tl.result[gene_cluster_res_key] = cell_cluster_to_gene_exp_cluster(data.tl, res_key)
                     # data.tl.reset_key_record('gene_exp_cluster', gene_cluster_res_key)
-                    gene_cluster_res = cell_cluster_to_gene_exp_cluster(data.tl, res_key)
+                    gene_cluster_res = cell_cluster_to_gene_exp_cluster(data, res_key)
                     if gene_cluster_res is not False:
                         data.tl.result[gene_cluster_res_key] = gene_cluster_res
                         data.tl.reset_key_record('gene_exp_cluster', gene_cluster_res_key)
@@ -348,13 +356,14 @@ def _read_stereo_h5_result(key_record: dict, data, f):
                             data.tl.result[res_key][key] = ast.literal_eval(h5ad.read_dataset(f[full_key]))
                         else:
                             data.tl.result[res_key][key] = h5ad.read_group(f[full_key])
-            if analysis_key == 'co_occurrence':
+            if analysis_key in ['co_occurrence', 'res_totalVI']:
                 data.tl.result[res_key] = {}
                 for full_key in f.keys():
                     if not full_key.endswith(analysis_key):
                         continue
                     data_key = full_key.split('@')[1]
                     data.tl.result[res_key][data_key] = h5ad.read_group(f[full_key])
+
 
 
 
@@ -813,7 +822,7 @@ def stereo_to_anndata(
                 adata.uns['sct_top_features'] = list(data.tl.result[res_key][1]['top_features'])
                 adata.uns['sct_cellname'] = list(data.tl.result[res_key][1]['umi_cells'].astype('str'))
                 adata.uns['sct_genename'] = list(data.tl.result[res_key][1]['umi_genes'])
-            elif key in ['pca', 'umap', 'tsne']:
+            elif key in ['pca', 'umap', 'tsne', 'totalVI']:
                 # pca :we do not keep variance and PCs(for varm which will be into feature.finding in pca of seurat.)
                 res_key = data.tl.key_record[key][-1]
                 sc_key = f'X_{key}'
@@ -856,6 +865,16 @@ def stereo_to_anndata(
                 for res_key in data.tl.key_record[key]:
                     logger.info(f"Adding data.tl.result['{res_key}'] into adata.uns['{res_key}'] .")
                     adata.uns[res_key] = data.tl.result[res_key]
+            elif key == 'res_totalVI':
+                res_key = data.tl.key_record[key][-1]
+                for k, v in data.tl.result[res_key].items():
+                    if isinstance(v, pd.DataFrame) or isinstance(v, np.ndarray):
+                        if v.shape == data.shape:
+                            adata.layers[k] = v
+                        else:
+                            adata.uns[k] = v
+                    else:
+                        adata.uns[k] = v
             else:
                 continue
 

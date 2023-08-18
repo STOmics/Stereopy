@@ -175,4 +175,7 @@ def filter_by_clusters(
     if excluded:
         is_in_bool = ~is_in_bool
     data.sub_by_index(cell_index=is_in_bool)
-    return data, cluster_res[is_in_bool]
+    cluster_res = cluster_res[is_in_bool]
+    cluster_res['group'] = cluster_res['group'].to_numpy()
+    cluster_res['group'] = cluster_res['group'].astype('category')
+    return data, cluster_res

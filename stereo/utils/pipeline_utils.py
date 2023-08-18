@@ -8,13 +8,14 @@ from stereo.core.stereo_exp_data import StereoExpData
 # from stereo.core.st_pipeline import StPipeline
 
 def cell_cluster_to_gene_exp_cluster(
-    tl,
+    data: StereoExpData,
     cluster_res_key: str = None,
     groups: Union[Optional[Sequence[str]], str] = None,
     genes: Union[Optional[Sequence[str]], str] = None,
-    kind: str = 'sum'
+    kind: str = 'sum',
+    filter_raw: bool = True
 ):
-    if  tl.raw is None:
+    if  data.raw is None:
         logger.warning(
             """
             The function cell_cluster_to_gene_exp_cluster must be based on raw data.
@@ -26,11 +27,11 @@ def cell_cluster_to_gene_exp_cluster(
         logger.warning("The parameter cluster_res_key of the function cell_cluster_to_gene_exp_cluster must be input")
         return False
     
-    if cluster_res_key not in tl.result:
+    if cluster_res_key not in data.tl.result:
         logger.warning(f"The cluster_res_key '{cluster_res_key}' is not exists")
         return False
 
-    cluster_result: pd.DataFrame = tl.result[cluster_res_key].copy()
+    cluster_result: pd.DataFrame = data.tl.result[cluster_res_key].copy()
     cluster_result.reset_index(inplace=True)
     cluster_result.sort_values(by=['group', 'index'], inplace=True)
     group_index = cluster_result.groupby('group').agg(cell_index=('index', list))
@@ -39,17 +40,21 @@ def cell_cluster_to_gene_exp_cluster(
             groups = [groups]
         group_index = group_index.loc[groups]
     tmp = []
-    tl.raw.array2sparse()
-    raw_cells_isin_data = np.isin(tl.raw.cell_names, tl.data.cell_names)
-    raw_genes_isin_data = np.isin(tl.raw.gene_names, tl.data.gene_names)
+    data.tl.raw.array2sparse()
+    if filter_raw:
+        raw_cells_isin_data = np.isin(data.raw.cell_names, data.cell_names)
+        raw_genes_isin_data = np.isin(data.raw.gene_names, data.gene_names)
+    else:
+        raw_cells_isin_data = np.ones(data.raw.cell_names.shape, dtype=bool)
+        raw_genes_isin_data = np.ones(data.raw.gene_names.shape, dtype=bool)
     if genes is not None:
         if isinstance(genes, str):
             genes = [genes]
-        all_genes_isin = np.isin(tl.raw.gene_names, genes)
+        all_genes_isin = np.isin(data.raw.gene_names, genes)
     else:
         all_genes_isin = True
-    exp_matrix = tl.raw.exp_matrix[raw_cells_isin_data][:, (raw_genes_isin_data & all_genes_isin)]
-    gene_names = tl.raw.gene_names[(raw_genes_isin_data & all_genes_isin)]
+    exp_matrix = data.raw.exp_matrix[raw_cells_isin_data][:, (raw_genes_isin_data & all_genes_isin)]
+    gene_names = data.raw.gene_names[(raw_genes_isin_data & all_genes_isin)]
 
     if kind != 'mean':
         kind = 'sum'
@@ -63,6 +68,78 @@ def cell_cluster_to_gene_exp_cluster(
     cluster_exp_matrix = np.vstack(tmp)
     return pd.DataFrame(cluster_exp_matrix, columns=gene_names, index=group_index.index).T
 
+def calc_pct_and_pct_rest(
+    data: StereoExpData,
+    cluster_res_or_key: Union[str, pd.DataFrame],
+    gene_names: Optional[Sequence[str]] = None,
+    groups: Optional[Sequence[str]] = None,
+    filter_raw: bool = True
+):
+    if  data.raw is None:
+        logger.warning(
+            """
+            The function calc_pct_and_pct_rest must be based on raw data.
+            Please run data.tl.raw_checkpoint() before Normalization.
+            """
+        )
+        return False
+    if isinstance(cluster_res_or_key, str):
+        if cluster_res_or_key not in data.tl.result:
+            logger.warning(f"Can not find the cluster result in data.tl.result by key {cluster_res_or_key}")
+            return False
+    
+    if filter_raw:
+        raw_cells_isin_data = np.isin(data.raw.cell_names, data.cell_names)
+        raw_genes_isin_data = np.isin(data.raw.gene_names, data.gene_names)
+    else:
+        raw_cells_isin_data = np.ones(data.raw.cell_names.shape, dtype=bool)
+        raw_genes_isin_data = np.ones(data.raw.gene_names.shape, dtype=bool)
+    if gene_names is not None:
+        genes_isin_all = np.isin(data.raw.gene_names, gene_names)
+    else:
+        genes_isin_all = True
+    raw_exp_matrix = data.raw.exp_matrix[raw_cells_isin_data][:, genes_isin_all & raw_genes_isin_data]
+    gene_names = data.raw.gene_names[genes_isin_all & raw_genes_isin_data]
+    exp_matrix_one_hot = (raw_exp_matrix > 0).astype(np.uint8)
+    if isinstance(cluster_res_or_key, str):
+        cluster_result: pd.DataFrame = data.tl.result[cluster_res_or_key].copy()
+    else:
+        cluster_result: pd.DataFrame = cluster_res_or_key.copy()
+    if 'bins' not in cluster_result.columns:
+        cluster_result.reset_index(drop=True, inplace=True)
+    cluster_result.reset_index(inplace=True)
+    cluster_result.sort_values(by=['group', 'index'], inplace=True)
+    group_index = cluster_result.groupby('group').agg(cell_index=('index', list))
+    group_check = group_index.apply(lambda x: 1 if len(x[0]) <= 0 else 0, axis=1, result_type='broadcast')
+    group_empty_index_list = group_check[group_check['cell_index'] == 1].index.tolist()
+    group_index.drop(index=group_empty_index_list, inplace=True)
+    if groups is not None:
+        if isinstance(groups, str):
+            groups = [groups]
+        group_index = group_index.loc[groups]
+
+    def _calc(a, exp_matrix_one_hot):
+        cell_index = a[0]
+        if isinstance(exp_matrix_one_hot, np.ndarray):
+            sub_exp = exp_matrix_one_hot[cell_index].sum(axis=0)
+            sub_exp_rest = exp_matrix_one_hot.sum(axis=0) - sub_exp
+        else:
+            sub_exp = exp_matrix_one_hot[cell_index].sum(axis=0).A[0]
+            sub_exp_rest = exp_matrix_one_hot.sum(axis=0).A[0] - sub_exp
+        sub_pct = sub_exp / len(cell_index)
+        sub_pct_rest = sub_exp_rest / (data.raw.cell_names.size - len(cell_index))
+        return sub_pct, sub_pct_rest
+
+    pct_all = np.apply_along_axis(_calc, 1, group_index.values, exp_matrix_one_hot)
+    pct = pd.DataFrame(pct_all[:, 0], columns=gene_names, index=group_index.index).T
+    pct_rest = pd.DataFrame(pct_all[:, 1], columns=gene_names, index=group_index.index).T
+    pct.columns.name = None
+    pct.reset_index(inplace=True)
+    pct.rename(columns={'index': 'genes'}, inplace=True)
+    pct_rest.columns.name = None
+    pct_rest.reset_index(inplace=True)
+    pct_rest.rename(columns={'index': 'genes'}, inplace=True)
+    return pct, pct_rest
 
 def cluster_bins_to_cellbins(
         bins_data: StereoExpData,
@@ -121,7 +198,7 @@ def cluster_bins_to_cellbins(
     cellbins_data.tl.reset_key_record('cluster', cellbins_cluster_res_key)
 
     if cellbins_data.tl.raw is not None:
-        gene_exp_cluster_res = cell_cluster_to_gene_exp_cluster(cellbins_data.tl, cellbins_cluster_res_key)
+        gene_exp_cluster_res = cell_cluster_to_gene_exp_cluster(cellbins_data, cellbins_cluster_res_key)
         if gene_exp_cluster_res is not False:
             cellbins_data.tl.result[f"gene_exp_{cellbins_cluster_res_key}"] = gene_exp_cluster_res
             cellbins_data.tl.reset_key_record('gene_exp_cluster', f"gene_exp_{cellbins_cluster_res_key}")

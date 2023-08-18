@@ -389,7 +389,7 @@ def split(data: StereoExpData = None):
             new_data.tl.raw = data.tl.raw.tl.filter_cells(cell_list=cell_names, inplace=False)
         if 'gene_exp_cluster' in data.tl.key_record:
             for cluster_res_key in data.tl.key_record['cluster']:
-                gene_exp_cluster_res = cell_cluster_to_gene_exp_cluster(new_data.tl, cluster_res_key)
+                gene_exp_cluster_res = cell_cluster_to_gene_exp_cluster(new_data, cluster_res_key)
                 if gene_exp_cluster_res is not False:
                     new_data.tl.result[f"gene_exp_{cluster_res_key}"] = gene_exp_cluster_res
         all_data.append(new_data)
