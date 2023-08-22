@@ -166,7 +166,6 @@ class PagaPlot(PlotBase):
     
     def paga_plot(
         self, 
-        sdata,
         adjacency: str = 'connectivities',
         threshold: Optional[float] = None,
         layout: Optional[_Layout] = None,
@@ -177,7 +176,6 @@ class PagaPlot(PlotBase):
     ):
         """
         abstract paga plot for the paga result.
-        param sdata:StereoExpData with paga result
         param adjacency: keyword to use for paga or paga tree
         threshold: prune edges lower than threshold
         param layout: the method to layout each node
@@ -187,7 +185,7 @@ class PagaPlot(PlotBase):
         return: paga abstract graph
         """
         # calculate node positions 
-        adjacency_mat = sdata.tl.result['paga'][adjacency].copy()
+        adjacency_mat = self.stereo_exp_data.tl.result['paga'][adjacency].copy()
         if threshold is None:
             threshold = 0.01  # default threshold
         if threshold > 0:
@@ -195,25 +193,27 @@ class PagaPlot(PlotBase):
             adjacency_mat.eliminate_zeros()
     
         pos = self._compute_pos(adjacency_mat, layout=layout, random_state=random_state)
-        sdata.tl.result['paga']['pos'] = pos
+        self.stereo_exp_data.tl.result['paga']['pos'] = pos
     
             
         # network
         G = pd.DataFrame(adjacency_mat.todense())
-        ct_list = sdata.cells.to_df()[sdata.tl.result['paga']['groups']].cat.categories
+        ct_list = self.stereo_exp_data.cells.to_df()[self.stereo_exp_data.tl.result['paga']['groups']].cat.categories
         G.index = ct_list
         G.columns = ct_list
         Edges = nx.from_pandas_adjacency(G).edges()
         Nodes2pos = dict(zip(ct_list, list(pos)))
         
         # define colors
-        ct_list = sdata.cells[sdata.tl.result['paga']['groups']].cat.categories
+        ct_list = self.stereo_exp_data.cells[self.stereo_exp_data.tl.result['paga']['groups']].cat.categories
         color_list = plt.get_cmap(cmap, len(ct_list))
         ct2color = {x:color_list.colors[i] for i,x in enumerate(ct_list)}
         
+        fig_flag = 0
         # plotting
         if ax == None:
-            _, ax = plt.subplots(1)
+            fig, ax = plt.subplots(1)
+            fig_flag = 1
         
         ax.scatter(pos[:, 0], pos[:, 1], c = color_list.colors, zorder=1)
         for i in range(len(ct_list)):
@@ -224,12 +224,14 @@ class PagaPlot(PlotBase):
             ax.plot([xi,xj], [yi, yj], color='black', zorder=0)
         ax.set_xticks([])
         ax.set_yticks([])
-        return ax
+        if fig_flag:
+            return fig
+        else:
+            return ax
     
     
     def _draw_graph(
         self, 
-        stereo_exp_data,
         layout: _Layout = 'fa',
         init_pos: Union[str, bool, None] = None,
         root: Optional[int] = None,
@@ -310,13 +312,13 @@ class PagaPlot(PlotBase):
             Coordinates of graph layout. E.g. for layout='fa' (the default),
             the field is called 'X_draw_graph_fa'
         """
-        adjacency = stereo_exp_data.tl.result['neighbors']['connectivities']
+        adjacency = self.stereo_exp_data.tl.result['neighbors']['connectivities']
         # init coordinates
-        groups_key = stereo_exp_data.tl.result['paga']['groups']
-        groups = stereo_exp_data.cells.to_df()[groups_key]
+        groups_key = self.stereo_exp_data.tl.result['paga']['groups']
+        groups = self.stereo_exp_data.cells.to_df()[groups_key]
     
-        pos = stereo_exp_data.tl.result['paga']['pos']
-        connectivities_coarse = stereo_exp_data.tl.result['paga']['connectivities_tree'].copy()
+        pos = self.stereo_exp_data.tl.result['paga']['pos']
+        connectivities_coarse = self.stereo_exp_data.tl.result['paga']['connectivities_tree'].copy()
         
         init_pos = np.ones((adjacency.shape[0], 2))
         for i, group_pos in enumerate(pos):
@@ -383,12 +385,11 @@ class PagaPlot(PlotBase):
             else:
                 ig_layout = g.layout(layout, **kwds)
             positions = np.array(ig_layout.coords)
-        stereo_exp_data.cells_matrix['paga_pos'] = positions
-        return stereo_exp_data
+        self.stereo_exp_data.cells_matrix['paga_pos'] = positions
+        return positions
     
     def paga_compare( 
         self, 
-        sdata,
         adjacency: str = 'connectivities',
         color:str = None,
         size:int = 1,
@@ -399,7 +400,6 @@ class PagaPlot(PlotBase):
     ):
         """
         abstract paga plot for the paga result and cell distribute around paga
-        param sdata:StereoExpData with paga result
         param adjacency: keyword to use for paga or paga tree
         param color: the col in cells or a gene name to display in compare plot
         param size: cell spot size
@@ -414,36 +414,39 @@ class PagaPlot(PlotBase):
             threshold = 0.01 
         if layout is None:
             layout = 'fr'
+            
+        fig = plt.figure(figsize=(10,6))
         ax = plt.subplot(1, 2, 1)
         # network
-        self.paga_plot(sdata, adjacency=adjacency, threshold=threshold, layout=layout, random_state=random_state, cmap=cmap, ax=ax)
+        self.paga_plot(adjacency=adjacency, threshold=threshold, layout=layout, random_state=random_state, cmap=cmap, ax=ax)
     
     
         # cell position
-        sdata = self._draw_graph(sdata, layout=layout)
-        cell_pos = sdata.cells_matrix['paga_pos']
+        cell_pos = self._draw_graph(layout=layout)
+        #cell_pos = self.stereo_exp_data.cells_matrix['paga_pos']
         # plotting
         ax = plt.subplot(1, 2, 2)
         if color is None:
-            color = sdata.tl.result['paga']['groups']
-        if (color not in sdata.cells) and (color not in sdata.gene_names):
-            print(f"color is neither in cells nor in genes, use '{sdata.tl.result['paga']['groups']}' as default")
-            color = sdata.tl.result['paga']['groups']
+            color = self.stereo_exp_data.tl.result['paga']['groups']
+        if (color not in self.stereo_exp_data.cells) and (color not in self.stereo_exp_data.gene_names):
+            print(f"color is neither in cells nor in genes, use '{self.stereo_exp_data.tl.result['paga']['groups']}' as default")
+            color = self.stereo_exp_data.tl.result['paga']['groups']
             
-        if color in sdata.cells:
-            if sdata.cells[color].dtype == 'category':
-                ct_list = sdata.cells[color].cat.categories
+        if color in self.stereo_exp_data.cells:
+            if self.stereo_exp_data.cells[color].dtype == 'category':
+                ct_list = self.stereo_exp_data.cells[color].cat.categories
                 color_list = plt.get_cmap(cmap, len(ct_list))
                 ct2color = {x:color_list.colors[i] for i,x in enumerate(ct_list)}
-                ax.scatter(cell_pos[:, 0], cell_pos[:, 1], s = size, c = [ct2color[x] for x in sdata.cells['leiden']])
+                ax.scatter(cell_pos[:, 0], cell_pos[:, 1], s = size, c = [ct2color[x] for x in self.stereo_exp_data.cells['leiden']])
             else:
-                ax.scatter(cell_pos[:, 0], cell_pos[:, 1], s = size, c = sdata.cells[color])
-        elif color in sdata.gene_names:
-            gene_list = list(sdata.genes.to_df().index)
+                ax.scatter(cell_pos[:, 0], cell_pos[:, 1], s = size, c = self.stereo_exp_data.cells[color])
+        elif color in self.stereo_exp_data.gene_names:
+            gene_list = list(self.stereo_exp_data.genes.to_df().index)
             gene_index = gene_list.index(color)
-            clist = sdata.exp_matrix[:, gene_index]
+            clist = self.stereo_exp_data.exp_matrix[:, gene_index]
             ax.scatter(cell_pos[:, 0], cell_pos[:, 1], s = size, c = clist)
         
         
         ax.set_xticks([])
         ax.set_yticks([])
+        return fig
