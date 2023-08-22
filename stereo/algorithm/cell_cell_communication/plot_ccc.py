@@ -297,6 +297,7 @@ class PlotCellCellCommunication(PlotBase):
             width: int = 600,
             height: int = 880,
             out_path: Optional[str] = None,
+            receptor_tf_paths_out_path: Optional[str] = None,
             res_key: str = 'cell_cell_communication',
     ):
         """
@@ -428,6 +429,8 @@ class PlotCellCellCommunication(PlotBase):
                     length_rtf.append(999)
 
         result_path = pd.DataFrame({'receptor': source_rtf, 'TF': target_rtf, 'path': paths, 'path_length': length_rtf})
+        if receptor_tf_paths_out_path:
+            result_path.to_csv(receptor_tf_paths_out_path)
         result_path = result_path[result_path['path_length'] <= max_path_length]
 
         tfs = list(set(result_path['TF']))

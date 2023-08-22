@@ -146,7 +146,6 @@ class ClustersGenesHeatmap(PlotBase):
 
         ax_heatmap = fig.add_subplot(axs_main[1, 0])
         ax_colorbar = fig.add_subplot(axs_on_right[1, 0])
-        ax_colorbar.tick_params()
         heatmap(
             mean_expression,
             ax=ax_heatmap,

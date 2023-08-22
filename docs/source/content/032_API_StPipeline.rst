@@ -37,6 +37,7 @@ which is compromised of basic preprocessing, embedding, clustering, and so on.
     core.StPipeline.gaussian_smooth
     core.StPipeline.annotation
     algorithm.single_r.SingleR.main
+    algorithm.get_niche.GetNiche.main
     algorithm.gen_ccc_micro_envs.GenCccMicroEnvs.main
     algorithm.cell_cell_communication.CellCellCommunication.main
     algorithm.regulatory_network_inference.RegulatoryNetworkInference.main
