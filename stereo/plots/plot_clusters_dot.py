@@ -8,6 +8,7 @@ import pandas as pd
 
 from stereo.plots.plot_base import PlotBase
 from stereo.utils.pipeline_utils import calc_pct_and_pct_rest, cell_cluster_to_gene_exp_cluster
+from stereo.log_manager import logger
 
 
 class ClustersGenesDotPlot(PlotBase):
@@ -26,7 +27,8 @@ class ClustersGenesDotPlot(PlotBase):
         title: str = None,
         width: int = None,
         height: int = None,
-        colormap: str = 'Reds'
+        colormap: str = 'Reds',
+        standard_scale: str = 'var'
     ):
         if cluster_res_key not in self.pipeline_res:
             raise KeyError(f"Can not find the cluster result in data.tl.result by key {cluster_res_key}")
@@ -79,6 +81,17 @@ class ClustersGenesDotPlot(PlotBase):
             genes=gene_names,
             kind='mean'
         )
+
+        if standard_scale == 'group':
+            mean_expression -= mean_expression.min(0)
+            mean_expression = (mean_expression / mean_expression.max(0)).fillna(0)
+        elif standard_scale == 'var':
+            mean_expression = mean_expression.sub(mean_expression.min(1), axis=0)
+            mean_expression = mean_expression.div(mean_expression.max(1), axis=0).fillna(0)
+        elif standard_scale is None:
+            pass
+        else:
+            logger.warning('Unknown type for standard_scale, ignored')
 
         dot_plot_data = self._create_dot_plot_data(
             pct,

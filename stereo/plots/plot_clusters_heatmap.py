@@ -74,17 +74,14 @@ class ClustersGenesHeatmap(PlotBase):
             genes=gene_names,
             kind='mean'
         )
+        mean_expression = mean_expression[group_codes]
 
         if standard_scale == 'group':
-            mean_expression = mean_expression.T
-            mean_expression = mean_expression.sub(mean_expression.min(1), axis=0)
-            mean_expression = mean_expression.div(mean_expression.max(1), axis=0).fillna(0)
-            mean_expression = mean_expression.T
-        elif standard_scale == 'var':
-            mean_expression = mean_expression.T
             mean_expression -= mean_expression.min(0)
             mean_expression = (mean_expression / mean_expression.max(0)).fillna(0)
-            mean_expression = mean_expression.T
+        elif standard_scale == 'var':
+            mean_expression = mean_expression.sub(mean_expression.min(1), axis=0)
+            mean_expression = mean_expression.div(mean_expression.max(1), axis=0).fillna(0)
         elif standard_scale is None:
             pass
         else:
