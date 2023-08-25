@@ -95,6 +95,8 @@ class TotalVi(MSDataAlgorithmBase):
         else:
             protein_adata: anndata.AnnData = protein_data._ann_data.copy()
         
+        protein_adata = protein_adata[rna_adata.obs_names].copy()
+        
         if issparse(protein_adata.X):
             protein_adata.X = protein_adata.X.toarray()
         
@@ -127,7 +129,7 @@ class TotalVi(MSDataAlgorithmBase):
 
         total_vi = scvi.model.TOTALVI(mdata, **kwags)
         total_vi.train()
-        representation = pd.DataFrame(total_vi.get_latent_representation())
+        
         if not self._use_hvg:
             rna = rna_data
         else:
@@ -135,11 +137,16 @@ class TotalVi(MSDataAlgorithmBase):
         
         protein = protein_data
 
+        representation = pd.DataFrame(total_vi.get_latent_representation(), index=rna.cell_names)
+
         rna.tl.result[mtx_res_key] = representation
         rna.tl.reset_key_record('totalVI', mtx_res_key)
 
-        protein.tl.result[mtx_res_key] = representation
+        protein.tl.result[mtx_res_key] = representation.loc[protein.cell_names].copy()
         protein.tl.reset_key_record('totalVI', mtx_res_key)
+
+        rna.tl.result[mtx_res_key].index = pd.Index(range(0, rna.cell_names.size))
+        protein.tl.result[mtx_res_key].index = pd.Index(range(0, protein.cell_names.size))
 
 
         denoised_rna, denoised_protein = total_vi.get_normalized_expression(n_samples=25, return_mean=True)
@@ -150,8 +157,8 @@ class TotalVi(MSDataAlgorithmBase):
         rna.tl.reset_key_record('res_totalVI', res_key)
 
         protein.tl.result[res_key] = {
-            'denoised_protein': denoised_protein,
-            'protein_foreground_prob': total_vi.get_protein_foreground_probability(n_samples=25, return_mean=True)
+            'denoised_protein': denoised_protein.loc[protein.cell_names],
+            'protein_foreground_prob': total_vi.get_protein_foreground_probability(n_samples=25, return_mean=True).loc[protein.cell_names]
         }
         protein.tl.reset_key_record('res_totalVI', res_key)
 
@@ -194,7 +201,8 @@ class TotalVi(MSDataAlgorithmBase):
         de_df.to_csv(f'{out_dir}/{diff_exp_file_name}')
         
         for cluster_res_key in rna_data.tl.key_record['cluster']:
-            self._protein_data.tl.result[cluster_res_key] = rna_data.tl.result[cluster_res_key]
+            # self._protein_data.tl.result[cluster_res_key] = rna_data.tl.result[cluster_res_key]
+            self._protein_data.cells[cluster_res_key] = rna_data.cells[cluster_res_key]
         
         if not isinstance(self._rna_data, AnnBasedStereoExpData):
             LogManager.stop_logging()
