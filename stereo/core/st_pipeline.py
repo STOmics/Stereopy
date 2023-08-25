@@ -1147,7 +1147,7 @@ class StPipeline(object):
         :param smooth_threshold: the threshold that indicates Gaussian variance with a value between 20 and 100. 
             Also too high value may cause overfitting, and low value may cause poor smoothing effect.
         :param pca_res_key: the key of PCA to get targeted result from `self.result`.
-        :param n_jobs: the number of parallel jobs to run for searching neighbors, if `-1`, all CPUs will be used.
+        :param n_jobs: the number of parallel jobs to run, if `-1`, all CPUs will be used.
         :param inplace: whether to inplace the previous express matrix or get a new StereoExpData object with the new express matrix.
 
         :return: An object of StereoExpData with the express matrix processed by Gaussian smooting.
@@ -1171,6 +1171,10 @@ class StPipeline(object):
 
         # logger.info(f"raw exp matrix size: {raw_exp_matrix.shape}")
         from ..algorithm.gaussian_smooth import gaussian_smooth
+
+        if n_jobs <= 0 or n_jobs > cpu_count():
+            n_jobs = cpu_count()
+
         result = gaussian_smooth(
             pca_exp_matrix,
             raw_exp_matrix,
