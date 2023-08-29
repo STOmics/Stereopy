@@ -4,7 +4,7 @@
 # @Email    : tanliwei@genomics.cnW
 import os
 import time
-from typing import Union
+from typing import Union, Literal
 from multiprocessing import cpu_count
 import pandas as pd
 import numpy as np
@@ -189,77 +189,49 @@ class CellCorrect(object):
         obj = gef_to_gem_cy.gefToGem(gem_file_adjusted, self.sn)
         obj.bgef2cgem(mask_path, self.bgef_path)
 
-    def __set_processes_count(self, process_count, fast):
+    def __set_processes_count(self, process_count, method):
         if process_count is not None:
             if not isinstance(process_count, int):
                 raise TypeError("the type of prameter 'process_count' must be int.")
             
-        if isinstance(fast, bool) and (not fast):
+        if method == 'GMM':
             if process_count is None or process_count == 0:
                 process_count = 10 if cpu_count() > 10 else cpu_count()
             elif process_count < 0 or process_count > cpu_count():
                 process_count = cpu_count()
-        else:
-            if isinstance(fast, bool) and fast:
-                fast = 'v2'
-            if fast == 'v1':
+        elif method == 'FAST':
+            process_count = 1
+        elif method == 'EDM':
+            if process_count is None or process_count == 0:
                 process_count = 1
-            elif fast == 'v2':
-                if process_count is None or process_count == 0:
-                    process_count = 1
-                elif process_count < 0 or process_count > cpu_count():
-                    process_count = cpu_count()
-            else:
-                process_count = 1 if process_count is None else process_count
-        return process_count
-    
-    def __set_contours_fitting(self, contours_fitting, fast):
-        if contours_fitting is not None:
-            if not isinstance(contours_fitting, bool):
-                raise TypeError("the type of parameter 'contours_fitting' must be bool.")
-
-        if isinstance(fast, bool) and (not fast):
-            if contours_fitting is None:
-                contours_fitting = True
+            elif process_count < 0 or process_count > cpu_count():
+                process_count = cpu_count()
         else:
-            if isinstance(fast, bool) and fast:
-                fast = 'v2'
-            if fast == 'v1':
-                if contours_fitting is None:
-                    contours_fitting = True
-            elif fast == 'v2':
-                if contours_fitting is None:
-                    contours_fitting = False
-            else:
-                contours_fitting = True if contours_fitting is None else contours_fitting
-        return contours_fitting
-
+            pass
+        return process_count
 
     @log_consumed_time
-    def correcting(self, threshold=20, process_count=None, only_save_result=False, sample_n=-1, fast=True, distance=10, **kwargs):
-        if isinstance(fast, bool) and fast:
-            fast = 'v2'
-        elif isinstance(fast, str):
-            fast = fast.lower()
-        process_count = self.__set_processes_count(process_count, fast)
-        if fast is False or fast == 'v1':
+    def correcting(self, threshold=20, process_count=None, only_save_result=False, sample_n=-1, method='EDM', distance=10, **kwargs):
+        if method is None:
+            method = 'EDM'
+        method = method.upper()
+        process_count = self.__set_processes_count(process_count, method)
+        if method in ('GMM', 'FAST'):
             genes, raw_data = self.generate_raw_data(sample_n)
-        if fast is False:
+        if method == 'GMM':
             correction = CellCorrection(self.mask_path, raw_data, threshold, process_count, err_log_dir=self.out_dir)
             adjusted_data = correction.cell_correct()
-        elif fast == 'v1':
+        elif method == 'FAST':
             adjusted_data = cell_correction_fast.cell_correct(raw_data, self.mask_path)
-        elif fast == 'v2':
+        elif method == 'EDM':
             n_split_data_jobs = kwargs.get('n_split_data_jobs', -1)
             new_mask_path = cell_correction_fast_by_mask.main(self.mask_path, n_jobs=process_count, distance=distance, out_path=self.out_dir, n_split_data_jobs=n_split_data_jobs)
             cgef_file_adjusted = self.generate_cgef_with_mask(new_mask_path, 'adjusted')
             gem_file_adjusted = self.cgef_to_gem(cgef_file_adjusted)
         else:
-            raise ValueError(f"Unexpected value({fast}) for parameter fast, available values include [False, 'v1', 'v2'].")
+            raise ValueError(f"Unexpected value({method}) for parameter method, available values include ['GMM', 'FAST', 'EDM'].")
 
-        if fast == 'v2':
-            pass
-        else:
+        if method in ('GMM', 'FAST'):
             gem_file_adjusted = self.generate_adjusted_gem(adjusted_data)
             dc = DrawContours(adjusted_data, self.out_dir)
             outline_path = dc.get_contours()
@@ -279,7 +251,8 @@ def cell_correct(out_dir: str,
                 mask_path: str=None,
                 process_count: int=None,
                 only_save_result: bool=False,
-                fast: Union[bool, str]='v2',
+                # fast: Union[bool, str]='v2',
+                method: Literal['GMM', 'FAST', 'EDM']='EDM',
                 distance: int=10,
                 **kwargs
 ):
@@ -312,4 +285,4 @@ def cell_correct(out_dir: str,
     """
 
     cc = CellCorrect(gem_path=gem_path, bgef_path=bgef_path, raw_cgef_path=raw_cgef_path, mask_path=mask_path, out_dir=out_dir)
-    return cc.correcting(threshold=threshold, process_count=process_count, only_save_result=only_save_result, fast=fast, distance=distance, **kwargs)
+    return cc.correcting(threshold=threshold, process_count=process_count, only_save_result=only_save_result, method=method, distance=distance, **kwargs)
