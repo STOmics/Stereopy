@@ -41,7 +41,7 @@ class TotalVi(MSDataAlgorithmBase):
         protein_key: Union[str, int] = None,
         hvg_key: Union[str, int] = None,
         res_key: str = 'res_totalVI',
-        mtx_res_key: str = 'totalVI',
+        mtx_key: str = 'totalVI',
         **kwags
     ):
         if rna_key is None:
@@ -139,14 +139,14 @@ class TotalVi(MSDataAlgorithmBase):
 
         representation = pd.DataFrame(total_vi.get_latent_representation(), index=rna.cell_names)
 
-        rna.tl.result[mtx_res_key] = representation
-        rna.tl.reset_key_record('totalVI', mtx_res_key)
+        rna.tl.result[mtx_key] = representation
+        # rna.tl.reset_key_record('totalVI', mtx_key)
 
-        protein.tl.result[mtx_res_key] = representation.loc[protein.cell_names].copy()
-        protein.tl.reset_key_record('totalVI', mtx_res_key)
+        protein.tl.result[mtx_key] = representation.loc[protein.cell_names].copy()
+        # protein.tl.reset_key_record('totalVI', mtx_key)
 
-        rna.tl.result[mtx_res_key].index = pd.Index(range(0, rna.cell_names.size))
-        protein.tl.result[mtx_res_key].index = pd.Index(range(0, protein.cell_names.size))
+        rna.tl.result[mtx_key].index = pd.Index(range(0, rna.cell_names.size))
+        protein.tl.result[mtx_key].index = pd.Index(range(0, protein.cell_names.size))
 
 
         denoised_rna, denoised_protein = total_vi.get_normalized_expression(n_samples=25, return_mean=True)
@@ -154,19 +154,19 @@ class TotalVi(MSDataAlgorithmBase):
         rna.tl.result[res_key] = {
             'denoised_rna': denoised_rna
         }
-        rna.tl.reset_key_record('res_totalVI', res_key)
+        # rna.tl.reset_key_record('res_totalVI', res_key)
 
         protein.tl.result[res_key] = {
             'denoised_protein': denoised_protein.loc[protein.cell_names],
             'protein_foreground_prob': total_vi.get_protein_foreground_probability(n_samples=25, return_mean=True).loc[protein.cell_names]
         }
-        protein.tl.reset_key_record('res_totalVI', res_key)
+        # protein.tl.reset_key_record('res_totalVI', res_key)
 
         self._rna_data = rna_data
         self._protein_data = protein_data
         self._hvg_data = hvg_data
         self._res_key = res_key
-        self._mtx_res_key = mtx_res_key
+        self._mtx_key = mtx_key
         self._total_vi_instance = total_vi
         # return self.save_result, total_vi
         return self
@@ -211,6 +211,9 @@ class TotalVi(MSDataAlgorithmBase):
         else:
             rna_adata: anndata.AnnData = self._rna_data._ann_data
         
+        multiomics_data = self._rna_data
+        multiomics_adata = rna_adata
+        
         if not isinstance(self._protein_data, AnnBasedStereoExpData):
             LogManager.stop_logging()
             protein_adata: anndata.AnnData = stereo_to_anndata(self._protein_data, split_batches=False)
@@ -231,8 +234,28 @@ class TotalVi(MSDataAlgorithmBase):
                 LogManager.start_logging()
             else:
                 hvg_adata: anndata.AnnData = self._hvg_data._ann_data
+            multiomics_data = self._hvg_data
+            multiomics_adata = hvg_adata
             mdata.mod['multiomics'] = hvg_adata
             mdata.update()
+        
+        protein_adata.obsm[f'X_{self._mtx_key}'] = self._protein_data.tl.result[self._mtx_key].to_numpy()
+        multiomics_adata.obsm[f'X_{self._mtx_key}'] = multiomics_data.tl.result[self._mtx_key].to_numpy()
+
+        for key, value in self._protein_data.tl.result[self._res_key].items():
+            if value.shape[0] == self._protein_data.shape[0]:
+                protein_adata.layers[key] = value
+            else:
+                protein_adata.uns[key] = value
+        
+        for key, value in multiomics_data.tl.result[self._res_key].items():
+            if value.shape[0] == multiomics_data.shape[0]:
+                multiomics_adata.layers[key] = value
+            else:
+                multiomics_adata.uns[key] = value
+        
+        mdata.update()
+
         if h5mu_file_name is None:
             h5mu_file_name = f'{rna_data.sn}_{rna_data.bin_size}.h5mu'
         mudata.write(f"{out_dir}/{h5mu_file_name}", mdata)
