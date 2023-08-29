@@ -25,3 +25,4 @@ from .plot_coo import PlotCoOccurrence
 from .plot_dendrogram import PlotDendrogram
 from .plot_clusters_dot import ClustersGenesDotPlot
 from .plot_clusters_heatmap import ClustersGenesHeatmap
+from .plot_paga import PlotPaga

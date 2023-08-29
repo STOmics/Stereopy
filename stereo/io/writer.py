@@ -162,13 +162,16 @@ def _write_one_h5ad_result(data, f, key_record):
             # write result[res_key]
             if analysis_key == 'hvg':
                 # interval to str
-                hvg_df = deepcopy(data.tl.result[res_key])
-                hvg_df.mean_bin = [str(interval) for interval in data.tl.result[res_key].mean_bin]
+                hvg_df: pd.DataFrame = deepcopy(data.tl.result[res_key])
+                if 'mean_bin' in hvg_df.columns:
+                    hvg_df.mean_bin = [str(interval) for interval in data.tl.result[res_key].mean_bin]
                 h5ad.write(hvg_df, f, f'{res_key}@hvg')  # -> dataframe
             if analysis_key in ['pca', 'umap']:
                 h5ad.write(data.tl.result[res_key].values, f, f'{res_key}@{analysis_key}')  # -> array
             if analysis_key == 'neighbors':
                 for neighbor_key, value in data.tl.result[res_key].items():
+                    if value is None:
+                        continue
                     if issparse(value):
                         sp_format = 'csr' if isinstance(value, csr_matrix) else 'csc'
                         h5ad.write(value, f, f'{neighbor_key}@{res_key}@neighbors', sp_format)  # -> csr_matrix
@@ -366,19 +369,45 @@ def update_gef(data: StereoExpData, gef_file: str, cluster_res_key: str):
     None
     """
     cluster = {}
+    cluster_idx = {}
     if cluster_res_key not in data.tl.result:
         raise Exception(f'{cluster_res_key} is not in the result, please check and run the func of cluster.')
     clu_result = data.tl.result[cluster_res_key]
-    for i, v in clu_result.iterrows():
-        cluster[str(v['bins'])] = int(v['group'])
+    bins = clu_result['bins'].to_numpy().astype('U')
+    groups = clu_result['group'].astype('category')
+    groups_idx = groups.cat.codes.to_numpy()
+    groups_code = groups.cat.categories.to_numpy()
+    groups = groups.to_numpy()
+    is_numeric = True
+    # for i, v in clu_result.iterrows():
+    for bin, c, cidx in zip(bins, groups, groups_idx):
+        # cluster[str(v['bins'])] = v['group']
+        if not isinstance(c, str):
+            cluster[bin] = c
+            cluster_idx[bin] = cidx
+        elif c.isdigit():
+            cluster[bin] = int(c)
+            cluster_idx[bin] = cidx
+        else:
+            cluster[bin] = c
+            cluster_idx[bin] = cidx
+            is_numeric = False
 
-    h5f = h5py.File(gef_file, 'r+')
-    cell_names = np.bitwise_or(np.left_shift(h5f['cellBin']['cell']['x'].astype('uint64'), 32), h5f['cellBin']['cell']['y'].astype('uint64')).astype('U')
-    celltid = np.zeros(h5f['cellBin']['cell'].shape, dtype='uint16')
-    
-    for n, cell_name in enumerate(cell_names):
-        if cell_name in cluster:
-            celltid[n] = cluster[cell_name]
+    with h5py.File(gef_file, 'r+') as h5f:
+        cell_names = np.bitwise_or(np.left_shift(h5f['cellBin']['cell']['x'].astype('uint64'), 32), h5f['cellBin']['cell']['y'].astype('uint64')).astype('U')
+        celltid = np.zeros(h5f['cellBin']['cell'].shape, dtype='uint16')
+        
+        for n, cell_name in enumerate(cell_names):
+            if cell_name in cluster:
+                if is_numeric:
+                    celltid[n] = cluster[cell_name]
+                else:
+                    celltid[n] = cluster_idx[cell_name]
 
-    # h5f['cellBin']['cell']['cellTypeID'] = celltid
-    h5f['cellBin']['cell']['clusterID'] = celltid
+        # h5f['cellBin']['cell']['cellTypeID'] = celltid
+        if is_numeric:
+            h5f['cellBin']['cell']['clusterID'] = celltid
+        else:
+            h5f['cellBin']['cell']['cellTypeID'] = celltid
+            del h5f['cellBin']['cellTypeList']
+            h5f['cellBin']['cellTypeList'] = groups_code

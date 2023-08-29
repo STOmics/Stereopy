@@ -552,6 +552,14 @@ class StereoExpData(Data):
         )
         if format_key_record:
             format_str += f"\nkey_record: {format_key_record}"
+        result_key = []
+        for rks in self.tl.key_record.values():
+            if rks is not None:
+                result_key += rks
+        for rk in self.tl.result.keys():
+            if rk not in result_key:
+                result_key.append(rk)
+        format_str += f"\nresult: {result_key}"
         return format_str
 
     def __repr__(self):

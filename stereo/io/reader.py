@@ -286,10 +286,12 @@ def _read_stereo_h5_result(key_record: dict, data, f):
                 data.tl.result[res_key] = pd.DataFrame(h5ad.read_dataset(f[f'{res_key}@{analysis_key}']))
             if analysis_key == 'neighbors':
                 data.tl.result[res_key] = {
-                    'neighbor': h5ad.read_group(f[f'neighbor@{res_key}@neighbors']),
+                    # 'neighbor': h5ad.read_group(f[f'neighbor@{res_key}@neighbors']),
                     'connectivities': h5ad.read_group(f[f'connectivities@{res_key}@neighbors']),
                     'nn_dist': h5ad.read_group(f[f'nn_dist@{res_key}@neighbors'])
                 }
+                if f'neighbor@{res_key}@neighbors' in f:
+                    data.tl.result[res_key]['neighbor'] = h5ad.read_group(f[f'neighbor@{res_key}@neighbors'])
             if analysis_key == 'cluster':
                 data.tl.result[res_key] = h5ad.read_group(f[f'{res_key}@cluster'])
                 gene_cluster_res_key = f'gene_exp_{res_key}'
@@ -822,7 +824,7 @@ def stereo_to_anndata(
                 adata.uns['sct_top_features'] = list(data.tl.result[res_key][1]['top_features'])
                 adata.uns['sct_cellname'] = list(data.tl.result[res_key][1]['umi_cells'].astype('str'))
                 adata.uns['sct_genename'] = list(data.tl.result[res_key][1]['umi_genes'])
-            elif key in ['pca', 'umap', 'tsne', 'totalVI']:
+            elif key in ['pca', 'umap', 'tsne']:
                 # pca :we do not keep variance and PCs(for varm which will be into feature.finding in pca of seurat.)
                 res_key = data.tl.key_record[key][-1]
                 sc_key = f'X_{key}'
@@ -865,16 +867,6 @@ def stereo_to_anndata(
                 for res_key in data.tl.key_record[key]:
                     logger.info(f"Adding data.tl.result['{res_key}'] into adata.uns['{res_key}'] .")
                     adata.uns[res_key] = data.tl.result[res_key]
-            elif key == 'res_totalVI':
-                res_key = data.tl.key_record[key][-1]
-                for k, v in data.tl.result[res_key].items():
-                    if isinstance(v, pd.DataFrame) or isinstance(v, np.ndarray):
-                        if v.shape == data.shape:
-                            adata.layers[k] = v
-                        else:
-                            adata.uns[k] = v
-                    else:
-                        adata.uns[k] = v
             else:
                 continue
 

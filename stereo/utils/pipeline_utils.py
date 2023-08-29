@@ -15,14 +15,20 @@ def cell_cluster_to_gene_exp_cluster(
     kind: str = 'sum',
     filter_raw: bool = True
 ):
-    if  data.raw is None:
-        logger.warning(
-            """
-            The function cell_cluster_to_gene_exp_cluster must be based on raw data.
-            Please run data.tl.raw_checkpoint() before Normalization.
-            """
-        )
-        return False
+    # if  data.raw is None:
+    #     logger.warning(
+    #         """
+    #         This function must be based on raw data if setting use_raw to True.
+    #         Please run data.tl.raw_checkpoint() before Normalization.
+    #         """
+    #     )
+    #     return False
+    use_raw = False
+    if data.raw is not None:
+        use_raw = True
+    if not use_raw:
+        logger.info("Can not find raw data, the data which may have been normalized will be used.")
+    
     if cluster_res_key is None:
         logger.warning("The parameter cluster_res_key of the function cell_cluster_to_gene_exp_cluster must be input")
         return False
@@ -40,21 +46,26 @@ def cell_cluster_to_gene_exp_cluster(
             groups = [groups]
         group_index = group_index.loc[groups]
     tmp = []
-    data.tl.raw.array2sparse()
-    if filter_raw:
-        raw_cells_isin_data = np.isin(data.raw.cell_names, data.cell_names)
-        raw_genes_isin_data = np.isin(data.raw.gene_names, data.gene_names)
+    if use_raw:
+        data.tl.raw.array2sparse()
+        if filter_raw:
+            raw_cells_isin_data = np.isin(data.raw.cell_names, data.cell_names)
+            raw_genes_isin_data = np.isin(data.raw.gene_names, data.gene_names)
+        else:
+            raw_cells_isin_data = np.ones(data.raw.cell_names.shape, dtype=bool)
+            raw_genes_isin_data = np.ones(data.raw.gene_names.shape, dtype=bool)
+        exp_matrix = data.raw.exp_matrix[raw_cells_isin_data][:, raw_genes_isin_data]
+        gene_names = data.raw.gene_names[raw_genes_isin_data]
     else:
-        raw_cells_isin_data = np.ones(data.raw.cell_names.shape, dtype=bool)
-        raw_genes_isin_data = np.ones(data.raw.gene_names.shape, dtype=bool)
+        exp_matrix = data.exp_matrix
+        gene_names = data.gene_names
+
     if genes is not None:
         if isinstance(genes, str):
             genes = [genes]
-        all_genes_isin = np.isin(data.raw.gene_names, genes)
-    else:
-        all_genes_isin = True
-    exp_matrix = data.raw.exp_matrix[raw_cells_isin_data][:, (raw_genes_isin_data & all_genes_isin)]
-    gene_names = data.raw.gene_names[(raw_genes_isin_data & all_genes_isin)]
+        all_genes_isin = np.isin(data.gene_names, genes)
+        exp_matrix = exp_matrix[:, all_genes_isin]
+        gene_names = gene_names[all_genes_isin]
 
     if kind != 'mean':
         kind = 'sum'
