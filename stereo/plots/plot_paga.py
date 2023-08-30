@@ -181,15 +181,15 @@ class PlotPaga(PlotBase):
         """
         abstract paga plot for the paga result.
 
-        :param adjacency: keyword to use for paga or paga tree, available values include 'connectivities' and 'connectivities_tree'
-        :param threshold: prune edges lower than threshold
-        :param layout: the method to layout each node
-        :param random_state: to control the random initialization
-        :param cmap: colormap to use, default with tab20
+        :param adjacency: keyword to use for paga or paga tree, available values include 'connectivities' and 'connectivities_tree'.
+        :param threshold: prune edges lower than threshold.
+        :param layout: the method to layout each node.
+        :param random_state: to control the random initializatio.
+        :param cmap: colormap to use, default with tab20.
         :param ax: subplot to plot.
         :param width: the figure width.
         :param height: the figure height.
-:
+
         """
         # calculate node positions 
         adjacency_mat = self.pipeline_res['paga'][adjacency].copy()
@@ -418,15 +418,15 @@ class PlotPaga(PlotBase):
         height: int = 6
     ):
         """
-        abstract paga plot for the paga result and cell distribute around paga
+        abstract paga plot for the paga result and cell distribute around paga.
 
-        :param adjacency: keyword to use for paga or paga tree, available values include 'connectivities' and 'connectivities_tree'
-        :param color: the col in cells or a gene name to display in compare plot
-        :param size: cell spot size
-        :param threshold: prune edges lower than threshold
-        :param layout: the method to layout each node
-        :param random_state: to control the random initialization
-        :param cmap: colormap to use, default with tab20
+        :param adjacency: keyword to use for paga or paga tree, available values include 'connectivities' and 'connectivities_tree'.
+        :param color: the col in cells or a gene name to display in compare plot.
+        :param size: cell spot size.
+        :param threshold: prune edges lower than threshold.
+        :param layout: the method to layout each node.
+        :param random_state: to control the random initialization.
+        :param cmap: colormap to use, default with tab20.
         :param width: the figure width.
         :param height: the figure height.
 
