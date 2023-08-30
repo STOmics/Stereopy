@@ -552,6 +552,14 @@ class StereoExpData(Data):
         )
         if format_key_record:
             format_str += f"\nkey_record: {format_key_record}"
+        result_key = []
+        for rks in self.tl.key_record.values():
+            if rks is not None:
+                result_key += rks
+        for rk in self.tl.result.keys():
+            if rk not in result_key:
+                result_key.append(rk)
+        format_str += f"\nresult: {result_key}"
         return format_str
 
     def __repr__(self):
@@ -684,6 +692,11 @@ class AnnBasedStereoExpData(StereoExpData):
         elif 'x' in self._ann_data.obs.columns and 'y' in self._ann_data.obs.columns:
             return self._ann_data.obs[['x', 'y']].to_numpy()
         return None
+
+    @position.setter
+    def position(self, pos):
+        if 'spatial' in self._ann_data.obsm:
+            self._ann_data.obsm['spatial'][:, [0, 1]] = pos
 
     @property
     def position_z(self):

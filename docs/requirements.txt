@@ -236,3 +236,5 @@ furo==2022.12.7
 Sphinx==5.3.0
 onnxruntime==1.14.1
 POT==0.8.1.0
+pycirclize>=0.5.0
+plotly>=5.15.0

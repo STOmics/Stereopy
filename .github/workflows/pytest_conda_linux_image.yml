@@ -29,6 +29,7 @@ jobs:
 
           pip install -r requirements.txt -q
           # TODO temporarily not install `tests/extra_requirements.txt`
+          pip install -r tests/extra_requirements.txt -q
           pip install -r tests/image_requirements.txt -q
           pip install pathlib -q
 

@@ -10,6 +10,7 @@ change log:
     2021/05/20 rst supplement. by: qindanhua.
     2021/06/20 adjust for restructure base class . by: qindanhua.
 """
+from joblib import cpu_count
 from natsort import natsorted
 import pandas as pd
 
@@ -17,7 +18,6 @@ from ..utils.data_helper import select_group
 from ..utils.time_consume import log_consumed_time
 from ..core.tool_base import ToolBase
 from ..log_manager import logger
-from tqdm import tqdm
 from typing import Union, Sequence
 import numpy as np
 from scipy import stats
@@ -56,7 +56,8 @@ class FindMarker(ToolBase):
             raw_data=None,
             sort_by='scores',
             n_genes: Union[str, int] = 'all',
-            ascending: bool = False
+            ascending: bool = False,
+            n_jobs: int = 4
     ):
         super(FindMarker, self).__init__(data=data, groups=groups, method=method)
         self.corr_method = corr_method.lower()
@@ -67,6 +68,7 @@ class FindMarker(ToolBase):
         self.sort_by = sort_by
         self.n_genes = n_genes
         self.ascending = ascending
+        self.n_jobs = n_jobs
         self.fit()
 
     @ToolBase.method.setter
@@ -120,6 +122,49 @@ class FindMarker(ToolBase):
         else:
             raise TypeError("The type of case_groups must be one of str, int, numpy.ndarray, list or tuple")
 
+    def handle_result(self, g, group_info, all_groups, ranks=None, tie_term=None, control_str='rest'):
+        if self.control_groups == 'rest':
+            other_g = all_groups.copy()
+            other_g.remove(g)
+        else:
+            other_g = self.control_groups.copy()
+            if g in other_g:
+                other_g.remove(g)
+        if len(other_g) <= 0:
+            return
+
+        g_index = select_group(groups=g, cluster=group_info, all_groups=all_groups)
+        if self.method == 't_test':
+            result = statistics.ttest(self.data.exp_matrix[g_index], self.data.exp_matrix[~g_index], self.corr_method)
+        elif self.method == 'logreg':
+            if self.temp_logres_score is None:
+                self.temp_logres_score = self.logres_score()
+            result = self.run_logres(self.temp_logres_score, self.data.exp_matrix[g_index],
+                                     self.data.exp_matrix[~g_index], g)
+        else:
+            if self.control_groups != 'rest' and self.tie_term:
+                xy = np.vstack((self.data.exp_matrix[g_index].values, self.data.exp_matrix[~g_index].values))
+                ranks = stats.rankdata(xy, axis=-1)
+                tie_term = mannwhitneyu.cal_tie_term(ranks)
+            result = statistics.wilcoxon(self.data.exp_matrix[g_index], self.data.exp_matrix[~g_index],
+                                         self.corr_method, ranks, tie_term, g_index)
+        result['genes'] = self.data.gene_names
+        result.sort_values(by=self.sort_by, ascending=self.ascending, inplace=True)
+
+        if self.n_genes != 'all':
+            if self.n_genes == 'auto':
+                to = int(10000 / self.len_case_groups ** 2)
+            else:
+                to = self.n_genes
+            to = min(max(to, 1), 50)
+            result = result[:to]
+
+        if self.control_groups != 'rest':
+            control_str = '-'.join(other_g)
+        self.result[f"{g}.vs.{control_str}"] = result
+        self.result[f"{g}.vs.{control_str}"]['pct'] = self.result['pct'].iloc[result.index][g].values
+        self.result[f"{g}.vs.{control_str}"]['pct_rest'] = self.result['pct_rest'].iloc[result.index][g].values
+
     @ToolBase.fit_log
     def fit(self):
         """
@@ -136,13 +181,12 @@ class FindMarker(ToolBase):
         group_info = self.groups
         all_groups = set(group_info['group'].values)
         if self.case_groups == 'all':
-            case_groups = list(all_groups)
+            case_groups = all_groups
         else:
             case_groups = self.case_groups
         case_groups = natsorted(case_groups)
         control_str = self.control_groups if isinstance(self.control_groups, str) else '-'.join(self.control_groups)
         self.result = {}
-
         # only used when method is wilcoxon
         ranks = None
         tie_term = None
@@ -153,63 +197,24 @@ class FindMarker(ToolBase):
             if self.tie_term:
                 tie_term = mannwhitneyu.cal_tie_term(ranks)
             self.logger.info('cal tie_term end')
-
-        logres_score = None
+        self.temp_logres_score = None
         if self.case_groups == 'all' and self.control_groups == 'rest' and self.method == 'logreg':
-            logres_score = self.logres_score()
-
+            self.temp_logres_score = self.logres_score()
         self.result['pct'], self.result['pct_rest'] = self.calc_pct_and_pct_rest()
-
-        for g in tqdm(case_groups, desc='Find marker gene: '):
-            if self.control_groups == 'rest':
-                other_g = all_groups.copy()
-                other_g.remove(g)
-                other_g = list(other_g)
-            else:
-                other_g = self.control_groups.copy()
-                if g in other_g:
-                    other_g.remove(g)
-            if len(other_g) <= 0:
-                continue
-            # self.logger.info('start to select group')
-            g_data, g_index = select_group(st_data=self.data, groups=g, cluster=group_info)
-            other_data, _ = select_group(st_data=self.data, groups=other_g, cluster=group_info)
-            # self.logger.info('end selelct group')
-            if self.method == 't_test':
-                result = statistics.ttest(g_data, other_data, self.corr_method)
-            elif self.method == 'logreg':
-                if logres_score is None:
-                    logres_score = self.logres_score()
-                result = self.run_logres(logres_score, g_data, other_data, g)
-            else:
-                if self.control_groups != 'rest' and self.tie_term:
-                    xy = np.concatenate((g_data.values, other_data.values), axis=-1)
-                    ranks = stats.rankdata(xy, axis=-1)
-                    tie_term = mannwhitneyu.cal_tie_term(ranks)
-                result = statistics.wilcoxon(g_data, other_data, self.corr_method, ranks, tie_term, g_index)
-            result['genes'] = self.data.gene_names
-            result.sort_values(by=self.sort_by, ascending=self.ascending, inplace=True)
-
-
-            if self.n_genes != 'all':
-                if self.n_genes == 'auto':
-                    to = int(10000 / len(case_groups) ** 2)
-                else:
-                    to = self.n_genes
-                to = min(max(to, 1), 50)
-                result = result[:to]
-
-            if self.control_groups != 'rest':
-                control_str = '-'.join(other_g)
-            self.result[f"{g}.vs.{control_str}"] = result
-            self.result[f"{g}.vs.{control_str}"]['pct'] = self.result['pct'].iloc[result.index][g].values
-            self.result[f"{g}.vs.{control_str}"]['pct_rest'] = self.result['pct_rest'].iloc[result.index][g].values
+        from joblib import Parallel, delayed
+        self.len_case_groups = len(case_groups)
+        n_jobs = min(cpu_count(), self.n_jobs)
+        Parallel(n_jobs=n_jobs, backend='threading')(
+            delayed(self.handle_result)(g, group_info, all_groups, ranks, tie_term, control_str)
+            for g in case_groups
+        )
+        del self.temp_logres_score
 
     @log_consumed_time
     def calc_pct_and_pct_rest(self):
         raw_cells_isin_data = np.isin(self.raw_data.cell_names, self.data.cell_names)
         raw_genes_isin_data = np.isin(self.raw_data.gene_names, self.data.gene_names)
-        raw_exp_matrix = self.raw_data.exp_matrix[raw_cells_isin_data][:, raw_genes_isin_data]
+        raw_exp_matrix = self.raw_data.exp_matrix[np.ix_(raw_cells_isin_data, raw_genes_isin_data)]
         exp_matrix_one_hot = (raw_exp_matrix > 0).astype(np.uint8)
         cluster_result: pd.DataFrame = self.groups.copy()
         cluster_result.reset_index(drop=True, inplace=True)
@@ -222,16 +227,21 @@ class FindMarker(ToolBase):
 
         def _calc(a, exp_matrix_one_hot):
             cell_index = a[0]
-            if isinstance(exp_matrix_one_hot, np.ndarray):
+            if isinstance_ndarray:
                 sub_exp = exp_matrix_one_hot[cell_index].sum(axis=0)
-                sub_exp_rest = exp_matrix_one_hot.sum(axis=0) - sub_exp
+                sub_exp_rest = exp_matrix_one_hot_number - sub_exp
             else:
                 sub_exp = exp_matrix_one_hot[cell_index].sum(axis=0).A[0]
-                sub_exp_rest = exp_matrix_one_hot.sum(axis=0).A[0] - sub_exp
+                sub_exp_rest = exp_matrix_one_hot_number - sub_exp
             sub_pct = sub_exp / len(cell_index)
-            sub_pct_rest = sub_exp_rest / (self.data.cell_names.size - len(cell_index))
+            sub_pct_rest = sub_exp_rest / (cell_names_size - len(cell_index))
             return sub_pct, sub_pct_rest
 
+        cell_names_size = self.data.cell_names.size
+        exp_matrix_one_hot_number = exp_matrix_one_hot.sum(axis=0)
+        isinstance_ndarray = isinstance(exp_matrix_one_hot, np.ndarray)
+        if not isinstance_ndarray:
+            exp_matrix_one_hot_number = exp_matrix_one_hot_number.A[0]
         pct_all = np.apply_along_axis(_calc, 1, group_index.values, exp_matrix_one_hot)
         pct = pd.DataFrame(pct_all[:, 0], columns=self.data.gene_names, index=group_index.index).T
         pct_rest = pd.DataFrame(pct_all[:, 1], columns=self.data.gene_names, index=group_index.index).T
@@ -247,17 +257,10 @@ class FindMarker(ToolBase):
         from ..algorithm.statistics import logreg
         x = self.data.exp_matrix
         y = self.groups['group'].values
-        # if isinstance(self.case_groups, np.ndarray) or self.case_groups != 'all':
-        #     if isinstance(self.case_groups, str):
-        #         use_groups = [self.case_groups]
-        #     else:
-        #         use_groups = list(self.case_groups)
-        #     use_groups.append(self.control_groups)
         if self.case_groups != 'all':
             use_groups = self.case_groups
             if self.control_groups != 'rest':
-                use_groups = list(set(self.case_groups + self.control_groups))
-            print(use_groups)
+                use_groups = set(self.case_groups + self.control_groups)
             group_index = self.groups['group'].isin(use_groups)
             x = x[group_index, :]
             y = y[group_index]
@@ -268,7 +271,6 @@ class FindMarker(ToolBase):
     def run_logres(self, score_df, g_data, other_data, group_name):
         from ..algorithm.statistics import cal_log2fc
         res = pd.DataFrame()
-        # res['genes'] = g_data.columns
         gene_index = score_df.columns.isin(self.data.gene_names)
         scores = score_df.loc[str(group_name)].values if score_df.shape[0] > 1 else score_df.values[0]
         res['scores'] = scores[gene_index]

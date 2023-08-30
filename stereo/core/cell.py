@@ -162,13 +162,14 @@ class Cell(object):
         """
         return self._obs[name].to_numpy()
 
-    def to_df(self):
+    def to_df(self, copy=False):
         """
         Transform StereoExpData object to pd.DataFrame.
 
         :return: a dataframe of Cell.
         """
-        obs = self._obs.copy(deep=True)
+
+        obs = self._obs.copy(deep=True) if copy else self._obs
         if 'batch' in obs.columns:
             obs['batch'] = obs['batch'].astype('category')
         return obs

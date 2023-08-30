@@ -44,10 +44,14 @@ The plot collection for StereoExpData object.
    plots.PlotCollection.violin
    algorithm.cell_cell_communication.PlotCellCellCommunication.ccc_dot_plot
    algorithm.cell_cell_communication.PlotCellCellCommunication.ccc_heatmap
+   algorithm.cell_cell_communication.PlotCellCellCommunication.ccc_circos_plot
+   algorithm.cell_cell_communication.PlotCellCellCommunication.ccc_sankey_plot
    algorithm.regulatory_network_inference.PlotRegulatoryNetwork.auc_heatmap_by_group
    algorithm.regulatory_network_inference.PlotRegulatoryNetwork.auc_heatmap
    algorithm.regulatory_network_inference.PlotRegulatoryNetwork.grn_dotplot
    algorithm.regulatory_network_inference.PlotRegulatoryNetwork.spatial_scatter_by_regulon_3D
    algorithm.regulatory_network_inference.PlotRegulatoryNetwork.spatial_scatter_by_regulon
-   algorithm.co_occurrence.PlotCoOccurrence.co_occurrence_plot
-   algorithm.co_occurrence.PlotCoOccurrence.co_occurrence_heatmap
+   plots.PlotCoOccurrence.co_occurrence_plot
+   plots.PlotCoOccurrence.co_occurrence_heatmap
+   plots.PlotPaga.paga_plot
+   plots.PlotPaga.paga_compare

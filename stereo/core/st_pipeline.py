@@ -160,6 +160,7 @@ class StPipeline(object):
                      max_n_genes_by_counts: Optional[int] = None,
                      pct_counts_mt: Optional[float] = None,
                      cell_list: Optional[list] = None,
+                     filter_raw: Optional[bool] = True,
                      inplace: bool = True):
         """
         Filter cells based on counts or the numbers of genes expressed.
@@ -178,6 +179,8 @@ class StPipeline(object):
             maximum number of `pct_counts_mt` required for a cell to pass filtering.
         cell_list
             the list of cells to be retained.
+        filter_raw
+            whether to filter raw data meanwhile.
         inplace
             whether to inplace the previous data or return a new data.
 
@@ -189,6 +192,8 @@ class StPipeline(object):
         from ..preprocess.filter import filter_cells
         data = filter_cells(self.data, min_gene, max_gene, min_n_genes_by_counts, max_n_genes_by_counts, pct_counts_mt,
                             cell_list, inplace)
+        if data.raw is not None and filter_raw:
+            filter_cells(data.raw, min_gene, max_gene, min_n_genes_by_counts, max_n_genes_by_counts, pct_counts_mt, cell_list, True)
         return data
 
     @logit
@@ -196,7 +201,8 @@ class StPipeline(object):
                      min_cell: Optional[int] = None,
                      max_cell: Optional[int] = None,
                      gene_list: Optional[Union[list, np.ndarray]] = None,
-                     mean_umi_gt: float = None,
+                     mean_umi_gt: Optional[float] = None,
+                     filter_raw: Optional[bool] = True,
                      inplace: bool = True):
         """
         Filter genes based on the numbers of cells or counts.
@@ -209,10 +215,13 @@ class StPipeline(object):
             maximum number of cells expressed required for a gene to pass filering.
         gene_list
             the list of genes to be retained.
-        inplace
-            whether to inplace the previous data or return a new data.
         mean_umi_gt
 			genes mean umi should greater than this.
+        filter_raw
+            whether to filter raw data meanwhile.
+        inplace
+            whether to inplace the previous data or return a new data.
+        
         Returns
         --------------------
         An object of StereoExpData.
@@ -220,6 +229,42 @@ class StPipeline(object):
         """
         from ..preprocess.filter import filter_genes
         data = filter_genes(self.data, min_cell, max_cell, gene_list, mean_umi_gt, inplace)
+        if data.raw is not None and filter_raw:
+            filter_genes(data.raw, min_cell, max_cell, gene_list, mean_umi_gt, True)
+        return data
+    
+    @logit
+    def filter_by_hvgs(self,
+                       hvg_res_key: str='highly_variable_genes',
+                       filter_raw: bool = True,
+                       inplace: bool = False):
+        """
+        Filter genes based on the result of highly_variable_genes function.
+
+        Parameters
+        ---------------------
+        hvg_res_key
+            the key of highly variable genes to get corresponding result.
+        filter_raw
+            whether to filter raw data meanwhile.
+        inplace
+            whether to inplace the previous data or return a new data.
+        
+        Returns
+        --------------------
+        An object of StereoExpData.
+        Depending on `inplace`, if `True`, the data will be replaced by those filtered.
+        """
+        if hvg_res_key not in self.result:
+            raise KeyError(f'Can not find result of highly_variable_genes function by key {hvg_res_key}.')
+        
+        from ..preprocess import filter_genes
+        hvgs_flag = self.result[hvg_res_key]['highly_variable'].to_numpy()
+        hvgs = self.data.gene_names[hvgs_flag]
+        data = filter_genes(self.data, gene_list=hvgs, inplace=inplace)
+        if data.raw is not None and filter_raw:
+            filter_genes(data.raw, gene_list=hvgs, inplace=True)
+        data.tl.result[hvg_res_key] = data.tl.result[hvg_res_key][hvgs_flag]
         return data
 
     @logit
@@ -228,6 +273,7 @@ class StPipeline(object):
                            max_x: int = None,
                            min_y: int = None,
                            max_y: int = None,
+                           filter_raw: bool = True,
                            inplace: bool = True):
         """
         Filter cells based on coordinate information.
@@ -235,15 +281,17 @@ class StPipeline(object):
         Parameters
         -----------------
         min_x
-            - minimum of coordinate x for a cell to pass filtering.
+            minimum of coordinate x for a cell to pass filtering.
         max_x
-            - maximum of coordinate x for a cell to pass filtering.
+            maximum of coordinate x for a cell to pass filtering.
         min_y
-            - minimum of coordinate y for a cell to pass filtering.
+            minimum of coordinate y for a cell to pass filtering.
         max_y
-            - maximum of coordinate y for a cell to pass filtering.
+            maximum of coordinate y for a cell to pass filtering.
+        filter_raw
+            whether to filter raw data meanwhile.
         inplace
-            - whether to inplace the previous data or return a new data.
+            whether to inplace the previous data or return a new data.
 
         Returns
         --------------------
@@ -252,6 +300,8 @@ class StPipeline(object):
         """
         from ..preprocess.filter import filter_coordinates
         data = filter_coordinates(self.data, min_x, max_x, min_y, max_y, inplace)
+        if data.raw is not None and filter_raw:
+            filter_coordinates(data.raw, min_x, max_x, min_y, max_y, True)
         return data
 
     @logit
@@ -260,6 +310,7 @@ class StPipeline(object):
         cluster_res_key: str = 'cluster',
         groups: Union[str, np.ndarray, List[str]] = None,
         excluded: bool = False,
+        filter_raw: Optional[bool] = True,
         inplace: bool = False
     ):
         """
@@ -268,20 +319,22 @@ class StPipeline(object):
         Parameters
         -----------------
         cluster_res_key
-            - the key of clustering to get corresponding result from `self.result`.
+            the key of clustering to get corresponding result from `self.result`.
         groups
-            - the groups in clustering result which will be retained or filtered based on the value of `excluded`.
+            the groups in clustering result which will be retained or filtered based on the value of `excluded`.
         excluded:
-            - set it to True to exclude the groups which specify by parameter `groups` while False to include.
+            set it to True to exclude the groups which specify by parameter `groups` while False to include.
+        filter_raw
+            whether to filter raw data meanwhile.
         inplace
-            - whether to inplace the previous data or return a new data.
+            whether to inplace the previous data or return a new data.
 
         Returns
         --------------------
         An object of StereoExpData.
         Depending on `inplace`, if `True`, the data will be replaced by those filtered.
         """
-        from ..preprocess.filter import filter_by_clusters
+        from ..preprocess.filter import filter_by_clusters, filter_cells
 
         if cluster_res_key not in self.result:
             raise Exception(f'{cluster_res_key} is not in the result, please check and run the func of cluster.')
@@ -293,6 +346,8 @@ class StPipeline(object):
             if isinstance(groups, str):
                 groups = [groups]
             data.tl.result[gene_exp_cluster_key] = data.tl.result[gene_exp_cluster_key][groups]
+        if data.raw is not None and filter_raw:
+            filter_cells(data.raw, cell_list=data.cell_names, inplace=True)
         return data
 
     @logit
@@ -427,6 +482,7 @@ class StPipeline(object):
             res_key: str = 'sctransform',
             exp_matrix_key: str = "scale.data",
             seed_use: int = 1448145,
+            filter_raw: Optional[bool] = True,
             **kwargs
     ):
         """
@@ -439,7 +495,7 @@ class StPipeline(object):
         n_genes
             number of genes to use for estimating parameters. means all genes.
         filter_hvgs
-            whether to filter highly variable genes.
+            True to retain data associated with highly variable genes only while False to entire data.
         var_features_n
             the number of variable features to select, for calculating a subset of pearson residuals.
         inplace
@@ -450,6 +506,8 @@ class StPipeline(object):
             which expression matrix to use for analysis.
         seed_use
             random seed.
+        filter_raw
+            because this function will filter data, whether to filter raw data meanwhile by setting `filter_raw`.
 
         Returns
         -----------
@@ -457,16 +515,15 @@ class StPipeline(object):
         Depending on `inplace`, if `True`, the data will be replaced by those normalized.
         """
         from ..preprocess.sc_transform import sc_transform
-        if inplace:
-            self.result[res_key] = sc_transform(self.data, n_cells, n_genes, filter_hvgs, var_features_n,
-                                                exp_matrix_key=exp_matrix_key, seed_use=seed_use, **kwargs)
-        else:
-            import copy
-            data = copy.deepcopy(self.data)
-            self.result[res_key] = sc_transform(data, n_cells, n_genes, filter_hvgs, var_features_n,
+        from ..preprocess.filter import filter_genes
+        data = self.data if inplace else copy.deepcopy(self.data)
+        self.result[res_key] = sc_transform(data, n_cells, n_genes, filter_hvgs, var_features_n,
                                                 exp_matrix_key=exp_matrix_key, seed_use=seed_use, **kwargs)
         key = 'sct'
         self.reset_key_record(key, res_key)
+
+        if data.raw is not None and filter_raw and data.shape != data.raw.shape:
+            filter_genes(data.raw, gene_list=data.gene_names, inplace=True)
 
     @logit
     def highly_variable_genes(
@@ -814,7 +871,7 @@ class StPipeline(object):
         self.reset_key_record(key, res_key)
         gene_cluster_res_key = f'gene_exp_{res_key}'
         from ..utils.pipeline_utils import cell_cluster_to_gene_exp_cluster
-        gene_exp_cluster_res = cell_cluster_to_gene_exp_cluster(self, res_key)
+        gene_exp_cluster_res = cell_cluster_to_gene_exp_cluster(self.data, res_key)
         if gene_exp_cluster_res is not False:
             self.result[gene_cluster_res_key] = gene_exp_cluster_res
             self.reset_key_record('gene_exp_cluster', gene_cluster_res_key)
@@ -857,7 +914,7 @@ class StPipeline(object):
         key = 'cluster'
         self.reset_key_record(key, res_key)
         gene_cluster_res_key = f'gene_exp_{res_key}'
-        gene_exp_cluster_res = cell_cluster_to_gene_exp_cluster(self, res_key)
+        gene_exp_cluster_res = cell_cluster_to_gene_exp_cluster(self.data, res_key)
         if gene_exp_cluster_res is not False:
             self.result[gene_cluster_res_key] = gene_exp_cluster_res
             self.reset_key_record('gene_exp_cluster', gene_cluster_res_key)
@@ -867,7 +924,8 @@ class StPipeline(object):
                    phenograph_k: int = 30,
                    pca_res_key: str = 'pca',
                    n_jobs: int = 10,
-                   res_key: str = 'phenograph'):
+                   res_key: str = 'phenograph',
+                   seed: int = 0):
         """
         Cluster cells into subgroups by Phenograph.
 
@@ -885,7 +943,7 @@ class StPipeline(object):
         from natsort import natsorted
         from ..utils.pipeline_utils import cell_cluster_to_gene_exp_cluster
         communities, _, _ = phe.cluster(self.result[pca_res_key], k=phenograph_k, clustering_algo='leiden',
-                                        n_jobs=n_jobs)
+                                        n_jobs=n_jobs, seed=seed)
         communities = communities + 1
         clusters = pd.Categorical(
             values=communities.astype('U'),
@@ -898,7 +956,7 @@ class StPipeline(object):
         key = 'cluster'
         self.reset_key_record(key, res_key)
         gene_cluster_res_key = f'gene_exp_{res_key}'
-        gene_exp_cluster_res = cell_cluster_to_gene_exp_cluster(self, res_key)
+        gene_exp_cluster_res = cell_cluster_to_gene_exp_cluster(self.data, res_key)
         if gene_exp_cluster_res is not False:
             self.result[gene_cluster_res_key] = gene_exp_cluster_res
             self.reset_key_record('gene_exp_cluster', gene_cluster_res_key)
@@ -1089,7 +1147,7 @@ class StPipeline(object):
         :param smooth_threshold: the threshold that indicates Gaussian variance with a value between 20 and 100. 
             Also too high value may cause overfitting, and low value may cause poor smoothing effect.
         :param pca_res_key: the key of PCA to get targeted result from `self.result`.
-        :param n_jobs: the number of parallel jobs to run for searching neighbors, if `-1`, all CPUs will be used.
+        :param n_jobs: the number of parallel jobs to run, if `-1`, all CPUs will be used.
         :param inplace: whether to inplace the previous express matrix or get a new StereoExpData object with the new express matrix.
 
         :return: An object of StereoExpData with the express matrix processed by Gaussian smooting.
@@ -1113,6 +1171,10 @@ class StPipeline(object):
 
         # logger.info(f"raw exp matrix size: {raw_exp_matrix.shape}")
         from ..algorithm.gaussian_smooth import gaussian_smooth
+
+        if n_jobs <= 0 or n_jobs > cpu_count():
+            n_jobs = cpu_count()
+
         result = gaussian_smooth(
             pca_exp_matrix,
             raw_exp_matrix,
@@ -1242,7 +1304,7 @@ class StPipeline(object):
 
         from ..utils.pipeline_utils import cell_cluster_to_gene_exp_cluster
         gene_cluster_res_key = f'gene_exp_{res_key}'
-        gene_exp_cluster_res = cell_cluster_to_gene_exp_cluster(self, res_key)
+        gene_exp_cluster_res = cell_cluster_to_gene_exp_cluster(self.data, res_key)
         if gene_exp_cluster_res is not False:
             self.result[gene_cluster_res_key] = gene_exp_cluster_res
             self.reset_key_record('gene_exp_cluster', gene_cluster_res_key)
