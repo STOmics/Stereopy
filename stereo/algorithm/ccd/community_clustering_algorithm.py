@@ -468,7 +468,7 @@ class CommunityClusteringAlgo(ABC):
                     # if not self.hide_plots:
                     #     plt.show()
                     # plt.close()
-                    return plt.figure()
+        return plt.figure()
 
     @timeit
     def colorplot_stats(self, color_system='rgb', cluster_index=None):
