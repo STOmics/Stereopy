@@ -200,6 +200,8 @@ class _CommunityDetection:
 
             # COMMUNITY CALLING (MAJORITY VOTING)
             algo.community_calling()
+            # copy final Cell Community Detection (CCD) result to original slices
+            self.slices[slice_id]._ann_data.obs.loc[algo.adata.obs[f'tissue_{algo.method_key}'].index, 'cell_communities'] = algo.adata.obs[f'tissue_{algo.method_key}']
 
             # save anndata objects for further use
             if self.params['save_adata']:
