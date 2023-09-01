@@ -24,7 +24,8 @@ COMMUNITY_DETECTION_DEFAULTS = {
     # Total number of cells per window mixture after normalization.
     'total_cell_norm': 10000,
     # Rate by which the binary image of cells is downsampled before calculating the entropy and scatteredness metrics.
-    'downsample_rate': 80,
+    # If no value is provided, downsample_rate will be equal to 1/2 of minimal window size.
+    'downsample_rate': None,
     # Number of threads that will be used to speed up community calling.
     'num_threads': 5,
     # Threshold value for spatial cell type entropy for filtering out overdispersed cell types.
