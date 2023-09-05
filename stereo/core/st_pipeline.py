@@ -975,7 +975,8 @@ class StPipeline(object):
                           output: Optional[str] = None,
                           sort_by='scores',
                           n_genes: Union[str, int] = 'all',
-                          ascending: bool = False
+                          ascending: bool = False,
+                          n_jobs: int = 4
                           ):
         """
         A tool to find maker genes. For each group, find statistical test different genes 
@@ -1009,9 +1010,13 @@ class StPipeline(object):
             raise Exception(f'this function must be based on a cluster result which includes at least two groups.')
         data = self.raw if use_raw else self.data
         data = self.subset_by_hvg(hvg_res_key, use_raw=use_raw, inplace=False) if use_highly_genes else data
+
+        if n_jobs <= 0:
+            n_jobs = cpu_count()
+
         tool = FindMarker(data=data, groups=self.result[cluster_res_key], method=method, case_groups=case_groups,
                           control_groups=control_groups, corr_method=corr_method, raw_data=self.raw, sort_by=sort_by,
-                          n_genes=n_genes, ascending=ascending)
+                          n_genes=n_genes, ascending=ascending, n_jobs=n_jobs)
         self.result[res_key] = tool.result
         self.result[res_key]['parameters'] = {}
         self.result[res_key]['parameters']['cluster_res_key'] = cluster_res_key

@@ -180,7 +180,7 @@ class MSDataPipeLine(object):
             from stereo.plots.ms_plot_base import MSDataPlotBase
             run_method = MSDataPlotBase.get_attribute_helper(item, self.ms_data, self.result)
             if run_method:
-                return run_method
+                return download(run_method)
 
         def temp(*args, **kwargs):
             if "scope" not in kwargs:
