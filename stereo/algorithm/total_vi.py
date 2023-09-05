@@ -40,8 +40,9 @@ class TotalVi(MSDataAlgorithmBase):
         rna_key: Union[str, int] = None,
         protein_key: Union[str, int] = None,
         hvg_key: Union[str, int] = None,
-        res_key: str = 'res_totalVI',
-        mtx_key: str = 'totalVI',
+        res_key: str = 'totalVI',
+        rna_use_raw: bool = False,
+        protein_use_raw: bool = False,
         **kwags
     ):
         if rna_key is None:
@@ -55,73 +56,67 @@ class TotalVi(MSDataAlgorithmBase):
             protein_data = self.ms_data[protein_key]
         
         if hvg_key is None:
-            # if len(self.ms_data) >= 3:
-            #     hvg_data = self.ms_data[2]
-            # else:
-            #     self._use_hvg = False
+            hvg_data = None
             self._use_hvg = False
         else:
             hvg_data = self.ms_data[hvg_key]
             self._use_hvg = True
         
-        if rna_data.raw is None:
-            raise Exception("Raw data is not exists, please run data.tl.raw_checkpoint before normalization.")
+        if rna_use_raw and rna_data.raw is None:
+            raise Exception("Raw data is not exists in rna data, please run data.tl.raw_checkpoint before normalization.")
+        
+        if protein_use_raw and protein_data.raw is None:
+            raise Exception("Raw data is not exists in protein data, please run data.tl.raw_checkpoint before normalization.")
 
-        # logger.debug(f'Before filtering, rna_data.shape: {rna_data.shape}, protein_data.shape: {protein_data.shape}')
-        # if rna_data.shape != protein_data.shape:
-        #     filter_cells(rna_data, cell_list=protein_data.cell_names)
-        #     filter_cells(protein_data, cell_list=rna_data.cell_names)
-        #     filter_cells(rna_data.raw, cell_list=rna_data.cell_names)
-        #     if protein_data.raw:
-        #         filter_cells(protein_data.raw, cell_list=protein_data.cell_names)
-        # logger.debug(f'After filtering, rna_data.shape: {rna_data.shape}, protein_data.shape: {protein_data.shape}')
-
-        if not isinstance(rna_data, AnnBasedStereoExpData):
-            LogManager.stop_logging()
-            rna_adata: anndata.AnnData = stereo_to_anndata(rna_data, split_batches=False)
-            LogManager.start_logging()
-        else:
-            rna_adata: anndata.AnnData = deepcopy(rna_data._ann_data)
-        
-        if issparse(rna_adata.X):
-            rna_adata.X = rna_adata.X.toarray()
-
-        rna_adata.layers['counts'] = deepcopy(rna_adata.raw.X.toarray() if issparse(rna_adata.raw.X) else rna_adata.raw.X)
-        
-        if not isinstance(protein_data, AnnBasedStereoExpData):
-            LogManager.stop_logging()
-            protein_adata: anndata.AnnData = stereo_to_anndata(protein_data, split_batches=False)
-            LogManager.start_logging()
-        else:
-            protein_adata: anndata.AnnData = protein_data._ann_data.copy()
-        
-        protein_adata = protein_adata[rna_adata.obs_names].copy()
-        
-        if issparse(protein_adata.X):
-            protein_adata.X = protein_adata.X.toarray()
-        
-        mdata = mudata.MuData({"rna": rna_adata, "protein": protein_adata})
-        
-        if self._use_hvg:
-            if not isinstance(hvg_data, AnnBasedStereoExpData):
-                LogManager.stop_logging()
-                hvg_adata: anndata.AnnData = stereo_to_anndata(hvg_data, split_batches=False)
-                LogManager.start_logging()
+        LogManager.stop_logging()
+        try:
+            if not isinstance(rna_data, AnnBasedStereoExpData):
+                rna_adata: anndata.AnnData = stereo_to_anndata(rna_data, split_batches=False)
             else:
-                hvg_adata: anndata.AnnData = hvg_data._ann_data.copy()
+                rna_adata: anndata.AnnData = deepcopy(rna_data._ann_data)
             
-            if issparse(hvg_adata.X):
-                hvg_adata.X = hvg_adata.X.toarray()
+            if issparse(rna_adata.X):
+                rna_adata.X = rna_adata.X.toarray()
+
+            if rna_use_raw:
+                rna_adata.layers['counts'] = deepcopy(rna_adata.raw.X.toarray() if issparse(rna_adata.raw.X) else rna_adata.raw.X)
             
-            hvg_adata.layers['counts'] = deepcopy(hvg_adata.raw.X.toarray() if issparse(hvg_adata.raw.X) else hvg_adata.raw.X)
-        
-            mdata.mod['multiomics'] = hvg_adata
-            mdata.update()
+            if not isinstance(protein_data, AnnBasedStereoExpData):
+                protein_adata: anndata.AnnData = stereo_to_anndata(protein_data, split_batches=False)
+            else:
+                protein_adata: anndata.AnnData = protein_data._ann_data.copy()
+            
+            protein_adata = protein_adata[rna_adata.obs_names].copy()
+            
+            if issparse(protein_adata.X):
+                protein_adata.X = protein_adata.X.toarray()
+            
+            if protein_use_raw:
+                protein_adata.layers['counts'] = deepcopy(protein_adata.raw.X.toarray() if issparse(protein_adata.raw.X) else protein_adata.raw.X)
+            
+            mdata = mudata.MuData({"rna": rna_adata, "protein": protein_adata})
+            
+            if self._use_hvg:
+                if not isinstance(hvg_data, AnnBasedStereoExpData):
+                    hvg_adata: anndata.AnnData = stereo_to_anndata(hvg_data, split_batches=False)
+                else:
+                    hvg_adata: anndata.AnnData = hvg_data._ann_data.copy()
+                
+                if issparse(hvg_adata.X):
+                    hvg_adata.X = hvg_adata.X.toarray()
+                
+                if rna_use_raw:
+                    hvg_adata.layers['counts'] = deepcopy(hvg_adata.raw.X.toarray() if issparse(hvg_adata.raw.X) else hvg_adata.raw.X)
+            
+                mdata.mod['multiomics'] = hvg_adata
+                mdata.update()
+        finally:
+            LogManager.start_logging()
         
         scvi.model.TOTALVI.setup_mudata(
             mdata,
-            rna_layer="counts",
-            protein_layer=None,
+            rna_layer="counts" if rna_use_raw else None,
+            protein_layer="counts" if protein_use_raw else None,
             modalities={
                 "rna_layer": "multiomics" if self._use_hvg else "rna",
                 "protein_layer": "protein",
@@ -138,37 +133,18 @@ class TotalVi(MSDataAlgorithmBase):
         protein = protein_data
 
         representation = pd.DataFrame(total_vi.get_latent_representation(), index=rna.cell_names)
-
-        rna.tl.result[mtx_key] = representation
-        # rna.tl.reset_key_record('totalVI', mtx_key)
-
-        protein.tl.result[mtx_key] = representation.loc[protein.cell_names].copy()
-        # protein.tl.reset_key_record('totalVI', mtx_key)
-
-        rna.tl.result[mtx_key].index = pd.Index(range(0, rna.cell_names.size))
-        protein.tl.result[mtx_key].index = pd.Index(range(0, protein.cell_names.size))
-
-
-        denoised_rna, denoised_protein = total_vi.get_normalized_expression(n_samples=25, return_mean=True)
-
-        rna.tl.result[res_key] = {
-            'denoised_rna': denoised_rna
-        }
-        # rna.tl.reset_key_record('res_totalVI', res_key)
-
-        protein.tl.result[res_key] = {
-            'denoised_protein': denoised_protein.loc[protein.cell_names],
-            'protein_foreground_prob': total_vi.get_protein_foreground_probability(n_samples=25, return_mean=True).loc[protein.cell_names]
-        }
-        # protein.tl.reset_key_record('res_totalVI', res_key)
+        rna.tl.result[res_key] = representation
+        rna.tl.reset_key_record('totalVI', res_key)
+        protein.tl.result[res_key] = representation.loc[protein.cell_names].copy()
+        protein.tl.reset_key_record('totalVI', res_key)
+        rna.tl.result[res_key].index = pd.Index(range(0, rna.cell_names.size))
+        protein.tl.result[res_key].index = pd.Index(range(0, protein.cell_names.size))
 
         self._rna_data = rna_data
         self._protein_data = protein_data
         self._hvg_data = hvg_data
         self._res_key = res_key
-        self._mtx_key = mtx_key
         self._total_vi_instance = total_vi
-        # return self.save_result, total_vi
         return self
 
 
@@ -183,84 +159,51 @@ class TotalVi(MSDataAlgorithmBase):
         if out_dir is None or not opth.exists(out_dir):
             raise FileNotFoundError(f'The directory {out_dir} is not exists.')
         
-        mdata = self._total_vi_instance.adata
-        
         if self._use_hvg:
-            rna_data = self._hvg_data
-            mod_key = 'multiomics'
+            clustered_data = self._hvg_data
         else:
-            rna_data = self._rna_data
-            mod_key = 'rna'
+            clustered_data = self._rna_data
+        for cluster_res_key in clustered_data.tl.key_record['cluster']:
+            self._protein_data.cells[cluster_res_key] = clustered_data.cells[cluster_res_key]
+            self._protein_data.tl.reset_key_record('cluster', cluster_res_key)
         
-        cluster_res = rna_data.tl.result[use_cluster_res_key].set_index('bins')
-        mdata.mod[mod_key].obs[use_cluster_res_key] = cluster_res['group']
-        mdata.update()
+        mdata = self._total_vi_instance.adata
+
+        LogManager.stop_logging()
+        try:
+            rna_adata: anndata.AnnData = stereo_to_anndata(self._rna_data, base_adata=mdata.mod['rna'], split_batches=False)
+            protein_adata: anndata.AnnData = stereo_to_anndata(self._protein_data, base_adata=mdata.mod['protein'], split_batches=False)
+            protein_adata.var['protein_names'] = protein_adata.var_names
+            if self._use_hvg:
+                hvg_adata: anndata.AnnData = stereo_to_anndata(self._hvg_data, base_adata=mdata.mod['multiomics'], split_batches=False)
+            mdata.update()
+        finally:
+            LogManager.start_logging()
+        
+        
+        mod_key = 'multiomics' if self._use_hvg else 'rna'
+        rna = hvg_adata if self._use_hvg else rna_adata
+
         de_df = self._total_vi_instance.differential_expression(groupby=f"{mod_key}:{use_cluster_res_key}", delta=0.5)
         if diff_exp_file_name is None:
-            diff_exp_file_name = f'{rna_data.sn}_{rna_data.bin_size}_differential_expression.csv'
+            diff_exp_file_name = f'{self._rna_data.sn}_{self._rna_data.bin_size}_differential_expression.csv'
         de_df.to_csv(f'{out_dir}/{diff_exp_file_name}')
-        
-        for cluster_res_key in rna_data.tl.key_record['cluster']:
-            # self._protein_data.tl.result[cluster_res_key] = rna_data.tl.result[cluster_res_key]
-            self._protein_data.cells[cluster_res_key] = rna_data.cells[cluster_res_key]
-        
-        if not isinstance(self._rna_data, AnnBasedStereoExpData):
-            LogManager.stop_logging()
-            rna_adata: anndata.AnnData = stereo_to_anndata(self._rna_data, split_batches=False)
-            LogManager.start_logging()
-        else:
-            rna_adata: anndata.AnnData = self._rna_data._ann_data
-        
-        multiomics_data = self._rna_data
-        multiomics_adata = rna_adata
-        
-        if not isinstance(self._protein_data, AnnBasedStereoExpData):
-            LogManager.stop_logging()
-            protein_adata: anndata.AnnData = stereo_to_anndata(self._protein_data, split_batches=False)
-            protein_adata.var['protein_names'] = protein_adata.var_names
-            LogManager.start_logging()
-        else:
-            protein_adata: anndata.AnnData = self._protein_data._ann_data
-        
-        mdata = mudata.MuData({
-            'rna': rna_adata,
-            'protein': protein_adata
-        })
 
-        if self._use_hvg:
-            if not isinstance(self._hvg_data, AnnBasedStereoExpData):
-                LogManager.stop_logging()
-                hvg_adata: anndata.AnnData = stereo_to_anndata(self._hvg_data, split_batches=False)
-                LogManager.start_logging()
-            else:
-                hvg_adata: anndata.AnnData = self._hvg_data._ann_data
-            multiomics_data = self._hvg_data
-            multiomics_adata = hvg_adata
-            mdata.mod['multiomics'] = hvg_adata
-            mdata.update()
-        
-        protein_adata.obsm[f'X_{self._mtx_key}'] = self._protein_data.tl.result[self._mtx_key].to_numpy()
-        multiomics_adata.obsm[f'X_{self._mtx_key}'] = multiomics_data.tl.result[self._mtx_key].to_numpy()
+        denoised_rna, denoised_protein = self._total_vi_instance.get_normalized_expression(n_samples=25, return_mean=True)
+        denoised_protein = denoised_protein.loc[rna_adata.obs_names]
 
-        for key, value in self._protein_data.tl.result[self._res_key].items():
-            if value.shape[0] == self._protein_data.shape[0]:
-                protein_adata.layers[key] = value
-            else:
-                protein_adata.uns[key] = value
-        
-        for key, value in multiomics_data.tl.result[self._res_key].items():
-            if value.shape[0] == multiomics_data.shape[0]:
-                multiomics_adata.layers[key] = value
-            else:
-                multiomics_adata.uns[key] = value
-        
+        protein_foreground_prob = self._total_vi_instance.get_protein_foreground_probability(n_samples=25, return_mean=True).loc[rna_adata.obs_names]
+
+        rna.layers['denoised_rna'] = denoised_rna
+        protein_adata.layers['denoised_protein'] = denoised_protein
+        protein_adata.layers['protein_foreground_prob'] = protein_foreground_prob
+
         mdata.update()
 
         if h5mu_file_name is None:
-            h5mu_file_name = f'{rna_data.sn}_{rna_data.bin_size}.h5mu'
+            h5mu_file_name = f'{self._rna_data.sn}_{self._rna_data.bin_size}.h5mu'
         mudata.write(f"{out_dir}/{h5mu_file_name}", mdata)
 
-        # rna_data.tl.result[self._res_key]['differential_expression'] = de_df
         self._differential_expression = de_df
         self._use_cluster_res_key = use_cluster_res_key
     

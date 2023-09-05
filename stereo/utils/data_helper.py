@@ -303,7 +303,7 @@ def split(data: StereoExpData = None):
             if key == 'hvg':
                 for res_key in all_res_key:
                     new_data.tl.result[res_key] = result[res_key]
-            elif key in ['pca', 'cluster', 'umap']:
+            elif key in ['pca', 'cluster', 'umap', 'totalVI']:
                 for res_key in all_res_key:
                     new_data.tl.result[res_key] = result[res_key].iloc[cell_idx]
                     new_data.tl.result[res_key].reset_index(drop=True, inplace=True)

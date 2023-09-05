@@ -712,6 +712,7 @@ def stereo_to_anndata(
         sample_id: str = "sample",
         reindex: bool = False,
         output: str = None,
+        base_adata: AnnData = None,
         split_batches: bool = True
 ):
     """
@@ -755,26 +756,31 @@ def stereo_to_anndata(
 
     from scipy.sparse import issparse
 
-    if data.tl.raw is None:
-        raise Exception('convert to AnnData should have raw data')
+    # if data.tl.raw is None:
+    #     raise Exception('convert to AnnData should have raw data')
 
     # exp = data.exp_matrix if issparse(data.exp_matrix) else csr_matrix(data.exp_matrix)
-    if not data.issparse():
-        data.array2sparse()
+    # if not data.issparse():
+    #     data.array2sparse()
 
-    cells = data.cells.to_df()
-    cells.dropna(axis=1, how='all', inplace=True)
-    genes = data.genes.to_df()
-    genes.dropna(axis=1, how='all', inplace=True)
+    # cells = data.cells.to_df()
+    # cells.dropna(axis=1, how='all', inplace=True)
+    # genes = data.genes.to_df()
+    # genes.dropna(axis=1, how='all', inplace=True)
 
-    adata = AnnData(X=data.exp_matrix, dtype=np.float64, obs=cells, var=genes)
-    adata.raw = AnnData(X=data.tl.raw.exp_matrix, dtype=np.float64, obs=data.tl.raw.cells.to_df(),
-                        var=data.tl.raw.genes.to_df())
+    # adata = AnnData(X=data.exp_matrix, dtype=np.float64, obs=cells, var=genes)
+    # adata.raw = AnnData(X=data.tl.raw.exp_matrix, dtype=np.float64, obs=data.tl.raw.cells.to_df(),
+    #                     var=data.tl.raw.genes.to_df())
+
+    if base_adata is None:
+        adata = AnnData(X=data.exp_matrix, dtype=np.float64, obs=data.cells.to_df(), var=data.genes.to_df())
+    else:
+        adata = base_adata
 
     ##sample id
     logger.info(f"Adding {sample_id} in adata.obs['orig.ident'].")
     adata.obs['orig.ident'] = pd.Categorical([sample_id] * adata.obs.shape[0], categories=[sample_id])
-    if data.position is not None:
+    if (data.position is not None) and ('spatial' not in adata.obsm):
         logger.info(f"Adding data.position as adata.obsm['spatial'] .")
         if data.position_z is not None:
             adata.obsm['spatial'] = np.concatenate([data.position, data.position_z], axis=1)
@@ -824,7 +830,7 @@ def stereo_to_anndata(
                 adata.uns['sct_top_features'] = list(data.tl.result[res_key][1]['top_features'])
                 adata.uns['sct_cellname'] = list(data.tl.result[res_key][1]['umi_cells'].astype('str'))
                 adata.uns['sct_genename'] = list(data.tl.result[res_key][1]['umi_genes'])
-            elif key in ['pca', 'umap', 'tsne']:
+            elif key in ['pca', 'umap', 'tsne', 'totalVI']:
                 # pca :we do not keep variance and PCs(for varm which will be into feature.finding in pca of seurat.)
                 res_key = data.tl.key_record[key][-1]
                 sc_key = f'X_{key}'

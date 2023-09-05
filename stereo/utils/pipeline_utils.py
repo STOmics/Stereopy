@@ -47,7 +47,7 @@ def cell_cluster_to_gene_exp_cluster(
         group_index = group_index.loc[groups]
     tmp = []
     if use_raw:
-        data.tl.raw.array2sparse()
+        data.raw.array2sparse()
         if filter_raw:
             raw_cells_isin_data = np.isin(data.raw.cell_names, data.cell_names)
             raw_genes_isin_data = np.isin(data.raw.gene_names, data.gene_names)
@@ -57,6 +57,7 @@ def cell_cluster_to_gene_exp_cluster(
         exp_matrix = data.raw.exp_matrix[raw_cells_isin_data][:, raw_genes_isin_data]
         gene_names = data.raw.gene_names[raw_genes_isin_data]
     else:
+        data.array2sparse()
         exp_matrix = data.exp_matrix
         gene_names = data.gene_names
 

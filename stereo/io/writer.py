@@ -166,7 +166,7 @@ def _write_one_h5ad_result(data, f, key_record):
                 if 'mean_bin' in hvg_df.columns:
                     hvg_df.mean_bin = [str(interval) for interval in data.tl.result[res_key].mean_bin]
                 h5ad.write(hvg_df, f, f'{res_key}@hvg')  # -> dataframe
-            if analysis_key in ['pca', 'umap']:
+            if analysis_key in ['pca', 'umap', 'totalVI']:
                 h5ad.write(data.tl.result[res_key].values, f, f'{res_key}@{analysis_key}')  # -> array
             if analysis_key == 'neighbors':
                 for neighbor_key, value in data.tl.result[res_key].items():
