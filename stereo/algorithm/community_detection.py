@@ -77,6 +77,13 @@ class _CommunityDetection:
         else:
             self.log_win_size_full_info()
 
+        # if downsample_rate is not provided, use the dimension of the smallest window size as reference
+        if self.params['downsample_rate'] == None:
+            logger.info("Downsample rate is not provided by user - proceeding to calculate one based on minimal window size.")
+            min_win_size = np.min([int(i) for i in self.params['win_sizes'].split(',')])
+            self.params['downsample_rate'] = min_win_size // 2
+            logger.info(f"donwsample_rate = {self.params['downsample_rate']}")
+
         # if cell type palette is not available, create and add to each slice anndata object
         if missing_cell_type_palette:
             self.annotation_palette = {cellt: cluster_palette[-id-1] for id, cellt in enumerate(self.cell_types)}
@@ -176,6 +183,9 @@ class _CommunityDetection:
                 algo.plot_celltype_images()
             # filter the cell types which are not localized using calculated metrics (entropy and scatteredness)
             algo.cell_type_filtering()
+            # check if cell type filtering removes all cell types and raise an Error
+            if algo.tissue.n_vars == 0:
+                raise ValueError(r'Empty algo.tissue object. All cell types removed. Adjust scatter_thres and entropy_thres to preserve useful cell types.')
 
             # add algo object for each slice to a list
             algo_list.append(algo)
@@ -200,6 +210,8 @@ class _CommunityDetection:
 
             # COMMUNITY CALLING (MAJORITY VOTING)
             algo.community_calling()
+            # copy final Cell Community Detection (CCD) result to original slices
+            self.slices[slice_id]._ann_data.obs.loc[algo.adata.obs[f'tissue_{algo.method_key}'].index, 'cell_communities'] = algo.adata.obs[f'tissue_{algo.method_key}']
 
             # save anndata objects for further use
             if self.params['save_adata']:

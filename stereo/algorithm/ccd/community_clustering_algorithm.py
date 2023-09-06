@@ -193,7 +193,7 @@ class CommunityClusteringAlgo(ABC):
 
         """
         # extract binary image of cell positions for each cell type in the slice
-        var_use = self.tissue.var.loc[(self.tissue.var['entropy']<self.entropy_thres) & (self.tissue.var['scatteredness']<self.scatter_thres)].index
+        var_use = self.tissue.var.loc[(self.tissue.var['entropy']<=self.entropy_thres) & (self.tissue.var['scatteredness']<=self.scatter_thres)].index
         self.tissue.raw = self.tissue
         self.tissue = self.tissue[:, var_use]
 
@@ -468,7 +468,7 @@ class CommunityClusteringAlgo(ABC):
                     # if not self.hide_plots:
                     #     plt.show()
                     # plt.close()
-                    return plt.figure()
+        return plt.figure()
 
     @timeit
     def colorplot_stats(self, color_system='rgb', cluster_index=None):

@@ -122,15 +122,13 @@ class SlidingWindow(CommunityClusteringAlgo):
             z_curr = int(subwindow.split("_")[2])
             w_curr = int(subwindow.split("_")[3])
 
-            # TODO: Hope this advice useful. May this code save string concat cost?
-            # tmp = f'{x_curr + slide_x}_{y_curr + slide_y}_{z_curr}_{w_curr}'
-            # and replace all the string concat places as argument `tmp`, they are not changed when looping
             for slide_x in range(0, np.min([bin_slide_ratio, x_max-x_curr+1])):
-                for slide_y in range(0, np.min([bin_slide_ratio, y_max-y_curr+1])):  # starts from 1 since values with coordinates (0,0) are already written by initializing with ret[subwindow]
-                    if (f'{x_curr + slide_x}_{y_curr + slide_y}_{z_curr}_{w_curr}') in ret.keys():
+                for slide_y in range(0, np.min([bin_slide_ratio, y_max-y_curr+1])):
+                    window_key = f'{x_curr + slide_x}_{y_curr + slide_y}_{z_curr}_{w_curr}'
+                    if window_key in ret.keys():
                         feature_matrix[subwindow] = {k: 
-                                                    feature_matrix[subwindow].get(k, 0) + ret[f'{x_curr + slide_x}_{y_curr + slide_y}_{z_curr}_{w_curr}'].get(k, 0)
-                                                    for k in set(feature_matrix[subwindow]).union(ret[f'{x_curr + slide_x}_{y_curr + slide_y}_{z_curr}_{w_curr}'])}
+                                                    feature_matrix[subwindow].get(k, 0) + ret[window_key].get(k, 0)
+                                                    for k in set(feature_matrix[subwindow]).union(ret[window_key])}
 
         feature_matrix = pd.DataFrame(feature_matrix).T
         # feature_matrix is placed in AnnData object with specified spatial coordinated of the sliding windows
@@ -184,8 +182,9 @@ class SlidingWindow(CommunityClusteringAlgo):
             for slide_x in range(0, np.min([bin_slide_ratio, x_curr - x_min + 1])):
                 for slide_y in range(0, np.min([bin_slide_ratio, y_curr - y_min + 1])):
                     # check if location exist (spatial area is not complete)
-                    if (f'{x_curr - slide_x}_{y_curr - slide_y}_{z_curr}_{win_size}') in self.tissue.obs.index:
-                        new_value = self.tissue.obs.loc[f'{x_curr - slide_x}_{y_curr - slide_y}_{z_curr}_{win_size}', self.cluster_algo]
+                    window_key = f'{x_curr - slide_x}_{y_curr - slide_y}_{z_curr}_{win_size}'
+                    if window_key in self.tissue.obs.index:
+                        new_value = self.tissue.obs.loc[window_key, self.cluster_algo]
                         subwindow_labels[new_value] = subwindow_labels[new_value] + 1 if new_value in subwindow_labels.keys() else 1
             
             # MAX VOTE
@@ -302,12 +301,12 @@ class SlidingWindowMultipleSizes(SlidingWindow):
                     cell_labels = cache[(x_curr, y_curr, z_curr, w_size)]
                 else:
                     # index of cell is in the top left corner of the whole window
-                    # TODO: Look like the same as line 125, f'{x_curr - slide_x}_{y_curr - slide_y}_{z_curr}_{win_size}' as tmp
                     for slide_x in range(0, np.min([bin_slide_ratio, x_curr - x_min + 1])):
                         for slide_y in range(0, np.min([bin_slide_ratio, y_curr - y_min + 1])):
                             # check if location exist (spatial area is not complete)
-                            if (f'{x_curr - slide_x}_{y_curr - slide_y}_{z_curr}_{win_size}') in self.tissue.obs.index:
-                                win_label = self.tissue.obs.loc[f'{x_curr - slide_x}_{y_curr - slide_y}_{z_curr}_{win_size}', self.cluster_algo]
+                            window_key = f'{x_curr - slide_x}_{y_curr - slide_y}_{z_curr}_{win_size}'
+                            if window_key in self.tissue.obs.index:
+                                win_label = self.tissue.obs.loc[window_key, self.cluster_algo]
                                 cell_labels[win_label] += 1
 
                     cache[(x_curr, y_curr, z_curr, w_size)] = cell_labels
