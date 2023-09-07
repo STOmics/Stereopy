@@ -23,6 +23,7 @@ GREATER_P = "greater_p"
 FEATURE_P = "feature_p"
 ANNOTATION = "annotation"
 LESS_PVALUE = "less_pvalue"
+END_CELLPOSE = '.cellpose'
 _LOG_PVALUE = "_log_pvalue"
 TOTAL_COUNTS = "total_counts"
 CELLTYPE_STD = "celltype_std"
@@ -34,6 +35,11 @@ GREATER_PVALUE = "greater_pvalue"
 N_GENES_BY_COUNTS = "n_genes_by_counts"
 CELLTYPE_MEAN_SCALE = "celltype_mean_scale"
 CONNECTIVITIES_TREE = "connectivities_tree"
+
+MODEL_URL = 'https://www.cellpose.org/models'
+CELLPOSE_GUI_PNG_URL = 'https://www.cellpose.org/static/images/cellpose_gui.png'
+STYLE_CHOICE_NPY_URL = 'https://www.cellpose.org/static/models/style_choice.npy'
+CELLPOSE_TRANSPARENT_PNG_URL = 'https://www.cellpose.org/static/images/cellpose_transparent.png'
 
 
 class BatchColType(Enum):
