@@ -44,6 +44,7 @@ extensions = [
     "sphinx.ext.viewcode",
     "sphinx_gallery.load_style",
     "sphinx_autodoc_typehints",
+    "sphinx_design",
     *[p.stem for p in (HERE / 'extensions').glob('*.py')],
 ]
 
@@ -105,7 +106,6 @@ nbsphinx_thumbnails = {
     "Tutorials/Batches_Integration": "_static/batches_integration.png",
     "Tutorials/RNA_Velocity": "_static/rna_velocity.png",
     "Tutorials/Spatial_Hotspot": "_static/hotspot.png",
-    "Tutorials/Gaussian_Smoothing": "_static/gaussian_smooth_1.png",
     "Tutorials/High_Resolution_Export": "_static/box_select.gif",
     "Tutorials/scTransform":"_static/variance_sct.png",
 	"Tutorials/Cell_Cell_Communication":"_static/cell_cell_communication.png",

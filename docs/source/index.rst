@@ -37,7 +37,7 @@ Meanwhile, we are still working on the improvement of performance and calculatio
 * Follow changes in `Release Notes <https://stereopy.readthedocs.io/en/latest/content/06_Release_notes.html>`_.
 
 About MSData
------------
+--------------
 For multi-sample data analysis, we have recently launched a simple-to-use method that can distinguish single-sample \
 and multi-sample when working on the parallel processings, but the results of two parties can be interacted.
 
@@ -46,14 +46,14 @@ inevitably a handful of BUGs. We sincerely hope to receive your feedback and sug
 
 
 Upcoming functions
-----------
+--------------------
 * Cell Co-occurrence
 * Cell Community
 * New algorithm for Batch Effect Correction
 
 
 Highlights
------------
+------------
 
 * More suitable for performing downstream analysis of Stereo-seq data.
 * Support efficient reading and writing (IO), pre-processing, and standardization of multiple spatial transcriptomics data formats.
@@ -63,7 +63,7 @@ Highlights
 
 
 Workflow
----------
+----------
 
 .. image:: ./_static/Stereopy_workflow_v0.11.0.png
     :alt: Title figure
@@ -113,12 +113,12 @@ Version 0.12.0
 
 .. toctree::
     :titlesonly:
-    :maxdepth: 2
+    :maxdepth: 3
     :hidden: 
 
     content/00_Installation
     content/01_Usage_principles
-    Tutorials/Cases
+    Tutorials/index
     content/03_API
     content/04_Community
     content/05_Contributing
