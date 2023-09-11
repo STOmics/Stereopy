@@ -1,6 +1,7 @@
 import base64
 import os
 import subprocess
+import time
 
 from collections import defaultdict
 from .utils import timeit
@@ -351,11 +352,21 @@ def generate_report(params):
     for k,v in params.items():
         if v == None or k == 'out_path' or k == 'project_name' or k == "skip_stats" or k == "save_adata":
             continue
+        if k == 'dev' and v is False:
+            continue
         if k == 'out_path_orig' or k == 'project_name_orig':
             k = k[:-5]
         command += f"--{k} {v} "
 
-    commit_date = subprocess.check_output(r'git log --pretty=format:"%h%x09%x09%ad%x09%s" -n 1', shell=True).expandtabs()
+    dev = params.get('dev', False)
+
+    commit_date = None
+    if dev:
+        commit_date = subprocess.check_output(r'git log --pretty=format:"%h%x09%x09%ad%x09%s" -n 1', shell=True).expandtabs()
+        created_time = f"Report created from commit: {commit_date}"
+    else:
+        commit_date = time.strftime("%I:%M%p  %B %d, %Y")
+        created_time = f"Report created at {commit_date}"
 
     annotation_figure, communities_figure = annotation_and_communities_figures(params['out_path'])
 
@@ -528,7 +539,7 @@ def generate_report(params):
                 {per_community_content(params['out_path'], params['plotting'])}
             </div>
         </div>
-        <footer><h4>Report created from commit: {commit_date}</h4></footer>
+        <footer><h4>{created_time}</h4></footer>
     </div>
     </body>
     </html>

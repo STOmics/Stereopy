@@ -55,7 +55,9 @@ COMMUNITY_DETECTION_DEFAULTS = {
     # Stop plots from displaying in notebooks or standard ouput. Used for batch processing.
     'hide_plots': False,
     # DPI (dots per inch) used for plotting figures.
-    'dpi': 100
+    'dpi': 100,
+    # Whether in development mode
+    'dev': False
 }
 
 # index to find community id in figure names for html report

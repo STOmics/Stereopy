@@ -658,25 +658,32 @@ class _CommunityDetection:
         plt.close()
     
     def plot(self, function_ind : str, slice_id = 0, community_id = None):
-        if function_ind == "all_annotations": self.plot_all_annotation()
-        if function_ind == "all_clustering": self.plot_all_clustering()
-        if function_ind == "cell_type_mixtures_total": self.plot_celltype_mixtures_total([algo.get_cell_mixtures().to_dict() for algo in self.algo_list])
-        if function_ind == "cell_perc_in_community_per_slice": self.plot_cell_perc_in_community_per_slice()
-        if function_ind == "cell_abundance_total": self.plot_cell_abundance_total()
-        if function_ind == "cell_abundance_per_slice": self.plot_cell_abundance_per_slice()
-        if function_ind == "cluster_abundance_total": self.plot_cluster_abundance_total()
-        if function_ind == "cluster_abundance_per_slice": self.plot_cluster_abundance_per_slice()
+        orig_hide_plots = self.params['hide_plots']
+        try:
+            self.params['hide_plots'] = False
+            if function_ind == "all_annotations": self.plot_all_annotation()
+            if function_ind == "all_clustering": self.plot_all_clustering()
+            if function_ind == "cell_type_mixtures_total": self.plot_celltype_mixtures_total([algo.get_cell_mixtures().to_dict() for algo in self.algo_list])
+            if function_ind == "cell_perc_in_community_per_slice": self.plot_cell_perc_in_community_per_slice()
+            if function_ind == "cell_abundance_total": self.plot_cell_abundance_total()
+            if function_ind == "cell_abundance_per_slice": self.plot_cell_abundance_per_slice()
+            if function_ind == "cluster_abundance_total": self.plot_cluster_abundance_total()
+            if function_ind == "cluster_abundance_per_slice": self.plot_cluster_abundance_per_slice()
 
-        if function_ind == "annotation": self.algo_list[slice_id].plot_annotation()
-        if function_ind == "clustering": self.algo_list[slice_id].plot_clustering()
-        if function_ind == "colorplot": self.algo_list[slice_id].colorplot_stats(self.params['color_plot_system'], community_id)
-        if function_ind == "colorplot_cell_type": self.algo_list[slice_id].colorplot_stats_per_cell_types()
-        if function_ind == "cell_types_table": self.algo_list[slice_id].plot_celltype_table()
-        if function_ind == "boxplot": self.algo_list[slice_id].boxplot_stats(community_id)
-        if function_ind == "cell_types_images": self.algo_list[slice_id].plot_celltype_images()
-        if function_ind == "histogram_cell_sums": self.algo_list[slice_id].plot_histogram_cell_sum_window()
-        if function_ind == "cluster_mixtures": self.algo_list[slice_id].plot_cluster_mixtures(community_id)
-        if function_ind == "cell_mixture_table": self.algo_list[slice_id].plot_stats()
+            self.algo_list[slice_id].hide_plots = False
+            if function_ind == "annotation": self.algo_list[slice_id].plot_annotation()
+            if function_ind == "clustering": self.algo_list[slice_id].plot_clustering()
+            if function_ind == "colorplot": self.algo_list[slice_id].colorplot_stats(self.params['color_plot_system'], community_id)
+            if function_ind == "colorplot_cell_type": self.algo_list[slice_id].colorplot_stats_per_cell_types()
+            if function_ind == "cell_types_table": self.algo_list[slice_id].plot_celltype_table()
+            if function_ind == "boxplot": self.algo_list[slice_id].boxplot_stats(community_id)
+            if function_ind == "cell_types_images": self.algo_list[slice_id].plot_celltype_images()
+            if function_ind == "histogram_cell_sums": self.algo_list[slice_id].plot_histogram_cell_sum_window()
+            if function_ind == "cluster_mixtures": self.algo_list[slice_id].plot_cluster_mixtures(community_id)
+            if function_ind == "cell_mixture_table": self.algo_list[slice_id].plot_stats()
+        finally:
+            self.params['hide_plots'] = orig_hide_plots
+            self.algo_list[slice_id].hide_plots = orig_hide_plots
 
 
 class CommunityDetection(AlgorithmBase, _CommunityDetection):
