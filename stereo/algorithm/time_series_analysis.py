@@ -46,7 +46,8 @@ class TimeSeriesAnalysis(AlgorithmBase):
         label2exp = {}
         for x in branch:
             cell_list = self.stereo_exp_data.cells.to_df().loc[self.stereo_exp_data.cells[use_col] == x,].index
-            test_exp_data = self.stereo_exp_data.sub_by_name(cell_name=cell_list.to_list())
+            print(cell_list)
+            test_exp_data = self.stereo_exp_data.tl.filter_cells(cell_list=cell_list.to_list(), inplace =False)
             if sparse.issparse(test_exp_data.exp_matrix):
                 label2exp[x] = test_exp_data.exp_matrix.todense()
             else:
@@ -144,11 +145,48 @@ class TimeSeriesAnalysis(AlgorithmBase):
                 break
         return U
 
-    def fuzzy_C_gene_pattern_cluster(self, cluster_number, Epsilon=1e7, use_col=None, branch=None):
+    
+    def gene_spatial_feature(self,  w_size=20):
+        """
+        Use pca on rasterizing spatial expression to represent gene spatial feature
+        :param w_size: window size to rasterizing spatial expression, 
+        :return: stereoexpdata.genes_matrix['spatial_info'] # a gene matrix to represent spatial feature
+        """
+        from scipy import sparse
+        #from stereo.algorithm import scale
+        from stereo.algorithm import dim_reduce
+        from stereo.algorithm import normalization
+        from stereo.algorithm import scale
+        
+        loc = self.stereo_exp_data.position.copy()
+        loc = (loc/w_size).astype('int').astype('str')
+        loc = np.array(['_'.join(x) for x in loc])
+        Exp_matrix = self.stereo_exp_data.exp_matrix
+        ci, gi = Exp_matrix.nonzero()
+        values = Exp_matrix.data
+        cl = loc[ci]
+        cl = pd.Series(cl).astype('category')
+        X = sparse.csr_matrix((values, (gi, cl.cat.codes.to_numpy())), shape = (np.max(gi)+1, len(cl.cat.categories)))
+        X = normalization.normalize_total(X, target_sum=1e4)
+        X = np.log1p(X)
+        X = scale.scale(X, zero_center=True, max_value=None)
+        X_pca = dim_reduce.pca(X, 50)['x_pca']
+        
+        self.stereo_exp_data.tl.result['spatial_info'] = X_pca
+        self.stereo_exp_data.genes_matrix['spatial_info'] = X_pca
+    
+    
+    
+    def fuzzy_C_gene_pattern_cluster(self, cluster_number, spatial_weight=1, n_spatial_feature=2, temporal_mean_threshold=0.85, temporal_top_threshold=1, Epsilon=1e7, w_size=None, use_col=None, branch=None):
         """
         Use fuzzy C means cluster method to cluster genes based on 1-p_value of celltypes in branch
-        :param cluster_number: cluster_number: number of cluster
+        :param cluster_number: number of cluster
+        :param spatial_weight: the weight to combine spatial feature
+        :param n_spatial_feature: n top features to combine of spatial feature
+        :param temporal_mean_threshold: filter out genes of which mean absolute temporal feature <= temporal_mean_threshold
+        :param temporal_top_threshold: filter out genes of which top absolute temporal feature < temporal_top_threshold
         :param Epsilon: max value to finish iteration
+        :param w_size: window size to rasterizing spatial expression, see also data.tl.gene_spatial_feature
         :param use_col: the col in obs representing celltype or clustering
         :param branch: celltypes order in use_col
         :return: stereo_exp_data contains fuzzy_C_result
@@ -165,7 +203,38 @@ class TimeSeriesAnalysis(AlgorithmBase):
         self.stereo_exp_data.genes_matrix[FEATURE_P] = np.max(
             [(1 - self.stereo_exp_data.genes_matrix[GREATER_P]), (1 - self.stereo_exp_data.genes_matrix[LESS_P])],
             axis=0) * sig
-        self.stereo_exp_data.genes_matrix[FUZZY_C_WEIGHT] = self.fuzzy_C(self.stereo_exp_data.genes_matrix[FEATURE_P],
-                                                                         cluster_number, Epsilon=Epsilon)
-        self.stereo_exp_data.genes[FUZZY_C_RESULT] = np.argmax(self.stereo_exp_data.genes_matrix[FUZZY_C_WEIGHT],
-                                                               axis=1)
+        
+        # filtter useless gene
+        useful_index_1 = (np.mean(np.abs(self.stereo_exp_data.genes_matrix[FEATURE_P]), axis=1) > temporal_mean_threshold)
+        useful_index_2 = (np.max(np.abs(self.stereo_exp_data.genes_matrix[FEATURE_P]), axis=1) >= temporal_top_threshold)
+        useful_index = useful_index_1 & useful_index_2
+        useless_index = ~useful_index
+        
+        if 'spatial_feature' not in self.stereo_exp_data.genes_matrix:
+            if w_size is None:
+                self.stereo_exp_data.tl.gene_spatial_feature()
+            else:
+                self.stereo_exp_data.tl.gene_spatial_feature(w_size)
+                
+        
+        temporal_feature = self.stereo_exp_data.genes_matrix[FEATURE_P]
+        spatial_feature = spatial_weight * self.stereo_exp_data.genes_matrix['spatial_feature'][:, :n_spatial_feature]
+        merge_feature = np.concatenate([temporal_feature, spatial_feature], axis=1)
+        
+        
+        fuzzy_C_weight= self.fuzzy_C(merge_feature[useful_index], cluster_number, Epsilon=Epsilon)
+        
+        df = { x:fuzzy_C_weight[i] for i, x in enumerate(self.stereo_exp_data.genes.to_df().index[useful_index])}
+        for x in self.stereo_exp_data.genes.to_df().index[useless_index]:
+            df[x] = np.zeros(n_cluster)
+            
+        df = pd.DataFrame(df).T
+        df = df.loc[self.stereo_exp_data.genes.to_df().index]
+        
+        self.stereo_exp_data.genes_matrix[FUZZY_C_WEIGHT] = df.to_numpy()
+        
+        
+        adata.var.loc[useless_index, 'fuzzy_C_result'] = 0
+        fuzzy_c_result = np.argmax(self.stereo_exp_data.genes_matrix[FUZZY_C_WEIGHT], axis=1)+1
+        fuzzy_c_result[useless_index] = 0
+        self.stereo_exp_data.genes[FUZZY_C_RESULT] = fuzzy_c_result
