@@ -13,7 +13,7 @@ import functools
 import numpy as np
 import dask.array as da
 
-from stereo.algorithm.cell_pose_seg import models
+from stereo.algorithm.cell_pose import models
 
 
 class DistSegError(Exception):
