@@ -13,21 +13,38 @@ from math import ceil
 from typing import Optional
 
 from scipy.ndimage import distance_transform_edt
-from stereo.algorithm.cell_pose_seg import utils
-from stereo.algorithm.cell_pose_seg import models
+from stereo.algorithm.cell_pose import utils
+from stereo.algorithm.cell_pose import models
 from stereo.utils.time_consume import log_consumed_time
 
 
-class CellSegmentation:
+class CellPost:
 
     def __init__(self,
                  open_path: str,
                  save_path: str,
                  photo_size: Optional[int] = 2048,
                  photo_step: Optional[int] = 2000,
+                 model_type: Optional[str] = 'cyto2',
                  dmin: Optional[int] = 10,
                  dmax: Optional[int] = 40,
                  step: Optional[int] = 10):
+        """
+
+        :param open_path: input file path
+        :param save_path: file save path
+        :param photo_size: input image size, default is 2048
+            The value of the microscope fov image setting
+        :param photo_step: the step size of each image processing, default is 2000
+        :param model_type: the type of model to cellpost, default is 'cyto2'
+            'cyto': cytoplasm model
+            'nuclei': nucleus model
+            'cyto2': optimized on the basis of the cyto model
+             cyto comes with the model, and cyto2 has been specially optimized, so it is recommended to use the cyto2 model.
+        :param dmin: cell minimum diameter, default is 10
+        :param dmax: cell diameter, default is 40
+        :param step: the step size of cell diameter search, default is 10
+        """
         self.open_path = open_path
         self.save_path = save_path
         self.photo_size = photo_size
@@ -35,10 +52,11 @@ class CellSegmentation:
         self.dmin = dmin
         self.dmax = dmax
         self.step = step
+        self.model_type = model_type
         self.segment_cells()
 
     @log_consumed_time
-    def _process_image(self, img_data):
+    def _process_image(self):
         overlap = self.photo_size - self.photo_step
         if (overlap % 2) == 1:
             overlap = overlap + 1
@@ -57,7 +75,7 @@ class CellSegmentation:
         patches = patchify.patchify(regray_image, (self.photo_size, self.photo_size), step=self.photo_step)
         wid = patches.shape[0]
         high = patches.shape[1]
-        model = models.Cellpose(gpu=True, model_type='cyto2')
+        model = models.Cellpose(gpu=True, model_type=self.model_type)
         a_patches = np.full((wid, high, (self.photo_step), (self.photo_step)), 255)
         for i in range(wid):
             for j in range(high):
@@ -112,7 +130,7 @@ class CellSegmentation:
         return merger_image1
 
     def segment_cells(self):
-        inverted_image = self._process_image(self.open_path)
+        inverted_image = self._process_image()
         post_image, expanded_image = self._post_image(inverted_image)
         result_image = self._merger_image(post_image, expanded_image)
         cv2.imwrite(self.save_path, result_image)
