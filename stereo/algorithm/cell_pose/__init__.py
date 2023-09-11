@@ -2,19 +2,16 @@
 # coding: utf-8
 
 try:
-    from stereo.algorithm.cell_pose.cell_pose import CellPost as cell_pose
+    from stereo.algorithm.cell_pose.cell_pose import CellPost
 except ImportError:
-    errmsg = """class `CellPost` is not import at `stereo.cell_pose` module.
+    errmsg = """class `CellPost` is not import.
 ************************************************
 * Some necessary modules may not be installed. *
 * Please install them by:                      *
-*   pip install pytorch                        *
-*   pip install pyqtgraph                      *
-*   pip install PyQt5                          *
-*   pip install numpy(>=1.16.0)                *
-*   pip install numba                          *
-*   pip install scipy                          *
-*   pip install natsort                        *
+*   pip install patchify                       *
+*   pip install torch                          *
+*   pip install fastremap                      *
+*   pip install roifile                        *
 ************************************************
     """
     raise ImportError(errmsg)
