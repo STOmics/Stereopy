@@ -407,10 +407,10 @@ class CommunityClusteringAlgo(ABC):
                 ax[1].set_title(f'Cell community {cluster[0]} ({self.adata.uns["sample_name"]})')
                 ax[1].get_legend().remove()
                 #ax[1].legend([f'{ind.get_text()} ({stats.loc[ind.get_text(), "perc_of_all_cells"]}%)' for ind in ax[1].get_legend().texts[:-1]], bbox_to_anchor=(1.0, 0.5), loc='center left', frameon=False, fontsize=10)
-                # fig.savefig(os.path.join(self.dir_path, f'cmixtures_{self.params_suffix}_c{cluster[0]}.png'), bbox_inches='tight')
-                # if not self.hide_plots:
-                #     plt.show()
-                # plt.close()
+                fig.savefig(os.path.join(self.dir_path, f'cmixtures_{self.params_suffix}_c{cluster[0]}.png'), bbox_inches='tight')
+                if not self.hide_plots:
+                    plt.show()
+                plt.close()
                 cl_palette[cluster[0]] = '#dcdcdc'
         return plt.figure()
 
@@ -464,10 +464,10 @@ class CommunityClusteringAlgo(ABC):
                     ax.set_title(f'Cell community {cluster} win size {window_size} step {sliding_step} ({self.adata.uns["sample_name"]})')
                     ax.set_xticklabels(ax.get_xticklabels(), rotation=90)
                     ax.xaxis.tick_bottom() # x axis on the bottom
-                    # fig.savefig(os.path.join(self.dir_path, f'boxplot_c{cluster}_ws{window_size}.png'), bbox_inches='tight')
-                    # if not self.hide_plots:
-                    #     plt.show()
-                    # plt.close()
+                    fig.savefig(os.path.join(self.dir_path, f'boxplot_c{cluster}_ws{window_size}.png'), bbox_inches='tight')
+                    if not self.hide_plots:
+                        plt.show()
+                    plt.close()
         return plt.figure()
 
     @timeit
@@ -553,11 +553,11 @@ class CommunityClusteringAlgo(ABC):
 
                         ax.text(1.05, 0.5, f'{plane_names[0]} - {top_three_ct[0]} ({ct_perc[top_three_ct[0]]}%)\n{plane_names[1]} - {top_three_ct[1]} ({ct_perc[top_three_ct[1]]}%)\n{plane_names[2]} - {top_three_ct[2]} ({ct_perc[top_three_ct[2]]}%)', \
                                     transform=ax.transAxes, fontsize=12, va='center', ha='left')
-                        # fig.savefig(os.path.join(self.dir_path, f'colorplot_{color_system}_c{cluster[0]}_ws{window_size}_ss{sliding_step}.png'), bbox_inches='tight', dpi=self.dpi)
-                        # if not self.hide_plots:
-                        #     plt.show()
-                        # # plt.close()
-                        return plt.figure()
+                        fig.savefig(os.path.join(self.dir_path, f'colorplot_{color_system}_c{cluster[0]}_ws{window_size}_ss{sliding_step}.png'), bbox_inches='tight', dpi=self.dpi)
+                        if not self.hide_plots:
+                            plt.show()
+                        plt.close()
+            return plt.figure()
         else:
             logger.warning(f'Unsupported color system: {color_system}.')
 
@@ -657,10 +657,10 @@ class CommunityClusteringAlgo(ABC):
                 g = sns.heatmap(np.array(range(stats.shape[1]+1))[:, np.newaxis], linewidths=0.5, linecolor='gray', annot=table_annotation, cbar=False, cmap=column_cmap, ax=ax, fmt='', xticklabels=False, yticklabels=False, square=None)
         axes[i//2].set_title('Cell type abundance per cluster (and per cel type set)')
         axes[i//2].title.set_size(20)
-        # fig.savefig(os.path.join(self.dir_path, f'celltype_table_{self.params_suffix}.png'), bbox_inches='tight')
-        # if not self.hide_plots:
-        #     plt.show()
-        # plt.close()
+        fig.savefig(os.path.join(self.dir_path, f'celltype_table_{self.params_suffix}.png'), bbox_inches='tight')
+        if not self.hide_plots:
+            plt.show()
+        plt.close()
         return plt.figure()
 
     def save_metrics(self):
