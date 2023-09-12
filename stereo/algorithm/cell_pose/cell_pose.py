@@ -18,11 +18,11 @@ from stereo.algorithm.cell_pose import models
 from stereo.utils.time_consume import log_consumed_time
 
 
-class CellPose:
+class Cellpose:
 
     def __init__(self,
-                 open_path: str,
-                 save_path: str,
+                 img_path: str,
+                 out_path: str,
                  photo_size: Optional[int] = 2048,
                  photo_step: Optional[int] = 2000,
                  model_type: Optional[str] = 'cyto2',
@@ -31,8 +31,8 @@ class CellPose:
                  step: Optional[int] = 10):
         """
 
-        :param open_path: input file path
-        :param save_path: file save path
+        :param img_path: input file path
+        :param out_path: file save path
         :param photo_size: input image size, default is 2048
             The value of the microscope fov image setting
         :param photo_step: the step size of each image processing, default is 2000
@@ -45,8 +45,8 @@ class CellPose:
         :param dmax: cell diameter, default is 40
         :param step: the step size of cell diameter search, default is 10
         """
-        self.open_path = open_path
-        self.save_path = save_path
+        self.img_path = img_path
+        self.out_path = out_path
         self.photo_size = photo_size
         self.photo_step = photo_step
         self.dmin = dmin
@@ -61,7 +61,7 @@ class CellPose:
         if (overlap % 2) == 1:
             overlap = overlap + 1
         act_step = ceil(overlap / 2)
-        im = cv2.imread(self.open_path)
+        im = cv2.imread(self.img_path)
         image = np.array(im)
         gray_image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
         res_image = np.pad(gray_image, ((act_step, act_step), (act_step, act_step)), 'constant')
@@ -133,4 +133,4 @@ class CellPose:
         inverted_image = self._process_image()
         post_image, expanded_image = self._post_image(inverted_image)
         result_image = self._merger_image(post_image, expanded_image)
-        cv2.imwrite(self.save_path, result_image)
+        cv2.imwrite(self.out_path, result_image)

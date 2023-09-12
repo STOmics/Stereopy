@@ -2,9 +2,9 @@
 # coding: utf-8
 
 try:
-    from stereo.algorithm.cell_pose.cell_pose import CellPose
+    from stereo.algorithm.cell_pose.cell_pose import Cellpose
 except ImportError:
-    errmsg = """class `CellPose` is not import.
+    errmsg = """class `Cellpose` is not import.
 ************************************************
 * Some necessary modules may not be installed. *
 * Please install them by:                      *
