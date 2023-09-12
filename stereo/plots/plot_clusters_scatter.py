@@ -1,5 +1,4 @@
-from typing import Union, Sequence, Optional
-from natsort import natsorted
+from typing import Sequence, Optional
 import matplotlib.pylab as plt
 from matplotlib.axes import Axes
 from matplotlib import gridspec
@@ -11,7 +10,7 @@ from stereo.utils.pipeline_utils import calc_pct_and_pct_rest, cell_cluster_to_g
 from stereo.log_manager import logger
 
 
-class ClustersGenesDotPlot(PlotBase):
+class ClustersGenesScatter(PlotBase):
     __category_width = 0.37
     __category_height = 0.35
     __legend_width = 4
