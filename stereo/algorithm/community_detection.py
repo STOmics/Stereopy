@@ -689,6 +689,53 @@ class _CommunityDetection:
 class CommunityDetection(AlgorithmBase, _CommunityDetection):
 
     def main(self, **kwargs):
+        """
+        API of Cell Community Detection.
+
+        Note: All the parameters are key word arguments.
+
+        :param annotation: the key specified the cell type.
+        :param tfile: File path to Anndata object with calculated cell mixtures for data windows, output of calc_feature_matrix.
+        :param out_path: Absolute path to store outputs, default to './results'.
+        :param cluster_algo: Clustering algorithm, default to leiden.
+        :param resolution: Resolution of leiden clustering algorithm. Ignored for spectral and agglomerative, default to 0.2.
+        :param n_clusters: Number of clusters for spectral and agglomerative clustering, ignored for leiden, default to 10.
+        :param spot_size: Size of the spot on plot, default to 30.
+        :param verbose: Show logging messages. 0 - Show warnings, >0 show info, default to 0.
+        :param plotting: Save plots flag.
+                        0 - No plotting and saving
+                        1 - save clustering plot
+                        2 - additionally save plots of cell type images statistics and cell mixture plots
+                        3 - additionally save cell and cluster abundance plots and cell mixture plots for all slices and cluster mixture plots and boxplots for each slice
+                        4 - additionally save cell type images, abundance plots and cell percentage table for each slice
+                        5 - additionally save color plots
+        :param project_name: Project name that is used to name a directory containing all the slices used, default to community.
+        :param skip_stats: Skip statistics calculation on cell community clustering result. 
+                            A table of cell mixtures and comparative spatial plots of cell types and mixtures will not be created, default to False.
+        :param total_cell_norm: Total number of cells per window mixture after normalization, default to 10000.
+        :param downsample_rate: Rate by which the binary image of cells is downsampled before calculating the entropy and scatteredness metrics.
+                                If no value is provided, downsample_rate will be equal to 1/2 of minimal window size, default to None.
+        :param num_threads: Number of threads that will be used to speed up community calling, default to 5.
+        :param entropy_thres: Threshold value for spatial cell type entropy for filtering out overdispersed cell types, default to 1.0.
+        :param scatter_thres: Threshold value for spatial cell type scatteredness for filtering out overdispersed cell types, defaykt to 1.0.
+        :param win_sizes: Comma separated list of window sizes for analyzing the cell community.
+        :param sliding_steps: Comma separated list of sliding steps for sliding window.
+        :param min_cluster_size: Minimum number of cell for cluster to be plotted in plot_stats(), default to 200.
+        :param min_perc_to_show: Minimum percentage of cell type in cluster for cell type to be plotted in plot_stats(), default to 4.
+        :param min_num_celltype: Minimum number of cell types that have more than `min_perc_celltype` in a cluster, 
+                                for a cluster to be shown in plot_celltype_table(), default to 1.
+        :param min_perc_celltype: Minimum percentage of cells of a cell type which at least min_num_celltype cell types 
+                                need to have to show a cluster in plot_celltype_table().
+        :param min_cells_coeff: Multiple od standard deviations from mean values where the cutoff for m, default to 1.5.
+        :param color_plot_system: Color system for display of cluster specific windows, default rgb.
+        :param save_adata: Save adata file with resulting .obs column of cell community labels, default to False.
+        :param min_count_per_type: Minimum number of cells per cell type needed to use the cell type for cell communities extraction (in percentages), default to 0.1.
+        :param hide_plots: Stop plots from displaying in notebooks or standard ouput. Used for batch processing, default to True.
+        :param dpi: DPI (dots per inch) used for plotting figures, default to 100.
+
+        :return: Object of CommunityDetection.
+        """
+
         assert type(self.stereo_exp_data) is AnnBasedStereoExpData, \
             "this method can only run with AnnBasedStereoExpData temporarily"
         self._main([self.stereo_exp_data], **kwargs)

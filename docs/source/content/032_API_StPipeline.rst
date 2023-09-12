@@ -42,3 +42,4 @@ which is compromised of basic preprocessing, embedding, clustering, and so on.
     algorithm.cell_cell_communication.CellCellCommunication.main
     algorithm.regulatory_network_inference.RegulatoryNetworkInference.main
     algorithm.co_occurrence.CoOccurrence.main
+    algorithm.community_detection.CommunityDetection.main

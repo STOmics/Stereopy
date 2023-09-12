@@ -36,11 +36,11 @@ COMMUNITY_DETECTION_DEFAULTS = {
     'win_sizes': 'NA',
     # Comma separated list of sliding steps for sliding window.
     'sliding_steps': 'NA',
-    # Minumum number of cell for cluster to be plotted in plot_stats().
+    # Minimum number of cell for cluster to be plotted in plot_stats().
     'min_cluster_size': 200,
-    # Minumum percentage of cell type in cluster for cell type to be plotted in plot_stats().
+    # Minimum percentage of cell type in cluster for cell type to be plotted in plot_stats().
     'min_perc_to_show': 4,
-    # Minimum number of cell types that have more than --min_perc_celltype in a cluster, for a cluster to be shown in plot_celltype_table().
+    # Minimum number of cell types that have more than `min_perc_celltype` in a cluster, for a cluster to be shown in plot_celltype_table().
     'min_num_celltype': 1,
     # Minimum percentage of cells of a cell type which at least min_num_celltype cell types need to have to show a cluster in plot_celltype_table().
     'min_perc_celltype': 10,
@@ -53,7 +53,7 @@ COMMUNITY_DETECTION_DEFAULTS = {
     # Minimum number of cells per cell type needed to use the cell type for cell communities extraction (in percentages).
     'min_count_per_type': 0.1,
     # Stop plots from displaying in notebooks or standard ouput. Used for batch processing.
-    'hide_plots': False,
+    'hide_plots': True,
     # DPI (dots per inch) used for plotting figures.
     'dpi': 100,
     # Whether in development mode
