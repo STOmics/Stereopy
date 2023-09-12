@@ -23,7 +23,7 @@ from .vt3d_browser.example import Plot3DBrowser
 from .plot_ccd import PlotCCD
 from .plot_coo import PlotCoOccurrence
 from .plot_dendrogram import PlotDendrogram
-from .plot_clusters_dot import ClustersGenesDotPlot
+from .plot_clusters_scatter import ClustersGenesScatter
 from .plot_clusters_heatmap import ClustersGenesHeatmap
 from .plot_paga import PlotPaga
 from .plot_time_series import PlotTimeSeries

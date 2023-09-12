@@ -18,7 +18,7 @@ from stereo.algorithm.cell_pose import models
 from stereo.utils.time_consume import log_consumed_time
 
 
-class CellPost:
+class CellPose:
 
     def __init__(self,
                  open_path: str,
