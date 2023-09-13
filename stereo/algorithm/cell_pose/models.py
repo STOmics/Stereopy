@@ -4,7 +4,6 @@ Copright © 2023 Howard Hughes Medical Institute, Authored by Carsen Stringer an
 import os
 import time
 import pathlib
-import logging
 import numpy as np
 from tqdm import trange
 
@@ -15,8 +14,7 @@ from .core import UnetModel
 from .core import assign_device
 from .core import parse_model_string
 from ...constant import MODEL_URL
-
-models_logger = logging.getLogger(__name__)
+from ... import logger as models_logger
 
 _MODEL_URL = MODEL_URL
 _MODEL_DIR_ENV = os.environ.get("CELLPOSE_LOCAL_MODELS_PATH")
@@ -502,7 +500,7 @@ class CellposeModel(UnetModel):
 
         if isinstance(x, list) or x.squeeze().ndim == 5:
             masks, styles, flows = [], [], []
-            tqdm_out = utils.TqdmToLogger(models_logger, level=logging.INFO)
+            tqdm_out = utils.TqdmToLogger(models_logger)
             nimg = len(x)
             iterator = trange(nimg, file=tqdm_out) if nimg > 1 else range(nimg)
             for i in iterator:
@@ -608,7 +606,7 @@ class CellposeModel(UnetModel):
                           axis=0)  # (dZ, dY, dX)
             del yf
         else:
-            tqdm_out = utils.TqdmToLogger(models_logger, level=logging.INFO)
+            tqdm_out = utils.TqdmToLogger(models_logger)
             iterator = trange(nimg, file=tqdm_out) if nimg > 1 else range(nimg)
             styles = np.zeros((nimg, self.nbase[-1]), np.float32)
             if resample:
@@ -897,7 +895,7 @@ class SizeModel():
         if isinstance(x, list):
             diams, diams_style = [], []
             nimg = len(x)
-            tqdm_out = utils.TqdmToLogger(models_logger, level=logging.INFO)
+            tqdm_out = utils.TqdmToLogger(models_logger)
             iterator = trange(nimg, file=tqdm_out) if nimg > 1 else range(nimg)
             for i in iterator:
                 channel = channels

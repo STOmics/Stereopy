@@ -5,7 +5,6 @@ import os
 import cv2
 import time
 import torch
-import logging
 import datetime
 import fastremap
 
@@ -18,11 +17,11 @@ from torch.utils import mkldnn as mkldnn_utils
 from . import utils
 from . import metrics
 from . import resnet_torch
+from ... import logger as core_logger
 
 TORCH_ENABLED = True
 
-core_logger = logging.getLogger(__name__)
-tqdm_out = utils.TqdmToLogger(core_logger, level=logging.INFO)
+tqdm_out = utils.TqdmToLogger(core_logger)
 
 
 def parse_model_string(pretrained_model):

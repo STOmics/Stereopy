@@ -5,7 +5,6 @@ Copright © 2023 Howard Hughes Medical Institute, Authored by Carsen Stringer an
 import os
 import cv2
 import torch
-import logging
 import tifffile
 import fastremap
 
@@ -14,10 +13,8 @@ from tqdm import trange
 from numba import njit
 from scipy.ndimage import maximum_filter1d
 from scipy.ndimage import find_objects
-
+from ... import logger as dynamics_logger
 from . import utils, metrics
-
-dynamics_logger = logging.getLogger(__name__)
 
 TORCH_ENABLED = True
 torch_GPU = torch.device('cuda')

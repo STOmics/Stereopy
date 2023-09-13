@@ -23,9 +23,8 @@ from scipy.ndimage import gaussian_filter
 from scipy.ndimage import binary_fill_holes
 from scipy.ndimage import generate_binary_structure
 
+from ... import logger as transforms_logger
 from . import metrics
-
-transforms_logger = logging.getLogger(__name__)
 
 try:
     from skimage.morphology import remove_small_holes

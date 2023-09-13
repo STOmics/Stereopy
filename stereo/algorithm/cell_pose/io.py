@@ -4,11 +4,8 @@ Copright © 2023 Howard Hughes Medical Institute, Authored by Carsen Stringer an
 
 import os
 import cv2
-import sys
 import glob
 import shutil
-import logging
-import pathlib
 import datetime
 import warnings
 import tifffile
@@ -22,8 +19,7 @@ from roifile import ImagejRoi
 
 from . import plot
 from . import utils
-
-from . import version
+from ... import logger as io_logger
 
 try:
     from PyQt5 import QtGui, QtCore, Qt, QtWidgets
@@ -46,31 +42,6 @@ try:
     SERVER_UPLOAD = True
 except:
     SERVER_UPLOAD = False
-
-io_logger = logging.getLogger(__name__)
-
-
-def logger_setup():
-    cp_dir = pathlib.Path.home().joinpath('.cellpose')
-    cp_dir.mkdir(exist_ok=True)
-    log_file = cp_dir.joinpath('run.log')
-    try:
-        log_file.unlink()
-    except:
-        print('creating new log file')
-    logging.basicConfig(
-        level=logging.INFO,
-        format="%(asctime)s [%(levelname)s] %(message)s",
-        handlers=[
-            logging.FileHandler(log_file),
-            logging.StreamHandler(sys.stdout)
-        ]
-    )
-    logger = logging.getLogger(__name__)
-    logger.info(f'WRITING LOG OUTPUT TO {log_file}')
-    logger.info(version)
-
-    return logger, log_file
 
 
 # helper function to check for a path; if it doesn't exist, make it

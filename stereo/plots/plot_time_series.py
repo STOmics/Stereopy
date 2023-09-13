@@ -65,7 +65,7 @@ class PlotTimeSeries(PlotBase):
         branch2exp = defaultdict(dict)
         stereo_exp_data = self.stereo_exp_data
         for x in branch:
-            cell_list = stereo_exp_data.cells.loc[stereo_exp_data.cells[use_col] == x, :].index
+            cell_list = stereo_exp_data.cells.to_df().loc[stereo_exp_data.cells[use_col] == x, :].index
             tmp_exp_data = stereo_exp_data.sub_by_name(cell_name=cell_list)
             for gene in genes:
                 branch2exp[gene][x] = tmp_exp_data.sub_by_name(gene_name=[gene]).exp_matrix.toarray().flatten()
@@ -112,9 +112,11 @@ class PlotTimeSeries(PlotBase):
         stereo_exp_data = self.stereo_exp_data
         df = stereo_exp_data.genes.to_df()
         df[_LOG_PVALUE] = -np.log10(np.min(df[[LESS_PVALUE, GREATER_PVALUE]], axis=1))
+        max_replace_value = df.loc[np.isfinite(df[_LOG_PVALUE]), _LOG_PVALUE].max()
+        df.loc[~np.isfinite(df[_LOG_PVALUE]), _LOG_PVALUE] = max_replace_value
         label2meam_exp = {}
         for x in branch:
-            cell_list = stereo_exp_data.cells.loc[stereo_exp_data.cells[use_col] == x,].index
+            cell_list = stereo_exp_data.cells.to_df().loc[stereo_exp_data.cells[use_col] == x,].index
             label2meam_exp[x] = np.array(
                 np.mean(stereo_exp_data.sub_by_name(cell_name=cell_list).exp_matrix, axis=0)).flatten()
         label2meam_exp = pd.DataFrame(label2meam_exp)
@@ -431,6 +433,7 @@ class PlotTimeSeries(PlotBase):
         else:
             fig = plt.figure(figsize=(width, height))
 
+        plt.set_loglevel('WARNING')
         axs = fig.subplots(int(np.ceil(NC / n_col)), n_col)
         for x in range(NC):
             if NC == n_col:
@@ -449,7 +452,7 @@ class PlotTimeSeries(PlotBase):
             for row in data.genes_matrix[CELLTYPE_MEAN_SCALE].loc[genelist].iterrows():
                 ax.plot(row[1], label=row[0], alpha=0.5)
 
-            if summary_trend:
+            if summary_trend or data.genes_matrix[CELLTYPE_MEAN_SCALE].shape[1] > 3:
                 from scipy.interpolate import make_interp_spline
                 tmp = data.genes_matrix[CELLTYPE_MEAN_SCALE].loc[genelist]
                 y_1 = tmp.quantile(0.5)
