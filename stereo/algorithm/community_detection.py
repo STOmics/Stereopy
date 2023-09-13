@@ -689,12 +689,39 @@ class _CommunityDetection:
 class CommunityDetection(AlgorithmBase, _CommunityDetection):
 
     def main(self, **kwargs):
-        """
-        API of Cell Community Detection.
+        r"""
+
+        CCD divides the tissue using sliding windows by accommodating multiple window sizes, and enables the simultaneous analysis of multiple slices from the same tissue. CCD consists of the three main steps:
+
+        1. Single or multiple-size sliding windows ($w$) are moved through the surface of the tissue with defined horizontal and vertical step while calculating the percentages ($[p_1, p_2,...,p_n]$) of each cell type inside of it. A feature vector ($fv$) with size equal to the number of cell types ($n$) is created for each processed window across all available tissue slices: 
+        
+            .. math::
+
+                \begin{equation}
+                    \forall w_i\rightarrow (fv_i = [p_1, p_2,...,p_n])
+                \end{equation}
+
+        2. Feature vectors from all windows are fed to the clustering algorithm ($C$) such as Leiden, Spectral or Hierarchical to obtain community labels ($l$). The number of the desired communities ($cn$) can be predefined explicitly as a parameter (Spectral or Hierarchical clustering) or by setting the resolution of clustering (Leiden):
+        
+            .. math::
+            
+                \begin{equation}
+                    C(\forall fv_i) \rightarrow l_i, l_i \in {l_1, l_2, ..., l_{cn}}
+                \end{equation}
+        
+        3. Community label is assigned to each cell-spot ($cs$) by majority voting ($MV$) using community labels from all windows covering it:
+
+            .. math::
+
+                \begin{equation}
+                    MV(\forall l_i)\text{ where } spatial(cs_j) \in w_i \rightarrow l_j, l_j \in {l_1, l_2, ..., l_{cn}}
+                \end{equation}
+
+        The window size and sliding step are optional CCD parameters. If not provided, the optimal window size is calculated throughout the iterative process with goal of having average number of cell-spots in all windows in range [30, 50]. Sliding step is set to the half of the window size.
 
         Note: All the parameters are key word arguments.
 
-        :param annotation: the key specified the cell type.
+        :param annotation: The key specified the cell type in obs.
         :param tfile: File path to Anndata object with calculated cell mixtures for data windows, output of calc_feature_matrix.
         :param out_path: Absolute path to store outputs, default to './results'.
         :param cluster_algo: Clustering algorithm, default to leiden.
@@ -702,13 +729,14 @@ class CommunityDetection(AlgorithmBase, _CommunityDetection):
         :param n_clusters: Number of clusters for spectral and agglomerative clustering, ignored for leiden, default to 10.
         :param spot_size: Size of the spot on plot, default to 30.
         :param verbose: Show logging messages. 0 - Show warnings, >0 show info, default to 0.
-        :param plotting: Save plots flag.
-                        0 - No plotting and saving
-                        1 - save clustering plot
-                        2 - additionally save plots of cell type images statistics and cell mixture plots
-                        3 - additionally save cell and cluster abundance plots and cell mixture plots for all slices and cluster mixture plots and boxplots for each slice
-                        4 - additionally save cell type images, abundance plots and cell percentage table for each slice
-                        5 - additionally save color plots
+        :param plotting: Save plots flag, default to 5, available values include:
+
+                        | 0 - No plotting and saving.
+                        | 1 - save clustering plot.
+                        | 2 - additionally save plots of cell type images statistics and cell mixture plots.
+                        | 3 - additionally save cell and cluster abundance plots and cell mixture plots for all slices and cluster mixture plots and boxplots for each slice.
+                        | 4 - additionally save cell type images, abundance plots and cell percentage table for each slice.
+                        | 5 - additionally save color plots.
         :param project_name: Project name that is used to name a directory containing all the slices used, default to community.
         :param skip_stats: Skip statistics calculation on cell community clustering result. 
                             A table of cell mixtures and comparative spatial plots of cell types and mixtures will not be created, default to False.

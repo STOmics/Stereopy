@@ -16,7 +16,7 @@ COMMUNITY_DETECTION_DEFAULTS = {
     # Save plots flag. 0 - No plotting/saving, 1 - save clustering plot, 2 - additionally save plots of cell type images statistics and cell mixture plots, 
     # 3 - additionally save cell and cluster abundance plots and cell mixture plots for all slices and cluster mixture plots and boxplots for each slice, 
     # 4 - additionally save cell type images, abundance plots and cell percentage table for each slice, 5 - additionally save color plots.
-    'plotting': 0,
+    'plotting': 5,
     # Project name that is used to name a directory containing all the slices used.
     'project_name': "community",
     # Skip statistics calculation on cell community clustering result. A table of cell mixtures and comparative spatial plots of cell types and mixtures will not be created.

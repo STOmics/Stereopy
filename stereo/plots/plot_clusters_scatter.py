@@ -17,7 +17,7 @@ class ClustersGenesScatter(PlotBase):
     __dendrogram_height = 0.6
     __title_font_size = 8
 
-    def clusters_genes_dot_plot(
+    def clusters_genes_scatter(
         self,
         cluster_res_key: str,
         dendrogram_res_key: Optional[str] = None,

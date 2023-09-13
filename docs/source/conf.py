@@ -48,6 +48,8 @@ extensions = [
     *[p.stem for p in (HERE / 'extensions').glob('*.py')],
 ]
 
+mathjax_path = 'https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML'
+
 # Generate the API documentation when building
 autosummary_generate = True
 autodoc_member_order = 'bysource'

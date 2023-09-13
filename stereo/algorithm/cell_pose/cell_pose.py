@@ -31,19 +31,18 @@ class Cellpose:
                  step: Optional[int] = 10):
         """
 
-        :param img_path: input file path
-        :param out_path: file save path
-        :param photo_size: input image size, default is 2048
-            The value of the microscope fov image setting
+        :param img_path: input file path.
+        :param out_path: file save path.
+        :param photo_size: input image size, the value of the microscope fov image setting, default is 2048.
         :param photo_step: the step size of each image processing, default is 2000
-        :param model_type: the type of model to cellpost, default is 'cyto2'
-            'cyto': cytoplasm model
-            'nuclei': nucleus model
-            'cyto2': optimized on the basis of the cyto model
-             cyto comes with the model, and cyto2 has been specially optimized, so it is recommended to use the cyto2 model.
-        :param dmin: cell minimum diameter, default is 10
-        :param dmax: cell diameter, default is 40
-        :param step: the step size of cell diameter search, default is 10
+        :param model_type: the type of model to cellpost, default is 'cyto2', available values include:
+
+                            | 'cyto': cytoplasm model.
+                            | 'nuclei': nucleus model.
+                            | 'cyto2': default and recommended model, optimized on the basis of the cyto model.
+        :param dmin: cell minimum diameter, default is 10.
+        :param dmax: cell diameter, default is 40.
+        :param step: the step size of cell diameter search, default is 10.
         """
         self.img_path = img_path
         self.out_path = out_path

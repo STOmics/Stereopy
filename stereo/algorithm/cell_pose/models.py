@@ -13,7 +13,8 @@ from . import dynamics
 from .core import UnetModel
 from .core import assign_device
 from .core import parse_model_string
-from ...constant import MODEL_URL
+# from ...constant import MODEL_URL
+from stereo.constant import MODEL_URL
 from ... import logger as models_logger
 
 _MODEL_URL = MODEL_URL
