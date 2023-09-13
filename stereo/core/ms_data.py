@@ -539,12 +539,20 @@ class MSData(_MSDataStruct):
         assert len(item) == len(self._names[_from]), f"`item`'s length not equal to _from"
         scope_names = self._names[scope]
         res_list = []
+        if type == 'obs':
+            self.merged_data.cells._obs[res_key] = fill
+        elif type == 'var':
+            raise NotImplementedError
+        else:
+            raise Exception(f"`type`: {type} not in ['obs', 'var'], this should not happens!")
+        
         for idx, stereo_exp_data in enumerate(self._data_list[scope]):
             if type == 'obs':
                 res = stereo_exp_data.cells._obs[item[idx]]
                 sample_idx = self._names.index(scope_names[idx])
                 new_index = res.index.astype('str') + f'-{sample_idx}'
                 res.index = new_index
+                self.merged_data.cells._obs.loc[new_index, res_key] = res
                 res_list.append(res.to_frame())
             elif type == 'var':
                 # res = stereo_exp_data.genes._var[res_key]
@@ -553,11 +561,11 @@ class MSData(_MSDataStruct):
             else:
                 raise Exception(f"`type`: {type} not in ['obs', 'var'], this should not happens!")
         if type == 'obs':
-            res_sum = pd.concat(res_list)
-            merged_bool_list = np.isin(self.merged_data.cells._obs.index.values, res_sum.index.values, invert=True)
-            self.merged_data.cells._obs.insert(0, res_key, pd.concat(res_list))
-            if fill is not np.NaN:
-                self.merged_data.cells._obs[merged_bool_list][res_key] = fill
+            # res_sum = pd.concat(res_list)
+            # merged_bool_list = np.isin(self.merged_data.cells._obs.index.values, res_sum.index.values, invert=True)
+            # self.merged_data.cells._obs.insert(0, res_key, pd.concat(res_list))
+            # if fill is not np.NaN:
+            #     self.merged_data.cells._obs[merged_bool_list][res_key] = fill
             scope_key_name = "scope_[" + ",".join([str(self._names.index(name)) for name in scope_names]) + "]"
             self.tl.result.setdefault(scope_key_name, {})
             self.tl.result[scope_key_name][res_key] = self.merged_data.cells._obs[res_key].to_frame()

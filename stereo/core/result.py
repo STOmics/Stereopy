@@ -366,7 +366,7 @@ class AnnBasedResult(_BaseResult, object):
             elif not {"means", "dispersions", "dispersions_norm", "highly_variable"} - set(value.columns.values):
                 self._set_hvg_res(key, value)
                 return
-            elif len(value.shape) == 2 and value.shape[0] > 399 and value.shape[1] > 399:
+            elif len(value.shape) == 2 and value.shape[0] == self.__based_ann_data.shape[0] and value.shape[1] <= self.__based_ann_data.shape[1]:
                 # TODO this is hard-code method to guess it's a reduce ndarray
                 self._set_reduce_res(key, value)
                 return
