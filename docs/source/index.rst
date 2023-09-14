@@ -47,8 +47,6 @@ inevitably a handful of BUGs. We sincerely hope to receive your feedback and sug
 
 Upcoming functions
 --------------------
-* Cell Co-occurrence
-* Cell Community
 * New algorithm for Batch Effect Correction
 
 
@@ -65,13 +63,39 @@ Highlights
 Workflow
 ----------
 
-.. image:: ./_static/Stereopy_workflow_v0.11.0.png
+.. image:: ./_static/Stereopy_workflow_v0.14.0.png
     :alt: Title figure
     :width: 700px
     :align: center
 
 Latest Additions
 ------------------
+
+Notice: this Beta version is specifically developed for multi-sample analysis.
+
+Version 0.14.0b1 (Beta)
+------------------------
+0.14.0b1 : 2023-9-15
+~~~~~~~~~~~~~~~~~~~~~~~~
+Features:
+1. Addition of Cell Community Detection (CCD) analysis.
+2. Addition of Cell Co-occurrence analysis.
+3. Addition of circos (`st.plt.ccc_circos_plot`) and sankey (`st.plt.ccc_sankey_plot`) plots in Cell-cell Communication analysis.
+4. Addition of volcano (`st.plt.TVG_volcano_plot`) and tree (`st.plt.time_series_tree_plot`) plots in Time Series analysis.
+5. Addition of PAGA tree plot, `st.plt.paga_plot`.
+6. Addition of visuallization of `st.tl.dendrogram`.
+7. Addition of version check using `st.__version__`.
+8. Supported obtain subset from a data object, using clustering output, by `st.tl.filter_by_clusters`.
+9. Supported filtering data using hvgs, by `st.tl.filter_by_hvgs`.
+10. Supported mapping the clustering result of SquareBin analysis to the same data but in CellBin.
+11. Supported writing annotation information into CGEF file, only clustering result available before.
+12. Supported saving images of PNG and PDF formats, in interactive interface.
+13. Optimized the function of `st.tl.find_marker_genes`.
+14. Optimized the modification of titles in horizontal axis, vertical axis and plot.
+BUG Fixes:
+1. Fixed the issue that SingleR calculating did not add filtration to the column field when traversing expression matrix, resulting in the subsequent absence of the column index.
+2. Fixed the issue that output Seurat h5ad could not be transformed into R format.
+3. Fixed the issue that clustering result could not be written into GEF file, using `st.io.update_gef`, caused by data type error.
 
 Version 0.13.0b1 (Beta)
 ~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -97,18 +121,6 @@ Version 0.12.1
 2. Fixed the bug that loaded data from GEF file had the same expression matrix but in different row order, through updating gefpy package to v0.6.24.
 3. Fixed the bug that `scale.data` had `np.nan` value in `st.tl.sctransform` , caused by data type limitation.
 4. Fixed the bug that dot symbol ( '.' ) caused identification error of cluster name in `.csv` output, when doing `st.tl.find_marker_genes`.
-
-Version 0.12.0
-~~~~~~~~~~~~~~
-0.12.0 : 2023-04-27
-
-1. Addition of the algorithm of Cell Segmentation V3.0.
-2. Addition of `method='hotspot'` to `st.tl.regulatory_network_inference`, which takes spatial coordinate information into account to calculate the relative importance between TFs and their target genes.
-3. Addition of dpi and width/height setting for visualization, and addition of plotting scale for displaying static plot.
-4. Optimized required memory while plotting UMAP embedding via `data.plt.umap` and cell distribution via `data.plt.cells_plotting`.
-5. Fixed bug that input parameter of `var_features_n` was invalid, in `data.tl.scTransform`.
-6. Updated requirements.txt.
-
 
 
 .. toctree::

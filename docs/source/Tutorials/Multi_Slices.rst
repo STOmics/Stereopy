@@ -11,5 +11,6 @@ Likewise, functions performed on one slice could also be used on multi-slice dat
     MSData_Clustering
     3D_Cell_Cell_Communication
     3D_Gene_Regulatory_Network
-    Batches_Integration
+    Time_Series_Analysis
     Batch_QC
+    Batches_Effect
