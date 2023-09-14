@@ -43,6 +43,9 @@ class TotalVi(MSDataAlgorithmBase):
         res_key: str = 'totalVI',
         rna_use_raw: bool = False,
         protein_use_raw: bool = False,
+        accelerator: str = 'auto',
+        devices: Union[int, str] = 'auto',
+        train_kwargs: dict = {},
         **kwags
     ):
         if rna_key is None:
@@ -123,7 +126,7 @@ class TotalVi(MSDataAlgorithmBase):
         })
 
         total_vi = scvi.model.TOTALVI(mdata, **kwags)
-        total_vi.train()
+        total_vi.train(accelerator=accelerator, devices=devices, **train_kwargs)
         
         if not self._use_hvg:
             rna = rna_data
