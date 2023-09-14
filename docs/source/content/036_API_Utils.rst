@@ -16,3 +16,4 @@ The module handles with multiple batches of data.
 
     utils.data_helper.merge
     utils.data_helper.split
+    utils.cluster_bins_to_cellbins

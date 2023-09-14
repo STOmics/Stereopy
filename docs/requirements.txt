@@ -225,6 +225,9 @@ onnxruntime==1.14.1
 POT==0.8.1.0
 pycirclize>=0.5.0
 plotly>=5.15.0
+patchify
+fastremap
+roifile
 
 Sphinx>=7.1.2
 nbsphinx>=0.9.3

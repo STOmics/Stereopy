@@ -26,12 +26,27 @@ class ClustersGenesHeatmap(PlotBase):
         dendrogram_res_key: Optional[str] = None,
         gene_names: Optional[Sequence[str]] = None,
         groups: Optional[Sequence[str]] = None,
-        title: str = None,
         width: int = None,
         height: int = None,
         colormap: str = 'Greens',
-        standard_scale: str = 'var'
+        standard_scale: str = 'gene'
     ):
+        """
+
+        Heatmap representing mean expression of genes on each cell cluster.
+
+        :param cluster_res_key: the key to get cluster result.
+        :param dendrogram_res_key: the key to get dendrogram result, defaults to None to avoid show dendrogram on plot.
+        :param gene_names: a list of genes to show, defaults to None to show all genes.
+        :param groups: a list of cell clusters to show, defaults to None to show all cell clusters.
+        :param width: the figure width in pixels, defaults to None
+        :param height: the figure height in pixels, defaults to None
+        :param colormap: colormap used on plot, defaults to 'Greens'
+        :param standard_scale: Whether or not to standardize that dimension between 0 and 1,
+                                meaning for each gene or cluster,
+                                subtract the minimum and divide each by its maximum, defaults to 'gene'
+
+        """
         if cluster_res_key not in self.pipeline_res:
             raise KeyError(f"Can not find the cluster result in data.tl.result by key {cluster_res_key}")
 
@@ -76,10 +91,10 @@ class ClustersGenesHeatmap(PlotBase):
         )
         mean_expression = mean_expression[group_codes]
 
-        if standard_scale == 'group':
+        if standard_scale == 'cluster':
             mean_expression -= mean_expression.min(0)
             mean_expression = (mean_expression / mean_expression.max(0)).fillna(0)
-        elif standard_scale == 'var':
+        elif standard_scale == 'gene':
             mean_expression = mean_expression.sub(mean_expression.min(1), axis=0)
             mean_expression = mean_expression.div(mean_expression.max(1), axis=0).fillna(0)
         elif standard_scale is None:
