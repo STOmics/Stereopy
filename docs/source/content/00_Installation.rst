@@ -41,7 +41,7 @@ Use PyPI run:
 
 .. code-block:: 
 
-    pip install --use-pep517 stereopy
+    pip install stereopy
 
 Development Version
 --------------------
