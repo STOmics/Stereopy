@@ -54,12 +54,14 @@ class PlotTimeSeries(PlotBase):
                              ):
         """
         show a boxplot of a specific gene expression in branch of use_col
-        :param use_col: the col in obs representing celltype or clustering
-        :param branch: celltypes order in use_col
-        :param genes: specific gene or gene list to plot
-        :param vmax, vmin: max and min value to plot, default None means auto calculate
-        :param title: title of figure
-        :return: a boxplot fig of one or several gene expression in branch of use_col
+
+        :param use_col: the col in obs representing celltype or clustering.
+        :param branch: celltypes order in use_col.
+        :param genes: specific gene or gene list to plot.
+        :param vmax, vmin: max and min value to plot, default None means auto calculate.
+        :param title: title of figure.
+
+        :return: a boxplot fig of one or several gene expression in branch of use_col.
         """
 
         branch2exp = defaultdict(dict)
@@ -101,12 +103,14 @@ class PlotTimeSeries(PlotBase):
                          title: Optional[str] = None):
         """
         Use fuzzy C means cluster method to cluster genes based on 1-p_value of celltypes in branch
-        :param use_col: the col in obs representing celltype or clustering
-        :param branch: celltypes order in use_col
+
+        :param use_col: the col in obs representing celltype or clustering.
+        :param branch: celltypes order in use_col.
         :param x_label: the x label.
         :param y_label: the y label.
-        :param title: title of figure
-        :return: a volcano plot display time variable gene(TVG)
+        :param title: title of figure.
+
+        :return: a volcano plot display time variable gene(TVG).
         """
         N_branch = len(branch)
         stereo_exp_data = self.stereo_exp_data
@@ -221,15 +225,17 @@ class PlotTimeSeries(PlotBase):
                               dpt_col: Optional[str] = DptColType.dpt_pseudotime.value):
         """
         spatial trajectory plot for paga in time_series multiple slice dataset
-        :param use_col: the col in obs representing celltype or clustering
-        :param batch_col: the col in obs representing different slice of time series
-        :param groups: the particular celltype that will show, default None means show all the celltype in use_col
-        :param height: height of figure
-        :param width: width of figure
-        :param palette: color palette to paint different celltypes
-        :param link_alpha: alpha of the bezierpath, from 0 to 1
-        :param spot_size: the size of each cell scatter
-        :param dpt_col: the col in obs representing dpt pseudotime
+
+        :param use_col: the col in obs representing celltype or clustering.
+        :param batch_col: the col in obs representing different slice of time series.
+        :param groups: the particular celltype that will show, default None means show all the celltype in use_col.
+        :param height: height of figure.
+        :param width: width of figure.
+        :param palette: color palette to paint different celltypes.
+        :param link_alpha: alpha of the bezierpath, from 0 to 1.
+        :param spot_size: the size of each cell scatter.
+        :param dpt_col: the col in obs representing dpt pseudotime.
+
         :return: a fig object
         """
 
@@ -386,17 +392,19 @@ class PlotTimeSeries(PlotBase):
                           title: Optional[str] = None):
         """
         a line plot to show the trend of each cluster of fuzzy C means
-        :param use_col: the col in obs representing celltype or clustering
-        :param branch: celltypes order in use_col
-        :param summary_trend: summary trend in use_col
-        :param threshold: the threshold of cluster score to plot
-        :param n_col: number of columns to display each cluster plot
-        :param width: width of figure
-        :param height: height of figure
+
+        :param use_col: the col in obs representing celltype or clustering.
+        :param branch: celltypes order in use_col.
+        :param summary_trend: summary trend in use_col.
+        :param threshold: the threshold of cluster score to plot.
+        :param n_col: number of columns to display each cluster plot.
+        :param width: width of figure.
+        :param height: height of figure.
         :param x_label: the x label.
         :param y_label: the y label.
-        :param title: title of figure
-        :return: a list of gene list of each cluster
+        :param title: title of figure.
+
+        :return: a list of gene list of each cluster.
         """
         from scipy import sparse
         data = self.stereo_exp_data
@@ -497,16 +505,18 @@ class PlotTimeSeriesAnalysis(MSDataPlotBase, PlotTimeSeries):
                               y_label: Optional[str] = None):
         """
         a tree plot to display the cell amounts changes during time series, trajectory can be add to plot by edges.
-        :param use_result: the col in obs representing celltype or clustering
-        :param method: choose from sankey and dot, choose the way to display
-        :param edges: a parameter to add arrow to illustrate development trajectory. if edges=='page', use paga result, otherwise use a list of tuple of celltype pairs as father node and child node
-        :param dot_size_scale: only used for method='dot', to adjust dot relatively size
-        :param palette: color palette to paint different celltypes
-        :param ylabel_pos: position to plot y labels
-        :param width: width of figure
-        :param height: height of figure
+
+        :param use_result: the col in obs representing celltype or clustering.
+        :param method: choose from sankey and dot, choose the way to display.
+        :param edges: a parameter to add arrow to illustrate development trajectory. if edges=='page', use paga result, otherwise use a list of tuple of celltype pairs as father node and child node.
+        :param dot_size_scale: only used for method='dot', to adjust dot relatively size.
+        :param palette: color palette to paint different celltypes.
+        :param ylabel_pos: position to plot y labels.
+        :param width: width of figure.
+        :param height: height of figure.
         :param x_label: the x label.
         :param y_label: the y label.
+
         :return: a fig object
         """
         # batch list
@@ -653,16 +663,17 @@ class PlotTimeSeriesAnalysis(MSDataPlotBase, PlotTimeSeries):
                                  dpt_col: Optional[str] = DptColType.dpt_pseudotime.value):
         """
         spatial trajectory plot for paga in time_series multiple slice dataset
-        :param use_col: the col in obs representing celltype or clustering
-        #param batch_col: the col in obs representing different slice of time series
-        :param groups: the particular celltype that will show, default None means show all the celltype in use_col
-        :param height: height of figure
-        :param width: width of figure
-        :param palette: color palette to paint different celltypes
-        :param link_alpha: alpha of the bezierpath, from 0 to 1
-        :param spot_size: the size of each cell scatter
-        :param dpt_col: the col in obs representing dpt pseudotime
-        :return: a fig object
+
+        :param use_col: the col in obs representing celltype or clustering.
+        :param groups: the particular celltype that will show, default None means show all the celltype in use_col.
+        :param height: height of figure.
+        :param width: width of figure.
+        :param palette: color palette to paint different celltypes.
+        :param link_alpha: alpha of the bezierpath, from 0 to 1.
+        :param spot_size: the size of each cell scatter.
+        :param dpt_col: the col in obs representing dpt pseudotime.
+
+        :return: a fig object.
         """
 
         import networkx as nx

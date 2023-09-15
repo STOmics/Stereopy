@@ -13,4 +13,4 @@ Likewise, functions performed on one slice could also be used on multi-slice dat
     3D_Gene_Regulatory_Network
     Time_Series_Analysis
     Batch_QC
-    Batches_Effect
+    Batch_Effect
