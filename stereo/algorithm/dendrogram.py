@@ -18,11 +18,6 @@ class Dendrogram(AlgorithmBase):
         """
         Computes a hierarchical clustering for the given `cluster_res_key` categories.
 
-        Alternatively, a list of `var_names` (e.g. genes) can be given.
-
-        Average values of either `var_names` or components are used
-        to compute a correlation matrix.
-
         .. note::
             The computation of the hierarchical clustering is based on predefined
             groups and not per cell. The correlation matrix is computed using by
