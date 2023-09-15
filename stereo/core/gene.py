@@ -101,12 +101,13 @@ class Gene(object):
         :param index: a numpy array of index info.
         :return: the subset of Gene object.
         """
-        if type(index) is list:
+        if isinstance(index, list) or isinstance(index, slice):
             self._var = self._var.iloc[index].copy()
-        elif index.dtype == bool:
-            self._var = self._var[index].copy()
-        else:
-            self._var = self._var.iloc[index].copy()
+        elif isinstance(index, np.ndarray):            
+            if index.dtype == bool:
+                self._var = self._var[index].copy()
+            else:
+                self._var = self._var.iloc[index].copy()
         return self
 
     def to_df(self, copy=False):
@@ -122,6 +123,9 @@ class Gene(object):
         for attr_name in self._var.columns:
             format_genes.append(attr_name)
         return f"\ngenes: {format_genes}" if format_genes else ""
+    
+    def _repr_html_(self):
+        return self._var._repr_html_()
 
 
 class AnnBasedGene(Gene):
