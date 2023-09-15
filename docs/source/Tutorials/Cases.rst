@@ -52,6 +52,7 @@ This sections contains various cases for additional functionalities.
     Batches_Integration
     Gene_Regulatory_Network
     Trajectory_Analysis
+    Cell_CoOccurrence
 
 
 Interactive Visualization

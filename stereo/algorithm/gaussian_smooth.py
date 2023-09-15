@@ -105,37 +105,41 @@ def gaussian_smooth(
     smooth_threshold: float = 90,
     a: float = 1,
     b: float = 0,
-    n_jobs: int = 10
+    n_jobs: int = -1
 ):
+    orig_jobs = nb.get_num_threads()
+    nb.set_num_threads(n_jobs)
+    try:
+        tc = TimeConsume()
+        tk = tc.start()
 
-    tc = TimeConsume()
-    tk = tc.start()
+        logger.info(f'Calulate the distance between each cell in {cells_position.shape[0]} cells')
+        cells_distance = _calculate_points_distance(cells_position)
+        logger.debug(f'_calculate_points_distance: {tc.get_time_consumed(tk)}')
 
-    logger.info(f'Calulate the distance between each cell in {cells_position.shape[0]} cells')
-    cells_distance = _calculate_points_distance(cells_position)
-    logger.debug(f'_calculate_points_distance: {tc.get_time_consumed(tk)}')
+        logger.info(f'Calculate {n_neighbors} nearest neighbors for each cell')
+        nbrs = NearestNeighbors(n_neighbors=n_neighbors, algorithm='ball_tree', n_jobs=n_jobs).fit(pca_exp_matrix)
+        logger.debug(f'NearestNeighbors.fit: {tc.get_time_consumed(tk)}')
 
-    logger.info(f'Calculate {n_neighbors} nearest neighbors for each cell')
-    nbrs = NearestNeighbors(n_neighbors=n_neighbors, algorithm='ball_tree', n_jobs=n_jobs).fit(pca_exp_matrix)
-    logger.debug(f'NearestNeighbors.fit: {tc.get_time_consumed(tk)}')
+        knn_graph_matrix = nbrs.kneighbors_graph(pca_exp_matrix)
+        logger.debug(f'kneighbors_graph: {tc.get_time_consumed(tk)}')
 
-    knn_graph_matrix = nbrs.kneighbors_graph(pca_exp_matrix)
-    logger.debug(f'kneighbors_graph: {tc.get_time_consumed(tk)}')
+        nnd_matrix = _create_nnd_matrix(
+            cells_position.shape[0],
+            n_neighbors,
+            cells_distance,
+            knn_graph_matrix
+        )
+        logger.debug(f'_create_nnd_matrix: {tc.get_time_consumed(tk)}')
 
-    nnd_matrix = _create_nnd_matrix(
-        cells_position.shape[0],
-        n_neighbors,
-        cells_distance,
-        knn_graph_matrix
-    )
-    logger.debug(f'_create_nnd_matrix: {tc.get_time_consumed(tk)}')
+        dist_threshold = np.percentile(nnd_matrix.data, smooth_threshold)
+        c = _gaussian_c(dist_threshold)
+        logger.debug(f'_gaussian_c: {tc.get_time_consumed(tk)}')
 
-    dist_threshold = np.percentile(nnd_matrix.data, smooth_threshold)
-    c = _gaussian_c(dist_threshold)
-    logger.debug(f'_gaussian_c: {tc.get_time_consumed(tk)}')
-
-    ##### smoothing
-    logger.info('Update express matrix.')
-    new_expression_matrix = _update_express_matrix(raw_exp_matrix, nnd_matrix, a, b, c)
-    logger.debug(f'_update_expression_matrix: {tc.get_time_consumed(tk, restart=False)}')
-    return new_expression_matrix
+        ##### smoothing
+        logger.info('Update express matrix.')
+        new_expression_matrix = _update_express_matrix(raw_exp_matrix, nnd_matrix, a, b, c)
+        logger.debug(f'_update_expression_matrix: {tc.get_time_consumed(tk, restart=False)}')
+        return new_expression_matrix
+    finally:
+        nb.set_num_threads(orig_jobs)

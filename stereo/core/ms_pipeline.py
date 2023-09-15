@@ -176,6 +176,11 @@ class MSDataPipeLine(object):
             run_method = MSDataAlgorithmBase.get_attribute_helper(item, self.ms_data, self.result)
             if run_method:
                 return run_method
+        elif self.__class__.ATTR_NAME == 'plt':
+            from stereo.plots.ms_plot_base import MSDataPlotBase
+            run_method = MSDataPlotBase.get_attribute_helper(item, self.ms_data, self.result)
+            if run_method:
+                return download(run_method)
 
         def temp(*args, **kwargs):
             if "scope" not in kwargs:

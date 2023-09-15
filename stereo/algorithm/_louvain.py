@@ -80,7 +80,8 @@ def louvain(
     if flavor in {'vtraag', 'igraph'}:
         if directed and flavor == 'igraph':
             directed = False
-        g = neighbor.get_igraph_from_adjacency(adjacency, directed=directed)
+        from .neighbors import Neighbors
+        g = Neighbors.get_igraph_from_adjacency(adjacency, directed=directed)
         if use_weights:
             weights = np.array(g.es["weight"]).astype(np.float64)
         else:

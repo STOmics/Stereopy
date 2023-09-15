@@ -29,7 +29,6 @@ class MSDataPlotBase(metaclass=ABCMeta):
         for sub_cls in MSDataPlotBase.__subclasses__():
             sub_cls_name = sub_cls.__name__.split(".")[-1]
             if sub_cls_name == names[1]:
-                print(sub_cls)
                 sub_obj = sub_cls(data, result)
                 return sub_obj.__getattribute__(item)
         return None

@@ -49,6 +49,7 @@ def download(func):
         if out_path is None:
             pn.extension()
             file_name_input = pn.widgets.TextInput(name='file name', placeholder='Enter a file name...', width=200)
+            format_select = pn.widgets.Select(name='file format', value='png', options=['png', 'pdf'], width=60)
             dpi_input = pn.widgets.IntInput(name='dpi', placeholder='Enter the dip...', width=200, value=100, step=1, start=0)
             export_button = pn.widgets.Button(name='export', button_type="primary", width=100)
             static_text = pn.widgets.StaticText(width=800)
@@ -57,9 +58,10 @@ def download(func):
                 static_text.value = ""
                 try:
                     out_path = file_name_input.value
+                    file_format = format_select.value
                     dpi = dpi_input.value if dpi_input.value > 0 else 100
                     if out_path is not None and len(out_path) > 0:
-                        out_path = f"{out_path}_{func.__name__}.png"
+                        out_path = f"{out_path}_{func.__name__}.{file_format}"
                         figure.savefig(out_path, bbox_inches='tight', dpi=dpi)
                         static_text.value = f'the plot has alrady been saved in the same directory as this notebook and named as <font color="red"><b>{out_path}</b></font>'
                 finally:
@@ -68,7 +70,7 @@ def download(func):
             export_button.on_click(action)
             return pn.Column(
                 '<font size="3"><br>Exporting the plot.</br></font>',
-                pn.Row(file_name_input, dpi_input),
+                pn.Row(file_name_input, format_select, dpi_input),
                 pn.Row(export_button, static_text)
             )
         else:

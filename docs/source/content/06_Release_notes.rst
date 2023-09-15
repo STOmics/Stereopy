@@ -3,6 +3,37 @@ Release Notes
 
 .. role:: small
 
+Version 0.14.0b1 (Beta)
+------------------------
+0.14.0b1 : 2023-9-15
+~~~~~~~~~~~~~~~~~~~~~~~~
+Notice: this Beta version is specifically developed for multi-slice analysis.
+
+Features:
+
+1. Addition of Cell Community Detection (CCD) analysis.
+2. Addition of Cell Co-occurrence analysis.
+3. Addition of Cellpose in cell segmentation, especially for cell cytoplasm using `model_type='cyto2'`.
+4. Addition of circos (`st.plt.ccc_circos_plot`) and sankey (`st.plt.ccc_sankey_plot`) plots in Cell-cell Communication analysis.
+5. Addition of volcano (`st.plt.TVG_volcano_plot`) and tree (`st.plt.time_series_tree_plot`) plots in Time Series analysis.
+6. Addition of PAGA tree plot, `st.plt.paga_plot`.
+7. Addition of visuallization of `st.tl.dendrogram`.
+8. Addition of version check using `st.__version__`.
+9. Supported obtain subset from a data object, using clustering output, by `st.tl.filter_by_clusters`.
+10. Supported filtering data using hvgs, by `st.tl.filter_by_hvgs`.
+11. Supported mapping the clustering result of SquareBin analysis to the same data but in CellBin.
+12. Supported writing annotation information into CellBin GEF file, only clustering result available before.
+13. Supported saving images of PNG and PDF formats, in interactive interface.
+14. Optimized the function of `st.tl.find_marker_genes`.
+15. Optimized the modification of titles in horizontal axis, vertical axis and plot.
+
+BUG Fixes:
+
+1. Fixed the issue that SingleR calculating did not add filtration to the column field when traversing expression matrix, resulting in the subsequent absence of the column index.
+2. Fixed the issue that output Seurat h5ad could not be transformed into R format.
+3. Fixed the issue that clustering output of Leiden was in wrong data type under the scene of GPU acceleration, leading to errors in subsequent analysis which work on the clustering result.
+4. Fixed the issue that clustering result could not be written into GEF file, using `st.io.update_gef`, caused by data type error. From v0.12.1 on, `date.cells.cell_name` has changed from int to string. 
+
 Version 0.13.0b1 (Beta)
 ------------------------
 0.13.0b1 : 2023-07-11

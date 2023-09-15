@@ -149,7 +149,8 @@ class CellCellCommunication(AlgorithmBase):
             genes_mouse = counts.index.tolist()
             genes_human, human_genes_to_mouse = mouse2human(genes_mouse, homogene_path)
             counts.index = genes_human
-            counts = counts.drop('NotAvailable')
+            if 'NotAvailable' in genes_human:
+                counts = counts.drop('NotAvailable')
             counts = counts.groupby(counts.index, as_index=True).sum()
 
         # 1.4. preprocess and validate micro_env data

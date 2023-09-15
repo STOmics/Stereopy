@@ -9,6 +9,7 @@
 import shutil
 import os
 from .correlation import pearson_corr, spearmanr_corr
+from .pipeline_utils import cluster_bins_to_cellbins
 # from .data_helper import select_group
 
 

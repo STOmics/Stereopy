@@ -179,7 +179,6 @@ class SingleR(AlgorithmBase):
         ct = self.group_data_frame['group'].astype('category').cat.categories
         de_n = np.round(500 * (2 / 3) ** np.log2(len(ct)))
         common_gene = set()
-        res_common_gene = list()
         for i in ct:
             for j in ct:
                 if i == j:
@@ -193,7 +192,6 @@ class SingleR(AlgorithmBase):
                     if gene in common_gene:
                         continue
                     common_gene.add(gene)
-                    res_common_gene.append(gene)
                 tmp_all = tmp_all.loc[tmp_all[0] > 0]
                 ret_all[i][j] = tmp_all.index.values
 
@@ -260,7 +258,7 @@ class SingleR(AlgorithmBase):
         if len(label_genes) < 20:
             return [top_labels[0]]
 
-        genes_filtered = list(label_genes)
+        genes_filtered = list(label_genes & set(test.columns))
         test_filtered = test.loc[:, genes_filtered].values
         if np.std(test_filtered) <= 0:
             return [top_labels[0]]

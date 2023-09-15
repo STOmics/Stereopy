@@ -19,8 +19,21 @@ from typing_extensions import Literal
 from ...log_manager import logger
 
 
-def heatmap(df: pd.DataFrame = None, ax: Axes = None, cmap=None, norm=None, plot_colorbar=False,
-            colorbar_ax: Axes = None, show_labels=True, plot_hline=False, **kwargs):
+def heatmap(
+    df: pd.DataFrame = None,
+    ax: Axes = None,
+    cmap=None,
+    norm=None,
+    plot_colorbar=False,
+    colorbar_ax: Axes = None,
+    colorbar_orientation = 'vertical',
+    colorbar_ticklocation = 'right',
+    colorbar_title = None,
+    show_xaxis=True,
+    show_yaxis=True,
+    plot_hline=False,
+    **kwargs
+):
     """
     :param df:
     :param ax:
@@ -41,23 +54,33 @@ def heatmap(df: pd.DataFrame = None, ax: Axes = None, cmap=None, norm=None, plot
         plot_colorbar = False
 
     kwargs.setdefault('interpolation', 'nearest')
-    im = ax.imshow(df.values, aspect='auto', norm=norm, **kwargs)
+    im = ax.imshow(df.values, aspect='auto', norm=norm, cmap=cmap, **kwargs)
 
     ax.set_ylim(df.shape[0] - 0.5, -0.5)
     ax.set_xlim(-0.5, df.shape[1] - 0.5)
-    ax.tick_params(axis='y', left=False, labelleft=False)
-    ax.set_ylabel('')
+    # ax.tick_params(axis='y', left=False, labelleft=False)
+    # ax.set_ylabel('')
     ax.grid(False)
 
-    if show_labels:
+    if show_xaxis:
         ax.tick_params(axis='x', labelsize='small')
         ax.set_xticks(np.arange(df.shape[1]))
         ax.set_xticklabels(list(df.columns), rotation=90)
     else:
         ax.tick_params(axis='x', labelbottom=False, bottom=False)
+    
+    if show_yaxis:
+        ax.tick_params(axis='y', labelsize='small')
+        ax.set_yticks(np.arange(df.shape[0]))
+        ax.set_yticklabels(list(df.index))
+    else:
+        ax.tick_params(axis='y', labelbottom=False, bottom=False)
 
     if plot_colorbar:
-        plt.colorbar(im, cax=colorbar_ax)
+        if colorbar_title is not None:
+            colorbar_ax.set_title(colorbar_title, fontdict=dict(fontsize=8))
+        colorbar_ax.tick_params(labelsize='small')
+        plt.colorbar(im, cax=colorbar_ax, orientation=colorbar_orientation, ticklocation=colorbar_ticklocation)
 
     if plot_hline:
         line_coord = (
@@ -101,6 +124,8 @@ def plot_categories_as_colorblocks(
     for code, (label, value) in enumerate(
             obs_tidy.index.value_counts(sort=False).iteritems()
     ):
+        if value == 0:
+            continue
         ticks.append(value_sum + (value / 2))
         labels.append(label)
         value_sum += value

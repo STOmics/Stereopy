@@ -27,8 +27,7 @@ jobs:
           conda activate test
 
           pip install -r requirements.txt -q
-          # TODO temporarily not install `tests/extra_requirements.txt`
-          # pip install -r tests/extra_requirements.txt -q
+          pip install -r tests/extra_requirements.txt -q
           pip install pathlib -q
           pip install pytest-xdist
 

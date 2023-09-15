@@ -145,12 +145,13 @@ class Cell(object):
 
         if self.cell_border is not None:
             self.cell_border = self.cell_border[index]
-        if type(index) is list:
+        if isinstance(index, list) or isinstance(index, slice):
             self._obs = self._obs.iloc[index].copy()
-        elif index.dtype == bool:
-            self._obs = self._obs[index].copy()
-        else:
-            self._obs = self._obs.iloc[index].copy()
+        elif isinstance(index, np.ndarray):
+            if index.dtype == bool:
+                self._obs = self._obs[index].copy()
+            else:
+                self._obs = self._obs.iloc[index].copy()
         return self
 
     def get_property(self, name):
@@ -162,13 +163,14 @@ class Cell(object):
         """
         return self._obs[name].to_numpy()
 
-    def to_df(self):
+    def to_df(self, copy=False):
         """
         Transform StereoExpData object to pd.DataFrame.
 
         :return: a dataframe of Cell.
         """
-        obs = self._obs.copy(deep=True)
+
+        obs = self._obs.copy(deep=True) if copy else self._obs
         if 'batch' in obs.columns:
             obs['batch'] = obs['batch'].astype('category')
         return obs
@@ -177,7 +179,11 @@ class Cell(object):
         format_cells = ['cell_name']
         for attr_name in self._obs.columns:
             format_cells.append(attr_name)
-        return f"\ncells: {format_cells}" if format_cells else ""
+        return f"\ncells: {format_cells}" if format_cells else ""    
+    
+    def _repr_html_(self):
+        obs: pd.DataFrame = self.to_df()
+        return obs._repr_html_()
 
 
 class AnnBasedCell(Cell):
