@@ -38,16 +38,17 @@ Meanwhile, we are still working on the improvement of performance and calculatio
 
 About MSData
 --------------
-For multi-sample data analysis, we have recently launched a simple-to-use method that can distinguish single-sample \
-and multi-sample when working on the parallel processings, but the results of two parties can be interacted.
+For multi-slice data analysis, we have recently launched a simple-to-use method that can distinguish uni-slice \
+and multi-sclie when working on the parallel processings, but the results of two parties can be interacted.
 
 In order to adapt to the new parameters and concepts in MSData analysis, the current version is a Beta one, which means there are \
-inevitably a handful of BUGs. We sincerely hope to receive your feedback and suggestions for MSData.
+inevitably a handful of bugs. We sincerely hope to receive your feedback and suggestions for MSData.
 
 
 Upcoming functions
 --------------------
 * New algorithm for Batch Effect Correction
+* GPU version for SingleR annotation
 
 
 Highlights
@@ -71,45 +72,50 @@ Workflow
 Latest Additions
 ------------------
 
-Notice: this Beta version is specifically developed for multi-sample analysis.
-
 Version 0.14.0b1 (Beta)
-------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~
 0.14.0b1 : 2023-9-15
-~~~~~~~~~~~~~~~~~~~~~~~~
+
+Notice: this Beta version is specifically developed for multi-slice analysis.
+
 Features:
+
 1. Addition of Cell Community Detection (CCD) analysis.
 2. Addition of Cell Co-occurrence analysis.
-3. Addition of circos (`st.plt.ccc_circos_plot`) and sankey (`st.plt.ccc_sankey_plot`) plots in Cell-cell Communication analysis.
-4. Addition of volcano (`st.plt.TVG_volcano_plot`) and tree (`st.plt.time_series_tree_plot`) plots in Time Series analysis.
-5. Addition of PAGA tree plot, `st.plt.paga_plot`.
-6. Addition of visuallization of `st.tl.dendrogram`.
-7. Addition of version check using `st.__version__`.
-8. Supported obtain subset from a data object, using clustering output, by `st.tl.filter_by_clusters`.
-9. Supported filtering data using hvgs, by `st.tl.filter_by_hvgs`.
-10. Supported mapping the clustering result of SquareBin analysis to the same data but in CellBin.
-11. Supported writing annotation information into CGEF file, only clustering result available before.
-12. Supported saving images of PNG and PDF formats, in interactive interface.
-13. Optimized the function of `st.tl.find_marker_genes`.
-14. Optimized the modification of titles in horizontal axis, vertical axis and plot.
+3. Addition of Cellpose in cell segmentation, especially for cell cytoplasm using `model_type='cyto2'`.
+4. Addition of circos (`st.plt.ccc_circos_plot`) and sankey (`st.plt.ccc_sankey_plot`) plots in Cell-cell Communication analysis.
+5. Addition of volcano (`st.plt.TVG_volcano_plot`) and tree (`st.plt.time_series_tree_plot`) plots in Time Series analysis.
+6. Addition of PAGA tree plot, `st.plt.paga_plot`.
+7. Addition of visuallization of `st.tl.dendrogram`.
+8. Addition of version check using `st.__version__`.
+9. Supported obtain subset from a data object, using clustering output, by `st.tl.filter_by_clusters`.
+10. Supported filtering data using hvgs, by `st.tl.filter_by_hvgs`.
+11. Supported mapping the clustering result of SquareBin analysis to the same data but in CellBin.
+12. Supported writing annotation information into CGEF file, only clustering result available before.
+13. Supported saving images of PNG and PDF formats, in interactive interface.
+14. Optimized the function of `st.tl.find_marker_genes`.
+15. Optimized the modification of titles in horizontal axis, vertical axis and plot.
+
 BUG Fixes:
+
 1. Fixed the issue that SingleR calculating did not add filtration to the column field when traversing expression matrix, resulting in the subsequent absence of the column index.
 2. Fixed the issue that output Seurat h5ad could not be transformed into R format.
-3. Fixed the issue that clustering result could not be written into GEF file, using `st.io.update_gef`, caused by data type error.
+3. Fixed the issue that clustering output of Leiden was in wrong data type, leading to errors in subsequent analysis which work on the clustering result.
+4. Fixed the issue that clustering result could not be written into GEF file, using `st.io.update_gef`, caused by data type error.
 
 Version 0.13.0b1 (Beta)
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 0.13.0b1 : 2023-07-11
 
-Notice: this Beta version is specifically developed for multi-sample analysis. Major update points are listed below.
+Notice: this Beta version is specifically developed for multi-slice analysis. Major update points are listed below.
 
 1. Addition of 3D Cell-cell Communication.
 2. Addition of 3D Gene Regulatory Network.
 3. Addition of Trajectory Inference, including PAGA and DPT algorithms.
 4. Addition of Batch QC function for evaluation on batch effect.
 5. Addition of `st.io.read_h5ad` for improved compatibility with AnnData H5ad, we highly recommend that instead of `st.io.read_ann_h5ad`.
-6. Addition of analysis workflow tutorial based on multi-sample data, with assistant parameters `scope` and `mode`.
-7. Addition of resetting the image order of multi-sample analysis results.
+6. Addition of analysis workflow tutorial based on multi-slice data, with assistant parameters `scope` and `mode`.
+7. Addition of resetting the image order of multi-slice analysis results.
 8. Addition of 3D mesh visualization.
 9. Improved the performance of Gaussian Smoothing.
 
