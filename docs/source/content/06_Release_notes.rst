@@ -31,7 +31,7 @@ BUG Fixes:
 
 1. Fixed the issue that SingleR calculating did not add filtration to the column field when traversing expression matrix, resulting in the subsequent absence of the column index.
 2. Fixed the issue that output Seurat h5ad could not be transformed into R format.
-3. Fixed the issue that clustering output of Leiden was in wrong data type, leading to errors in subsequent analysis which work on the clustering result.
+3. Fixed the issue that clustering output of Leiden was in wrong data type under the scene of GPU acceleration, leading to errors in subsequent analysis which work on the clustering result.
 4. Fixed the issue that clustering result could not be written into GEF file, using `st.io.update_gef`, caused by data type error. From v0.12.1 on, `date.cells.cell_name` has changed from int to string. 
 
 Version 0.13.0b1 (Beta)
