@@ -12,8 +12,8 @@ Import Stereopy :
 The module handles with multiple batches of data.
 
 .. autosummary::
-   :toctree: reference/
-   :nosignatures:
+   :toctree: .
 
     utils.data_helper.merge
     utils.data_helper.split
+    utils.cluster_bins_to_cellbins

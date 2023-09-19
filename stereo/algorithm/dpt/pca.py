@@ -315,3 +315,4 @@ def _pca_with_sparse(X, npcs, solver='arpack', mu=None, random_state=None):
         'components': v,
     }
     return output
+
