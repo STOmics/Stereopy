@@ -719,7 +719,9 @@ class CommunityDetection(AlgorithmBase, _CommunityDetection):
 
         The window size and sliding step are optional CCD parameters. If not provided, the optimal window size is calculated throughout the iterative process with goal of having average number of cell-spots in all windows in range [30, 50]. Sliding step is set to the half of the window size.
 
-        Note: All the parameters are key word arguments.
+        .. note::
+
+            All the parameters are key word arguments.
 
         :param annotation: The key specified the cell type in obs.
         :param tfile: File path to Anndata object with calculated cell mixtures for data windows, output of calc_feature_matrix.

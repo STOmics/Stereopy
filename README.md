@@ -10,7 +10,7 @@
 [Documentation](https://stereopy.readthedocs.io/en/latest/index.html) - 
 [API](https://stereopy.readthedocs.io/en/latest/content/03_API.html)
 
-<img src="https://github.com/STOmics/stereopy/blob/main/docs/source/_static/Stereopy_workflow_v0.11.0.png" width="60%" height="80%">
+<img src="https://github.com/STOmics/stereopy/blob/main/docs/source/_static/Stereopy_workflow_v0.14.0.png" width="60%" height="80%">
 
 [comment]: <> (![Stereopy]&#40;./docs/source/_static/stereopy.PNG&#41;)
 
