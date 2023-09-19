@@ -74,7 +74,7 @@ def heatmap(
         ax.set_yticks(np.arange(df.shape[0]))
         ax.set_yticklabels(list(df.index))
     else:
-        ax.tick_params(axis='y', labelbottom=False, bottom=False)
+        ax.tick_params(axis='y', labelleft=False, left=False)
 
     if plot_colorbar:
         if colorbar_title is not None:
