@@ -773,7 +773,8 @@ def stereo_to_anndata(
     #                     var=data.tl.raw.genes.to_df())
 
     if base_adata is None:
-        adata = AnnData(X=data.exp_matrix, dtype=np.float64, obs=data.cells.to_df(), var=data.genes.to_df())
+        adata = AnnData(shape=data.exp_matrix.shape,dtype=np.float64, obs=data.cells.to_df(), var=data.genes.to_df())
+        adata.X = data.exp_matrix
     else:
         adata = base_adata
 
@@ -787,11 +788,12 @@ def stereo_to_anndata(
         else:
             adata.obsm['spatial'] = data.position
         logger.info(f"Adding data.position as adata.obs['x'] and adata.obs['y'] .")
-        adata.obs['x'] = pd.DataFrame(data.position[:, 0], index=data.cell_names.astype('str'))
-        adata.obs['y'] = pd.DataFrame(data.position[:, 1], index=data.cell_names.astype('str'))
+        cell_names_index = data.cell_names.astype('str')
+        adata.obs['x'] = pd.DataFrame(data.position[:, 0], index=cell_names_index)
+        adata.obs['y'] = pd.DataFrame(data.position[:, 1], index=cell_names_index)
         if data.position_z is not None:
-            adata.obs['z'] = pd.DataFrame(data.position_z, index=data.cell_names.astype('str'))
-    
+            adata.obs['z'] = pd.DataFrame(data.position_z, index=cell_names_index)
+
     if flavor != 'seurat':
         if data.bin_type is not None:
             adata.uns['bin_type'] = data.bin_type
@@ -810,7 +812,7 @@ def stereo_to_anndata(
         adata.uns['sn'] = pd.DataFrame(sn_list, columns=['batch', 'sn'])
 
     for key in data.tl.key_record.keys():
-        if len(data.tl.key_record[key]) > 0:
+        if data.tl.key_record[key]:
             if key == 'hvg':
                 res_key = data.tl.key_record[key][-1]
                 logger.info(f"Adding data.tl.result['{res_key}'] into adata.var .")
@@ -822,14 +824,16 @@ def stereo_to_anndata(
             elif key == 'sct':
                 res_key = data.tl.key_record[key][-1]
                 # adata.uns[res_key] = {}
+                zero_index_data = data.tl.result[res_key][0]
+                one_index_data = data.tl.result[res_key][1]
                 logger.info(f"Adding data.tl.result['{res_key}'] into adata.uns['sct_'] .")
-                adata.uns['sct_counts'] = csr_matrix(data.tl.result[res_key][0]['counts'].T)
-                adata.uns['sct_data'] = csr_matrix(data.tl.result[res_key][0]['data'].T)
-                adata.uns['sct_scale'] = csr_matrix(data.tl.result[res_key][0]['scale.data'].T.to_numpy())
-                adata.uns['sct_scale_genename'] = list(data.tl.result[res_key][0]['scale.data'].index)
-                adata.uns['sct_top_features'] = list(data.tl.result[res_key][1]['top_features'])
-                adata.uns['sct_cellname'] = list(data.tl.result[res_key][1]['umi_cells'].astype('str'))
-                adata.uns['sct_genename'] = list(data.tl.result[res_key][1]['umi_genes'])
+                adata.uns['sct_counts'] = csr_matrix(zero_index_data['counts'].T)
+                adata.uns['sct_data'] = csr_matrix(zero_index_data['data'].T)
+                adata.uns['sct_scale'] = csr_matrix(zero_index_data['scale.data'].T.to_numpy())
+                adata.uns['sct_scale_genename'] = list(zero_index_data['scale.data'].index)
+                adata.uns['sct_top_features'] = list(one_index_data['top_features'])
+                adata.uns['sct_cellname'] = list(one_index_data['umi_cells'].astype('str'))
+                adata.uns['sct_genename'] = list(one_index_data['umi_genes'])
             elif key in ['pca', 'umap', 'tsne', 'totalVI']:
                 # pca :we do not keep variance and PCs(for varm which will be into feature.finding in pca of seurat.)
                 res_key = data.tl.key_record[key][-1]
@@ -853,9 +857,10 @@ def stereo_to_anndata(
                     # adata.uns[res_key]['connectivities'] = data.tl.result[res_key]['connectivities']
                     # adata.uns[res_key]['distances'] = data.tl.result[res_key]['nn_dist']
             elif key == 'cluster':
+                cell_name_index = data.cells.cell_name.astype('str')
                 for res_key in data.tl.key_record[key]:
                     logger.info(f"Adding data.tl.result['{res_key}'] into adata.obs['{res_key}'] .")
-                    adata.obs[res_key] = pd.DataFrame(data.tl.result[res_key]['group'].values, index=data.cells.cell_name.astype('str'))
+                    adata.obs[res_key] = pd.DataFrame(data.tl.result[res_key]['group'].values, index=cell_name_index)
             elif key in ('gene_exp_cluster', 'cell_cell_communication'):
                 for res_key in data.tl.key_record[key]:
                     logger.info(f"Adding data.tl.result['{res_key}'] into adata.uns['{key}@{res_key}']")
@@ -864,11 +869,12 @@ def stereo_to_anndata(
                 for res_key in data.tl.key_record[key]:
                     logger.info(f"Adding data.tl.result['{res_key}'] into adata.uns['{res_key}'] .")
                     regulon_key = f'{res_key}_regulons'
-                    adata.uns[regulon_key] = data.tl.result[res_key]['regulons']
+                    res_key_data = data.tl.result[res_key]
+                    adata.uns[regulon_key] = res_key_data['regulons']
                     auc_matrix_key = f'{res_key}_auc_matrix'
-                    adata.uns[auc_matrix_key] = data.tl.result[res_key]['auc_matrix']
+                    adata.uns[auc_matrix_key] = res_key_data['auc_matrix']
                     adjacencies_key = f'{res_key}_adjacencies'
-                    adata.uns[adjacencies_key] = data.tl.result[res_key]['adjacencies']
+                    adata.uns[adjacencies_key] = res_key_data['adjacencies']
             elif key == 'co_occurrence':
                 for res_key in data.tl.key_record[key]:
                     logger.info(f"Adding data.tl.result['{res_key}'] into adata.uns['{res_key}'] .")
@@ -882,14 +888,14 @@ def stereo_to_anndata(
             logger.info(f"Adding data.tl.raw.exp_matrix as adata.uns['raw_counts'] .")
             adata.uns['raw_counts'] = data.tl.raw.exp_matrix if issparse(data.tl.raw.exp_matrix) \
                 else csr_matrix(data.tl.raw.exp_matrix)
-            adata.uns['raw_cellname'] = list(data.tl.raw.cell_names.astype(str))
+            list_cell_names = data.tl.raw.cell_names.astype(str)
+            adata.uns['raw_cellname'] = list(list_cell_names)
             adata.uns['raw_genename'] = list(data.tl.raw.gene_names)
             if data.tl.raw.position is not None and reindex:
                 logger.info(f"Reindex as adata.uns['raw_cellname'] .")
-                raw_sample = pd.DataFrame(['sample'] * data.tl.raw.cell_names.shape[0],
-                                          index=data.tl.raw.cell_names.astype('str'))
-                raw_x = pd.DataFrame(data.tl.raw.position[:, 0].astype(str), index=data.tl.raw.cell_names.astype('str'))
-                raw_y = pd.DataFrame(data.tl.raw.position[:, 1].astype(str), index=data.tl.raw.cell_names.astype('str'))
+                raw_sample = pd.DataFrame(['sample'] * data.tl.raw.cell_names.shape[0], index=list_cell_names)
+                raw_x = pd.DataFrame(data.tl.raw.position[:, 0].astype(str), index=list_cell_names)
+                raw_y = pd.DataFrame(data.tl.raw.position[:, 1].astype(str), index=list_cell_names)
                 new_ix = np.array(raw_sample + "_" + raw_x + "_" + raw_y).tolist()
                 adata.uns['raw_cellname'] = new_ix
         else:
@@ -897,7 +903,8 @@ def stereo_to_anndata(
             raw_exp = data.tl.raw.exp_matrix
             raw_genes = data.tl.raw.genes.to_df()
             raw_genes.dropna(axis=1, how='all', inplace=True)
-            raw_adata = AnnData(X=raw_exp, var=raw_genes, dtype=np.float64)
+            raw_adata = AnnData(shape=raw_exp.toarray().shape, var=raw_genes, dtype=np.float64)
+            raw_adata.X = raw_exp
             adata.raw = raw_adata
 
     if reindex:
