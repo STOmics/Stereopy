@@ -1,5 +1,5 @@
-import numpy as np
 import matplotlib.pyplot as plt
+import numpy as np
 
 from .traj import Traj
 from .. import base_scatter
@@ -37,7 +37,7 @@ class PlotClusterTraj(PlotBase):
         traj.assign_ty_rep()
         _, keep_ty = traj.filter_minority(count_thresh)
         traj.revise_con_based_on_selection(keep_ty)
-        if not choose_ty is None:
+        if not choose_ty is None:  # noqa
             traj.revise_con_based_on_selection(choose_ty)
         traj.estimate_avg_dis()
         traj.cal_repre_x_y_by_ty(eps_co, check_surr_co)

@@ -1,16 +1,12 @@
 #!/usr/bin/env python
 # coding: utf-8
-import numpy as np
-import math
-from scipy.interpolate import CubicSpline
 import itertools
-import os
+import math
 from collections import Counter
-import matplotlib as mpl
 
 import matplotlib.pyplot as plt
-import matplotlib.patches as mpatches
-from sklearn.cluster import DBSCAN
+import numpy as np
+from scipy.interpolate import CubicSpline
 
 from stereo.core.stereo_exp_data import StereoExpData
 
@@ -71,7 +67,7 @@ def generate_cubic_interp_points(x_known, y_known, z_known, n_per_inter):
     :param y_known: np.NdArray (n_nodes,)
     :param z_known: np.NdArray (n_nodes,)
     :param n_per_inter: number of interpolated points to generate between each pair of connected nodes
-    :return: x_unknown_li [np.NdArray, np.NdArray, ...], each ele of the list includes the x of points along a interval between two nodes, plus the nodes themselves
+    :return: x_unknown_li [np.NdArray, np.NdArray, ...], each ele of the list includes the x of points along a interval between two nodes, plus the nodes themselves # noqa
              y_unknown_li
              com_tra_wei_li_plt: [np.NdArray, np.NdArray, ...]:
     """
@@ -149,7 +145,7 @@ class Traj:
 
     def gen_repre_x_y_z_by_ty(self, ty_repre):
         """
-        calculate representative positions of spots for annotation, as central of gravity (CoG) of spots within a type of spots, if the CoG is located inside
+        calculate representative positions of spots for annotation, as central of gravity (CoG) of spots within a type of spots, if the CoG is located inside # noqa
         of spots region, or else as the same coordinate with a random spot within the type of spots
         :param: ty_repre: dictionary. keys mean name of type, values are np array of representing points coordinates
         :return: x_rep: (n_type,), y_rep：(n_type,), z_rep：(n_type,)
@@ -190,7 +186,7 @@ class Traj:
     def compute_com_traj_li(self):
         """
         Compute a list of complete trajectories
-        :param lower_thresh_not_equal: threshold value that element on con matrix should surpass, to be considered a valid connection
+        :param lower_thresh_not_equal: threshold value that element on con matrix should surpass, to be considered a valid connection # noqa
         :return: com_tra_li: list of list of indices, e.g. [[0,1], [1,3,5,2]]
         """
 
@@ -262,9 +258,9 @@ class Traj:
         """
         calculate position parameter for plotting curve
         :param n_per_inter: number of interpolated points per interval
-        :return: x_unknown_li_all_tra: [[np.NdArray]], y_unknown_li_all_tra: [[np.NdArray]], z_unknown_li_all_tra: [[np.NdArray]]
+        :return: x_unknown_li_all_tra: [[np.NdArray]], y_unknown_li_all_tra: [[np.NdArray]], z_unknown_li_all_tra: [[np.NdArray]]  # noqa
         """
-        # self.com_tra_li: [[1, 18, 10], [2, 12, 18], [3, 16, 0, 15, 12], [6, 7, 8, 19], [8, 11], [13, 4, 7, 9, 5, 17, 16], [9, 14]]
+        # self.com_tra_li: [[1, 18, 10], [2, 12, 18], [3, 16, 0, 15, 12], [6, 7, 8, 19], [8, 11], [13, 4, 7, 9, 5, 17, 16], [9, 14]]  # noqa
         x_unknown_li_all_tra = []
         y_unknown_li_all_tra = []
         z_unknown_li_all_tra = []
@@ -288,16 +284,18 @@ class Traj:
                     y_known = np.insert(y_known, 1, (y_known[0] + y_known[1]) / 2)
                     z_known = np.insert(z_known, 1, (z_known[0] + z_known[1]) / 2)
 
+                    # [arr, arr, ...]
                     x_unknown_li, y_unknown_li, z_unknown_li = generate_cubic_interp_points(x_known, y_known, z_known,
-                                                                                            n_per_inter)  # [arr, arr, ...]
+                                                                                            n_per_inter)
 
                     # 将多引入导致的两段，重新合并在一起
                     x_unknown_li = [np.concatenate((x_unknown_li[0], x_unknown_li[1]))] + x_unknown_li[2:]
                     y_unknown_li = [np.concatenate((y_unknown_li[0], y_unknown_li[1]))] + y_unknown_li[2:]
                     z_unknown_li = [np.concatenate((z_unknown_li[0], z_unknown_li[1]))] + z_unknown_li[2:]
                 else:
+                    # [arr, arr, ...]
                     x_unknown_li, y_unknown_li, z_unknown_li = generate_cubic_interp_points(x_known, y_known, z_known,
-                                                                                            n_per_inter)  # [arr, arr, ...]
+                                                                                            n_per_inter)
 
             x_unknown_li_all_tra.append(x_unknown_li)  # [[arr, arr, ...], [arr, arr, ...], ]
             y_unknown_li_all_tra.append(y_unknown_li)
@@ -399,7 +397,7 @@ def cal_plt_param_traj_clus_from_arr(con, x_raw, y_raw, z_raw, ty,
     mask_keep, keep_ty = traj.filter_minority(count_thresh)
     traj.revise_con_based_on_selection(keep_ty)
 
-    if not choose_ty is None:
+    if not choose_ty is None: # noqa
         traj.revise_con_based_on_selection(choose_ty)
 
     traj.gen_repre_x_y_z_by_ty(ty_repre_xyz)
@@ -427,7 +425,8 @@ def cal_plt_param_traj_clus_from_arr(con, x_raw, y_raw, z_raw, ty,
         return x_li, y_li, z_li, ctnames, wei_li
 
 
-def cal_plt_param_traj_clus_from_adata(data: StereoExpData, ty_col, choose_ty=None, trim=True, type_traj='curve', paga_key='paga', mesh_key='mesh'):
+def cal_plt_param_traj_clus_from_adata(data: StereoExpData, ty_col, choose_ty=None, trim=True, type_traj='curve',
+                                       paga_key='paga', mesh_key='mesh'):
     """
     to calculate plotting parameters from stereo_exp_data
 
@@ -455,18 +454,20 @@ def cal_plt_param_traj_clus_from_adata(data: StereoExpData, ty_col, choose_ty=No
     if choose_ty is None:
         choose_ty = list(set(ty))
     ty_repre_xyz = {}
-    key_name = list(data.tl.result[mesh_key].keys())[0]  # sort of 'randomly' assign a type of algorithm result to generate representing point coordinate
+    key_name = list(data.tl.result[mesh_key].keys())[
+        0]  # sort of 'randomly' assign a type of algorithm result to generate representing point coordinate
     for ty_name in choose_ty:
         try:
             xyz_repre = data.tl.result[mesh_key][key_name][ty_name]['repre']
-        except:
+        except Exception:
             xyz_repre = np.array(
                 [x_raw[ty == ty_name].mean(), y_raw[ty == ty_name].mean(), z_raw[ty == ty_name].mean()])
         ty_repre_xyz[ty_name] = xyz_repre
 
     # 2 calculate parameters for plotting cluster-to-cluster trajectory
     x_unknown_li_all_tra, y_unknown_li_all_tra, z_unknown_li_all_tra, com_tra_li, com_tra_wei_li \
-        = cal_plt_param_traj_clus_from_arr(con_plt, x_raw, y_raw, z_raw, ty, choose_ty, ty_repre_xyz, type_traj=type_traj)
+        = cal_plt_param_traj_clus_from_arr(con_plt, x_raw, y_raw, z_raw, ty, choose_ty, ty_repre_xyz,
+                                           type_traj=type_traj)
 
     return x_unknown_li_all_tra, y_unknown_li_all_tra, z_unknown_li_all_tra, com_tra_li, com_tra_wei_li
 
@@ -479,7 +480,7 @@ def _plot_line(x_unknown, y_unknown, z_unknown, ax, wei):
 def _show_curve(x_unknown_li_all_tra, y_unknown_li_all_tra, z_unknown_li_all_tra, com_tra_li, com_tra_wei_li):
     ax = plt.figure().add_subplot(projection='3d')
     # 画轨迹连线
-    # self.com_tra_li: [[1, 18, 10], [2, 12, 18], [3, 16, 0, 15, 12], [6, 7, 8, 19], [8, 11], [13, 4, 7, 9, 5, 17, 16], [9, 14]]
+    # self.com_tra_li: [[1, 18, 10], [2, 12, 18], [3, 16, 0, 15, 12], [6, 7, 8, 19], [8, 11], [13, 4, 7, 9, 5, 17, 16], [9, 14]]  # noqa
     for i, sin_tra in enumerate(com_tra_li):  # 对每条完整的轨迹
         for j in range(len(sin_tra) - 1):  # 对于这条轨迹每一个截断
             _plot_line(x_unknown_li_all_tra[i][j],

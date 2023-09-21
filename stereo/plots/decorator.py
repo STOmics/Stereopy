@@ -1,11 +1,11 @@
-from math import ceil
-from natsort import natsorted
-from functools import wraps, partial
-from matplotlib.figure import Figure
+from functools import partial
+from functools import wraps
+
 import panel as pn
-import numpy as np
+from matplotlib.figure import Figure
 
 from stereo.utils.data_helper import reorganize_data_coordinates
+
 
 def plot_scale(func):
     @wraps(func)
@@ -20,8 +20,8 @@ def plot_scale(func):
             data = pc_object.stereo_exp_data
         if data:
             if (data.attr is None) or \
-                (data.resolution is None) or (data.resolution <= 0) or \
-                (data.bin_size is None) or (data.bin_size <= 0):
+                    (data.resolution is None) or (data.resolution <= 0) or \
+                    (data.bin_size is None) or (data.bin_size <= 0):
                 kwargs['show_plotting_scale'] = False
             else:
                 kwargs.setdefault('show_plotting_scale', True)
@@ -30,7 +30,9 @@ def plot_scale(func):
                 kwargs.setdefault('data_resolution', data_resolution)
                 kwargs.setdefault('data_bin_offset', data_bin_offset)
         return func(*args, **kwargs)
+
     return wrapped
+
 
 def download(func):
     @wraps(func)
@@ -50,9 +52,11 @@ def download(func):
             pn.extension()
             file_name_input = pn.widgets.TextInput(name='file name', placeholder='Enter a file name...', width=200)
             format_select = pn.widgets.Select(name='file format', value='png', options=['png', 'pdf'], width=60)
-            dpi_input = pn.widgets.IntInput(name='dpi', placeholder='Enter the dip...', width=200, value=100, step=1, start=0)
+            dpi_input = pn.widgets.IntInput(name='dpi', placeholder='Enter the dip...', width=200, value=100, step=1,
+                                            start=0)
             export_button = pn.widgets.Button(name='export', button_type="primary", width=100)
             static_text = pn.widgets.StaticText(width=800)
+
             def _action(_, figure: Figure):
                 export_button.loading = True
                 static_text.value = ""
@@ -63,9 +67,11 @@ def download(func):
                     if out_path is not None and len(out_path) > 0:
                         out_path = f"{out_path}_{func.__name__}.{file_format}"
                         figure.savefig(out_path, bbox_inches='tight', dpi=dpi)
-                        static_text.value = f'the plot has alrady been saved in the same directory as this notebook and named as <font color="red"><b>{out_path}</b></font>'
+                        static_text.value = f'the plot has alrady been saved in the same directory as this notebook ' \
+                                            f'and named as <font color="red"><b>{out_path}</b></font>'
                 finally:
                     export_button.loading = False
+
             action = partial(_action, figure=fig)
             export_button.on_click(action)
             return pn.Column(
@@ -75,7 +81,9 @@ def download(func):
             )
         else:
             fig.savefig(out_path, bbox_inches='tight', dpi=dpi)
+
     return wrapped
+
 
 def reorganize_coordinate(func):
     @wraps(func)
@@ -114,6 +122,7 @@ def reorganize_coordinate(func):
         res = func(*args, **kwargs)
         data.reset_position()
         return res
+
     return wrapped
 
 # def reorganize_coordinate(func):
@@ -162,7 +171,7 @@ def reorganize_coordinate(func):
 #                         max_xs[position_column_number + 1] = max_x
 #                     if max_y > max_ys[position_row_number + 1]:
 #                         max_ys[position_row_number + 1] = max_y
-                
+
 #                 data.position_offset = {}
 #                 for i, bno in enumerate(batches):
 #                     idx = np.where(data.cells.batch == bno)[0]
@@ -171,7 +180,7 @@ def reorganize_coordinate(func):
 #                     x_add = max_xs[position_column_number]
 #                     y_add = max_ys[position_row_number]
 #                     if position_column_number > 0:
-#                         x_add += sum(max_xs[0:position_column_number]) + horizontal_offset_additional * position_column_number
+#                         x_add += sum(max_xs[0:position_column_number]) + horizontal_offset_additional * position_column_number  # noqa
 #                     if position_row_number > 0:
 #                         y_add += sum(max_ys[0:position_row_number]) + vertical_offset_additional * position_row_number
 #                     # position_offset = np.repeat([[x_add, y_add]], repeats=len(idx), axis=0).astype(np.uint32)

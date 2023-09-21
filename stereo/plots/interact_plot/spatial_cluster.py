@@ -5,14 +5,13 @@
 @time:2021/09/06
 """
 
-import holoviews as hv
-import hvplot.pandas
-import panel as pn
 import collections
-from holoviews import opts
-from stereo.stereo_config import stereo_conf
+
+import holoviews as hv
+import panel as pn
 from natsort import natsorted
 
+from stereo.stereo_config import stereo_conf
 
 colormaps = stereo_conf.colormaps
 pn.param.ParamMethod.loading_indicator = True
@@ -91,6 +90,7 @@ def interact_spatial_cluster(
             hv.opts.Scatter(
                 color=hv.dim('group').categorize(color_key)
             ))
+
     coms = pn.Row(
         _df_plot,
         pn.Column(
@@ -119,4 +119,3 @@ def rgb_to_hex(rgb):
 if __name__ == '__main__':
     a = [(12, 51, 131), (10, 136, 186), (242, 211, 56), (242, 143, 56), (217, 30, 30)]
     print(rgb_to_hex((12, 51, 131)))
-

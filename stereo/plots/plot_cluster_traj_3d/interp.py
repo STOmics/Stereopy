@@ -1,5 +1,6 @@
-import numpy as np
 import math
+
+import numpy as np
 from scipy.interpolate import CubicSpline
 
 
@@ -31,7 +32,8 @@ def _cal_knot_dis_on_path(x_known, y_known, z_known):
     path_len = 0
     path_knot_len_li = [path_len]
     for i in range(len(x_known) - 1):
-        inter_len = math.sqrt((x_known[i + 1] - x_known[i]) ** 2 + (y_known[i + 1] - y_known[i]) ** 2 + (z_known[i + 1] - z_known[i]) ** 2)
+        inter_len = math.sqrt((x_known[i + 1] - x_known[i]) ** 2 + (y_known[i + 1] - y_known[i]) ** 2 + (
+                    z_known[i + 1] - z_known[i]) ** 2)
         path_len += inter_len
         path_knot_len_li.append(path_len)
     return path_knot_len_li
@@ -58,7 +60,7 @@ def generate_cubic_interp_points(x_known, y_known, z_known, n_per_inter):
     :param y_known: np.NdArray (n_nodes,)
     :param z_known: np.NdArray (n_nodes,)
     :param n_per_inter: number of interpolated points to generate between each pair of connected nodes
-    :return: x_unknown_li [np.NdArray, np.NdArray, ...], each ele of the list includes the x of points along a interval between two nodes, plus the nodes themselves
+    :return: x_unknown_li [np.NdArray, np.NdArray, ...], each ele of the list includes the x of points along a interval between two nodes, plus the nodes themselves  # noqa
              y_unknown_li
              com_tra_wei_li_plt: [np.NdArray, np.NdArray, ...]:
     """

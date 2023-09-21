@@ -5,13 +5,13 @@
 @time:2022/12/22
 """
 
-import holoviews as hv
-import hvplot.pandas
-import panel as pn
 import collections
-from holoviews import opts
-from stereo.stereo_config import StereoConfig
+
+import holoviews as hv
+import panel as pn
 from natsort import natsorted
+
+from stereo.stereo_config import StereoConfig
 
 conf = StereoConfig()
 
@@ -52,36 +52,33 @@ def interact_spatial_cluster_annotation(
     cs = natsorted(set(df['group']))
     cluster_select = pn.widgets.Select(name='cluster', options=cs, value=cs[0], width=100, loading=False)
 
-    # marker_gene_select = pn.widgets.DataFrame(res_marker_gene['1.vs.rest'].sort_values(by='scores', ascending=False)[['genes','scores']].set_index('scores').head(100), width=200, height=400)
-    ##
+    # marker_gene_select = pn.widgets.DataFrame(res_marker_gene['1.vs.rest'].sort_values(by='scores', ascending=False)[['genes','scores']].set_index('scores').head(100), width=200, height=400) # noqa
     if len(cs) > len(colormaps[theme_default]):
         colormaps[theme_default] = conf.get_colors(theme_default, n=len(cs))
 
     global color_key
     color_key = collections.OrderedDict({k: c for k, c in zip(cs, colormaps[theme_default][0:len(cs)])})
 
-    ct_colorpicker = pn.widgets.ColorPicker(name='node color', value=color_key[cs[0]], width=70)
-
     cluster_text = pn.widgets.TextInput(name='annotation', width=100)
-    
+
     global flag
     flag = 1
-    
-    #global cluster_name
-    #cluster_name = cluster_select.value
-    
+
+    # global cluster_name
+    # cluster_name = cluster_select.value
+
     @pn.depends(cluster_select)
     def _df_marker_gene(x):
         marker_cluster_select = x + '.vs.rest'
         marker_gene_data = res_marker_gene[marker_cluster_select].sort_values(by='scores', ascending=False)
-        marker_gene_data = marker_gene_data[['genes','scores']]
+        marker_gene_data = marker_gene_data[['genes', 'scores']]
         marker_gene_data.set_index('scores', inplace=True)
         marker_gene_data = marker_gene_data.head(100)
         marker_gene_select = pn.widgets.DataFrame(marker_gene_data, width=200, height=400)
-        # marker_gene_select = pn.widgets.DataFrame(res_marker_gene[marker_cluster_select].sort_values(by='scores', ascending=False)[['genes','scores']].set_index('scores').head(100), width=200, height=400)
-        
+        # marker_gene_select = pn.widgets.DataFrame(res_marker_gene[marker_cluster_select].sort_values(by='scores', ascending=False)[['genes','scores']].set_index('scores').head(100), width=200, height=400) # noqa
+
         return marker_gene_select
-    
+
     @pn.depends(dot_slider, cluster_text)
     def _df_plot(dot_size, cluster_text):
         global theme_default
@@ -91,9 +88,9 @@ def interact_spatial_cluster_annotation(
         if flag == 1:
             flag += 1
         else:
-            df.loc[df['group']==cluster_name,'group'] = cluster_text
+            df.loc[df['group'] == cluster_name, 'group'] = cluster_text
             color_key[cluster_text] = color_key.pop(cluster_name)
-            
+
         sfig = df.hvplot.scatter(
             x='x', y='y',
             by='group',
@@ -113,10 +110,11 @@ def interact_spatial_cluster_annotation(
             hv.opts.Scatter(
                 color=hv.dim('group').categorize(color_key)
             ))
-    
+
     button_save = pn.widgets.Button(name='Save annotation', width=200)
+
     def save_annotation(event):
-        data.tl.result[res_key] = df[['bins','group']]
+        data.tl.result[res_key] = df[['bins', 'group']]
         key = 'cluster'
         data.tl.reset_key_record(key, res_key)
         gene_cluster_res_key = f'gene_exp_{res_key}'
@@ -126,9 +124,9 @@ def interact_spatial_cluster_annotation(
         if gene_exp_cluster_res is not False:
             data.tl.result[gene_cluster_res_key] = gene_exp_cluster_res
             data.tl.reset_key_record('gene_exp_cluster', gene_cluster_res_key)
-        
+
     button_save.on_click(save_annotation)
-    
+
     coms = pn.Row(
         _df_plot,
         pn.Column(
@@ -142,5 +140,3 @@ def interact_spatial_cluster_annotation(
         )
     )
     return coms
-
-

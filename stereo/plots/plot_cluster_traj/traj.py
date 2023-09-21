@@ -1,15 +1,15 @@
-import numpy as np
 import itertools
-import os
 import math
 from collections import Counter
-import matplotlib as mpl
 
-import matplotlib.pyplot as plt
+import matplotlib as mpl
 import matplotlib.patches as mpatches
+import matplotlib.pyplot as plt
+import numpy as np
 from sklearn.cluster import DBSCAN
 
-from .interp import generate_linear_interp_points, generate_cubic_interp_points
+from .interp import generate_cubic_interp_points
+from .interp import generate_linear_interp_points
 
 
 class Traj:
@@ -80,11 +80,13 @@ class Traj:
         x_arr = x_arr.astype(np.int32)
         y_arr = y_arr.astype(np.int32)
 
-        shorter_len = np.array([y_arr.max()+1, x_arr.max()+1]).min()
+        shorter_len = np.array([y_arr.max() + 1, x_arr.max() + 1]).min()
         scale = 50 / shorter_len
 
-        s_arr = np.zeros(shape=(math.ceil(y_arr.max() * scale + 1), math.ceil(x_arr.max() * scale + 1)))  # e.g. 2.1 * 2.6 + 1 = 6.46 -> 7, 支持0~6的索引
-        s_arr[np.ceil(y_arr * scale).astype(np.int32), np.ceil(x_arr * scale).astype(np.int32)] = 1  # e.g 最大值：2.1 * 2.6 = 5.46 -> 6
+        s_arr = np.zeros(shape=(math.ceil(y_arr.max() * scale + 1),
+                                math.ceil(x_arr.max() * scale + 1)))  # e.g. 2.1 * 2.6 + 1 = 6.46 -> 7, 支持0~6的索引
+        s_arr[np.ceil(y_arr * scale).astype(np.int32), np.ceil(x_arr * scale).astype(
+            np.int32)] = 1  # e.g 最大值：2.1 * 2.6 = 5.46 -> 6
 
         # plt.figure()
         # plt.imshow(s_arr)
@@ -95,14 +97,14 @@ class Traj:
         s = np.sum(s_arr) / scale ** 2
 
         # average distance = sqrt(area/n)
-        d_avg = math.sqrt(s/x_arr.shape[0])
+        d_avg = math.sqrt(s / x_arr.shape[0])
 
         self.d_avg = d_avg
         return
 
     def cal_repre_x_y_by_ty(self, eps_co, check_surr_co):
         """
-        calculate representative positions of spots for annotation, as central of gravity (CoG) of spots within a type of spots, if the CoG is located inside
+        calculate representative positions of spots for annotation, as central of gravity (CoG) of spots within a type of spots, if the CoG is located inside # noqa
         of spots region, or else as the same coordinate with a random spot within the type of spots
 
         :return: x_rep: (n_type,) y_rep：(n_type,), ty_rep: (n_type,)
@@ -117,7 +119,7 @@ class Traj:
 
             # 二次分群， 找到每个点的坐标分群标签
             X = np.concatenate((np.expand_dims(x_clus, axis=1), np.expand_dims(y_clus, axis=1)), axis=1)
-            dbscan_clus = DBSCAN(eps=eps_co*self.d_avg, min_samples=3).fit(X)
+            dbscan_clus = DBSCAN(eps=eps_co * self.d_avg, min_samples=3).fit(X)
             dbscan_labels_arr = dbscan_clus.labels_  # (n_spot_in_this_cluster,)
 
             # 预处理：生成dbscan标签和对应点数量两个矩阵
@@ -194,7 +196,7 @@ class Traj:
     def compute_com_traj_li(self):
         """
         Compute a list of complete trajectories
-        :param lower_thresh_not_equal: threshold value that element on con matrix should surpass, to be considered a valid connection
+        :param lower_thresh_not_equal: threshold value that element on con matrix should surpass, to be considered a valid connection # noqa
         :return: com_tra_li: list of list of indices, e.g. [[0,1], [1,3,5,2]]
         """
 
@@ -266,7 +268,7 @@ class Traj:
         :param n_per_inter: number of interpolated points per interval
         :return: x_unknown_li_all_tra: [[np.NdArray]], y_unknown_li_all_tra: [[np.NdArray]]
         """
-        # self.com_tra_li: [[1, 18, 10], [2, 12, 18], [3, 16, 0, 15, 12], [6, 7, 8, 19], [8, 11], [13, 4, 7, 9, 5, 17, 16], [9, 14]]
+        # self.com_tra_li: [[1, 18, 10], [2, 12, 18], [3, 16, 0, 15, 12], [6, 7, 8, 19], [8, 11], [13, 4, 7, 9, 5, 17, 16], [9, 14]] # noqa
         x_unknown_li_all_tra = []
         y_unknown_li_all_tra = []
         for i, sin_tra in enumerate(self.com_tra_li):  # 对每条完整的轨迹
@@ -287,14 +289,16 @@ class Traj:
                     x_known = np.insert(x_known, 1, (x_known[0] + x_known[1]) / 2)
                     y_known = np.insert(y_known, 1, (y_known[0] + y_known[1]) / 2)
 
-                    x_unknown_li, y_unknown_li = generate_cubic_interp_points(x_known, y_known, n_per_inter)  # [arr, arr, ...]
+                    x_unknown_li, y_unknown_li = generate_cubic_interp_points(x_known, y_known,
+                                                                              n_per_inter)  # [arr, arr, ...]
 
                     # 将多引入导致的两段，重新合并在一起
                     x_unknown_li = [np.concatenate((x_unknown_li[0], x_unknown_li[1]))] + x_unknown_li[2:]
                     y_unknown_li = [np.concatenate((y_unknown_li[0], y_unknown_li[1]))] + y_unknown_li[2:]
 
                 else:
-                    x_unknown_li, y_unknown_li = generate_cubic_interp_points(x_known, y_known, n_per_inter)  # [arr, arr, ...]
+                    x_unknown_li, y_unknown_li = generate_cubic_interp_points(x_known, y_known,
+                                                                              n_per_inter)  # [arr, arr, ...]
 
             x_unknown_li_all_tra.append(x_unknown_li)  # [[arr, arr, ...], [arr, arr, ...], ]
             y_unknown_li_all_tra.append(y_unknown_li)
@@ -368,21 +372,26 @@ class Traj:
         cmap_val = mpl.colors.ListedColormap(np.random.rand(256, 3))
         dict_ty_float = dict(zip(set(self.ty[mask_keep]), np.arange(len(set(self.ty[mask_keep])))))  #
 
-        im = plt.scatter(self.x_raw[mask_keep], self.y_raw[mask_keep], c=[dict_ty_float[ele] for ele in self.ty[mask_keep]], s=spot_size, cmap=cmap_val, alpha=spot_alpha, linewidths=0)
+        im = plt.scatter(self.x_raw[mask_keep], self.y_raw[mask_keep],
+                         c=[dict_ty_float[ele] for ele in self.ty[mask_keep]], s=spot_size, cmap=cmap_val,
+                         alpha=spot_alpha, linewidths=0)
 
         # plot legend
         uni_ele = np.unique(self.ty[mask_keep])
         colors = [im.cmap(im.norm(dict_ty_float[val])) for val in uni_ele]
 
-        patches = [mpatches.Patch(color=colors[i], label=uni_ele[i]) for i in range(len(colors))]  # nan excluded:  if not np.isnan(uni_ele[i])
+        patches = [mpatches.Patch(color=colors[i], label=uni_ele[i]) for i in
+                   range(len(colors))]  # nan excluded:  if not np.isnan(uni_ele[i])
 
         ncols = len(patches) // (num_legend_per_col + 1) + 1
         plt.legend(handles=patches, loc='center left', bbox_to_anchor=(1, 0.5), ncol=ncols,
                    framealpha=0)  # loc和bbox_to_anchor组合，loc表示legend的锚点，bbox_to_anchor表示锚点相对图的位置
 
         # set ticks
-        x_tick = np.arange(np.floor(self.x_raw.min() / tick_step) * tick_step, np.ceil(self.x_raw.max() / tick_step) * tick_step, step=tick_step).astype(np.int32)
-        y_tick = np.arange(np.floor(self.y_raw.min() / tick_step) * tick_step, np.ceil(self.y_raw.max() / tick_step) * tick_step, step=tick_step).astype(np.int32)
+        x_tick = np.arange(np.floor(self.x_raw.min() / tick_step) * tick_step,
+                           np.ceil(self.x_raw.max() / tick_step) * tick_step, step=tick_step).astype(np.int32)
+        y_tick = np.arange(np.floor(self.y_raw.min() / tick_step) * tick_step,
+                           np.ceil(self.y_raw.max() / tick_step) * tick_step, step=tick_step).astype(np.int32)
         plt.xticks(ticks=x_tick, labels=x_tick)
         plt.yticks(ticks=y_tick, labels=y_tick)
 
@@ -404,7 +413,7 @@ class Traj:
 
         # print(self.ty_rep)
         for i in range(self.x_rep.shape[0]):
-            if not plt_ty is None:  # types were selected
+            if not plt_ty is None:  # types were selected # noqa
                 if not self.ty_rep[i] in plt_ty:
                     continue
             try:
@@ -413,7 +422,7 @@ class Traj:
                     ty_val = str(int(self.ty_rep[i]))
                 else:
                     ty_val = str(float(self.ty_rep[i]))
-            except:
+            except Exception:
                 ty_val = self.ty_rep[i]
 
             plt.text(self.x_rep[i], self.y_rep[i], ty_val,
@@ -431,16 +440,17 @@ class Traj:
     def show_curve(self, x_unknown_li_all_tra, y_unknown_li_all_tra, com_tra_wei_li,
                    line_alpha, line_width_co, line_color, uni_lwidth):
         # 画轨迹连线
-        # self.com_tra_li: [[1, 18, 10], [2, 12, 18], [3, 16, 0, 15, 12], [6, 7, 8, 19], [8, 11], [13, 4, 7, 9, 5, 17, 16], [9, 14]]
+        # self.com_tra_li: [[1, 18, 10], [2, 12, 18], [3, 16, 0, 15, 12], [6, 7, 8, 19], [8, 11], [13, 4, 7, 9, 5, 17, 16], [9, 14]] # noqa
         for i, sin_tra in enumerate(self.com_tra_li):  # 对每条完整的轨迹
             for j in range(len(sin_tra) - 1):  # 对于这条轨迹每一个截断
-                self._plot_line(x_unknown_li_all_tra[i][j], y_unknown_li_all_tra[i][j], line_alpha, line_width_co, com_tra_wei_li[i][j], line_color, uni_lwidth)
+                self._plot_line(x_unknown_li_all_tra[i][j], y_unknown_li_all_tra[i][j], line_alpha, line_width_co,
+                                com_tra_wei_li[i][j], line_color, uni_lwidth)
         return
 
     def show_straight(self, x_li, y_li, wei_li,
                       line_alpha, line_width_co, line_color, uni_lwidth):
         for i in range(self.con_pair.shape[0]):
-            self._plot_line([x_li[i][0], x_li[i][1]], [y_li[i][0], y_li[i][1]], line_alpha, line_width_co, wei_li[i], line_color, uni_lwidth)
+            self._plot_line([x_li[i][0], x_li[i][1]], [y_li[i][0], y_li[i][1]], line_alpha, line_width_co, wei_li[i],
+                            line_color, uni_lwidth)
 
         return
-

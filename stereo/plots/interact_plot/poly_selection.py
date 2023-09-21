@@ -1,21 +1,19 @@
 import collections
 import copy
+from typing import Optional
 
-import pandas as pd
-import numpy as np
 import holoviews as hv
-import hvplot.pandas
+import numpy as np
+import pandas as pd
 import panel as pn
-import param
 from holoviews.element.selection import spatial_select
 from holoviews.util.transform import dim
+
 from stereo.stereo_config import stereo_conf
-from typing import Optional
 from stereo.tools.boundary import ConcaveHull
 
 pn.extension()
 hv.extension('bokeh')
-
 
 pn.param.ParamMethod.loading_indicator = True
 pa = hv.annotate.instance()
@@ -38,7 +36,8 @@ class PolySelection(object):
         self.bgcolor = bgcolor
         # self.poly_annotate = hv.annotate.instance()
         if self.data.cells.total_counts is None:
-            total_counts = self.data.exp_matrix.sum(axis=1).T.A[0] if self.data.issparse() else self.data.exp_matrix.sum(axis=1).T
+            total_counts = self.data.exp_matrix.sum(axis=1).T.A[
+                0] if self.data.issparse() else self.data.exp_matrix.sum(axis=1).T
         else:
             total_counts = self.data.cells.total_counts
         self.scatter_df = pd.DataFrame({
@@ -76,7 +75,6 @@ class PolySelection(object):
             selected_point = pa.selected.data[0]
         else:
             import collections
-            from stereo.log_manager import logger
             selected_point = collections.OrderedDict({'x': [], 'y': []})
             print('selections not found, please choose a selection area')
         selected_point_array = np.array([selected_point['x'], selected_point['y']])

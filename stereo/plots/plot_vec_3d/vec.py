@@ -3,17 +3,9 @@
 """
 
 import numpy as np
-import math
-import collections
-import matplotlib as mpl
-import os
 import pandas as pd
-
-import matplotlib.pyplot as plt
-import matplotlib.patches as mpatches
-from scipy.ndimage import gaussian_filter as gauss_fil
 from scipy.ndimage import convolve as conv
-from collections import Counter
+from scipy.ndimage import gaussian_filter as gauss_fil
 
 
 class Vec():
@@ -93,7 +85,7 @@ class Vec():
         xyz_scaled = np.concatenate([np.expand_dims(x_scaled, axis=1),
                                      np.expand_dims(y_scaled, axis=1),
                                      np.expand_dims(z_scaled, axis=1)],
-                                     axis=1)  # (n,2)
+                                    axis=1)  # (n,2)
 
         # get unique version of coordinate output
         uniq_xyz_scaled, uni_ind = np.unique(xyz_scaled, return_index=True, axis=0)
@@ -126,7 +118,7 @@ class Vec():
 
         # find mean of each group of (y_scaled, x_scaled)
         # 原方案：已跑通，时间n^2, 发育的脑数据约十分钟
-        # val_seq_agg_mean = [val_seq_for_mean[np.array([i for i in range(self.yx_scaled.shape[0]) if (self.yx_scaled[i] == uniq_yx).all()])].mean()
+        # val_seq_agg_mean = [val_seq_for_mean[np.array([i for i in range(self.yx_scaled.shape[0]) if (self.yx_scaled[i] == uniq_yx).all()])].mean()  # noqa
         #                     for uniq_yx in self.uniq_yx_scaled]
         # assign values
         # s_arr[self.yx_scaled[:, 0][self.uni_ind], self.yx_scaled[:, 1][
@@ -138,12 +130,14 @@ class Vec():
         # np.unique(self.yx_scaled, return_index=True, axis=0)[1]
 
         # 方案2： 用numpy_indexed做groupby：方法会自动排序，和val_seq_for_mean顺序对应不上
-        # val_seq_grouped = npi.group_by((self.yx_scaled[:, 0], self.yx_scaled[:, 1])).split(val_seq_for_mean)  # list of arrays
+        # val_seq_grouped = npi.group_by((self.yx_scaled[:, 0], self.yx_scaled[:, 1])).split(val_seq_for_mean)  # list of arrays # noqa
         # [arr.meanval_seq_grouped
 
         # 方案3：改用pandas加速 TODO: 和力昂沟通是否避免用pandas
-        df = pd.DataFrame({'x': self.xyz_scaled[:, 0], 'y': self.xyz_scaled[:, 1], 'z': self.xyz_scaled[:, 2], 'val': val_seq_for_mean})
-        df = df.groupby(by=['x', 'y', 'z'], sort=False).agg({'x': 'mean', 'y': 'mean', 'z': 'mean', 'val': 'mean'}).reset_index(drop=True)
+        df = pd.DataFrame({'x': self.xyz_scaled[:, 0], 'y': self.xyz_scaled[:, 1], 'z': self.xyz_scaled[:, 2],
+                           'val': val_seq_for_mean})
+        df = df.groupby(by=['x', 'y', 'z'], sort=False).agg(
+            {'x': 'mean', 'y': 'mean', 'z': 'mean', 'val': 'mean'}).reset_index(drop=True)
         s_arr[df['x'].to_numpy(dtype='int'), df['y'].to_numpy(dtype='int'), df['z'].to_numpy(dtype='int')] = df['val']
         return s_arr
 
@@ -160,7 +154,7 @@ class Vec():
     #     """
     #
     #     # initiate the new matrix filled with nan values
-    #     s_arr = np.empty(shape=(self.new_arr_sh), dtype=object)  # e.g. 2.1 * 2.6 + 1 = 6.46 -> 7, 支持0~6的索引  # element is None by default
+    #     s_arr = np.empty(shape=(self.new_arr_sh), dtype=object)  # e.g. 2.1 * 2.6 + 1 = 6.46 -> 7, 支持0~6的索引  # element is None by default  # noqa
     #
     #     # find mean of each group of (y_scaled, x_scaled)
     #     # 旧方案：已经测通，时间复杂度n^2,占用约10min
@@ -168,7 +162,7 @@ class Vec():
     #     #                                            if (self.yx_scaled[i] == uniq_yx).all()]).most_common()[0][0]
     #     #                       for uniq_yx in self.uniq_yx_scaled]
     #     # # assign values
-    #     # s_arr[self.yx_scaled[:, 0][self.uni_ind], self.yx_scaled[:, 1][self.uni_ind]] = val_seq_agg_common  # e.g 最大值：2.1 * 2.6 = 5.46 -> 6
+    #     # s_arr[self.yx_scaled[:, 0][self.uni_ind], self.yx_scaled[:, 1][self.uni_ind]] = val_seq_agg_common  # e.g 最大值：2.1 * 2.6 = 5.46 -> 6 # noqa
     #
     #     # 新方案：改用pandas加速 TODO: 和力昂沟通是否避免用pandas
     #     df = pd.DataFrame(columns=['y', 'x', 'val'])
@@ -178,7 +172,7 @@ class Vec():
     #
     #     df['val'] = val_seq_for_common
     #
-    #     df = df.groupby(by=['y', 'x'], sort=False).agg({'y': 'mean', 'x': 'mean', 'val': lambda x: pd.Series.mode(x)[0]}).reset_index(drop=True)
+    #     df = df.groupby(by=['y', 'x'], sort=False).agg({'y': 'mean', 'x': 'mean', 'val': lambda x: pd.Series.mode(x)[0]}).reset_index(drop=True) # noqa
     #
     #     s_arr[df['y'].to_numpy(dtype='int'), df['x'].to_numpy(dtype='int')] = df['val']
     #     return s_arr
@@ -196,7 +190,7 @@ class Vec():
         if type_val == 'gauss':
             arr_fil = gauss_fil(arr, sigma=sigma_val, mode='mirror')  # 0.5, 2
         elif type_val == 'mean':
-            d = 2*radius_val+1
+            d = 2 * radius_val + 1
             arr_fil = conv(arr, weights=np.ones((d, d)))
         else:
             arr_fil = arr.copy()
@@ -216,7 +210,8 @@ class Vec():
         arr_append_z[:] = np.nan
 
         # generate ux, uy, uz
-        s_arr_x_sh = np.append(arr_append_x, s_arr[:-1, :, :], axis=0)  # shifted  (1, sh[1], sh[2]), (sh[0]-1, sh[1], sh[2])
+        s_arr_x_sh = np.append(arr_append_x, s_arr[:-1, :, :],
+                               axis=0)  # shifted  (1, sh[1], sh[2]), (sh[0]-1, sh[1], sh[2])
         s_arr_x_unsh = np.append(s_arr[:-1, :, :], arr_append_x, axis=0)  # unshifted 0
         ux = s_arr_x_sh - s_arr_x_unsh
         mask_nan_ux = np.isnan(s_arr_x_sh) | np.isnan(s_arr_x_unsh)
@@ -252,8 +247,3 @@ class Vec():
     #     x_arr_re = x_arr_re * self.scale
     #     y_arr_re = y_arr_re * self.scale  # (n,)
     #     return x_arr_re, y_arr_re
-
-
-
-
-

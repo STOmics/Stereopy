@@ -2,19 +2,16 @@
 输入x_raw, y_raw, ptime
 """
 
-import numpy as np
 import collections
-import matplotlib as mpl
-import os
-import pandas as pd
-
-import matplotlib.pyplot as plt
-import matplotlib.patches as mpatches
-from scipy.ndimage import gaussian_filter as gauss_fil
-from scipy.ndimage import convolve as conv
 from collections import Counter
 
-from stereo.plots import base_scatter
+import matplotlib as mpl
+import matplotlib.patches as mpatches
+import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
+from scipy.ndimage import convolve as conv
+from scipy.ndimage import gaussian_filter as gauss_fil
 
 
 class Vec():
@@ -109,7 +106,7 @@ class Vec():
 
         # find mean of each group of (y_scaled, x_scaled)
         # 原方案：已跑通，时间n^2, 发育的脑数据约十分钟
-        # val_seq_agg_mean = [val_seq_for_mean[np.array([i for i in range(self.yx_scaled.shape[0]) if (self.yx_scaled[i] == uniq_yx).all()])].mean()
+        # val_seq_agg_mean = [val_seq_for_mean[np.array([i for i in range(self.yx_scaled.shape[0]) if (self.yx_scaled[i] == uniq_yx).all()])].mean() # noqa
         #                     for uniq_yx in self.uniq_yx_scaled]
         # assign values
         # s_arr[self.yx_scaled[:, 0][self.uni_ind], self.yx_scaled[:, 1][
@@ -121,7 +118,7 @@ class Vec():
         # np.unique(self.yx_scaled, return_index=True, axis=0)[1]
 
         # 方案2： 用numpy_indexed做groupby：方法会自动排序，和val_seq_for_mean顺序对应不上
-        # val_seq_grouped = npi.group_by((self.yx_scaled[:, 0], self.yx_scaled[:, 1])).split(val_seq_for_mean)  # list of arrays
+        # val_seq_grouped = npi.group_by((self.yx_scaled[:, 0], self.yx_scaled[:, 1])).split(val_seq_for_mean)  # list of arrays # noqa
         # [arr.meanval_seq_grouped
 
         # 方案3：改用pandas加速 TODO: 和力昂沟通是否避免用pandas
@@ -152,7 +149,7 @@ class Vec():
         #                                            if (self.yx_scaled[i] == uniq_yx).all()]).most_common()[0][0]
         #                       for uniq_yx in self.uniq_yx_scaled]
         # # assign values
-        # s_arr[self.yx_scaled[:, 0][self.uni_ind], self.yx_scaled[:, 1][self.uni_ind]] = val_seq_agg_common  # e.g 最大值：2.1 * 2.6 = 5.46 -> 6
+        # s_arr[self.yx_scaled[:, 0][self.uni_ind], self.yx_scaled[:, 1][self.uni_ind]] = val_seq_agg_common  # e.g 最大值：2.1 * 2.6 = 5.46 -> 6 # noqa
 
         # 新方案：改用pandas加速 TODO: 和力昂沟通是否避免用pandas
         df = pd.DataFrame(columns=['y', 'x', 'val'])
@@ -300,7 +297,7 @@ class Vec():
             X, Y = np.meshgrid(x, y)  # col, row
 
             # start_p_tup = np.where((np.absolute(u) > 0.01) | (np.absolute(v) > 0.01))
-            # start_p = np.concatenate([np.expand_dims(start_p_tup[1], axis=-1), np.expand_dims(start_p_tup[0], axis=-1)], axis=-1)
+            # start_p = np.concatenate([np.expand_dims(start_p_tup[1], axis=-1), np.expand_dims(start_p_tup[0], axis=-1)], axis=-1) # noqa
 
             plt.streamplot(X, Y, line_len_co * (-u), line_len_co * (-v), color='k', linewidth=line_width,
                            density=density)  # start_points=start_p,

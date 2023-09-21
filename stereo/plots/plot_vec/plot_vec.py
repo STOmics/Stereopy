@@ -1,8 +1,8 @@
 import numpy as np
 
 from stereo.plots.decorator import plot_scale
-from stereo.plots.plot_vec.vec import Vec
 from stereo.plots.plot_base import PlotBase
+from stereo.plots.plot_vec.vec import Vec
 
 
 class PlotVec(PlotBase):

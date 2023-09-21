@@ -1,28 +1,31 @@
 from typing import Literal
+
 import matplotlib.pylab as plt
-from matplotlib.axes import Axes
 import numpy as np
+from matplotlib.axes import Axes
 
 from stereo.log_manager import logger
 from .plot_base import PlotBase
 
+
 class PlotDendrogram(PlotBase):
 
     def dendrogram(
-        self,
-        orientation: Literal['top', 'bottom', 'left', 'right'] = 'top',
-        remove_labels: bool = False,
-        ticks = None,
-        title = None,
-        width = None,
-        height = None,
-        ax: Axes = None,
-        res_key: str = 'dendrogram',
+            self,
+            orientation: Literal['top', 'bottom', 'left', 'right'] = 'top',
+            remove_labels: bool = False,
+            ticks=None,
+            title=None,
+            width=None,
+            height=None,
+            ax: Axes = None,
+            res_key: str = 'dendrogram',
     ):
         """
         Plots a dendrogram using the precomputed dendrogram
         information stored in `data.tl.result[res_key]`
         """
+
         def translate_pos(pos_list, new_ticks, old_ticks):
             if not isinstance(old_ticks, list):
                 # assume that the list is a numpy array
@@ -40,11 +43,11 @@ class PlotDendrogram(PlotBase):
                     new_min = new_ticks[idx_prev]
                     new_max = new_ticks[idx_next]
                     new_x_val = ((x_val - old_min) / (old_max - old_min)) * (
-                        new_max - new_min
+                            new_max - new_min
                     ) + new_min
                 new_xs.append(new_x_val)
             return new_xs
-        
+
         if ax is None:
             fig, dendro_ax = plt.subplots()
         else:

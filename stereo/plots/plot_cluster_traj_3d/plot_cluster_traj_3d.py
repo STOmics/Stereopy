@@ -7,12 +7,12 @@ from ..plot_base import PlotBase
 class PlotClusterTraj3D(PlotBase):
 
     def plot_cluster_traj_3d(self, con, x_raw, y_raw, z_raw, ty,
-             choose_ty, ty_repre_xyz,
-             count_thresh=0,
-             type_traj='curve',
-             lower_thresh_not_equal=0.5,
-             n_per_inter=100,
-             ):
+                             choose_ty, ty_repre_xyz,
+                             count_thresh=0,
+                             type_traj='curve',
+                             lower_thresh_not_equal=0.5,
+                             n_per_inter=100,
+                             ):
 
         """
         Visualize PAGA result in 3D.
@@ -33,8 +33,8 @@ class PlotClusterTraj3D(PlotBase):
         :param lower_thresh_not_equal: Threshold value that neglects all element in parameter: con with value lower than it
         :param n_per_inter: Number of interpolated points between two connected cell types, if parameter: type_traj is 0.5
 
-        :return: TODO: 主要由前端开发确定
-        """
+        :return:
+        """  # noqa
 
         # TODO: 对输入进行断言
 
@@ -44,7 +44,7 @@ class PlotClusterTraj3D(PlotBase):
         mask_keep, keep_ty = traj.filter_minority(count_thresh)
         traj.revise_con_based_on_selection(keep_ty)
 
-        if not choose_ty is None:
+        if not choose_ty is None: # noqa
             traj.revise_con_based_on_selection(choose_ty)
 
         traj.gen_repre_x_y_z_by_ty(ty_repre_xyz)
@@ -61,7 +61,7 @@ class PlotClusterTraj3D(PlotBase):
             com_tra_wei_li = traj.compute_weight_on_com_tra_li()
             print(com_tra_wei_li)
             return self._show_curve(x_unknown_li_all_tra, y_unknown_li_all_tra, z_unknown_li_all_tra, traj.com_tra_li,
-                            com_tra_wei_li)
+                                    com_tra_wei_li)
 
         else:
             traj.compute_com_traj_li()
@@ -79,7 +79,7 @@ class PlotClusterTraj3D(PlotBase):
         figure = plt.figure()
         ax = figure.add_subplot(projection='3d')
         # 画轨迹连线
-        # self.com_tra_li: [[1, 18, 10], [2, 12, 18], [3, 16, 0, 15, 12], [6, 7, 8, 19], [8, 11], [13, 4, 7, 9, 5, 17, 16], [9, 14]]
+        # self.com_tra_li: [[1, 18, 10], [2, 12, 18], [3, 16, 0, 15, 12], [6, 7, 8, 19], [8, 11], [13, 4, 7, 9, 5, 17, 16], [9, 14]]  # noqa
         for i, sin_tra in enumerate(com_tra_li):  # 对每条完整的轨迹
             for j in range(len(sin_tra) - 1):  # 对于这条轨迹每一个截断
                 self._plot_line(x_unknown_li_all_tra[i][j],

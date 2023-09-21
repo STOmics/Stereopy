@@ -6,22 +6,33 @@
 @file:marker_genes.py
 @time:2021/03/31
 """
-import natsort
 from collections import OrderedDict
+from typing import (
+    Optional,
+    Sequence,
+    Union,
+    Literal
+)
+
 import matplotlib.pyplot as plt
-from matplotlib.colors import Normalize
-from matplotlib.path import Path
-from matplotlib.patches import PathPatch
-from matplotlib import gridspec
-from matplotlib.axes import Axes
+import natsort
 import numpy as np
 import pandas as pd
+from matplotlib import gridspec
+from matplotlib.axes import Axes
+from matplotlib.colors import Normalize
+from matplotlib.patches import PathPatch
+from matplotlib.path import Path
 from scipy.sparse import spmatrix
-from typing import Optional, Sequence, Union, Literal
-from ._plot_basic.heatmap_plt import heatmap, plot_categories_as_colorblocks, plot_gene_groups_brackets
+
+from ._plot_basic.heatmap_plt import (
+    heatmap,
+    plot_categories_as_colorblocks,
+    plot_gene_groups_brackets
+)
 from ..core.stereo_exp_data import StereoExpData
-from ..utils import data_helper, pipeline_utils
-from ..log_manager import logger
+from ..utils import data_helper
+from ..utils import pipeline_utils
 
 
 def marker_genes_text(
@@ -312,8 +323,9 @@ def marker_genes_heatmap(
                                                          gene_list=gene_list, min_value=min_value, max_value=max_value)
     if do_log:
         draw_df = np.log1p(draw_df)
-    return plot_heatmap(df=draw_df, show_labels=show_labels, show_group=show_group, show_group_txt=show_group_txt, 
-                        group_position=group_position, group_labels=group_labels, cluster_colors_array=cluster_colors_array,
+    return plot_heatmap(df=draw_df, show_labels=show_labels, show_group=show_group, show_group_txt=show_group_txt,
+                        group_position=group_position, group_labels=group_labels,
+                        cluster_colors_array=cluster_colors_array,
                         width=width, height=height)
 
 
@@ -326,14 +338,14 @@ class MarkerGenesScatterPlot:
     __color_map = 'Reds'
 
     def __init__(
-        self,
-        data: Union[spmatrix, np.ndarray],
-        marker_genes_res: dict,
+            self,
+            data: Union[spmatrix, np.ndarray],
+            marker_genes_res: dict,
     ):
         self.data = data
         self.marker_genes_res = marker_genes_res
         self.marker_genes_parameters = marker_genes_res['parameters']
-    
+
     def _store_marker_genes_result_by_group(self):
         marker_genes_group_keys = natsort.natsorted([key for key in self.marker_genes_res.keys() if '.vs.' in key])
         res_dict = {}
@@ -341,17 +353,20 @@ class MarkerGenesScatterPlot:
             group_name = mg_key.split('.vs.')[0]
             res_dict[group_name] = self.marker_genes_res[mg_key]
         return res_dict
-    
+
     def _get_dot_size_and_color(
-        self,
-        groups,
-        gene_index,
-        values_to_plot=None,
+            self,
+            groups,
+            gene_index,
+            values_to_plot=None,
     ):
         original_marker_genes_key = self.marker_genes_parameters.get('marker_genes_res_key')
-        pct: pd.DataFrame = self.data.tl.result[original_marker_genes_key]['pct'] if original_marker_genes_key is not None else self.marker_genes_res['pct']
+        pct: pd.DataFrame = self.data.tl.result[original_marker_genes_key][
+            'pct'] if original_marker_genes_key is not None else self.marker_genes_res['pct']
         marker_genes_res_dict = self._store_marker_genes_result_by_group()
-        mean_expressin_in_group = pipeline_utils.cell_cluster_to_gene_exp_cluster(self.data, self.marker_genes_parameters['cluster_res_key'], kind='mean')
+        mean_expressin_in_group = pipeline_utils.cell_cluster_to_gene_exp_cluster(self.data,
+                                                                                  self.marker_genes_parameters[
+                                                                                      'cluster_res_key'], kind='mean')
         # gene_isin = pct['genes'].isin(gene_names)
         for g in groups:
             if values_to_plot is None:
@@ -363,23 +378,25 @@ class MarkerGenesScatterPlot:
                     column = values_to_plot
                 column = column.replace('log10_', '')
                 if values_to_plot.startswith('log10'):
-                    yield pct[g][gene_index].values * 100, -1 * np.log10(marker_genes_res_dict[g][column][gene_index].values)
+                    yield pct[g][gene_index].values * 100, -1 * np.log10(
+                        marker_genes_res_dict[g][column][gene_index].values)
                 else:
                     yield pct[g][gene_index].values * 100, marker_genes_res_dict[g][column][gene_index].values
 
     def _create_plot_scatter_data(
-        self,
-        markers_num=5,
-        genes=None,
-        groups=None,
-        values_to_plot=None,
-        sort_by='scores'
+            self,
+            markers_num=5,
+            genes=None,
+            groups=None,
+            values_to_plot=None,
+            sort_by='scores'
     ):
         cluster_res = self.data.tl.result[self.marker_genes_parameters['cluster_res_key']]
         if values_to_plot is None:
             group_names = np.asarray(natsort.natsorted(cluster_res['group'].unique()))
         else:
-            group_names = np.asarray(natsort.natsorted([key.split('.vs.')[0] for key in self.marker_genes_res.keys() if '.vs.' in key]))
+            group_names = np.asarray(
+                natsort.natsorted([key.split('.vs.')[0] for key in self.marker_genes_res.keys() if '.vs.' in key]))
         if group_names.size == 0:
             raise Exception('There is no group to show, please to check the parameter `groups`')
 
@@ -412,7 +429,8 @@ class MarkerGenesScatterPlot:
             gene_intervals.append((current_gene_idx[0], current_gene_idx[-1]))
             marker_genes_group_keys_to_show.append(mg_key)
             tmp = []
-            for i, dot_style in enumerate(self._get_dot_size_and_color(group_names, current_gene_index, values_to_plot)):
+            for i, dot_style in enumerate(
+                    self._get_dot_size_and_color(group_names, current_gene_index, values_to_plot)):
                 dot_size, dot_color = dot_style
                 df = pd.DataFrame({
                     'x': current_gene_idx,
@@ -427,10 +445,10 @@ class MarkerGenesScatterPlot:
         return pd.concat(df_list, axis=0), gene_names, group_names, marker_genes_group_keys_to_show, gene_intervals
 
     def _plot_gene_groups_brackets(
-        self,
-        ax: Axes,
-        gene_intervals,
-        marker_genes_group_keys_to_show
+            self,
+            ax: Axes,
+            gene_intervals,
+            marker_genes_group_keys_to_show
     ):
         ax.axis('off')
         verts = []
@@ -461,13 +479,13 @@ class MarkerGenesScatterPlot:
         path = Path(verts, codes)
         patch = PathPatch(path, facecolor='none', lw=1.5)
         ax.add_patch(patch)
-    
+
     def _plot_gene_groups_scatter(
-        self,
-        ax: Axes,
-        plot_data,
-        gene_names,
-        group_names
+            self,
+            ax: Axes,
+            plot_data,
+            gene_names,
+            group_names
     ):
         ax.set_xlim(left=-1, right=len(gene_names))
         ax.xaxis.set_ticks(range(len(gene_names)), gene_names)
@@ -481,12 +499,12 @@ class MarkerGenesScatterPlot:
             c=plot_data['dot_color'],
             cmap=self.__color_map
         )
-    
+
     def _plot_colorbar(
-        self,
-        ax: Axes,
-        im,
-        values_to_plot
+            self,
+            ax: Axes,
+            im,
+            values_to_plot
     ):
         if values_to_plot is None:
             colorbar_title = 'Mean expression in group'
@@ -497,10 +515,10 @@ class MarkerGenesScatterPlot:
                 colorbar_title = values_to_plot.replace('_', ' ')
         ax.set_title(colorbar_title, fontdict={'fontsize': self.__title_font_size})
         plt.colorbar(im, cax=ax, orientation='horizontal', ticklocation='bottom')
-    
+
     def _plot_dot_size_map(
-        self,
-        ax: Axes
+            self,
+            ax: Axes
     ):
         ax.set_title('Fraction of cells in group(%)', fontdict={'fontsize': self.__title_font_size})
         ax.set_xlim(left=5, right=105)
@@ -516,37 +534,39 @@ class MarkerGenesScatterPlot:
         )
 
     def plot_scatter(
-        self,
-        markers_num: int = 10,
-        genes: Union[Optional[Sequence[str]], str] = None,
-        groups: Union[Optional[Sequence[str]], str] = None,
-        values_to_plot: Optional[
-            Literal[
+            self,
+            markers_num: int = 10,
+            genes: Union[Optional[Sequence[str]], str] = None,
+            groups: Union[Optional[Sequence[str]], str] = None,
+            values_to_plot: Optional[
+                Literal[
+                    'scores',
+                    'logfoldchanges',
+                    'pvalues',
+                    'pvalues_adj',
+                    'log10_pvalues',
+                    'log10_pvalues_adj'
+                ]
+            ] = None,
+            sort_by: Literal[
                 'scores',
                 'logfoldchanges',
                 'pvalues',
-                'pvalues_adj',
-                'log10_pvalues',
-                'log10_pvalues_adj'
-            ]
-        ] = None,
-        sort_by: Literal[
-            'scores',
-            'logfoldchanges',
-            'pvalues',
-            'pvalues_adj'
-        ] = 'scores',
-        width: int=None,
-        height: int=None
+                'pvalues_adj'
+            ] = 'scores',
+            width: int = None,
+            height: int = None
     ):
-        if (values_to_plot is not None) and ('pvalues' in values_to_plot) and self.marker_genes_parameters['method'] == 'logreg':
+        if (values_to_plot is not None) and ('pvalues' in values_to_plot) and \
+                self.marker_genes_parameters['method'] == 'logreg':
             raise Exception("Just only the t_test and wilcoxon_test method would output the pvalues and pvalues_adj.")
 
         plot_data, gene_names, group_names, marker_genes_group_keys_to_show, gene_intervals = \
             self._create_plot_scatter_data(markers_num, genes, groups, values_to_plot, sort_by)
-        
+
         if width is None or height is None:
-            main_area_width, main_area_height = self.__category_width * len(gene_names), self.__category_height * len(group_names)
+            main_area_width, main_area_height = self.__category_width * len(gene_names), self.__category_height * len(
+                group_names)
         else:
             width /= 100
             height /= 100

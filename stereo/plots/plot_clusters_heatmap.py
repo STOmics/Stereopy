@@ -1,19 +1,18 @@
-from typing import Union, Sequence, Optional
-from natsort import natsorted
+from typing import Optional
+from typing import Sequence
+
 import matplotlib.pylab as plt
-from matplotlib.axes import Axes
-from matplotlib import gridspec
 import numpy as np
 import pandas as pd
+from matplotlib import gridspec
 
-from stereo.plots.plot_base import PlotBase
-from ._plot_basic.heatmap_plt import heatmap
-from stereo.utils.pipeline_utils import calc_pct_and_pct_rest, cell_cluster_to_gene_exp_cluster
 from stereo.log_manager import logger
+from stereo.plots.plot_base import PlotBase
+from stereo.utils.pipeline_utils import cell_cluster_to_gene_exp_cluster
+from ._plot_basic.heatmap_plt import heatmap
 
 
 class ClustersGenesHeatmap(PlotBase):
-
     __category_width = 0.37
     __category_height = 0.35
     __legend_width = 2
@@ -21,15 +20,15 @@ class ClustersGenesHeatmap(PlotBase):
     __title_font_size = 8
 
     def clusters_genes_heatmap(
-        self,
-        cluster_res_key: str,
-        dendrogram_res_key: Optional[str] = None,
-        gene_names: Optional[Sequence[str]] = None,
-        groups: Optional[Sequence[str]] = None,
-        width: int = None,
-        height: int = None,
-        colormap: str = 'Greens',
-        standard_scale: str = 'gene'
+            self,
+            cluster_res_key: str,
+            dendrogram_res_key: Optional[str] = None,
+            gene_names: Optional[Sequence[str]] = None,
+            groups: Optional[Sequence[str]] = None,
+            width: int = None,
+            height: int = None,
+            colormap: str = 'Greens',
+            standard_scale: str = 'gene'
     ):
         """
 
@@ -57,8 +56,10 @@ class ClustersGenesHeatmap(PlotBase):
             else:
                 drg_res = self.pipeline_res[dendrogram_res_key]
                 if cluster_res_key != drg_res['cluster_res_key'][0]:
-                    raise KeyError(f'The cluster result used in dendrogram may not be the same as that specified by key {cluster_res_key}')
-        
+                    raise KeyError(
+                        f'The cluster result used in dendrogram may not be the same as that specified '
+                        f'by key {cluster_res_key}')
+
         if gene_names is None:
             gene_names = self.stereo_exp_data.gene_names
         else:

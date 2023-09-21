@@ -6,40 +6,41 @@
 @file:constant.py
 @time:2023/08/01
 """
+# flake8: noqa
 
-import numpy as np
-import pandas as pd
+from collections import defaultdict
 from typing import List
 from typing import Optional
 
 import matplotlib.pyplot as plt
-from collections import defaultdict
+import numpy as np
+import pandas as pd
 
-from stereo.constant import TMP
-from stereo.constant import GROUP
-from stereo.constant import BATCH
-from stereo.constant import PAGA
-from stereo.constant import SANKEY
-from stereo.constant import INDEX
-from stereo.constant import LOG_FC
-from stereo.constant import SIMPLE
-from stereo.constant import CATEGORY
-from stereo.constant import ColorType
 from stereo.constant import ANNOTATION
-from stereo.constant import DptColType
-from stereo.constant import LESS_PVALUE
-from stereo.constant import PaletteType
-from stereo.constant import _LOG_PVALUE
-from stereo.constant import CELLTYPE_STD
+from stereo.constant import BATCH
 from stereo.constant import BatchColType
-from stereo.constant import DirectionType
+from stereo.constant import CATEGORY
 from stereo.constant import CELLTYPE_MEAN
+from stereo.constant import CELLTYPE_MEAN_SCALE
+from stereo.constant import CELLTYPE_STD
+from stereo.constant import CONNECTIVITIES_TREE
+from stereo.constant import ColorType
+from stereo.constant import DirectionType
+from stereo.constant import DptColType
 from stereo.constant import FUZZY_C_WEIGHT
 from stereo.constant import GREATER_PVALUE
-from stereo.constant import CONNECTIVITIES_TREE
-from stereo.constant import CELLTYPE_MEAN_SCALE
-from stereo.plots.plot_base import PlotBase
+from stereo.constant import GROUP
+from stereo.constant import INDEX
+from stereo.constant import LESS_PVALUE
+from stereo.constant import LOG_FC
+from stereo.constant import PAGA
+from stereo.constant import PaletteType
+from stereo.constant import SANKEY
+from stereo.constant import SIMPLE
+from stereo.constant import TMP
+from stereo.constant import _LOG_PVALUE
 from stereo.plots.ms_plot_base import MSDataPlotBase
+from stereo.plots.plot_base import PlotBase
 
 
 class PlotTimeSeries(PlotBase):
@@ -78,8 +79,8 @@ class PlotTimeSeries(PlotBase):
             for i, g in enumerate(genes):
                 ax.boxplot(list(branch2exp[g].values()), labels=list(branch2exp[g].keys()))
                 ax.set_title(g if title != '' else '')
-                if vmax != None:
-                    if vmin == None:
+                if vmax != None:  # noqa
+                    if vmin == None:  # noqa
                         ax.set_ylim(0, vmax)
                     else:
                         ax.set_ylim(vmin, vmax)
@@ -508,7 +509,7 @@ class PlotTimeSeriesAnalysis(MSDataPlotBase, PlotTimeSeries):
 
         :param use_result: the col in obs representing celltype or clustering.
         :param method: choose from sankey and dot, choose the way to display.
-        :param edges: a parameter to add arrow to illustrate development trajectory. if edges=='page', use paga result, otherwise use a list of tuple of celltype pairs as father node and child node.
+        :param edges: a parameter to add arrow to illustrate development trajectory. if edges=='page', use paga result, otherwise use a list of tuple of celltype pairs as father node and child node. # flake8: noqa
         :param dot_size_scale: only used for method='dot', to adjust dot relatively size.
         :param palette: color palette to paint different celltypes.
         :param ylabel_pos: position to plot y labels.

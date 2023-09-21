@@ -1,23 +1,23 @@
 import atexit
 import os
 import sys
-from time import sleep
 from threading import Thread
+from time import sleep
 
-from ..plot_base import PlotBase
 from .stereopy_3D_browser import launch
+from ..plot_base import PlotBase
 
 
 class Plot3DBrowser(PlotBase):
 
     def start_vt3d_browser(
-        self,
-        port=7654,
-        paga_res_key = None,
-        ccc_res_key = None,
-        grn_res_key = None,
-        cluster_res_key = None,
-        mesh_method='delaunay_3d'
+            self,
+            port=7654,
+            paga_res_key=None,
+            ccc_res_key=None,
+            grn_res_key=None,
+            cluster_res_key=None,
+            mesh_method='delaunay_3d'
     ):
         if paga_res_key is not None:
             meshes = self.stereo_exp_data.tl.result['mesh'][mesh_method]
@@ -25,7 +25,7 @@ class Plot3DBrowser(PlotBase):
             meshes = {}
         th = Thread(
             target=launch,
-            args=(self.stereo_exp_data, ),
+            args=(self.stereo_exp_data,),
             kwargs={
                 'meshes': meshes,
                 'cluster_label': cluster_res_key,
@@ -61,10 +61,10 @@ class Plot3DBrowser(PlotBase):
         import IPython
         sleep(5)
         return IPython.display.IFrame(src=f"http://127.0.0.1:{port}", width=width, height=height)
-    
+
     def display_3d_ccc(self, *args, **kwargs):
         return self.display_3d_mesh(*args, **kwargs)
-    
+
     def display_3d_grn(self, *args, **kwargs):
         return self.display_3d_mesh(*args, **kwargs)
 

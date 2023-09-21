@@ -9,18 +9,20 @@
 change log:
     2021/07/12 params change. by: qindanhua.
 """
-from matplotlib.cm import get_cmap
+from typing import Optional
+from typing import Union
+
 import matplotlib.pyplot as plt
-from matplotlib.colors import ListedColormap, to_hex, Normalize, LinearSegmentedColormap
-from matplotlib import gridspec
-from matplotlib.axes import Axes
-from matplotlib.path import Path
-from matplotlib.patches import PathPatch
 import numpy as np
 import pandas as pd
-from scipy.sparse import issparse
-from typing import Optional, Union
 import seaborn as sns
+from matplotlib import gridspec
+from matplotlib.axes import Axes
+from matplotlib.colors import ListedColormap
+from matplotlib.patches import PathPatch
+from matplotlib.path import Path
+from scipy.sparse import issparse
+
 from ..stereo_config import stereo_conf
 
 
@@ -122,7 +124,7 @@ def base_scatter(
         for lh in ax.legend_.legendHandles:
             lh.set_alpha(1)
             lh._sizes = [40]
-    
+
     ax.set_title(title, fontsize=18, fontweight='bold')
     ax.set_ylabel(y_label, fontsize=15)  # set y-axis labels
     ax.set_xlabel(x_label, fontsize=15)  # set x-axis labels
@@ -131,7 +133,7 @@ def base_scatter(
         ax.invert_yaxis()
 
     if show_plotting_scale:
-        min_x, max_x = np.min(x).astype(int), np.max(x).astype(int)
+        min_x, _ = np.min(x).astype(int), np.max(x).astype(int)
         min_y, max_y = np.min(y).astype(int), np.max(y).astype(int)
 
         ax_left, ax_right = ax.get_xlim()
@@ -201,28 +203,27 @@ def base_scatter(
             real_length /= 1e3
             unit = 'um'
 
-                
         t1 = ax.text(
-                x=horizontal_text_location_x,
-                y=horizontal_text_location_y,
-                s=f"{real_length}{unit}",
-                # fontsize='small',
-                rotation=0,
-                horizontalalignment='center',
-                verticalalignment='bottom'
+            x=horizontal_text_location_x,
+            y=horizontal_text_location_y,
+            s=f"{real_length}{unit}",
+            # fontsize='small',
+            rotation=0,
+            horizontalalignment='center',
+            verticalalignment='bottom'
         )
         t2 = ax.text(
-                x=vertical_text_location_x,
-                y=vertical_text_location_y,
-                s=f"{real_length}{unit}",
-                # fontsize='small',
-                rotation=90,
-                # rotation_mode='anchor',
-                horizontalalignment='right',
-                verticalalignment='center'
+            x=vertical_text_location_x,
+            y=vertical_text_location_y,
+            s=f"{real_length}{unit}",
+            # fontsize='small',
+            rotation=90,
+            # rotation_mode='anchor',
+            horizontalalignment='right',
+            verticalalignment='center'
         )
         renderer = ax.get_figure().canvas.get_renderer()
-        bbox  = t1.get_window_extent(renderer)
+        bbox = t1.get_window_extent(renderer)
         trans = ax.transData.inverted()
         t1_top_left = trans.transform_point((bbox.x0, bbox.y1))
         if invert_y:
@@ -234,13 +235,12 @@ def base_scatter(
                 new_ax_top = ax_top + plotting_scale_height * 4
                 ax.set_ylim(top=new_ax_top)
 
-        bbox  = t2.get_window_extent(renderer)
+        bbox = t2.get_window_extent(renderer)
         trans = ax.transData.inverted()
         t2_top_left = trans.transform_point((bbox.x0, bbox.y1))
         if t2_top_left[0] <= ax_left:
             new_ax_lef = ax_left - plotting_scale_height * 4
             ax.set_xlim(left=new_ax_lef)
-
 
     if not show_legend:
         ax.legend_.remove()
@@ -249,7 +249,7 @@ def base_scatter(
         ax.set_aspect('equal', adjustable='datalim')
         ax.set_yticks([])
         ax.set_xticks([])
-    
+
     return ax.get_figure()
 
 
@@ -397,7 +397,8 @@ def volcano(
         ymax = int(np.percentile(np.array(data['y']), [90])[0])
         ax.vlines(-cut_off_logFC, ymin, ymax, color='dimgrey', linestyle='dashed', linewidth=1)  # draw vertical lines
         ax.vlines(cut_off_logFC, ymin, ymax, color='dimgrey', linestyle='dashed', linewidth=1)  # draw vertical lines
-        ax.hlines(-np.log10(cut_off_pvalue), xmin, xmax, color='dimgrey', linestyle='dashed', linewidth=1)  # draw vertical lines
+        ax.hlines(-np.log10(cut_off_pvalue), xmin, xmax, color='dimgrey', linestyle='dashed',
+                  linewidth=1)  # draw vertical lines
         # ax.set_xticks(range(xmin, xmax, 4))# set x-axis labels
         # ax.set_yticks(range(ymin, ymax, 2))# set y-axis labels
     if label and text_visible:
@@ -424,7 +425,7 @@ def marker_gene_volcano(
 ):
     df = data
     if 'log2fc' not in df.columns or 'pvalues' not in df.columns:
-        raise ValueError(f'data frame should content log2fc and pvalues columns')
+        raise ValueError('data frame should content log2fc and pvalues columns')
     df['x'] = df['log2fc']
     df['y'] = -df['pvalues'].apply(np.log10)
     df.loc[(df.x > cut_off_logFC) & (df.pvalues < cut_off_pvalue), 'group'] = 'up'
@@ -434,13 +435,13 @@ def marker_gene_volcano(
         # df['text'] = df['group'] == 'up'
         df['label'] = df['genes'].isin(text_genes)
         fig = volcano(df, x='x', y='y', hue='group', label='genes', text_visible='label',
-                     cut_off_pvalue=cut_off_pvalue,
-                     cut_off_logFC=cut_off_logFC,
-                     **kwargs)
+                      cut_off_pvalue=cut_off_pvalue,
+                      cut_off_logFC=cut_off_logFC,
+                      **kwargs)
     else:
         fig = volcano(df, x='x', y='y', hue='group',
-                     cut_off_pvalue=cut_off_pvalue, cut_off_logFC=cut_off_logFC,
-                     **kwargs)
+                      cut_off_pvalue=cut_off_pvalue, cut_off_logFC=cut_off_logFC,
+                      **kwargs)
     return fig
 
 

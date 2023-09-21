@@ -4,22 +4,38 @@
 @author: qindanhua@genomics.cn
 @time:2021/08/31
 """
-from typing import Optional, Union, Sequence, Literal
-from natsort import natsorted
-import panel as pn
+from random import randint
+from typing import (
+    Optional,
+    Union,
+    Sequence,
+    Literal
+)
+
 import matplotlib.pyplot as plt
 import numpy as np
+import panel as pn
 import seaborn as sns
-from random import randint
-from .scatter import base_scatter, multi_scatter, marker_gene_volcano, highly_variable_genes
-from stereo.core.stereo_exp_data import StereoExpData
-from stereo.stereo_config import stereo_conf
-from stereo.log_manager import logger
-from .plot_base import PlotBase
-from .decorator import plot_scale, download, reorganize_coordinate
-from stereo.constant import TOTAL_COUNTS
-from stereo.constant import PCT_COUNTS_MT
+from natsort import natsorted
+
 from stereo.constant import N_GENES_BY_COUNTS
+from stereo.constant import PCT_COUNTS_MT
+from stereo.constant import TOTAL_COUNTS
+from stereo.core.stereo_exp_data import StereoExpData
+from stereo.log_manager import logger
+from stereo.stereo_config import stereo_conf
+from .decorator import (
+    plot_scale,
+    download,
+    reorganize_coordinate
+)
+from .plot_base import PlotBase
+from .scatter import (
+    base_scatter,
+    multi_scatter,
+    marker_gene_volcano,
+    highly_variable_genes
+)
 
 pn.param.ParamMethod.loading_indicator = True
 
@@ -92,7 +108,7 @@ class PlotCollection:
         :param horizontal_offset_additional: the additional offset between each slice on horizontal direction while reorganizing coordinates.
         :param vertical_offset_additional: the additional offset between each slice on vertical direction while reorganizing coordinates.
 
-        """
+        """  # noqa
         res = self.check_res_key(res_key)
         from .interact_plot.spatial_cluster import interact_spatial_cluster
         import pandas as pd
@@ -137,7 +153,7 @@ class PlotCollection:
         :param horizontal_offset_additional: the additional offset between each slice on horizontal direction while reorganizing coordinates.
         :param vertical_offset_additional: the additional offset between each slice on vertical direction while reorganizing coordinates.
 
-        """
+        """  # noqa
         res = self.check_res_key(res_cluster_key)
         res_marker_gene = self.check_res_key(res_marker_gene_key)
         from .interact_plot.annotation_cluster import interact_spatial_cluster_annotation
@@ -346,7 +362,7 @@ class PlotCollection:
         :param horizontal_offset_additional: the additional offset between each slice on horizontal direction while reorganizing coordinates.
         :param vertical_offset_additional: the additional offset between each slice on vertical direction while reorganizing coordinates.
 
-        """
+        """  # noqa
         from .scatter import multi_scatter
         if title is None:
             title = [' '.join(i.split('_')) for i in cells_key]
@@ -409,7 +425,7 @@ class PlotCollection:
         :param y_label: the y label.
         :param title: the title label.
 
-        """
+        """  # noqa
 
         self.data.array2sparse()
         if isinstance(gene_name, str):
@@ -479,7 +495,7 @@ class PlotCollection:
         :param horizontal_offset_additional: the additional offset between each slice on horizontal direction while reorganizing coordinates.
         :param vertical_offset_additional: the additional offset between each slice on vertical direction while reorganizing coordinates.
 
-        """
+        """  # noqa
         # self.data.tl.raw.sparse2array()
         # self.data.sparse2array()
         if gene_name is None:
@@ -561,7 +577,7 @@ class PlotCollection:
         :param horizontal_offset_additional: the additional offset between each slice on horizontal direction while reorganizing coordinates.
         :param vertical_offset_additional: the additional offset between each slice on vertical direction while reorganizing coordinates.
 
-        """
+        """  # noqa
         from .interact_plot.interactive_scatter import InteractiveScatter
 
         fig = InteractiveScatter(self.data, width=width, height=height, bgcolor=bgcolor)
@@ -728,7 +744,7 @@ class PlotCollection:
             # self.data.sparse2array()
             self.data.array2sparse()
             if gene_names is None:
-                raise ValueError(f'gene name must be set if cluster_key is None')
+                raise ValueError('gene name must be set if cluster_key is None')
             if isinstance(gene_names, str):
                 gene_names = [gene_names]
             return multi_scatter(
@@ -795,7 +811,7 @@ class PlotCollection:
         :param vertical_offset_additional: the additional offset between each slice on vertical direction while reorganizing coordinates.
 
         :return: Spatial scatter distribution of clusters.
-        """
+        """  # noqa
         res = self.check_res_key(res_key)
         group_list = res['group'].to_numpy()
         n = np.unique(group_list).size
@@ -844,7 +860,7 @@ class PlotCollection:
             **kwargs
     ):
         """
-        Scatter plot of maker genes. 
+        Scatter plot of maker genes.
 
         :param res_key: the result key of marker genes.
         :param groups: the group names.
@@ -982,7 +998,7 @@ class PlotCollection:
         :param out_dpi: the dpi when the figure is saved.
         :param width: the figure width in pixels.
         :param height: the figure height in pixels.
-        """
+        """  # noqa
         from .marker_genes import MarkerGenesScatterPlot
         marker_genes_res = self.check_res_key(res_key)
         mgsp = MarkerGenesScatterPlot(self.data, marker_genes_res)
@@ -1171,7 +1187,7 @@ class PlotCollection:
         :param horizontal_offset_additional: the additional offset between each slice on horizontal direction while reorganizing coordinates.
         :param vertical_offset_additional: the additional offset between each slice on vertical direction while reorganizing coordinates.
         :return: Cells distribution figure.
-        """
+        """  # noqa
         from .plot_cells import PlotCells
         pc = PlotCells(
             self.data,
@@ -1183,16 +1199,16 @@ class PlotCollection:
             base_image=base_image
         )
         return pc.show()
-    
+
     @download
     def correlation_heatmap(
-        self,
-        width: Optional[int] = None,
-        height: Optional[int] = None,
-        title: str = 'Correlation Heatmap',
-        x_label: str = 'x',
-        y_label: str = 'y',
-        cmap: str = 'coolwarm'
+            self,
+            width: Optional[int] = None,
+            height: Optional[int] = None,
+            title: str = 'Correlation Heatmap',
+            x_label: str = 'x',
+            y_label: str = 'y',
+            cmap: str = 'coolwarm'
     ):
         df = self.data.to_df()
         correlation_matrix = df.corr()
@@ -1209,7 +1225,7 @@ class PlotCollection:
             vmin=-1,
             cmap=cmap
         )
-        clustermap.ax_heatmap.set_title(title,  fontweight='bold', fontsize=13)
-        clustermap.ax_heatmap.set_xlabel(x_label,  fontweight='bold', fontsize=10)
-        clustermap.ax_heatmap.set_ylabel(y_label,  fontweight='bold', fontsize=10)
+        clustermap.ax_heatmap.set_title(title, fontweight='bold', fontsize=13)
+        clustermap.ax_heatmap.set_xlabel(x_label, fontweight='bold', fontsize=10)
+        clustermap.ax_heatmap.set_ylabel(y_label, fontweight='bold', fontsize=10)
         return clustermap.figure
