@@ -1,6 +1,6 @@
 """
 @file: gene.py
-@description: 
+@description:
 @author: Ping Qiu
 @email: qiuping1@genomics.cn
 @last modified by: Ping Qiu
@@ -103,7 +103,7 @@ class Gene(object):
         """
         if isinstance(index, list) or isinstance(index, slice):
             self._var = self._var.iloc[index].copy()
-        elif isinstance(index, np.ndarray):            
+        elif isinstance(index, np.ndarray):
             if index.dtype == bool:
                 self._var = self._var[index].copy()
             else:
@@ -123,7 +123,7 @@ class Gene(object):
         for attr_name in self._var.columns:
             format_genes.append(attr_name)
         return f"\ngenes: {format_genes}" if format_genes else ""
-    
+
     def _repr_html_(self):
         return self._var._repr_html_()
 

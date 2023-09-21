@@ -10,18 +10,24 @@ change log:
     2021/08/12  add to_andata function , by wuyiran.
 """
 import copy
+from typing import Optional
+from typing import Union
 from warnings import warn
-from typing import Optional, Union
 
 import anndata
-import pandas as pd
 import numpy as np
-from scipy.sparse import spmatrix, issparse, csr_matrix
+import pandas as pd
+from scipy.sparse import (
+    spmatrix,
+    issparse,
+    csr_matrix
+)
 
+from .cell import AnnBasedCell
+from .cell import Cell
 from .data import Data
-from .cell import Cell, AnnBasedCell
-from .gene import Gene, AnnBasedGene
-from .constants import CHIP_RESOLUTION
+from .gene import AnnBasedGene
+from .gene import Gene
 from ..log_manager import logger
 
 
@@ -46,8 +52,8 @@ class StereoExpData(Data):
     ):
 
         """
-        The core data object is designed for expression matrix of spatial omics, which can be set 
-        corresponding properties directly to initialize the data. 
+        The core data object is designed for expression matrix of spatial omics, which can be set
+        corresponding properties directly to initialize the data.
 
         Parameters
         -------------------
@@ -72,7 +78,7 @@ class StereoExpData(Data):
         partitions
             the number of multi-process cores, used when processing files in parallel.
         offset_x
-            the x value of the offset . 
+            the x value of the offset .
         offset_y
             the y value of the offset .
         attr
@@ -112,7 +118,7 @@ class StereoExpData(Data):
     @property
     def plt(self):
         """
-        Call the visualization module.        
+        Call the visualization module.
         """
         if self._plt is None:
             from ..plots.plot_collection import PlotCollection
@@ -347,11 +353,11 @@ class StereoExpData(Data):
         """
         self.bin_type_check(b_type)
         self._bin_type = b_type
-    
+
     @property
     def bin_size(self):
         return self._bin_size
-    
+
     @bin_size.setter
     def bin_size(self, bin_size):
         self._bin_size = bin_size
@@ -478,11 +484,11 @@ class StereoExpData(Data):
     @sn.setter
     def sn(self, sn):
         self._sn = sn
-    
+
     @property
     def raw(self):
         return self.tl.raw
-    
+
     @property
     def resolution(self):
         if self.attr is not None and 'resolution' in self.attr:
@@ -583,13 +589,13 @@ class StereoExpData(Data):
 class AnnBasedStereoExpData(StereoExpData):
 
     def __init__(
-        self,
-        h5ad_file_path: str = None,
-        based_ann_data: anndata.AnnData = None,
-        bin_type: str = None,
-        bin_size: int = None,
-        *args,
-        **kwargs
+            self,
+            h5ad_file_path: str = None,
+            based_ann_data: anndata.AnnData = None,
+            bin_type: str = None,
+            bin_size: int = None,
+            *args,
+            **kwargs
     ):
         # if 'based_ann_data' in kwargs:
         #     based_ann_data = kwargs.pop('based_ann_data')
@@ -598,10 +604,10 @@ class AnnBasedStereoExpData(StereoExpData):
         super(AnnBasedStereoExpData, self).__init__(*args, **kwargs)
         if h5ad_file_path is None and based_ann_data is None:
             raise Exception("Must to input the 'h5ad_file_path' or 'based_ann_data'.")
-        
+
         if h5ad_file_path is not None and based_ann_data is not None:
             raise Exception("'h5ad_file_path' and 'based_ann_data' only can input one of them")
-        
+
         if based_ann_data:
             assert type(based_ann_data) is anndata.AnnData
             self._ann_data = based_ann_data
@@ -615,10 +621,10 @@ class AnnBasedStereoExpData(StereoExpData):
 
         if bin_type is not None and 'bin_type' not in self._ann_data.uns:
             self._ann_data.uns['bin_type'] = bin_type
-        
+
         if bin_size is not None and 'bin_size' not in self._ann_data.uns:
             self._ann_data.uns['bin_size'] = bin_size
-        
+
         if h5ad_file_path is not None and 'sn' not in self._ann_data.uns:
             sn = self.get_sn_from_path(h5ad_file_path)
             if sn is not None:
@@ -635,7 +641,7 @@ class AnnBasedStereoExpData(StereoExpData):
 
     def __repr__(self):
         return self.__str__()
-    
+
     # def __getattr__(self, name: str):
     #     if name.startswith('__'):
     #         raise AttributeError
@@ -671,7 +677,7 @@ class AnnBasedStereoExpData(StereoExpData):
     @property
     def plt(self):
         """
-        Call the visualization module. 
+        Call the visualization module.
         """
         if self._plt is None:
             from ..plots.plot_collection import PlotCollection
@@ -708,7 +714,7 @@ class AnnBasedStereoExpData(StereoExpData):
         elif 'z' in self._ann_data.obs.columns:
             return self._ann_data.obs[['z']].to_numpy()
         return None
-    
+
     @position.setter
     def position(self, position: np.ndarray):
         if len(position.shape) != 2:
@@ -722,25 +728,25 @@ class AnnBasedStereoExpData(StereoExpData):
             self._ann_data.obs['y'] = position[:, 1]
         else:
             self._ann_data.obsm['spatial'] = position
-    
+
     @position_z.setter
     def position_z(self, position_z: np.ndarray):
         if (position_z.shape) == 1:
             position_z = position_z.reshape(-1, 1)
         if 'spatial' in self._ann_data.obsm:
-            self._ann_data.obsm['spatial'][:, 2] = np.concatenate([self._ann_data.obsm['spatial'][:, [0, 1]], position_z], axis=1)
+            self._ann_data.obsm['spatial'][:, 2] = np.concatenate(
+                [self._ann_data.obsm['spatial'][:, [0, 1]], position_z], axis=1)
         else:
             self._ann_data.obs['z'] = position_z
-
 
     @property
     def bin_type(self):
         return self._ann_data.uns.get('bin_type', 'bins')
-    
+
     @property
     def bin_size(self):
         return self._ann_data.uns.get('bin_size', 1)
-    
+
     @property
     def sn(self):
         sn = None

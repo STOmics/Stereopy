@@ -2,7 +2,7 @@
 # coding: utf-8
 """
 @file: h5ad.py
-@description: 
+@description:
 @author: Ping Qiu
 @email: qiuping1@genomics.cn
 @last modified by: wuyiran
@@ -24,7 +24,6 @@ from functools import singledispatch
 from stereo.core.gene import Gene
 from stereo.core.cell import Cell
 from stereo.algorithm.neighbors import Neighbors
-
 
 H5PY_V3 = version.parse(h5py.__version__).major >= 3
 
@@ -267,7 +266,7 @@ def read_genes(group) -> Gene:
 
 def read_cells(group) -> Cell:
     cell_name = group['cell_name'][...]
-    for i in range(cell_name.shape[0]) :
+    for i in range(cell_name.shape[0]):
         if type(cell_name[i]) is bytes:
             cell_name[i] = cell_name[i].decode()
     cell = Cell(cell_name=cell_name)
@@ -365,7 +364,7 @@ def read_group(group: h5py.Group) -> Union[dict, pd.DataFrame, sparse.spmatrix, 
 
 
 def read_dense_as_sparse(
-    dataset: h5py.Dataset, sparse_format: sparse.spmatrix, axis_chunk: int
+        dataset: h5py.Dataset, sparse_format: sparse.spmatrix, axis_chunk: int
 ):
     if sparse_format == sparse.csr_matrix:
         return read_dense_as_csr(dataset, axis_chunk)

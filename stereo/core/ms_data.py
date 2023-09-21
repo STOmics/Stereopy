@@ -77,7 +77,7 @@ class _MSDataView(object):
         else:
             from copy import deepcopy
             self._merged_data = deepcopy(self._data_list[0])
-        
+
         obs_columns = self._merged_data.cells._obs.columns.tolist()
         obs_columns.remove('batch')
         if len(obs_columns) > 0:
@@ -99,7 +99,7 @@ class _MSDataStruct(object):
     Parameters
     ----------
     data_list: List[StereoExpData] `stereo_exp_data` array
-        An array of `stereo_exp_data` organized by some relationship defined by `_relationship` and `_relationship_info`.
+        An array of `stereo_exp_data` organized by some relationship defined by `_relationship` and `_relationship_info`
 
     merged_data: `stereo_exp_data` object
         An `stereo_exp_data` merged with `data_list` used batches integrate.
@@ -138,7 +138,7 @@ class _MSDataStruct(object):
     >>> from stereo.core.ms_data import MSData
     >>> data1 = read_gef("../demo_data/SS200000135TL_D1/SS200000135TL_D1.gef")
     >>> data2 = read_gef("../demo_data/SS200000135TL_D1/SS200000135TL_D1.tissue.gef")
-    >>> ms_data = MSData(_data_list=[data1, data2], _names=['raw', 'tissue'], _relationship='other', _var_type='intersect')
+    >>> ms_data = MSData(_data_list=[data1, data2], _names=['raw', 'tissue'], _relationship='other', _var_type='intersect') # noqa
     >>> ms_data
 
     ms_data: {'raw': (9004, 25523), 'tissue': (9111, 20816)}
@@ -242,7 +242,7 @@ class _MSDataStruct(object):
     @names.setter
     def names(self, value: List[str]):
         if len(value) != len(self._data_list):
-            raise Exception(f'new names\' length should be same as data_list')
+            raise Exception('new names\' length should be same as data_list')
         self._names = value
         self.reset_name(default_key=False)
 
@@ -259,7 +259,7 @@ class _MSDataStruct(object):
     @property
     def relationship_info(self):
         return self._relationship_info
-    
+
     def reset_position(self, mode='integrate'):
         if mode == 'integrate' and self.merged_data:
             self.merged_data.reset_position()
@@ -508,7 +508,8 @@ class MSData(_MSDataStruct):
         from stereo.utils.data_helper import merge
         if self._var_type not in {"union", "intersect"}:
             raise Exception("Please specify the operation on samples with the parameter '_var_type'")
-        self.merged_data = merge(*self.data_list, var_type=self._var_type, reorganize_coordinate=reorganize_coordinate, **kwargs)
+        self.merged_data = merge(*self.data_list, var_type=self._var_type, reorganize_coordinate=reorganize_coordinate,
+                                 **kwargs)
         obs_columns = self.merged_data.cells._obs.columns.tolist()
         obs_columns.remove('batch')
         if len(obs_columns) > 0:
@@ -534,9 +535,9 @@ class MSData(_MSDataStruct):
             item: Optional[list] = None,
             fill=np.NaN
     ):
-        assert self.merged_data, f"`to_integrate` need running function `integrate`"
+        assert self.merged_data, "`to_integrate` need running function `integrate`"
         assert self._names[scope] == self._names[_from], f"`scope`: {scope} should equal with _from: {_from}"
-        assert len(item) == len(self._names[_from]), f"`item`'s length not equal to _from"
+        assert len(item) == len(self._names[_from]), "`item`'s length not equal to _from"
         scope_names = self._names[scope]
         res_list = []
         if type == 'obs':
@@ -545,7 +546,7 @@ class MSData(_MSDataStruct):
             raise NotImplementedError
         else:
             raise Exception(f"`type`: {type} not in ['obs', 'var'], this should not happens!")
-        
+
         for idx, stereo_exp_data in enumerate(self._data_list[scope]):
             if type == 'obs':
                 res = stereo_exp_data.cells._obs[item[idx]]
@@ -585,9 +586,9 @@ class MSData(_MSDataStruct):
             item: Optional[list] = None,
             fill=np.NaN
     ):
-        assert self.merged_data, f"`to_integrate` need running function `integrate`"
+        assert self.merged_data, "`to_integrate` need running function `integrate`"
         assert self._names[scope] == self._names[to], f"`scope`: {scope} should equal with to: {to}"
-        assert len(item) == len(self._names[to]), f"`item`'s length not equal to `to`"
+        assert len(item) == len(self._names[to]), "`item`'s length not equal to `to`"
 
         scope_names = self._names[scope]
         scope_key_name = "scope_[" + ",".join([str(self._names.index(name)) for name in scope_names]) + "]"

@@ -1,6 +1,6 @@
 """
 @file: cell.py
-@description: 
+@description:
 @author: Ping Qiu
 @email: qiuping1@genomics.cn
 @last modified by: Ping Qiu
@@ -125,7 +125,7 @@ class Cell(object):
             return None
 
         if not isinstance(batch, np.ndarray) and not isinstance(batch, list) \
-            and not isinstance(batch,int) and not isinstance(batch, str):
+                and not isinstance(batch, int) and not isinstance(batch, str):
             raise TypeError('batch must be np.ndarray or list or int or str')
 
         if isinstance(batch, int):
@@ -179,8 +179,8 @@ class Cell(object):
         format_cells = ['cell_name']
         for attr_name in self._obs.columns:
             format_cells.append(attr_name)
-        return f"\ncells: {format_cells}" if format_cells else ""    
-    
+        return f"\ncells: {format_cells}" if format_cells else ""
+
     def _repr_html_(self):
         obs: pd.DataFrame = self.to_df()
         return obs._repr_html_()
@@ -219,7 +219,7 @@ class AnnBasedCell(Cell):
 
     def __contains__(self, item):
         return item in self.__based_ann_data.obs.columns
-    
+
     @property
     def _obs(self):
         return self.__based_ann_data.obs

@@ -1,5 +1,4 @@
 from warnings import warn
-from copy import deepcopy
 
 import pandas as pd
 from anndata import AnnData
@@ -7,9 +6,8 @@ from anndata import AnnData
 
 class _BaseResult(object):
     CLUSTER_NAMES = {
-        'leiden', 'louvain', 'phenograph', 'annotation',
-        'leiden_from_bins', 'louvain_from_bins', 'phenograph_from_bins', 'annotation_from_bins',
-        'celltype', 'cell_type'
+        'leiden', 'louvain', 'phenograph', 'annotation', 'leiden_from_bins', 'louvain_from_bins',
+        'phenograph_from_bins', 'annotation_from_bins', 'celltype', 'cell_type'
     }
     CONNECTIVITY_NAMES = {'neighbors'}
     REDUCE_NAMES = {'umap', 'pca', 'tsne'}
@@ -27,7 +25,6 @@ class _BaseResult(object):
         MARKER_GENES: MARKER_GENES_NAMES
     }
 
-from  anndata import AnnData
 
 class Result(_BaseResult, dict):
 
@@ -45,7 +42,7 @@ class Result(_BaseResult, dict):
     #     y = memo.get(d, _nil)
     #     if y is not _nil:
     #         return y
-        
+
     #     cls = Result(None)
     #     memo[d] = id(cls)
     #     cls.__stereo_exp_data = deepcopy(self.__stereo_exp_data, memo)
@@ -188,10 +185,10 @@ class Result(_BaseResult, dict):
         dict.__setitem__(self, key, value)
 
     def _set_cluster_res(self, key, value):
-        assert type(value) is pd.DataFrame and 'group' in value.columns.values, f"this is not cluster res"
+        assert type(value) is pd.DataFrame and 'group' in value.columns.values, "this is not cluster res"
         warn(
             f'FutureWarning: {key} will be moved from `StereoExpData.tl.result` to `StereoExpData.cells` in the '
-            f'future, make sure your code set the property correctly. ',
+            'future, make sure your code set the property correctly. ',
             category=FutureWarning
         )
         self.__stereo_exp_data.cells._obs[key] = value['group'].values
@@ -199,17 +196,17 @@ class Result(_BaseResult, dict):
 
     def _set_connectivities_res(self, key, value):
         assert type(value) is dict and not {'connectivities', 'nn_dist'} - set(value.keys()), \
-            f'not enough key to set connectivities'
+            'not enough key to set connectivities'
         warn(
-            f'FutureWarning: {key} will be moved from `StereoExpData.tl.result` to `StereoExpData.cells_pairwise` in the '
-            f'future, make sure your code set the property correctly. ',
+            f'FutureWarning: {key} will be moved from `StereoExpData.tl.result` to `StereoExpData.cells_pairwise` in '
+            f'the future, make sure your code set the property correctly. ',
             category=FutureWarning
         )
         self.__stereo_exp_data.cells._pairwise[key] = value
         self.CONNECTIVITY_NAMES.add(key)
 
     def _set_reduce_res(self, key, value):
-        assert type(value) is pd.DataFrame, f'reduce result must be pandas.DataFrame'
+        assert type(value) is pd.DataFrame, 'reduce result must be pandas.DataFrame'
         warn(
             f'{key} will be moved from `StereoExpData.tl.result` to `StereoExpData.cells_matrix` in the '
             f'future, make sure your code set the property correctly. ',
@@ -366,7 +363,8 @@ class AnnBasedResult(_BaseResult, object):
             elif not {"means", "dispersions", "dispersions_norm", "highly_variable"} - set(value.columns.values):
                 self._set_hvg_res(key, value)
                 return
-            elif len(value.shape) == 2 and value.shape[0] == self.__based_ann_data.shape[0] and value.shape[1] <= self.__based_ann_data.shape[1]:
+            elif len(value.shape) == 2 and value.shape[0] == self.__based_ann_data.shape[0] and value.shape[1] <= \
+                    self.__based_ann_data.shape[1]:
                 # TODO this is hard-code method to guess it's a reduce ndarray
                 self._set_reduce_res(key, value)
                 return
@@ -381,14 +379,14 @@ class AnnBasedResult(_BaseResult, object):
         self.__based_ann_data.uns[key] = value
 
     def _set_cluster_res(self, key, value):
-        assert type(value) is pd.DataFrame and 'group' in value.columns.values, f"this is not cluster res"
+        assert type(value) is pd.DataFrame and 'group' in value.columns.values, "this is not cluster res"
         # FIXME ignore set params to uns, this may cause dirty data in uns, if it exist at the first time
         self.__based_ann_data.uns[key] = {'params': {}, 'source': 'stereopy', 'method': key}
         self.__based_ann_data.obs[key] = value['group'].values
 
     def _set_connectivities_res(self, key, value):
         assert type(value) is dict and not {'connectivities', 'nn_dist'} - set(value.keys()), \
-            f'not enough key to set connectivities'
+            'not enough key to set connectivities'
         self.__based_ann_data.uns[key] = {
             'params': {'method': 'umap'},
             'source': 'stereopy',
@@ -406,7 +404,7 @@ class AnnBasedResult(_BaseResult, object):
             self.__based_ann_data.obsp[f'{key}_distances'] = value['nn_dist']
 
     def _set_reduce_res(self, key, value):
-        assert type(value) is pd.DataFrame, f'reduce result must be pandas.DataFrame'
+        assert type(value) is pd.DataFrame, 'reduce result must be pandas.DataFrame'
         self.__based_ann_data.uns[key] = {'params': {}, 'source': 'stereopy', 'method': key}
         self.__based_ann_data.obsm[f'X_{key}'] = value.values
 

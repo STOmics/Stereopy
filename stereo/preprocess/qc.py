@@ -6,8 +6,8 @@
 @file:qc.py
 @time:2021/03/26
 """
-from scipy.sparse import issparse
 import numpy as np
+from scipy.sparse import issparse
 
 
 def cal_qc(data):
@@ -22,6 +22,7 @@ def cal_qc(data):
     cal_genes_indicators(data)
     return data
 
+
 def cal_cells_indicators(data):
     exp_matrix = data.exp_matrix
     data.cells.total_counts = cal_total_counts(exp_matrix)
@@ -29,12 +30,14 @@ def cal_cells_indicators(data):
     data.cells.pct_counts_mt = cal_pct_counts_mt(data)
     return data
 
+
 def cal_genes_indicators(data):
     exp_matrix = data.exp_matrix
     data.genes.n_cells = cal_n_cells(exp_matrix)
     data.genes.n_counts = cal_per_gene_counts(exp_matrix)
     data.genes.mean_umi = cal_gene_mean_umi(data)
     return data
+
 
 def cal_total_counts(exp_matrix):
     """

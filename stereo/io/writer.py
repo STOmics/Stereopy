@@ -2,7 +2,7 @@
 # coding: utf-8
 """
 @file: writer.py
-@description: 
+@description:
 @author: Ping Qiu
 @email: qiuping1@genomics.cn
 @last modified by: Nils Mechtel
@@ -26,6 +26,7 @@ from stereo.log_manager import logger
 
 environ['HDF5_USE_FILE_LOCKING'] = "FALSE"
 
+
 def write_h5ad(
         data: StereoExpData,
         use_raw: bool = True,
@@ -45,13 +46,13 @@ def write_h5ad(
     use_result
         whether to save `result` and `res_key`.
     key_record
-        a dict includes selective `res_key` with the precondition that `use_result` 
-        is `True`, if None, it will save the `result` and `res_key` of 
+        a dict includes selective `res_key` with the precondition that `use_result`
+        is `True`, if None, it will save the `result` and `res_key` of
         `data.tl.key_record`,otherwise it will save the result and res_key of the dict.
     output
         the path to output file.
-	split_batches
-		Whether to save each batch to a single file if it is a merged data, default to True.
+    split_batches
+        Whether to save each batch to a single file if it is a merged data, default to True.
     Returns
     -------------------
     None
@@ -145,13 +146,13 @@ def _write_one_h5ad_result(data, f, key_record):
     # write key_record
     mykey_record = deepcopy(data.tl.key_record) if key_record is None else deepcopy(key_record)
     mykey_record_keys = list(mykey_record.keys())
-    # supported_keys = ['hvg', 'pca', 'neighbors', 'umap', 'cluster', 'marker_genes', 'cell_cell_communication '] # 'sct', 'spatial_hotspot'
+    # supported_keys = ['hvg', 'pca', 'neighbors', 'umap', 'cluster', 'marker_genes', 'cell_cell_communication '] # 'sct', 'spatial_hotspot' # noqa
     supported_keys = data.tl.key_record.keys()
     for analysis_key in mykey_record_keys:
         if analysis_key not in supported_keys:
             mykey_record.pop(analysis_key)
-            logger.info(
-                f'key_name:{analysis_key} is not recongnized, try to select the name in {supported_keys} as your key_name.')
+            logger.info(f'key_name:{analysis_key} is not recongnized, '
+                        f'try to select the name in {supported_keys} as your key_name.')
     h5ad.write_key_record(f, 'key_record', mykey_record)
     for analysis_key, res_keys in mykey_record.items():
         for res_key in res_keys:
@@ -211,7 +212,8 @@ def _write_one_h5ad_result(data, f, key_record):
                 h5ad.write(list(data.tl.result[res_key][1]['umi_genes']), f, f'genes@{res_key}@sct')
                 h5ad.write(list(data.tl.result[res_key][1]['umi_cells']), f, f'cells@{res_key}@sct')
                 h5ad.write(list(data.tl.result[res_key][1]['top_features']), f, f'genes@{res_key}@sct_top_features')
-                h5ad.write(list(data.tl.result[res_key][0]['scale.data'].index), f, f'genes@{res_key}@sct_scale_genename')
+                h5ad.write(list(data.tl.result[res_key][0]['scale.data'].index), f,
+                           f'genes@{res_key}@sct_scale_genename')
                 # TODO ignored other result of the sct
             if analysis_key == 'spatial_hotspot':
                 # Hotspot object
@@ -219,7 +221,8 @@ def _write_one_h5ad_result(data, f, key_record):
             if analysis_key == 'cell_cell_communication':
                 for key, item in data.tl.result[res_key].items():
                     if key != 'parameters':
-                        h5ad.write(item, f, f'{res_key}@{key}@cell_cell_communication', save_as_matrix=False)  # -> dataframe
+                        h5ad.write(item, f, f'{res_key}@{key}@cell_cell_communication',
+                                   save_as_matrix=False)  # -> dataframe
                     else:
                         name, value = [], []
                         for pname, pvalue in item.items():
@@ -229,13 +232,15 @@ def _write_one_h5ad_result(data, f, key_record):
                             'name': name,
                             'value': value
                         })
-                        h5ad.write(parameters_df, f, f'{res_key}@{key}@cell_cell_communication', save_as_matrix=False)  # -> dataframe
+                        h5ad.write(parameters_df, f, f'{res_key}@{key}@cell_cell_communication',
+                                   save_as_matrix=False)  # -> dataframe
             if analysis_key == 'regulatory_network_inference':
                 for key, item in data.tl.result[res_key].items():
                     if key == 'regulons':
                         h5ad.write(str(item), f, f'{res_key}@{key}@regulatory_network_inference')  # -> str
                     else:
-                        h5ad.write(item, f, f'{res_key}@{key}@regulatory_network_inference', save_as_matrix=False)  # -> dataframe
+                        h5ad.write(item, f, f'{res_key}@{key}@regulatory_network_inference',
+                                   save_as_matrix=False)  # -> dataframe
             if analysis_key == 'co_occurrence':
                 for key, item in data.tl.result[res_key].items():
                     h5ad.write(item, f, f'{res_key}@{key}@co_occurrence', save_as_matrix=True)
@@ -248,7 +253,7 @@ def write_h5ms(ms_data, output: str):
             f['sample'].create_group(f'sample_{idx}')
             _write_one_h5ad(f['sample'][f'sample_{idx}'], data)
         if ms_data._merged_data:
-            f.create_group(f'sample_merged')
+            f.create_group('sample_merged')
             _write_one_h5ad(f['sample_merged'], ms_data._merged_data)
         h5ad.write_list(f, 'names', ms_data.names)
         h5ad.write_dataframe(f, 'obs', ms_data.obs)
@@ -274,7 +279,7 @@ def write_h5ms(ms_data, output: str):
 
 def write_mid_gef(data: StereoExpData, output: str):
     """
-    Write the StereoExpData object into a GEF (.h5) file. 
+    Write the StereoExpData object into a GEF (.h5) file.
 
     Parameters
     ---------------------
@@ -301,7 +306,7 @@ def write_mid_gef(data: StereoExpData, output: str):
         for k in zipped:
             final_exp.append(k)
 
-        ## count
+        # count
         g_len = len(final_gene)
         last_offset = 0 if g_len == 0 else final_gene[g_len - 1][1]
         last_count = 0 if g_len == 0 else final_gene[g_len - 1][2]
@@ -363,7 +368,7 @@ def update_gef(data: StereoExpData, gef_file: str, cluster_res_key: str):
         the path of the GEF file to add cluster result to.
     cluster_res_key
         the key to get cluster result from `data.tl.result`.
-    
+
     Returns
     --------------
     None
@@ -394,9 +399,10 @@ def update_gef(data: StereoExpData, gef_file: str, cluster_res_key: str):
             is_numeric = False
 
     with h5py.File(gef_file, 'r+') as h5f:
-        cell_names = np.bitwise_or(np.left_shift(h5f['cellBin']['cell']['x'].astype('uint64'), 32), h5f['cellBin']['cell']['y'].astype('uint64')).astype('U')
+        cell_names = np.bitwise_or(np.left_shift(h5f['cellBin']['cell']['x'].astype('uint64'), 32),
+                                   h5f['cellBin']['cell']['y'].astype('uint64')).astype('U')
         celltid = np.zeros(h5f['cellBin']['cell'].shape, dtype='uint16')
-        
+
         for n, cell_name in enumerate(cell_names):
             if cell_name in cluster:
                 if is_numeric:
