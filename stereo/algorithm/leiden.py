@@ -33,7 +33,7 @@ except ImportError:
         pass
 
 
-    MutableVertexPartition.__module__ = 'leidenalg.VertexPartition'
+    MutableVertexPartition.__module__ = 'leidenalg.VertexPartition'  # noqa
 
 
 def leiden(
