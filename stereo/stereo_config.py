@@ -6,10 +6,12 @@
 @file:config.py
 @time:2021/03/05
 """
-from typing import Union, Optional
-from pathlib import Path
 import os
-from matplotlib import rcParams, rcParamsDefault
+from typing import Union
+from typing import Optional
+from pathlib import Path
+from matplotlib import rcParams
+from matplotlib import rcParamsDefault
 import matplotlib.colors as mpl_colors
 from colorcet import palette
 
@@ -29,7 +31,7 @@ class StereoConfig(object):
             n_jobs=1,
             log_file: Union[str, Path, None] = None,
             log_level: str = "info",
-            log_format: str = "[%(asctime)s][%(name)s][%(process)d][%(threadName)s][%(thread)d][%(module)s][%(lineno)d][%(levelname)s]: %(message)s",
+            log_format: str = "[%(asctime)s][%(name)s][%(process)d][%(threadName)s][%(thread)d][%(module)s][%(lineno)d][%(levelname)s]: %(message)s", # noqa
             output: str = "./output",
             data_dir: str = None
     ):
@@ -55,7 +57,8 @@ class StereoConfig(object):
 
     @property
     def linear_colormaps(self):
-        colormaps = {n: palette[n] for n in ['rainbow', 'fire', 'bgy', 'bgyw', 'bmy', 'gray', 'kbc', 'CET_D4', 'blues', 'CET_L4']}
+        colormaps = {n: palette[n] for n in
+                     ['rainbow', 'fire', 'bgy', 'bgyw', 'bmy', 'gray', 'kbc', 'CET_D4', 'blues', 'CET_L4']}
         stmap_colors = ['#0c3383', '#0a88ba', '#f2d338', '#f28f38', '#d91e1e']
         nodes = [0.0, 0.25, 0.50, 0.75, 1.0]
         mycmap = mpl_colors.LinearSegmentedColormap.from_list("mycmap", list(zip(nodes, stmap_colors)))

@@ -5,18 +5,29 @@
 @time: 2021/8/16 16:11
 """
 
-from scipy.sparse import issparse, spmatrix
-import pandas as pd
-import numpy as np
-from typing import Optional, Union, Tuple
 from functools import singledispatch
-from scipy.sparse import spmatrix, csr_matrix, issparse, csc_matrix
+from typing import (
+    Optional,
+    Union,
+    Tuple
+)
+
 import numba
+import numpy as np
+from scipy.sparse import (
+    spmatrix,
+    csr_matrix,
+    issparse,
+    csc_matrix
+)
+
 from ..log_manager import logger
+
 
 @singledispatch
 def get_mean_var(X, *, axis=0):
     pass
+
 
 @get_mean_var.register(np.ndarray)
 def _(x, *, axis=0):
@@ -26,6 +37,7 @@ def _(x, *, axis=0):
     # enforce R convention (unbiased estimator) for variance
     var *= x.shape[axis] / (x.shape[axis] - 1)
     return mean, var
+
 
 # from scanpy _utils
 @get_mean_var.register(spmatrix)
@@ -47,7 +59,7 @@ def sparse_mean_variance_axis(mtx: spmatrix, axis: int):
     `sparsefuncs.mean_variance_axis`.
 
     Modifications:
-    * allow deciding on the output type, which can increase accuracy when calculating the mean and variance of 32bit floats.
+    * allow deciding on the output type, which can increase accuracy when calculating the mean and variance of 32bit floats. # noqa
     * This doesn't currently implement support for null values, but could.
     * Uses numba not cython
     """
@@ -164,11 +176,11 @@ def check_nonnegative_integers(X: Union[np.ndarray, spmatrix]):
 
 
 def filter_genes(
-    data,
-    min_counts: Optional[int] = None,
-    min_cells: Optional[int] = None,
-    max_counts: Optional[int] = None,
-    max_cells: Optional[int] = None,
+        data,
+        min_counts: Optional[int] = None,
+        min_cells: Optional[int] = None,
+        max_counts: Optional[int] = None,
+        max_cells: Optional[int] = None,
 ) -> Tuple[np.ndarray, np.ndarray]:
     """\
     Filter genes based on number of cells or counts.

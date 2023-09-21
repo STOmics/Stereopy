@@ -4,14 +4,18 @@
 # @Email    : xujunhao@genomics.cn
 import os
 import time
-import loompy
-import pandas as pd
-import numpy as np
+
 import gtfparse as gp
+import loompy
+import numpy as np
+import pandas as pd
 import scipy.sparse as sparse
+from shapely.geometry import MultiPoint
+from shapely.geometry import Point
 from tqdm import tqdm
+
 from ..log_manager import logger
-from shapely.geometry import Point, MultiPoint
+
 
 class RnaVelocity(object):
 
@@ -66,7 +70,7 @@ class RnaVelocity(object):
             logger.info("Getting layers")
             from gefpy.bgef_reader_cy import BgefR
             gef = BgefR(self.gef_path, self.bin_size, 4)
-            #Determine whether the gef file contains exon information
+            # Determine whether the gef file contains exon information
             if gef.is_Contain_Exon():
                 # do not do any filtering
                 region = []
@@ -108,7 +112,7 @@ class RnaVelocity(object):
             logger.info("Getting layers")
             from gefpy.cgef_reader_cy import CgefR
             gef = CgefR(self.gef_path)
-            #Determine whether the gef file contains exon information
+            # Determine whether the gef file contains exon information
             if gef.is_Contain_Exon():
                 # do not do any filtering
                 region = []
@@ -137,8 +141,8 @@ class RnaVelocity(object):
     def make_multipoint(self, x):
         p = [Point(i) for i in zip(x['x'], x['y'])]
         mlp = MultiPoint(p).convex_hull
-        x_center = round(mlp.centroid.x,4)
-        y_center = round(mlp.centroid.y,4)
+        x_center = round(mlp.centroid.x, 4)
+        y_center = round(mlp.centroid.y, 4)
         cell_id = str(x_center) + '_' + str(y_center)
         return pd.Series({'cell_id': cell_id})
 
@@ -152,13 +156,13 @@ class RnaVelocity(object):
 
         if 'label' in df.columns:
             df.rename(columns={'label': 'CellID'}, inplace=True)
-            
+
         df.dropna(inplace=True)
         return df
 
     def parse_bin_coor(self, df, bin_size):
         """
-        merge bins to a bin unit according to the bin size, 
+        merge bins to a bin unit according to the bin size,
         and generate cell id of bin unit using the coordinate after merged.
 
         :param df: a dataframe of the bin file.
@@ -233,14 +237,16 @@ class RnaVelocity(object):
 
         df = df.reset_index()
         bin_cell = list(set(df["geneID"]))
-        chunks = [bin_cell[x:x+5000] for x in range(0, len(bin_cell), 5000)]
+        chunks = [bin_cell[x:x + 5000] for x in range(0, len(bin_cell), 5000)]
         chunks_exp = []
         if which == "matrix":
             for i in tqdm(chunks):
-                chunks_exp.append(pd.pivot(df[df["geneID"].isin(i)], columns="cell_id", index="geneID", values='MIDCount'))
+                chunks_exp.append(
+                    pd.pivot(df[df["geneID"].isin(i)], columns="cell_id", index="geneID", values='MIDCount'))
         elif which == "extron":
             for i in tqdm(chunks):
-                chunks_exp.append(pd.pivot(df[df["geneID"].isin(i)], columns="cell_id", index="geneID", values='ExonCount'))
+                chunks_exp.append(
+                    pd.pivot(df[df["geneID"].isin(i)], columns="cell_id", index="geneID", values='ExonCount'))
         else:
             raise
 
@@ -259,7 +265,8 @@ class RnaVelocity(object):
         base = gp.read_gtf(self.gtf_path)
         gene_list = list(layer_total.index)
 
-        base_sub = base.loc[base["feature"] == "gene", ["gene_id", "gene_name", "seqname", "strand", "start", "end"]].copy()
+        base_sub = base.loc[
+            base["feature"] == "gene", ["gene_id", "gene_name", "seqname", "strand", "start", "end"]].copy()
         base_sub.drop_duplicates(keep="first", inplace=True)
 
         base_need = base_sub.loc[np.isin(base_sub["gene_name"], gene_list), :].copy()
@@ -282,16 +289,16 @@ class RnaVelocity(object):
         :return: the output loom path.
         """
         row_attrs = {"Accession": np.array(df_row_attrs.gene_id),
-                        "Chromosome": np.array(df_row_attrs.seqname),
-                        "End": np.array(df_row_attrs.end),
-                        "Gene": np.array(df_row_attrs.gene_name),
-                        "Start": np.array(df_row_attrs.start),
-                        "Strand": np.array(df_row_attrs.strand)}
+                     "Chromosome": np.array(df_row_attrs.seqname),
+                     "End": np.array(df_row_attrs.end),
+                     "Gene": np.array(df_row_attrs.gene_name),
+                     "Start": np.array(df_row_attrs.start),
+                     "Strand": np.array(df_row_attrs.strand)}
 
         col_attrs = {"CellID": np.array(layers["total"].columns)}
 
         file_out = os.path.join(self.out_dir, "rna_velocity.loom")
-        
+
         loompy.create(file_out, sparse.coo_matrix(np.array(layers["total"])), row_attrs=row_attrs, col_attrs=col_attrs)
 
         with loompy.connect(file_out) as ds:
@@ -301,22 +308,24 @@ class RnaVelocity(object):
 
         return file_out
 
+
 def generate_loom(out_dir=None,
-                gem_path=None,
-                gef_path=None,
-                gtf_path=None,
-                bin_type='bins',
-                bin_size=100):
+                  gem_path=None,
+                  gef_path=None,
+                  gtf_path=None,
+                  bin_type='bins',
+                  bin_size=100):
     """
     generate loom file for Dynamo according gem/gef and gtf file
 
     :param out_dir: the output path.
     :param gem_path: the path of gem file, if None, need to input gef_path, defaults to None.
     :param gef_path: the path of gef file, if None, need to input gem_path and then generate from gem, defaults to None.
+    :param gtf_path: the path of gtf file, if None, need to input gtf_path, defaults to None.
     :param bin_type: the type of bin, if file format is stereo-seq file. `bins` or `cell_bins`.
     :param bin_size: the size of bin to merge. The parameter only takes effect.
                     when the value of data.bin_type is 'bins'.
-    
+
     :return: the output loom path.
     """
 

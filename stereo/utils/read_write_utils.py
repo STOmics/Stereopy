@@ -35,4 +35,5 @@ class ReadWriteUtils(object):
                 else:
                     raise FileNotFoundError("Please ensure there is a file")
             return func(*args, **kwargs)
+
         return wrapped

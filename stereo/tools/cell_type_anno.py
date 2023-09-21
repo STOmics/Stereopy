@@ -10,17 +10,20 @@ change log:
     2021/05/20 rst supplement. by: qindanhua.
     2021/07/08 adjust for restructure base class . by: qindanhua.
 """
-import pandas as pd
-import numpy as np
 import os
-from multiprocessing import Pool
 import traceback
+from multiprocessing import Pool
+
+import numpy as np
+import pandas as pd
+
+from ..core.tool_base import ToolBase
 from ..log_manager import logger
-from ..utils.correlation import spearmanr_corr, pearson_corr
 from ..preprocess.normalize import normalize_total
 from ..stereo_config import stereo_conf
 from ..utils import remove_file
-from ..core.tool_base import ToolBase
+from ..utils.correlation import pearson_corr
+from ..utils.correlation import spearmanr_corr
 
 
 class CellTypeAnno(ToolBase):
@@ -49,6 +52,7 @@ class CellTypeAnno(ToolBase):
     1      0_1  hereditary spherocytosis cell line  ...            20        1.0
     2     0_10  hereditary spherocytosis cell line  ...            20        1.0
     """
+
     def __init__(
             self,
             data,
@@ -90,7 +94,7 @@ class CellTypeAnno(ToolBase):
         if not os.path.exists(os.path.join(ref_dir, 'ref_sample_epx.csv')) and \
                 os.path.exists(os.path.join(ref_dir, 'cell_map.csv')):
             raise ValueError(
-                f'reference file not found, ref_dir should exist two file ref_sample_epx.csv and cell_map.csv'
+                'reference file not found, ref_dir should exist two file ref_sample_epx.csv and cell_map.csv'
             )
         self._ref_dir = ref_dir
 
@@ -110,7 +114,7 @@ class CellTypeAnno(ToolBase):
         logger.info(f'input data:  {df.shape[0]} genes, {df.shape[1]} cells.')
         if self.split_num > 1:
             logger.info(f'split the exp matrix to {self.split_num} matrixs')
-            step_size = int(df.shape[1]/self.split_num) + 1
+            step_size = int(df.shape[1] / self.split_num) + 1
             for i in range(self.split_num):
                 start = i * step_size
                 end = start + step_size if start + step_size < df.shape[1] else df.shape[1]
@@ -161,7 +165,7 @@ class CellTypeAnno(ToolBase):
         df = score_mean.merge(type_cnt, on=['cell', 'cell type'])
         df.to_csv(os.path.join(output_dir, 'all_annotation.csv'), index=False)
         df = df[(df.groupby('cell')['type_cnt'].transform('max') == df['type_cnt']) & (
-                    df.groupby('cell')['score_mean'].transform('max') == df['score_mean'])]
+                df.groupby('cell')['score_mean'].transform('max') == df['score_mean'])]
         df.to_csv(os.path.join(output_dir, 'top_annotation.csv'), index=False)
         return df
 
@@ -222,7 +226,7 @@ class CellTypeAnno(ToolBase):
                                      error_callback=subprocess_error)
             pool.close()
             pool.join()
-            logger.info(f'start to merge top result ...')
+            logger.info('start to merge top result ...')
             for i in range(self.n_estimators):
                 files = [os.path.join(tmp_output, f'subsample_{i}_{j}.top_{self.method}_corr.csv')
                          for j in range(self.split_num)]
@@ -241,7 +245,7 @@ class CellTypeAnno(ToolBase):
                                  error_callback=subprocess_error)
             pool.close()
             pool.join()
-            logger.info(f'start to merge top result ...')
+            logger.info('start to merge top result ...')
             files = [os.path.join(tmp_output, f'sub_{i}.top_{self.method}_corr.csv') for i in range(len(datas))]
             self.result.matrix = self.concat_top_corr_files(files, self.output)
         # clear tmp directory
@@ -254,7 +258,7 @@ def parse_ref_data(ref_dir):
     :param ref_dir: reference directory
     :return: reference data
     """
-    logger.info(f'loading ref data')
+    logger.info('loading ref data')
     ref_sample_path = os.path.join(ref_dir, 'ref_sample_epx.csv')
     if not os.path.exists(ref_sample_path):
         raise ValueError('can not load reference file, download from https://github.com/STOmics/stereopy')

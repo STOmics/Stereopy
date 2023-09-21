@@ -1,8 +1,10 @@
-import imp
 import os
 import shutil
-from ..image import cell_seg, cell_seg_deepcell
+
+from ..image import cell_seg
+from ..image import cell_seg_deepcell
 from ..log_manager import logger
+
 
 class CellSegment(object):
 
@@ -22,7 +24,7 @@ class CellSegment(object):
             tissue_seg_model_path=None,
             tissue_seg_method=None,
             post_processing_workers=10
-        ):
+    ):
         logger.info(f"start to generate mask,model type {model_type}.")
         self.mask_out_path = os.path.join(self.mask_out_path, model_type)
         if model_type == 'deep-learning':
@@ -50,11 +52,12 @@ class CellSegment(object):
                 post_processing_workers=post_processing_workers
             )
         logger.info(f"generate mask end, the results is saved in {self.mask_out_path}")
-    
+
     def get_mask_files(self):
         if self.mask_out_path is None:
             raise Exception("no mask files, please run the function generate_mask first")
-        return [os.path.join(self.mask_out_path, file_name) for file_name in os.listdir(self.mask_out_path) if file_name.endswith('mask.tif')]
+        return [os.path.join(self.mask_out_path, file_name) for file_name in os.listdir(self.mask_out_path) if
+                file_name.endswith('mask.tif')]
 
     def remove_all_mask_files(self):
         shutil.rmtree(self.mask_out_path)

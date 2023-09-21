@@ -6,14 +6,14 @@
 @file: data_helper.py
 @time: 2021/3/14 16:11
 """
+from math import ceil
 from typing import Optional
 from typing import Union
-from natsort import natsorted
-from math import ceil
 
 import numpy as np
 import pandas as pd
 import scipy.sparse as sp
+from natsort import natsorted
 
 from stereo.core.cell import Cell
 from stereo.core.gene import Gene
@@ -143,19 +143,19 @@ def merge(
     """
     Merge several slices of data.
 
-    :param data_list: several slices of data to be merged, at least two slices. 
+    :param data_list: several slices of data to be merged, at least two slices.
     :param reorganize_coordinate: whether to reorganize the coordinates of the obs(cells), 
-            if set it to a number, like 2, the coordinates will be reorganized to 2 columns on coordinate system as below:
+            if set it to a number, like 2, the coordinates will be reorganized to 2 columns on coordinate system as below # noqa
                             ---------------
                             | data1 data2
                             | data3 data4
-                            | data5 ...  
+                            | data5 ...
                             | ...   ...  
                             ---------------
             if set to `False`, the coordinates maybe overlap between slices.
-    :param horizontal_offset_additional: the additional offset between each slice on horizontal direction while reorganizing coordinates.
-    :param vertical_offset_additional: the additional offset between each slice on vertical direction while reorganizing coordinates.
-    :param space_between: the distance between each slice, like '10nm', '1um', ..., it will be used for calculating the z-coordinate of each slice.
+    :param horizontal_offset_additional: the additional offset between each slice on horizontal direction while reorganizing coordinates.  # noqa
+    :param vertical_offset_additional: the additional offset between each slice on vertical direction while reorganizing coordinates.  # noqa
+    :param space_between: the distance between each slice, like '10nm', '1um', ..., it will be used for calculating the z-coordinate of each slice.  # noqa
 
     :return: A merged StereoExpData object.
     """

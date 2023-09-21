@@ -9,16 +9,17 @@ change log:
     2021/06/20 adjust for restructure base class . by: qindanhua.
     2021/06/29 last modified by qindanhua.
 """
-import time
-import numpy as np
+from typing import Optional
+
 import leidenalg as la
-from ..core.tool_base import ToolBase
-from ..log_manager import logger
-from stereo.algorithm.neighbors import Neighbors
-from ..preprocess.normalize import Normalizer
+import numpy as np
 # from .dim_reduce import DimReduce
 import pandas as pd
-from typing import Optional
+
+from stereo.algorithm.neighbors import Neighbors
+from ..core.tool_base import ToolBase
+from ..log_manager import logger
+from ..preprocess.normalize import Normalizer
 
 
 class Clustering(ToolBase):
@@ -37,7 +38,7 @@ class Clustering(ToolBase):
 
     >>> from stereo.tools.clustering import Clustering
     >>> import pandas as pd
-    >>> test_exp_matrix = pd.DataFrame({'gene_1': [0, 1, 2, 0, 3, 4], 'gene_2': [1, 3, 2, 0, 3, 0], 'gene_3': [0, 0, 2, 0, 3, 1]}, index=['cell_1', 'cell_2', 'cell_3', 'cell_4', 'cell_5', 'cell_6'])
+    >>> test_exp_matrix = pd.DataFrame({'gene_1': [0, 1, 2, 0, 3, 4], 'gene_2': [1, 3, 2, 0, 3, 0], 'gene_3': [0, 0, 2, 0, 3, 1]}, index=['cell_1', 'cell_2', 'cell_3', 'cell_4', 'cell_5', 'cell_6']) # noqa
     >>> test_exp_matrix
             gene_1  gene_2  gene_3
     cell_1       0       1       0
@@ -50,6 +51,7 @@ class Clustering(ToolBase):
     >>> ct.fit()
     >>> ct.result.matrix
     """
+
     def __init__(
             self,
             data=None,

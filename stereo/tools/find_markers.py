@@ -10,24 +10,27 @@ change log:
     2021/05/20 rst supplement. by: qindanhua.
     2021/06/20 adjust for restructure base class . by: qindanhua.
 """
+from typing import Sequence
+from typing import Union
+
+import numpy as np
+import pandas as pd
 from joblib import cpu_count
 from natsort import natsorted
-import pandas as pd
+from scipy import stats
 
-from ..utils.data_helper import select_group
-from ..utils.time_consume import log_consumed_time
+from ..algorithm import mannwhitneyu
+from ..algorithm import statistics
 from ..core.tool_base import ToolBase
 from ..log_manager import logger
-from typing import Union, Sequence
-import numpy as np
-from scipy import stats
-from ..algorithm import mannwhitneyu, statistics
+from ..utils.data_helper import select_group
+from ..utils.time_consume import log_consumed_time
 
 
 class FindMarker(ToolBase):
     """
     a tool of finding maker gene
-    for each group, find statistical test different genes between one group and the rest groups using t-test or wilcoxon_test
+    for each group, find statistical test different genes between one group and the rest groups using t-test or wilcoxon_test # noqa
 
     :param data: expression matrix, StereoExpData object
     :param groups: group information matrix, at least two columns, treat first column as sample name, and the second as
@@ -177,7 +180,7 @@ class FindMarker(ToolBase):
         if self.method == 'wilcoxon_test':
             self.data.sparse2array()
         if self.groups is None:
-            raise ValueError(f'group information must be set')
+            raise ValueError('group information must be set')
         group_info = self.groups
         all_groups = set(group_info['group'].values)
         if self.case_groups == 'all':

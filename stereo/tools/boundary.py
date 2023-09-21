@@ -7,8 +7,8 @@
 
 
 import numpy as np
-from shapely.geometry import Point
 from shapely.geometry import LineString
+from shapely.geometry import Point
 from shapely.geometry import Polygon
 
 
@@ -78,9 +78,9 @@ class ConcaveHull(object):
             last_norm = np.array([-1, 0], ndmin=2)
         elif first == 0:
             # normalized vector pointing towards previous point
-            last_norm = self.norm(np.subtract(self.data_set[last, :], self.data_set[ix,:]))
+            last_norm = self.norm(np.subtract(self.data_set[last, :], self.data_set[ix, :]))
         # normalized row vectors pointing to set of k nearest neibs
-        ixs_norm = self.norm_array(np.subtract(self.data_set[ixs, :], self.data_set[ix,:]))
+        ixs_norm = self.norm_array(np.subtract(self.data_set[ixs, :], self.data_set[ix, :]))
         ang = np.zeros((ixs.shape[0], 1))
         for j in range(ixs.shape[0]):
             theta = np.arccos(np.dot(last_norm, ixs_norm[j, :]))
@@ -149,7 +149,7 @@ class ConcaveHull(object):
             else:
                 # Calculates the headings between first_point and the knn points
                 # Returns angles in the same indexing sequence as in knn
-                angles = self.clockwise_angles(last_point, current_point, knn, 0)
+                angles = self.clockwise_angles(last_point, current_point, knn, 0)  # noqa
 
             # Calculate the candidate indexes (largest angles first). candidates =[0,1,2]  or [2,1,0] etc if kk=3
             candidates = np.argsort(-angles)
@@ -175,7 +175,7 @@ class ConcaveHull(object):
                 print("invalid hull for all nearest neibs")
                 return self.recurse_calculate()
 
-            last_point = current_point  # record last point for clockwise angles
+            last_point = current_point  # record last point for clockwise angles # noqa
             current_point = knn[candidate]  # candidate = 0, 1, or 2 if kk=3
             hull = test_hull
             # we remove the newly found current point from the "mask" indicies so that it wont be passed to

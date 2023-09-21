@@ -1,19 +1,22 @@
-from natsort import natsorted
 from typing import Sequence, Optional, Union
-import pandas as pd
-import numpy as np
+
 import numba as nb
-from stereo.log_manager import logger
+import numpy as np
+import pandas as pd
+
 from stereo.core.stereo_exp_data import StereoExpData
+from stereo.log_manager import logger
+
+
 # from stereo.core.st_pipeline import StPipeline
 
 def cell_cluster_to_gene_exp_cluster(
-    data: StereoExpData,
-    cluster_res_key: str = None,
-    groups: Union[Optional[Sequence[str]], str] = None,
-    genes: Union[Optional[Sequence[str]], str] = None,
-    kind: str = 'sum',
-    filter_raw: bool = True
+        data: StereoExpData,
+        cluster_res_key: str = None,
+        groups: Union[Optional[Sequence[str]], str] = None,
+        genes: Union[Optional[Sequence[str]], str] = None,
+        kind: str = 'sum',
+        filter_raw: bool = True
 ):
     # if  data.raw is None:
     #     logger.warning(
@@ -28,11 +31,11 @@ def cell_cluster_to_gene_exp_cluster(
         use_raw = True
     if not use_raw:
         logger.info("Can not find raw data, the data which may have been normalized will be used.")
-    
+
     if cluster_res_key is None:
         logger.warning("The parameter cluster_res_key of the function cell_cluster_to_gene_exp_cluster must be input")
         return False
-    
+
     if cluster_res_key not in data.tl.result:
         logger.warning(f"The cluster_res_key '{cluster_res_key}' is not exists")
         return False
@@ -80,14 +83,15 @@ def cell_cluster_to_gene_exp_cluster(
     cluster_exp_matrix = np.vstack(tmp)
     return pd.DataFrame(cluster_exp_matrix, columns=gene_names, index=group_index.index).T
 
+
 def calc_pct_and_pct_rest(
-    data: StereoExpData,
-    cluster_res_or_key: Union[str, pd.DataFrame],
-    gene_names: Optional[Sequence[str]] = None,
-    groups: Optional[Sequence[str]] = None,
-    filter_raw: bool = True
+        data: StereoExpData,
+        cluster_res_or_key: Union[str, pd.DataFrame],
+        gene_names: Optional[Sequence[str]] = None,
+        groups: Optional[Sequence[str]] = None,
+        filter_raw: bool = True
 ):
-    if  data.raw is None:
+    if data.raw is None:
         logger.warning(
             """
             The function calc_pct_and_pct_rest must be based on raw data.
@@ -99,7 +103,7 @@ def calc_pct_and_pct_rest(
         if cluster_res_or_key not in data.tl.result:
             logger.warning(f"Can not find the cluster result in data.tl.result by key {cluster_res_or_key}")
             return False
-    
+
     if filter_raw:
         raw_cells_isin_data = np.isin(data.raw.cell_names, data.cell_names)
         raw_genes_isin_data = np.isin(data.raw.gene_names, data.gene_names)
@@ -153,6 +157,7 @@ def calc_pct_and_pct_rest(
     pct_rest.rename(columns={'index': 'genes'}, inplace=True)
     return pct, pct_rest
 
+
 def cluster_bins_to_cellbins(
         bins_data: StereoExpData,
         cellbins_data: StereoExpData,
@@ -160,7 +165,7 @@ def cluster_bins_to_cellbins(
 ):
     """
     Mapping clustering result of bins to conresponding cellbins.
-    
+
     The clustering of a cell will be mapped to the clustering of a bin if this cell's coordinate is within this bin.
 
     :param bins_data: StereoExpData object of bins.
@@ -174,8 +179,8 @@ def cluster_bins_to_cellbins(
     @nb.njit(cache=True, nogil=True, parallel=True)
     def __locate_cellbins_to_bins(bins_position, bin_size, bins_groups_idx, cellbins_names, cellbins_position):
         cells_count = cellbins_position.shape[0]
-        cells_groups_idx = np.empty((cells_count, ), dtype=bins_groups_idx.dtype)
-        cells_bool_list = np.zeros((cells_count, )).astype(np.bool8)
+        cells_groups_idx = np.empty((cells_count,), dtype=bins_groups_idx.dtype)
+        cells_bool_list = np.zeros((cells_count,)).astype(np.bool8)
         bins_position_end = bins_position + bin_size
         cellbins_position = cellbins_position.astype(bins_position.dtype)
         for i in nb.prange(cells_count):
@@ -193,7 +198,8 @@ def cluster_bins_to_cellbins(
 
     bins_groups_idx = np.arange(bins_data.cell_names.shape[0], dtype=np.int64)
     cells_groups_idx, cells_located, cells_filtered = \
-        __locate_cellbins_to_bins(bins_data.position, bins_data.bin_size, bins_groups_idx, cellbins_data.cell_names, cellbins_data.position)
+        __locate_cellbins_to_bins(bins_data.position, bins_data.bin_size, bins_groups_idx, cellbins_data.cell_names,
+                                  cellbins_data.position)
     if len(cells_located) == 0:
         logger.warning("All cells can not be located to any bins!")
         return cellbins_data

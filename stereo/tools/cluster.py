@@ -2,7 +2,7 @@
 # coding: utf-8
 """
 @file: cluster.py
-@description: 
+@description:
 @author: Ping Qiu
 @email: qiuping1@genomics.cn
 @last modified by: Ping Qiu
@@ -10,16 +10,17 @@
 change log:
     2021/07/23  create file.
 """
-import numpy as np
+from typing import Optional
+
 import leidenalg as la
+import numpy as np
+import pandas as pd
+import phenograph
+
+from stereo.algorithm.neighbors import Neighbors
 from ..core.tool_base import ToolBase
 from ..log_manager import logger
-from stereo.algorithm.neighbors import Neighbors
 from ..preprocess.normalize import Normalizer
-import pandas as pd
-from typing import Optional
-import colorcet as cc
-import phenograph
 
 
 class Cluster(ToolBase):
@@ -34,6 +35,7 @@ class Cluster(ToolBase):
     if pca_x is None and normalization is True.
 
     """
+
     def __init__(
             self,
             data=None,

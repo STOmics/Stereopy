@@ -12,6 +12,7 @@ change log:
 """
 
 import pandas as pd
+
 from ..core.tool_base import ToolBase
 
 
@@ -19,6 +20,7 @@ class SpatialPatternScore(ToolBase):
     """
     calculate spatial pattern score
     """
+
     def __init__(
             self,
             data=None,

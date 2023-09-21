@@ -12,11 +12,13 @@ change log:
     2021/06/15 adjust for restructure base class . by: qindanhua.
 """
 
+from typing import Optional
+
+import numpy as np
 import pandas as pd
+
 # from stereo.log_manager import logger
 from stereo.core.tool_base import ToolBase
-import numpy as np
-from typing import Optional
 
 
 class DimReduce(ToolBase):
@@ -55,6 +57,7 @@ class DimReduce(ToolBase):
     Or
     >>> dr.u_map(X, n_pcs=3, n_neighbors=5, min_dist=0.3)
     """
+
     def __init__(
             self,
             data=None,
@@ -141,4 +144,3 @@ class DimReduce(ToolBase):
                          color_bar=True)
         if file_path:
             plt.savefig(file_path)
-

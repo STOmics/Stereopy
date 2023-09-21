@@ -2,15 +2,22 @@
 Tissue Extraction from bGEF
 """
 from typing import Optional
-import numpy as np
-from scipy.sparse import csr_matrix
-from gefpy.bgef_creater_cy import BgefCreater
 
+import numpy as np
+from gefpy.bgef_creater_cy import BgefCreater
+from scipy.sparse import csr_matrix
+
+from ..core import StereoExpData
 from ..core.cell import Cell
 from ..core.gene import Gene
-from ..core import StereoExpData
+from ..image.tissue_cut import (
+    ssDNA,
+    RNA,
+    DEEP,
+    SingleStrandDNATissueCut,
+    RNATissueCut
+)
 from ..log_manager import logger
-from ..image.tissue_cut import ssDNA, RNA, DEEP, SingleStrandDNATissueCut, RNATissueCut
 
 
 def tissue_extraction_to_bgef(
@@ -70,10 +77,12 @@ def tissue_extraction_to_bgef(
     else:
         # TODO: has not finished, need recheck
         data = StereoExpData(bin_size=1)
-        uniq_cells, uniq_genes, count, cell_ind, gene_ind = bc.get_stereo_data(src_gef_path, extract_bin_size, mask_file_path)
+        uniq_cells, uniq_genes, count, cell_ind, gene_ind = bc.get_stereo_data(src_gef_path, extract_bin_size,
+                                                                               mask_file_path)
         logger.info(f'the matrix has {len(uniq_cells)} cells, and {len(uniq_genes)} genes.')
 
-        data.position = np.array(list((zip(np.right_shift(uniq_cells, 32), np.bitwise_and(uniq_cells, 0xffff))))).astype('uint32')
+        data.position = np.array(
+            list((zip(np.right_shift(uniq_cells, 32), np.bitwise_and(uniq_cells, 0xffff))))).astype('uint32')
         data.offset_x = data.position[0].min()
         data.offset_y = data.position[1].min()
         data.attr = {
@@ -87,5 +96,6 @@ def tissue_extraction_to_bgef(
         }
         data.cells = Cell(cell_name=uniq_cells)
         data.genes = Gene(gene_name=uniq_genes)
-        data.exp_matrix = csr_matrix((count, (cell_ind, gene_ind)), shape=(len(uniq_cells), len(uniq_genes)), dtype=np.uint32)
+        data.exp_matrix = csr_matrix((count, (cell_ind, gene_ind)), shape=(len(uniq_cells), len(uniq_genes)),
+                                     dtype=np.uint32)
         return data
