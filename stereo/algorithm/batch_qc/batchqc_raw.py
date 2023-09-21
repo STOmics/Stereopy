@@ -7,40 +7,55 @@
 # @Email   : zhangchao5@genomics.cn
 import os
 import os.path as osp
-# import pkgutil
-# import pwd
 import time
-# import scanpy as sc
-import pandas as pd
-from typing import Union
-# from anndata import AnnData
-from lxml import etree
 from collections import defaultdict
+from typing import Union
+
 import matplotlib
-from .test import *
-from .module import domain_variance_score
-from .utils import pca_lowrank, embed_text, embed_tabel, embed_table_imgs, check_data
-from stereo.core.stereo_exp_data import StereoExpData, AnnBasedStereoExpData
-from stereo.log_manager import logger, LogManager
+import pandas as pd
+from lxml import etree
+
+from stereo.core.stereo_exp_data import AnnBasedStereoExpData
+from stereo.core.stereo_exp_data import StereoExpData
 from stereo.io import stereo_to_anndata
+from stereo.log_manager import LogManager
+from stereo.log_manager import logger
+from .module import domain_variance_score
+from .test import (
+    qq_plot,
+    cdf_plot,
+    umap_plot,
+    joint_plot,
+    kernel_plot,
+    metric_score,
+    variance_test,
+    var_mean_plot,
+    sample_heatmap,
+    description_data,
+    distribution_fitting,
+)
+from .utils import embed_tabel
+from .utils import embed_table_imgs
+from .utils import embed_text
 
 matplotlib.use('Agg')
 
+
 def batchqc_raw(
-    data: Union[StereoExpData, AnnBasedStereoExpData],
-    # norm_log: bool = False,
-    # is_scale: bool = False,
-    # n_pcs: int = 50,
-    n_neighbors: int = 100,
-    batch_key: str = "batch",
-    # position_key: str = "X_umap",
-    condition: Union[str, list, None] = None,
-    count_key: str = "total_counts",
-    celltype_key: Union[str, None] = None,
-    report_path: str = "./",
-    gpu: Union[str, int] = "0",
-    data_loader_num_workers: int = -1,
-    num_threads: int = -1
+        data: Union[StereoExpData, AnnBasedStereoExpData],
+        # norm_log: bool = False,
+        # is_scale: bool = False,
+        # n_pcs: int = 50,
+        n_neighbors: int = 100,
+        batch_key: str = "batch",
+        # position_key: str = "X_umap",
+        condition: Union[str, list, None] = None,
+        count_key: str = "total_counts",
+        celltype_key: Union[str, None] = None,
+        report_path: str = "./",
+        gpu: Union[str, int] = "0",
+        data_loader_num_workers: int = -1,
+        num_threads: int = -1
 ) -> dict:
     """BatchQC Raw Dataset Pipeline
 
@@ -83,7 +98,7 @@ def batchqc_raw(
         raise AttributeError("there is no batch label, it may not be a data merged from several slices.")
     if count_key not in merge_data.obs_keys():
         raise KeyError(f"there is no '{count_key}' in result, please check and run data.tl.cal_qc()")
-    
+
     n_batch = merge_data.obs[batch_key].cat.categories.size
 
     # check_data(merge_data)
@@ -105,7 +120,6 @@ def batchqc_raw(
 
     # sc.pp.neighbors(merge_data)
     # sc.tl.umap(merge_data)
-
 
     domain_df = domain_variance_score(
         merge_data,
@@ -140,7 +154,8 @@ def batchqc_raw(
     dist_srcs = distribution_fitting(merge_data, batch_key=batch_key, fit_key=count_key)
     output_dict["imgs"]["dist"] = dist_srcs
 
-    metric_dict = metric_score(merge_data, n_neighbor=n_neighbors, batch_key=batch_key, metric_pos='X_umap', celltype_key=celltype_key)
+    metric_dict = metric_score(merge_data, n_neighbor=n_neighbors, batch_key=batch_key, metric_pos='X_umap',
+                               celltype_key=celltype_key)
     output_dict["table"].update(metric_dict)
 
     heatmap_gene_src = sample_heatmap(merge_data, feat_key="X_pca", metric="correlation", batch_key=batch_key)
@@ -153,10 +168,9 @@ def batchqc_raw(
     output_dict["imgs"]["umap_batch"] = umap_batch_src
     output_dict["imgs"]["joint"] = joint_srcs
 
-    batch_score = output_dict["table"]["domain"].iloc[0]["Accept Rate"] * \
-                  output_dict["table"]["confound"].iloc[0]["Cramer's V Coefficient"] * \
-                  output_dict["table"]["kbet_df"].iloc[0]["Accept Rate"] * \
-                  output_dict["table"]["lisi_df"].iloc[0]["LISI Mean"] / n_batch
+    batch_score = output_dict["table"]["domain"].iloc[0]["Accept Rate"] * output_dict["table"]["confound"].iloc[0][
+        "Cramer's V Coefficient"] * output_dict["table"]["kbet_df"].iloc[0]["Accept Rate"] * output_dict["table"][
+                      "lisi_df"].iloc[0]["LISI Mean"] / n_batch
 
     is_scale = False
     if output_dict["table"]["kbet_df"].iloc[0]["95% P Value"] < 0.05:
@@ -202,7 +216,8 @@ def generate_report(data_dict: dict, save_path: str, type: str = 'html') -> None
 
     # -------- set username & run time --------
     embed_text(html, pos="h4", name="username", text=f"Report By: {os.getlogin()}")
-    embed_text(html, pos="h5", name="runtime", text=f"Report Time: {time.strftime('%Y-%m-%d %H:%M:%S', time.localtime())}")
+    embed_text(html, pos="h5", name="runtime",
+               text=f"Report Time: {time.strftime('%Y-%m-%d %H:%M:%S', time.localtime())}")
 
     # -------- insert table --------
     embed_tabel(data_dict["table"]["describe"], html, pos="h4", name="describe", is_round=False)
@@ -245,7 +260,6 @@ def generate_report(data_dict: dict, save_path: str, type: str = 'html') -> None
     tree.write(osp.join(save_path, "BatchQC_report_raw.html"))
     if type.lower() == 'pdf':
         pass
-    logger.info(f"{time.strftime('%Y-%m-%d %H:%M:%S', time.localtime())} The 'BatchQC_Report.html' has been saved to {save_path}")
+    logger.info(f"{time.strftime('%Y-%m-%d %H:%M:%S', time.localtime())} "
+                f"The 'BatchQC_Report.html' has been saved to {save_path}")
     return osp.join(save_path, "BatchQC_report_raw.html")
-
-

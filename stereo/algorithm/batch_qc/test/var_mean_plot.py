@@ -5,8 +5,9 @@
 # @File    : var_mean_plot.py
 # @Software: PyCharm
 # @Email   : zhangchao5@genomics.cn
-import matplotlib.pyplot as plt
 from io import BytesIO
+
+import matplotlib.pyplot as plt
 
 
 def var_mean_plot(merge_data, batch_key="batch"):

@@ -6,8 +6,11 @@
 # @desc :
 
 from functools import partial
+
 # import scanpy as sc
 import pandas as pd
+
+
 # import numpy as np
 # import anndata
 # import sys
@@ -19,17 +22,19 @@ import pandas as pd
 def preprocess_significant_means_result(significant_means: pd.DataFrame):
     # drop_list = ['id_cp_interaction', 'partner_a', 'partner_b', 'gene_a', 'gene_b', 'secreted', 'receptor_a',
     #              'receptor_b', 'annotation_strategy', 'is_integrin', 'rank']
-    drop_list = ['id_cp_interaction', 'gene_a', 'gene_b', 'secreted', 'receptor_a', 'receptor_b', 'annotation_strategy', 'is_integrin', 'rank']
+    drop_list = ['id_cp_interaction', 'gene_a', 'gene_b', 'secreted', 'receptor_a', 'receptor_b', 'annotation_strategy',
+                 'is_integrin', 'rank']
     significant_means = significant_means.drop(drop_list, axis=1)
-    significant_means = significant_means.dropna(subset=significant_means.columns.difference(['interacting_pair']), how='all')
+    significant_means = significant_means.dropna(subset=significant_means.columns.difference(['interacting_pair']),
+                                                 how='all')
     significant_means = significant_means.set_index('interacting_pair')
     return significant_means
 
 
 def preprocess_data(
-    significant_means: pd.DataFrame,
-    separator_cluster='|',
-    separator_interaction='_'
+        significant_means: pd.DataFrame,
+        separator_cluster='|',
+        separator_interaction='_'
 ):
     result = []
     for index, row in significant_means.iterrows():
@@ -43,23 +48,25 @@ def preprocess_data(
             result.append(current)
     return pd.DataFrame(result, columns=['celltype1', 'celltype2', 'ligand', 'receptor'])
 
+
 def visualization_process(
-    significant_means: pd.DataFrame,
-    separator_celltype='|',
-    separator_lr='_',
-    human_genes_to_mouse=None
+        significant_means: pd.DataFrame,
+        separator_celltype='|',
+        separator_lr='_',
+        human_genes_to_mouse=None
 ):
     significant_means = preprocess_significant_means_result(significant_means)
     visualization_data = preprocess_data(significant_means, separator_celltype, separator_lr)
     if human_genes_to_mouse is not None:
         def human2mouse(row, human_genes_to_mouse):
             ligand = row['ligand'] if row['ligand'] not in human_genes_to_mouse else human_genes_to_mouse[row['ligand']]
-            receptor = row['receptor'] if row['receptor'] not in human_genes_to_mouse else human_genes_to_mouse[row['receptor']]
+            receptor = row['receptor'] if row['receptor'] not in human_genes_to_mouse else human_genes_to_mouse[
+                row['receptor']]
             return row['celltype1'], row['celltype2'], ligand, receptor
+
         apply_func = partial(human2mouse, human_genes_to_mouse=human_genes_to_mouse)
         visualization_data = visualization_data.apply(apply_func, axis=1, result_type='broadcast')
     return visualization_data
-
 
 # def get_cell_type_1(adata):
 #     """
@@ -123,7 +130,7 @@ def visualization_process(
 #     z1 = [x for x, y in zip(z1, mask1) if y]
 #     trace1 = go.Scatter3d(x=x1, y=y1, z=z1, mode='markers',
 #                           marker=dict(size=2, color=e1, colorscale='Reds', cmin=1,
-#                                       colorbar=dict(thickness=20, x=1.02, xanchor='right', title=adata_ligand.var.index[0])),
+#                           colorbar=dict(thickness=20, x=1.02, xanchor='right', title=adata_ligand.var.index[0])),
 #                           name=adata_ligand.var.index[0])
 
 #     x2 = [x[0] for x in adata_receptor.obsm['spatial_regis']]
@@ -136,7 +143,7 @@ def visualization_process(
 #     z2 = [x for x, y in zip(z2, mask2) if y]
 #     trace2 = go.Scatter3d(x=x2, y=y2, z=z2, mode='markers',
 #                           marker=dict(size=2, color=e2, colorscale='Blues', cmin=1,
-#                                       colorbar=dict(thickness=20, x=1.08, xanchor='right', title=adata_receptor.var.index[0])),
+#                           colorbar=dict(thickness=20, x=1.08, xanchor='right', title=adata_receptor.var.index[0])),
 #                           name=adata_receptor.var.index[0])
 #     # layout = go.Layout(title='3D Scatter plot')
 #     fig = go.Figure(data=[trace1, trace2])
@@ -166,4 +173,3 @@ def visualization_process(
 #         temp = temp.pivot(index='slice', columns='celltype', values='number_cells').reset_index()
 #         temp.columns.name = None
 #         stats = pd.concat([stats, temp], axis=0, ignore_index=True)
-

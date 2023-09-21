@@ -5,11 +5,12 @@
 # @File    : heatmap.py
 # @Software: PyCharm
 # @Email   : zhangchao5@genomics.cn
-import matplotlib.pyplot as plt
-import seaborn as sn
-import pandas as pd
-from anndata import AnnData
 from io import BytesIO
+
+import matplotlib.pyplot as plt
+import pandas as pd
+import seaborn as sn
+from anndata import AnnData
 
 from ..utils import generate_palette
 

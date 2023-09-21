@@ -5,12 +5,13 @@
 # @File    : qq_plot.py
 # @Software: PyCharm
 # @Email   : zhangchao5@genomics.cn
-import pandas as pd
-import numpy as np
-import seaborn as sn
-import matplotlib.pyplot as plt
-from io import BytesIO
 from collections import defaultdict
+from io import BytesIO
+
+import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
+import seaborn as sn
 from scipy.stats import stats
 
 
@@ -63,8 +64,8 @@ def qq_plot(merge_data, batch_key="batch", test_key="total_counts"):
             plt.errorbar(x=tmp_df[test_key][k], y=y, yerr=ks_stats / 2, color='r',
                          capsize=5, mew=3, label=f"Test statistic: {ks_stats:.4f}")
             plt.legend(loc='best', fontsize=14)
-            plt.ylabel(f'Cumulative Density', fontsize=20)
-            plt.xlabel(f'UMICount', fontsize=20)
+            plt.ylabel('Cumulative Density', fontsize=20)
+            plt.xlabel('UMICount', fontsize=20)
             plt.xticks(fontsize=20, rotation=-35)
             plt.yticks(fontsize=20)
             plt.title("Kolmogorov-Smirnov Test", fontsize=20, pad=30)
@@ -77,4 +78,3 @@ def qq_plot(merge_data, batch_key="batch", test_key="total_counts"):
     static_df[
         "describe_note"] = "Kolmogorov-smirnov test (K-S Test) checks whether two data distributions are consistent."
     return buffer_dict, static_df
-

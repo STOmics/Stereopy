@@ -12,6 +12,7 @@ class EarlyStopping:
     """
     Early stops the training if loss doesn't improve after a given patience.
     """
+
     def __init__(self, patience=10):
         self.patience = patience
         self.counter = 0
@@ -35,5 +36,3 @@ class EarlyStopping:
             self.best_score = score
             self.counter = 0
             self.loss_min = loss
-
-

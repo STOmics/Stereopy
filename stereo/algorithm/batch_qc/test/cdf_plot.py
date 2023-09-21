@@ -5,11 +5,11 @@
 # @File    : cdf_plot.py
 # @Software: PyCharm
 # @Email   : zhangchao5@genomics.cn
-import pandas as pd
-import numpy as np
-import matplotlib.pyplot as plt
-
 from io import BytesIO
+
+import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
 
 
 def cdf_plot(merge_data, batch_key="batch", use_key="total_counts"):

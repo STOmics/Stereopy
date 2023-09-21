@@ -5,9 +5,10 @@
 # @File    : kernel_plot.py
 # @Software: PyCharm
 # @Email   : zhangchao5@genomics.cn
+from io import BytesIO
+
 import matplotlib.pyplot as plt
 import seaborn as sn
-from io import BytesIO
 
 
 def kernel_plot(merge_data, batch_key="batch", test_key="total_counts"):

@@ -9,8 +9,8 @@
 import pandas as pd
 from sqlalchemy import or_
 
-from stereo.log_manager import logger
-from stereo.algorithm.cell_cell_communication.utils.database_utils import Repository, remove_not_defined_columns
+from stereo.algorithm.cell_cell_communication.utils.database_utils import Repository
+from stereo.algorithm.cell_cell_communication.utils.database_utils import remove_not_defined_columns
 from stereo.algorithm.cell_cell_communication.utils.sqlalchemy_model import (
     Complex,
     ComplexComposition,
@@ -19,6 +19,7 @@ from stereo.algorithm.cell_cell_communication.utils.sqlalchemy_model import (
     Protein,
     Interaction
 )
+from stereo.log_manager import logger
 
 
 class ComplexRepository(Repository):
@@ -53,12 +54,8 @@ class ComplexRepository(Repository):
         protein_gene_join = Protein.protein_multidata_id == Multidata.id_multidata
         if include_gene:
             gene_protein_join = Gene.protein_id == Protein.id_protein
-            multidatas_proteins_query = self.database_manager.database.session.query(Gene,
-                                                                                     Protein,
-                                                                                     Multidata).join(Protein,
-                                                                                                     gene_protein_join
-                                                                                                     ).join(Multidata,
-                                                                                                            protein_gene_join)
+            multidatas_proteins_query = self.database_manager.database.session.query(
+                Gene, Protein, Multidata).join(Protein, gene_protein_join).join(Multidata, protein_gene_join)
         else:
             multidatas_proteins_query = self.database_manager.database.session.query(Protein, Multidata).join(
                 Multidata, protein_gene_join)

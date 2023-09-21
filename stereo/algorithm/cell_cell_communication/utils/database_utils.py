@@ -7,12 +7,16 @@
 
 
 import pandas as pd
-
-from sqlalchemy import MetaData, ForeignKeyConstraint, Table
+from sqlalchemy import (
+    Table,
+    MetaData,
+    ForeignKeyConstraint,
+)
 from sqlalchemy.engine import reflection
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
-from sqlalchemy.sql.ddl import DropConstraint, DropTable
+from sqlalchemy.sql.ddl import DropConstraint
+from sqlalchemy.sql.ddl import DropTable
 
 from stereo.log_manager import logger
 
@@ -154,9 +158,8 @@ class Repository:
                                                  db_column_name,
                                                  db_table_name, i + 1)
 
-            not_existent_proteins = not_existent_proteins + \
-                                    result_df[result_df['_merge_%s' % (i + 1)] == 'left_only'][
-                                        unique_original_column_names[i]].drop_duplicates().tolist()
+            not_existent_proteins = not_existent_proteins + result_df[result_df['_merge_%s' % (i + 1)] == 'left_only'][
+                unique_original_column_names[i]].drop_duplicates().tolist()
         not_existent_proteins = list(set(not_existent_proteins))
 
         for i in range(1, len(unique_original_column_names) + 1):

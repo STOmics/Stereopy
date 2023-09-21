@@ -5,8 +5,8 @@
 # @File    : metric_score.py
 # @Software: PyCharm
 # @Email   : zhangchao5@genomics.cn
-import pandas as pd
 import numpy as np
+import pandas as pd
 
 from ..score import get_kbet, get_lisi, get_ksim
 

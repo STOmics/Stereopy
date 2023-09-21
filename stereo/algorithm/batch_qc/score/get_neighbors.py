@@ -7,8 +7,8 @@
 # @Email   : zhangchao5@genomics.cn
 import psutil
 import scipy.sparse as sp
-from sklearn.neighbors import NearestNeighbors
 from anndata import AnnData
+from sklearn.neighbors import NearestNeighbors
 
 
 def get_neighbors(
@@ -24,7 +24,7 @@ def get_neighbors(
     n_neighbors: ``int``
         Number of neighbors, NOT including the data itself. By default, 30
     use_rep: ``str``
-        Representation to used calculated kNN, which must exist in ``data.obsm``. If `None` use data.X, by default, 'X_umap'
+        Representation to used calculated kNN, which must exist in ``data.obsm``. If `None` use data.X, by default, 'X_umap' # noqa
     """
     if use_rep is None:
         embed_x = data.X if not sp.issparse(data.X) else data.X.toarray()
@@ -44,4 +44,3 @@ def get_neighbors(
     distances, indices = knn.kneighbors()
     data.obsm[indices_key] = indices
     data.obsm[distances_key] = distances
-

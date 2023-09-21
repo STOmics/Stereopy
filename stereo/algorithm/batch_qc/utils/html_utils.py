@@ -6,6 +6,7 @@
 # @Software: PyCharm
 # @Email   : zhangchao5@genomics.cn
 import base64
+
 from lxml import etree
 
 
@@ -69,7 +70,7 @@ def embed_tabel(dataframe, tree, pos, name, is_round=True):
             else:
                 try:
                     td.text = f"{val:.4f}"
-                except:
+                except:  # noqa
                     td.text = f"{val}"
 
     if result is not None:
@@ -122,7 +123,7 @@ def embed_table_imgs(buffer_dict, tree, pos, class_name):
                                                   "padding: 15px;")
             byte_data = buffer_dict[dict_keys[i + j]].getvalue()
             fig_src = f"data:image/png;base64,{base64.b64encode(byte_data).decode('UTF-8')}"
-            img = etree.SubElement(td, "img", src=fig_src, width="568", height="320")
+            img = etree.SubElement(td, "img", src=fig_src, width="568", height="320")  # noqa
             # td.text = f"{dict_keys[i + j]}".title()
     header.addnext(table)
 
@@ -130,5 +131,3 @@ def embed_table_imgs(buffer_dict, tree, pos, class_name):
 def embed_text(tree, pos, name, text):
     header = tree.xpath(f"//{pos}[@class='{name}']")[0]
     header.text = text
-
-

@@ -5,11 +5,11 @@
 # @File    : umap_plot.py
 # @Software: PyCharm
 # @Email   : zhangchao5@genomics.cn
+from io import BytesIO
+
 import matplotlib.pyplot as plt
 import seaborn as sn
-
 from anndata import AnnData
-from io import BytesIO
 
 from ..utils import generate_palette
 
@@ -32,4 +32,3 @@ def umap_plot(merge_data: AnnData, visualize_key: str = "batch"):
     fig_buffer = BytesIO()
     plt.savefig(fig_buffer, format="png", bbox_inches='tight', dpi=300)
     return fig_buffer
-
