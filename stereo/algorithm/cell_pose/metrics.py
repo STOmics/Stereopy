@@ -6,8 +6,8 @@ from numba import jit
 from scipy.ndimage import convolve, mean
 from scipy.optimize import linear_sum_assignment
 
-from . import utils
 from . import dynamics
+from . import utils
 
 
 def mask_ious(masks_true, masks_pred):
@@ -48,14 +48,14 @@ def boundary_scores(masks_true, masks_pred, scales):
 
 
 def aggregated_jaccard_index(masks_true, masks_pred):
-    """ AJI = intersection of all matched masks / union of all masks 
-    
+    """ AJI = intersection of all matched masks / union of all masks
+
     Parameters
     ------------
-    
-    masks_true: list of ND-arrays (int) or ND-array (int) 
+
+    masks_true: list of ND-arrays (int) or ND-array (int)
         where 0=NO masks; 1,2... are mask labels
-    masks_pred: list of ND-arrays (int) or ND-array (int) 
+    masks_pred: list of ND-arrays (int) or ND-array (int)
         ND-array (int) where 0=NO masks; 1,2... are mask labels
 
     Returns
@@ -84,10 +84,10 @@ def average_precision(masks_true, masks_pred, threshold=[0.5, 0.75, 0.9]):
 
     Parameters
     ------------
-    
-    masks_true: list of ND-arrays (int) or ND-array (int) 
+
+    masks_true: list of ND-arrays (int) or ND-array (int)
         where 0=NO masks; 1,2... are mask labels
-    masks_pred: list of ND-arrays (int) or ND-array (int) 
+    masks_pred: list of ND-arrays (int) or ND-array (int)
         ND-array (int) where 0=NO masks; 1,2... are mask labels
 
     Returns
@@ -137,8 +137,8 @@ def average_precision(masks_true, masks_pred, threshold=[0.5, 0.75, 0.9]):
 
 @jit(nopython=True)
 def _label_overlap(x, y):
-    """ fast function to get pixel overlaps between masks in x and y 
-    
+    """ fast function to get pixel overlaps between masks in x and y
+
     Parameters
     ------------
 
@@ -152,9 +152,9 @@ def _label_overlap(x, y):
 
     overlap: ND-array, int
         matrix of pixel overlaps of size [x.max()+1, y.max()+1]
-    
+
     """
-    # put label arrays into standard form then flatten them 
+    # put label arrays into standard form then flatten them
     #     x = (utils.format_labels(x)).ravel()
     #     y = (utils.format_labels(y)).ravel()
     x = x.ravel()
@@ -166,7 +166,7 @@ def _label_overlap(x, y):
     # loop over the labels in x and add to the corresponding
     # overlap entry. If label A in x and label B in y share P
     # pixels, then the resulting overlap is P
-    # len(x)=len(y), the number of pixels in the whole image 
+    # len(x)=len(y), the number of pixels in the whole image
     for i in range(len(x)):
         overlap[x[i], y[i]] += 1
     return overlap
@@ -174,11 +174,11 @@ def _label_overlap(x, y):
 
 def _intersection_over_union(masks_true, masks_pred):
     """ intersection over union of all mask pairs
-    
+
     Parameters
     ------------
-    
-    masks_true: ND-array, int 
+
+    masks_true: ND-array, int
         ground truth masks, where 0=NO masks; 1,2... are mask labels
     masks_pred: ND-array, int
         predicted masks, where 0=NO masks; 1,2... are mask labels
@@ -188,12 +188,12 @@ def _intersection_over_union(masks_true, masks_pred):
 
     iou: ND-array, float
         matrix of IOU pairs of size [x.max()+1, y.max()+1]
-    
+
     ------------
     How it works:
         The overlap matrix is a lookup table of the area of intersection
         between each set of labels (true and predicted). The true labels
-        are taken to be along axis 0, and the predicted labels are taken 
+        are taken to be along axis 0, and the predicted labels are taken
         to be along axis 1. The sum of the overlaps along axis 0 is thus
         an array giving the total overlap of the true labels with each of
         the predicted labels, and likewise the sum over axis 1 is the
@@ -203,7 +203,7 @@ def _intersection_over_union(masks_true, masks_pred):
         column vectors gives a 2D array with the areas of every label pair
         added together. This is equivalent to the union of the label areas
         except for the duplicated overlap area, so the overlap matrix is
-        subtracted to find the union matrix. 
+        subtracted to find the union matrix.
 
     """
     overlap = _label_overlap(masks_true, masks_pred)
@@ -216,7 +216,7 @@ def _intersection_over_union(masks_true, masks_pred):
 
 def _true_positive(iou, th):
     """ true positive at threshold th
-    
+
     Parameters
     ------------
 
@@ -230,7 +230,7 @@ def _true_positive(iou, th):
 
     tp: float
         number of true positives at threshold
-        
+
     ------------
     How it works:
         (1) Find minimum number of masks
@@ -239,11 +239,11 @@ def _true_positive(iou, th):
             gets more negative with higher IoU, but less negative with greater
             n_min (but that's a constant...)
         (3) Solve the linear sum assignment problem. The costs array defines the cost
-            of matching a true label with a predicted label, so the problem is to 
+            of matching a true label with a predicted label, so the problem is to
             find the set of pairings that minimizes this cost. The scipy.optimize
-            function gives the ordered lists of corresponding true and predicted labels. 
+            function gives the ordered lists of corresponding true and predicted labels.
         (4) Extract the IoUs fro these parings and then threshold to get a boolean array
-            whose sum is the number of true positives that is returned. 
+            whose sum is the number of true positives that is returned.
 
     """
     n_min = min(iou.shape[0], iou.shape[1])
@@ -267,11 +267,11 @@ def flow_error(maski, dP_net, use_gpu=False, device=None):
 
     Parameters
     ------------
-    
-    maski: ND-array (int) 
-        masks produced from running dynamics on dP_net, 
+
+    maski: ND-array (int)
+        masks produced from running dynamics on dP_net,
         where 0=NO masks; 1,2... are mask labels
-    dP_net: ND-array (float) 
+    dP_net: ND-array (float)
         ND flows where dP_net.shape[1:] = maski.shape
 
     Returns
@@ -281,7 +281,7 @@ def flow_error(maski, dP_net, use_gpu=False, device=None):
         mean squared error between predicted flows and flows from masks
     dP_masks: ND-array (float)
         ND flows produced from the predicted masks
-    
+
     """
     if dP_net.shape[1:] != maski.shape:
         print('ERROR: net flow is not same size as predicted masks')

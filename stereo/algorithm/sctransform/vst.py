@@ -1,6 +1,6 @@
 import time
-from typing import Optional
 from random import sample
+from typing import Optional
 
 import numba
 import numpy as np
@@ -9,11 +9,18 @@ from joblib import Parallel, delayed
 from patsy.highlevel import dmatrix
 from scipy.sparse import csr_matrix
 
+from stereo.log_manager import logger
 from .bw import bwSJ
 from .ksmooth import ksmooth
-from .utils import make_cell_attr, cpu_count, dds, multi_pearson_residual, is_outlier, fit_poisson, \
+from .utils import (
+    make_cell_attr,
+    cpu_count,
+    dds,
+    multi_pearson_residual,
+    is_outlier,
+    fit_poisson,
     row_gmean_sparse
-from stereo.log_manager import logger
+)
 
 
 def vst(
@@ -97,13 +104,14 @@ def vst(
     # TODO: `do_regularize` and `exclude_poisson` is True have some code to do something
     #    find over-dispersive genes, this is not default, will be finished
     if do_regularize and exclude_poisson:
-        logger.warning(f'finding over-dispersive genes has not finished yet')
+        logger.warning('finding over-dispersive genes has not finished yet')
         raise NotImplementedError
 
     if n_genes and n_genes < len(genes_step1):
         sampling_prob = dds(genes_log_gmean_step1)
         genes_step1 = np.array(
-            pd.DataFrame(genes_step1).sample(n_genes, weights=sampling_prob.T, random_state=np.random.RandomState(seed_use))).T[
+            pd.DataFrame(genes_step1).sample(n_genes, weights=sampling_prob.T,
+                                             random_state=np.random.RandomState(seed_use))).T[
             0]
         genes_step1_bool_list = np.isin(genes, genes_step1)
         if use_geometric_mean:
@@ -277,10 +285,10 @@ def reg_model_pars(
 
     outliers_pd = pd.DataFrame(outliers, dtype=bool, index=model_pars.index.values)
     if np.any(outliers):
-        model_pars = model_pars[outliers != True]
+        model_pars = model_pars[outliers != True]  # noqa
         # TODO tag genes step1
         # genes_step1 = model_pars.index.values
-        genes_log_gmean_step1 = genes_log_gmean_step1[outliers != True]
+        genes_log_gmean_step1 = genes_log_gmean_step1[outliers != True]  # noqa
 
     min_step1, max_step1 = genes_log_gmean_step1.min(), genes_log_gmean_step1.max()
     x_points = np.where(genes_log_gmean > min_step1, genes_log_gmean, min_step1)

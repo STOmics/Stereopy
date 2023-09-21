@@ -2,45 +2,50 @@
 Copright © 2023 Howard Hughes Medical Institute, Authored by Carsen Stringer and Marius Pachitariu.
 """
 
-import os
-import cv2
-import glob
-import shutil
 import datetime
+import glob
+import os
+import shutil
 import warnings
-import tifffile
-
-import numpy as np
-from tqdm import tqdm
 from pathlib import Path
+
+import cv2
+import numpy as np
+import tifffile
 from natsort import natsorted
-from roifile import roiwrite
 from roifile import ImagejRoi
+from roifile import roiwrite
+from tqdm import tqdm
 
 from . import plot
 from . import utils
 from ... import logger as io_logger
 
 try:
-    from PyQt5 import QtGui, QtCore, Qt, QtWidgets
-    from PyQt5.QtWidgets import QMessageBox
+    from PyQt5 import (  # noqa
+        QtGui,
+        QtCore,
+        Qt,
+        QtWidgets
+    )
+    from PyQt5.QtWidgets import QMessageBox  # noqa
 
     GUI = True
-except:
+except Exception:
     GUI = False
 
 try:
     import matplotlib.pyplot as plt
 
     MATPLOTLIB = True
-except:
+except Exception:
     MATPLOTLIB = False
 
 try:
     from google.cloud import storage
 
     SERVER_UPLOAD = True
-except:
+except Exception:
     SERVER_UPLOAD = False
 
 
@@ -68,11 +73,11 @@ def imread(filename):
             ltif = len(tif.pages)
             try:
                 full_shape = tif.shaped_metadata[0]['shape']
-            except:
+            except Exception:
                 try:
                     page = tif.series[0][0]
                     full_shape = tif.series[0].shape
-                except:
+                except Exception:
                     ltif = 0
             if ltif < 10:
                 img = tif.asarray()
@@ -278,12 +283,12 @@ def load_train_test_data(train_dir, test_dir=None, image_filter=None, mask_filte
 
 
 def masks_flows_to_seg(images, masks, flows, diams, file_names, channels=None):
-    """ save output of model eval to be loaded in GUI 
+    """ save output of model eval to be loaded in GUI
 
     can be list output (run on multiple images) or single output (run on single image)
 
     saved to file_names[k]+'_seg.npy'
-    
+
     Parameters
     -------------
 
@@ -293,7 +298,7 @@ def masks_flows_to_seg(images, masks, flows, diams, file_names, channels=None):
     masks: (list of) 2D arrays, int
         masks output from Cellpose.eval, where 0=NO masks; 1,2,...=mask labels
 
-    flows: (list of) list of ND arrays 
+    flows: (list of) list of ND arrays
         flows output from Cellpose.eval
 
     diams: float array
@@ -303,8 +308,8 @@ def masks_flows_to_seg(images, masks, flows, diams, file_names, channels=None):
         names of files of images
 
     channels: list of int (optional, default None)
-        channels used to run Cellpose    
-    
+        channels used to run Cellpose
+
     """
 
     if channels is None:
@@ -370,10 +375,10 @@ def masks_flows_to_seg(images, masks, flows, diams, file_names, channels=None):
 
 
 def save_to_png(images, masks, flows, file_names):
-    """ deprecated (runs io.save_masks with png=True) 
-    
+    """ deprecated (runs io.save_masks with png=True)
+
         does not work for 3D images
-    
+
     """
     save_masks(images, masks, flows, file_names, png=True)
 
@@ -418,7 +423,7 @@ def save_masks(images, masks, flows, file_names, png=True, tif=False, channels=[
     if png and matplotlib installed, full segmentation figure is saved to file_names[k]+'_cp.png'
 
     only tif option works for 3D data, and only tif option works for empty masks
-    
+
     Parameters
     -------------
 
@@ -428,21 +433,21 @@ def save_masks(images, masks, flows, file_names, png=True, tif=False, channels=[
     masks: (list of) 2D arrays, int
         masks output from Cellpose.eval, where 0=NO masks; 1,2,...=mask labels
 
-    flows: (list of) list of ND arrays 
+    flows: (list of) list of ND arrays
         flows output from Cellpose.eval
 
     file_names: (list of) str
         names of files of images
-        
+
     savedir: str
         absolute path where images will be saved. Default is none (saves to image directory)
-    
+
     save_flows, save_outlines, save_ncolor, save_txt: bool
         Can choose which outputs/views to save.
         ncolor is a 4 (or 5, if 4 takes too long) index version of the labels that
         is way easier to visualize than having hundreds of unique colors that may
         be similar and touch. Any color map can be applied to it (0,1,2,3,4,...).
-    
+
     """
 
     if isinstance(masks, list):
@@ -520,7 +525,7 @@ def save_masks(images, masks, flows, file_names, png=True, tif=False, channels=[
         fig.savefig(os.path.join(savedir, basename + '_cp_output' + suffix + '.png'), dpi=300)
         plt.close(fig)
 
-    # ImageJ txt outline files 
+    # ImageJ txt outline files
     if masks.ndim < 3 and save_txt:
         check_dir(txtdir)
         outlines = utils.outlines_list(masks)
@@ -554,7 +559,7 @@ def save_masks(images, masks, flows, file_names, png=True, tif=False, channels=[
 
 def save_server(parent=None, filename=None):
     """ Uploads a *_seg.npy file to the bucket.
-    
+
     Parameters
     ----------------
     parent: PyQt.MainWindow (optional, default None)
@@ -566,7 +571,8 @@ def save_server(parent=None, filename=None):
         q = QMessageBox.question(
             parent,
             "Send to server",
-            "Are you sure? Only send complete and fully manually segmented data.\n (do not send partially automated segmentations)",
+            "Are you sure? Only send complete and fully manually segmented data.\n (do not send partially automated "
+            "segmentations)",
             QMessageBox.Yes | QMessageBox.No
         )
         if q != QMessageBox.Yes:

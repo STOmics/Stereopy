@@ -6,15 +6,16 @@
 @file:common.py
 @time:2023/08/24
 """
-import cv2
-import patchify
-import numpy as np
 from math import ceil
 from typing import Optional
 
+import cv2
+import numpy as np
+import patchify
 from scipy.ndimage import distance_transform_edt
-from stereo.algorithm.cell_pose import utils
+
 from stereo.algorithm.cell_pose import models
+from stereo.algorithm.cell_pose import utils
 from stereo.utils.time_consume import log_consumed_time
 
 
@@ -89,15 +90,15 @@ class Cellpose:
                     if num0 < num0min:
                         num0min = num0
                         outlines = utils.masks_to_outlines(masks)
-                        outlines = (outlines == True).astype(int) * 255
+                        outlines = (outlines == True).astype(int) * 255  # noqa
 
                         try:
                             a_patches[i, j, :, :] = outlines[act_step:(self.photo_step + act_step),
-                                                    act_step:(self.photo_step + act_step)]
+                                                    act_step:(self.photo_step + act_step)]  # noqa
                             output = masks.copy()
-                        except:
+                        except Exception:
                             a_patches[i, j, :, :] = output[act_step:(self.photo_step + act_step),
-                                                    act_step:(self.photo_step + act_step)]
+                                                    act_step:(self.photo_step + act_step)]  # noqa
         patch_nor = patchify.unpatchify(a_patches, ((wid) * (self.photo_step), (high) * (self.photo_step)))
         nor_imgdata = np.array(patch_nor)
         cropped_1 = nor_imgdata[0:gray_image.shape[0], 0:gray_image.shape[1]]
@@ -113,7 +114,7 @@ class Cellpose:
         for y, x in contour_coords:
             mask = distance_transform[y, x] <= contour_thickness
             expanded_image[y - contour_thickness:y + contour_thickness + 1,
-            x - contour_thickness:x + contour_thickness + 1] = mask * 255
+            x - contour_thickness:x + contour_thickness + 1] = mask * 255  # noqa
         contours, _ = cv2.findContours(expanded_image, cv2.RETR_LIST, cv2.CHAIN_APPROX_NONE)
         height, width = process_image.shape
         black_background = np.zeros((height, width), dtype=np.uint8)

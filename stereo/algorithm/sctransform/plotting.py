@@ -1,5 +1,5 @@
-import numpy as np
 import matplotlib.pyplot as plt
+import numpy as np
 
 
 def plot_fit(pysct_results, xaxis="gmean", fig=None):

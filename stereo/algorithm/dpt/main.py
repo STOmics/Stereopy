@@ -2,13 +2,14 @@ from copy import deepcopy
 from typing import Optional, Tuple, Sequence, List
 
 import numpy as np
-import scipy as sp
 import pandas as pd
+import scipy as sp
 from natsort import natsorted
 
 from stereo.algorithm.algorithm_base import AlgorithmBase
+from stereo.algorithm.dpt.struct import Neighbors
+from stereo.algorithm.dpt.struct import OnFlySymMatrix
 from stereo.log_manager import logger
-from stereo.algorithm.dpt.struct import Neighbors, OnFlySymMatrix
 
 
 def _diffmap(stereo_exp_data, n_comps=15, neighbors_key=None, random_state=0):
@@ -110,20 +111,9 @@ class DPTClass(Neighbors):
                     if jseg != iseg:
                         # take the inner tip, the "second tip" of the segment
                         for itip in range(2):
-                            if (
+                            if (self.distances_dpt[segs_tips[jseg][1], segs_tips[iseg][itip]] < 0.5 *
                                     self.distances_dpt[
-                                        segs_tips[jseg][1], segs_tips[iseg][itip]
-                                    ]
-                                    < 0.5
-                                    * self.distances_dpt[
-                                segs_tips[iseg][~itip], segs_tips[iseg][itip]
-                            ]
-                            ):
-                                # logg.debug(
-                                #     '    group', iseg, 'with tip', segs_tips[iseg][itip],
-                                #     'connects with', jseg, 'with tip', segs_tips[jseg][1],
-                                # )
-                                # logg.debug('    do not use the tip for "triangulation"')
+                                        segs_tips[iseg][~itip], segs_tips[iseg][itip]]):
                                 third_maximizer = itip
             # map the global position to the position within the segment
             tips = [np.where(allindices[seg] == tip)[0][0] for tip in segs_tips[iseg]]
@@ -666,7 +656,7 @@ class DPTClass(Neighbors):
         imax = min_length + iimax
         corr_coeff_max = corr_coeff[iimax]
         if corr_coeff_max < 0.3:
-            logg.debug('    is root itself, never obtain significant correlation')
+            logger.debug('is root itself, never obtain significant correlation')
         return imax
 
     def __detect_branching_haghverdi16(
@@ -963,8 +953,8 @@ class DPT(AlgorithmBase):
         Infer progression of cells through geodesic distance along the graph.
 
         Reconstruct the progression of a biological process from snapshot
-        data. Here, we use a further developed version, which is able to deal with disconnected graphs [Wolf19]_ 
-        and can be run in a `hierarchical` mode by setting the parameter `n_branchings>1`. 
+        data. Here, we use a further developed version, which is able to deal with disconnected graphs [Wolf19]_
+        and can be run in a `hierarchical` mode by setting the parameter `n_branchings>1`.
         We recommend, however, to only use :func:`~stereo.tl.dpt` for computing pseudotime (`n_branchings=0`) and
         to detect branchings via :func:`~stereo.tl.paga`. For pseudotime, you need
         to annotate your data with a root cell. For instance::

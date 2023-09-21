@@ -1,22 +1,22 @@
 """
 Copright © 2023 Howard Hughes Medical Institute, Authored by Carsen Stringer and Marius Pachitariu.
 """
-import os
-import cv2
-import time
-import torch
 import datetime
+import os
+import time
+
+import cv2
 import fastremap
-
 import numpy as np
-from torch import nn
-from tqdm import trange, tqdm
+import torch
 from scipy.stats import mode
+from torch import nn
 from torch.utils import mkldnn as mkldnn_utils
+from tqdm import trange, tqdm
 
-from . import utils
 from . import metrics
 from . import resnet_torch
+from . import utils
 from ... import logger as core_logger
 
 TORCH_ENABLED = True
@@ -65,7 +65,7 @@ def _use_gpu_torch(gpu_number=0):
         _ = torch.zeros([1, 2, 3]).to(device)
         core_logger.info('** TORCH CUDA version installed and working. **')
         return True
-    except:
+    except Exception:
         core_logger.info('TORCH CUDA version not installed/working.')
         return False
 
@@ -89,7 +89,7 @@ def assign_device(use_torch=True, gpu=False, device=0):
             gpu = True
             cpu = False
             core_logger.info('>>>> using GPU')
-        except:
+        except Exception:
             cpu = True
             gpu = False
 
@@ -255,7 +255,7 @@ class UnetModel():
                 thresholds = np.load(model_path + '_cell_boundary_threshold.npy')
                 cell_threshold, boundary_threshold = thresholds
                 core_logger.info('>>>> found saved thresholds from validation set')
-            except:
+            except Exception:
                 core_logger.warning('WARNING: no thresholds found, using default / user input')
 
         cell_threshold = 2.0 if cell_threshold is None else cell_threshold
@@ -473,7 +473,7 @@ class UnetModel():
 
         bsize: int (optional, default 224)
             size of tiles to use in pixels [bsize x bsize]
-         
+
         tile_overlap: float (optional, default 0.1)
             fraction of overlap of tiles when computing flows
 
@@ -804,7 +804,7 @@ class UnetModel():
             self.learning_rate_const = mode(learning_rate)[0][0]
         else:
             self.learning_rate_const = learning_rate
-            # set learning rate schedule    
+            # set learning rate schedule
             if SGD:
                 LR = np.linspace(0, self.learning_rate_const, 10)
                 if self.n_epochs > 250:

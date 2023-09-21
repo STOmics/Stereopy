@@ -1,19 +1,25 @@
 from copy import deepcopy
-from typing import Union, List, Optional
-import numpy as np
-from stereo.core.stereo_exp_data import StereoExpData
+from typing import (
+    Union,
+    List,
+    Optional
+)
+
 from stereo.algorithm.ms_algorithm_base import MSDataAlgorithmBase
-from .methods import pairwise_align, center_align
-from .helper import stack_slices_pairwise, stack_slices_center
+from .helper import stack_slices_center
+from .helper import stack_slices_pairwise
+from .methods import center_align
+from .methods import pairwise_align
+
 
 class SpatialAlignment(MSDataAlgorithmBase):
     def main(
-        self,
-        method: str = 'pairwise',
-        initial_slice: Optional[Union[str, int]] = None,
-        slices: Optional[List[Union[str, int]]] = None,
-        *args,
-        **kwargs
+            self,
+            method: str = 'pairwise',
+            initial_slice: Optional[Union[str, int]] = None,
+            slices: Optional[List[Union[str, int]]] = None,
+            *args,
+            **kwargs
     ):
         """
         Calculates and returns optimal alignment of two slices or computes center alignment of slices.
@@ -24,14 +30,14 @@ class SpatialAlignment(MSDataAlgorithmBase):
         """
         if method not in ('pairwise', 'center'):
             raise ValueError(f'Error method({method}), it must be one of pairwise and center')
-        
+
         if method == 'pairwise':
             if slices is None:
                 slices = self.ms_data.data_list
             else:
                 slices = [self.ms_data[s] for s in slices]
             assert len(slices) >= 2, "You should have at least 2 slices on 'pairwise_align' method"
-                
+
             scount = len(slices)
             pi_pairs = []
             for i in range(scount - 1):
@@ -51,5 +57,5 @@ class SpatialAlignment(MSDataAlgorithmBase):
             center_slice, pis = center_align(initial_slice, slices, *args, **kwargs)
             stack_slices_center(center_slice, slices, pis)
             self.ms_data.center_slice = center_slice
-        
+
         return self.ms_data

@@ -1,17 +1,24 @@
 import time
 from collections import defaultdict
 
-import scipy
 import numba
 import numpy as np
 import pandas as pd
+import scipy
+from joblib import (
+    Parallel,
+    delayed,
+    cpu_count
+)
 from tqdm import tqdm
-from joblib import Parallel, delayed, cpu_count
 
-from ...log_manager import logger
+from .utils import (
+    corr_spearman,
+    apply_along_axis
+)
 from ..algorithm_base import AlgorithmBase
-from .utils import corr_spearman, apply_along_axis
 from ...core.stereo_exp_data import StereoExpData
+from ...log_manager import logger
 
 
 class _TestData(object):
@@ -92,11 +99,11 @@ class SingleR(AlgorithmBase):
         self._group_data_frame_checker()
 
         self.ref_exp_data = _TestData(
-            ref_exp_data.exp_matrix if scipy.sparse.issparse(ref_exp_data.exp_matrix) else scipy.sparse.csr_matrix(ref_exp_data.exp_matrix),
+            ref_exp_data.exp_matrix if scipy.sparse.issparse(ref_exp_data.exp_matrix) else scipy.sparse.csr_matrix(
+                ref_exp_data.exp_matrix),
             np.array(range(len(ref_exp_data.cells.cell_name))),
             np.array(range(len(ref_exp_data.genes.gene_name)))
         )
-
 
         self.n_jobs = n_jobs
         self.quantile = quantile

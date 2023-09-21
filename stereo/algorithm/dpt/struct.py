@@ -1,14 +1,25 @@
-import scipy
 import warnings
 from types import MappingProxyType
-from typing import Union, Optional, Callable, Any, Tuple, Mapping
+from typing import (
+    Union,
+    Optional,
+    Callable,
+    Any,
+    Tuple,
+    Mapping
+)
 
 import numpy as np
+import scipy
+from scipy.sparse import (
+    issparse,
+    csr_matrix,
+    coo_matrix
+)
 from sklearn.utils import check_random_state
-from scipy.sparse import issparse, csr_matrix, coo_matrix
 
-from stereo.log_manager import logger
 from stereo.algorithm.dpt.pca import pca
+from stereo.log_manager import logger
 
 
 def choose_representation(adata, use_rep=None, n_pcs=None):
@@ -138,7 +149,6 @@ def neighbors(
     and in later versions it will become a hard dependency.
     """
 
-    start = logger.info('computing neighbors')
     adata = adata.copy() if copy else adata
     if adata.is_view:  # we shouldn't need this here...
         adata._init_as_actual(adata.copy())
@@ -714,7 +724,6 @@ class Neighbors:
         -------
         Makes attributes `.transitions_sym` and `.transitions` available.
         """
-        start = logger.info('computing transitions')
         W = self._connectivities
         # density normalization as of Coifman et al. (2005)
         # ensures that kernel matrix is independent of sampling density

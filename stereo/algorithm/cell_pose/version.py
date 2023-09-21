@@ -3,10 +3,11 @@ Copright © 2023 Howard Hughes Medical Institute, Authored by Carsen Stringer an
 """
 
 import sys
-import torch
-from platform import python_version
-from importlib.metadata import version
 from importlib.metadata import PackageNotFoundError
+from importlib.metadata import version
+from platform import python_version
+
+import torch
 
 try:
     version = version("cellpose")

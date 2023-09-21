@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # coding: utf-8
-
+# flake8: noqa
 try:
     from stereo.algorithm.cell_pose.cell_pose import Cellpose
 except ImportError:

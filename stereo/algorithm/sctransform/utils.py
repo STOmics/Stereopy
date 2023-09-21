@@ -1,12 +1,16 @@
 import numba
 import numpy as np
 import pandas as pd
-
-from joblib import Parallel, delayed, cpu_count
-from patsy.highlevel import dmatrix
-from scipy.special import polygamma, digamma
-from scipy import interpolate
 from KDEpy import FFTKDE
+from joblib import (
+    Parallel,
+    delayed,
+    cpu_count
+)
+from patsy.highlevel import dmatrix
+from scipy import interpolate
+from scipy.special import digamma
+from scipy.special import polygamma
 
 from .bw import bwSJ
 

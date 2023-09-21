@@ -2,19 +2,20 @@
 Copright © 2023 Howard Hughes Medical Institute, Authored by Carsen Stringer and Marius Pachitariu.
 """
 import os
-import time
 import pathlib
+import time
+
 import numpy as np
 from tqdm import trange
 
-from . import utils
-from . import plot
+# from ...constant import MODEL_URL
+from stereo.constant import MODEL_URL
 from . import dynamics
+from . import plot
+from . import utils
 from .core import UnetModel
 from .core import assign_device
 from .core import parse_model_string
-# from ...constant import MODEL_URL
-from stereo.constant import MODEL_URL
 from ... import logger as models_logger
 
 _MODEL_URL = MODEL_URL
@@ -73,7 +74,7 @@ class Cellpose():
         loads the 4 built-in networks and averages them if True, loads one network if False
 
     device: torch device (optional, default None)
-        device used for model running / training 
+        device used for model running / training
         (torch.device('cuda') or torch.device('cpu')), overrides gpu input,
         recommended if you want to use a specific GPU (e.g. torch.device('cuda:1'))
 
@@ -136,7 +137,7 @@ class Cellpose():
             For instance, to segment grayscale images, input [0,0]. To segment images with cells
             in green and nuclei in blue, input [2,3]. To segment one grayscale image and one
             image with cells in green and nuclei in blue, input [[0,0], [2,3]].
-        
+
         channel_axis: int (optional, default None)
             if None, channels dimension is attempted to be automatically determined
 
@@ -174,7 +175,7 @@ class Cellpose():
             run dynamics at original image size (will be slower but create more accurate boundaries)
 
         interp: bool (optional, default True)
-                interpolate during 2D dynamics (not available in 3D) 
+                interpolate during 2D dynamics (not available in 3D)
                 (in previous versions it was False)
 
         flow_threshold: float (optional, default 0.4)
@@ -187,10 +188,10 @@ class Cellpose():
                 minimum number of pixels per mask, can turn off with -1
 
         stitch_threshold: float (optional, default 0.0)
-            if stitch_threshold>0.0 and not do_3D and equal image sizes, masks are stitched in 3D to return volume segmentation
+            if stitch_threshold>0.0 and not do_3D and equal image sizes, masks are stitched in 3D to return volume segmentation # noqa
 
         rescale: float (optional, default None)
-            if diameter is set to None, and rescale is not None, then rescale is used instead of diameter for resizing image
+            if diameter is set to None, and rescale is not None, then rescale is used instead of diameter for resizing image # noqa
 
         progress: pyqt progress bar (optional, default None)
             to return progress bar status to GUI
@@ -207,7 +208,7 @@ class Cellpose():
             flows[k][0] = XY flow in HSV 0-255
             flows[k][1] = XY flows at each pixel
             flows[k][2] = cell probability (if > cellprob_threshold, pixel used for dynamics)
-            flows[k][3] = final pixel locations after Euler integration 
+            flows[k][3] = final pixel locations after Euler integration
 
         styles: list of 1D arrays of length 256, or single 1D array (if do_3D=True)
             style vector summarizing each image, also used to estimate size of objects in image
@@ -281,23 +282,23 @@ class CellposeModel(UnetModel):
 
     gpu: bool (optional, default False)
         whether or not to save model to GPU, will check if GPU available
-        
+
     pretrained_model: str or list of strings (optional, default False)
         full path to pretrained cellpose model(s), if None or False, no model loaded
-        
+
     model_type: str (optional, default None)
-        any model that is available in the GUI, use name in GUI e.g. 'livecell' 
+        any model that is available in the GUI, use name in GUI e.g. 'livecell'
         (can be user-trained or model zoo)
-        
+
     net_avg: bool (optional, default False)
         loads the 4 built-in networks and averages them if True, loads one network if False
-        
+
     diam_mean: float (optional, default 30.)
-        mean 'diameter', 30. is built in value for 'cyto' model; 17. is built in value for 'nuclei' model; 
+        mean 'diameter', 30. is built in value for 'cyto' model; 17. is built in value for 'nuclei' model;
         if saved in custom model file (cellpose>=2.0) then it will be loaded automatically and overwrite this value
-        
+
     device: torch device (optional, default None)
-        device used for model running / training 
+        device used for model running / training
         (torch.device('cuda') or torch.device('cpu')), overrides gpu input,
         recommended if you want to use a specific GPU (e.g. torch.device('cuda:1'))
 
@@ -309,13 +310,13 @@ class CellposeModel(UnetModel):
         use skip connections from style vector to all upsampling layers
 
     concatenation: bool (optional, default False)
-        if True, concatentate downsampling block outputs with upsampling block inputs; 
-        default is to add 
-    
+        if True, concatentate downsampling block outputs with upsampling block inputs;
+        default is to add
+
     nchan: int (optional, default 2)
-        number of channels to use as input to network, default is 2 
+        number of channels to use as input to network, default is 2
         (cyto + nuclei) or (nuclei + zeros)
-    
+
     """
 
     def __init__(self, gpu=False, pretrained_model=False,
@@ -426,7 +427,7 @@ class CellposeModel(UnetModel):
                 invert image pixel intensity before running network
 
             diameter: float (optional, default None)
-                diameter for each image, 
+                diameter for each image,
                 if diameter is None, set to diam_mean or diam_train if available
 
             rescale: float (optional, default None)
@@ -455,13 +456,13 @@ class CellposeModel(UnetModel):
                 run dynamics at original image size (will be slower but create more accurate boundaries)
 
             interp: bool (optional, default True)
-                interpolate during 2D dynamics (not available in 3D) 
+                interpolate during 2D dynamics (not available in 3D)
                 (in previous versions it was False)
 
             flow_threshold: float (optional, default 0.4)
                 flow error threshold (all cells with errors below threshold are kept) (not used for 3D)
 
-            cellprob_threshold: float (optional, default 0.0) 
+            cellprob_threshold: float (optional, default 0.0)
                 all pixels with value above threshold kept for masks, decrease to find more and larger masks
 
             compute_masks: bool (optional, default True)
@@ -476,7 +477,7 @@ class CellposeModel(UnetModel):
 
             progress: pyqt progress bar (optional, default None)
                 to return progress bar status to GUI
-                            
+
             loop_run: bool (optional, default False)
                 internal variable for determining if model has been loaded, stops model loading in loop over images
 
@@ -492,7 +493,7 @@ class CellposeModel(UnetModel):
                 flows[k][0] = XY flow in HSV 0-255
                 flows[k][1] = XY flows at each pixel
                 flows[k][2] = cell probability (if > cellprob_threshold, pixel used for dynamics)
-                flows[k][3] = final pixel locations after Euler integration 
+                flows[k][3] = final pixel locations after Euler integration
 
             styles: list of 1D arrays of length 64, or single 1D array (if do_3D=True)
                 style vector summarizing each image, also used to estimate size of objects in image
@@ -587,14 +588,14 @@ class CellposeModel(UnetModel):
                 augment=False, tile=True, tile_overlap=0.1,
                 cellprob_threshold=0.0,
                 flow_threshold=0.4, min_size=15,
-                interp=True, anisotropy=1.0, do_3D=False, stitch_threshold=0.0,
+                interp=True, anisotropy=1.0, do_3D=False, stitch_threshold=0.0,  # noqa
                 ):
 
         tic = time.time()
         shape = x.shape
         nimg = shape[0]
 
-        bd, tr = None, None
+        bd = None
         if do_3D:
             img = np.asarray(x)
             if normalize or invert:
@@ -703,8 +704,8 @@ class CellposeModel(UnetModel):
               rescale=True, min_train_masks=5,
               model_name=None):
 
-        """ train network with images train_data 
-        
+        """ train network with images train_data
+
             Parameters
             ------------------
 
@@ -722,9 +723,9 @@ class CellposeModel(UnetModel):
                 images for testing
 
             test_labels: list of arrays (2D or 3D)
-                labels for test_data, where 0=no masks; 1,2,...=mask labels; 
+                labels for test_data, where 0=no masks; 1,2,...=mask labels;
                 can include flows as additional images
-        
+
             test_files: list of strings
                 file names for images in test_data (to save flows for future runs)
 
@@ -748,7 +749,7 @@ class CellposeModel(UnetModel):
 
             weight_decay: float (default, 0.00001)
 
-            SGD: bool (default, True) 
+            SGD: bool (default, True)
                 use SGD as optimization instead of RAdam
 
             batch_size: int (optional, default 8)
@@ -756,11 +757,11 @@ class CellposeModel(UnetModel):
                 (can make smaller or bigger depending on GPU memory usage)
 
             nimg_per_epoch: int (optional, default None)
-                minimum number of images to train on per epoch, 
+                minimum number of images to train on per epoch,
                 with a small training set (< 8 images) it may help to set to 8
 
             rescale: bool (default, True)
-                whether or not to rescale images to diam_mean during training, 
+                whether or not to rescale images to diam_mean during training,
                 if True it assumes you will fit a size model after training or resize your images accordingly,
                 if False it will try to train the model to be scale-invariant (works worse)
 
@@ -816,13 +817,13 @@ class SizeModel():
             model from which to get styles
 
         device: torch device (optional, default None)
-            device used for model running / training 
+            device used for model running / training
             (torch.device('cuda') or torch.device('cpu')), overrides gpu input,
             recommended if you want to use a specific GPU (e.g. torch.device('cuda:1'))
 
         pretrained_size: str
             path to pretrained size model
-            
+
     """
 
     def __init__(self, cp_model, device=None, pretrained_size=None, **kwargs):
@@ -958,11 +959,11 @@ class SizeModel():
         return diam, diam_style
 
     def _size_estimation(self, style):
-        """ linear regression from style to size 
-        
-            sizes were estimated using "diameters" from square estimates not circles; 
+        """ linear regression from style to size
+
+            sizes were estimated using "diameters" from square estimates not circles;
             therefore a conversion factor is included (to be removed)
-        
+
         """
         szest = np.exp(self.params['A'] @ (style - self.params['smean']).T +
                        np.log(self.diam_mean) + self.params['ymean'])
@@ -975,7 +976,7 @@ class SizeModel():
               l2_regularization=1.0, batch_size=8,
               ):
         """ train size model with images train_data to estimate linear model from styles to diameters
-        
+
             Parameters
             ------------------
 
@@ -993,7 +994,7 @@ class SizeModel():
                 normalize data so 0.0=1st percentile and 1.0=99th percentile of image intensities in each channel
 
             n_epochs: int (default, 10)
-                how many times to go through whole training set (taking random patches) for styles for diameter estimation
+                how many times to go through whole training set (taking random patches) for styles for diameter estimation # noqa
 
             l2_regularization: float (default, 1.0)
                 regularize linear model from styles to diameters

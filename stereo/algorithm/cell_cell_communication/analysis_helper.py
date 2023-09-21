@@ -7,15 +7,16 @@
 
 
 import os
+import warnings
+from typing import Optional
+
 import numpy as np
 import pandas as pd
 from fbpca import pca
 from geosketch import gs
-from typing import Optional
 
 from stereo.log_manager import logger
 
-import warnings
 warnings.simplefilter("ignore", FutureWarning)
 
 
@@ -42,7 +43,7 @@ class Subsampler(object):
                     pca_input = np.log1p(counts_t)  # natural log, ln(x+1）
                 else:
                     pca_input = counts_t
-            
+
                 u, s, vt = pca(pca_input.values, k=self.num_pc)
                 x_dimred = u[:, :self.num_pc] * s[:self.num_pc]
             else:
@@ -59,7 +60,8 @@ class Subsampler(object):
         return x_matrix.T
 
 
-def write_to_file(df: pd.DataFrame, filename: str, output_path: str, output_format: Optional[str] = None, index: bool =False):
+def write_to_file(df: pd.DataFrame, filename: str, output_path: str, output_format: Optional[str] = None,
+                  index: bool = False):
     _, file_extension = os.path.splitext(filename)
 
     if output_format is None:

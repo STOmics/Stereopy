@@ -1,9 +1,14 @@
-from typing import Optional, Union
-from anndata import AnnData
+from typing import Optional
+from typing import Union
+
 import numpy as np
-from scipy.sparse import issparse, spmatrix
-from scipy.sparse.linalg import LinearOperator, svds
-from sklearn.utils import check_array, check_random_state
+from anndata import AnnData
+from scipy.sparse import issparse
+from scipy.sparse import spmatrix
+from scipy.sparse.linalg import LinearOperator
+from scipy.sparse.linalg import svds
+from sklearn.utils import check_array
+from sklearn.utils import check_random_state
 from sklearn.utils.extmath import svd_flip
 
 from stereo.log_manager import logger
@@ -11,17 +16,17 @@ from stereo.utils.hvg_utils import get_mean_var
 
 
 def pca(
-    data: Union[AnnData, np.ndarray, spmatrix],
-    n_comps: Optional[int] = None,
-    zero_center: Optional[bool] = True,
-    svd_solver: str = 'arpack',
-    random_state = 0,
-    return_info: bool = False,
-    use_highly_variable: Optional[bool] = None,
-    dtype: str = 'float32',
-    copy: bool = False,
-    chunked: bool = False,
-    chunk_size: Optional[int] = None,
+        data: Union[AnnData, np.ndarray, spmatrix],
+        n_comps: Optional[int] = None,
+        zero_center: Optional[bool] = True,
+        svd_solver: str = 'arpack',
+        random_state=0,
+        return_info: bool = False,
+        use_highly_variable: Optional[bool] = None,
+        dtype: str = 'float32',
+        copy: bool = False,
+        chunked: bool = False,
+        chunk_size: Optional[int] = None,
 ) -> Union[AnnData, np.ndarray, spmatrix]:
     """\
     Principal component analysis [Pedregosa11]_.
@@ -315,4 +320,3 @@ def _pca_with_sparse(X, npcs, solver='arpack', mu=None, random_state=None):
         'components': v,
     }
     return output
-
