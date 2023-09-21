@@ -1,10 +1,10 @@
 import copy
 
+import cv2
 import numpy as np
+from PIL import Image
 from skimage.exposure import equalize_adapthist
 from skimage.exposure import rescale_intensity
-from PIL import Image
-import cv2
 
 
 def f_rgb2gray(img, need_not=False):
@@ -272,4 +272,3 @@ def f_ij_auto_contrast(img):
         img[img > hmax] = hmax
         cv2.normalize(img, img, 0, bit_max - 1, cv2.NORM_MINMAX)
     return img
-

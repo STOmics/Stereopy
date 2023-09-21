@@ -1,14 +1,19 @@
-import numpy as np
-import cv2
-import slideio
 import os
+
+import cv2
+import numpy as np
+import slideio
 import tifffile
-from skimage import transform
 from scipy import signal
+from skimage import transform
 from skimage.feature import peak_local_max
 from skimage.measure import label
 from skimage.morphology import remove_small_objects
-from skimage.segmentation import watershed, find_boundaries, relabel_sequential
+from skimage.segmentation import (
+    watershed,
+    find_boundaries,
+    relabel_sequential
+)
 
 
 def resize(data, shape, data_format='channels_last', labeled_image=False):
@@ -63,7 +68,7 @@ def resize(data, shape, data_format='channels_last', labeled_image=False):
         order = 0 if labeled_image else 1
         anti_aliasing = not labeled_image
 
-        _resize = lambda d: transform.resize(d, shape, mode='constant', preserve_range=True,
+        _resize = lambda d: transform.resize(d, shape, mode='constant', preserve_range=True,  # noqa
                                              order=order, anti_aliasing=anti_aliasing)
     # single channel image, resize with cv2
     else:
@@ -77,7 +82,7 @@ def resize(data, shape, data_format='channels_last', labeled_image=False):
             interpolation = cv2.INTER_LINEAR
             data = data.astype('float32')
 
-        _resize = lambda d: np.expand_dims(cv2.resize(np.squeeze(d), shape,
+        _resize = lambda d: np.expand_dims(cv2.resize(np.squeeze(d), shape,  # noqa
                                                       interpolation=interpolation),
                                            axis=channel_axis)
 
@@ -229,8 +234,8 @@ def tile_image(image, model_input_shape=(512, 512),
     tile_size_x = model_input_shape[0]
     tile_size_y = model_input_shape[1]
 
-    ceil = lambda x: int(np.ceil(x))
-    round_to_even = lambda x: int(np.ceil(x / 2.0) * 2)
+    ceil = lambda x: int(np.ceil(x))  # noqa
+    round_to_even = lambda x: int(np.ceil(x / 2.0) * 2)  # noqa
 
     stride_x = min(round_to_even(stride_ratio * tile_size_x), tile_size_x)
     stride_y = min(round_to_even(stride_ratio * tile_size_y), tile_size_y)
@@ -384,7 +389,6 @@ def window_2D(window_size, overlap_x=(32, 32), overlap_y=(32, 32), power=2):
     return window
 
 
-
 def untile_image(tiles, tiles_info, power=2, **kwargs):
     """Untile a set of tiled images back to the original model shape.
 
@@ -450,7 +454,7 @@ def view_bar(message, id, total, end=''):
     rate = id / total
     rate_num = int(rate * 40)
     print('\r%s:[%s%s]%d%%\t%d/%d' % (message, ">" * rate_num,
-                                    "=" * (40 - rate_num), np.round(rate * 100), id, total,), end=end)
+                                      "=" * (40 - rate_num), np.round(rate * 100), id, total,), end=end)
 
 
 def split(image, cut_size, overlap=100):
@@ -467,15 +471,14 @@ def split(image, cut_size, overlap=100):
             x_end = min(x_begin + cut_size, shapes[0])
             y_end = min(y_begin + cut_size, shapes[1])
             i = image[x_begin: x_end, y_begin: y_end]
-            # tifffile.imsave(os.path.join(outpath, file + '_' + str(shapes[0]) + '_' + str(shapes[1]) + '_' + str(x_begin) + '_' + str(y_begin) + '.tif'), i)  #, r'white_5000'r'20210326_other_crop'
+            # tifffile.imsave(os.path.join(outpath, file + '_' + str(shapes[0]) + '_' + str(shapes[1]) + '_' + str(x_begin) + '_' + str(y_begin) + '.tif'), i)  #, r'white_5000'r'20210326_other_crop' # noqa
             x_list.append(x_begin)
             y_list.append(y_begin)
             img_list.append(i)
     return img_list, x_list, y_list
 
 
-def merge(label_list, x_list, y_list, shapes,  overlap = 100):
-
+def merge(label_list, x_list, y_list, shapes, overlap=100):
     if len(label_list) == 1:
         return label_list[0]
 
@@ -491,9 +494,8 @@ def merge(label_list, x_list, y_list, shapes,  overlap = 100):
         if overlap == 0:
             image[int(x_begin): int(x_begin) + h - overlap, int(y_begin): int(y_begin) + w - overlap] = temp_img
         else:
-            image[int(x_begin): int(x_begin) + h - overlap, int(y_begin): int(y_begin) + w - overlap] = temp_img[
-                                                                                                        overlap // 2: - overlap // 2,
-                                                                                                        overlap // 2: - overlap // 2]
+            temp_data = temp_img[overlap // 2: - overlap // 2, overlap // 2: - overlap // 2]
+            image[int(x_begin): int(x_begin) + h - overlap, int(y_begin): int(y_begin) + w - overlap] = temp_data
     return image
 
 
@@ -547,7 +549,7 @@ def outline(image):
 
 def hole_fill(binary_image):
     ''' 孔洞填充 '''
-    hole = binary_image.copy()  ## 空洞填充
+    hole = binary_image.copy()  # 空洞填充
     hole = cv2.copyMakeBorder(hole, 1, 1, 1, 1, cv2.BORDER_CONSTANT, value=[0])  # 首先将图像边缘进行扩充，防止空洞填充不完全
     hole2 = hole.copy()
     cv2.floodFill(hole, None, (0, 0), 255)  # 找到洞孔
@@ -557,7 +559,6 @@ def hole_fill(binary_image):
 
 
 def transfer_16bit_to_8bit(image_16bit):
-
     min_16bit = np.min(image_16bit)
     max_16bit = np.max(image_16bit)
 

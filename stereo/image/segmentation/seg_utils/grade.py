@@ -1,10 +1,14 @@
-import numpy as np
-import os
-from scipy import ndimage
-from .find_maxima import find_maxima
-from skimage import measure, segmentation
 import multiprocessing as mp
+import os
 import warnings
+
+import numpy as np
+from scipy import ndimage
+from skimage import measure
+from skimage import segmentation
+
+from .find_maxima import find_maxima
+
 warnings.filterwarnings('ignore')
 
 
@@ -28,8 +32,6 @@ def grade_stat(props, output_path):
 def score_cell(obj):
     AREA_THRE = 150
     INTENSITY_THRE = 150
-    SHAPE_THRE = 0.6
-    CONVEX_THRE = 0.8
 
     area = obj['area']
     convex_area = obj['convex_area']
@@ -56,7 +58,6 @@ def score_cell(obj):
 
 # score and watershed
 def water_score(input_list):
-
     mask, image = input_list
     label = measure.label(mask, connectivity=2)
     props = measure.regionprops(label, intensity_image=image)
@@ -65,7 +66,7 @@ def water_score(input_list):
     color_mask_ori = np.zeros(shapes)
     score_list = []
     for idx, obj in enumerate(props):
-        intensity_image = obj['intensity_image'] # white image
+        intensity_image = obj['intensity_image']  # white image
         bbox = obj['bbox']
         center = obj['centroid']
         count, xpts, ypts = find_maxima(intensity_image)

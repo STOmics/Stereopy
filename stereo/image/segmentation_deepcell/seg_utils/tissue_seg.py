@@ -1,14 +1,14 @@
-import cv2
-import numpy as np
-from skimage import measure
-from PIL import Image
 import multiprocessing as mp
 
-from . import utils as utils  #
+import cv2
+import numpy as np
+from PIL import Image
+from skimage import measure
+
+from . import utils as utils
 
 
 def down_sample(img, scale=5):
-
     shape = img.shape
     ori_image = Image.fromarray(img)
     image_thumb = ori_image.resize((shape[1] // scale, shape[0] // scale), Image.NEAREST)
@@ -17,7 +17,6 @@ def down_sample(img, scale=5):
 
 
 def up_sample(image, ori_shape):
-
     mask_thumb = Image.fromarray(image)
     marker = mask_thumb.resize((ori_shape[1], ori_shape[0]), Image.NEAREST)
     marker = np.array(marker).astype(np.uint8)
@@ -26,7 +25,7 @@ def up_sample(image, ori_shape):
 
 def hole_fill(binary_image):
     ''' 孔洞填充 '''
-    hole = binary_image.copy()  ## 空洞填充
+    hole = binary_image.copy()  # 空洞填充
     hole = cv2.copyMakeBorder(hole, 1, 1, 1, 1, cv2.BORDER_CONSTANT, value=[0])  # 首先将图像边缘进行扩充，防止空洞填充不完全
     hole2 = hole.copy()
     cv2.floodFill(hole, None, (0, 0), 255)  # 找到洞孔
@@ -40,7 +39,6 @@ def getArea(elem):
 
 
 def tissueSeg(ori_image_list):
-
     if not isinstance(ori_image_list, list):
         ori_image_list = [ori_image_list]
 
@@ -72,7 +70,6 @@ def tissueSeg(ori_image_list):
             prop = props[i]
             result += np.where(label_image != prop.label, 0, 1).astype(np.uint8)
 
-
         result = hole_fill(result)
         result_thumb = cv2.dilate(result, kernel, iterations=10)
 
@@ -92,7 +89,6 @@ def tissue_seg_multi(input_list, processes):
     with mp.Pool(processes=processes) as p:
         pre_tissue = p.map(tissueSeg, input_list)
     return pre_tissue
-
 
 # if __name__=='__main__':
 #     import tifffile

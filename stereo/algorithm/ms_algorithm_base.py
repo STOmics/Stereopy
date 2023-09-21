@@ -13,7 +13,7 @@ class MSDataAlgorithmBase(AlgorithmBase):
     def get_attribute_helper(item, ms_data: MSData, res: dict):
         try:
             __import__(f"stereo.algorithm.{item}")
-        except:
+        except Exception:
             # raise AttributeError(f"No attribute named 'StPipeline.{item}'")
             return None
 

@@ -1,15 +1,16 @@
-import cv2
-from . import utils as utils
-from skimage import measure
-import numpy as np
-from PIL import Image
 import multiprocessing as mp
 
+import cv2
+import numpy as np
+from PIL import Image
+from skimage import measure
+
+from . import utils as utils
 
 
 class TissueSegPipe(object):
 
-    def __init__(self, image, scale = 5):
+    def __init__(self, image, scale=5):
         self.image = image
         self.scale = scale
         self.img_thumb = []
@@ -17,13 +18,11 @@ class TissueSegPipe(object):
         self.mask_thumb = []
         pass
 
-
     def down_sample(self):
         ori_image = Image.fromarray(self.image.__img)
         shape = self.image.__shape
         image_thumb = ori_image.resize((shape[1] // self.scale, shape[0] // self.scale), Image.NEAREST)
         self.img_thumb = np.array(image_thumb).astype(np.uint8)
-
 
     def up_sample(self, image):
         mask_thumb = Image.fromarray(image)
@@ -32,7 +31,6 @@ class TissueSegPipe(object):
         marker = np.array(marker).astype(np.uint8)
         self.mask = marker
         return marker
-
 
     def tissueSeg(self):
 
@@ -72,15 +70,7 @@ class TissueSegPipe(object):
         return marker, np.uint8(result_thumb > 0)
 
 
-
-
-
-
-
 def tissue_seg_multi(self, input_list, processes):
     with mp.Pool(processes=processes) as p:
         pre_tissue = p.map(self.tissueSeg, input_list)
     return pre_tissue
-
-
-

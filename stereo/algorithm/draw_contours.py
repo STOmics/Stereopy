@@ -1,12 +1,15 @@
 import os
 import random
-import pandas as pd
-import numpy as np
+
 import cv2
+import numpy as np
+import pandas as pd
 # from tqdm import tqdm
 from skimage import measure
-from stereo.utils.time_consume import log_consumed_time
+
 from stereo.log_manager import logger
+from stereo.utils.time_consume import log_consumed_time
+
 
 class DrawContours:
 
@@ -57,7 +60,7 @@ class DrawContours:
             centroid = self.get_centroid(cell_point)
             centroids[label] = centroid
             ct_label[tuple(centroid)] = label
-        
+
         _, thres = cv2.threshold(canvas, 120, 255, cv2.THRESH_BINARY)
         h, w = canvas.shape[:2]
         mask = np.zeros((h + 2, w + 2), np.uint8)
@@ -119,7 +122,8 @@ class DrawContours:
         for i, p in enumerate(props):
             cell = p['image'].astype(np.uint8)
 
-            if cell.shape == (1, 1): continue
+            if cell.shape == (1, 1):
+                continue
 
             bbox_p = p['bbox']
             center = ct_np[np.where((ct_np[:, 0] > bbox_p[1]) & (ct_np[:, 0] < bbox_p[3]))]
@@ -131,7 +135,7 @@ class DrawContours:
                 center_pt = tuple(center[0].tolist())
             else:
                 mid_pt = np.asarray([(bbox_p[1] + bbox_p[3]) // 2, (bbox_p[0] + bbox_p[2]) // 2])
-                dis = np.sqrt(np.sum((center - mid_pt)**2, axis=1))
+                dis = np.sqrt(np.sum((center - mid_pt) ** 2, axis=1))
                 center_pt = tuple(center[np.argmin(dis)].tolist())
 
             label = int(ct_label[center_pt])

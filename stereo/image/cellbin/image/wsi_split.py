@@ -1,7 +1,7 @@
 from math import ceil
 
-from tqdm import tqdm
 import numpy as np
+from tqdm import tqdm
 
 
 class SplitWSI(object):
@@ -128,7 +128,7 @@ class SplitWSI(object):
         return
 
     def _f_run(self):
-        #for i in range(0, len(self._box_lst), self._batch_size):
+        # for i in range(0, len(self._box_lst), self._batch_size):
         for i in tqdm(range(0, len(self._box_lst), self._batch_size)):
             batch_box = self._box_lst[i:min(i + self._batch_size, len(self._box_lst))]
             batch_input = self._f_get_batch_input(batch_box)

@@ -1,10 +1,12 @@
-import numpy as np
-import tifffile
-import cv2
-from os.path import join, splitext, split
-import seg_utils.utils as utils
-from stereo.log_manager import logger
+from os.path import split
+from os.path import splitext
 
+import cv2
+import numpy as np
+import seg_utils.utils as utils
+import tifffile
+
+from stereo.log_manager import logger
 
 SPLIT_SIZE = 20000
 
@@ -31,7 +33,6 @@ class Image(object):
         self.cell_mask_water = []
         self.score_mask = []
 
-
     def __imload(self, path):
 
         assert self.__suffix in ['.tif', '.png', '.jpg']
@@ -41,17 +42,15 @@ class Image(object):
             img = cv2.imread(path, -1)
         return img
 
-
     def __convert_gray(self):
 
         if len(self.__img.shape) == 3:
-            logger.info('Image %s convert to gray!'%self.__file)
+            logger.info('Image %s convert to gray!' % self.__file)
             self.__img = self.__img[:, :, 0]
-
 
     def __trans16to8(self):
 
         assert self.__dtype in ['uint16', 'uint8']
         if self.__dtype != 'uint8':
-            logger.info('%s transfer to 8bit'%self.__file)
+            logger.info('%s transfer to 8bit' % self.__file)
             self.__img = utils.transfer_16bit_to_8bit(self.__img)

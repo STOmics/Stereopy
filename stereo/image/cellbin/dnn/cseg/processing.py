@@ -1,10 +1,15 @@
 import cv2
 import numpy as np
 
-from ...image.augmentation import f_ij_16_to_8, f_rgb2gray
-from ...image.mask import f_instance2semantics
-from ...image.augmentation import f_percentile_threshold, f_histogram_normalization, f_equalize_adapthist
+from ...image.augmentation import f_ij_16_to_8
 from ...image.augmentation import f_padding as f_pad
+from ...image.augmentation import (
+    f_percentile_threshold,
+    f_histogram_normalization,
+    f_equalize_adapthist
+)
+from ...image.augmentation import f_rgb2gray
+from ...image.mask import f_instance2semantics
 from ...image.morphology import f_deep_watershed
 
 

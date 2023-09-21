@@ -6,15 +6,16 @@
 
 import numpy as np
 from scipy.sparse import issparse
-from scipy.sparse.linalg import LinearOperator, svds
+from scipy.sparse.linalg import LinearOperator
+from scipy.sparse.linalg import svds
+from sklearn.decomposition import FactorAnalysis
+from sklearn.decomposition import PCA
+from sklearn.manifold import TSNE
 from sklearn.utils import check_array, check_random_state
 from sklearn.utils.extmath import svd_flip
-from sklearn.decomposition import FactorAnalysis
-from sklearn.manifold import TSNE
-from sklearn.decomposition import PCA
 
-from .scale import _get_mean_var
 from stereo.log_manager import logger
+from .scale import _get_mean_var
 
 
 def low_variance(x, threshold=0.01):
@@ -88,8 +89,10 @@ def pca(x, n_pcs, svd_solver='auto', random_state=0):
         # pca_.components_ = output['components']
         # pca_.explained_variance_ = output['variance']
         # pca_.explained_variance_ratio_ = output['variance_ratio']
-        # return dict([('x_pca', output['X_pca']), ('variance', output['variance']), ('variance_ratio', output['variance_ratio']), ('pcs', pca_.components_.T)])
-        return dict([('x_pca', output['X_pca']), ('variance', output['variance']), ('variance_ratio', output['variance_ratio']), ('pcs', output['components'].T)])
+        # return dict([('x_pca', output['X_pca']), ('variance', output['variance']), ('variance_ratio', output['variance_ratio']), ('pcs', pca_.components_.T)]) # noqa
+        return dict(
+            [('x_pca', output['X_pca']), ('variance', output['variance']), ('variance_ratio', output['variance_ratio']),
+             ('pcs', output['components'].T)])
     else:
         pca_obj = PCA(n_components=n_pcs, svd_solver=svd_solver, random_state=random_state)
         x_pca = pca_obj.fit_transform(x)
@@ -156,6 +159,7 @@ def _pca_with_sparse(X, n_pcs, solver='arpack', mu=None, random_state=None):
         'components': v,
     }
     return output
+
 
 def t_sne(x, n_pcs, n_iter=200):
     """

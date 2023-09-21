@@ -1,19 +1,21 @@
 # import image
 import os
 import time
-from skimage import measure
-from os.path import join, splitext, exists, split
-import tifffile
+from os.path import (
+    join,
+    splitext,
+    exists,
+    split
+)
+
 import cv2
 import numpy as np
-
+import seg_utils.cell_infer as cell_infer
 import seg_utils.grade as grade
 import seg_utils.utils as utils
-from multiprocessing import Process
-from multiprocessing import Queue
-import matplotlib.pyplot as plt
-from . import tissue_seg
-import seg_utils.cell_infer as cell_infer
+import tifffile
+from skimage import measure
+
 from stereo.image.tissue_cut import SingleStrandDNATissueCut, DEEP, INTENSITY
 from stereo.log_manager import logger
 
@@ -31,7 +33,7 @@ class CellSegPipe(object):
             tissue_seg_model_path='',
             tissue_seg_method=DEEP,
             post_processing_workers=10
-        ):
+    ):
         self.deep_crop_size = DEEP_CROP_SIZE
         self.overlap = OVERLAP
         self.model_path = model_path
@@ -104,7 +106,7 @@ class CellSegPipe(object):
             if img.dtype != 'uint8':
                 logger.info('%s transfer to 8bit' % self.__file[idx])
                 self.img_list[idx] = utils.transfer_16bit_to_8bit(img)
-    
+
     # def __get_tissue_mask(self):
 
     #     process = len(self.img_list) if self.__is_list else 1
@@ -170,14 +172,13 @@ class CellSegPipe(object):
             self.tissue_num.append(len(filtered_props))
             self.tissue_bbox.append([p['bbox'] for p in filtered_props])
 
-
     def tissue_cell_infer(self, q=None):
         # import seg_utils.cell_infer as cell_infer
 
         """cell segmentation in tissue area by neural network"""
         tissue_cell_label = []
         # for idx, img in enumerate(self.img_list):
-            # tissue_bbox = self.tissue_bbox[idx]
+        # tissue_bbox = self.tissue_bbox[idx]
         for img, tissue_bbox in zip(self.img_filter, self.tissue_bbox):
             tissue_img = [img[p[0]: p[2], p[1]: p[3]] for p in tissue_bbox]
             label_list = cell_infer.cellInfer(self.model_path, tissue_img, self.deep_crop_size, self.overlap)
@@ -185,7 +186,7 @@ class CellSegPipe(object):
         if q is not None:
             q.put(tissue_cell_label)
         return tissue_cell_label
-    
+
     def tissue_label_filter(self, tissue_cell_label):
 
         """filter cell mask in tissue area"""
@@ -195,7 +196,11 @@ class CellSegPipe(object):
             label_filter_list = []
             for i in range(self.tissue_num[idx]):
                 tissue_bbox_temp = tissue_bbox[i]
-                label_filter = np.multiply(label[i], self.tissue_mask[idx][tissue_bbox_temp[0]: tissue_bbox_temp[2], tissue_bbox_temp[1]: tissue_bbox_temp[3]]).astype(np.uint8)
+                label_filter = np.multiply(
+                    label[i],
+                    self.tissue_mask[idx][tissue_bbox_temp[0]: tissue_bbox_temp[2],
+                    tissue_bbox_temp[1]: tissue_bbox_temp[3]]  # noqa
+                ).astype(np.uint8)
                 label_filter_list.append(label_filter)
             tissue_cell_label_filter.append(label_filter_list)
         return tissue_cell_label_filter
@@ -209,17 +214,18 @@ class CellSegPipe(object):
             cell_mask = np.zeros((self.img_list[idx].shape), dtype=np.uint8)
             for i in range(self.tissue_num[idx]):
                 tissue_bbox_temp = tissue_bbox[i]
-                cell_mask[tissue_bbox_temp[0]: tissue_bbox_temp[2], tissue_bbox_temp[1]: tissue_bbox_temp[3]] = label_list[i]
+                cell_mask[tissue_bbox_temp[0]: tissue_bbox_temp[2], tissue_bbox_temp[1]: tissue_bbox_temp[3]] = \
+                    label_list[i]
             cell_masks.append(cell_mask)
         return cell_masks
-
 
     def watershed_score(self, cell_mask):
 
         """watershed and score on cell mask by neural network"""
         for idx, cell_mask in enumerate(cell_mask):
             cell_mask = np.squeeze(cell_mask)
-            cell_mask_tile, x_list, y_list, mask_width_add, mask_height_add = utils.split(cell_mask, self.deep_crop_size)
+            cell_mask_tile, x_list, y_list, mask_width_add, mask_height_add = utils.split(cell_mask,
+                                                                                          self.deep_crop_size)
             img_tile, _, _, _, _ = utils.split(self.img_list[idx], self.deep_crop_size)
             input_list = [[cell_mask_tile[id], img] for id, img in enumerate(img_tile)]
             if self.__is_water:
@@ -229,8 +235,10 @@ class CellSegPipe(object):
 
             post_mask_tile = [label[0] for label in post_list_tile]
             score_mask_tile = [label[1] for label in post_list_tile]  # grade saved
-            post_mask = utils.merge(post_mask_tile, x_list, y_list, cell_mask.shape, width_add=mask_width_add, height_add=mask_height_add)
-            score_mask = utils.merge(score_mask_tile, x_list, y_list, cell_mask.shape, width_add=mask_width_add, height_add=mask_height_add)
+            post_mask = utils.merge(post_mask_tile, x_list, y_list, cell_mask.shape, width_add=mask_width_add,
+                                    height_add=mask_height_add)
+            score_mask = utils.merge(score_mask_tile, x_list, y_list, cell_mask.shape, width_add=mask_width_add,
+                                     height_add=mask_height_add)
             self.post_mask_list.append(post_mask)
             self.score_mask_list.append(score_mask)
 
@@ -239,9 +247,10 @@ class CellSegPipe(object):
             tifffile.imsave(join(self.__out_path, self.__file_name[idx] + r'_tissue_cut.tif'), tissue_thumb)
 
     def __mkdir_subpkg(self):
-
-        """make new dir while image is large"""
-        assert self.__is_list == False
+        """
+        make new dir while image is large
+        """
+        assert self.__is_list == False  # noqa
         file = self.__file[0]
         file_name = splitext(file)[0]
 
@@ -323,7 +332,7 @@ class CellSegPipe(object):
         tissue_cell_label_filter = self.tissue_label_filter(tissue_cell_label)
         cell_mask = self.__mosaic(tissue_cell_label_filter)
 
-        ###post process###
+        # post process
         self.watershed_score(cell_mask)
         # self.watershed_score(tissue_cell_label)
         t5 = time.time()

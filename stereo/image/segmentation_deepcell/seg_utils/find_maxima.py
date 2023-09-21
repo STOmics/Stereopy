@@ -1,6 +1,7 @@
-from scipy import ndimage
 import time
+
 import numpy as np
+from scipy import ndimage
 
 
 def isWithin(x, y, direction, width, height):
@@ -76,7 +77,6 @@ def find_local_maxima_np(img_data):
 
 def find_maxima(img, ntol=20):
     # Start of script
-    t1 = time.time()
     img_data = np.array(img)
 
     # Should your image be an RGB image.
@@ -113,13 +113,11 @@ def find_maxima(img, ntol=20):
 
     # At each stage we classify our pixels. We use 2n as we can use more than one definition
     # together.
-    MAXIMUM = 1
     LISTED = 2
     PROCESSED = 4
     MAX_AREA = 8
     EQUAL = 16
     MAX_POINT = 32
-    ELIMINATED = 64
 
     maxSortingError = 0
     time_array = []
@@ -133,7 +131,7 @@ def find_maxima(img, ntol=20):
             continue
 
         sortingError = True
-        while sortingError == True:
+        while sortingError:
 
             # Our initial pixel
             pListx[0] = x0
@@ -215,7 +213,7 @@ def find_maxima(img, ntol=20):
             # for listI in range(0,Listlen):
             #   types[pListy[0:listlen],pListx[0:listlen]] =0
             # else:
-            if maxPossible == True:
+            if maxPossible:
                 resetMask = ~(LISTED)
             else:
                 resetMask = ~(LISTED | EQUAL)
@@ -223,8 +221,6 @@ def find_maxima(img, ntol=20):
             # Now we calculate the x and y-coordinates, if there were any equal.
             xEqual /= nEqual
             yEqual /= nEqual
-            minDist2 = 1e20
-            nearestI = 0
 
             # This makes sure it has same output as the fiji plugin. Not strictly needed.
             xEqual = round(xEqual)
@@ -252,8 +248,6 @@ def find_maxima(img, ntol=20):
 
     out = types == 61
     ypts, xpts = np.where(out)
-    t2 = time.time()
     # print("count " + str(np.sum(out)))
     # print("time: " + str(np.round(t2 - t1, 4)) + ' s')
     return np.sum(out), xpts, ypts
-

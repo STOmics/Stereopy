@@ -1,17 +1,27 @@
 # import image
 import os
 import time
-from skimage import measure
-from os.path import join, splitext, exists, split
-import tifffile
+from os.path import (
+    join,
+    splitext,
+    exists,
+    split
+)
+
 import cv2
 import numpy as np
-from . import tissue_seg as tissue_seg
+import tifffile
+from skimage import measure
+
+from stereo.image.tissue_cut import (
+    SingleStrandDNATissueCut,
+    DEEP,
+    INTENSITY
+)
+from stereo.log_manager import logger
 from . import cell_infer as cell_infer
 from . import grade as grade
 from . import utils as utils
-from stereo.image.tissue_cut import SingleStrandDNATissueCut, DEEP, INTENSITY
-from stereo.log_manager import logger
 
 
 class CellSegPipe(object):
@@ -27,7 +37,7 @@ class CellSegPipe(object):
             tissue_seg_model_path='',
             tissue_seg_method=DEEP,
             post_processing_workers=10
-        ):
+    ):
         self.deep_crop_size = DEEP_CROP_SIZE
         self.overlap = OVERLAP
         self.__img_path = img_path
@@ -44,12 +54,12 @@ class CellSegPipe(object):
         self.__out_path = out_path
         if not exists(out_path):
             os.mkdir(out_path)
-            logger.info('Create new dir : %s'%out_path)
+            logger.info('Create new dir : %s' % out_path)
         self.__is_water = is_water
         t0 = time.time()
         self.__trans16to8()
         t1 = time.time()
-        logger.info('Transform 16bit to 8bit : %.2f'%(t1 - t0))
+        logger.info('Transform 16bit to 8bit : %.2f' % (t1 - t0))
         self.tissue_mask = []
         self.tissue_mask_thumb = []
         self.tissue_num = []  # tissue num in each image
@@ -64,7 +74,7 @@ class CellSegPipe(object):
         self.cell_mask = []
         self.post_mask_list = []
         self.score_mask_list = []
-        self.model_path= model_path
+        self.model_path = model_path
         self.post_processing_workers = post_processing_workers
 
     def __imload_list(self, img_path):
@@ -92,14 +102,14 @@ class CellSegPipe(object):
 
         for idx, img in enumerate(self.img_list):
             if len(img.shape) == 3:
-                logger.info('Image %s convert to gray!'%self.__file[idx])
+                logger.info('Image %s convert to gray!' % self.__file[idx])
                 self.img_list[idx] = img[:, :, 0]
 
     def __trans16to8(self):
         for idx, img in enumerate(self.img_list):
             assert img.dtype in ['uint16', 'uint8']
             if img.dtype != 'uint8':
-                logger.info('%s transfer to 8bit'%self.__file[idx])
+                logger.info('%s transfer to 8bit' % self.__file[idx])
                 self.img_list[idx] = utils.transfer_16bit_to_8bit(img)
 
     # def __get_tissue_mask(self):
@@ -129,7 +139,6 @@ class CellSegPipe(object):
         """get tissue image by tissue mask"""
         # for idx, img in enumerate(self.img_list):
         for img, tissue_mask in zip(self.img_list, self.tissue_mask):
-
             img_filter = np.multiply(img, tissue_mask).astype(np.uint8)
             self.img_filter.append(img_filter)
 
@@ -187,8 +196,10 @@ class CellSegPipe(object):
             label_filter_list = []
             for i in range(self.tissue_num[idx]):
                 tissue_bbox_temp = tissue_bbox[i]
-                label_filter = np.multiply(label[i], self.tissue_mask[idx][tissue_bbox_temp[0]: tissue_bbox_temp[2],
-                                                                           tissue_bbox_temp[1]: tissue_bbox_temp[3]]).astype(np.uint8)
+                label_filter = np.multiply(
+                    label[i],
+                    self.tissue_mask[idx][tissue_bbox_temp[0]: tissue_bbox_temp[2],
+                    tissue_bbox_temp[1]: tissue_bbox_temp[3]]).astype(np.uint8)  # noqa
                 label_filter_list.append(label_filter)
             tissue_cell_label_filter.append(label_filter_list)
         return tissue_cell_label_filter
@@ -202,7 +213,7 @@ class CellSegPipe(object):
             for i in range(self.tissue_num[idx]):
                 tissue_bbox_temp = tissue_bbox[i]
                 cell_mask[tissue_bbox_temp[0]: tissue_bbox_temp[2],
-                         tissue_bbox_temp[1]: tissue_bbox_temp[3]] = label_list[i]
+                tissue_bbox_temp[1]: tissue_bbox_temp[3]] = label_list[i]  # noqa
             self.cell_mask.append(cell_mask)
         return self.cell_mask
 
@@ -218,7 +229,6 @@ class CellSegPipe(object):
             else:
                 post_list_tile = grade.score_multi(input_list, self.post_processing_workers)
 
-
             post_mask_tile = [label[0] for label in post_list_tile]
             score_mask_tile = [label[1] for label in post_list_tile]  # grade saved
 
@@ -233,7 +243,7 @@ class CellSegPipe(object):
 
     def __mkdir_subpkg(self):
         """make new dir while image is large"""
-        assert self.__is_list == False
+        assert self.__is_list == False  # noqa
         file = self.__file[0]
         file_name = splitext(file)[0]
 
@@ -281,13 +291,16 @@ class CellSegPipe(object):
             for idx, img in enumerate(mask_list):
                 shapes = self.img_list[0].shape
                 tifffile.imsave(
-                    os.path.join(self.__subpkg_mask, self.__file_name[0] + '_' + str(shapes[0]) + '_' + str(shapes[1]) + '_' +
+                    os.path.join(self.__subpkg_mask,
+                                 self.__file_name[0] + '_' + str(shapes[0]) + '_' + str(shapes[1]) + '_' +
                                  str(x_list[idx]) + '_' + str(y_list[idx]) + '.tif'), img)
                 tifffile.imsave(
-                    os.path.join(self.__subpkg_mask_outline, self.__file_name[0] + '_' + str(shapes[0]) + '_' + str(shapes[1]) + '_' +
+                    os.path.join(self.__subpkg_mask_outline,
+                                 self.__file_name[0] + '_' + str(shapes[0]) + '_' + str(shapes[1]) + '_' +
                                  str(x_list[idx]) + '_' + str(y_list[idx]) + '.tif'), mask_list_outline[idx])
                 tifffile.imsave(
-                    os.path.join(self.__subpkg_score, self.__file_name[0] + '_' + str(shapes[0]) + '_' + str(shapes[1]) + '_' +
+                    os.path.join(self.__subpkg_score,
+                                 self.__file_name[0] + '_' + str(shapes[0]) + '_' + str(shapes[1]) + '_' +
                                  str(x_list[idx]) + '_' + str(y_list[idx]) + '.tif'), score_list[idx])
 
     def save_result(self):
@@ -297,25 +310,25 @@ class CellSegPipe(object):
 
     def run(self):
         t0 = time.time()
-        ### cell segmentation in roi###
+        # cell segmentation in roi
         tissue_cell_label = self.tissue_cell_infer()
         t1 = time.time()
-        logger.info('Cell inference : %.2f'%(t1 - t0))
+        logger.info('Cell inference : %.2f' % (t1 - t0))
 
-        ### filter by tissue mask###
+        # filter by tissue mask
         tissue_cell_label_filter = self.tissue_label_filter(tissue_cell_label)
         t2 = time.time()
-        logger.info('Filter by tissue mask : %.2f'%(t2 - t1))
+        logger.info('Filter by tissue mask : %.2f' % (t2 - t1))
 
-        ###mosaic tissue roi ###
+        # mosaic tissue roi
         cell_mask = self.__mosaic(tissue_cell_label_filter)
         t3 = time.time()
         logger.info('Mosaic tissue roi : %.2f' % (t3 - t2))
 
-        ###post process###
+        # post process
         self.watershed_score(cell_mask)
         t4 = time.time()
         logger.info('Post-processing : %.2f' % (t4 - t3))
 
         self.save_result()
-        logger.info('Result saved : %s '%(self.__out_path))
+        logger.info('Result saved : %s ' % (self.__out_path))

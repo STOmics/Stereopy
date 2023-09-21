@@ -1,18 +1,20 @@
-import pandas as pd
 import numpy as np
+import pandas as pd
 from scipy.spatial.distance import cdist
+
 from stereo.algorithm.algorithm_base import AlgorithmBase
-from stereo.preprocess.filter import filter_by_clusters, filter_cells
+from stereo.preprocess.filter import filter_by_clusters
+from stereo.preprocess.filter import filter_cells
 
 
 class GetNiche(AlgorithmBase):
     def main(
-        self,
-        niche_distance: float,
-        cluster_1: str,
-        cluster_2: str,
-        cluster_res_key: str = None,
-        inplace: bool = False
+            self,
+            niche_distance: float,
+            cluster_1: str,
+            cluster_2: str,
+            cluster_res_key: str = None,
+            inplace: bool = False
     ):
         """
         To ensure the accuracy and specificity of this juxtacrine signaling model,
@@ -24,7 +26,7 @@ class GetNiche(AlgorithmBase):
         :param cluster_2: the other cell cluster in the interaction.
         :param coord_key: the key which specifies the coordiate of cells.
         :param cluster_res_key: the key which specifies the clustering result in data.tl.result.
-        :param inplace: whether to inplace the previous express matrix or get a new StereoExpData object with the new express matrix, default by False.
+        :param inplace: whether to inplace the previous express matrix or get a new StereoExpData object with the new express matrix, default by False. # noqa
         """
         assert cluster_1 != cluster_2, "cluster_1 can not equal to cluster_2."
 
@@ -52,7 +54,8 @@ class GetNiche(AlgorithmBase):
         cell_list = list(result_target_sender.index) + list(result_target_sender.columns)
         data_result = filter_cells(data_full, cell_list=cell_list, inplace=inplace)
         for res_key in data_result.tl.key_record['pca']:
-            data_result.tl.result[res_key] = data_result.tl.result[res_key][np.isin(data_full.cell_names, cell_list)].copy()
+            data_result.tl.result[res_key] = data_result.tl.result[res_key][
+                np.isin(data_full.cell_names, cell_list)].copy()
         if cluster_res_key in data_result.cells:
             data_result.cells[cluster_res_key] = pd.Series(
                 data_result.cells[cluster_res_key].to_numpy(),
@@ -65,5 +68,5 @@ class GetNiche(AlgorithmBase):
                 index=data_result.cell_names,
                 dtype='category'
             )
-            
+
         return data_result

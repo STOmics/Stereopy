@@ -1,9 +1,19 @@
+import math
+from typing import (
+    Type,
+    Any,
+    Callable,
+    Union,
+    List,
+    Optional
+)
+
 import torch
 import torch.nn as nn
-import math
-from .SE_weight_module import SEWeightModule
 from torch import Tensor
-from typing import Type, Any, Callable, Union, List, Optional
+
+from .SE_weight_module import SEWeightModule
+
 # from .._internally_replaced_utils import load_state_dict_from_url
 
 
@@ -18,6 +28,7 @@ model_urls = {
     'wide_resnet50_2': 'https://download.pytorch.org/models/wide_resnet50_2-95faca4d.pth',
     'wide_resnet101_2': 'https://download.pytorch.org/models/wide_resnet101_2-32ee1156.pth',
 }
+
 
 def conv(in_planes, out_planes, kernel_size=3, stride=1, padding=1, dilation=1, groups=1):
     """standard convolution with padding"""
@@ -152,7 +163,7 @@ class EPSABlock(nn.Module):
 #         print('33333333333', out.shape)
 #
 #         out = self.conv2(out)
-#         # Conv2d = nn.Conv2d(self.width, self.width, kernel_size=3, stride=1, padding=1, dilation=1, groups=1, bias=False)
+#         # Conv2d = nn.Conv2d(self.width, self.width, kernel_size=3, stride=1, padding=1, dilation=1, groups=1, bias=False) # noqa
 #         # Conv2d.cuda(1)
 #         # out = Conv2d(out)
 #         print('55555555555', out.shape)
@@ -334,24 +345,19 @@ def conv3x3(in_planes: int, out_planes: int, stride: int = 1, groups: int = 1, d
                      padding=dilation, groups=groups, bias=False, dilation=dilation)
 
 
-def conv1x1(in_planes: int, out_planes: int, stride: int = 1) -> nn.Conv2d:
-    """1x1 convolution"""
-    return nn.Conv2d(in_planes, out_planes, kernel_size=1, stride=stride, bias=False)
-
-
 class BasicBlock(nn.Module):
     expansion: int = 1
 
     def __init__(
-        self,
-        inplanes: int,
-        planes: int,
-        stride: int = 1,
-        downsample: Optional[nn.Module] = None,
-        groups: int = 1,
-        base_width: int = 64,
-        dilation: int = 1,
-        norm_layer: Optional[Callable[..., nn.Module]] = None
+            self,
+            inplanes: int,
+            planes: int,
+            stride: int = 1,
+            downsample: Optional[nn.Module] = None,
+            groups: int = 1,
+            base_width: int = 64,
+            dilation: int = 1,
+            norm_layer: Optional[Callable[..., nn.Module]] = None
     ) -> None:
         super(BasicBlock, self).__init__()
         if norm_layer is None:
@@ -398,15 +404,15 @@ class Bottleneck(nn.Module):
     expansion: int = 4
 
     def __init__(
-        self,
-        inplanes: int,
-        planes: int,
-        stride: int = 1,
-        downsample: Optional[nn.Module] = None,
-        groups: int = 1,
-        base_width: int = 64,
-        dilation: int = 1,
-        norm_layer: Optional[Callable[..., nn.Module]] = None
+            self,
+            inplanes: int,
+            planes: int,
+            stride: int = 1,
+            downsample: Optional[nn.Module] = None,
+            groups: int = 1,
+            base_width: int = 64,
+            dilation: int = 1,
+            norm_layer: Optional[Callable[..., nn.Module]] = None
     ) -> None:
         super(Bottleneck, self).__init__()
         if norm_layer is None:
@@ -449,15 +455,15 @@ class Bottleneck(nn.Module):
 class ResNet(nn.Module):
 
     def __init__(
-        self,
-        block: Type[Union[BasicBlock, Bottleneck]],
-        layers: List[int],
-        num_classes: int = 1000,
-        zero_init_residual: bool = False,
-        groups: int = 1,
-        width_per_group: int = 64,
-        replace_stride_with_dilation: Optional[List[bool]] = None,
-        norm_layer: Optional[Callable[..., nn.Module]] = None
+            self,
+            block: Type[Union[BasicBlock, Bottleneck]],
+            layers: List[int],
+            num_classes: int = 1000,
+            zero_init_residual: bool = False,
+            groups: int = 1,
+            width_per_group: int = 64,
+            replace_stride_with_dilation: Optional[List[bool]] = None,
+            norm_layer: Optional[Callable[..., nn.Module]] = None
     ) -> None:
         super(ResNet, self).__init__()
         if norm_layer is None:
@@ -555,18 +561,18 @@ class ResNet(nn.Module):
 
 
 def _resnet(
-    arch: str,
-    block: Type[Union[BasicBlock, Bottleneck]],
-    layers: List[int],
-    num_classes: int,
-    pretrained: bool,
-    progress: bool,
-    **kwargs: Any
+        arch: str,
+        block: Type[Union[BasicBlock, Bottleneck]],
+        layers: List[int],
+        num_classes: int,
+        pretrained: bool,
+        progress: bool,
+        **kwargs: Any
 ) -> ResNet:
-    model = ResNet(block, layers,  num_classes, **kwargs)
+    model = ResNet(block, layers, num_classes, **kwargs)
     if pretrained:
         state_dict = torch.hub.load_state_dict_from_url(model_urls[arch],
-                                              progress=progress)
+                                                        progress=progress)
         model.load_state_dict(state_dict)
     return model
 

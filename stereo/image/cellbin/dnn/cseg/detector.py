@@ -1,11 +1,18 @@
-from ...image.wsi_split import SplitWSI
+import numpy as np
+
 from . import CellSegmentation
 from .predict import CellPredict
-from .processing import f_prepocess, f_preformat, f_postformat, f_preformat_mesmer, \
-    f_postformat_mesmer, f_padding, f_fusion
+from .processing import (
+    f_prepocess,
+    f_preformat,
+    f_postformat,
+    f_preformat_mesmer,
+    f_postformat_mesmer,
+    f_padding,
+    f_fusion
+)
 from ...dnn.onnx_net import OnnxNet
-
-import numpy as np
+from ...image.wsi_split import SplitWSI
 
 
 # TensorRT/ONNX

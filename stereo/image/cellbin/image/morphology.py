@@ -5,12 +5,20 @@ import numpy as np
 import scipy.ndimage as nd
 from skimage.feature import peak_local_max
 from skimage.measure import label
-from skimage.morphology import remove_small_objects, h_maxima
-from skimage.morphology import disk, ball, square, cube, dilation
-from skimage.segmentation import relabel_sequential, watershed
-from skimage.morphology import remove_small_holes
-from skimage.segmentation import find_boundaries
 from skimage.measure import regionprops
+from skimage.morphology import (
+    disk,
+    ball,
+    square,
+    cube,
+    dilation
+)
+from skimage.morphology import h_maxima
+from skimage.morphology import remove_small_holes
+from skimage.morphology import remove_small_objects
+from skimage.segmentation import find_boundaries
+from skimage.segmentation import relabel_sequential
+from skimage.segmentation import watershed
 
 
 def f_deep_watershed(outputs,
@@ -77,37 +85,36 @@ def f_deep_watershed(outputs,
     total_pixels = maximas.shape[1] * maximas.shape[2]
     if maxima_algorithm == 'h_maxima' and total_pixels > 5000 ** 2:
         print('h_maxima peak finding algorithm was selected, '
-                 'but the provided image is larger than 5k x 5k pixels.'
-                 'This will lead to slow prediction performance.')
+              'but the provided image is larger than 5k x 5k pixels.'
+              'This will lead to slow prediction performance.')
     # Handle deprecated arguments
     min_distance = kwargs.pop('min_distance', None)
     if min_distance is not None:
         radius = min_distance
         warn('`min_distance` is now deprecated in favor of `radius`. '
-                     'The value passed for `radius` will be used.')
+             'The value passed for `radius` will be used.')
 
     # distance_threshold vs interior_threshold
     distance_threshold = kwargs.pop('distance_threshold', None)
     if distance_threshold is not None:
         interior_threshold = distance_threshold
         warn('`distance_threshold` is now deprecated in favor of '
-                     '`interior_threshold`. The value passed for '
-                     '`distance_threshold` will be used.',
-                     DeprecationWarning)
+             '`interior_threshold`. The value passed for '
+             '`distance_threshold` will be used.',
+             DeprecationWarning)
 
     # detection_threshold vs maxima_threshold
     detection_threshold = kwargs.pop('detection_threshold', None)
     if detection_threshold is not None:
         maxima_threshold = detection_threshold
         warn('`detection_threshold` is now deprecated in favor of '
-                     '`maxima_threshold`. The value passed for '
-                     '`detection_threshold` will be used.',
-                     DeprecationWarning)
+             '`maxima_threshold`. The value passed for '
+             '`detection_threshold` will be used.',
+             DeprecationWarning)
 
     if maximas.shape[:-1] != interiors.shape[:-1]:
-        raise ValueError('All input arrays must have the same shape. '
-                         'Got {} and {}'.format(
-                            maximas.shape, interiors.shape))
+        raise ValueError(
+            'All input arrays must have the same shape. Got {} and {}'.format(maximas.shape, interiors.shape))
 
     if maximas.ndim not in {4, 5}:
         raise ValueError('maxima and interior tensors must be rank 4 or 5. '

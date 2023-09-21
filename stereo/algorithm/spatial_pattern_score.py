@@ -2,7 +2,7 @@
 # coding: utf-8
 """
 @file: spatial_pattern_score.py
-@description: 
+@description:
 @author: Ping Qiu
 @email: qiuping1@genomics.cn
 @last modified by: Ping Qiu
@@ -11,9 +11,10 @@ change log:
     2021/08/27  create file.
 """
 
-import pandas as pd
-import numpy as np
 import statistics
+
+import numpy as np
+import pandas as pd
 import scipy.stats as stats
 from tqdm import tqdm
 

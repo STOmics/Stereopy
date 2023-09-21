@@ -1,6 +1,7 @@
 from os import path
 
 import onnxruntime
+
 from . import BaseNet
 
 

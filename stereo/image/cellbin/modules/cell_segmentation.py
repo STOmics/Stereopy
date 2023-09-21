@@ -1,13 +1,17 @@
 import os
 
+import matplotlib.pyplot as plt
 import numpy as np
 from tifffile import tifffile
-import matplotlib.pyplot as plt
 
 from . import CellBinElement
 from ..dnn.cseg.cell_trace import get_trace as get_t
 from ..dnn.cseg.detector import Segmentation
-from ...tissue_cut import SingleStrandDNATissueCut, DEEP, INTENSITY
+from ...tissue_cut import (
+    SingleStrandDNATissueCut,
+    DEEP,
+    INTENSITY
+)
 
 
 class CellSegmentation(CellBinElement):

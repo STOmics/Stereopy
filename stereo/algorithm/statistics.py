@@ -4,10 +4,11 @@
 @author: Ping Qiu  qiuping1@genomics.cn
 """
 
-import pandas as pd
 import numpy as np
+import pandas as pd
 from scipy import stats
 from statsmodels.stats.multitest import multipletests
+
 from .mannwhitneyu import mannwhitneyu
 from ..utils.hvg_utils import get_mean_var
 

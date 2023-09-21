@@ -1,35 +1,26 @@
 # python core module
-from typing import Union
-from collections import defaultdict
-import time
-from natsort import natsorted
-from copy import deepcopy
 from multiprocessing import cpu_count
+from typing import Union
 
 # third part module
 import numba as nb
 import numpy as np
 import pandas as pd
-import matplotlib.pyplot as plt
-from scipy import sparse
-import networkx as nx
-from sklearn.metrics import pairwise_distances
-from tqdm import tqdm
 
+from stereo.algorithm.algorithm_base import AlgorithmBase
+from stereo.core.stereo_exp_data import AnnBasedStereoExpData
 # module in self project
-import stereo as st # only used in test function to read data
-from stereo.core.stereo_exp_data import StereoExpData, AnnBasedStereoExpData
-from stereo.log_manager import logger
-from stereo.algorithm.algorithm_base  import AlgorithmBase, ErrorCode
+from stereo.core.stereo_exp_data import StereoExpData
 
 
-##----------------------------------------------##
-## please try the notebook demo in pull requese ##
-##----------------------------------------------##
+# ----------------------------------------------#
+# please try the notebook demo in pull requese #
+# ----------------------------------------------#
 
 @nb.njit(cache=True, nogil=True)
 def _cal_distance(point: np.ndarray, points: np.ndarray):
-    return np.sqrt(np.sum((points - point)**2, axis=1))
+    return np.sqrt(np.sum((points - point) ** 2, axis=1))
+
 
 @nb.njit(cache=True, nogil=True, parallel=True)
 def _cal_pairwise_distances(points_a: np.ndarray, points_b: np.ndarray):
@@ -50,8 +41,8 @@ def _coo_stereopy_calculator(
         thresh: np.ndarray,
         genelist: np.ndarray = None,
         gene_exp_matrix: np.ndarray = None,
-        gene_thresh: float = 0 
-    ):
+        gene_thresh: float = 0
+):
     count_list = np.zeros((thresh.size - 1, group_codes.size), dtype=np.uint64)
     if genelist is None:
         ret_list = np.zeros((thresh.size - 1, group_codes.size, group_codes.size), dtype=np.uint64)
@@ -61,7 +52,7 @@ def _coo_stereopy_calculator(
         out = np.zeros((thresh.size - 1, genelist.size, group_codes.size), dtype=np.float64)
 
     for ep in nb.prange(thresh.size - 1):
-        thresh_l, thresh_r = thresh[ep], thresh[ep+1]
+        thresh_l, thresh_r = thresh[ep], thresh[ep + 1]
         count = count_list[ep]
         ret = ret_list[ep]
         if genelist is None:
@@ -82,22 +73,23 @@ def _coo_stereopy_calculator(
                 gene_exp_flag = np.where(gene_exp_flag > 0, 1, 0)
                 ret[gidx] += gene_exp_flag.astype(np.uint64)
                 count[gidx] += np.uint64(1)
-            ret=ret.T / count
+            ret = ret.T / count
             out[ep, :, :] = ret
     return out
 
+
 @nb.njit(cache=True, nogil=True, parallel=True)
 def _coo_squidpy_calculator(
-    data_position: np.ndarray,
-    group_codes: np.ndarray,
-    groups_idx: np.ndarray,
-    thresh: np.ndarray,
+        data_position: np.ndarray,
+        group_codes: np.ndarray,
+        groups_idx: np.ndarray,
+        thresh: np.ndarray,
 ):
     num = group_codes.size
     out = np.zeros((num, num, thresh.shape[0] - 1))
     for ep in nb.prange(thresh.shape[0] - 1):
         co_occur = np.zeros((num, num))
-        thresh_l, thresh_r = thresh[ep], thresh[ep+1]
+        thresh_l, thresh_r = thresh[ep], thresh[ep + 1]
         for x in range(data_position.shape[0]):
             dist = _cal_distance(data_position[x], data_position)
             i = groups_idx[x]
@@ -113,26 +105,27 @@ def _coo_squidpy_calculator(
         out[:, :, ep] = probs_con
     return out
 
+
 class CoOccurrence(AlgorithmBase):
     """
     docstring for CoOccurence
-    :param 
-    :return: 
+    :param
+    :return:
     """
 
     def main(
-        self,
-        cluster_res_key,
-        method='stereopy',
-        dist_thres=300,
-        steps=10,
-        genelist=None,
-        gene_thresh=0,
-        n_jobs=-1,
-        res_key='co_occurrence'
+            self,
+            cluster_res_key,
+            method='stereopy',
+            dist_thres=300,
+            steps=10,
+            genelist=None,
+            gene_thresh=0,
+            n_jobs=-1,
+            res_key='co_occurrence'
     ):
         """
-        Co-occurence calculates the score or probability of two or more cell types in spatial.  
+        Co-occurence calculates the score or probability of two or more cell types in spatial.
         Stereopy provided two method for co-occurence, 'squidpy' for method in squidpy, 'stereopy' for method in stereopy by default.
 
 
@@ -141,7 +134,7 @@ class CoOccurrence(AlgorithmBase):
         :param dist_thres: The max distance to measure co-occurence. Only used when `method='stereopy'`.
         :param steps: The steps to generate threshold to measure co-occurence, use along with dist_thres, i.e. default params
                         will generate [30,60,90......,270,300] as threshold. Only used when `method='stereopy'`.
-        :param genelist: Calculate co-occurence between clusters in cluster_res_key & genelist if provided, otherwise calculate between clusters 
+        :param genelist: Calculate co-occurence between clusters in cluster_res_key & genelist if provided, otherwise calculate between clusters
                         in cluster_res_key. Only used when `method='stereopy'`.
         :param gene_thresh: Threshold to determine whether a cell expresses targeted gene. Only used when `method='stereopy'`.
         :param n_jobs: The number of threads to calculate co-occurence, default to all cores of the machine.
@@ -149,16 +142,17 @@ class CoOccurrence(AlgorithmBase):
 
 
         :return: StereoExpData object with co_occurrence result in `data.tl.result`.
-        """
+        """  # noqa
         if n_jobs <= 0 or n_jobs > cpu_count():
             n_jobs = cpu_count()
-        
+
         current_jobs = nb.get_num_threads()
         nb.set_num_threads(n_jobs)
 
         try:
             if method == 'stereopy':
-                res = self.co_occurrence(self.stereo_exp_data, cluster_res_key, dist_thres = dist_thres, steps = steps, genelist = genelist, gene_thresh = gene_thresh)
+                res = self.co_occurrence(self.stereo_exp_data, cluster_res_key, dist_thres=dist_thres, steps=steps,
+                                         genelist=genelist, gene_thresh=gene_thresh)
             elif method == 'squidpy':
                 res = self.co_occurrence_squidpy(self.stereo_exp_data, cluster_res_key)
             else:
@@ -167,29 +161,28 @@ class CoOccurrence(AlgorithmBase):
             self.stereo_exp_data.tl.reset_key_record('co_occurrence', res_key)
         finally:
             nb.set_num_threads(current_jobs)
-        
+
         return self.stereo_exp_data
 
-
     def co_occurrence_squidpy(
-        self,
-        data: Union[StereoExpData, AnnBasedStereoExpData],
-        use_col: str
+            self,
+            data: Union[StereoExpData, AnnBasedStereoExpData],
+            use_col: str
     ):
         """
         Squidpy mode to calculate co-occurence, result same as squidpy
         :param data: An instance of StereoExpData, data.position & data.tl.result[use_col] will be used.
-        :param use_col: The key of the cluster or annotation result of cells stored in data.tl.result which ought to be equal 
-                        to cells in length.
+        :param use_col: The key of the cluster or annotation result of cells stored in data.tl.result which ought to
+                        be equal to cells in length.
         :return: co_occurrence result, also written in data.tl.result['co-occur']
         """
 
         thresh_min, thresh_max = self._find_min_max(data.position)
         thresh = np.linspace(thresh_min, thresh_max, num=50)
         if use_col in data.cells:
-            groups:pd.Series = data.cells[use_col].astype('category')
+            groups: pd.Series = data.cells[use_col].astype('category')
         else:
-            groups:pd.Series = self.pipeline_res[use_col]['group'].astype('category')
+            groups: pd.Series = self.pipeline_res[use_col]['group'].astype('category')
         group_codes = groups.cat.categories.to_numpy().astype('U')
         out = _coo_squidpy_calculator(
             data.position,
@@ -215,38 +208,40 @@ class CoOccurrence(AlgorithmBase):
         min_idx, min_idx2 = np.argpartition(coord_sum, 2)[:2]
         max_idx = np.argmax(coord_sum)
         # fmt: off
-        thres_max = _cal_pairwise_distances(spatial[min_idx, :].reshape(1, -1), spatial[max_idx, :].reshape(1, -1))[0, 0] / 2.0
-        thres_min = _cal_pairwise_distances(spatial[min_idx, :].reshape(1, -1), spatial[min_idx2, :].reshape(1, -1))[0, 0]
+        thres_max = _cal_pairwise_distances(spatial[min_idx, :].reshape(1, -1), spatial[max_idx, :].reshape(1, -1))[
+                        0, 0] / 2.0
+        thres_min = _cal_pairwise_distances(spatial[min_idx, :].reshape(1, -1), spatial[min_idx2, :].reshape(1, -1))[
+            0, 0]
         # fmt: on
         return thres_min, thres_max
 
     def co_occurrence(
-        self,
-        data: Union[StereoExpData, AnnBasedStereoExpData],
-        use_col,
-        dist_thres = 300,
-        steps = 10,
-        genelist = None,
-        gene_thresh = 0
+            self,
+            data: Union[StereoExpData, AnnBasedStereoExpData],
+            use_col,
+            dist_thres=300,
+            steps=10,
+            genelist=None,
+            gene_thresh=0
     ):
         '''
-        Stereopy mode to calculate co-occurence, the score of result['A']['B'] represent the probablity of 'B' occurence around 
+        Stereopy mode to calculate co-occurence, the score of result['A']['B'] represent the probablity of 'B' occurence around
         'A' in distance of threshold
 
         :param data: An instance of StereoExpData, data.position & data.tl.result[use_col] will be used.
-        :param use_col: The key of the cluster or annotation result of cells stored in data.tl.result which ought to be equal 
+        :param use_col: The key of the cluster or annotation result of cells stored in data.tl.result which ought to be equal
                         to cells in length.
         :param method: The metrics to calculate co-occurence choose from ['stereopy', 'squidpy'], 'squidpy' by default.
-        :param dist_thres: The max distance to measure co-occurence. 
-        :param steps: The steps to generate threshold to measure co-occurence, use along with dist_thres, i.e. default params 
-                        will generate [30,60,90......,270,300] as threshold. 
-        :param genelist: Calculate co-occurence between use_col & genelist if provided, otherwise calculate between clusters 
-                        in use_col. 
-        :param gene_thresh: Threshold to determine whether a cell express the gene. 
+        :param dist_thres: The max distance to measure co-occurence.
+        :param steps: The steps to generate threshold to measure co-occurence, use along with dist_thres, i.e. default params
+                        will generate [30,60,90......,270,300] as threshold.
+        :param genelist: Calculate co-occurence between use_col & genelist if provided, otherwise calculate between clusters
+                        in use_col.
+        :param gene_thresh: Threshold to determine whether a cell express the gene.
         :return: co_occurrence result, also written in data.tl.result['co-occur']
-        '''
-        #from collections import defaultdict
-        #from scipy import sparse
+        '''  # noqa
+        # from collections import defaultdict
+        # from scipy import sparse
         # dist_ori = pairwise_distances(data.position, data.position, metric='euclidean')
         # distance = _cal_pairwise_distances(data.position, data.position)
         if isinstance(genelist, np.ndarray):
@@ -258,17 +253,18 @@ class CoOccurrence(AlgorithmBase):
         elif isinstance(genelist, int):
             genelist = [genelist]
 
-        thresh = np.linspace(0, dist_thres, num=steps+1)
+        thresh = np.linspace(0, dist_thres, num=steps + 1)
         if use_col in data.cells:
-            groups:pd.Series = data.cells[use_col].astype('category')
+            groups: pd.Series = data.cells[use_col].astype('category')
         else:
-            groups:pd.Series = self.pipeline_res[use_col]['group'].astype('category')
+            groups: pd.Series = self.pipeline_res[use_col]['group'].astype('category')
         group_codes = groups.cat.categories.to_numpy().astype('U')
         gene_exp_matrix = None
         if genelist is not None:
             genelist = np.array(genelist, dtype='U')
             gene_idx = [np.argwhere(data.gene_names == gene_name)[0][0] for gene_name in genelist]
-            gene_exp_matrix = data.exp_matrix[:, gene_idx].toarray() if data.issparse() else data.exp_matrix[:, gene_idx]
+            gene_exp_matrix = data.exp_matrix[:, gene_idx].toarray() if data.issparse() else \
+                data.exp_matrix[:, gene_idx]
             gene_exp_matrix = gene_exp_matrix.T
         out = _coo_stereopy_calculator(
             data.position,
@@ -289,15 +285,14 @@ class CoOccurrence(AlgorithmBase):
             ret[ret_key] = pd.DataFrame(tmp, index=group_codes).T
         return ret
 
-
     def ms_co_occur_integrate(self, ms_data, scope, use_col, res_key='co_occurrence'):
-        from collections import Counter, defaultdict
+        from collections import Counter
         if use_col not in ms_data.obs:
             tmp_list = []
             for data in ms_data:
                 tmp_list.extend(list(data.cells[use_col]))
-            ms_data.obs[use_col]=tmp_list
-        ms_data.obs[use_col] =  ms_data.obs[use_col].astype('category')
+            ms_data.obs[use_col] = tmp_list
+        ms_data.obs[use_col] = ms_data.obs[use_col].astype('category')
 
         slice_groups = scope.split('|')
         if len(slice_groups) == 1:
@@ -310,7 +305,7 @@ class CoOccurrence(AlgorithmBase):
             ct_ratio = ct_count.div(ct_count.sum(axis=1), axis=0)
             ct_ratio = ct_ratio.loc[ms_data.obs[use_col].cat.categories]
             merge_co_occur_ret = ms_data[slices[0]].tl.result[res_key].copy()
-            merge_co_occur_ret = {x:y[ms_data.obs[use_col].cat.categories] *0 for x, y  in merge_co_occur_ret.items()}
+            merge_co_occur_ret = {x: y[ms_data.obs[use_col].cat.categories] * 0 for x, y in merge_co_occur_ret.items()}
             for ct in merge_co_occur_ret:
                 for x in slices:
                     merge_co_occur_ret[ct] += ms_data[x].tl.result[res_key][ct] * ct_ratio[x]
@@ -327,13 +322,14 @@ class CoOccurrence(AlgorithmBase):
                 ct_ratio = ct_count.div(ct_count.sum(axis=1), axis=0)
                 ct_ratio = ct_ratio.loc[ms_data.obs[use_col].cat.categories]
                 merge_co_occur_ret = ms_data[slices[0]].tl.result[res_key].copy()
-                merge_co_occur_ret = {x:y[ms_data.obs[use_col].cat.categories] *0 for x, y  in merge_co_occur_ret.items()}
+                merge_co_occur_ret = {x: y[ms_data.obs[use_col].cat.categories] * 0 for x, y in
+                                      merge_co_occur_ret.items()}
                 for ct in merge_co_occur_ret:
                     for x in slices:
                         merge_co_occur_ret[ct] += ms_data[x].tl.result[res_key][ct] * ct_ratio[x]
                 ret.append(merge_co_occur_ret)
 
-            merge_co_occur_ret = {ct:ret[0][ct]-ret[1][ct] for ct in merge_co_occur_ret}
+            merge_co_occur_ret = {ct: ret[0][ct] - ret[1][ct] for ct in merge_co_occur_ret}
 
         else:
             print('co-occurrence only compare case and control on two groups')

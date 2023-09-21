@@ -1,10 +1,7 @@
-import os
-from skimage import io
-import cv2
 import torch
-from torch.utils.data import Dataset
-from albumentations import (HorizontalFlip, Normalize, Compose, GaussNoise)
+from albumentations import Compose
 from albumentations.pytorch import ToTensorV2
+from torch.utils.data import Dataset
 
 
 def get_transforms():
@@ -37,7 +34,7 @@ class data_batch(Dataset):
         return len(self.img_list)
 
     def __getitem__(self, idx):
-        ### data1
+        # data1
         img = self.img_list[idx]
         # img = cv2.cvtColor(img, cv2.COLOR_GRAY2RGB)
         # img = transform.resize(img,(256,256))

@@ -1,15 +1,25 @@
-import numpy as np
-import os
 import logging
-import torch
-from seg_utils.utils import normalize, cell_watershed, resize, tile_image, untile_image, split, merge, outline, view_bar
-from .resnet_unet import EpsaResUnet
-from albumentations.pytorch import ToTensorV2
-from albumentations import (HorizontalFlip, Normalize, Compose, GaussNoise)
-from tqdm import tqdm
+import os
+
 import cv2
-import tifffile
+import numpy as np
+import tensorflow as tf
+import torch
+from albumentations import Compose
+from albumentations.pytorch import ToTensorV2
+from seg_utils.utils import (
+    normalize,
+    cell_watershed,
+    resize,
+    tile_image,
+    untile_image,
+    split,
+    merge
+)
+from tqdm import tqdm
+
 from .dataset import data_batch
+from .resnet_unet import EpsaResUnet
 
 
 def get_transforms():
@@ -72,7 +82,6 @@ class CellInfer(object):
         if self.format_model_output_fn is not None and not callable(self.format_model_output_fn):
             raise ValueError('Format_model_output_fn must be a callable function.')
 
-
     def _resize_input(self, image, image_mpp):
         """Checks if there is a difference between image and model resolution
         and resizes if they are different. Otherwise returns the unmodified
@@ -96,7 +105,6 @@ class CellInfer(object):
 
         return image
 
-
     def _preprocess(self, image, **kwargs):
         """Preprocess ``image`` if ``preprocessing_fn`` is defined.
         Otherwise return ``image`` unmodified.
@@ -109,7 +117,6 @@ class CellInfer(object):
             numpy.array: The pre-processed ``image``.
         """
         if self.preprocessing_fn is not None:
-
             image = self.preprocessing_fn(image, **kwargs)
 
         return image
@@ -130,8 +137,7 @@ class CellInfer(object):
         """
         if len(image.shape) != 4:
             raise ValueError('deepcell_toolbox.tile_image only supports 4d images.'
-                             'Image submitted for predict has {} dimensions'.format(
-                                 len(image.shape)))
+                             'Image submitted for predict has {} dimensions'.format(len(image.shape)))
 
         # Check difference between input and model image size
         x_diff = image.shape[1] - self.model_image_shape[0]
@@ -159,7 +165,6 @@ class CellInfer(object):
                                            stride_ratio=0.75, pad_mode=pad_mode)
 
         return tiles, tiles_info
-
 
     def _untile_output(self, output_tiles, tiles_info):
         """Untiles either a single array or a list of arrays
@@ -209,7 +214,6 @@ class CellInfer(object):
         else:
             return output_images
 
-
     def _run_model(self,
                    image,
                    batch_size=4,
@@ -243,7 +247,6 @@ class CellInfer(object):
 
         return formatted_images
 
-
     def _postprocess(self, image, **kwargs):
         """Applies postprocessing function to image if one has been defined.
         Otherwise returns unmodified image.
@@ -267,7 +270,6 @@ class CellInfer(object):
             image = image[0]
 
         return image
-
 
     def _resize_output(self, image, original_shape):
         """Rescales input if the shape does not match the original shape
@@ -307,14 +309,13 @@ class CellInfer(object):
 
         return image
 
-
     def predict_image(self,
-                image,
-                batch_size=4,
-                image_mpp=None,
-                pad_mode='reflect',
-                preprocess_kwargs=None,
-                postprocess_kwargs=None):
+                      image,
+                      batch_size=4,
+                      image_mpp=None,
+                      pad_mode='reflect',
+                      preprocess_kwargs=None,
+                      postprocess_kwargs=None):
         if preprocess_kwargs is None:
             preprocess_kwargs = {}
 
@@ -330,13 +331,11 @@ class CellInfer(object):
         # Check input size of image
         if len(image.shape) != self.required_rank:
             raise ValueError('Input data must have {} dimensions. '
-                             'Input data only has {} dimensions'.format(
-                self.required_rank, len(image.shape)))
+                             'Input data only has {} dimensions'.format(self.required_rank, len(image.shape)))
 
         if image.shape[-1] != self.required_channels:
             raise ValueError('Input data must have {} channels. '
-                             'Input data only has {} channels'.format(
-                self.required_channels, image.shape[-1]))
+                             'Input data only has {} channels'.format(self.required_channels, image.shape[-1]))
 
         # Resize image, returns unmodified if appropriate
         resized_image = self._resize_input(image, image_mpp)
@@ -353,12 +352,10 @@ class CellInfer(object):
         # Resize label_image back to original resolution if necessary
         label_image = self._resize_output(label_image, image.shape)
 
-
         return label_image
 
 
 def cellInfer(model_path, file, size, overlap=100):
-
     # split -> predict -> merge
     if isinstance(file, list):
         file_list = file
@@ -395,6 +392,7 @@ def cellInfer(model_path, file, size, overlap=100):
             for i in range(len(pred_mask)):
                 label_list.append(pred[i])
 
-        merge_label = merge(label_list, x_list, y_list, image[:, :, 0].shape, width_add=width_add, height_add=height_add)
+        merge_label = merge(label_list, x_list, y_list, image[:, :, 0].shape, width_add=width_add,
+                            height_add=height_add)
         result.append(merge_label)
     return result
