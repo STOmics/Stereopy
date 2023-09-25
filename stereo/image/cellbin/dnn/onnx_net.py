@@ -29,8 +29,12 @@ class OnnxNet(BaseNet):
             sessionOptions = onnxruntime.SessionOptions()
             if (self._gpu < 0) and (self._num_threads > 0):
                 sessionOptions.intra_op_num_threads = self._num_threads
-            self._model = onnxruntime.InferenceSession(self._model_path, providers=self._providers,
-                                                       provider_options=self._providers_id, sess_options=sessionOptions)
+            self._model = onnxruntime.InferenceSession(
+                self._model_path,
+                providers=self._providers,
+                provider_options=self._providers_id,
+                sess_options=sessionOptions
+            )
             self._input_name = self._model.get_inputs()[0].name
         else:
             raise Exception(f"Weight path '{self._model_path}' does not exist")

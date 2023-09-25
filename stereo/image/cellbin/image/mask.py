@@ -11,15 +11,10 @@ def f_fill_all_hole(mask_in):
     """
     ''' 对二值图像进行孔洞填充 '''
     im_floodfill = cv2.copyMakeBorder(mask_in, 2, 2, 2, 2, cv2.BORDER_CONSTANT, value=[0])
-    # im_floodfill = im_in.copy()
-    # Mask used to flood filling.
-    # Notice the size needs to be 2 pixels than the image.
     h, w = im_floodfill.shape[:2]
     mask = np.zeros((h + 2, w + 2), np.uint8)
 
-    # Floodfill from point (0, 0)
     cv2.floodFill(im_floodfill, mask, (0, 0), 255)
-    # Invert floodfilled image
     im_floodfill_inv = cv2.bitwise_not(im_floodfill[2:-2, 2:-2])
 
     # Combine the two images to get the foreground.

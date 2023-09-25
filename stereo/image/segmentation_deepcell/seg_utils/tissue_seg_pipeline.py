@@ -33,7 +33,6 @@ class TissueSegPipe(object):
         return marker
 
     def tissueSeg(self):
-
         # downsample ori_image
         self.down_sample()
 

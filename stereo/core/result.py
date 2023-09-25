@@ -275,8 +275,6 @@ class AnnBasedResult(_BaseResult, object):
 
     def __getitem__(self, name):
         if name in AnnBasedResult.CLUSTER_NAMES:
-            # return pd.DataFrame(self.__based_ann_data.obs[name].values, columns=['group'],
-            #                     index=self.__based_ann_data.obs_names)
             return pd.DataFrame({
                 'bins': self.__based_ann_data.obs_names,
                 'group': self.__based_ann_data.obs[name].values
@@ -307,8 +305,6 @@ class AnnBasedResult(_BaseResult, object):
             return pd.DataFrame(obsm_obj)
         obs_obj = self.__based_ann_data.obs.get(name, None)
         if obs_obj is not None:
-            # return pd.DataFrame(self.__based_ann_data.obs[name].values, columns=['group'],
-            #                     index=self.__based_ann_data.obs_names)
             return pd.DataFrame({
                 'bins': self.__based_ann_data.obs_names,
                 'group': self.__based_ann_data.obs[name].values

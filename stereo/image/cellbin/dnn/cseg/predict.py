@@ -1,5 +1,6 @@
 from queue import Queue
-from threading import Thread, Event
+from threading import Event
+from threading import Thread
 
 import numpy as np
 

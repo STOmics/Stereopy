@@ -110,7 +110,6 @@ def f_percentile_threshold(img, percentile=99.9):
     :return: np.array: thresholded version of input image
     """
 
-    # non_zero_vals = img[np.nonzero(img)]
     non_zero_vals = img[img > 0]
 
     # only threshold if channel isn't blank

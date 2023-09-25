@@ -28,9 +28,6 @@ def f_prepocess(img):
 def f_postpocess(pred):
     pred = pred[0, :, :, 0]
 
-    # pred[pred > 0] = 1
-    # pred = np.uint8(pred)
-
     pred = f_instance2semantics(pred)
     return pred
 

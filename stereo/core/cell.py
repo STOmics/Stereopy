@@ -9,7 +9,8 @@ change log:
     2021/06/29  create file.
     2021/08/17  add get_property and to_df function to file, by wuyiran.
 """
-from typing import Optional, Union
+from typing import Optional
+from typing import Union
 
 import numpy as np
 import pandas as pd
@@ -193,8 +194,6 @@ class AnnBasedCell(Cell):
                  batch: Optional[Union[np.ndarray, list, int, str]] = None):
         self.__based_ann_data = based_ann_data
         super().__init__(cell_name, cell_border, batch)
-        # self._obs = self.__based_ann_data.obs
-        # self.loc = self._obs.loc
         self.loc = self.__based_ann_data.obs.loc
 
     def __setattr__(self, key, value):

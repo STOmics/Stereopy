@@ -98,7 +98,6 @@ class StereoExpData(Data):
         self._bin_size = bin_size
         self._tl = None
         self._plt = None
-        # self.raw = None
         self._offset_x = offset_x
         self._offset_y = offset_y
         self._attr = attr if attr is not None else {'resolution': 500}
@@ -597,10 +596,6 @@ class AnnBasedStereoExpData(StereoExpData):
             *args,
             **kwargs
     ):
-        # if 'based_ann_data' in kwargs:
-        #     based_ann_data = kwargs.pop('based_ann_data')
-        # else:
-        #     based_ann_data = None
         super(AnnBasedStereoExpData, self).__init__(*args, **kwargs)
         if h5ad_file_path is None and based_ann_data is None:
             raise Exception("Must to input the 'h5ad_file_path' or 'based_ann_data'.")
@@ -769,8 +764,11 @@ class AnnBasedStereoExpData(StereoExpData):
             self.tl.raw = AnnBasedStereoExpData(based_ann_data=self._ann_data.raw.to_adata())
         return self
 
-    def sub_by_name(self, cell_name: Optional[Union[np.ndarray, list]] = None,
-                    gene_name: Optional[Union[np.ndarray, list]] = None):
+    def sub_by_name(
+            self,
+            cell_name: Optional[Union[np.ndarray, list]] = None,
+            gene_name: Optional[Union[np.ndarray, list]] = None
+    ):
         data = AnnBasedStereoExpData(self.file, based_ann_data=self._ann_data.copy())
         data._ann_data.obs_names_make_unique()
         data._ann_data.var_names_make_unique()

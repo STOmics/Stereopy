@@ -141,7 +141,6 @@ def find_maxima(img, ntol=20):
             listlen = 1
             listI = 0
 
-            # isEdgeMAxima = (x0==0 or x0 == width-1 or y0 == 0 or y0 == height -1)
             sortingError = False
             maxPossible = True
             xEqual = float(x0)
@@ -192,12 +191,6 @@ def find_maxima(img, ntol=20):
                             types[y2, x2] |= LISTED
 
                             # We are not excluding edge pixels yet.
-                            # if (x2==0 or x2 == width-1 or y2==0 or y2==height-1):
-                            #    isEdgeMaximum = True
-
-                            # maxPossible = False
-                            # break
-
                             if v2 == v0:
                                 # This point is equal to our maxima.
                                 types[y2, x2] |= EQUAL
@@ -208,11 +201,7 @@ def find_maxima(img, ntol=20):
                 listI += 1
                 t4 = time.time()
                 time_array.append(t4 - t3)
-            # if sortingError:
             # If our point x0, y0 was not true maxima and we reach a bigger one, start again.
-            # for listI in range(0,Listlen):
-            #   types[pListy[0:listlen],pListx[0:listlen]] =0
-            # else:
             if maxPossible:
                 resetMask = ~(LISTED)
             else:
@@ -248,6 +237,4 @@ def find_maxima(img, ntol=20):
 
     out = types == 61
     ypts, xpts = np.where(out)
-    # print("count " + str(np.sum(out)))
-    # print("time: " + str(np.round(t2 - t1, 4)) + ' s')
     return np.sum(out), xpts, ypts

@@ -208,11 +208,7 @@ def find_maxima(img, ntol=20):
                 listI += 1
                 t4 = time.time()
                 time_array.append(t4 - t3)
-            # if sortingError:
             # If our point x0, y0 was not true maxima and we reach a bigger one, start again.
-            # for listI in range(0,Listlen):
-            #   types[pListy[0:listlen],pListx[0:listlen]] =0
-            # else:
             if maxPossible:
                 resetMask = ~(LISTED)
             else:
@@ -248,6 +244,4 @@ def find_maxima(img, ntol=20):
 
     out = types == 61
     ypts, xpts = np.where(out)
-    # print("count " + str(np.sum(out)))
-    # print("time: " + str(np.round(t2 - t1, 4)) + ' s')
     return np.sum(out), xpts, ypts

@@ -169,7 +169,6 @@ class CellSegPipe(object):
                     bbox = tissue_tile['bbox']
                     tissue_mask_filter[bbox[0]: bbox[2], bbox[1]: bbox[3]] += tissue_tile['image']
                 self.tissue_mask[idx] = np.uint8(tissue_mask_filter > 0)
-                # self.tissue_mask_thumb[idx] = tissue_seg.down_sample(self.tissue_mask[idx])
             self.tissue_num.append(len(filtered_props))
             self.tissue_bbox.append([p['bbox'] for p in filtered_props])
 
@@ -177,9 +176,6 @@ class CellSegPipe(object):
 
         """cell segmentation in tissue area by neural network"""
         tissue_cell_label = []
-        # for idx, img in enumerate(self.img_list):
-
-        #     tissue_bbox = self.tissue_bbox[idx]
         for img, tissue_bbox in zip(self.img_filter, self.tissue_bbox):
             tissue_img = [img[p[0]: p[2], p[1]: p[3]] for p in tissue_bbox]
 
@@ -269,8 +265,6 @@ class CellSegPipe(object):
 
         tifffile.imsave(join(self.__out_path, file_name + r'_score.tif'),
                         self.score_mask_list[idx])
-        # tifffile.imsave(join(self.__out_path, file_name + r'_tissue_cut.tif'),
-        #                 self.tissue_mask_thumb[idx])
         tifffile.imsave(join(self.__out_path, file_name + mask_outline_name),
                         utils.outline(self.post_mask_list[idx]))
         tifffile.imsave(join(self.__out_path, file_name + mask_name),
@@ -305,7 +299,6 @@ class CellSegPipe(object):
 
     def save_result(self):
         """save tissue mask"""
-        # self.save_tissue_mask()
         self.save_cell_mask()
 
     def run(self):

@@ -21,7 +21,6 @@ from ..core.tool_base import ToolBase
 from ..log_manager import logger
 from ..preprocess.normalize import normalize_total
 from ..stereo_config import stereo_conf
-from ..utils import remove_file
 from ..utils.correlation import pearson_corr
 from ..utils.correlation import spearmanr_corr
 
@@ -249,6 +248,7 @@ class CellTypeAnno(ToolBase):
             files = [os.path.join(tmp_output, f'sub_{i}.top_{self.method}_corr.csv') for i in range(len(datas))]
             self.result.matrix = self.concat_top_corr_files(files, self.output)
         # clear tmp directory
+        from ..utils import remove_file
         remove_file(tmp_output)
 
 

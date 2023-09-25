@@ -34,11 +34,7 @@ class data_batch(Dataset):
         return len(self.img_list)
 
     def __getitem__(self, idx):
-        # data1
         img = self.img_list[idx]
-        # img = cv2.cvtColor(img, cv2.COLOR_GRAY2RGB)
-        # img = transform.resize(img,(256,256))
-
         augmented = self.transforms(image=img)
         img = augmented['image']
 

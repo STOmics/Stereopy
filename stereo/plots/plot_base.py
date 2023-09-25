@@ -1,11 +1,11 @@
 from abc import ABCMeta
 from typing import Union
 
-from ..core import StereoExpData
 from ..core.stereo_exp_data import AnnBasedStereoExpData
 
 
 class PlotBase(metaclass=ABCMeta):
+    from ..core import StereoExpData
     PLOT_NAME_TO_NAMES = {}
 
     def __init__(self, stereo_exp_data: Union[StereoExpData, AnnBasedStereoExpData], pipeline_res: dict = None):

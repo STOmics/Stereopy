@@ -15,7 +15,6 @@ class Image(object):
         self.height: int = 0
         self.depth: int = 8
         self.ndim = 1
-        # self.channel_first: bool = False
 
     def read(self, image, buffer=None):
         """

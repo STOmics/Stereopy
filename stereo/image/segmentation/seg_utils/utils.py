@@ -82,8 +82,7 @@ def resize(data, shape, data_format='channels_last', labeled_image=False):
             interpolation = cv2.INTER_LINEAR
             data = data.astype('float32')
 
-        _resize = lambda d: np.expand_dims(cv2.resize(np.squeeze(d), shape,  # noqa
-                                                      interpolation=interpolation),
+        _resize = lambda d: np.expand_dims(cv2.resize(np.squeeze(d), shape, interpolation=interpolation),  # noqa
                                            axis=channel_axis)
 
     # Check for batch dimension to loop over
@@ -191,9 +190,7 @@ def cell_watershed(outputs,
         markers = np.zeros(inner_distance.shape)
         markers[coords[:, 0], coords[:, 1]] = 1
         markers = label(markers)
-        label_image = watershed(-outer_distance,
-                                markers,
-                                mask=outer_distance > distance_threshold)
+        label_image = watershed(-outer_distance, markers, mask=outer_distance > distance_threshold)
         label_image = erode_edges(label_image, 1)
 
         # Remove small objects
@@ -209,8 +206,7 @@ def cell_watershed(outputs,
     return label_images
 
 
-def tile_image(image, model_input_shape=(512, 512),
-               stride_ratio=0.75, pad_mode='constant'):
+def tile_image(image, model_input_shape=(512, 512), stride_ratio=0.75, pad_mode='constant'):
     """
     Tile large image into many overlapping tiles of size "model_input_shape".
 
@@ -404,7 +400,6 @@ def untile_image(tiles, tiles_info, power=2, **kwargs):
     min_tile_size = 32
     min_stride_ratio = 0.5
 
-    stride_ratio = tiles_info['stride_ratio']
     image_shape = tiles_info['image_shape']
     batches = tiles_info['batches']
     x_starts = tiles_info['x_starts']
@@ -453,32 +448,9 @@ def untile_image(tiles, tiles_info, power=2, **kwargs):
 def view_bar(message, id, total, end=''):
     rate = id / total
     rate_num = int(rate * 40)
-    print('\r%s:[%s%s]%d%%\t%d/%d' % (message, ">" * rate_num,
-                                      "=" * (40 - rate_num), np.round(rate * 100), id, total,), end=end)
+    print('\r%s:[%s%s]%d%%\t%d/%d' % (message, ">" * rate_num, "=" * (40 - rate_num), np.round(rate * 100), id, total,),
+          end=end)
 
-
-# def split(image, cut_size, overlap=100):
-#     image = np.array(image)
-#     shapes = image.shape
-#     x_nums = int(shapes[0] / (cut_size - overlap))
-#     y_nums = int(shapes[1] / (cut_size - overlap))
-#     img_list = []
-#     x_list = []
-#     y_list = []
-#     for x_temp in range(x_nums + 1):
-#         for y_temp in range(y_nums + 1):
-#             x_begin = max(0, x_temp * (cut_size - overlap))
-#             y_begin = max(0, y_temp * (cut_size - overlap))
-#             x_end = min(x_begin + cut_size, shapes[0])
-#             y_end = min(y_begin + cut_size, shapes[1])
-#             i = image[x_begin: x_end, y_begin: y_end]
-#             if i.shape[0] < cut_size or i.shape[1] < cut_size:
-#                 continue
-#             # tifffile.imsave(os.path.join(outpath, file + '_' + str(shapes[0]) + '_' + str(shapes[1]) + '_' + str(x_begin) + '_' + str(y_begin) + '.tif'), i)  #, r'white_5000'r'20210326_other_crop' # noqa
-#             x_list.append(x_begin)
-#             y_list.append(y_begin)
-#             img_list.append(i)
-#     return img_list, x_list, y_list
 
 def split(image, cut_size, overlap=100):
     image = np.array(image)

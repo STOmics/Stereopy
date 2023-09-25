@@ -453,8 +453,8 @@ def untile_image(tiles, tiles_info, power=2, **kwargs):
 def view_bar(message, id, total, end=''):
     rate = id / total
     rate_num = int(rate * 40)
-    print('\r%s:[%s%s]%d%%\t%d/%d' % (message, ">" * rate_num,
-                                      "=" * (40 - rate_num), np.round(rate * 100), id, total,), end=end)
+    print('\r%s:[%s%s]%d%%\t%d/%d' % (message, ">" * rate_num, "=" * (40 - rate_num), np.round(rate * 100), id, total,),
+          end=end)
 
 
 def split(image, cut_size, overlap=100):
@@ -471,7 +471,6 @@ def split(image, cut_size, overlap=100):
             x_end = min(x_begin + cut_size, shapes[0])
             y_end = min(y_begin + cut_size, shapes[1])
             i = image[x_begin: x_end, y_begin: y_end]
-            # tifffile.imsave(os.path.join(outpath, file + '_' + str(shapes[0]) + '_' + str(shapes[1]) + '_' + str(x_begin) + '_' + str(y_begin) + '.tif'), i)  #, r'white_5000'r'20210326_other_crop' # noqa
             x_list.append(x_begin)
             y_list.append(y_begin)
             img_list.append(i)
@@ -504,11 +503,8 @@ def czi_save_tif(path, outpath):
     slide = slideio.open_slide(path, "CZI")
 
     scene = slide.get_scene(0)
-    print(dir(scene))
-    print(scene.size, scene.resolution, scene.origin)
     im = scene.read_block((0, 0, 0, 0), size=(scene.size[0], scene.size[1]))
     shapes = im.shape
-    print(shapes)
     if len(shapes) == 2:
         tifffile.imsave(os.path.join(outpath, os.path.splitext(file)[0]) + '_ssdna.tif', im)
     else:

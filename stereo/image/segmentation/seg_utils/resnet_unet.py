@@ -35,9 +35,7 @@ class SResUnet(nn.Module):
         else:
             raise EOFError
 
-        # self.encoder = encoder(pretrained=pretrained)
         self.encoder_layers = list(self.encoder.children())
-
         self.block0 = nn.Conv2d(6, 64, kernel_size=7, stride=2, padding=3, bias=False)
         self.block0.weight[:, :3, :, :].data = self.encoder_layers[0].weight[:, :, :, :].data
         self.block0.weight[:, 3:, :, :].data = self.encoder_layers[0].weight[:, :, :, :].data
@@ -57,12 +55,6 @@ class SResUnet(nn.Module):
         self.conv9 = double_conv(64 + 64, 64)
         self.up_conv10 = up_conv(64, 32)
         self.conv10 = nn.Conv2d(32, out_channels, kernel_size=1)
-
-        # self.block1.requires_grad_(False)
-        # self.block2.requires_grad_(False)
-        # self.block3.requires_grad_(False)
-        # self.block4.requires_grad_(False)
-        # self.block5.requires_grad_(False)
 
         if not pretrained:
             self._weights_init()
@@ -120,7 +112,6 @@ class DResUnet(nn.Module):
             self.encoder = torchvision.models.resnet.resnet152(pretrained=pretrained)
         else:
             raise EOFError
-        # self.encoder = encoder(pretrained=pretrained)
         self.encoder_layers = list(self.encoder.children())
 
         self.block1 = nn.Sequential(*self.encoder_layers[:3])
@@ -192,7 +183,6 @@ class EpsaResUnet(nn.Module):
             self.encoder = models.EPSANet(models.EPSABlock, [3, 4, 6, 3])
         else:
             raise EOFError
-        # self.encoder = encoder(pretrained=pretrained)
         self.encoder_layers = list(self.encoder.children())
 
         self.block1 = nn.Sequential(*self.encoder_layers[:3])
@@ -214,9 +204,6 @@ class EpsaResUnet(nn.Module):
 
         if not pretrained:
             self._weights_init()
-
-        # self.block4.requires_grad_(False)
-        # self.block5.requires_grad_(False)
 
     def _weights_init(self):
         for m in self.modules():

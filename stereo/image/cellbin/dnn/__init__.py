@@ -3,7 +3,8 @@
 # In this section you will find the functions, which describe how to run classification, segmentation and detection
 # DNN models with ONNX.
 
-from abc import ABC, abstractmethod
+from abc import ABC
+from abc import abstractmethod
 
 
 class BaseNet(ABC):

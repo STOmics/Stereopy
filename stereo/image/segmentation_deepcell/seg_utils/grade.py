@@ -92,7 +92,6 @@ def water_score(input_list):
             color_mask_ori[bbox[0]: bbox[2], bbox[1]: bbox[3]] += color_seg
         else:
             post_mask[bbox[0]: bbox[2], bbox[1]: bbox[3]] += (obj['image'] * 255).astype(np.uint8)
-            # area_list.append(mean_intensity)
             total_score = score_cell(obj)
             score_list.append([obj['label'], center[0], center[1], total_score])
             color_mask_temp = obj['image'] * total_score * 100

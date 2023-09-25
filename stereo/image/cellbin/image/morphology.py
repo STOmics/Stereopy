@@ -153,9 +153,6 @@ def f_deep_watershed(outputs,
         else:
             # Find peaks and merge equal regions
             fn = ball if input_is_3d else disk
-            # markers = h_maxima(image=maxima,
-            #                    h=maxima_threshold,
-            #                    selem=fn(radius))
             markers = h_maxima(image=maxima,
                                h=maxima_threshold,
                                footprint=fn(radius))

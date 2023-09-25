@@ -114,7 +114,7 @@ class cl_bcdu(object):
             for i in range(len(cont)):
                 if hier[0][i][3] != -1:
                     continue
-                l = cnt_len(cont[i]) # noqa
+                l = cnt_len(cont[i])  # noqa
                 if l > 100 and hier[0][i][2] > -1:
                     tmp = []
                     for j in range(len(hier[0])):
@@ -186,8 +186,6 @@ class cl_bcdu(object):
             if not self.init_model():
                 return False, im, []
 
-        # src = np.squeeze(src)
-
         im = uity.ij_auto_contrast(src)
         if im.dtype != 'uint8':
             im = uity.ij_16_to_8(im)
@@ -204,11 +202,9 @@ class cl_bcdu(object):
         im[im < thea] = 0
         im[im >= thea] = 255
 
-        # _, im = cv2.threshold(im, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_TRIANGLE)
         im = uity.up_sample(im, src.shape[:2])
         im[im > 0] = 1
 
-        # in_score = self.eval_point(im_contrast, im, 2)
         avg_score = self.eval_point(im_contrast, im, 0)
         out_score = self.eval_point(im_contrast, im, 1)
 

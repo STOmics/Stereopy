@@ -545,7 +545,7 @@ class StPipeline(object):
             n_bins: int = 20,
             res_key='highly_variable_genes'
     ):
-        """\
+        """
         Annotate highly variable genes, refering to Scanpy.
         Which method to implement depends on `flavor`,including Seurat [Satija15]_ ,
         Cell Ranger [Zheng17]_ and Seurat v3 [Stuart19]_.
@@ -713,7 +713,7 @@ class StPipeline(object):
                         Options are:
                             `'spectral'`: use a spectral embedding of the graph.
                             `'random'`: assign initial embedding positions at random.
-
+        :param method: Use the original 'umap' implementation, or 'rapids' (experimental, GPU only)
         :return: UMAP result is stored in `self.result` where the result key is `'umap'`.
         """
         from ..algorithm.umap import umap
@@ -859,7 +859,7 @@ class StPipeline(object):
         :param n_iterations: how many iterations of the Leiden clustering algorithm to perform.
                              Positive values above 2 define the total number of iterations to perform,
                              `-1` has the algorithm run until it reaches its optimal clustering.
-
+        :param method: Use the original 'normal' implementation, or 'rapids' (experimental, GPU only)
         :return: Clustering result of Leiden is stored in `self.result` where the key is `'leiden'`.
         """
         neighbor, connectivities, _ = self.get_neighbors_res(neighbors_res_key)
@@ -870,7 +870,6 @@ class StPipeline(object):
             from ..algorithm.leiden import leiden as le
             clusters = le(neighbor=neighbor, adjacency=connectivities, directed=directed, resolution=resolution,
                           use_weights=use_weights, random_state=random_state, n_iterations=n_iterations)
-        # self.data.cells[res_key] = clusters
         df = pd.DataFrame({'bins': self.data.cell_names, 'group': clusters})
         self.result[res_key] = df
         key = 'cluster'
@@ -914,7 +913,6 @@ class StPipeline(object):
         from ..utils.pipeline_utils import cell_cluster_to_gene_exp_cluster
         clusters = lo(neighbor=neighbor, resolution=resolution, random_state=random_state,
                       adjacency=connectivities, flavor=flavor, directed=directed, use_weights=use_weights)
-        # self.data.cells[res_key] = clusters
         df = pd.DataFrame({'bins': self.data.cell_names, 'group': clusters})
         self.result[res_key] = df
         key = 'cluster'
@@ -940,7 +938,7 @@ class StPipeline(object):
         :param n_jobs: the number of parallel jobs to run for neighbors search. If set to `-1`, all CPUs will be used.
                     Too high value may cause segment fault.
         :param res_key: the key for storing result of Phenograph clustering.
-
+        :param seed: leiden initialization of the optimization.
         :return: Clustering result of Phenograph is stored in `self.result` where the key is `'phenograph'`.
         """
         if pca_res_key not in self.result:
@@ -955,8 +953,6 @@ class StPipeline(object):
             values=communities.astype('U'),
             categories=natsorted(map(str, np.unique(communities))),
         )
-        # clusters = communities.astype(str)
-        # self.data.cells[res_key] = clusters
         df = pd.DataFrame({'bins': self.data.cell_names, 'group': clusters})
         self.result[res_key] = df
         key = 'cluster'
@@ -1002,6 +998,7 @@ class StPipeline(object):
         :param n_genes: default to 0, means will auto calculate n_genes by N = 10000/K². K is cluster number, and N is
                 larger or equal to 1, less or equal to 50.
         :param ascending: default to False.
+        :param n_jobs: the number of parallel jobs to run. default to 4.
         :return: The result of marker genes is stored in `self.result` where the key is `'marker_genes'`.
         """
         from ..tools.find_markers import FindMarker
@@ -1128,7 +1125,6 @@ class StPipeline(object):
         from ..algorithm.spatial_hotspot import spatial_hotspot
         if use_highly_genes and hvg_res_key not in self.result:
             raise Exception(f'{hvg_res_key} is not in the result, please check and run the highly_var_genes func.')
-        # data = self.subset_by_hvg(hvg_res_key, inplace=False) if use_highly_genes else self.data
         if use_raw and not self.raw:
             raise Exception('self.raw must be set if use_raw is True.')
         data = copy.deepcopy(self.raw) if use_raw else copy.deepcopy(self.data)
@@ -1138,8 +1134,6 @@ class StPipeline(object):
             data = data.sub_by_name(gene_name=highly_genes_name)
         hs = spatial_hotspot(data, model=model, n_neighbors=n_neighbors, n_jobs=n_jobs, fdr_threshold=fdr_threshold,
                              min_gene_threshold=min_gene_threshold, outdir=outdir)
-        # res = {"results":hs.results, "local_cor_z": hs.local_correlation_z, "modules": hs.modules,
-        #        "module_scores": hs.module_scores}
         self.result[res_key] = hs
 
     @logit
@@ -1169,7 +1163,6 @@ class StPipeline(object):
         assert smooth_threshold >= 20 and smooth_threshold <= 100, 'smooth_threshold must be between 20 and 100'
 
         pca_exp_matrix = self.result[pca_res_key].to_numpy()
-        # raw_exp_matrix = self.raw.exp_matrix.toarray() if issparse(self.raw.exp_matrix) else self.raw.exp_matrix
         raw_exp_matrix = self.raw.exp_matrix if self.raw.issparse() else self.raw.array2sparse()
 
         if pca_exp_matrix.shape[0] != raw_exp_matrix.shape[0]:
@@ -1180,7 +1173,6 @@ class StPipeline(object):
                 """
             )
 
-        # logger.info(f"raw exp matrix size: {raw_exp_matrix.shape}")
         from ..algorithm.gaussian_smooth import gaussian_smooth
 
         if n_jobs <= 0 or n_jobs > cpu_count():
@@ -1194,7 +1186,6 @@ class StPipeline(object):
             smooth_threshold=smooth_threshold,
             n_jobs=n_jobs
         )
-        # logger.info(f"smoothed exp matrix size: {result.shape}")
         data = self.data if inplace else copy.deepcopy(self.data)
         data.exp_matrix = result
         return data
@@ -1212,8 +1203,8 @@ class StPipeline(object):
             n_pairs: int = 1000,
             adj_method: str = "fdr_bh",
             bin_scale: int = 1,
-            n_jobs=4,
-            res_key='lr_score'
+            n_jobs: int = 4,
+            res_key: str = 'lr_score'
     ):
         """calculate cci score for each LR pair and do permutation test
 
@@ -1237,8 +1228,12 @@ class StPipeline(object):
             number of pairs to random sample, by default 1000
         adj_method : str, optional
             adjust method of p value, by default "fdr_bh"
-        n_wokers : int, optional
-            num of worker when calculate_score, by default 4
+        bin_scale : int, optional
+            to scale the distance `distance = bin_scale * distance`, by default 1
+        n_jobs: int, optional
+            the number of parallel jobs to run, by default 4
+        res_key:  str, optional
+            the key for getting the result after integrating from the self.result, defaults to 'lr_score'
 
         Raises
         ------

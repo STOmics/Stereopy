@@ -1,4 +1,8 @@
-from joblib import Parallel, delayed, cpu_count
+from joblib import (
+    Parallel,
+    delayed,
+    cpu_count
+)
 
 from stereo import logger
 from stereo.core import StPipeline
@@ -30,9 +34,6 @@ class MSDataPipeLine(object):
         self._result = new_result
 
     def _use_integrate_method(self, item, *args, **kwargs):
-        # if item == "batches_integrate":
-        #     raise AttributeError
-
         if "mode" in kwargs:
             del kwargs["mode"]
 
@@ -66,9 +67,6 @@ class MSDataPipeLine(object):
             if scope_result is None:
                 raise KeyError
             method_result = scope_result.get(name, None)
-            # if method_result is None:
-            #     raise KeyError
-            # return method_result
             return method_result
 
         ms_data_view._merged_data.tl.result.get_item_method = get_item_method

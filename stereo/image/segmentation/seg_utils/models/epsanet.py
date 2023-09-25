@@ -89,8 +89,16 @@ class PSAModule(nn.Module):
 class EPSABlock(nn.Module):
     expansion = 4
 
-    def __init__(self, inplanes, planes, stride=1, downsample=None, norm_layer=None, conv_kernels=[3, 5, 7, 9],
-                 conv_groups=[1, 4, 8, 16]):
+    def __init__(
+            self,
+            inplanes,
+            planes,
+            stride=1,
+            downsample=None,
+            norm_layer=None,
+            conv_kernels=[3, 5, 7, 9],
+            conv_groups=[1, 4, 8, 16]
+    ):
         super(EPSABlock, self).__init__()
         if norm_layer is None:
             norm_layer = nn.BatchNorm2d
@@ -106,7 +114,6 @@ class EPSABlock(nn.Module):
         self.stride = stride
 
     def forward(self, x):
-        # print('111111111111', x.shape)
         identity = x
 
         out = self.conv1(x)
@@ -119,7 +126,6 @@ class EPSABlock(nn.Module):
 
         out = self.conv3(out)
         out = self.bn3(out)
-        # print('222222222222', out.shape)
 
         if self.downsample is not None:
             identity = self.downsample(x)
@@ -187,7 +193,6 @@ class EPSANet(nn.Module):
     def __init__(self, block, layers, num_classes=1000):
         super(EPSANet, self).__init__()
         self.inplanes = 64
-        # self.conv1 = nn.Conv2d(3, 64, kernel_size=7, stride=2, padding=3, bias=False)
         self.conv1 = nn.Conv2d(6, 64, kernel_size=7, stride=2, padding=3, bias=False)
         self.bn1 = nn.BatchNorm2d(64)
         self.relu = nn.ReLU(inplace=True)
@@ -578,13 +583,11 @@ def _resnet(
 
 
 def epsanet50():
-    model = EPSANet(EPSABlock, [3, 4, 6, 3], num_classes=20)
-    return model
+    return EPSANet(EPSABlock, [3, 4, 6, 3], num_classes=20)
 
 
 def epsanet101():
-    model = EPSANet(EPSABlock, [3, 4, 23, 3], num_classes=20)
-    return model
+    return EPSANet(EPSABlock, [3, 4, 23, 3], num_classes=20)
 
 
 def resnet50(pretrained: bool = False, progress: bool = True, num_classes: int = 20, **kwargs: Any) -> ResNet:
@@ -594,5 +597,4 @@ def resnet50(pretrained: bool = False, progress: bool = True, num_classes: int =
         pretrained (bool): If True, returns a model pre-trained on ImageNet
         progress (bool): If True, displays a progress bar of the download to stderr
     """
-    return _resnet('resnet50', Bottleneck, [3, 4, 6, 3], num_classes, pretrained, progress,
-                   **kwargs)
+    return _resnet('resnet50', Bottleneck, [3, 4, 6, 3], num_classes, pretrained, progress, **kwargs)

@@ -5,8 +5,17 @@ from tqdm import tqdm
 
 
 class SplitWSI(object):
-    def __init__(self, img, win_shape, overlap=0, batch_size=0,
-                 need_fun_ret=False, need_combine_ret=True, editable=False, tar_dtype=np.uint8):
+    def __init__(
+            self,
+            img,
+            win_shape,
+            overlap=0,
+            batch_size=0,
+            need_fun_ret=False,
+            need_combine_ret=True,
+            editable=False,
+            tar_dtype=np.uint8
+    ):
         """
         update by cenweixuan on 2023/3/07
         help split the img and run the function piece by piece then combine the pieces into img
@@ -128,11 +137,9 @@ class SplitWSI(object):
         return
 
     def _f_run(self):
-        # for i in range(0, len(self._box_lst), self._batch_size):
         for i in tqdm(range(0, len(self._box_lst), self._batch_size)):
             batch_box = self._box_lst[i:min(i + self._batch_size, len(self._box_lst))]
             batch_input = self._f_get_batch_input(batch_box)
-            batch_output = []
             if self._batch_size > 1:
                 batch_output = self._runfun(batch_input, *self._runfun_args)
             else:

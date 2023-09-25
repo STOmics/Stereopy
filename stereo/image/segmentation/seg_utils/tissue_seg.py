@@ -86,9 +86,6 @@ def tissueSeg(ori_image_list):
 
 
 def tissue_seg_multi(input_list, processes):
-    # with mp.Pool(processes=processes) as p:
-    #     pre_tissue = p.map(tissueSeg, input_list)
-    # return pre_tissue
     pre_tissue = []
     if processes > 1:
         pool = mp.Pool(processes=processes)
