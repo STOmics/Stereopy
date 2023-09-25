@@ -4,4 +4,5 @@
 from . import io
 from .common import version as __version__
 from .log_manager import logger
-from .stereo_config import StereoConfig, stereo_conf
+from .stereo_config import StereoConfig
+from .stereo_config import stereo_conf

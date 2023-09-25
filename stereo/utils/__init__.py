@@ -12,7 +12,8 @@
 import os
 import shutil
 
-from .correlation import pearson_corr, spearmanr_corr
+from .correlation import pearson_corr
+from .correlation import spearmanr_corr
 from .pipeline_utils import cluster_bins_to_cellbins
 
 

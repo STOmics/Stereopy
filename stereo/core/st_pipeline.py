@@ -29,7 +29,6 @@ from typing_extensions import Literal
 from .result import Result, AnnBasedResult
 from .stereo_exp_data import AnnBasedStereoExpData
 from .stereo_exp_data import StereoExpData
-from ..algorithm.algorithm_base import AlgorithmBase
 from ..log_manager import logger
 from ..utils.time_consume import TimeConsume
 
@@ -70,6 +69,7 @@ class StPipeline(object):
         if item.startswith('__'):
             raise AttributeError
 
+        from ..algorithm.algorithm_base import AlgorithmBase
         new_attr = AlgorithmBase.get_attribute_helper(item, self.data, self.result)
         if new_attr:
             self.__setattr__(item, new_attr)
