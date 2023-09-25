@@ -9,8 +9,10 @@
 import pandas as pd
 from sqlalchemy import or_
 
-from stereo.algorithm.cell_cell_communication.utils.database_utils import Repository
-from stereo.algorithm.cell_cell_communication.utils.database_utils import remove_not_defined_columns
+from stereo.algorithm.cell_cell_communication.utils.database_utils import (
+    Repository,
+    remove_not_defined_columns
+)
 from stereo.algorithm.cell_cell_communication.utils.sqlalchemy_model import (
     Complex,
     ComplexComposition,
@@ -373,12 +375,8 @@ class MultidataRepository(Repository):
         protein_multidata_join = Protein.protein_multidata_id == Multidata.id_multidata
         if include_gene:
             gene_protein_join = Gene.protein_id == Protein.id_protein
-            query_single = self.database_manager.database.session.query(Gene,
-                                                                        Protein,
-                                                                        Multidata).join(Protein,
-                                                                                        gene_protein_join
-                                                                                        ).join(Multidata,
-                                                                                               protein_multidata_join)
+            query_single = self.database_manager.database.session.query(Gene, Protein, Multidata)
+            query_single = query_single.join(Protein, gene_protein_join).join(Multidata, protein_multidata_join)
         else:
             query_single = self.database_manager.database.session.query(Protein, Multidata).join(
                 Multidata, protein_multidata_join)
@@ -386,8 +384,8 @@ class MultidataRepository(Repository):
         multidata_simple = pd.read_sql(query_single.statement, self.database_manager.database.engine)
 
         multidata_complex_join = Multidata.id_multidata == Complex.complex_multidata_id
-        query_complex = self.database_manager.database.session.query(Multidata, Complex).join(Complex,
-                                                                                              multidata_complex_join)
+        query_complex = self.database_manager.database.session.query(Multidata, Complex).join(
+            Complex, multidata_complex_join)
         multidata_complex = pd.read_sql(query_complex.statement, self.database_manager.database.engine)
 
         if multidata_complex.empty:
@@ -431,8 +429,8 @@ class ProteinRepository(Repository):
         :return:
         """
         protein_multidata_join = Protein.protein_multidata_id == Multidata.id_multidata
-        protein_query = self.database_manager.database.session.query(Protein, Multidata).join(Multidata,
-                                                                                              protein_multidata_join)
+        protein_query = self.database_manager.database.session.query(Protein, Multidata).join(
+            Multidata, protein_multidata_join)
         protein = pd.read_sql(protein_query.statement, self.database_manager.database.session.bind)
 
         return protein
@@ -455,8 +453,7 @@ class ProteinRepository(Repository):
 
     def add_proteins(self, proteins: pd.DataFrame, multidatas: pd.DataFrame):
         multidatas.to_sql(name='multidata_table', if_exists='append', con=self.database_manager.database.engine,
-                          index=False,
-                          chunksize=50)
+                          index=False, chunksize=50)
 
         multidata_query = self.database_manager.database.session.query(Multidata.id_multidata, Multidata.name)
         multidatas_db = pd.read_sql(multidata_query.statement, self.database_manager.database.session.bind)

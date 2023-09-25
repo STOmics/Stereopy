@@ -252,10 +252,8 @@ def stack_slices_pairwise(
 
     # new_slices = []
     for i in range(len(slices)):
-        # s: StereoExpData = deepcopy(slices[i])
         slices[i].raw_position = slices[i].position
         slices[i].position = new_coor[i]
-        # new_slices.append(s)
 
     if not output_params:
         return slices
@@ -315,16 +313,10 @@ def stack_slices_center(
             translations.append(tY)
         new_coor.append(y)
 
-    # new_slices = []
     for i in range(len(slices)):
-        # s: StereoExpData = deepcopy(slices[i])
         slices[i].raw_position = slices[i].position
         slices[i].position = new_coor[i]
-        # new_slices.append(s)
 
-    # new_center: StereoExpData = deepcopy(center_slice)
-    # new_center.raw_position = new_center.position
-    # new_center.position = c
     center_slice.raw_position = center_slice.position
     center_slice.position = c
     if not output_params:

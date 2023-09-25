@@ -60,8 +60,13 @@ class Subsampler(object):
         return x_matrix.T
 
 
-def write_to_file(df: pd.DataFrame, filename: str, output_path: str, output_format: Optional[str] = None,
-                  index: bool = False):
+def write_to_file(
+        df: pd.DataFrame,
+        filename: str,
+        output_path: str,
+        output_format: Optional[str] = None,
+        index: bool = False
+):
     _, file_extension = os.path.splitext(filename)
 
     if output_format is None:

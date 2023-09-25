@@ -1,4 +1,5 @@
-from IPython.display import display, HTML
+from IPython.display import HTML
+from IPython.display import display
 
 from stereo.plots.plot_base import PlotBase
 

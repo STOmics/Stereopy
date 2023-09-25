@@ -368,11 +368,6 @@ if __name__ == "__main__":
     gene_name = [str(x) for x in fly.var_names]  # 13668 genes
     spot_name = [str(x) for x in fly.obs_names]  # 15295 cells
 
-    # count_sp = fly.X  # 15295 x 13668 (16 slices)
-    # # count_df = pd.DataFrame(count_sp.tocsr().toarray(), columns=gene_name)
-    # count_df = pd.DataFrame(count_sp, columns=gene_name)
-    # count_df['cell'] = spot_name
-
     coord_x = [x[0] for x in fly.obsm['spatial']]
     coord_y = [x[1] for x in fly.obsm['spatial']]
     coord_z = [x[2] for x in fly.obsm['spatial']]

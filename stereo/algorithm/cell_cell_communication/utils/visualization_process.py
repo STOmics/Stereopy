@@ -7,21 +7,10 @@
 
 from functools import partial
 
-# import scanpy as sc
 import pandas as pd
 
 
-# import numpy as np
-# import anndata
-# import sys
-# sys.path.append(r'E:\VT3D\test_stereopy_3D_browser-main')
-# from stereopy_3D_browser import launch
-# import plotly.graph_objs as go
-
-
 def preprocess_significant_means_result(significant_means: pd.DataFrame):
-    # drop_list = ['id_cp_interaction', 'partner_a', 'partner_b', 'gene_a', 'gene_b', 'secreted', 'receptor_a',
-    #              'receptor_b', 'annotation_strategy', 'is_integrin', 'rank']
     drop_list = ['id_cp_interaction', 'gene_a', 'gene_b', 'secreted', 'receptor_a', 'receptor_b', 'annotation_strategy',
                  'is_integrin', 'rank']
     significant_means = significant_means.drop(drop_list, axis=1)

@@ -28,7 +28,8 @@ from arboreto.algo import grnboost2
 from arboreto.utils import load_tf_names
 from ctxcore.rnkdb import FeatherRankingDatabase as RankingDatabase
 from dask.diagnostics import ProgressBar
-from dask.distributed import Client, LocalCluster
+from dask.distributed import Client
+from dask.distributed import LocalCluster
 from pyscenic.aucell import aucell
 from pyscenic.export import export2loom
 from pyscenic.prune import df2regulons
@@ -68,10 +69,10 @@ class RegulatoryNetworkInference(AlgorithmBase):
         :param database: the sequence of databases.
         :param motif_anno: the name of the file that contains the motif annotations to use.
         :param tfs: list of target transcription factors. If None or 'all', the list of gene_names will be used.
-        :param target_genes: optional list of gene names (strings). Required when a (dense or sparse) matrix is passed as # noqa
+        :param target_genes: optional list of gene names (strings). Required when a (dense or sparse) matrix is passed as
             'expression_data' instead of a DataFrame
-        :param auc_threshold: the fraction of the ranked genome to take into account for the calculation of the Area Under the recovery Curve. # noqa
-        :param num_workers: if not using a cluster, the number of workers to use for the calculation. None of all available CPUs need to be used. # noqa
+        :param auc_threshold: the fraction of the ranked genome to take into account for the calculation of the Area Under the recovery Curve.
+        :param num_workers: if not using a cluster, the number of workers to use for the calculation. None of all available CPUs need to be used.
         :param res_key: the key for storage of inference regulatory network result.
         :param seed: optional random seed for the regressors. Default None.
         :param cache: whether to use cache files. Need to provide adj.csv, motifs.csv and auc.csv.
@@ -79,8 +80,8 @@ class RegulatoryNetworkInference(AlgorithmBase):
         :param method: the method to inference GRN, 'grnboost' or 'hotspot'.
         :param ThreeD_slice: whether to use 3D slice data.
         :param prune_kwargs: dict, others parameters of pyscenic.prune.prune2df
-        :return: Computation result of inference regulatory network is stored in self.result where the result key is 'regulatory_network_inference'. # noqa
-        """
+        :return: Computation result of inference regulatory network is stored in self.result where the result key is 'regulatory_network_inference'.
+        """  # noqa
         matrix = self.stereo_exp_data.to_df()
         df = self.stereo_exp_data.to_df()
 
@@ -237,13 +238,10 @@ class RegulatoryNetworkInference(AlgorithmBase):
         logger.info(local_correlations.shape)
 
         # subset by TFs
-        if tf_list:
-            if tf_list != 'all':
-                common_tf_list = list(set(tf_list).intersection(set(local_correlations.columns)))
-                logger.info(f'detected {len(common_tf_list)} predefined TF in data')
-                assert len(common_tf_list) > 0, 'predefined TFs not found in data'
-        else:
-            common_tf_list = local_correlations.columns
+        if tf_list and tf_list != 'all':
+            common_tf_list = list(set(tf_list).intersection(set(local_correlations.columns)))
+            logger.info(f'detected {len(common_tf_list)} predefined TF in data')
+            assert len(common_tf_list) > 0, 'predefined TFs not found in data'
 
         # reshape matrix
         local_correlations['TF'] = local_correlations.columns
@@ -424,7 +422,6 @@ class RegulatoryNetworkInference(AlgorithmBase):
         self.regulon_list = regulon_list
 
         # alternative way of getting regulon_list, without creating df first
-        # regulon_list = prune(dbs, modules, motif_anno)
         return regulon_list, df
 
     def auc_activity_level(self,
@@ -505,9 +502,12 @@ class RegulatoryNetworkInference(AlgorithmBase):
         :param loom_fn:
         :return:
         """
-        export2loom(ex_mtx=matrix, auc_mtx=auc_matrix,
-                    regulons=[r.rename(r.name.replace('(+)', ' (' + str(len(r)) + 'g)')) for r in regulons],
-                    out_fname=loom_fn)
+        export2loom(
+            ex_mtx=matrix,
+            auc_mtx=auc_matrix,
+            regulons=[r.rename(r.name.replace('(+)', ' (' + str(len(r)) + 'g)')) for r in regulons],
+            out_fname=loom_fn
+        )
 
     def to_cytoscape(self,
                      regulons: list,

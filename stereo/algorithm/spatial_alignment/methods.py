@@ -13,7 +13,8 @@ from sklearn.decomposition import NMF
 from stereo.core.cell import Cell
 from stereo.core.gene import Gene
 from stereo.core.stereo_exp_data import StereoExpData
-from stereo.log_manager import logger, LogManager
+from stereo.log_manager import LogManager
+from stereo.log_manager import logger
 from .helper import (
     kl_divergence_backend,
     to_dense_array,
@@ -92,10 +93,6 @@ def pairwise_align(
         if gpu_verbose:
             logger.info("Using selected backend cpu. If you want to use gpu, set use_gpu = True.")
 
-    # subset for common genes
-    # common_genes = intersect(sliceA.var.index, sliceB.var.index)
-    # sliceA = sliceA[:, common_genes]
-    # sliceB = sliceB[:, common_genes]
     if filter_gene:
         common_genes = np.intersect1d(sliceA.genes.gene_name, sliceB.genes.gene_name)
         LogManager.stop_logging()
@@ -263,11 +260,8 @@ def center_align(
     common_genes = initial_slice.genes.gene_name
     for s in slices:
         common_genes = np.intersect1d(common_genes, s.genes.gene_name)
-        # common_genes = intersect(common_genes, s.genes.gene_name)
-    # common_genes = np.array(common_genes, dtype='U')
 
     # subset common genes
-    # A = A[:, common_genes]
     LogManager.stop_logging()
     initial_slice.tl.filter_genes(gene_list=common_genes)
     for i in range(len(slices)):
@@ -296,10 +290,6 @@ def center_align(
         logger.warning("Warning: initial_slice.position is not of type numpy array.")
 
     # Initialize center_slice
-    # center_slice = AnnData(np.dot(W,H))
-    # center_slice.var.index = common_genes
-    # center_slice.obs.index = A.obs.index
-    # center_slice.obsm['spatial'] = center_coordinates
     center_slice = StereoExpData(exp_matrix=np.dot(W, H))
     center_slice.genes = Gene(gene_name=common_genes)
     center_slice.cells = Cell(cell_name=initial_slice.cells.cell_name)
@@ -339,9 +329,6 @@ def center_align(
 
 def center_ot(W, H, slices, center_coordinates, common_genes, alpha, backend, use_gpu, dissimilarity='kl', norm=False,
               G_inits=None, distributions=None, verbose=False):
-    # center_slice = AnnData(np.dot(W,H))
-    # center_slice.var.index = common_genes
-    # center_slice.obsm['spatial'] = center_coordinates
     center_slice = StereoExpData()
     center_slice.exp_matrix = np.dot(W, H)
     center_slice.genes = Gene(gene_name=common_genes)

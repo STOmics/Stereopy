@@ -16,7 +16,6 @@ def kernel_plot(merge_data, batch_key="batch", test_key="total_counts"):
     ax = plt.gca()
     ax.spines[["top", "right"]].set_visible(False)
     sn.kdeplot(x=test_key, data=merge_data.obs, hue=batch_key, common_norm=False)
-    # plt.title(f"Kernel Fitting Curve by {test_key}".title())
     plt.xticks(fontsize=20, rotation=-35)
     plt.yticks(fontsize=20)
     plt.xlabel(test_key.title(), fontsize=20)

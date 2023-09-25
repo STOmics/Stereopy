@@ -300,8 +300,6 @@ class CellCellCommunication(AlgorithmBase):
             'significant_means': significant_means,
             'deconvoluted': deconvoluted_result,
             'visualization_data': visualization_data
-            # 'interactions_filtered': interactions_filtered,
-            # 'interactions': interactions
         }
         if analysis_type == "statistical":
             self.pipeline_res[res_key]['pvalues'] = pvalues_result
@@ -477,7 +475,6 @@ class CellCellCommunication(AlgorithmBase):
         elif len_columns > 2:
             logger.warning(f"Microenvrionemnts expects 2 columns and got {len_columns}. Droppoing extra columns.")
         microenvs = microenvs.iloc[:, 0:2]
-        # if any(~microenvs.iloc[:, 0].isin(meta['cell_type'])):
         if not all(microenvs.iloc[:, 0].isin(meta['cell_type'])):
             raise Exception("Some clusters/cell_types in microenvironments are not present in meta")
         microenvs.columns = ["cell_type", "microenvironment"]
@@ -1272,23 +1269,13 @@ class CellCellCommunication(AlgorithmBase):
         genes_counts = list(counts.index)
         genes_filtered = genes[genes['id_multidata'].apply(lambda gene: gene in genes_counts)]
 
-        deconvoluted_complex_result_1 = self._deconvolute_complex_interaction_component(complex_compositions,
-                                                                                        genes_filtered,
-                                                                                        interactions,
-                                                                                        '_1',
-                                                                                        counts_data)
-        deconvoluted_simple_result_1 = self._deconvolute_interaction_component(interactions,
-                                                                               '_1',
-                                                                               counts_data)
+        deconvoluted_complex_result_1 = self._deconvolute_complex_interaction_component(
+            complex_compositions, genes_filtered, interactions, '_1', counts_data)
+        deconvoluted_simple_result_1 = self._deconvolute_interaction_component(interactions, '_1', counts_data)
 
-        deconvoluted_complex_result_2 = self._deconvolute_complex_interaction_component(complex_compositions,
-                                                                                        genes_filtered,
-                                                                                        interactions,
-                                                                                        '_2',
-                                                                                        counts_data)
-        deconvoluted_simple_result_2 = self._deconvolute_interaction_component(interactions,
-                                                                               '_2',
-                                                                               counts_data)
+        deconvoluted_complex_result_2 = self._deconvolute_complex_interaction_component(
+            complex_compositions, genes_filtered, interactions, '_2', counts_data)
+        deconvoluted_simple_result_2 = self._deconvolute_interaction_component(interactions, '_2', counts_data)
 
         deconvoluted_result = deconvoluted_complex_result_1.append(
             [deconvoluted_simple_result_1, deconvoluted_complex_result_2, deconvoluted_simple_result_2], sort=False)
@@ -1311,13 +1298,11 @@ class CellCellCommunication(AlgorithmBase):
         interactions = interactions[~interactions['is_complex{}'.format(suffix)]]
         deconvoluted_result = pd.DataFrame()
         deconvoluted_result['gene'] = interactions['{}{}'.format(counts_data, suffix)]
-
-        deconvoluted_result[
-            ['multidata_id', 'protein_name', 'gene_name', 'name', 'is_complex', 'id_cp_interaction', 'receptor']] = \
-            interactions[
-                ['multidata{}_id'.format(suffix), 'protein_name{}'.format(suffix), 'gene_name{}'.format(suffix),
-                 'name{}'.format(suffix),
-                 'is_complex{}'.format(suffix), 'id_cp_interaction', 'receptor{}'.format(suffix)]]
+        interactions_index_data = interactions[
+            ['multidata{}_id'.format(suffix), 'protein_name{}'.format(suffix), 'gene_name{}'.format(suffix),
+             'name{}'.format(suffix), 'is_complex{}'.format(suffix), 'id_cp_interaction', 'receptor{}'.format(suffix)]]
+        deconvoluted_result[['multidata_id', 'protein_name', 'gene_name', 'name', 'is_complex', 'id_cp_interaction',
+                             'receptor']] = interactions_index_data
         deconvoluted_result['complex_name'] = np.nan
 
         return deconvoluted_result
@@ -1339,13 +1324,12 @@ class CellCellCommunication(AlgorithmBase):
         deconvoluted_result = pd.DataFrame()
         component = pd.DataFrame()
         component[counts_data] = interactions['{}{}'.format(counts_data, suffix)]
+        interactions_index_data = interactions[
+            ['{}{}'.format(counts_data, suffix), 'protein_name{}'.format(suffix), 'gene_name{}'.format(suffix),
+             'name{}'.format(suffix), 'is_complex{}'.format(suffix), 'id_cp_interaction',
+             'multidata{}_id'.format(suffix), 'receptor{}'.format(suffix)]]
         component[[counts_data, 'protein_name', 'gene_name', 'name', 'is_complex', 'id_cp_interaction', 'id_multidata',
-                   'receptor']] = \
-            interactions[
-                ['{}{}'.format(counts_data, suffix), 'protein_name{}'.format(suffix), 'gene_name{}'.format(suffix),
-                 'name{}'.format(suffix), 'is_complex{}'.format(suffix), 'id_cp_interaction',
-                 'multidata{}_id'.format(suffix), 'receptor{}'.format(suffix)]]
-
+                   'receptor']] = interactions_index_data
         deconvolution_complex = pd.merge(complex_compositions,
                                          component,
                                          left_on='complex_multidata_id',
@@ -1357,12 +1341,10 @@ class CellCellCommunication(AlgorithmBase):
                                          suffixes=['_complex', '_simple'])
 
         deconvoluted_result['gene'] = deconvolution_complex['{}_simple'.format(counts_data)]
-
-        deconvoluted_result[
-            ['multidata_id', 'protein_name', 'gene_name', 'name', 'is_complex', 'id_cp_interaction', 'receptor',
-             'complex_name']] = \
-            deconvolution_complex[
-                ['complex_multidata_id', 'protein_name_simple', 'gene_name_simple', 'name_simple',
-                 'is_complex_complex', 'id_cp_interaction', 'receptor_simple', 'name_complex']]
+        deconvolution_complex_index_data = deconvolution_complex[
+            ['complex_multidata_id', 'protein_name_simple', 'gene_name_simple', 'name_simple',
+             'is_complex_complex', 'id_cp_interaction', 'receptor_simple', 'name_complex']]
+        deconvoluted_result[['multidata_id', 'protein_name', 'gene_name', 'name', 'is_complex', 'id_cp_interaction',
+                             'receptor', 'complex_name']] = deconvolution_complex_index_data
 
         return deconvoluted_result

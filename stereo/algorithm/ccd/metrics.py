@@ -35,11 +35,11 @@ def scatteredness2D(image, kernel):
     """
 
     _, num_objects = scipy.ndimage.label(image, structure=kernel, output=None)  # this assumes 4 neighbors connectivity
-    # # idea for scatteredness was to compute the number of connected components and divide it with number of existing non-zero elements # noqa
-    # # but this measure does not contain the information on percentage of non-zero elements in the matrix.
-    # # thus we multiply it with non-zero percentage (num non-zero / total num) creating just this formula
-    # # num_object/image.size
-    # # max value is based on neighbors size (if 4 then 1/4, if 8, 1/8), min value is 0 if there are no non-zero elements # noqa
+    # idea for scatteredness was to compute the number of connected components and divide it with number of existing non-zero elements # noqa
+    # but this measure does not contain the information on percentage of non-zero elements in the matrix.
+    # thus we multiply it with non-zero percentage (num non-zero / total num) creating just this formula
+    # num_object/image.size
+    # max value is based on neighbors size (if 4 then 1/4, if 8, 1/8), min value is 0 if there are no non-zero elements
     # [NOTE] add neighbourhood size for scatteredness calculation to params
     # [NOTE] try to find a heuristic to control the downsampling rate based on the proportion of cell number to area pixel number # noqa
     scatteredness = num_objects / image.size * (

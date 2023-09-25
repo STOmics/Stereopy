@@ -28,7 +28,7 @@ def pca(
         chunked: bool = False,
         chunk_size: Optional[int] = None,
 ) -> Union[AnnData, np.ndarray, spmatrix]:
-    """\
+    """
     Principal component analysis [Pedregosa11]_.
 
     Computes PCA coordinates, loadings and variance decomposition.
@@ -139,9 +139,7 @@ def pca(
         use_highly_variable = True if 'highly_variable' in adata.var.keys() else False
     if use_highly_variable:
         logger.info('    on highly variable genes')
-    adata_comp = (
-        adata[:, adata.var['highly_variable']] if use_highly_variable else adata
-    )
+    adata_comp = (adata[:, adata.var['highly_variable']] if use_highly_variable else adata)
 
     if n_comps is None:
         min_dim = min(adata_comp.n_vars, adata_comp.n_obs)
@@ -151,7 +149,7 @@ def pca(
         else:
             n_comps = 20
 
-    logger.info(f'    with n_comps={n_comps}')
+    logger.info(f'with n_comps={n_comps}')
 
     random_state = check_random_state(random_state)
 
@@ -241,7 +239,7 @@ def pca(
             adata.varm['PCs'] = pca_.components_.T
         adata.uns['pca']['variance'] = pca_.explained_variance_
         adata.uns['pca']['variance_ratio'] = pca_.explained_variance_ratio_
-        logger.info('    finished', time=logg_start)
+        logger.info('finished', time=logg_start)
         logger.debug(
             'and added\n'
             '    \'X_pca\', the PCA coordinates (adata.obs)\n'
@@ -251,7 +249,7 @@ def pca(
         )
         return adata if copy else None
     else:
-        logger.info('    finished', time=logg_start)
+        logger.info('finished', time=logg_start)
         if return_info:
             return (
                 X_pca,

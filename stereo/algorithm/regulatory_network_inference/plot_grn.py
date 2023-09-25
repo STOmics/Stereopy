@@ -25,13 +25,15 @@ class PlotRegulatoryNetwork(PlotBase):
 
     # dotplot method for StereoExpData
     @staticmethod
-    def _cal_percent_exp_df(exp_matrix: pd.DataFrame,
-                            cluster_meta: pd.DataFrame,
-                            regulon_genes: str,
-                            celltype: list,
-                            groupby: str = 'group',
-                            cell_label: str = 'bins',
-                            cutoff: float = 0):
+    def _cal_percent_exp_df(
+            exp_matrix: pd.DataFrame,
+            cluster_meta: pd.DataFrame,
+            regulon_genes: str,
+            celltype: list,
+            groupby: str = 'group',
+            cell_label: str = 'bins',
+            cutoff: float = 0
+    ):
         """
         Expression percent
         cell numbers

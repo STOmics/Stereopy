@@ -37,7 +37,6 @@ def domain_variance_score(
         num_threads=num_threads
     )
     classifier.train(max_epochs=500, save_path=save_path)
-    # classifier.validation(pt_path=save_path)
     test_acc = classifier.test(pt_path=save_path)
     df = pd.DataFrame(data={
         "n_batch": n_batch,

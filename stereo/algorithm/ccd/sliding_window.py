@@ -79,15 +79,15 @@ class SlidingWindow(CommunityClusteringAlgo):
         """
         Calculate the feature matrix for sliding window analysis.
 
-        This method calculates the feature matrix for sliding window analysis based on the given window size and sliding step. # noqa
-        It assigns centroids to each sliding step of windows and calculates features for each subwindow. The feature matrix # noqa
+        This method calculates the feature matrix for sliding window analysis based on the given window size and sliding step.
+        It assigns centroids to each sliding step of windows and calculates features for each subwindow. The feature matrix
         is then placed in an AnnData object with specified spatial coordinates of the sliding windows.
 
         Parameters:
         - win_size (int): The size of the sliding window.
         - sliding_step (int): The sliding step for moving the window.
 
-        """
+        """  # noqa
 
         # window size needs to be a multiple of sliding step
         sliding_step = (win_size / int((win_size / sliding_step))) if sliding_step != None else win_size  # noqa
@@ -160,15 +160,15 @@ class SlidingWindow(CommunityClusteringAlgo):
 
         This method defines the subwindow cluster label based on the labels of all overlapping windows. It goes through
         all subwindow positions and gathers clustering labels of all windows that contain it. The final label of the
-        subwindow is determined by majority vote. Window cluster labels are stored in `self.tissue_pruned.obs[self.cluster_algo]`, # noqa
-        and the subwindow labels are placed in `self.tissue.obs[self.cluster_algo + '_max_vote']`. The `self.tissue_pruned` object is # noqa
+        subwindow is determined by majority vote. Window cluster labels are stored in `self.tissue_pruned.obs[self.cluster_algo]`,
+        and the subwindow labels are placed in `self.tissue.obs[self.cluster_algo + '_max_vote']`. The `self.tissue_pruned` object is
         used only for clustering and is discarded.
 
         Parameters:
         - win_size (int): The size of the sliding window.
         - sliding_step (int): The sliding step for moving the window.
 
-        """
+        """  # noqa
         sliding_step = (win_size / int((win_size / sliding_step))) if sliding_step != None else win_size  # noqa
 
         bin_slide_ratio = int(win_size / sliding_step)

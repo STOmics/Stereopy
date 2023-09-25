@@ -43,12 +43,8 @@ matplotlib.use('Agg')
 
 def batchqc_raw(
         data: Union[StereoExpData, AnnBasedStereoExpData],
-        # norm_log: bool = False,
-        # is_scale: bool = False,
-        # n_pcs: int = 50,
         n_neighbors: int = 100,
         batch_key: str = "batch",
-        # position_key: str = "X_umap",
         condition: Union[str, list, None] = None,
         count_key: str = "total_counts",
         celltype_key: Union[str, None] = None,
@@ -63,24 +59,18 @@ def batchqc_raw(
     -----------------
     *data: 'Anndata'
         Data matrix with rows for cells and columns for genes.
-    norm_log: 'bool'
-        Whether to preprocess data. 'sc.pp.normalization()', 'sc.pp.log1p()'
-    is_scale: 'bool'
-         Whether to preprocess data. 'sc.pp.scale()'
-    n_pcs: 'int'
-        Number of principal components retained in PCA. default, 50.
     n_neighbors: 'int'
         Calculate the nearest neighbors of a local area. default, 100.
     batch_key: 'str'
         Label the data batches.
-    position_key: 'str'
-        Compute the coordinate space of the nearest neighbor.
     condition: 'str, list, None'
         Label the experimental conditions. By default, the experimental conditions for each data are different.
     count_key: 'str', total_counts or n_genes_by_counts.
-    celltype_key: 'str'
+    celltype_key: 'str', the cell type
     report_path: 'str', the path to save the reports of result.
     gpu: 'str', 'int'
+    data_loader_num_workers: 'int',  will create `data_loader_num_workers` num of multiprocessing to work.
+    num_threads: 'int',  will create `num_threads` num of threads to work.
 
     Return
     -----------------
@@ -212,7 +202,6 @@ def generate_report(data_dict: dict, save_path: str, type: str = 'html') -> None
     with open(template_file, 'r') as fp:
         html_data = fp.read()
     html = etree.HTML(html_data)
-    # html = etree.HTML(pkgutil.get_data('.template', "report_template_raw.html").decode())
 
     # -------- set username & run time --------
     embed_text(html, pos="h4", name="username", text=f"Report By: {os.getlogin()}")

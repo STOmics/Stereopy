@@ -10,7 +10,8 @@ from skimage import color
 
 from stereo.log_manager import logger
 from .utils import plot_spatial
-from .utils import timeit, set_figure_params
+from .utils import set_figure_params
+from .utils import timeit
 
 cluster_palette = ["#1f77b4", "#ff7f0e", "#279e68", "#d62728", "#aa40fc", "#8c564b",
                    "#e377c2", "#b5bd61", "#17becf", "#aec7e8", "#ffbb78", "#98df8a", "#ff9896",
@@ -228,10 +229,7 @@ class CommunityClusteringAlgo(ABC):
 
         """
 
-        # # plot initial clustering for each window
-        # sc.pl.spatial(self.tissue, color=self.cluster_algo, spot_size=1)
-        # # plot clustering after majority voting for each subwindow
-        # sc.pl.spatial(self.tissue, color='f'{self.cluster_algo}_max_vote', spot_size=1)
+        # plot initial clustering for each window
         figure, ax = plt.subplots(figsize=(10, 6))
         labels = np.unique(self.adata.obs[f'tissue_{self.method_key}'].values)
         if 'unknown' in labels:
@@ -351,8 +349,7 @@ class CommunityClusteringAlgo(ABC):
         # total_counts column - sum of all cells per cluster
         sns.heatmap(pd.DataFrame(stats.iloc[:, -2]), annot=True, vmin=0, vmax=np.max(stats.iloc[:-1, -2]), linewidths=0,
                     linecolor=None, cbar=False, cmap='Greens', ax=axes[-2], fmt='4.0f', xticklabels=True,
-                    yticklabels=False,
-                    square=True)
+                    yticklabels=False, square=True)
         # perf_of_all_cells column - perc of all tissue cells in each cluster
         sns.heatmap(pd.DataFrame(stats.iloc[:, -1]), annot=True, vmin=0, vmax=np.max(stats.iloc[:-1, -1]), linewidths=0,
                     linecolor=None, cbar=False, cmap='Greens', ax=axes[-1], fmt='4.0f', xticklabels=True,

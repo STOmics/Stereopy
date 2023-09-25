@@ -8,7 +8,6 @@ import time
 import numpy as np
 from tqdm import trange
 
-# from ...constant import MODEL_URL
 from stereo.constant import MODEL_URL
 from . import dynamics
 from . import plot
@@ -188,10 +187,10 @@ class Cellpose():
                 minimum number of pixels per mask, can turn off with -1
 
         stitch_threshold: float (optional, default 0.0)
-            if stitch_threshold>0.0 and not do_3D and equal image sizes, masks are stitched in 3D to return volume segmentation # noqa
+            if stitch_threshold>0.0 and not do_3D and equal image sizes, masks are stitched in 3D to return volume segmentation
 
         rescale: float (optional, default None)
-            if diameter is set to None, and rescale is not None, then rescale is used instead of diameter for resizing image # noqa
+            if diameter is set to None, and rescale is not None, then rescale is used instead of diameter for resizing image
 
         progress: pyqt progress bar (optional, default None)
             to return progress bar status to GUI
@@ -215,7 +214,7 @@ class Cellpose():
 
         diams: list of diameters, or float (if do_3D=True)
 
-        """
+        """  # noqa
 
         channels = [0, 0] if channels is None else channels
 
@@ -269,7 +268,6 @@ class Cellpose():
                                             min_size=min_size,
                                             stitch_threshold=stitch_threshold,
                                             model_loaded=model_loaded)
-        # models_logger.info('>>>> TOTAL TIME %0.2f sec' % (time.time() - tic0))
 
         return masks, flows, styles, diams
 
@@ -510,7 +508,7 @@ class CellposeModel(UnetModel):
                     channels[i], np.ndarray)) and len(channels[i]) == 2) else channels
                 temp_rescale = rescale[i] if isinstance(rescale, list) or isinstance(rescale, np.ndarray) else rescale
                 temp_diameter = diameter[i] if isinstance(diameter, list) or isinstance(diameter,
-                                                                                        np.ndarray) else diameter,
+                                                                                        np.ndarray) else diameter
                 maski, flowi, stylei = self.eval(
                     x[i],
                     batch_size=batch_size,
@@ -649,13 +647,9 @@ class CellposeModel(UnetModel):
             tic = time.time()
             niter = 200 if (do_3D and not resample) else (1 / rescale * 200)
             if do_3D:
-                masks, p = dynamics.compute_masks(dP, cellprob, niter=niter,
-                                                  cellprob_threshold=cellprob_threshold,
-                                                  flow_threshold=flow_threshold,
-                                                  interp=interp, do_3D=do_3D, min_size=min_size,
-                                                  resize=None,
-                                                  use_gpu=self.gpu, device=self.device
-                                                  )
+                masks, p = dynamics.compute_masks(dP, cellprob, niter=niter, cellprob_threshold=cellprob_threshold,
+                                                  flow_threshold=flow_threshold, interp=interp, do_3D=do_3D,
+                                                  min_size=min_size, resize=None, use_gpu=self.gpu, device=self.device)
             else:
                 masks, p = [], []
                 resize = [shape[1], shape[2]] if not resample else None
@@ -695,14 +689,30 @@ class CellposeModel(UnetModel):
         loss = loss + loss2
         return loss
 
-    def train(self, train_data, train_labels, train_files=None,
-              test_data=None, test_labels=None, test_files=None,
-              channels=None, normalize=True,
-              save_path=None, save_every=100, save_each=False,
-              learning_rate=0.2, n_epochs=500, momentum=0.9, SGD=True,
-              weight_decay=0.00001, batch_size=8, nimg_per_epoch=None,
-              rescale=True, min_train_masks=5,
-              model_name=None):
+    def train(
+            self,
+            train_data,
+            train_labels,
+            train_files=None,
+            test_data=None,
+            test_labels=None,
+            test_files=None,
+            channels=None,
+            normalize=True,
+            save_path=None,
+            save_every=100,
+            save_each=False,
+            learning_rate=0.2,
+            n_epochs=500,
+            momentum=0.9,
+            SGD=True,
+            weight_decay=0.00001,
+            batch_size=8,
+            nimg_per_epoch=None,
+            rescale=True,
+            min_train_masks=5,
+            model_name=None
+    ):
 
         """ train network with images train_data
 
@@ -969,12 +979,19 @@ class SizeModel():
                        np.log(self.diam_mean) + self.params['ymean'])
         return np.maximum(5., szest)
 
-    def train(self, train_data, train_labels,
-              test_data=None, test_labels=None,
-              channels=None, normalize=True,
-              learning_rate=0.2, n_epochs=10,
-              l2_regularization=1.0, batch_size=8,
-              ):
+    def train(
+            self,
+            train_data,
+            train_labels,
+            test_data=None,
+            test_labels=None,
+            channels=None,
+            normalize=True,
+            learning_rate=0.2,
+            n_epochs=10,
+            l2_regularization=1.0,
+            batch_size=8,
+    ):
         """ train size model with images train_data to estimate linear model from styles to diameters
 
             Parameters
@@ -1037,10 +1054,11 @@ class SizeModel():
             iall = np.arange(0, nimg, 1, int)
             for ibatch in range(0, nimg, batch_size):
                 inds = iall[ibatch:ibatch + batch_size]
-                imgi, lbl, scale = utils.random_rotate_and_resize([train_data[i] for i in inds],
-                                                                  Y=[train_labels[i].astype(np.int16) for i in
-                                                                     inds],
-                                                                  scale_range=1, xy=(512, 512))
+                imgi, lbl, scale = utils.random_rotate_and_resize(
+                    [train_data[i] for i in inds],
+                    Y=[train_labels[i].astype(np.int16) for i in inds],
+                    scale_range=1, xy=(512, 512)
+                )
 
                 feat = self.cp.network(imgi)[1]
                 styles[inds + nimg * iepoch] = feat

@@ -103,8 +103,7 @@ class Repository:
 
     @staticmethod
     def _blend_column(original_df: pd.DataFrame, multidata_df: pd.DataFrame, original_column_name: list,
-                      db_column_name: list,
-                      table_name: str, number: int) -> pd.DataFrame:
+                      db_column_name: list, table_name: str, number: int) -> pd.DataFrame:
         """
 
         :param original_df:
@@ -122,9 +121,11 @@ class Repository:
 
         interaction_df = interaction_df[
             (interaction_df['_merge'] == 'both') | (interaction_df['_merge'] == 'left_only')]  # 这不就等于左merge？
-        interaction_df.rename(index=str,
-                              columns={'_merge': '_merge_%s' % number, db_column_name: db_column_name + '_%s' % number},
-                              inplace=True)
+        interaction_df.rename(
+            index=str,
+            columns={'_merge': '_merge_%s' % number, db_column_name: db_column_name + '_%s' % number},
+            inplace=True
+        )
 
         return interaction_df
 

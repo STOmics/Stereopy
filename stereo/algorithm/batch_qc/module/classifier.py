@@ -19,7 +19,6 @@ from torch.utils.data import DataLoader
 from stereo.log_manager import logger
 from .dataset import DnnDataset
 from .early_stop import EarlyStopping
-# from module import MultiCEFocalLoss, DnnDataset, EarlyStopping
 from .loss import MultiCEFocalLoss
 
 
@@ -42,8 +41,16 @@ class BatchModel(nn.Module):
 
 
 class BatchClassifier:
-    def __init__(self, input_dims, n_batch, data_x, batch_idx, batch_size=4096, gpu="0", data_loader_num_workers=-1,
-                 num_threads=-1):
+    def __init__(
+            self,
+            input_dims,
+            n_batch,
+            data_x,
+            batch_idx,
+            batch_size=4096,
+            gpu="0",
+            data_loader_num_workers=-1,
+            num_threads=-1):
         self.set_seed(num_threads=num_threads)
         if isinstance(gpu, (str, int)) and torch.cuda.is_available():
             self.device = torch.device(f"cuda:{gpu}")
@@ -134,9 +141,6 @@ class BatchClassifier:
             if early_stop.counter == 0:
                 torch.save(self.model.state_dict(), osp.join(save_path, "batch_model.bgi"))
             if early_stop.stop_flag:
-                # print(f"{time.strftime('%Y-%m-%d %H:%M:%S', time.localtime())} Model Training Finished!")
-                # print(f"{time.strftime('%Y-%m-%d %H:%M:%S', time.localtime())} Trained checkpoint file has been
-                # saved to {save_path}")
                 logger.info("Model Training Finished!")
                 logger.info(f"Trained checkpoint file has been saved to {save_path}")
                 break

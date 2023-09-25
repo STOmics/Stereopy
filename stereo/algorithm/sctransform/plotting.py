@@ -15,7 +15,6 @@ def plot_fit(pysct_results, xaxis="gmean", fig=None):
     for index, column in enumerate(model_params_fit.columns):
         ax = fig.add_subplot(1, total_params, index + 1)
         model_param_col = model_params[column]
-        # model_param_outliers = is_outlier(model_param_col)
         if column != "theta":
             ax.scatter(
                 genes_log10_mean_step1,  # [~model_param_outliers],
@@ -83,8 +82,6 @@ def plot_residual_var(pysct_results, topngenes=30, label_genes=True, ax=None):
             plt.text(row["gmean"], row["residual_variance"], row["index"])
             for index, row in topn.iterrows()
         ]
-        # adjust_text(texts, arrowprops=dict(arrowstyle="-", color="k", lw=0.5))
-    # fig.tight_layout()
     return fig
 
 
@@ -164,7 +161,6 @@ def plot_genes_var_contribution(stereo_exp_data, gene_names=None):
 
     axes.set_xticks([0, 1])
     axes.set_xticklabels(['SCTransform', 'Log1p'])
-    # fig.supxlabel('Compare Normalization Methods `SCTransform` with `Log1p`')
     fig.supylabel('Variance Contribution %')
     plt.legend()
     fig.tight_layout()

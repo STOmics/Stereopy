@@ -33,7 +33,7 @@ def choose_representation(adata, use_rep=None, n_pcs=None):
                         '`X_pca` does not have enough PCs. Rerun `sc.pp.pca` with adjusted `n_comps`.'
                     )
                 X = adata.obsm['X_pca'][:, :n_pcs]
-                logger.info(f'    using \'X_pca\' with n_pcs = {X.shape[1]}')
+                logger.info(f'using \'X_pca\' with n_pcs = {X.shape[1]}')
             else:
                 logger.warning(
                     f'You’re trying to run this on {adata.n_vars} dimensions of `.X`, '
@@ -43,7 +43,7 @@ def choose_representation(adata, use_rep=None, n_pcs=None):
                 X = pca(adata.X)
                 adata.obsm['X_pca'] = X[:, :n_pcs]
         else:
-            logger.info('    using data matrix X directly')
+            logger.info('using data matrix X directly')
             X = adata.X
     else:
         if use_rep in adata.obsm.keys() and n_pcs is not None:
@@ -79,7 +79,7 @@ def neighbors(
         key_added: Optional[str] = None,
         copy: bool = False,
 ):
-    """\
+    """
     Compute a neighborhood graph of observations [McInnes18]_.
 
     The neighbor search efficiency of this heavily relies on UMAP [McInnes18]_,
@@ -194,15 +194,6 @@ def neighbors(
 
     if neighbors.rp_forest is not None:
         neighbors_dict['rp_forest'] = neighbors.rp_forest
-    # logger.info(
-    #     '    finished',
-    #     time=start,
-    #     deep=(
-    #         f'added to `.uns[{key_added!r}]`\n'
-    #         f'    `.obsp[{dists_key!r}]`, distances for each pair of neighbors\n'
-    #         f'    `.obsp[{conns_key!r}]`, weighted adjacency matrix'
-    #     ),
-    # )
     logger.info(
         '    finished\n' +
         f'added to `.uns[{key_added!r}]`\n'
@@ -376,9 +367,7 @@ def _make_forest_dict(forest):
     props = ('hyperplanes', 'offsets', 'children', 'indices')
     for prop in props:
         d[prop] = {}
-        sizes = np.fromiter(
-            (getattr(tree, prop).shape[0] for tree in forest), dtype=int
-        )
+        sizes = np.fromiter((getattr(tree, prop).shape[0] for tree in forest), dtype=int)
         d[prop]['start'] = np.zeros_like(sizes)
         if prop == 'offsets':
             dims = sizes.sum()
@@ -404,7 +393,7 @@ def _compute_connectivities_umap(
         set_op_mix_ratio=1.0,
         local_connectivity=1.0,
 ):
-    """\
+    """
     This is from umap.fuzzy_simplicial_set [McInnes18]_.
 
     Given a set of data X, a neighborhood size, and a measure of distance
@@ -499,7 +488,7 @@ class OnFlySymMatrix:
 
 
 class Neighbors:
-    """\
+    """
         Data represented as graph of nearest neighbors.
 
         Represent a data matrix as a graph of nearest neighbor relations (edges)
@@ -548,15 +537,9 @@ class Neighbors:
 
                 # estimating n_neighbors
                 if self._connectivities is None:
-                    self.n_neighbors = int(
-                        count_nonzero(self._distances) / self._distances.shape[0]
-                    )
+                    self.n_neighbors = int(count_nonzero(self._distances) / self._distances.shape[0])
                 else:
-                    self.n_neighbors = int(
-                        count_nonzero(self._connectivities)
-                        / self._connectivities.shape[0]
-                        / 2
-                    )
+                    self.n_neighbors = int(count_nonzero(self._connectivities) / self._connectivities.shape[0] / 2)
             info_str += '`.distances` `.connectivities` '
             self._number_connected_components = 1
             if issparse(self._connectivities):
@@ -584,7 +567,7 @@ class Neighbors:
             self._eigen_basis = None
             self.n_dcs = None
         if info_str != '':
-            logger.debug(f'    initialized {info_str}')
+            logger.debug(f'initialized {info_str}')
 
     def _set_iroot_via_xroot(self, xroot):
         """Determine the index of the root cell.
@@ -711,7 +694,7 @@ class Neighbors:
         self.pseudotime /= np.max(self.pseudotime[self.pseudotime < np.inf])
 
     def compute_transitions(self, density_normalize: bool = True):
-        """\
+        """
         Compute transition matrix.
 
         Parameters
@@ -746,7 +729,7 @@ class Neighbors:
         else:
             self.Z = scipy.sparse.spdiags(1.0 / z, 0, K.shape[0], K.shape[0])
         self._transitions_sym = self.Z @ K @ self.Z
-        logger.info('    finished')
+        logger.info('finished')
 
     def compute_eigen(
             self,
@@ -755,7 +738,7 @@ class Neighbors:
             sort='decrease',
             random_state=0,
     ):
-        """\
+        """
         Compute eigen decomposition of transition matrix.
 
         Parameters
@@ -792,7 +775,6 @@ class Neighbors:
             evals, evecs = scipy.linalg.eigh(matrix)
         else:
             n_comps = min(matrix.shape[0] - 1, n_comps)
-            # ncv = max(2 * n_comps + 1, int(np.sqrt(matrix.shape[0])))
             ncv = None
             which = 'LM' if sort == 'decrease' else 'SM'
             # it pays off to increase the stability with a bit more precision
@@ -829,7 +811,7 @@ class Neighbors:
             metric='euclidean',
             metric_kwds: Mapping[str, Any] = MappingProxyType({}),
     ) -> None:
-        """\
+        """
         Compute distances and connectivities of neighbors.
 
         Parameters
@@ -855,8 +837,6 @@ class Neighbors:
             logger.warning(f'n_obs too small: adjusting to `n_neighbors = {n_neighbors}`')
         if method == 'umap' and not knn:
             raise ValueError('`method = \'umap\' only with `knn = True`.')
-        # if method not in {'umap', 'gauss', 'rapids'}:
-        #     raise ValueError("`method` needs to be 'umap', 'gauss', or 'rapids'.")
         if method not in {'umap', 'gauss'}:
             raise ValueError("`method` needs to be 'umap', or 'gauss'.")
         if self.stereo_exp_data.shape[0] >= 10000 and not knn:
@@ -881,10 +861,6 @@ class Neighbors:
                 )
             else:
                 self._distances = _distances
-        # elif method == 'rapids':
-        #     knn_indices, knn_distances = compute_neighbors_rapids(
-        #         X, n_neighbors, metric=metric
-        #     )
         else:
             # non-euclidean case and approx nearest neighbors
             if X.shape[0] < 4096:

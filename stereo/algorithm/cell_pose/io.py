@@ -351,27 +351,32 @@ def masks_flows_to_seg(images, masks, flows, diams, file_names, channels=None):
     base = os.path.splitext(file_names)[0]
     if masks.ndim == 3:
         np.save(base + '_seg.npy',
-                {'outlines': outlines.astype(np.uint16) if outlines.max() < 2 ** 16 - 1 else outlines.astype(np.uint32),
-                 'masks': masks.astype(np.uint16) if outlines.max() < 2 ** 16 - 1 else masks.astype(np.uint32),
-                 'chan_choose': channels,
-                 'img': images,
-                 'ismanual': np.zeros(masks.max(), bool),
-                 'filename': file_names,
-                 'flows': flowi,
-                 'est_diam': diams})
+                {
+                    'outlines': outlines.astype(np.uint16) if outlines.max() < 2 ** 16 - 1 else outlines.astype(
+                        np.uint32),
+                    'masks': masks.astype(np.uint16) if outlines.max() < 2 ** 16 - 1 else masks.astype(np.uint32),
+                    'chan_choose': channels,
+                    'img': images,
+                    'ismanual': np.zeros(masks.max(), bool),
+                    'filename': file_names,
+                    'flows': flowi,
+                    'est_diam': diams
+                })
     else:
         if images.shape[0] < 8:
             np.transpose(images, (1, 2, 0))
-        np.save(base + '_seg.npy', {
-            'img': images,
-            'outlines': outlines.astype(np.uint16) if outlines.max() < 2 ** 16 - 1 else outlines.astype(np.uint32),
-            'masks': masks.astype(np.uint16) if masks.max() < 2 ** 16 - 1 else masks.astype(np.uint32),
-            'chan_choose': channels,
-            'ismanual': np.zeros(masks.max(), bool),
-            'filename': file_names,
-            'flows': flowi,
-            'est_diam': diams
-        })
+        np.save(base + '_seg.npy',
+                {
+                    'img': images,
+                    'outlines': outlines.astype(np.uint16) if outlines.max() < 2 ** 16 - 1 else outlines.astype(
+                        np.uint32),
+                    'masks': masks.astype(np.uint16) if masks.max() < 2 ** 16 - 1 else masks.astype(np.uint32),
+                    'chan_choose': channels,
+                    'ismanual': np.zeros(masks.max(), bool),
+                    'filename': file_names,
+                    'flows': flowi,
+                    'est_diam': diams
+                })
 
 
 def save_to_png(images, masks, flows, file_names):

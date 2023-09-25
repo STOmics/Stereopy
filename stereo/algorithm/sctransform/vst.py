@@ -129,10 +129,11 @@ def vst(
     cells_step1_bool_list = np.isin(cells, cells_step1)
     genes_step1_bool_list = np.isin(genes, genes_step1)
     start_time = time.time()
-    model_pars = get_model_pars(genes_step1, bin_size, umi[genes_step1_bool_list,][:, cells_step1_bool_list],
-                                model_str, cells_step1, method, data_step1, theta_given,
-                                theta_estimation_fun, exclude_poisson, fix_intercept, fix_slope, use_geometric_mean,
-                                use_geometric_mean_offset)
+    model_pars = get_model_pars(
+        genes_step1, bin_size, umi[genes_step1_bool_list,][:, cells_step1_bool_list],
+        model_str, cells_step1, method, data_step1, theta_given,
+        theta_estimation_fun, exclude_poisson, fix_intercept, fix_slope, use_geometric_mean,
+        use_geometric_mean_offset)
     logger.info(f'get_model_pars finished, cost {time.time() - start_time} seconds')
 
     min_theta = 1e-07

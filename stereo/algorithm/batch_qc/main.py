@@ -21,13 +21,13 @@ class BatchQc(AlgorithmBase):
         """_summary_
 
         :param n_neighbors: Calculate the nearest neighbors of a local area, defaults to 100.
-        :param condition: Label the experimental conditions. By default, the experimental conditions for each data are different, defaults to None.  # noqa
+        :param condition: Label the experimental conditions. By default, the experimental conditions for each data are different, defaults to None.
         :param count_key: total_counts or n_genes_by_counts, defaults to "total_counts".
         :param cluster_res_key: The key which specifies the clustering result in data.tl.result, defaults to None.
         :param report_path: The path to save the reports of result, defaults to "./batch_qc".
-        :param gpu: The gpu on which running this function, defaults to "0", it will run on cpu automatically if the machine doesn't have gpu. # noqa
+        :param gpu: The gpu on which running this function, defaults to "0", it will run on cpu automatically if the machine doesn't have gpu.
         :param res_key: Set a key to store the result to data.tl.result, defaults to 'batch_qc'.
-        """
+        """  # noqa
         if num_threads <= 0 or num_threads > cpu_count():
             num_threads = cpu_count()
 

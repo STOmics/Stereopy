@@ -304,8 +304,6 @@ def get_perimeter(points):
 
 def get_mask_compactness(masks):
     perimeters = get_mask_perimeters(masks)
-    # outlines = masks_to_outlines(masks)
-    # perimeters = np.unique(outlines*masks, return_counts=True)[1][1:]
     npoints = np.unique(masks, return_counts=True)[1][1:]
     areas = npoints
     compactness = 4 * np.pi * areas / perimeters ** 2
@@ -375,8 +373,7 @@ def get_mask_stats(masks_true):
 
     convexity[mask_perimeters > 0.0] = (convex_perimeters[mask_perimeters > 0.0] /
                                         mask_perimeters[mask_perimeters > 0.0])
-    solidity[convex_areas > 0.0] = (areas[convex_areas > 0.0] /
-                                    convex_areas[convex_areas > 0.0])
+    solidity[convex_areas > 0.0] = (areas[convex_areas > 0.0] / convex_areas[convex_areas > 0.0])
     convexity = np.clip(convexity, 0.0, 1.0)
     solidity = np.clip(solidity, 0.0, 1.0)
     compactness = np.clip(compactness, 0.0, 1.0)
@@ -767,9 +764,7 @@ def update_axis(m_axis, to_squeeze, ndim):
     return m_axis
 
 
-def convert_image(x, channels, channel_axis=None, z_axis=None,
-                  do_3D=False, normalize=True, invert=False,
-                  nchan=2):
+def convert_image(x, channels, channel_axis=None, z_axis=None, do_3D=False, normalize=True, invert=False, nchan=2):
     """ return image with z first, channels last and normalized intensities """
 
     # check if image is a torch array instead of numpy array
@@ -1204,8 +1199,16 @@ def _image_resizer(img, resize=512, to_uint8=False):
     return img
 
 
-def random_rotate_and_resize(X, Y=None, scale_range=1., xy=(224, 224),
-                             do_flip=True, rescale=None, unet=False, random_per_image=True):
+def random_rotate_and_resize(
+        X,
+        Y=None,
+        scale_range=1.,
+        xy=(224, 224),
+        do_flip=True,
+        rescale=None,
+        unet=False,
+        random_per_image=True
+):
     """ augmentation by random rotation and resizing
         X and Y are lists or arrays of length nimg, with dims channels x Ly x Lx (channels optional)
         Parameters
@@ -1273,9 +1276,11 @@ def random_rotate_and_resize(X, Y=None, scale_range=1., xy=(224, 224),
             cc = np.array([Lx / 2, Ly / 2])
             cc1 = cc - np.array([Lx - xy[1], Ly - xy[0]]) / 2 + dxy
             pts1 = np.float32([cc, cc + np.array([1, 0]), cc + np.array([0, 1])])
-            pts2 = np.float32([cc1,
-                               cc1 + scale[n] * np.array([np.cos(theta), np.sin(theta)]),
-                               cc1 + scale[n] * np.array([np.cos(np.pi / 2 + theta), np.sin(np.pi / 2 + theta)])])
+            pts2 = np.float32([
+                cc1,
+                cc1 + scale[n] * np.array([np.cos(theta), np.sin(theta)]),
+                cc1 + scale[n] * np.array([np.cos(np.pi / 2 + theta), np.sin(np.pi / 2 + theta)])
+            ])
             M = cv2.getAffineTransform(pts1, pts2)
 
         img = X[n].copy()
