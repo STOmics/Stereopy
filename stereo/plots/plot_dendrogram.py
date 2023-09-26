@@ -42,9 +42,7 @@ class PlotDendrogram(PlotBase):
                     old_max = old_ticks[idx_next]
                     new_min = new_ticks[idx_prev]
                     new_max = new_ticks[idx_next]
-                    new_x_val = ((x_val - old_min) / (old_max - old_min)) * (
-                            new_max - new_min
-                    ) + new_min
+                    new_x_val = ((x_val - old_min) / (old_max - old_min)) * (new_max - new_min) + new_min
                 new_xs.append(new_x_val)
             return new_xs
 

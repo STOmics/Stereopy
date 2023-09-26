@@ -48,7 +48,7 @@ def get_args():
             3 - additionally save cell and cluster abundance plots and cell mixture plots for all slices and cluster mixture plots and boxplots for each slice; 
             4 - additionally save cell type images, abundance plots and cell percentage table for each slice;
             5 - additionally save color plots.
-        ''' # noqa
+        '''  # noqa
     )
     parser.add_argument('-j', '--project_name', required=False, type=str, default='community',
                         help='Project name that is used to name a directory containing all the slices used, default to community.')  # noqa
@@ -86,12 +86,6 @@ def get_args():
                         help='Minimum number of cells per cell type needed to use the cell type for cell communities extraction (in percentages), default to 0.1.')  # noqa
     parser.add_argument('-dpi', '--dpi', required=False, type=int, default=100,
                         help='DPI (dots per inch) used for plotting figures, default to 100.')
-
-    # for key, value in COMMUNITY_DETECTION_DEFAULTS.items():
-    #     if key == 'hide_plots' or key == 'dev':
-    #         continue
-    #     argname = f'--{key}'
-    #     parser.add_argument(argname, required=False, type=type(value), default=value)
 
     args = parser.parse_args(namespace=Params())
     return args

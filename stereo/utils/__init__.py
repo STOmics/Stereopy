@@ -17,9 +17,6 @@ from .correlation import spearmanr_corr
 from .pipeline_utils import cluster_bins_to_cellbins
 
 
-# from .data_helper import select_group
-
-
 def remove_file(path):
     if os.path.isfile(path):
         os.remove(path)

@@ -9,6 +9,14 @@ from ..log_manager import logger
 class CellSegment(object):
 
     def __init__(self, image_path, gpu='-1', mask_out_path=None):
+        """
+        Init CellSegment object
+
+        :param image_path: the path to image file.
+        :param gpu: The gpu on which running this function, defaults to "-1", it will run on cpu automatically
+                    if the machine doesn't have gpu.
+        :param mask_out_path: the path to output mask result.
+        """
         self.image_path = image_path
         self.mask_out_path = "cell_seg_res" if mask_out_path is None else mask_out_path
         if not os.path.exists(self.mask_out_path):

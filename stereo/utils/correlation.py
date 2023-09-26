@@ -14,8 +14,10 @@ from scipy import stats
 def pearson(arr1, arr2):
     """
     calculate pearson correlation between two numpy arrays.
+
     :param arr1: one array, the feature is a column. the shape is  `m * n`
     :param arr2: the other array, the feature is a column. the shape is `m * k`
+
     :return: a pearson score np.array , the shape is `k * n`
     """
     assert arr1.shape[0] == arr2.shape[0]
@@ -28,8 +30,10 @@ def pearson(arr1, arr2):
 def pearson_corr(df1, df2):
     """
     calculate pearson correlation between two dataframes.
+
     :param df1: one dataframe
     :param df2: the other dataframe
+
     :return: a pearson score dataframe, the index is the columns of `df1`, the columns is the columns of `df2`
     """
     v1, v2 = df1.values, df2.values
@@ -40,8 +44,10 @@ def pearson_corr(df1, df2):
 def spearmanr_corr(df1, df2):
     """
     calculate pearson correlation between two dataframes.
+
     :param df1: one dataframe
     :param df2: the other dataframe
+
     :return: a spearmanr score dataframe, the index is the columns of `df1`, the columns is the columns of `df2`
     """
     score, pvalue = stats.spearmanr(df1.values, df2.values)

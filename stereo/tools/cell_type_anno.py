@@ -107,6 +107,7 @@ class CellTypeAnno(ToolBase):
         split input data to N(split_num) part
 
         :param df: input expression data frame
+
         :return: N part of data frame
         """
         datas = []
@@ -130,6 +131,7 @@ class CellTypeAnno(ToolBase):
         :param files: all prediction results
         :param output_dir: output directory
         :param prefix: prefix of output files
+
         :return: correlation dataframe
         """
         df = pd.read_csv(files[0])
@@ -147,6 +149,7 @@ class CellTypeAnno(ToolBase):
         :param input_dir: input directory, output of previous step
         :param prefix: prefix of output file
         :param output_dir: output directory
+
         :return: result data frame
         """
         files = [os.path.join(input_dir, f) for f in os.listdir(input_dir) if prefix in f]
@@ -176,6 +179,7 @@ class CellTypeAnno(ToolBase):
         :param input_dir: input directory, output of previous step
         :param prefix: prefix of output file
         :param output_dir: output directory
+
         :return: result data frame
         """
         files = [os.path.join(input_dir, f) for f in os.listdir(input_dir) if prefix in f]
@@ -208,8 +212,7 @@ class CellTypeAnno(ToolBase):
         run
         """
         exp_matrix = self.data.exp_matrix().T
-        df = pd.DataFrame(exp_matrix, index=list(self.data.gene_names),
-                          columns=list(self.data.cell_names))
+        df = pd.DataFrame(exp_matrix, index=list(self.data.gene_names), columns=list(self.data.cell_names))
         datas = self.split_dataframe(df) if self.split_num > 1 else [df]
         tmp_output = os.path.join(self.output, 'tmp')
         logger.info('start to run annotation.')
@@ -220,9 +223,11 @@ class CellTypeAnno(ToolBase):
             for i in range(self.n_estimators):
                 for j in range(len(datas)):
                     sub_index = f'subsample_{i}_{j}'
-                    pool.apply_async(run_annotation, (datas[j], self.ref_dir, self.method, self.keep_zeros, tmp_output,
-                                                      sub_index, self.use_rf, self.sample_rate),
-                                     error_callback=subprocess_error)
+                    pool.apply_async(run_annotation,
+                                     (datas[j], self.ref_dir, self.method, self.keep_zeros, tmp_output,
+                                      sub_index, self.use_rf, self.sample_rate),
+                                     error_callback=subprocess_error
+                                     )
             pool.close()
             pool.join()
             logger.info('start to merge top result ...')
@@ -239,9 +244,11 @@ class CellTypeAnno(ToolBase):
             pool = Pool(self.n_jobs)
             for i in range(len(datas)):
                 sub_index = f'sub_{i}'
-                pool.apply_async(run_annotation, (datas[i], self.ref_dir, self.method, self.keep_zeros, tmp_output,
-                                                  sub_index, self.use_rf, self.sample_rate),
-                                 error_callback=subprocess_error)
+                pool.apply_async(run_annotation,
+                                 (datas[i], self.ref_dir, self.method, self.keep_zeros, tmp_output,
+                                  sub_index, self.use_rf, self.sample_rate),
+                                 error_callback=subprocess_error
+                                 )
             pool.close()
             pool.join()
             logger.info('start to merge top result ...')
@@ -255,7 +262,9 @@ class CellTypeAnno(ToolBase):
 def parse_ref_data(ref_dir):
     """
     read reference database
+
     :param ref_dir: reference directory
+
     :return: reference data
     """
     logger.info('loading ref data')
@@ -276,6 +285,7 @@ def random_choose_genes(df, sample_rate):
 
     :param df: input data frame
     :param sample_rate: percentage of sampling
+
     :return: sampling data frame
     """
     sample_cnt = pd.Series(np.int32(df.sum(axis=0) * sample_rate), index=df.columns)
@@ -289,9 +299,10 @@ def choose_gene(x, num):
     """
     gene selection
 
-    :param x:
-    :param num:
-    :return:
+    :param x: data frame
+    :param num: series object
+
+    :return: series object
     """
     gene_list = list(x.index)
     p = x.values

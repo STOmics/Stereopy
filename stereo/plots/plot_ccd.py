@@ -89,19 +89,38 @@ class PlotCCDSingle(PlotBase):
 
         for i, ax in enumerate(axes):
             if i == 0:
-                g = sns.heatmap(np.array(range(len(stats.columns) + 1))[:, np.newaxis], linewidths=0.5,
-                                linecolor='gray',
-                                annot=np.array([''] + [column for column in stats.columns])[:, np.newaxis], ax=ax,
-                                cbar=False,
-                                cmap=row_cmap, fmt="", xticklabels=False, yticklabels=False, square=None)
+                g = sns.heatmap(
+                    np.array(range(len(stats.columns) + 1))[:, np.newaxis],
+                    linewidths=0.5,
+                    linecolor='gray',
+                    annot=np.array([''] + [column for column in stats.columns])[:, np.newaxis],
+                    ax=ax,
+                    cbar=False,
+                    cmap=row_cmap,
+                    fmt="",
+                    xticklabels=False,
+                    yticklabels=False,
+                    square=None
+                )
             else:
                 table_annotation = np.array([f'cluster {stats.index[i - 1]}'] + [
-                    f'{ct_perc_per_cluster.iloc[i - 1, int(x)]}%\n({ct_perc_per_celltype.iloc[i - 1, int(x)]}%)' for x
-                    in range(len(stats.columns))])[:, np.newaxis]
+                    f'{ct_perc_per_cluster.iloc[i - 1, int(x)]}%\n({ct_perc_per_celltype.iloc[i - 1, int(x)]}%)'
+                    for x in range(len(stats.columns))
+                ])[:, np.newaxis]
                 column_cmap[0] = cluster_color[stats.index[i - 1]]
-                g = sns.heatmap(np.array(range(stats.shape[1] + 1))[:, np.newaxis], linewidths=0.5,  # noqa
-                                linecolor='gray', annot=table_annotation, cbar=False, cmap=column_cmap,
-                                ax=ax, fmt='', xticklabels=False, yticklabels=False, square=None)
+                g = sns.heatmap(  # noqa
+                    np.array(range(stats.shape[1] + 1))[:, np.newaxis],
+                    linewidths=0.5,
+                    linecolor='gray',
+                    annot=table_annotation,
+                    cbar=False,
+                    cmap=column_cmap,
+                    ax=ax,
+                    fmt='',
+                    xticklabels=False,
+                    yticklabels=False,
+                    square=None
+                )
         axes[i // 2].set_title('Cell type abundance per cluster (and per cel type set)')
         axes[i // 2].title.set_size(20)
         fig.savefig(os.path.join(self.dir_path, f'celltype_table_{self.params_suffix}.png'), bbox_inches='tight')
@@ -123,16 +142,14 @@ class PlotCCD(MSDataPlotBase):
         """
         number_of_samples = len(self.pipeline_res['ccd']["algo_list"])
         number_of_rows = 2 if number_of_samples % 2 == 0 and number_of_samples > 2 else 1
-        number_of_columns = (
-                number_of_samples // 2) if number_of_samples % 2 == 0 and number_of_samples > 2 else number_of_samples
+        number_of_columns = (number_of_samples // 2) if number_of_samples % 2 == 0 and number_of_samples > 2 \
+            else number_of_samples
 
         figure, axes = plt.subplots(nrows=number_of_rows, ncols=number_of_columns, squeeze=False, layout='constrained',
                                     figsize=(10, 6))
         h_d = {}
         unknown_label = []
         for (algo, ax) in zip(self.pipeline_res['ccd']["algo_list"], axes.flatten()):
-
-            # TODO cluster_palette only produce after running plot
             labels = np.unique(algo.adata.obs[f'tissue_{algo.method_key}'].values)
             if 'unknown' in labels:
                 labels = labels[labels != 'unknown']
@@ -220,10 +237,6 @@ class PlotCCD(MSDataPlotBase):
             ax.set_xticklabels(ax.get_xticklabels(), rotation=70)
             ax.xaxis.tick_top()
 
-        # plt.savefig(os.path.join(params['out_path'], f'total_cell_mixtures_table.png'), bbox_inches='tight')
-        # if not params['hide_plots']:
-        #     plt.show()
-        # plt.close()
         return plt.figure()
 
     def plot_cell_perc_in_community_per_slice(self, **params):
@@ -231,8 +244,9 @@ class PlotCCD(MSDataPlotBase):
         Plots the percentage of cells in each community per slice.
         """
         cells_in_comm_per_slice = {
-            algo.filename: algo.get_community_labels().value_counts(normalize=True).rename(algo.filename) for algo in
-            self.pipeline_res['ccd']["algo_list"]}
+            algo.filename: algo.get_community_labels().value_counts(normalize=True).rename(algo.filename)
+            for algo in self.pipeline_res['ccd']["algo_list"]
+        }
         df = pd.concat(cells_in_comm_per_slice.values(), axis=1).fillna(0).mul(100).T
         df = df[sorted(df.columns.values, key=lambda x: float(x) if x != "unknown" else float('inf'))]
         set_figure_params(dpi=params.get('dpi'), facecolor='white')
@@ -244,10 +258,6 @@ class PlotCCD(MSDataPlotBase):
         ax.xaxis.tick_top()
         ax.xaxis.set_label_position('top')
 
-        # plt.savefig(os.path.join(params['out_path'], 'cell_perc_in_community_per_slice.png'), bbox_inches='tight')
-        # if not params['hide_plots']:
-        #     plt.show()
-        # plt.close()
         return plt.figure()
 
     def plot_cell_abundance_total(self, **params):
@@ -275,10 +285,6 @@ class PlotCCD(MSDataPlotBase):
         ax.set_facecolor('white')
         plt.legend(loc='upper left', bbox_to_anchor=(1.04, 1))
 
-        # plt.savefig(os.path.join(params['out_path'], f'cell_abundance_all_slices.png'), bbox_inches='tight')
-        # if not params['hide_plots']:
-        #     plt.show()
-        # plt.close()
         return plt.figure()
 
     def plot_cell_abundance_per_slice(self, **params):
@@ -317,10 +323,6 @@ class PlotCCD(MSDataPlotBase):
         for ax in axes:
             ax.grid(False)
 
-        # plt.savefig(os.path.join(params['out_path'], f'cell_abundance_per_slice.png'), bbox_inches='tight')
-        # if not params['hide_plots']:
-        #     plt.show()
-        # plt.close()
         return plt.figure()
 
     def plot_cluster_abundance_total(self, **params):
@@ -351,10 +353,6 @@ class PlotCCD(MSDataPlotBase):
         ax.set_facecolor('white')
         plt.legend(loc='upper left', bbox_to_anchor=(1.04, 1))
 
-        # plt.savefig(os.path.join(params['out_path'], f'cluster_abundance_all_slices.png'), bbox_inches='tight')
-        # if not params['hide_plots']:
-        #     plt.show()
-        # plt.close()
         return plt.figure()
 
     def plot_cluster_abundance_per_slice(self, **params):
@@ -395,8 +393,4 @@ class PlotCCD(MSDataPlotBase):
         for ax in axes:
             ax.grid(False)
 
-        # plt.savefig(os.path.join(params['out_path'], f'cluster_abundance_per_slice.png'), bbox_inches='tight')
-        # if not params['hide_plots']:
-        #     plt.show()
-        # plt.close()
         return plt.figure()

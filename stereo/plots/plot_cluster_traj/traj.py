@@ -14,7 +14,6 @@ from .interp import generate_linear_interp_points
 
 class Traj:
     def __init__(self, con, x_raw, y_raw, ty):
-        # TODO: 插入断言
         self.con = con
         self.x_raw = x_raw
         self.y_raw = y_raw
@@ -55,8 +54,6 @@ class Traj:
         """
         choose_i = np.array([np.where(self.ty_rep == ele)[0][0] for ele in choose_ty])
         choose_ind = np.array([ele for ele in itertools.permutations(choose_i, 2)])  # np.NdArray, (n,2)
-        # choose_ind = choose_ind.transpose()
-
         choose_mtx = np.zeros(self.con.shape, dtype=bool)
         choose_mtx[(choose_ind[:, 0], choose_ind[:, 1])] = 1
 
@@ -88,15 +85,7 @@ class Traj:
         s_arr[np.ceil(y_arr * scale).astype(np.int32), np.ceil(x_arr * scale).astype(
             np.int32)] = 1  # e.g 最大值：2.1 * 2.6 = 5.46 -> 6
 
-        # plt.figure()
-        # plt.imshow(s_arr)
-        # plt.gca().invert_yaxis()
-        # plt.savefig('E:/ANALYSIS_ALGORITHM/cell_trajectory_analysis/result/area.tif')
-        # plt.close()
-
         s = np.sum(s_arr) / scale ** 2
-
-        # average distance = sqrt(area/n)
         d_avg = math.sqrt(s / x_arr.shape[0])
 
         self.d_avg = d_avg
@@ -159,7 +148,7 @@ class Traj:
                     x_rep = x_mean
                     y_rep = y_mean
 
-            # # 测试：重心位置
+            # 测试：重心位置
             # plt.figure()
             # plt.scatter(x_clus, y_clus, c=dbscan_clus.labels_, s=1, cmap='rainbow')
             # plt.colorbar()
@@ -411,7 +400,6 @@ class Traj:
         else:
             plt_ty = [ele for ele in choose_ty if ele in keep_ty]
 
-        # print(self.ty_rep)
         for i in range(self.x_rep.shape[0]):
             if not plt_ty is None:  # types were selected # noqa
                 if not self.ty_rep[i] in plt_ty:
@@ -437,8 +425,8 @@ class Traj:
             plt.plot(x_unknown, y_unknown, alpha=line_alpha, linewidth=line_width_co * wei, c=c_val)
         return
 
-    def show_curve(self, x_unknown_li_all_tra, y_unknown_li_all_tra, com_tra_wei_li,
-                   line_alpha, line_width_co, line_color, uni_lwidth):
+    def show_curve(self, x_unknown_li_all_tra, y_unknown_li_all_tra, com_tra_wei_li, line_alpha, line_width_co,
+                   line_color, uni_lwidth):
         # 画轨迹连线
         # self.com_tra_li: [[1, 18, 10], [2, 12, 18], [3, 16, 0, 15, 12], [6, 7, 8, 19], [8, 11], [13, 4, 7, 9, 5, 17, 16], [9, 14]] # noqa
         for i, sin_tra in enumerate(self.com_tra_li):  # 对每条完整的轨迹
@@ -447,8 +435,7 @@ class Traj:
                                 com_tra_wei_li[i][j], line_color, uni_lwidth)
         return
 
-    def show_straight(self, x_li, y_li, wei_li,
-                      line_alpha, line_width_co, line_color, uni_lwidth):
+    def show_straight(self, x_li, y_li, wei_li, line_alpha, line_width_co, line_color, uni_lwidth):
         for i in range(self.con_pair.shape[0]):
             self._plot_line([x_li[i][0], x_li[i][1]], [y_li[i][0], y_li[i][1]], line_alpha, line_width_co, wei_li[i],
                             line_color, uni_lwidth)

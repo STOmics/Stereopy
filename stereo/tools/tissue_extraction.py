@@ -41,6 +41,7 @@ def tissue_extraction_to_bgef(
     :param src_img_path: see desc in `src_type`
     :param rna_tissue_cut_bin_size: default to 20, using bin20 for better performance but less mask fineness
     :param save_result_bgef: True return None, but save gef to disk; False for returning a `StereoExpData`
+
     :return: None or StereoExpData
     """
     if src_type == ssDNA:
@@ -77,8 +78,8 @@ def tissue_extraction_to_bgef(
     else:
         # TODO: has not finished, need recheck
         data = StereoExpData(bin_size=1)
-        uniq_cells, uniq_genes, count, cell_ind, gene_ind = bc.get_stereo_data(src_gef_path, extract_bin_size,
-                                                                               mask_file_path)
+        uniq_cells, uniq_genes, count, cell_ind, gene_ind = bc.get_stereo_data(
+            src_gef_path, extract_bin_size, mask_file_path)
         logger.info(f'the matrix has {len(uniq_cells)} cells, and {len(uniq_genes)} genes.')
 
         data.position = np.array(
@@ -96,6 +97,9 @@ def tissue_extraction_to_bgef(
         }
         data.cells = Cell(cell_name=uniq_cells)
         data.genes = Gene(gene_name=uniq_genes)
-        data.exp_matrix = csr_matrix((count, (cell_ind, gene_ind)), shape=(len(uniq_cells), len(uniq_genes)),
-                                     dtype=np.uint32)
+        data.exp_matrix = csr_matrix(
+            (count, (cell_ind, gene_ind)),
+            shape=(len(uniq_cells), len(uniq_genes)),
+            dtype=np.uint32
+        )
         return data

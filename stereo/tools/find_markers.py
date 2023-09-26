@@ -142,15 +142,25 @@ class FindMarker(ToolBase):
         elif self.method == 'logreg':
             if self.temp_logres_score is None:
                 self.temp_logres_score = self.logres_score()
-            result = self.run_logres(self.temp_logres_score, self.data.exp_matrix[g_index],
-                                     self.data.exp_matrix[~g_index], g)
+            result = self.run_logres(
+                self.temp_logres_score,
+                self.data.exp_matrix[g_index],
+                self.data.exp_matrix[~g_index],
+                g
+            )
         else:
             if self.control_groups != 'rest' and self.tie_term:
                 xy = np.vstack((self.data.exp_matrix[g_index].values, self.data.exp_matrix[~g_index].values))
                 ranks = stats.rankdata(xy, axis=-1)
                 tie_term = mannwhitneyu.cal_tie_term(ranks)
-            result = statistics.wilcoxon(self.data.exp_matrix[g_index], self.data.exp_matrix[~g_index],
-                                         self.corr_method, ranks, tie_term, g_index)
+            result = statistics.wilcoxon(
+                self.data.exp_matrix[g_index],
+                self.data.exp_matrix[~g_index],
+                self.corr_method,
+                ranks,
+                tie_term,
+                g_index
+            )
         result['genes'] = self.data.gene_names
         result.sort_values(by=self.sort_by, ascending=self.ascending, inplace=True)
 
@@ -284,10 +294,6 @@ class FindMarker(ToolBase):
     def merge_groups_data(g1, g2):
         """
         drop duplicated and the columns that all the values are 0
-
-        :param g1:
-        :param g2:
-        :return:
         """
         g1 = g1.loc[:, ~g1.columns.duplicated()]
         g2 = g2.loc[:, ~g2.columns.duplicated()]
@@ -302,7 +308,7 @@ class FindMarker(ToolBase):
                          sort_key: str = 'scores',
                          ascend: bool = False,
                          fontsize: int = 8,
-                         ncols: int = 4, ):
+                         ncols: int = 4):
         from ..plots.marker_genes import marker_genes_text
 
         marker_genes_text(self.result, groups, markers_num, sort_key, ascend, fontsize, ncols)
@@ -320,8 +326,19 @@ class FindMarker(ToolBase):
                      gene_list=None, do_log=True):
         from ..plots.marker_genes import marker_genes_heatmap
 
-        marker_genes_heatmap(data=self.data, cluster_res=self.groups, marker_res=self.result,
-                             markers_num=markers_num, sort_key=sort_key, ascend=ascend, show_labels=show_labels,
-                             show_group=show_group, show_group_txt=show_group_txt,
-                             cluster_colors_array=cluster_colors_array, min_value=min_value, max_value=max_value,
-                             gene_list=gene_list, do_log=do_log)
+        marker_genes_heatmap(
+            data=self.data,
+            cluster_res=self.groups,
+            marker_res=self.result,
+            markers_num=markers_num,
+            sort_key=sort_key,
+            ascend=ascend,
+            show_labels=show_labels,
+            show_group=show_group,
+            show_group_txt=show_group_txt,
+            cluster_colors_array=cluster_colors_array,
+            min_value=min_value,
+            max_value=max_value,
+            gene_list=gene_list,
+            do_log=do_log
+        )

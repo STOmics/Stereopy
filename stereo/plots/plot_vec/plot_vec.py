@@ -49,11 +49,7 @@ class PlotVec(PlotBase):
         plt_avg_ptime_fil = vec.filter(plt_avg_ptime, filter_type, sigma_val, radius_val)
 
         plt_common_ty = vec.gen_arr_for_common(ty_raw)
-        # print('most common type in each pixel calculated.')
-
         u, v = vec.cal_param(plt_avg_ptime_fil)
-        # print('u, v calculated.')
-
         mask_nan = np.isnan(u) | np.isnan(v) | (u == 0) | (v == 0)
         u[mask_nan] = np.nan
         v[mask_nan] = np.nan

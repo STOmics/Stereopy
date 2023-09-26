@@ -165,7 +165,18 @@ class PlotTimeSeries(PlotBase):
 
         return fig
 
-    def bezierpath(self, rs, re, qs, qe, ry, qy, v=True, col=ColorType.green.value, alpha=0.2, label='', lw=0,
+    def bezierpath(self,
+                   rs,
+                   re,
+                   qs,
+                   qe,
+                   ry,
+                   qy,
+                   v=True,
+                   col=ColorType.green.value,
+                   alpha=0.2,
+                   label='',
+                   lw=0,
                    zorder=0):
         """
         bezierpath patch for plot the connection of same organ in different batches
@@ -239,7 +250,6 @@ class PlotTimeSeries(PlotBase):
 
         :return: a fig object
         """
-
         import networkx as nx
         import seaborn as sns
         from scipy import stats
@@ -351,13 +361,11 @@ class PlotTimeSeries(PlotBase):
                     if (y1 + y2) / 2 < threshold_y:
                         ax.annotate('', (x2, y2), (x1, y1),
                                     arrowprops=dict(connectionstyle="arc3,rad=0.4", ec=ColorType.black.value,
-                                                    color='#f9f8e6',
-                                                    arrowstyle=SIMPLE, alpha=0.5))
+                                                    color='#f9f8e6', arrowstyle=SIMPLE, alpha=0.5))
                     else:
                         ax.annotate('', (x2, y2), (x1, y1),
                                     arrowprops=dict(connectionstyle="arc3,rad=-0.4", ec=ColorType.black.value,
-                                                    color='#f9f8e6',
-                                                    arrowstyle=SIMPLE, alpha=0.5))
+                                                    color='#f9f8e6', arrowstyle=SIMPLE, alpha=0.5))
 
         # 贝塞尔曲线流形显示
         if len(groups) == 1:
@@ -365,10 +373,17 @@ class PlotTimeSeries(PlotBase):
                 for bc in range(len(bc_list) - 1):
                     edge0, edge1 = g + '|' + bc_list[bc], g + '|' + bc_list[bc + 1]
                     if (edge0 in median_center) and (edge1 in median_center):
-                        p = self.bezierpath(min_vertex_right[edge0][1], max_vertex_right[edge0][1],
-                                            min_vertex_left[edge1][1], max_vertex_right[edge1][1],
-                                            min_vertex_right[edge0][0], min_vertex_left[edge1][0], True,
-                                            col=ct2color[g], alpha=link_alpha)
+                        p = self.bezierpath(
+                            min_vertex_right[edge0][1],
+                            max_vertex_right[edge0][1],
+                            min_vertex_left[edge1][1],
+                            max_vertex_right[edge1][1],
+                            min_vertex_right[edge0][0],
+                            min_vertex_left[edge1][0],
+                            True,
+                            col=ct2color[g],
+                            alpha=link_alpha
+                        )
                         ax.add_patch(p)
 
         # 显示时期的label
@@ -537,8 +552,7 @@ class PlotTimeSeriesAnalysis(MSDataPlotBase, PlotTimeSeries):
         ret = defaultdict(dict)
         for t in bc_list:
             for x in ct_list:
-                ret[x][t] = ms_data[t].tl.result[use_result].loc[ms_data[t].tl.result[use_result][GROUP] == x].shape[
-                    0]
+                ret[x][t] = ms_data[t].tl.result[use_result].loc[ms_data[t].tl.result[use_result][GROUP] == x].shape[0]
 
         # order the celltype
         ret_df = pd.DataFrame(ret)
@@ -676,7 +690,6 @@ class PlotTimeSeriesAnalysis(MSDataPlotBase, PlotTimeSeries):
 
         :return: a fig object.
         """
-
         import networkx as nx
         import seaborn as sns
         from scipy import stats
@@ -803,13 +816,11 @@ class PlotTimeSeriesAnalysis(MSDataPlotBase, PlotTimeSeries):
                     if (y1 + y2) / 2 < threshold_y:
                         ax.annotate('', (x2, y2), (x1, y1),
                                     arrowprops=dict(connectionstyle="arc3,rad=0.4", ec=ColorType.black.value,
-                                                    color='#f9f8e6',
-                                                    arrowstyle=SIMPLE, alpha=0.5))
+                                                    color='#f9f8e6', arrowstyle=SIMPLE, alpha=0.5))
                     else:
                         ax.annotate('', (x2, y2), (x1, y1),
                                     arrowprops=dict(connectionstyle="arc3,rad=-0.4", ec=ColorType.black.value,
-                                                    color='#f9f8e6',
-                                                    arrowstyle=SIMPLE, alpha=0.5))
+                                                    color='#f9f8e6', arrowstyle=SIMPLE, alpha=0.5))
 
         # 贝塞尔曲线流形显示
         if len(groups) == 1:
@@ -817,10 +828,17 @@ class PlotTimeSeriesAnalysis(MSDataPlotBase, PlotTimeSeries):
                 for bc in range(len(bc_list) - 1):
                     edge0, edge1 = g + '|' + bc_list[bc], g + '|' + bc_list[bc + 1]
                     if (edge0 in median_center) and (edge1 in median_center):
-                        p = self.bezierpath(min_vertex_right[edge0][1], max_vertex_right[edge0][1],
-                                            min_vertex_left[edge1][1], max_vertex_right[edge1][1],
-                                            min_vertex_right[edge0][0], min_vertex_left[edge1][0], True,
-                                            col=ct2color[g], alpha=link_alpha)
+                        p = self.bezierpath(
+                            min_vertex_right[edge0][1],
+                            max_vertex_right[edge0][1],
+                            min_vertex_left[edge1][1],
+                            max_vertex_right[edge1][1],
+                            min_vertex_right[edge0][0],
+                            min_vertex_left[edge1][0],
+                            True,
+                            col=ct2color[g],
+                            alpha=link_alpha
+                        )
                         ax.add_patch(p)
 
         # 显示时期的label

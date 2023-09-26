@@ -46,7 +46,6 @@ class PlotClusterTraj(PlotBase):
         # plotting
         figure = plt.figure(dpi=dpi_save)
         if show_scatter:
-            # traj.show_scatter(spot_size, spot_alpha, seed_val, num_legend_per_col, tick_step, mask_keep)
             figure = base_scatter(x_raw, y_raw, hue=np.array(ty), **kwargs)
 
         traj.show_ty_label(text_size, choose_ty, keep_ty)

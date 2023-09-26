@@ -167,7 +167,8 @@ class RnaVelocity(object):
 
         :param df: a dataframe of the bin file.
         :param bin_size: the size of bin to merge.
-        :return:
+
+        :return: a dataframe
         """
         x_min = df['x'].min()
         y_min = df['y'].min()

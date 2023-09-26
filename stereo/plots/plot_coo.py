@@ -39,7 +39,6 @@ class PlotCoOccurrence(PlotBase):
             groups = natsorted(groups)
         nrow = int(np.sqrt(len(groups)))
         ncol = np.ceil(len(groups) / nrow).astype(int)
-        # print(nrow, ncol)
         if width is None:
             width = 5 * ncol
         if height is None:
@@ -47,7 +46,6 @@ class PlotCoOccurrence(PlotBase):
         fig = plt.figure(figsize=(width, height))
         axs = fig.subplots(nrow, ncol)
         self._close_axis(axs)
-        # clust_unique = list(data.cells[cluster_res_key].astype('category').cat.categories)
         for i, g in enumerate(groups):
             interest = self.pipeline_res[res_key][g]
             if nrow == 1:
@@ -91,7 +89,6 @@ class PlotCoOccurrence(PlotBase):
         groups = [x for x in tmp.index if (x < dist_max) & (x > dist_min)]
         nrow = int(np.sqrt(len(groups)))
         ncol = np.ceil(len(groups) / nrow).astype(int)
-        # print(nrow, ncol)
         if width is None:
             width = 9 * ncol
         if height is None:
@@ -115,5 +112,4 @@ class PlotCoOccurrence(PlotBase):
             ax.set_title('{:.4g}'.format(g))
             ax.set_axis_on()
             ax.set_xticklabels(ax.get_xticklabels(), rotation=60, ha='right', va='top')
-            # ax.legend(fontsize = 7, ncol = max(1, nrow-1), loc='upper right')
         return fig

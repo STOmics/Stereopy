@@ -3,12 +3,12 @@ from collections import Counter
 
 import numpy as np
 
-from .interp import generate_linear_interp_points, generate_cubic_interp_points
+from .interp import generate_cubic_interp_points
+from .interp import generate_linear_interp_points
 
 
 class Traj:
     def __init__(self, con, x_raw, y_raw, z_raw, ty, choose_ty):
-        # TODO: 插入断言
         self.con = con
         self.x_raw = x_raw
         self.y_raw = y_raw
@@ -48,8 +48,6 @@ class Traj:
         """
         choose_i = np.array([np.where(self.ty_all_no_dup_same_ord == ele)[0][0] for ele in choose_ty])
         choose_ind = np.array([ele for ele in itertools.permutations(choose_i, 2)])  # np.NdArray, (n,2)
-        # choose_ind = choose_ind.transpose()
-
         choose_mtx = np.zeros(self.con.shape, dtype=bool)
         choose_mtx[(choose_ind[:, 0], choose_ind[:, 1])] = 1
 
@@ -85,13 +83,11 @@ class Traj:
         :return: ndarray, (n,2)
         """
         pi_index = np.where(self.con > lower_thresh_not_equal)
-        pi_index_li = [[pi_index[0][i], pi_index[1][i]] for i in
-                       range(pi_index[0].shape[0])]  # 将clus的关系从邻接矩阵转化成[[], []]存储
+        # 将clus的关系从邻接矩阵转化成[[], []]存储
+        pi_index_li = [[pi_index[0][i], pi_index[1][i]] for i in range(pi_index[0].shape[0])]
         pi_index_li = [li for li in pi_index_li if not li[0] == li[1]]  # 去掉起始和终点相同的li
         pi_index_li = [sorted(li) for li in pi_index_li]  # 是li从较小index到较大index
-        # pi_index_li = np.array([li for li, _ in itertools.groupby(pi_index_li)])  # 去掉重复的li
         pi_index_li = np.unique(np.array(pi_index_li), axis=0)
-
         self.con_pair = pi_index_li
         return
 
@@ -150,9 +146,7 @@ class Traj:
 
         # 2. 计算完整轨迹的集合
         pi_index_arr = np.array(self.con_pair)  # 待选线段的集合，每次循环都会更新 (n, 2)
-        # print('pi_index_arr', pi_index_arr)
         edge_arr = find_end_p_gathering_from_intervals(pi_index_arr)
-        # print('edge_arr', edge_arr)
         com_tra_li = []  # list of complete trajectories, 每次循环都会更新, [[], [], ...]
         while edge_arr.shape[0] >= 1:
             # 找到一个边界点

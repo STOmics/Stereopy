@@ -74,7 +74,6 @@ class Vec():
         # calculate scale
         shortest_edge_max_coor = np.array([x_sh.max(), y_sh.max(), z_sh.max()]).min()  # 最短边的最大坐标
         self.scale = (num_pix - 1) / shortest_edge_max_coor  # scale, 使最短边的最大坐标变换后，成为num_pix-1
-        # print(num_pix, shortest_edge_max_coor, self.scale)
 
         # process coordinates into new array framework
         x_scaled = np.ceil(x_sh * self.scale).astype(np.int32)  # (n,), val_seq: (n,)
@@ -99,7 +98,6 @@ class Vec():
         self.uniq_xyz_scaled = uniq_xyz_scaled
         self.uni_ind = uni_ind
         self.new_arr_sh = new_arr_sh
-        # print('self.new_arr_sh', self.new_arr_sh)
         return
 
     def gen_arr_for_mean(self, val_seq_for_mean):
@@ -229,21 +227,3 @@ class Vec():
         mask_nan_uz = np.isnan(s_arr_z_sh) | np.isnan(s_arr_z_unsh)
         uz[mask_nan_uz] = np.nan
         return ux, uy, uz
-
-    # todo: def apply the transformation used in voxelization to mesh?
-    # def _apply_trans(self, x_arr, y_arr):
-    #     """
-    #     apply the transformation applied onto raw data of vector, onto other data
-    #     :param x_arr: np.NdArray: (n,)
-    #     :param y_arr: np.NdArray: (n,)
-    #     :return:
-    #     """
-    #     x_arr_re = x_arr.copy()
-    #     y_arr_re = y_arr.copy()
-    #
-    #     x_arr_re = x_arr_re + self.offset_x
-    #     y_arr_re = y_arr_re + self.offset_y
-    #
-    #     x_arr_re = x_arr_re * self.scale
-    #     y_arr_re = y_arr_re * self.scale  # (n,)
-    #     return x_arr_re, y_arr_re

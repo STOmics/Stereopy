@@ -39,7 +39,6 @@ def _(x, *, axis=0):
     return mean, var
 
 
-# from scanpy _utils
 @get_mean_var.register(spmatrix)
 def _(X, *, axis=0):
     if issparse(X):
@@ -182,7 +181,7 @@ def filter_genes(
         max_counts: Optional[int] = None,
         max_cells: Optional[int] = None,
 ) -> Tuple[np.ndarray, np.ndarray]:
-    """\
+    """
     Filter genes based on number of cells or counts.
 
     Keep genes that have at least `min_counts` counts or are expressed in at

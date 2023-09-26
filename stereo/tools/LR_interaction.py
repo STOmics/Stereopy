@@ -77,13 +77,11 @@ class LrInteraction(ToolBase):
                   'is not unique or has gene not in the `data.gene_names`')
 
         lr_pairs = np.unique(lr_pairs)
-        lr_pairs = [item for item in lr_pairs
-                    if np.all([self.is_gene_name(self.data, gene)
-                               for gene in item.split("_")])]
+        lr_pairs = [item for item in lr_pairs if np.all([self.is_gene_name(self.data, gene)
+                                                         for gene in item.split("_")])]
         lr_genes = '_'.join(lr_pairs).split('_')
         genes = np.unique('_'.join(lr_pairs).split('_'))
-        lr_pairs_rev = [item.split("_")[1] + "_" + item.split("_")[0]
-                        for item in lr_pairs]
+        lr_pairs_rev = [item.split("_")[1] + "_" + item.split("_")[0] for item in lr_pairs]
         lr_genes_rev = '_'.join(lr_pairs_rev).split('_')
 
         df = self.data[:, genes].copy().to_df()
@@ -122,15 +120,11 @@ class LrInteraction(ToolBase):
         spot_lr = (spot_lr1.values * (nb_lr2.values > self.min_exp) +
                    (spot_lr1.values > self.min_exp) * nb_lr2.values)
 
-        columns = [lr_pairs[i // 2]
-                   for i in range(len(spot_lr2.columns))]
+        columns = [lr_pairs[i // 2] for i in range(len(spot_lr2.columns))]
 
         # make multiindex so we can group it together
-        columns = pd.MultiIndex.from_arrays((columns,
-                                             spot_lr2.columns))
-        scores = pd.DataFrame(spot_lr,
-                              index=self.data.cell_names,
-                              columns=columns)
+        columns = pd.MultiIndex.from_arrays((columns, spot_lr2.columns))
+        scores = pd.DataFrame(spot_lr, index=self.data.cell_names, columns=columns)
         scores = scores.T.reset_index().groupby(['level_0']).sum().T
         scores.index.name = 'LR pairs'
 
@@ -157,8 +151,7 @@ class LrInteraction(ToolBase):
                           candidate_genes: np.array
                           ):
         ref_quants = ref_quants.reshape(-1, 1)
-        dists = (np.fabs(ref_quants - candidate_quants) /
-                 (ref_quants + candidate_quants)).sum(axis=0)
+        dists = (np.fabs(ref_quants - candidate_quants) / (ref_quants + candidate_quants)).sum(axis=0)
 
         # remove the zero-dists since this
         # indicates they are the same gene
@@ -204,26 +197,19 @@ class LrInteraction(ToolBase):
         """Gets the LR-specific background & bg spot indices."""
         l_, r_ = lr_.split("_")
         if l_ not in gene_bg_genes:
-            l_genes = self.get_similar_genes(
-                l_quant, n_genes, candidate_quants, genes  # group_l_props,
-            )
+            l_genes = self.get_similar_genes(l_quant, n_genes, candidate_quants, genes)
             gene_bg_genes[l_] = l_genes
         else:
             l_genes = gene_bg_genes[l_]
 
         if r_ not in gene_bg_genes:
-            r_genes = self.get_similar_genes(
-                r_quant, n_genes, candidate_quants, genes  # group_r_props,
-            )
+            r_genes = self.get_similar_genes(r_quant, n_genes, candidate_quants, genes)
             gene_bg_genes[r_] = r_genes
         else:
             r_genes = gene_bg_genes[r_]
 
         rand_pairs = self.gene_rand_pairs(l_genes, r_genes, n_pairs)
-        background = self.calculate_score(lr_pairs=rand_pairs,
-                                          neighbors_key=neighbors_key,
-                                          key_add=None,
-                                          verbose=False)
+        background = self.calculate_score(lr_pairs=rand_pairs, neighbors_key=neighbors_key, key_add=None, verbose=False)
         return background
 
     def get_lr_features(self, lr_expr):  # modified
@@ -242,9 +228,7 @@ class LrInteraction(ToolBase):
         def nonzero_quantile(expr):
             """Calculating the non-zero quantiles."""
             nonzero_expr = expr[expr > 0]  # all=0
-            quants = np.quantile(nonzero_expr,
-                                 q=quantiles,
-                                 interpolation=interpolation)
+            quants = np.quantile(nonzero_expr, q=quantiles, interpolation=interpolation)
             return quants
 
         def nonzero_median(expr):
@@ -258,38 +242,29 @@ class LrInteraction(ToolBase):
             gene_props = (expr == 0).sum() / len(expr)
             return gene_props
 
-        summary = lr_expr.T.agg([nonzero_quantile, nonzero_median,
-                                 zero_props, np.median], axis=1)
+        summary = lr_expr.T.agg([nonzero_quantile, nonzero_median, zero_props, np.median], axis=1)
         l_summary = summary.iloc[l_indices, :]
         r_summary = summary.iloc[r_indices, :]
 
-        lr_median_means = (l_summary.nonzero_median.values +
-                           r_summary.nonzero_median.values) / 2
-        lr_prop_means = (l_summary.zero_props.values +
-                         r_summary.zero_props.values) / 2
+        lr_median_means = (l_summary.nonzero_median.values + r_summary.nonzero_median.values) / 2
+        lr_prop_means = (l_summary.zero_props.values + r_summary.zero_props.values) / 2
 
         median_order = np.argsort(lr_median_means)
         prop_order = np.argsort(lr_prop_means * -1)
-        median_ranks = [np.where(median_order == i)[0][0]
-                        for i in range(len(self.lr_pairs))]
-        prop_ranks = [np.where(prop_order == i)[0][0]
-                      for i in range(len(self.lr_pairs))]
+        median_ranks = [np.where(median_order == i)[0][0] for i in range(len(self.lr_pairs))]
+        prop_ranks = [np.where(prop_order == i)[0][0] for i in range(len(self.lr_pairs))]
         mean_ranks = np.array([median_ranks, prop_ranks]).mean(axis=0)
 
-        columns = ["nonzero-median", "zero-prop",
-                   "median_rank", "prop_rank", "mean_rank"]
+        columns = ["nonzero-median", "zero-prop", "median_rank", "prop_rank", "mean_rank"]
         lr_features = pd.DataFrame(columns=columns, index=self.lr_pairs)
-        lr_features[columns[0: 2]] = summary[['nonzero_median',
-                                              'zero_props']].values.mean(axis=0)
+        lr_features[columns[0: 2]] = summary[['nonzero_median', 'zero_props']].values.mean(axis=0)
         lr_features[columns[2]] = median_ranks
         lr_features[columns[3]] = prop_ranks
-        lr_features[columns[4]] = mean_ranks  # pd.assign
+        lr_features[columns[4]] = mean_ranks
 
-        q_cols = [f'L_q{quantile}' for quantile in quantiles] + \
-                 [f'R_q{quantile}' for quantile in quantiles]
+        q_cols = [f'L_q{quantile}' for quantile in quantiles] + [f'R_q{quantile}' for quantile in quantiles]
 
-        q_values = np.hstack([l_summary.nonzero_quantile.values.tolist(),
-                              r_summary.nonzero_quantile.values.tolist()])
+        q_values = np.hstack([l_summary.nonzero_quantile.values.tolist(), r_summary.nonzero_quantile.values.tolist()])
 
         lr_features[q_cols] = q_values
         self.result['lr_features'] = lr_features
@@ -315,15 +290,13 @@ class LrInteraction(ToolBase):
         n_pairs = self.n_pairs
 
         lr_genes = np.unique([lr_.split("_") for lr_ in lr_pairs])
-        genes = np.array([gene for gene in self.data.gene_names
-                          if gene not in lr_genes])
+        genes = np.array([gene for gene in self.data.gene_names if gene not in lr_genes])
         candidate_expr = self.data[:, genes].to_df().values
 
         n_genes = round(np.sqrt(n_pairs) * 2)
         if len(genes) < n_genes:
             print(
-                "Exiting since need at least "
-                f"{n_genes} genes to generate {n_pairs} pairs."
+                f"Exiting since need at least {n_genes} genes to generate {n_pairs} pairs."
             )
             return
 
@@ -338,9 +311,7 @@ class LrInteraction(ToolBase):
         l_quants = lr_feats.loc[lr_pairs, [col for col in lr_feats.columns if "L_" in col]].values
         r_quants = lr_feats.loc[lr_pairs, [col for col in lr_feats.columns if "R_" in col]].values
 
-        candidate_quants = np.apply_along_axis(np.quantile, 0, candidate_expr,
-                                               q=quantiles, interpolation="nearest"
-                                               )
+        candidate_quants = np.apply_along_axis(np.quantile, 0, candidate_expr, q=quantiles, interpolation="nearest")
 
         pvals = np.ones(lr_scores.shape, dtype=np.float32)
         # do permutation
@@ -370,8 +341,7 @@ class LrInteraction(ToolBase):
             if save_bg:
                 self.result["lrs_to_bg"][lr_] = background
 
-            n_greater = (background.values[spot_indices, :]
-                         >= lr_score[spot_indices].reshape(-1, 1)).sum(axis=1)
+            n_greater = (background.values[spot_indices, :] >= lr_score[spot_indices].reshape(-1, 1)).sum(axis=1)
 
             n_greater = np.where(n_greater != 0, n_greater, 1)
             pvals[spot_indices, idx] = n_greater / background.shape[0]
@@ -394,7 +364,7 @@ class LrInteraction(ToolBase):
             spot_comp: pd.DataFrame = None,  # TODO
             key_add: str = 'cci_score',
             adj_method: str = "fdr_bh",
-    ):  # reference: stlearn
+    ):
         """run
 
         Parameters
@@ -456,7 +426,7 @@ class LrInteraction(ToolBase):
         self._permutation(lr_scores=lr_scores,
                           lr_pairs=lr_pairs,
                           neighbors_key=neighbors_key,
-                          adj_method=adj_method,
-                          verbose=False)
+                          adj_method=adj_method
+                          )
 
         return self.result

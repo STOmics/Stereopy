@@ -17,7 +17,6 @@ from typing import Optional
 import numpy as np
 import pandas as pd
 
-# from stereo.log_manager import logger
 from stereo.core.tool_base import ToolBase
 
 
@@ -96,7 +95,6 @@ class DimReduce(ToolBase):
             raise ValueError(f'{self.n_iter} should be int type')
 
     def fit(self, exp_matrix=None):
-
         from ..algorithm.dim_reduce import low_variance, factor_analysis, pca, t_sne, u_map
 
         self._check_params()
@@ -112,25 +110,20 @@ class DimReduce(ToolBase):
         else:
             pca_res = pca(exp_matrix, self.n_pcs)
             x_reduce = pca_res['x_pca']
-            # self.result.variance_ratio = pca_res['variance_ratio']
-            # self.result.variance_pca = pca_res['variance']
-            # self.result.pcs = pca_res['pcs']
         self.result = pd.DataFrame(x_reduce)
         return self.result
-        # self.add_result(result=self.result, key_added=self.name)
 
     def plot_scatter(self,
                      gene_name: Optional[list],
                      file_path=None):
         """
         plot scatter after
+
         :param gene_name list of gene names
-        :param file_path:
-        :return:
+        :param file_path: the path of input file.
+
+        :return: None
         """
-        # from scipy.sparse import issparse
-        # if issparse(self.data.exp_matrix):
-        #     self.data.exp_matrix = self.data.exp_matrix.toarray()
         from ..plots.scatter import plt, base_scatter, multi_scatter
 
         self.data.sparse2array()

@@ -50,14 +50,11 @@ def interact_spatial_cluster(
     theme_select = pn.widgets.Select(name='color theme', options=list(colormaps.keys()), value=theme_default, width=200)
     cluster_select = pn.widgets.Select(name='cluster', options=cs, value=cs[0], width=100, loading=False)
 
-    ##
     if len(cs) > len(colormaps[theme_default]):
         colormaps[theme_default] = stereo_conf.get_colors(theme_default, n=len(cs))
 
     global color_key
     color_key = collections.OrderedDict({k: c for k, c in zip(cs, colormaps[theme_default][0:len(cs)])})
-    # print(color_key)
-    # print(cs)
     ct_colorpicker = pn.widgets.ColorPicker(name='node color', value=color_key[cs[0]], width=70)
 
     @pn.depends(bg_colorpicker, dot_slider, theme_select, ct_colorpicker)
@@ -83,8 +80,6 @@ def interact_spatial_cluster(
         ).opts(bgcolor=bg_color,
                invert_yaxis=True,
                aspect='equal'
-               # legend_muted=True,
-               # legend_cols=2
                )
         return sfig.opts(
             hv.opts.Scatter(
@@ -106,12 +101,6 @@ def interact_spatial_cluster(
     return coms
 
 
-# def hex_to_rgb(value):
-#     value = value.lstrip('#')
-#     lv = len(value)
-#     return tuple(int(value[i:i + lv // 3], 16) for i in range(0, lv, lv // 3))
-#
-#
 def rgb_to_hex(rgb):
     return '#%02x%02x%02x' % rgb
 

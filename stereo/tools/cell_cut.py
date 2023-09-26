@@ -13,7 +13,6 @@ class CellCut(object):
         :param cgef_out_dir: the path of the directory to save generated cgef
         """
         self.cgef_out_dir = cgef_out_dir
-        # self.cgef_out_parent_path = os.path.dirname(cgef_out_path)
         if not os.path.exists(self.cgef_out_dir):
             os.makedirs(self.cgef_out_dir)
 
@@ -62,16 +61,16 @@ class CellCut(object):
         :param image_path: the path to ssDNA image file.
         :param model_path: the path to model file.
         :param mask_save: whether to save mask file after correction, generated from ssDNA image.
-        :param model_type: the type of model to generate mask, whcih only could be set to deep learning model and deep cell model. # noqa
+        :param model_type: the type of model to generate mask, whcih only could be set to deep learning model and deep cell model.
         :param depp_cro_size: deep crop size.
         :param overlap: overlap size.
         :param gen_mask_on_gpu: specify gpu id to predict when generate mask, if `'-1'`, use cpu for prediction.
-        :param tissue_seg_model_path: the path of deep-learning model of tissue segmentation, if set it to None, it would use OpenCV to process. # noqa
+        :param tissue_seg_model_path: the path of deep-learning model of tissue segmentation, if set it to None, it would use OpenCV to process.
         :param tissue_seg_method: the method of tissue segmentation, 0 is deep-learning and 1 is OpenCV.
         :param post_processing_workers: the number of processes for post-processing.
 
         :return: Path to CGEF result.
-        """
+        """  # noqa
         if bgef_path is None and gem_path is None:
             raise Exception("must to input the path of bgef or the path of gem")
 

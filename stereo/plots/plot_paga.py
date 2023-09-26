@@ -17,7 +17,6 @@ from sklearn.utils import check_random_state
 from stereo.log_manager import logger
 from stereo.plots.plot_base import PlotBase
 
-# _LAYOUTS = ('fr', 'drl', 'kk', 'grid_fr', 'lgl', 'rt', 'rt_circular', 'fa')
 _Layout = Literal[
     'fr',
     'drl',
@@ -80,11 +79,6 @@ class PlotPaga(PlotBase):
         import networkx as nx
 
         random_state = check_random_state(random_state)
-        # adjacency = pipeline_res['paga']['connectivities']
-
-        # if adj_tree == 'connectivities_tree':
-        #    adj_tree = pipeline_res['paga']['connectivities_tree']
-
         nx_g_solid = nx.Graph(adjacency)
         if layout is None:
             layout = 'fr'
@@ -99,7 +93,6 @@ class PlotPaga(PlotBase):
                 )
                 layout = 'fr'
         if layout == 'fa':
-            # np.random.seed(random_state)
             if init_pos is None:
                 init_coords = random_state.random_sample((adjacency.shape[0], 2))
             else:
@@ -145,11 +138,8 @@ class PlotPaga(PlotBase):
                 pos_list = g.layout(layout).coords
             else:
                 # I don't know why this is necessary
-                # np.random.seed(random_state)
                 if init_pos is None:
-                    init_coords = random_state.random_sample(
-                        (adjacency.shape[0], 2)
-                    ).tolist()
+                    init_coords = random_state.random_sample((adjacency.shape[0], 2)).tolist()
                 else:
                     init_pos = init_pos.copy()
                     # this is a super-weird hack that is necessary as igraph’s
@@ -166,7 +156,6 @@ class PlotPaga(PlotBase):
         if len(pos) == 1:
             pos[0] = (0.5, 0.5)
         pos_array = np.array([pos[n] for count, n in enumerate(nx_g_solid)])
-        # pipeline_res['paga']['pos'] = pos_array
         return pos_array
 
     def paga_plot(
@@ -175,7 +164,6 @@ class PlotPaga(PlotBase):
             threshold: float = 0.01,
             layout: _Layout = 'fr',
             random_state: int = 0,
-            # labels: Union[str, Sequence[str], Mapping[str, str], None] = None,
             cmap: str = 'tab20',
             ax: Optional[plt.Axes] = None,
             width: Optional[int] = None,
@@ -196,8 +184,6 @@ class PlotPaga(PlotBase):
         """
         # calculate node positions
         adjacency_mat = self.pipeline_res['paga'][adjacency].copy()
-        # if threshold is None:
-        #     threshold = 0.01  # default threshold
         if threshold > 0:
             adjacency_mat.data[adjacency_mat.data < threshold] = 0
             adjacency_mat.eliminate_zeros()
@@ -214,14 +200,11 @@ class PlotPaga(PlotBase):
         Nodes2pos = dict(zip(ct_list, list(pos)))
 
         # define colors
-        # ct_list = self.stereo_exp_data.cells[self.pipeline_res['paga']['groups']].cat.categories
         color_list = plt.get_cmap(cmap, len(ct_list))
 
-        # fig_flag = 0
         # plotting
         if ax is None:
             _, ax = plt.subplots(1)
-            # fig_flag = 1
         if width is not None:
             ax.get_figure().set_figwidth(width)
         if height is not None:
@@ -236,10 +219,6 @@ class PlotPaga(PlotBase):
             ax.plot([xi, xj], [yi, yj], color='black', zorder=0)
         ax.set_xticks([])
         ax.set_yticks([])
-        # if fig_flag:
-        #     return fig
-        # else:
-        #     return ax
         return ax.get_figure()
 
     def _draw_graph(
@@ -255,7 +234,7 @@ class PlotPaga(PlotBase):
             copy: bool = False,
             **kwds,
     ):
-        """\
+        """
         Force-directed graph drawing [Islam11]_ [Jacomy14]_ [Chippada18]_.
 
         An alternative to tSNE that often preserves the topology of the data
@@ -431,21 +410,15 @@ class PlotPaga(PlotBase):
 
         """
         # parameter setting
-        # if threshold is None:
-        #     threshold = 0.01
-        # if layout is None:
-        #     layout = 'fr'
-
         fig = plt.figure(figsize=(width, height))
         ax = plt.subplot(1, 2, 1)
         # network
-        self.paga_plot(adjacency=adjacency, threshold=threshold, layout=layout, random_state=random_state, cmap=cmap,
-                       ax=ax)
+        self.paga_plot(adjacency=adjacency, threshold=threshold, layout=layout, random_state=random_state,
+                       cmap=cmap, ax=ax)
 
         # cell position
         cell_pos = self._draw_graph(layout=layout)
 
-        # cell_pos = self.stereo_exp_data.cells_matrix['paga_pos']
         # plotting
         ax = plt.subplot(1, 2, 2)
         if color is None:
@@ -457,15 +430,10 @@ class PlotPaga(PlotBase):
 
         if color in self.stereo_exp_data.cells:
             if self.stereo_exp_data.cells[color].dtype == 'category':
-                # ct_list = self.stereo_exp_data.cells[color].cat.categories
-                # color_list = plt.get_cmap(cmap, len(ct_list))
-                # ct2color = {x:color_list.colors[i] for i,x in enumerate(ct_list)}
-                # ax.scatter(cell_pos[:, 0], cell_pos[:, 1], s = size, c = [ct2color[x] for x in self.stereo_exp_data.cells[color]]) # noqa
                 ax.scatter(cell_pos[:, 0], cell_pos[:, 1], s=size,
                            c=self.stereo_exp_data.cells[color].cat.codes.to_numpy())
             else:
                 ax.scatter(cell_pos[:, 0], cell_pos[:, 1], s=size, c=self.stereo_exp_data.cells[color])
-            # ax.scatter(cell_pos[:, 0], cell_pos[:, 1], s = size, c = self.stereo_exp_data.cells[color].to_numpy())
         elif color in self.stereo_exp_data.gene_names:
             gene_list = list(self.stereo_exp_data.genes.to_df().index)
             gene_index = gene_list.index(color)

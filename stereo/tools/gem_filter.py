@@ -46,11 +46,6 @@ def gem_filter(tissue_mask_path: str, data: DataFrame):
     logger.info(f"reading and findContours: {tc.get_time_consumed(key=tk)}")
     logger.info(f"count of contours: {len(contours)}")
 
-    # logger.info("drawContours")
-    # img = np.zeros((tissue_mask.shape[0], tissue_mask.shape[1]), dtype=np.int8)
-    # cv2.drawContours(img, contours, -1, color=(1), thickness=cv2.FILLED)
-    # logger.info(f"drawContours: {tc.get_time_consumed(key=tk)}")
-
     logger.info("get min and max coordinate")
     min_and_max = lambda c: [np.min(c[:, :, 0]), np.min(c[:, :, 1]), -np.max(c[:, :, 0]), -np.max(c[:, :, 1])] # noqa
     a = np.array([min_and_max(c) for c in contours], dtype=np.int32)

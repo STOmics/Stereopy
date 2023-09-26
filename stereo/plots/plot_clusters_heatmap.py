@@ -133,7 +133,6 @@ class ClustersGenesHeatmap(PlotBase):
             width_ratios=width_ratios,
             height_ratios=height_ratios,
             wspace=(0.15 / main_area_width),
-            # hspace=(0.13 / main_area_height)
             hspace=0
         )
 
@@ -143,7 +142,6 @@ class ClustersGenesHeatmap(PlotBase):
             width_ratios=[main_area_width],
             height_ratios=[self.__dendrogram_height, main_area_height],
             wspace=0,
-            # hspace=(0.13 / main_area_height),
             hspace=0,
             subplot_spec=axs[0, 0]
         )
@@ -151,7 +149,6 @@ class ClustersGenesHeatmap(PlotBase):
         axs_on_right = gridspec.GridSpecFromSubplotSpec(
             nrows=2,
             ncols=1,
-            # width_ratios=[main_area_width / 3, main_area_width / 6, main_area_width / 2],
             height_ratios=[0.95, 0.05],
             subplot_spec=axs[0, 1],
             hspace=0.1
@@ -175,7 +172,6 @@ class ClustersGenesHeatmap(PlotBase):
         if drg_res is not None:
             from .plot_dendrogram import PlotDendrogram
             ax_drg = fig.add_subplot(axs_main[0, 0], sharex=ax_heatmap)
-            # ax_drg = fig.add_subplot(axs_main[0, 0])
             plt_drg = PlotDendrogram(self.stereo_exp_data, self.pipeline_res)
             plt_drg.dendrogram(
                 orientation='top',

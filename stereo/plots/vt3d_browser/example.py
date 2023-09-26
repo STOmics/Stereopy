@@ -37,25 +37,6 @@ class Plot3DBrowser(PlotBase):
         )
         th.setDaemon(True)
         th.start()
-        # pid = _daemonize()
-        # if not pid:
-        #     launch(
-        #         self.stereo_exp_data,
-        #         meshes=meshes,
-        #         cluster_label=cluster_res_key,
-        #         paga_key=paga_res_key,
-        #         ccc_key=ccc_res_key,
-        #         grn_key=grn_res_key,
-        #         port=port
-        #     )
-        # launch(
-        #     self.stereo_exp_data,
-        #     meshes=meshes,
-        #     paga_key=paga_res_key,
-        #     ccc_key=ccc_res_key,
-        #     grn_key=grn_res_key,
-        #     port=port
-        # )
 
     def display_3d_mesh(self, width=1400, height=1200, port=7654):
         import IPython

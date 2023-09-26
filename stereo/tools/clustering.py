@@ -13,7 +13,6 @@ from typing import Optional
 
 import leidenalg as la
 import numpy as np
-# from .dim_reduce import DimReduce
 import pandas as pd
 
 from stereo.algorithm.neighbors import Neighbors
@@ -62,9 +61,7 @@ class Clustering(ToolBase):
     ):
         super(Clustering, self).__init__(data=data, method=method)
         self._neighbors = n_neighbors if n_neighbors < len(self.data.cell_names) else int(len(self.data.cell_names) / 2)
-        # self.neighbors = n_neighbors
         self.normalization = normalization
-        # self._pca_x = pca_x
         self.pca_x = pca_x
 
     @property
@@ -181,8 +178,6 @@ class Clustering(ToolBase):
         info = {'bins': self.data.cell_names, 'cluster': cluster}
         df = pd.DataFrame(info)
         self.result.matrix = df
-        # TODO  added for find marker
-        # self.data.obs[self.name] = cluster
         return df
 
     def plot_scatter(self, plot_dim_reduce=False, file_path=None):

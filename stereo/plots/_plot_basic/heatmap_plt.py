@@ -64,8 +64,6 @@ def heatmap(
 
     ax.set_ylim(df.shape[0] - 0.5, -0.5)
     ax.set_xlim(-0.5, df.shape[1] - 0.5)
-    # ax.tick_params(axis='y', left=False, labelleft=False)
-    # ax.set_ylabel('')
     ax.grid(False)
 
     if show_xaxis:
@@ -309,7 +307,6 @@ def _check_indices(
 
     alt_dim = ("obs", "var")[dim == "obs"]
 
-    alias_name = None
     if alias_index is not None:
         alt_names = pd.Series(alt_index, index=alias_index)
         alias_name = alias_index.name

@@ -76,7 +76,6 @@ class MSPlot(MSDataPlotBase):
                     max_cell_count = data.shape[0]
             dot_size = 220000 / max_cell_count
 
-        # data_count = len(self.ms_data.data_list)
         if slices is None:
             slices = list(range(len(self.ms_data.data_list)))
         slices_count = len(slices)
@@ -142,7 +141,6 @@ class MSPlot(MSDataPlotBase):
                     **kwargs
                 )
         elif type == 'center':
-            slices_count
             fig, axes = self.__create_axes(plot_count=slices_count, ncols=ncols, width=width, height=height)
             center_slice = self.ms_data.center_slice
             for i, slice_idx in enumerate(slices):
@@ -152,9 +150,8 @@ class MSPlot(MSDataPlotBase):
                     pos = np.concatenate([center_slice.raw_position, slice.raw_position], axis=0)
                 else:
                     pos = np.concatenate([center_slice.position, slice.position], axis=0)
-                hue = np.concatenate(
-                    [np.repeat('center', repeats=center_slice.shape[0]), np.repeat(slice_name, repeats=slice.shape[0])],
-                    axis=0)
+                hue = np.concatenate([np.repeat('center', repeats=center_slice.shape[0]),
+                                      np.repeat(slice_name, repeats=slice.shape[0])], axis=0)
                 base_scatter(
                     x=pos[:, 0],
                     y=pos[:, 1],
