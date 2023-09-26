@@ -11,7 +11,11 @@ change log:
     2021/07/06  create file.
 """
 import copy
-from typing import Union, List, Tuple
+from typing import (
+    Union,
+    List,
+    Tuple
+)
 
 import numpy as np
 import pandas as pd
@@ -43,6 +47,7 @@ def filter_cells(
     :param pct_counts_mt: Maximum number of  pct_counts_mt for a cell pass filtering.
     :param cell_list: the list of cells which will be filtered.
     :param inplace: whether inplace the original data or return a new data.
+
     :return: StereoExpData object.
     """
     data = data if inplace else copy.deepcopy(data)
@@ -88,6 +93,7 @@ def filter_genes(
     :param mean_umi_gt: Filter genes whose mean umi greater than this value.
     :param gene_list: the list of genes which will be filtered.
     :param inplace: whether inplace the original data or return a new data.
+
     :return: StereoExpData object.
     """
     data = data if inplace else copy.deepcopy(data)
@@ -126,6 +132,7 @@ def filter_coordinates(
     :param min_y: Minimum of y for a cell pass filtering.
     :param max_y: Maximum of y for a cell pass filtering.
     :param inplace: whether inplace the original data or return a new data.
+
     :return: StereoExpData object
     """
     data = data if inplace else copy.deepcopy(data)
@@ -160,6 +167,7 @@ def filter_by_clusters(
     :param cluster_res: clustering result.
     :param groups: the groups in clustering result which will be filtered.
     :param inplace: whether inplace the original data or return a new data.
+    :param excluded: bool type.
     :return: StereoExpData object
     """
     data = data if inplace else copy.deepcopy(data)

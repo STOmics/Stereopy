@@ -47,9 +47,9 @@ class my_json_encoder(json.JSONEncoder):
 
 
 def getPAGACurves(data, ty_col='annotation', choose_ty=None, trim=True, paga_key='paga', mesh_key='mesh'):
-    x_unknown_li_all_tra, y_unknown_li_all_tra, z_unknown_li_all_tra, com_tra_li, com_tra_wei_li = \
-        cal_plt_param_traj_clus_from_adata(data, ty_col=ty_col, choose_ty=choose_ty, trim=trim, type_traj='curve',
-                                           paga_key=paga_key, mesh_key=mesh_key)
+    parameters_data = cal_plt_param_traj_clus_from_adata(data, ty_col=ty_col, choose_ty=choose_ty, trim=trim,
+                                                         type_traj='curve', paga_key=paga_key, mesh_key=mesh_key)
+    x_unknown_li_all_tra, y_unknown_li_all_tra, z_unknown_li_all_tra, com_tra_li, com_tra_wei_li = parameters_data
     traj_names = []
     traj_lines = []
     traj_widths = []
@@ -70,9 +70,10 @@ def getPAGACurves(data, ty_col='annotation', choose_ty=None, trim=True, paga_key
 
 
 def getPAGALines(data, ty_col='annotation', choose_ty=None, trim=True, paga_key='paga', mesh_key='mesh'):
-    x_unknown_li_all_tra, y_unknown_li_all_tra, z_unknown_li_all_tra, com_tra_li, com_tra_wei_li = \
-        cal_plt_param_traj_clus_from_adata(data, ty_col=ty_col, choose_ty=choose_ty, trim=trim, type_traj='line',
-                                           paga_key=paga_key, mesh_key=mesh_key)
+    parameters_data = cal_plt_param_traj_clus_from_adata(data, ty_col=ty_col, choose_ty=choose_ty, trim=trim,
+                                                         type_traj='line', paga_key=paga_key, mesh_key=mesh_key)
+    x_unknown_li_all_tra, y_unknown_li_all_tra, z_unknown_li_all_tra, com_tra_li, com_tra_wei_li = parameters_data
+
     traj_names = []
     traj_lines = []
     traj_widths = []
@@ -244,7 +245,6 @@ class Stereo3DWebCache:
     ):
         self._data = data
         self.__subdata = None
-        # self._annokeys = cluster_label
         self._cluster_label = cluster_label
         self._spatkey = spatial_label
         self._grn_key = grn_key
@@ -305,7 +305,6 @@ class Stereo3DWebCache:
             self._summary['option']['default'] = 'PAGA_trajectory'
         if (self._ccc_key is not None) and (self._ccc_key in self._data.tl.result):
             self._summary['option']['Cell_Cell_Communication'] = True
-            # self._summary['option']['CellTypes'] = False
             self._summary['option']['default'] = 'Cell_Cell_Communication'
             self._data.tl.result[self._ccc_key]['visualization_data']['celltype1'] = UpdateList(
                 self._data.tl.result[self._ccc_key]['visualization_data']['celltype1'])
@@ -389,8 +388,6 @@ class Stereo3DWebCache:
         return json.dumps(ret_dict, cls=my_json_encoder)
 
     def get_ccc_ct_gene(self, celltype, genename):
-        # anno_res = self._data.tl.result[self._cluster_label]
-        # cell_names = anno_res[anno_res['group'] == celltype]['bins'].to_numpy()
         if self._cluster_label in self._data.cells._obs.columns:
             is_in_bool = self._data.cells._obs[self._cluster_label].isin([celltype])
         else:
@@ -434,14 +431,12 @@ class Stereo3DWebCache:
         """
         return the paga_line.json
         """
-        # return json.dumps(getPAGALines(self._data, ty_col=self._annokeys[0], paga_key=self._paga_key))
         return json.dumps(getPAGALines(self._data, ty_col=self._cluster_label, paga_key=self._paga_key))
 
     def get_paga(self):
         """
         return the paga.json
         """
-        # return json.dumps(getPAGACurves(self._data, ty_col=self._annokeys[0], paga_key=self._paga_key))
         return json.dumps(getPAGACurves(self._data, ty_col=self._cluster_label, paga_key=self._paga_key))
 
     def get_anno(self):
@@ -455,7 +450,6 @@ class Stereo3DWebCache:
             df['anno'] = self._data.cells._obs[self._cluster_label].to_numpy()
         else:
             df['anno'] = self._data.tl.result[self._cluster_label]['group'].to_numpy()
-        # df['anno'] = self._data.tl.result[self._cluster_label]['group'].to_numpy()
         mapper = self._summary['annomapper'][f'{self._cluster_label}_legend2int']
         df['annoid'] = df.apply(lambda row: mapper[row['anno']], axis=1)
         return json.dumps(df[['x', 'y', 'z', 'annoid']].to_numpy().tolist(), cls=my_json_encoder)
@@ -660,20 +654,6 @@ def launch(data: StereoExpData,
 
     :return:
     """  # noqa
-
-    # TODO merge multi slices
-    # merge anndata if necessary
-    # if type(datas) == list:
-    #     if len(datas) < 1:
-    #         print('No data provided, return without any data browsing server...')
-    #         return
-    #     adata = datas[0]
-    #     if len(datas) > 1:
-    #         for i in range(1, len(datas)):
-    #             adata = adata.concatenate(datas[i])
-    # else:
-    #     adata = datas
-    # sanity check for parameters
     if paga_key is None and grn_key is None and ccc_key is None:
         raise Exception
 

@@ -10,17 +10,20 @@ import xarray as xr
 from bokeh.models import HoverTool
 from natsort import natsorted
 
-# from selenium import webdriver
-# from chromedriver_py import binary_path
 from stereo.stereo_config import stereo_conf
 
 
-# from stereo.log_manager import file_logger
-
-
 class PlotCells:
-    def __init__(self, data, cluster_res_key='cluster', bgcolor='#2F2F4F', width=None, height=None, fg_alpha=0.5,
-                 base_image=None):
+    def __init__(
+            self,
+            data,
+            cluster_res_key='cluster',
+            bgcolor='#2F2F4F',
+            width=None,
+            height=None,
+            fg_alpha=0.5,
+            base_image=None
+    ):
         self.data = data
         if cluster_res_key in self.data.tl.result:
             res = self.data.tl.result[cluster_res_key]
@@ -34,17 +37,9 @@ class PlotCells:
             self.cluster_id = []
 
         self.bgcolor = bgcolor
-        # self.figure_size = figure_size
-        # self.width = width
-        # self.height = height
         self.width, self.height = self._set_width_and_height(width, height)
         self.fg_alpha = fg_alpha
         self.base_image = base_image
-
-        # if self.figure_size < 500:
-        #     self.figure_size = 500
-        # elif self.figure_size > 1000:
-        #     self.figure_size = 1000
 
         if self.fg_alpha < 0:
             self.fg_alpha = 0.3
@@ -55,11 +50,6 @@ class PlotCells:
             self.fg_alpha = 1
 
         self.hover_fg_alpha = self.fg_alpha / 2
-        # if self.fg_alpha > 0.5:
-        #     self.hover_fg_alpha = 0.5
-        # else:
-        #     self.hover_fg_alpha = self.fg_alpha - 0.1 if self.fg_alpha > 0.2 else self.fg_alpha
-
         self.figure_polygons = None
         self.figure_points = None
 
@@ -104,8 +94,6 @@ class PlotCells:
         polygons = []
         color = []
         position = []
-        # cell_count = len(self.data.cell_names)
-        # cell_idx = []
         for i, cell_border in enumerate(self.data.cells.cell_border):
             cell_border = cell_border[cell_border[:, 0] < 32767] + self.data.position[i]
             cell_border = cell_border.reshape((-1,)).tolist()
@@ -119,7 +107,6 @@ class PlotCells:
             else:
                 color.append(self.data.cells.total_counts[i])
             position.append(str(tuple(self.data.position[i].astype(np.uint32))))
-            # cell_idx.append(i)
 
         polygons = spd.geometry.PolygonArray(polygons)
         polygons_detail = spd.GeoDataFrame({
@@ -146,31 +133,36 @@ class PlotCells:
         return polygons_detail, hover_tool, vdims
 
     def _create_widgets(self):
-        self.color_map_key_continuous = pn.widgets.Select(value='stereo',
-                                                          options=list(stereo_conf.linear_colormaps.keys()),
-                                                          name='color theme', width=200)
-        self.color_map_key_discrete = pn.widgets.Select(value='stereo_30', options=list(stereo_conf.colormaps.keys()),
-                                                        name='color theme', width=200)
+        self.color_map_key_continuous = pn.widgets.Select(
+            value='stereo', options=list(stereo_conf.linear_colormaps.keys()), name='color theme', width=200
+        )
+        self.color_map_key_discrete = pn.widgets.Select(
+            value='stereo_30', options=list(stereo_conf.colormaps.keys()), name='color theme', width=200
+        )
         if self.cluster_res is None:
             self.color_map_key_discrete.visible = False
         else:
             self.color_map_key_continuous.visible = False
-        self.reverse_colormap = pn.widgets.Checkbox(name='reverse colormap', value=False,
-                                                    disabled=False if self.cluster_res is None else True)
+        self.reverse_colormap = pn.widgets.Checkbox(
+            name='reverse colormap', value=False, disabled=False if self.cluster_res is None else True
+        )
         self.size_input = pn.widgets.IntInput(name='size', value=500, start=300, end=1000, step=10, width=200)
         color_by_key = []
         if self.cluster_res is not None:
             default_cluster_id = self.cluster_id[0]
             default_cluster_color = self.cluster_color_map[default_cluster_id]
-            self.cluster = pn.widgets.Select(value=default_cluster_id, options=self.cluster_id, name='cluster',
-                                             width=100)
-            self.cluster_colorpicker = pn.widgets.ColorPicker(name='cluster color', value=default_cluster_color,
-                                                              width=70)
+            self.cluster = pn.widgets.Select(
+                value=default_cluster_id, options=self.cluster_id, name='cluster', width=100
+            )
+            self.cluster_colorpicker = pn.widgets.ColorPicker(
+                name='cluster color', value=default_cluster_color, width=70
+            )
             color_by_key.append('cluster')
         else:
             self.cluster = pn.widgets.Select(name='cluster', width=100, disabled=True, visible=False)
-            self.cluster_colorpicker = pn.widgets.ColorPicker(name='cluster color', width=70, disabled=True,
-                                                              visible=False)
+            self.cluster_colorpicker = pn.widgets.ColorPicker(
+                name='cluster color', width=70, disabled=True, visible=False
+            )
         color_by_key.extend(['total_count', 'n_genes_by_counts'])
         self.color_by = pn.widgets.Select(name='color by', options=color_by_key, value=color_by_key[0], width=200)
         self.export = pn.widgets.Button(name='export', button_type="primary", width=100)
@@ -239,22 +231,14 @@ class PlotCells:
                 self.cluster.visible = True
                 self.cluster_colorpicker.visible = True
                 if self.color_map_key_continuous.visible is True:
-                    cm_key_value = 'stereo_30'
                     self.color_map_key_continuous.visible = False
                     self.color_map_key_discrete.visible = True
-                else:
-                    cm_key_value = cm_key_discrete_value
 
                 self.cluster_color_map[self.cluster.value] = cluster_colorpicker_value
                 cmap = list(self.cluster_color_map.values())
 
             self.figure_polygons = polygons_detail.hvplot.polygons(
-                'polygons',
-                # c='color' if cluster_res is None or color_by_value != 'cluster' else hv.dim('color').categorize(cluster_color_map), # noqa
-                # datashade=True,
-                # dynspread=True,
-                # aggregator='mean',
-                hover_cols=vdims
+                'polygons', hover_cols=vdims
             ).opts(
                 bgcolor=self.bgcolor,
                 color='color' if self.cluster_res is None or color_by_value != 'cluster' else hv.dim(
@@ -273,15 +257,13 @@ class PlotCells:
                 fill_alpha=self.fg_alpha,
                 hover_fill_alpha=self.hover_fg_alpha,
                 active_tools=['wheel_zoom'],
-                # tools=[hover_tool, 'lasso_select']
                 tools=[hover_tool]
             )
 
             if self.base_image is not None:
                 base_image_points_detail = self._create_base_image_xarray()
                 self.figure_points = base_image_points_detail.hvplot(
-                    cmap='gray', cnorm='eq_hist',
-                    datashade=True, dynspread=True
+                    cmap='gray', cnorm='eq_hist', datashade=True, dynspread=True
                 ).opts(
                     bgcolor=self.bgcolor,
                     width=self.width,
@@ -298,8 +280,10 @@ class PlotCells:
         return pn.Row(
             pn.Column(_create_figure),
             pn.Column(
-                self.color_map_key_continuous, self.color_map_key_discrete, self.color_by, self.reverse_colormap,
+                self.color_map_key_continuous,
+                self.color_map_key_discrete,
+                self.color_by,
+                self.reverse_colormap,
                 pn.Row(self.cluster, self.cluster_colorpicker),
-                # self.export
             )
         )

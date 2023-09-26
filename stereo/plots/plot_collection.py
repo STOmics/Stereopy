@@ -68,7 +68,6 @@ class PlotCollection:
         if item.startswith('__'):
             raise AttributeError
 
-        # new_attr = download(PlotBase.get_attribute_helper(item, self.data, self.result))
         new_attr = PlotBase.get_attribute_helper(item, self.data, self.result)
         if getattr(new_attr, '__download__', True):
             new_attr = download(new_attr)
@@ -191,8 +190,7 @@ class PlotCollection:
 
         """
         res = self.check_res_key(res_key)
-        return highly_variable_genes(res, width=width, height=height, xy_label=xy_label,
-                                     xyII_label=xyII_label)
+        return highly_variable_genes(res, width=width, height=height, xy_label=xy_label, xyII_label=xyII_label)
 
     @download
     def marker_genes_volcano(
@@ -426,7 +424,6 @@ class PlotCollection:
         :param title: the title label.
 
         """  # noqa
-
         self.data.array2sparse()
         if isinstance(gene_name, str):
             gene_name = [gene_name]
@@ -496,16 +493,12 @@ class PlotCollection:
         :param vertical_offset_additional: the additional offset between each slice on vertical direction while reorganizing coordinates.
 
         """  # noqa
-        # self.data.tl.raw.sparse2array()
-        # self.data.sparse2array()
         if gene_name is None:
             idx = randint(0, len(self.data.tl.raw.gene_names) - 1)
             gene_name = self.data.gene_names[idx]
         else:
-            # gene_names = self.data.gene_names.tolist()
             if gene_name not in self.data.gene_names:
                 raise Exception(f'gene {gene_name} do not exist in expression matrix')
-            # idx = gene_names.index(gene_name)
             idx = np.argwhere(self.data.gene_names == gene_name)[0][0]
 
         raw_exp_data = self.data.tl.raw.exp_matrix[:, idx].T
@@ -533,8 +526,12 @@ class PlotCollection:
         return fig
 
     @download
-    def violin(self, width: Optional[int] = None, height: Optional[int] = None,
-               y_label: Optional[list] = ['total counts', 'n genes by counts', 'pct counts mt']):
+    def violin(
+            self,
+            width: Optional[int] = None,
+            height: Optional[int] = None,
+            y_label: Optional[list] = ['total counts', 'n genes by counts', 'pct counts mt']
+    ):
         """
         Violin plot to show index distribution of quality control.
 
@@ -545,8 +542,7 @@ class PlotCollection:
         :param y_label: list of y label.
         """
         from .violin import violin_distribution
-        fig = violin_distribution(self.data, width=width, height=height, y_label=y_label)
-        return fig
+        return violin_distribution(self.data, width=width, height=height, y_label=y_label)
 
     @reorganize_coordinate
     def interact_spatial_scatter(
@@ -581,7 +577,6 @@ class PlotCollection:
         from .interact_plot.interactive_scatter import InteractiveScatter
 
         fig = InteractiveScatter(self.data, width=width, height=height, bgcolor=bgcolor)
-        # fig = ins.interact_scatter()
         if poly_select:
             from stereo.plots.interact_plot.poly_selection import PolySelection
             fig = PolySelection(self.data, width=width, height=height, bgcolor=bgcolor)
@@ -638,9 +633,7 @@ class PlotCollection:
         batch_count = len(batch_number_unique)
         cmap = stereo_conf.get_colors(colors, batch_count)
         fig_all = umap_res.hvplot.scatter(
-            x='x', y='y',
-            c='batch', cmap=cmap, cnorm='eq_hist',
-            # datashade=True, dynspread=True
+            x='x', y='y', c='batch', cmap=cmap, cnorm='eq_hist',
         ).opts(
             width=main_width,
             height=main_height,
@@ -664,7 +657,6 @@ class PlotCollection:
             fig = sub_umap_res.hvplot.scatter(
                 x='x', y='y',
                 c='batch', color=c, cnorm='eq_hist',
-                # datashade=True, dynspread=True
             ).opts(
                 width=sub_width,
                 height=sub_height,
@@ -732,7 +724,6 @@ class PlotCollection:
             return base_scatter(
                 res.values[:, 0],
                 res.values[:, 1],
-                # hue=np.array(cluster_res['group']),
                 hue=cluster_res['group'],
                 palette=stereo_conf.get_colors('stereo_30' if colors == 'stereo' else colors, n),
                 title=title,
@@ -741,7 +732,6 @@ class PlotCollection:
                 width=width, height=height,
                 **kwargs)
         else:
-            # self.data.sparse2array()
             self.data.array2sparse()
             if gene_names is None:
                 raise ValueError('gene name must be set if cluster_key is None')
@@ -750,7 +740,6 @@ class PlotCollection:
             return multi_scatter(
                 res.values[:, 0],
                 res.values[:, 1],
-                # hue=np.array(self.data.sub_by_name(gene_name=gene_names).exp_matrix).T,
                 hue=self.data.sub_exp_matrix_by_name(gene_name=gene_names).T,
                 palette=colors,
                 title=gene_names if title is None else title,
@@ -817,8 +806,6 @@ class PlotCollection:
         n = np.unique(group_list).size
         palette = stereo_conf.get_colors(colors, n=n)
         if groups is not None:
-            # if not isinstance(groups, str):
-            #     groups = str(groups)
             if isinstance(groups, str):
                 groups = [groups]
             isin = np.in1d(group_list, groups)
@@ -827,22 +814,22 @@ class PlotCollection:
                 n = np.unique(group_list).size
                 palette = palette[0:n - 1] + ['#828282']
                 hue_order = natsorted(np.unique(group_list[isin])) + ['others']
-                # palette = ['#B3CDE3', '#FF7F00']
-                # kwargs['show_legend'] = False
 
         fig = base_scatter(
             self.data.position[:, 0],
             self.data.position[:, 1],
             hue=group_list,
             palette=palette,
-            title=title, x_label=x_label, y_label=y_label, dot_size=dot_size, invert_y=invert_y,
+            title=title,
+            x_label=x_label,
+            y_label=y_label,
+            dot_size=dot_size,
+            invert_y=invert_y,
             hue_order=hue_order,
             width=width, height=height,
             **kwargs
         )
         return fig
-        # if file_path:
-        #     plt.savefig(file_path)
 
     @download
     def marker_genes_text(
@@ -1089,8 +1076,6 @@ class PlotCollection:
             x=res.latent.iloc[:, 0],
             y=res.latent.iloc[:, 1],
             hue=scores,
-            # x_label=['spatial1', 'spatial1'],
-            # y_label=['spatial2', 'spatial2'],
             title=title,
             ncols=ncols,
             dot_size=dot_size,

@@ -79,7 +79,6 @@ class Vec():
         uniq_yx_scaled, uni_ind = np.unique(yx_scaled, return_index=True, axis=0)
 
         # get new array shape
-        # new_arr_sh = (math.ceil(y_raw.max() * scale + 1), math.ceil(x_raw.max() * scale + 1))
         new_arr_sh = (y_scaled.max() + 1, x_scaled.max() + 1)
 
         self.yx_scaled = yx_scaled
@@ -249,11 +248,6 @@ class Vec():
         figure = plt.figure(dpi=dpi_val)
         if background in scatter_corpus + imshow_corpus:
             if background in scatter_corpus:
-                # # generate a dictionary that maps types to int
-                # undup = collections.Counter(ty_raw).keys()  # None表示空pixel
-                # color_dict = dict(zip(undup, np.arange(len(undup))))  # 生成从str映射到int的字典
-                # # color_dict[None] = np.nan  # 字典中，None对应nan
-
                 # scatter
                 x_plt, y_plt = self._apply_trans(x_raw, y_raw)
                 plt_ty = np.vectorize(ty_val_dict.get)(ty_raw)
@@ -266,11 +260,6 @@ class Vec():
                 colors_li_uni = [im.cmap(im.norm(val)) for val in val_li_uni]  # 从图上取颜色
 
             else:
-                # # generate a dictionary that maps types to int
-                # undup = collections.Counter(plt_common_ty.flatten()).keys()  # None表示空pixel
-                # color_dict = dict(zip(undup, np.arange(len(undup))))  # 生成从str映射到int的字典
-                # color_dict[None] = np.nan  # 字典中，None对应nan
-
                 # plot the image
                 plt_common_ty_val = np.vectorize(ty_val_dict.get)(plt_common_ty)
                 im = plt.imshow(plt_common_ty_val, cmap=cmap_val, alpha=background_alpha)
@@ -295,10 +284,6 @@ class Vec():
             x = np.arange(0, u.shape[1])
             y = np.arange(0, u.shape[0])
             X, Y = np.meshgrid(x, y)  # col, row
-
-            # start_p_tup = np.where((np.absolute(u) > 0.01) | (np.absolute(v) > 0.01))
-            # start_p = np.concatenate([np.expand_dims(start_p_tup[1], axis=-1), np.expand_dims(start_p_tup[0], axis=-1)], axis=-1) # noqa
-
             plt.streamplot(X, Y, line_len_co * (-u), line_len_co * (-v), color='k', linewidth=line_width,
                            density=density)  # start_points=start_p,
 
@@ -322,8 +307,6 @@ class Vec():
         # in order to fit `StereoPy` original point
         plt.gca().invert_yaxis()
 
-        # plt.savefig(os.path.join(fig_dir, fig_name), dpi=dpi_val, bbox_inches='tight')
-        # plt.close()
         return figure
 
 # func3：画图

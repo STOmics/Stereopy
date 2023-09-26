@@ -4,8 +4,8 @@
 # @Email    : tanliwei@genomics.cnW
 import os
 import time
-from typing import Literal
 from multiprocessing import cpu_count
+from typing import Literal
 
 import numba
 import numpy as np
@@ -30,7 +30,6 @@ from ..utils.time_consume import log_consumed_time
 @log_consumed_time
 @numba.njit(cache=True, parallel=True, nogil=True)
 def generate_cell_and_dnb(adjusted_data: np.ndarray):
-    # ['x', 'y', 'UMICount', 'label', 'geneid']
     cells_list = adjusted_data[:, 3]
     cells_idx_sorted = np.argsort(cells_list)
     adjusted_data = adjusted_data[cells_idx_sorted]
@@ -56,7 +55,7 @@ def generate_cell_and_dnb(adjusted_data: np.ndarray):
 
 class CellCorrect(object):
 
-    def __init__(self, gem_path=None, bgef_path=None, raw_cgef_path=None, mask_path=None, out_dir=None, ):
+    def __init__(self, gem_path=None, bgef_path=None, raw_cgef_path=None, mask_path=None, out_dir=None):
         self.tc = TimeConsume()
         self.gem_path = gem_path
         self.bgef_path = bgef_path
@@ -144,7 +143,6 @@ class CellCorrect(object):
 
         logger.info("start to generate raw data")
         genes, raw_data = self.get_data_from_bgef_and_cgef(self.bgef_path, self.raw_cgef_path, sample_n=sample_n)
-        # self.generate_raw_gem(raw_data)
         return genes, raw_data
 
     @log_consumed_time
@@ -157,11 +155,14 @@ class CellCorrect(object):
     def generate_adjusted_cgef(self, adjusted_data: pd.DataFrame, outline_path):
         adjusted_data_np = adjusted_data[['x', 'y', 'UMICount', 'label', 'geneid']].to_numpy(dtype=np.uint32)
         cell_data, dnb_data = generate_cell_and_dnb(adjusted_data_np)
-        cell_type = np.dtype({'names': ['cellid', 'offset', 'count'], 'formats': [np.uint32, np.uint32, np.uint32]},
-                             align=True)
-        dnb_type = np.dtype(
-            {'names': ['x', 'y', 'count', 'gene_id'], 'formats': [np.int32, np.int32, np.uint16, np.uint32]},
-            align=True)
+        cell_type = np.dtype({
+            'names': ['cellid', 'offset', 'count'],
+            'formats': [np.uint32, np.uint32, np.uint32]
+        }, align=True)
+        dnb_type = np.dtype({
+            'names': ['x', 'y', 'count', 'gene_id'],
+            'formats': [np.int32, np.int32, np.uint16, np.uint32]
+        }, align=True)
         cell = np.array(cell_data, dtype=cell_type)
         dnb = np.array(dnb_data, dtype=dnb_type)
         file_name = self.get_file_name('adjusted.cellbin.gef')
@@ -223,8 +224,15 @@ class CellCorrect(object):
         return process_count
 
     @log_consumed_time
-    def correcting(self, threshold=20, process_count=None, only_save_result=False, sample_n=-1, method='EDM',
-                   distance=10, **kwargs):
+    def correcting(self,
+                   threshold=20,
+                   process_count=None,
+                   only_save_result=False,
+                   sample_n=-1,
+                   method='EDM',
+                   distance=10,
+                   **kwargs
+                   ):
         if method is None:
             method = 'EDM'
         method = method.upper()
@@ -238,9 +246,13 @@ class CellCorrect(object):
             adjusted_data = cell_correction_fast.cell_correct(raw_data, self.mask_path)
         elif method == 'EDM':
             n_split_data_jobs = kwargs.get('n_split_data_jobs', -1)
-            new_mask_path = cell_correction_fast_by_mask.main(self.mask_path, n_jobs=process_count, distance=distance,
-                                                              out_path=self.out_dir,
-                                                              n_split_data_jobs=n_split_data_jobs)
+            new_mask_path = cell_correction_fast_by_mask.main(
+                self.mask_path,
+                n_jobs=process_count,
+                distance=distance,
+                out_path=self.out_dir,
+                n_split_data_jobs=n_split_data_jobs
+            )
             cgef_file_adjusted = self.generate_cgef_with_mask(new_mask_path, 'adjusted')
         else:
             raise ValueError(
@@ -285,17 +297,18 @@ def cell_correct(out_dir: str,
     :param raw_cgef_path: the path to CGEF file which not has been corrected.
     :param mask_path: the path to mask file.
     :param process_count: the count of the processes or threads will be started when correct cells, defaults to None
-                by default, it will be set to 10 when `fast` is set to False and will be set to 1 when `fast` is set to v1 or v2. # noqa
+                by default, it will be set to 10 when `fast` is set to False and will be set to 1 when `fast` is set to v1 or v2.
                 if it is set to -1, all of the cores will be used.
 	:param only_save_result: if `True`, only save result to disk; if `False`, return an StereoExpData object.
     :param fast: specify the version of algorithm, available values include [False, v1, v2], defaults to v2.
-                    False: the oldest and slowest version, it will uses multiprocessing if set `process_count` to more than 1. # noqa
+                    False: the oldest and slowest version, it will uses multiprocessing if set `process_count` to more than 1.
                     v1: the first fast version, it olny uses single process and single threading.
-                    v2: default and recommended algorithm, the latest fast version, faster and more accurate than v1, it will uses multithreading if set `process_count` to more than 1. # noqa
-    :param distance: outspread distance based on cellular contour of cell segmentation image, in pixels, only available for v2 algorithm. # noqa
+                    v2: default and recommended algorithm, the latest fast version, faster and more accurate than v1, it will uses multithreading if set `process_count` to more than 1.
+    :param method: correct in different method if `method` is set, otherwise `EDM`.
+    :param distance: outspread distance based on cellular contour of cell segmentation image, in pixels, only available for v2 algorithm.
 
     :return: An StereoExpData object if `only_save_result` is set to `False`, otherwise none.
-    """
+    """  # noqa
 
     cc = CellCorrect(gem_path=gem_path, bgef_path=bgef_path, raw_cgef_path=raw_cgef_path, mask_path=mask_path,
                      out_dir=out_dir)

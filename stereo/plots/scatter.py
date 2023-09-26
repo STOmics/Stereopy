@@ -69,13 +69,15 @@ def base_scatter(
     :param color_bar: show color bar or not, color_values must be int array or list when color_bar is True
     :param color_bar_reverse: if True, reverse the color bar, defaults to False
     :param bad_color: the name list of clusters to show.
-    :param dot_size: marker size.
+    :param dot_size: dot size.
     :param palette: customized colors
     :param legend_ncol: number of legend columns
     :param show_legend
     :param show_ticks
-    :param vmin:
-    :param vmax:
+    :param vmin: min value to plot, default None means auto calculate.
+    :param vmax: max value to plot, default None means auto calculate.
+    :param width: the figure width in pixels.
+    :param height: the figure height in pixels.
 
     :return: matplotlib Axes object
 
@@ -149,8 +151,6 @@ def base_scatter(
 
         vertical_x_location = min_x - plotting_scale_height * 2
         vertical_text_location_x = vertical_x_location - plotting_scale_height
-        # new_ax_left = vertical_text_location_x - plotting_scale_height * 3
-        # ax.set_xlim(left=new_ax_left)
         if invert_y:
             horizontal_y_location = min_y - plotting_scale_height * 2
             vertical_start_y = min_y
@@ -163,8 +163,6 @@ def base_scatter(
                 (horizontal_end_x, horizontal_y_location - plotting_scale_height),
             ]
             horizontal_text_location_y = horizontal_y_location - plotting_scale_height
-            # new_ax_top = horizontal_text_location_y - plotting_scale_height * 3
-            # ax.set_ylim(top=new_ax_top)
         else:
             horizontal_y_location = max_y + plotting_scale_height * 2
             vertical_start_y = max_y
@@ -177,8 +175,6 @@ def base_scatter(
                 (horizontal_end_x, horizontal_y_location + plotting_scale_height),
             ]
             horizontal_text_location_y = horizontal_y_location + plotting_scale_height
-            # new_ax_top = horizontal_text_location_y + plotting_scale_height * 3
-            # ax.set_ylim(top=new_ax_top)
 
         vertices.extend([
             (vertical_x_location - plotting_scale_height, vertical_start_y),
@@ -207,7 +203,6 @@ def base_scatter(
             x=horizontal_text_location_x,
             y=horizontal_text_location_y,
             s=f"{real_length}{unit}",
-            # fontsize='small',
             rotation=0,
             horizontalalignment='center',
             verticalalignment='bottom'
@@ -216,9 +211,7 @@ def base_scatter(
             x=vertical_text_location_x,
             y=vertical_text_location_y,
             s=f"{real_length}{unit}",
-            # fontsize='small',
             rotation=90,
-            # rotation_mode='anchor',
             horizontalalignment='right',
             verticalalignment='center'
         )
@@ -288,8 +281,10 @@ def multi_scatter(
     :param bad_color: the name list of clusters to show.
     :param dot_size: marker size.
     :param palette: customized colors
-    :param vmin:
-    :param vmax:
+    :param vmin: min value to plot, default None means auto calculate.
+    :param vmax: max value to plot, default None means auto calculate.
+    :param width: the figure width in pixels.
+    :param height: the figure height in pixels.
 
     :return: matplotlib Axes object
 
@@ -314,14 +309,14 @@ def multi_scatter(
         right=1 - (ncols - 1) * left - 0.01 / ncols,
         bottom=bottom,
         top=1 - (nrows - 1) * bottom - 0.1 / nrows,
-        # hspace=hspace,
-        # wspace=wspace,
     )
     for i, cv in enumerate(hue):
         if issparse(cv):
             cv = cv.toarray()[0]
-        ax: Axes = fig.add_subplot(axs[i])  # ax = plt.subplot(axs[i]) || ax = fig.add_subplot(axs[1, 1]))
-        base_scatter(x, y, cv,
+        ax: Axes = fig.add_subplot(axs[i])
+        base_scatter(x,
+                     y,
+                     cv,
                      ax=ax,
                      title=title[i] if title is not None and title != '' else None,
                      x_label=x_label[i] if x_label is not None and x_label != '' else None,
@@ -341,14 +336,22 @@ def multi_scatter(
 
 
 def volcano(
-        data: Optional[pd.DataFrame], x: Optional[str], y: Optional[str], hue: Optional[str],
+        data: Optional[pd.DataFrame],
+        x: Optional[str],
+        y: Optional[str],
+        hue: Optional[str],
         hue_order=('down', 'normal', 'up'),
         palette=("#377EB8", "grey", "#E41A1C"),
         alpha=1, s=15,
-        label: Optional[str] = None, text_visible: Optional[str] = None,
-        x_label='log2(fold change)', y_label='-log10(pvalue)',
-        vlines=True, cut_off_pvalue=0.01, cut_off_logFC=1,
-        width=None, height=None
+        label: Optional[str] = None,
+        text_visible: Optional[str] = None,
+        x_label='log2(fold change)',
+        y_label='-log10(pvalue)',
+        vlines=True,
+        cut_off_pvalue=0.01,
+        cut_off_logFC=1,
+        width=None,
+        height=None
 ):
     """
     volcano plot
@@ -363,12 +366,15 @@ def volcano(
     :param s: dot size
     :param label: key in data, variables that specify dot label
     :param text_visible: key in data, variables that specify to show this dot's label or not
-    :param x_label:
-    :param y_label:
+    :param x_label: the x label.
+    :param y_label: the y label.
     :param cut_off_pvalue: used when plot vlines
     :param cut_off_logFC: used when plot vlines
     :param vlines: plot vlines or not
-    :return:
+    :param width: the figure width in pixels.
+    :param height: the figure height in pixels.
+
+    :return: figure object
     """
     if width is None or height is None:
         width, height = 6, 6
@@ -384,7 +390,6 @@ def volcano(
         alpha=alpha, s=s,
         ax=ax
     )
-    # ax.figure.set_size_inches(width, height)
     ax.spines['right'].set_visible(False)  # remove right border
     ax.spines['top'].set_visible(False)  # remove top border
     ax.set_ylabel(y_label, fontweight='bold')  # set y-axis labels
@@ -399,8 +404,6 @@ def volcano(
         ax.vlines(cut_off_logFC, ymin, ymax, color='dimgrey', linestyle='dashed', linewidth=1)  # draw vertical lines
         ax.hlines(-np.log10(cut_off_pvalue), xmin, xmax, color='dimgrey', linestyle='dashed',
                   linewidth=1)  # draw vertical lines
-        # ax.set_xticks(range(xmin, xmax, 4))# set x-axis labels
-        # ax.set_yticks(range(ymin, ymax, 2))# set y-axis labels
     if label and text_visible:
         data = data[data[text_visible]]
         for _, row in data.iterrows():
@@ -411,7 +414,6 @@ def volcano(
                 horizontalalignment='left',
                 size='medium',
                 color='black',
-                # weight='semibold'
             )
     return fig
 
@@ -423,6 +425,17 @@ def marker_gene_volcano(
         cut_off_logFC=1,
         **kwargs
 ):
+    """
+    marker_gene_volcano plot
+
+    :param data: data frame
+    :param text_genes: show gene names.
+    :param cut_off_pvalue: used when plot vlines
+    :param cut_off_logFC: used when plot vlines
+    :param kwargs:
+
+    :return: figure object
+    """
     df = data
     if 'log2fc' not in df.columns or 'pvalues' not in df.columns:
         raise ValueError('data frame should content log2fc and pvalues columns')
@@ -432,15 +445,11 @@ def marker_gene_volcano(
     df.loc[(df.x < -cut_off_logFC) & (df.pvalues < cut_off_pvalue), 'group'] = 'down'
     df.loc[(df.x >= -cut_off_logFC) & (df.x <= cut_off_logFC) | (df.pvalues >= cut_off_pvalue), 'group'] = 'normal'
     if text_genes is not None:
-        # df['text'] = df['group'] == 'up'
         df['label'] = df['genes'].isin(text_genes)
         fig = volcano(df, x='x', y='y', hue='group', label='genes', text_visible='label',
-                      cut_off_pvalue=cut_off_pvalue,
-                      cut_off_logFC=cut_off_logFC,
-                      **kwargs)
+                      cut_off_pvalue=cut_off_pvalue, cut_off_logFC=cut_off_logFC, **kwargs)
     else:
-        fig = volcano(df, x='x', y='y', hue='group',
-                      cut_off_pvalue=cut_off_pvalue, cut_off_logFC=cut_off_logFC,
+        fig = volcano(df, x='x', y='y', hue='group', cut_off_pvalue=cut_off_pvalue, cut_off_logFC=cut_off_logFC,
                       **kwargs)
     return fig
 
@@ -456,6 +465,10 @@ def highly_variable_genes(
     scatter of highly variable genes
 
     :param data: pd.DataFrame
+    :param width: the figure width in pixels.
+    :param height: the figure height in pixels.
+    :param xy_label: the x、y label of first figure.
+    :param xyII_label: the x、y label of second figure.
 
     :return: figure object
     """
@@ -474,22 +487,28 @@ def highly_variable_genes(
     fig = plt.figure(figsize=(width, height), clear=True)
     ax1 = fig.add_subplot(121)
     ax2 = fig.add_subplot(122)
-    sns.scatterplot(x="means", y=y_label + '_norm',
-                    hue='gene type',
-                    hue_order=('highly variable genes', 'other genes'),
-                    palette=("black", "#ccc"),
-                    alpha=1,
-                    s=15,
-                    data=data, ax=ax1
-                    )
-    sns.scatterplot(x="means", y=y_label,
-                    hue='gene type',
-                    hue_order=('highly variable genes', 'other genes'),
-                    palette=("black", "#ccc"),
-                    alpha=1,
-                    s=15,
-                    data=data, ax=ax2
-                    )
+    sns.scatterplot(
+        x="means",
+        y=y_label + '_norm',
+        hue='gene type',
+        hue_order=('highly variable genes', 'other genes'),
+        palette=("black", "#ccc"),
+        alpha=1,
+        s=15,
+        data=data,
+        ax=ax1
+    )
+    sns.scatterplot(
+        x="means",
+        y=y_label,
+        hue='gene type',
+        hue_order=('highly variable genes', 'other genes'),
+        palette=("black", "#ccc"),
+        alpha=1,
+        s=15,
+        data=data,
+        ax=ax2
+    )
     ax1.set_xlabel(xy_label[0], fontsize=15)
     ax1.set_ylabel(xy_label[1], fontsize=15)
     ax2.set_xlabel(xyII_label[0], fontsize=15)

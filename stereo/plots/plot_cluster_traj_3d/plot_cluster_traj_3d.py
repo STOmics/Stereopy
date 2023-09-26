@@ -35,9 +35,6 @@ class PlotClusterTraj3D(PlotBase):
 
         :return:
         """  # noqa
-
-        # TODO: 对输入进行断言
-
         traj = Traj(con, x_raw, y_raw, z_raw, ty, choose_ty)
         traj.gen_ty_all_no_dup_same_ord()
 

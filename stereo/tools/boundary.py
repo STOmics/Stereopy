@@ -32,18 +32,18 @@ class ConcaveHull(object):
 
     @staticmethod
     def dist_pt_to_group(a, b):  # a is a (n,2) , b is (1,2) arrays
-        d = np.sqrt(np.sum(np.square(np.subtract(a, b)), axis=1))
-        return d
+        return np.sqrt(np.sum(np.square(np.subtract(a, b)), axis=1))
 
     @staticmethod
     def get_lowest_latitude_index(points):
-        indices = np.argsort(points[:, 1])
-        return indices[0]
+        return np.argsort(points[:, 1])[0]
 
     @staticmethod
-    def norm_array(v):  # normalize row vectors in an array. observations are rows
-        norms = np.array(np.sqrt(np.sum(np.square(v), axis=1)), ndmin=2).transpose()
-        return np.divide(v, norms)
+    def norm_array(v):
+        """
+        normalize row vectors in an array. observations are rows
+        """
+        return np.divide(v, np.array(np.sqrt(np.sum(np.square(v), axis=1)), ndmin=2).transpose())
 
     @staticmethod
     def norm(v):
@@ -56,6 +56,7 @@ class ConcaveHull(object):
     def get_k_nearest(self, ix, k):
         """
         Calculates the k nearest point indices to the point indexed by ix
+
         :param ix: Index of the starting point
         :param k: Number of neighbors to consider
         :return: Array of indices into the data set array
@@ -65,7 +66,6 @@ class ConcaveHull(object):
         base_indices = np.arange(len(ixs))[ixs]
         distances = self.dist_pt_to_group(self.data_set[ixs, :], self.data_set[ix, :])
         sorted_indices = np.argsort(distances)
-
         kk = min(k, len(sorted_indices))
         k_nearest = sorted_indices[range(kk)]
         return base_indices[k_nearest]
@@ -84,9 +84,7 @@ class ConcaveHull(object):
         ang = np.zeros((ixs.shape[0], 1))
         for j in range(ixs.shape[0]):
             theta = np.arccos(np.dot(last_norm, ixs_norm[j, :]))
-            # ang[j,0] = theta
             z_comp = np.cross(last_norm, ixs_norm[j, :])
-            # ang[j,2] = z
             if z_comp <= 0:
                 ang[j, 0] = theta
             elif z_comp > 0:

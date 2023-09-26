@@ -7,13 +7,14 @@
 @time:2021/03/05
 """
 import os
-from typing import Union
-from typing import Optional
 from pathlib import Path
-from matplotlib import rcParams
-from matplotlib import rcParamsDefault
+from typing import Optional
+from typing import Union
+
 import matplotlib.colors as mpl_colors
 from colorcet import palette
+from matplotlib import rcParams
+from matplotlib import rcParamsDefault
 
 
 class StereoConfig(object):
@@ -31,7 +32,8 @@ class StereoConfig(object):
             n_jobs=1,
             log_file: Union[str, Path, None] = None,
             log_level: str = "info",
-            log_format: str = "[%(asctime)s][%(name)s][%(process)d][%(threadName)s][%(thread)d][%(module)s][%(lineno)d][%(levelname)s]: %(message)s", # noqa
+            log_format: str = "[%(asctime)s][%(name)s][%(process)d][%(threadName)s][%(thread)d][%(module)s][%(lineno)d][%(levelname)s]: %(message)s",
+            # noqa
             output: str = "./output",
             data_dir: str = None
     ):
@@ -97,7 +99,6 @@ class StereoConfig(object):
     def log_file(self) -> Union[str, Path, None]:
         """
         get the file path of log.
-        :return:
         """
         return self._log_file
 
@@ -105,8 +106,8 @@ class StereoConfig(object):
     def log_file(self, value):
         """
         set file path of log.
+
         :param value: value of log file path
-        :return:
         """
         if value:
             dir_path = os.path.dirname(value)
@@ -118,7 +119,6 @@ class StereoConfig(object):
     def log_format(self) -> str:
         """
         get the format of log.
-        :return:
         """
         return self._log_format
 
@@ -126,8 +126,8 @@ class StereoConfig(object):
     def log_format(self, value):
         """
         set file path of log.
+
         :param value: value of log format
-        :return:
         """
         self._log_format = value
 
@@ -135,7 +135,6 @@ class StereoConfig(object):
     def log_level(self) -> str:
         """
         get log level
-        :return:
         """
         return self._log_level
 
@@ -143,8 +142,8 @@ class StereoConfig(object):
     def log_level(self, value):
         """
         set log level
+
         :param value: the value of log level
-        :return:
         """
         if value.lower() not in ['info', 'warning', 'debug', 'error', 'critical']:
             print('the log level is out of range, please check and it is not modified.')
@@ -155,7 +154,6 @@ class StereoConfig(object):
     def auto_show(self):
         """
         Auto show figures if `auto_show == True` (default `True`).
-        :return:
         """
         return self._auto_show
 
@@ -163,8 +161,8 @@ class StereoConfig(object):
     def auto_show(self, value):
         """
         set value of auto_show
+
         :param value: value of auto_show
-        :return:
         """
         self._auto_show = value
 
@@ -172,7 +170,6 @@ class StereoConfig(object):
     def file_format(self) -> str:
         """
         file format of saving anndata object
-        :return:
         """
         return self._file_format
 
@@ -180,8 +177,8 @@ class StereoConfig(object):
     def file_format(self, value):
         """
         set the value of file format
+
         :param value: the value of file format
-        :return:
         """
         self._file_format = value
 
@@ -194,8 +191,13 @@ class StereoConfig(object):
         self._n_jobs = value
 
     @staticmethod
-    def set_plot_param(fontsize: int = 14, figsize: Optional[int] = None, color_map: Optional[str] = None,
-                       facecolor: Optional[str] = None, transparent: bool = False, ):
+    def set_plot_param(
+            fontsize: int = 14,
+            figsize: Optional[int] = None,
+            color_map: Optional[str] = None,
+            facecolor: Optional[str] = None,
+            transparent: bool = False
+    ):
         if fontsize is not None:
             rcParams['font.size'] = fontsize
         if color_map is not None:
@@ -212,7 +214,6 @@ class StereoConfig(object):
     def set_rcparams_defaults():
         """
         reset `matplotlib.rcParams` to defaults.
-        :return:
         """
         rcParams.update(rcParamsDefault)
 

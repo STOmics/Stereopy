@@ -103,8 +103,6 @@ def interact_spatial_cluster_annotation(
                invert_yaxis=True,
                aspect='equal',
                active_tools=['wheel_zoom']
-               # legend_muted=True,
-               # legend_cols=2
                )
         return sfig.opts(
             hv.opts.Scatter(
@@ -131,10 +129,7 @@ def interact_spatial_cluster_annotation(
         _df_plot,
         pn.Column(
             dot_slider,
-            pn.Row(
-                cluster_select,
-                cluster_text
-            ),
+            pn.Row(cluster_select, cluster_text),
             button_save,
             _df_marker_gene
         )

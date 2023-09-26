@@ -34,17 +34,14 @@ class PolySelection(object):
         self.width = width
         self.height = height
         self.bgcolor = bgcolor
-        # self.poly_annotate = hv.annotate.instance()
         if self.data.cells.total_counts is None:
             total_counts = self.data.exp_matrix.sum(axis=1).T.A[
                 0] if self.data.issparse() else self.data.exp_matrix.sum(axis=1).T
         else:
             total_counts = self.data.cells.total_counts
         self.scatter_df = pd.DataFrame({
-            # 'cell': self.data.cell_names,
             'x': self.data.position[:, 0],
             'y': self.data.position[:, 1] * -1,
-            # 'count': np.array(self.data.exp_matrix.sum(axis=1))[:, 0],
             'count': total_counts
         })
         self.scatter_df.reset_index(inplace=True)
@@ -68,9 +65,6 @@ class PolySelection(object):
     # @param.depends(pa.param.annotator)
     def _download_callback(self, _):
         self.download.loading = True
-        # sio = io.StringIO()
-        # selected_pos = hv.Dataset(self.scatter_df).select(link.selection_expr).data[['cell']].values
-        # print(pa.selected.data)
         if len(pa.selected.data):
             selected_point = pa.selected.data[0]
         else:
@@ -80,11 +74,8 @@ class PolySelection(object):
         selected_point_array = np.array([selected_point['x'], selected_point['y']])
         points = selected_point_array.T
         selection_expr = dim('x', spatial_select, dim('y'), geometry=points)
-        # print(selection_expr)
         selected_pos = hv.Dataset(self.scatter_df).select(selection_expr).data.index
         self.generate_selected_expr_matrix(selected_pos, drop=self.drop_checkbox.value)
-        # logger.info(f'generate a new StereoExpData')
-
         self.download.loading = False
 
     def add_selected_area(self):
@@ -144,7 +135,6 @@ class PolySelection(object):
     def generate_selected_expr_matrix(self, selected_pos, drop=False):
         import copy
         if selected_pos is not None:
-            # selected_index = np.isin(self.data.cell_names, selected_pos)
             selected_index = self.scatter_df.index.drop(selected_pos) if drop else selected_pos
             data_temp = copy.deepcopy(self.data)
             self.selected_exp_data = data_temp.sub_by_index(cell_index=selected_index)
@@ -188,5 +178,4 @@ class PolySelection(object):
                 '',
                 pn.Row(self.drop_checkbox, self.download)
             ))
-        # return pn.Row(poly_scatter, pn.Column(anno_table, self.download))
         return self.figure

@@ -57,9 +57,8 @@ def log_consumed_time(outer_func=None, unit='s'):
             logger.info('start to run {}...'.format(func.__name__))
             tk = tc.start()
             res = func(*args, **kwargs)
-            logger.info('{} end, consume time {:.4f}{}.'.format(func.__name__,
-                                                                tc.get_time_consumed(key=tk, restart=False, unit=unit),
-                                                                unit))
+            logger.info('{} end, consume time {:.4f}{}.'.format(
+                func.__name__, tc.get_time_consumed(key=tk, restart=False, unit=unit), unit))
             return res
 
         return wrapped

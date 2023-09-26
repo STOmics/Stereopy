@@ -8,6 +8,7 @@
 """
 
 import logging
+
 from .stereo_config import stereo_conf
 
 
@@ -33,7 +34,9 @@ class LogManager(object):
     def get_logger(self, name="Stereo"):
         """
         get logger object
+
         :param name: logger name
+
         :return: logger object
         """
         alogger = logging.getLogger(name)
@@ -61,12 +64,11 @@ class LogManager(object):
     def _add_handler(self, alogger: logging.Logger):
         """
         add handler of logger
-        :param alogger: logger object
-        :return:
-        """
-        # self._remove_handler(alogger)
 
-        # self._set_handler()
+        :param alogger: logger object
+
+        :return: None
+        """
         if self.file_handler is not None:
             alogger.addHandler(self.file_handler)
         if self.stream_handler is not None:
@@ -87,8 +89,8 @@ class LogManager(object):
         global logger
         level = level.lower()
         if level not in ['debug', 'info', 'warning', 'error', 'critical']:
-            raise ValueError(
-                "Invalid log level, available values are ['info', 'warning', 'debug', 'error', 'critical'].")
+            raise ValueError("Invalid log level, available values are ['info', 'warning', 'debug', 'error',"
+                             " 'critical'].")
         log_manager = LogManager.get_instance()
         log_manager.level = level
         logger = log_manager.get_logger(name='Stereo')
@@ -114,5 +116,4 @@ class LogManager(object):
         log_manager._add_handler(logger)
 
 
-# logger = LogManager().get_logger(name='Stereo')
 logger = LogManager.logger()

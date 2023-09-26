@@ -13,25 +13,25 @@ change log:
     2022/02/09  read raw data and result
 """
 from copy import deepcopy
-from typing import Union
 from typing import Optional
+from typing import Union
 
 import h5py
 import numpy as np
 import pandas as pd
 from anndata import AnnData
 from scipy.sparse import csr_matrix
-from shapely.geometry import Point
 from shapely.geometry import MultiPoint
+from shapely.geometry import Point
 from typing_extensions import Literal
 
-from stereo.io import h5ad
 from stereo.core.cell import Cell
-from stereo.core.gene import Gene
-from stereo.log_manager import logger
 from stereo.core.constants import CHIP_RESOLUTION
-from stereo.core.stereo_exp_data import StereoExpData
+from stereo.core.gene import Gene
 from stereo.core.stereo_exp_data import AnnBasedStereoExpData
+from stereo.core.stereo_exp_data import StereoExpData
+from stereo.io import h5ad
+from stereo.log_manager import logger
 from stereo.utils.read_write_utils import ReadWriteUtils
 
 
@@ -300,8 +300,6 @@ def _read_stereo_h5_result(key_record: dict, data, f):
                 gene_cluster_res_key = f'gene_exp_{res_key}'
                 if ('gene_exp_cluster' not in data.tl.key_record) or (
                         gene_cluster_res_key not in data.tl.key_record['gene_exp_cluster']):
-                    # data.tl.result[gene_cluster_res_key] = cell_cluster_to_gene_exp_cluster(data.tl, res_key)
-                    # data.tl.reset_key_record('gene_exp_cluster', gene_cluster_res_key)
                     gene_cluster_res = cell_cluster_to_gene_exp_cluster(data, res_key)
                     if gene_cluster_res is not False:
                         data.tl.result[gene_cluster_res_key] = gene_cluster_res
@@ -567,8 +565,6 @@ def read_ann_h5ad(
             elif k == "var":
                 genes_df = h5ad.read_dataframe(f[k])
                 data.genes.gene_name = genes_df.index.values
-                # data.genes.n_cells = genes_df['n_cells']
-                # data.genes.n_counts = genes_df['n_counts']
             elif k == 'obsm':
                 if spatial_key is not None:
                     if isinstance(f[k], h5py.Group):
@@ -764,22 +760,6 @@ def stereo_to_anndata(
 
     from scipy.sparse import issparse
 
-    # if data.tl.raw is None:
-    #     raise Exception('convert to AnnData should have raw data')
-
-    # exp = data.exp_matrix if issparse(data.exp_matrix) else csr_matrix(data.exp_matrix)
-    # if not data.issparse():
-    #     data.array2sparse()
-
-    # cells = data.cells.to_df()
-    # cells.dropna(axis=1, how='all', inplace=True)
-    # genes = data.genes.to_df()
-    # genes.dropna(axis=1, how='all', inplace=True)
-
-    # adata = AnnData(X=data.exp_matrix, dtype=np.float64, obs=cells, var=genes)
-    # adata.raw = AnnData(X=data.tl.raw.exp_matrix, dtype=np.float64, obs=data.tl.raw.cells.to_df(),
-    #                     var=data.tl.raw.genes.to_df())
-
     if base_adata is None:
         adata = AnnData(shape=data.exp_matrix.shape, dtype=np.float64, obs=data.cells.to_df(), var=data.genes.to_df())
         adata.X = data.exp_matrix
@@ -831,7 +811,6 @@ def stereo_to_anndata(
                     adata.var[i] = data.tl.result[res_key][i]
             elif key == 'sct':
                 res_key = data.tl.key_record[key][-1]
-                # adata.uns[res_key] = {}
                 zero_index_data = data.tl.result[res_key][0]
                 one_index_data = data.tl.result[res_key][1]
                 logger.info(f"Adding data.tl.result['{res_key}'] into adata.uns['sct_'] .")
@@ -862,8 +841,6 @@ def stereo_to_anndata(
                     adata.uns[res_key] = {}
                     adata.uns[res_key]['connectivities_key'] = sc_con
                     adata.uns[res_key]['distance_key'] = sc_dis
-                    # adata.uns[res_key]['connectivities'] = data.tl.result[res_key]['connectivities']
-                    # adata.uns[res_key]['distances'] = data.tl.result[res_key]['nn_dist']
             elif key == 'cluster':
                 cell_name_index = data.cells.cell_name.astype('str')
                 for res_key in data.tl.key_record[key]:
@@ -928,18 +905,6 @@ def stereo_to_anndata(
         logger.info("Rename QC info.")
         adata.obs.rename(columns={'total_counts': "nCount_Spatial", "n_genes_by_counts": "nFeature_Spatial",
                                   "pct_counts_mt": 'percent.mito'}, inplace=True)
-        # if 'X_pca' not in list(adata.obsm.keys()):
-        # logger.info(f"Creating fake info. Please ignore X_ignore in your data.")
-        # adata.obsm['X_ignore'] = np.zeros((adata.obs.shape[0], 2))
-
-    # logger.info(f"Adding data.attr in adata.uns.")
-    # if data.offset_x is not None:
-    #     adata.uns['offset_x'] = data.offset_x
-    # if data.offset_y is not None:
-    #     adata.uns['offset_y'] = data.offset_y
-    # if data.attr is not None:
-    #     for key, value in data.attr.items():
-    #         adata.uns[key] = value
 
     logger.info("Finished conversion to anndata.")
 

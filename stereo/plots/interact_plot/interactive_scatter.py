@@ -34,24 +34,19 @@ class InteractiveScatter:
             data,
             width: Optional[int] = 500, height: Optional[int] = 500,
             bgcolor='#2F2F4F',
-            # bgcolor='#333333'
     ):
         self.data = data
         self.width = width
         self.height = height
         self.bgcolor = bgcolor
-        # self.link = link_selections.instance()
         if self.data.cells.total_counts is None:
             total_counts = self.data.exp_matrix.sum(axis=1).T.A[
                 0] if self.data.issparse() else self.data.exp_matrix.sum(axis=1).T
         else:
             total_counts = self.data.cells.total_counts
         self.scatter_df = pd.DataFrame({
-            # 'cell': self.data.cell_names,
             'x': self.data.position[:, 0],
             'y': self.data.position[:, 1] * -1,
-            # 'count': np.array(self.data.exp_matrix.sum(axis=1))[:, 0],
-            # 'count': np.array(self.data.exp_matrix.sum(axis=1))[:, 0] if self.data.cells.total_counts is None else self.data.cells.total_counts # noqa
             'count': total_counts
         })
         self.scatter_df.reset_index(inplace=True)
@@ -65,13 +60,9 @@ class InteractiveScatter:
             name='bin size',
             options=[1, 10, 20],
             width=100,
-            # disable=True
         )
         self.download = pn.widgets.Button(
-            # filename='exp_matrix.csv',
             name='export',
-            # loading=True,
-            # callback=self._download_callback,
             button_type="primary",
             width=100
         )
@@ -81,7 +72,6 @@ class InteractiveScatter:
 
     def generate_selected_expr_matrix(self, selected_pos, drop=False):
         if selected_pos is not None:
-            # selected_index = np.isin(self.data.cell_names, selected_pos)
             selected_index = self.scatter_df.index.drop(selected_pos) if drop else selected_pos
             data_temp = copy.deepcopy(self.data)
             self.selected_exp_data = data_temp.sub_by_index(
@@ -137,10 +127,8 @@ class InteractiveScatter:
         pn.extension()
         hv.extension('bokeh')
         cmap = pn.widgets.Select(value=colormaps['stereo'], options=colormaps, name='color theme', width=200)
-        # alpha = pn.widgets.FloatSlider(value=1)
         reverse_colormap = pn.widgets.Checkbox(name='reverse_colormap')
         scatter_df = self.scatter_df
-        # dot_size = self.dot_size
         bgcolor = self.bgcolor
         width, height = self.width, self.height
 
@@ -152,11 +140,8 @@ class InteractiveScatter:
                 cmap=cmap_value,
                 width=width, height=height,
                 padding=(0.1, 0.1),
-                # rasterize=True,
                 datashade=True,
                 dynspread=True,
-                # tools=['undo', 'redo'],
-
             ).opts(
                 bgcolor=bgcolor,
                 xaxis=None,
@@ -166,7 +151,6 @@ class InteractiveScatter:
 
         @param.depends(link.param.selection_expr)
         def _selection_table(_):
-            # print(link.selection_expr)
             return hv.element.Table(hv.Dataset(scatter_df).select(link.selection_expr)).opts(width=300, height=200)
 
         self.figure = pn.Column(
@@ -174,14 +158,9 @@ class InteractiveScatter:
             pn.Row(
                 _df_plot,
                 pn.Column(
-                    # pn.panel(pn.bind(random_plot, button), loading_indicator=True),
-                    # _selection_table,
                     pn.Column(
                         # "above in the table is selected points, pick or drop them to generate a new StereoExpData",
-                        pn.Row(
-                            self.drop_checkbox,
-                            # self.bin_select
-                        ),
+                        pn.Row(self.drop_checkbox),
                         'export selected data a new StereoExpData object',
                         self.download,
                     ),

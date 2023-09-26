@@ -198,10 +198,8 @@ class Cluster(ToolBase):
         from ..plots.scatter import base_scatter, plt
 
         if plot_dim_reduce:
-            base_scatter(self.pca_x.values[:, 0], self.pca_x.values[:, 1],
-                         hue=np.array(self.result['cluster']))
+            base_scatter(self.pca_x.values[:, 0], self.pca_x.values[:, 1], hue=np.array(self.result['cluster']))
         else:
-            base_scatter(self.data.position[:, 0], self.data.position[:, 1],
-                         hue=np.array(self.result['cluster']))
+            base_scatter(self.data.position[:, 0], self.data.position[:, 1], hue=np.array(self.result['cluster']))
         if file_path:
             plt.savefig(file_path)

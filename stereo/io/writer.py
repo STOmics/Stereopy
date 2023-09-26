@@ -11,14 +11,17 @@ change log:
     2021/07/05  create file.
     2022/02/09  save raw data and result
 """
-from os import environ
 import pickle
 from copy import deepcopy
+from os import environ
 
 import h5py
 import numpy as np
 import pandas as pd
-from scipy.sparse import csr_matrix, issparse
+from scipy.sparse import (
+    csr_matrix,
+    issparse
+)
 
 from stereo.core.stereo_exp_data import StereoExpData
 from stereo.io import h5ad
@@ -260,8 +263,6 @@ def write_h5ms(ms_data, output: str):
         h5ad.write_dataframe(f, 'var', ms_data.var)
         h5ad.write(ms_data._var_type, f, 'var_type')
         h5ad.write(ms_data.relationship, f, 'relationship')
-        # TODO
-        # h5ad.write(ms_data.relationship_info, f, 'relationship_info')
         if ms_data.tl.result:
             mss_f = f.create_group('mss')
             for key, value in ms_data.tl.result.items():
@@ -314,8 +315,8 @@ def write_mid_gef(data: StereoExpData, output: str):
         offset = last_offset + last_count
         count = c_idx.shape[0]
         final_gene.append((g_name, offset, count))
-    final_exp_np = rfn.unstructured_to_structured(np.array(final_exp, dtype=int),
-                                                  np.dtype([('x', np.uint32), ('y', np.uint32), ('count', np.uint16)]))
+    final_exp_np = rfn.unstructured_to_structured(
+        np.array(final_exp, dtype=int), np.dtype([('x', np.uint32), ('y', np.uint32), ('count', np.uint16)]))
     genetyp = np.dtype({'names': ['gene', 'offset', 'count'], 'formats': ['S32', np.uint32, np.uint32]})
     final_gene_np = np.array(final_gene, dtype=genetyp)
     h5f = h5py.File(output, "w")
@@ -384,9 +385,7 @@ def update_gef(data: StereoExpData, gef_file: str, cluster_res_key: str):
     groups_code = groups.cat.categories.to_numpy()
     groups = groups.to_numpy()
     is_numeric = True
-    # for i, v in clu_result.iterrows():
     for bin, c, cidx in zip(bins, groups, groups_idx):
-        # cluster[str(v['bins'])] = v['group']
         if not isinstance(c, str):
             cluster[bin] = c
             cluster_idx[bin] = cidx
@@ -410,7 +409,6 @@ def update_gef(data: StereoExpData, gef_file: str, cluster_res_key: str):
                 else:
                     celltid[n] = cluster_idx[cell_name]
 
-        # h5f['cellBin']['cell']['cellTypeID'] = celltid
         if is_numeric:
             h5f['cellBin']['cell']['clusterID'] = celltid
         else:

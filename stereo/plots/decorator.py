@@ -19,9 +19,8 @@ def plot_scale(func):
         elif isinstance(pc_object, PlotBase):
             data = pc_object.stereo_exp_data
         if data:
-            if (data.attr is None) or \
-                    (data.resolution is None) or (data.resolution <= 0) or \
-                    (data.bin_size is None) or (data.bin_size <= 0):
+            if (data.attr is None) or (data.resolution is None) or (data.resolution <= 0) or (data.bin_size is None) \
+                    or (data.bin_size <= 0):
                 kwargs['show_plotting_scale'] = False
             else:
                 kwargs.setdefault('show_plotting_scale', True)
