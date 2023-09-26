@@ -684,7 +684,9 @@ class StPipeline(object):
             gamma: float = 1.0,
             negative_sample_rate: int = 5,
             init_pos: str = 'spectral',
-            method: str = 'umap'
+            method: str = 'umap',
+            random_state: int = 0,
+            parallel: bool = False
     ):
         """
         Embed the neighborhood graph using UMAP [McInnes18]_.
@@ -722,9 +724,21 @@ class StPipeline(object):
         if neighbors_res_key not in self.result:
             raise Exception(f'{neighbors_res_key} is not in the result, please check and run the neighbors func.')
         _, connectivities, _ = self.get_neighbors_res(neighbors_res_key)
-        x_umap = umap(x=self.result[pca_res_key], neighbors_connectivities=connectivities,
-                      min_dist=min_dist, spread=spread, n_components=n_components, maxiter=maxiter, alpha=alpha,
-                      gamma=gamma, negative_sample_rate=negative_sample_rate, init_pos=init_pos, method=method)
+        x_umap = umap(
+            x=self.result[pca_res_key],
+            neighbors_connectivities=connectivities,
+            min_dist=min_dist,
+            spread=spread,
+            n_components=n_components,
+            maxiter=maxiter,
+            alpha=alpha,
+            gamma=gamma,
+            negative_sample_rate=negative_sample_rate,
+            init_pos=init_pos,
+            method=method,
+            random_state=random_state,
+            parallel=parallel
+        )
         self.result[res_key] = pd.DataFrame(x_umap)
         key = 'umap'
         self.reset_key_record(key, res_key)
