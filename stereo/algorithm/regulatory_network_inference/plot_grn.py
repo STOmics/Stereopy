@@ -173,16 +173,90 @@ class PlotRegulatoryNetwork(PlotBase):
 
     def auc_heatmap(
             self,
-            network_res_key='regulatory_network_inference',
-            width=8,
-            height=8,
+            network_res_key: str = 'regulatory_network_inference',
+            width: int = 8,
+            height: int = 8,
+            pivot_kws: dict = None,
+            method: str = 'average',
+            metric: str = 'euclidean',
+            z_score: int = None,
+            standard_scale: int = None,
+            cbar_kws: dict = None,
+            row_cluster: bool = True,
+            col_cluster: bool = True,
+            row_linkage: np.ndarray = None,
+            col_linkage: np.ndarray = None,
+            row_colors: Union[list, pd.DataFrame, pd.Series] = None,
+            col_colors: Union[list, pd.DataFrame, pd.Series] = None,
+            mask: Union[list, pd.DataFrame] = None,
+            dendrogram_ratio: float = (.1, .2),
+            colors_ratio: float = 0.03,
+            cbar_pos: tuple = (-.05, .2, .03, .4),
+            tree_kws: dict = None
     ):
         """
         Plot heatmap for auc value for regulons
 
-        :param network_res_key: the key which specifies inference regulatory network result in data.tl.result, defaults to 'regulatory_network_inference' # noqa
-        :param height: height of drawing
-        :param width: width of drawing
+        Parameters
+        ----------
+        network_res_key: str, optional
+            the key which specifies inference regulatory network result in data.tl.result, defaults to 'regulatory_network_inference' # noqa
+        height: int, optional
+            height of drawing
+        width: int, optional
+            width of drawing
+        pivot_kws : dict, optional
+            If `data` is a tidy dataframe, can provide keyword arguments for
+            pivot to create a rectangular dataframe.
+        method : str, optional
+            Linkage method to use for calculating clusters. See
+            :func:`scipy.cluster.hierarchy.linkage` documentation for more
+            information.
+        metric : str, optional
+            Distance metric to use for the data. See
+            :func:`scipy.spatial.distance.pdist` documentation for more options.
+            To use different metrics (or methods) for rows and columns, you may
+            construct each linkage matrix yourself and provide them as
+            `{row,col}_linkage`.
+        z_score : int or None, optional
+            Either 0 (rows) or 1 (columns). Whether or not to calculate z-scores
+            for the rows or the columns. Z scores are: z = (x - mean)/std, so
+            values in each row (column) will get the mean of the row (column)
+            subtracted, then divided by the standard deviation of the row (column).
+            This ensures that each row (column) has mean of 0 and variance of 1.
+        standard_scale : int or None, optional
+            Either 0 (rows) or 1 (columns). Whether or not to standardize that
+            dimension, meaning for each row or column, subtract the minimum and
+            divide each by its maximum.
+        cbar_kws : dict, optional
+            Keyword arguments to pass to `cbar_kws` in :func:`heatmap`, e.g. to
+            add a label to the colorbar.
+        {row,col}_cluster : bool, optional
+            If ``True``, cluster the {rows, columns}.
+        {row,col}_linkage : :class:`numpy.ndarray`, optional
+            Precomputed linkage matrix for the rows or columns. See
+            :func:`scipy.cluster.hierarchy.linkage` for specific formats.
+        {row,col}_colors : list-like or pandas DataFrame/Series, optional
+            List of colors to label for either the rows or columns. Useful to evaluate
+            whether samples within a group are clustered together. Can use nested lists or
+            DataFrame for multiple color levels of labeling. If given as a
+            :class:`pandas.DataFrame` or :class:`pandas.Series`, labels for the colors are
+            extracted from the DataFrames column names or from the name of the Series.
+            DataFrame/Series colors are also matched to the data by their index, ensuring
+            colors are drawn in the correct order.
+        mask : bool array or DataFrame, optional
+            If passed, data will not be shown in cells where `mask` is True.
+            Cells with missing values are automatically masked. Only used for
+            visualizing, not for calculating.
+        {dendrogram,colors}_ratio : float, or pair of floats, optional
+            Proportion of the figure size devoted to the two marginal elements. If
+            a pair is given, they correspond to (row, col) ratios.
+        cbar_pos : tuple of (left, bottom, width, height), optional
+            Position of the colorbar axes in the figure. Setting to ``None`` will
+            disable the colorbar.
+        tree_kws : dict, optional
+            Parameters for the :class:`matplotlib.collections.LineCollection`
+            that is used to plot the lines of the dendrogram tree.
 
         :return: matplotlib.figure
         """
@@ -193,9 +267,24 @@ class PlotRegulatoryNetwork(PlotBase):
 
         fig = sns.clustermap(
             self.pipeline_res[network_res_key]['auc_matrix'],
+            pivot_kws=pivot_kws,
+            method=method,
+            metric=metric,
+            z_score=z_score,
+            standard_scale=standard_scale,
+            cbar_kws=cbar_kws,
+            row_cluster=row_cluster,
+            col_cluster=col_cluster,
+            col_linkage=col_linkage,
+            row_linkage=row_linkage,
+            row_colors=row_colors,
+            col_colors=col_colors,
+            mask=mask,
+            colors_ratio=colors_ratio,
+            tree_kws=tree_kws,
             figsize=(width, height),
-            dendrogram_ratio=(.1, .2),
-            cbar_pos=(-.05, .2, .03, .4),
+            dendrogram_ratio=dendrogram_ratio,
+            cbar_pos=cbar_pos,
         )
 
         return fig
@@ -219,6 +308,8 @@ class PlotRegulatoryNetwork(PlotBase):
         :param reg_name: specify the regulon you want to draw, defaults to None, if none, will select randomly.
         :param dot_size: marker size, defaults to None
         :param palette: Color theme, defaults to 'CET_L4'
+        :param height: height of drawing
+        :param width: width of drawing
 
         :return: matplotlib.figure
         """
@@ -293,22 +384,100 @@ class PlotRegulatoryNetwork(PlotBase):
         plt.savefig(f'{reg_name.split("(")[0]}.png')
         plt.close()
 
-    def auc_heatmap_by_group(self,
-                             network_res_key: str = 'regulatory_network_inference',
-                             cluster_res_key: str = None,
-                             top_n_feature: int = 5,
-                             width: int = 18,
-                             height: int = 28,
-                             ):
-        """Plot heatmap for Regulon specificity scores (RSS) value
-
-        :param network_res_key: the key which specifies inference regulatory network result in data.tl.result, defaults to 'regulatory_network_inference' # noqa
-        :param cluster_res_key: the key which specifies the clustering result in data.tl.result, defaults to None
-        :param top_n_feature:
-        :param width:
-        :param height:
+    def auc_heatmap_by_group(
+            self,
+            network_res_key: str = 'regulatory_network_inference',
+            cluster_res_key: str = None,
+            top_n_feature: int = 5,
+            width: int = 18,
+            height: int = 28,
+            pivot_kws: dict = None,
+            method: str = 'average',
+            metric: str = 'euclidean',
+            z_score: int = None,
+            standard_scale: int = None,
+            cbar_kws: dict = None,
+            row_cluster: bool = True,
+            col_cluster: bool = True,
+            row_linkage: np.ndarray = None,
+            col_linkage: np.ndarray = None,
+            col_colors: Union[list, pd.DataFrame, pd.Series] = None,
+            mask: Union[list, pd.DataFrame] = None,
+            dendrogram_ratio: float = (.1, .2),
+            colors_ratio: float = 0.03,
+            cbar_pos: tuple = (-.05, .2, .03, .4),
+            tree_kws: dict = None
+    ):
         """
+        Plot heatmap for Regulon specificity scores (RSS) value
 
+        Parameters
+        ----------
+        network_res_key: str, optional
+            the key which specifies inference regulatory network result in data.tl.result, defaults to 'regulatory_network_inference' # noqa
+        cluster_res_key:  str, optional
+            the key which specifies the clustering result in data.tl.result, defaults to None
+        top_n_feature: int, optional
+            get the top n feature
+        height: int, optional
+            height of drawing
+        width: int, optional
+            width of drawing
+        pivot_kws : dict, optional
+            If `data` is a tidy dataframe, can provide keyword arguments for
+            pivot to create a rectangular dataframe.
+        method : str, optional
+            Linkage method to use for calculating clusters. See
+            :func:`scipy.cluster.hierarchy.linkage` documentation for more
+            information.
+        metric : str, optional
+            Distance metric to use for the data. See
+            :func:`scipy.spatial.distance.pdist` documentation for more options.
+            To use different metrics (or methods) for rows and columns, you may
+            construct each linkage matrix yourself and provide them as
+            `{row,col}_linkage`.
+        z_score : int or None, optional
+            Either 0 (rows) or 1 (columns). Whether or not to calculate z-scores
+            for the rows or the columns. Z scores are: z = (x - mean)/std, so
+            values in each row (column) will get the mean of the row (column)
+            subtracted, then divided by the standard deviation of the row (column).
+            This ensures that each row (column) has mean of 0 and variance of 1.
+        standard_scale : int or None, optional
+            Either 0 (rows) or 1 (columns). Whether or not to standardize that
+            dimension, meaning for each row or column, subtract the minimum and
+            divide each by its maximum.
+        cbar_kws : dict, optional
+            Keyword arguments to pass to `cbar_kws` in :func:`heatmap`, e.g. to
+            add a label to the colorbar.
+        {row,col}_cluster : bool, optional
+            If ``True``, cluster the {rows, columns}.
+        {row,col}_linkage : :class:`numpy.ndarray`, optional
+            Precomputed linkage matrix for the rows or columns. See
+            :func:`scipy.cluster.hierarchy.linkage` for specific formats.
+        {row,col}_colors : list-like or pandas DataFrame/Series, optional
+            List of colors to label for either the rows or columns. Useful to evaluate
+            whether samples within a group are clustered together. Can use nested lists or
+            DataFrame for multiple color levels of labeling. If given as a
+            :class:`pandas.DataFrame` or :class:`pandas.Series`, labels for the colors are
+            extracted from the DataFrames column names or from the name of the Series.
+            DataFrame/Series colors are also matched to the data by their index, ensuring
+            colors are drawn in the correct order.
+        mask : bool array or DataFrame, optional
+            If passed, data will not be shown in cells where `mask` is True.
+            Cells with missing values are automatically masked. Only used for
+            visualizing, not for calculating.
+        {dendrogram,colors}_ratio : float, or pair of floats, optional
+            Proportion of the figure size devoted to the two marginal elements. If
+            a pair is given, they correspond to (row, col) ratios.
+        cbar_pos : tuple of (left, bottom, width, height), optional
+            Position of the colorbar axes in the figure. Setting to ``None`` will
+            disable the colorbar.
+        tree_kws : dict, optional
+            Parameters for the :class:`matplotlib.collections.LineCollection`
+            that is used to plot the lines of the dendrogram tree.
+
+        :return: matplotlib.figure
+        """
         if network_res_key not in self.pipeline_res:
             logger.info(f"The result specified by {network_res_key} is not exists.")
         elif cluster_res_key not in self.pipeline_res:
@@ -348,8 +517,22 @@ class PlotRegulatoryNetwork(PlotBase):
             auc_zscore[topreg],
             row_colors=meta.set_index(['bins']),
             figsize=(width, height),
-            dendrogram_ratio=(.1, .2),
-            cbar_pos=(-.05, .2, .03, .4)
+            pivot_kws=pivot_kws,
+            method=method,
+            metric=metric,
+            z_score=z_score,
+            standard_scale=standard_scale,
+            cbar_kws=cbar_kws,
+            row_cluster=row_cluster,
+            col_cluster=col_cluster,
+            col_linkage=col_linkage,
+            row_linkage=row_linkage,
+            col_colors=col_colors,
+            mask=mask,
+            colors_ratio=colors_ratio,
+            tree_kws=tree_kws,
+            dendrogram_ratio=dendrogram_ratio,
+            cbar_pos=cbar_pos,
         )
 
         return g
