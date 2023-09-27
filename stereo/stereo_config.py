@@ -32,8 +32,8 @@ class StereoConfig(object):
             n_jobs=1,
             log_file: Union[str, Path, None] = None,
             log_level: str = "info",
-            log_format: str = "[%(asctime)s][%(name)s][%(process)d][%(threadName)s][%(thread)d][%(module)s][%(lineno)d][%(levelname)s]: %(message)s",
-            # noqa
+            log_format: str = "[%(asctime)s][%(name)s][%(process)d][%(threadName)s][%(thread)d][%(module)s]"
+                              "[%(lineno)d][%(levelname)s]: %(message)s",
             output: str = "./output",
             data_dir: str = None
     ):
