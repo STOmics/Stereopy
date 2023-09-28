@@ -17,10 +17,15 @@ import numpy as np
 import panel as pn
 import seaborn as sns
 from natsort import natsorted
+import tifffile as tiff
 
-from stereo.constant import N_GENES_BY_COUNTS
-from stereo.constant import PCT_COUNTS_MT
-from stereo.constant import TOTAL_COUNTS
+from stereo.constant import (
+    N_GENES_BY_COUNTS,
+    PCT_COUNTS_MT,
+    TOTAL_COUNTS,
+    PLOT_SCATTER_SIZE_FACTOR,
+    PLOT_BASE_IMAGE_EXPANSION
+)
 from stereo.core.stereo_exp_data import StereoExpData
 from stereo.log_manager import logger
 from stereo.stereo_config import stereo_conf
@@ -758,7 +763,8 @@ class PlotCollection:
     def cluster_scatter(
             self,
             res_key: str,
-            groups: Union[str, list, np.ndarray] = None,
+            groups: Optional[Union[str, list, np.ndarray]] = None,
+            show_others: Optional[bool] = None,
             title: Optional[str] = None,
             x_label: Optional[str] = None,
             y_label: Optional[str] = None,
@@ -768,6 +774,8 @@ class PlotCollection:
             hue_order: Optional[set] = None,
             width: Optional[int] = None,
             height: Optional[int] = None,
+            base_image: Optional[str] = None,
+            base_cmap: Optional[str] = 'Greys',
             **kwargs
     ):
         """
@@ -805,28 +813,65 @@ class PlotCollection:
         group_list = res['group'].to_numpy()
         n = np.unique(group_list).size
         palette = stereo_conf.get_colors(colors, n=n)
+        x = self.data.position[:, 0].astype(int)
+        y = self.data.position[:, 1].astype(int)
+        x_min, x_max = x.min(), x.max()
+        y_min, y_max = y.min(), y.max()
+        boundary = [x_min, x_max, y_min, y_max]
+        marker = 's'
+        if dot_size is None:
+            dot_size = PLOT_SCATTER_SIZE_FACTOR / group_list.size
         if groups is not None:
             if isinstance(groups, str):
                 groups = [groups]
             isin = np.in1d(group_list, groups)
             if not np.all(isin):
-                group_list[~isin] = 'others'
-                n = np.unique(group_list).size
-                palette = palette[0:n - 1] + ['#828282']
-                hue_order = natsorted(np.unique(group_list[isin])) + ['others']
+                if show_others is None:
+                    if base_image is None:
+                        show_others = True
+                    else:
+                        show_others = False
+                if show_others:
+                    group_list[~isin] = 'others'
+                    n = np.unique(group_list).size
+                    palette = palette[0:n - 1] + ['#828282']
+                    hue_order = natsorted(np.unique(group_list[isin])) + ['others']
+                else:
+                    group_list = group_list[isin]
+                    n = np.unique(group_list).size
+                    palette = palette[0:n]
+                    hue_order = natsorted(np.unique(group_list))
+                    x = x[isin]
+                    y = y[isin]
+        
+        base_boundary = None
+        base_image_data = None
+        if base_image is not None:
+            base_image_data = tiff.imread(base_image)
+            if x_min > 0 or y_min > 0:
+                x_min = max(0, x_min - PLOT_BASE_IMAGE_EXPANSION)
+                y_min = max(0, y_min - PLOT_BASE_IMAGE_EXPANSION)
+                x_max += PLOT_BASE_IMAGE_EXPANSION
+                y_max += PLOT_BASE_IMAGE_EXPANSION
+                base_image_data = base_image_data[y_min:(y_max + 1), x_min:(x_max + 1)]
+            base_boundary = [x_min, x_max, y_max, y_min]
+            marker = '.'
+
+        if 'marker' in kwargs:
+            marker = kwargs['marker']
+            del kwargs['marker']
 
         fig = base_scatter(
-            self.data.position[:, 0],
-            self.data.position[:, 1],
+            # self.data.position[:, 0],
+            # self.data.position[:, 1],
+            x, y,
             hue=group_list,
             palette=palette,
-            title=title,
-            x_label=x_label,
-            y_label=y_label,
-            dot_size=dot_size,
-            invert_y=invert_y,
-            hue_order=hue_order,
+            title=title, x_label=x_label, y_label=y_label, 
+            dot_size=dot_size, invert_y=invert_y, hue_order=hue_order,
             width=width, height=height,
+            base_image=base_image_data, base_cmap=base_cmap, base_boundary=base_boundary,
+            boundary=boundary, marker=marker,
             **kwargs
         )
         return fig

@@ -35,6 +35,8 @@ GREATER_PVALUE = "greater_pvalue"
 N_GENES_BY_COUNTS = "n_genes_by_counts"
 CELLTYPE_MEAN_SCALE = "celltype_mean_scale"
 CONNECTIVITIES_TREE = "connectivities_tree"
+PLOT_SCATTER_SIZE_FACTOR = 120000
+PLOT_BASE_IMAGE_EXPANSION = 500
 
 MODEL_URL = 'https://www.cellpose.org/models'
 CELLPOSE_GUI_PNG_URL = 'https://www.cellpose.org/static/images/cellpose_gui.png'
