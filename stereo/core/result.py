@@ -220,6 +220,12 @@ class Result(_BaseResult, dict):
 
     def _set_marker_genes_res(self, key, value):
         dict.__setitem__(self, key, value)
+    
+    def set_value(self, key, value):
+        dict.__setitem__(self, key, value)
+    
+    def get_value(self, key):
+        dict.__getitem__(self, key)
 
 
 class AnnBasedResult(_BaseResult, object):

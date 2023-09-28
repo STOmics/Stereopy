@@ -30,3 +30,4 @@ from .plot_clusters_heatmap import ClustersGenesHeatmap
 from .plot_paga import PlotPaga
 from .plot_time_series import PlotTimeSeries
 from .plot_time_series import PlotTimeSeriesAnalysis
+from .plot_elbow import PlotElbow
