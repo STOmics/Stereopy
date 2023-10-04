@@ -487,7 +487,7 @@ class PlotRegulatoryNetwork(PlotBase):
 
         if cluster_res_key in self.stereo_exp_data.cells._obs.columns:
             meta = pd.DataFrame({
-                'bin': self.stereo_exp_data.cells.cell_name,
+                'bins': self.stereo_exp_data.cells.cell_name,
                 'group': self.stereo_exp_data.cells._obs[cluster_res_key].tolist()
             })
         else:
