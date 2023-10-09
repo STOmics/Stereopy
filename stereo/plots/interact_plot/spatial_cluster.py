@@ -8,6 +8,7 @@
 import collections
 
 import holoviews as hv
+import hvplot.pandas  # noqa
 import panel as pn
 from natsort import natsorted
 

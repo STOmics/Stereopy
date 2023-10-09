@@ -12,12 +12,13 @@ from typing import (
     Literal
 )
 
+import hvplot.pandas  # noqa
 import matplotlib.pyplot as plt
 import numpy as np
 import panel as pn
 import seaborn as sns
-from natsort import natsorted
 import tifffile as tiff
+from natsort import natsorted
 
 from stereo.constant import (
     N_GENES_BY_COUNTS,
@@ -843,7 +844,7 @@ class PlotCollection:
                     hue_order = natsorted(np.unique(group_list))
                     x = x[isin]
                     y = y[isin]
-        
+
         base_boundary = None
         base_image_data = None
         if base_image is not None:
@@ -867,7 +868,7 @@ class PlotCollection:
             x, y,
             hue=group_list,
             palette=palette,
-            title=title, x_label=x_label, y_label=y_label, 
+            title=title, x_label=x_label, y_label=y_label,
             dot_size=dot_size, invert_y=invert_y, hue_order=hue_order,
             width=width, height=height,
             base_image=base_image_data, base_cmap=base_cmap, base_boundary=base_boundary,

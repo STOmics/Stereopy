@@ -8,6 +8,7 @@ import copy
 from typing import Optional
 
 import holoviews as hv
+import hvplot.pandas  # noqa
 import pandas as pd
 import panel as pn
 import param
