@@ -263,6 +263,7 @@ class PlotCollection:
             y_label: Optional[list] = ["pct_counts_mt", "n_genes_by_counts"],
             ncols: Optional[int] = 2,
             dot_size: Optional[int] = None,
+            palette: Optional[str] = '#808080',
             width: Optional[int] = None,
             height: Optional[int] = None,
             **kwargs
@@ -274,12 +275,12 @@ class PlotCollection:
         :param y_label: list of y label.
         :param ncols: the number of columns.
         :param dot_size: the dot size.
+        :param palette: color theme.
         :param width: the figure width in pixels.
         :param height: the figure height in pixels.
         :param out_path: the path to save the figure.
         :param out_dpi: the dpi when the figure is saved.
-
-        """
+        """  # noqa
         import math
         import matplotlib.pyplot as plt
         from matplotlib import gridspec
@@ -311,7 +312,7 @@ class PlotCollection:
                 draw_data[:, 1],
                 hue=[0 for i in range(len(draw_data[:, 1]))],
                 ax=ax,
-                palette=['#808080'],
+                palette=[palette],
                 x_label=' '.join(xi.split('_')) if not set_xy_empty else '',
                 y_label=' '.join(yi.split('_')) if not set_xy_empty else '',
                 dot_size=dot_size,
@@ -337,6 +338,8 @@ class PlotCollection:
             x_label: Optional[list] = ['spatial1', 'spatial1'],
             y_label: Optional[list] = ['spatial2', 'spatial2'],
             title: Optional[str] = None,
+            vmin: float = None,
+            vmax: float = None,
             **kwargs
     ):
         """
@@ -365,7 +368,8 @@ class PlotCollection:
                 if set it to `False`, the coordinates will not be changed.
         :param horizontal_offset_additional: the additional offset between each slice on horizontal direction while reorganizing coordinates.
         :param vertical_offset_additional: the additional offset between each slice on vertical direction while reorganizing coordinates.
-
+        :param vmin: The value representing the lower limit of the color scale. Values smaller than vmin are plotted with the same color as vmin.
+        :param vmax: The value representing the lower limit of the color scale. Values smaller than vmin are plotted with the same color as vmin.
         """  # noqa
         from .scatter import multi_scatter
         if title is None:
@@ -383,6 +387,8 @@ class PlotCollection:
             color_bar=True,
             width=width,
             height=height,
+            vmin=vmin,
+            vmax=vmax,
             **kwargs
         )
         return fig
@@ -401,6 +407,8 @@ class PlotCollection:
             x_label: Optional[str] = 'spatial1',
             y_label: Optional[str] = 'spatial2',
             title: Optional[str] = None,
+            vmin: float = None,
+            vmax: float = None,
             **kwargs
     ):
         """Draw the spatial distribution of expression quantity of the gene specified by gene names.
@@ -428,6 +436,8 @@ class PlotCollection:
         :param x_label: the x label.
         :param y_label: the y label.
         :param title: the title label.
+        :param vmin: The value representing the lower limit of the color scale. Values smaller than vmin are plotted with the same color as vmin.
+        :param vmax: The value representing the lower limit of the color scale. Values smaller than vmin are plotted with the same color as vmin.
 
         """  # noqa
         self.data.array2sparse()
@@ -450,6 +460,8 @@ class PlotCollection:
             color_bar_reverse=color_bar_reverse,
             width=width,
             height=height,
+            vmin=vmin,
+            vmax=vmax,
             **kwargs
         )
 
@@ -469,6 +481,8 @@ class PlotCollection:
             x_label: Optional[list] = ['spatial1', 'spatial1'],
             y_label: Optional[list] = ['spatial2', 'spatial2'],
             title: Optional[list] = None,
+            vmin: float = None,
+            vmax: float = None,
             **kwargs
     ):
         """Draw the spatial distribution of expression quantity of the gene specified by gene names,
@@ -497,7 +511,8 @@ class PlotCollection:
                 if set it to `False`, the coordinates will not be changed.
         :param horizontal_offset_additional: the additional offset between each slice on horizontal direction while reorganizing coordinates.
         :param vertical_offset_additional: the additional offset between each slice on vertical direction while reorganizing coordinates.
-
+        :param vmin: The value representing the lower limit of the color scale. Values smaller than vmin are plotted with the same color as vmin.
+        :param vmax: The value representing the lower limit of the color scale. Values smaller than vmin are plotted with the same color as vmin.
         """  # noqa
         if gene_name is None:
             idx = randint(0, len(self.data.tl.raw.gene_names) - 1)
@@ -527,6 +542,8 @@ class PlotCollection:
             color_bar_reverse=color_bar_reverse,
             width=width,
             height=height,
+            vmin=vmin,
+            vmax=vmax,
             **kwargs
         )
         return fig
@@ -702,6 +719,9 @@ class PlotCollection:
             colors: Optional[Union[str, list]] = 'stereo',
             width: Optional[int] = None,
             height: Optional[int] = None,
+            palette: Optional[int] = None,
+            vmin: float = None,
+            vmax: float = None,
             **kwargs
     ):
         """
@@ -717,25 +737,33 @@ class PlotCollection:
         :param colors: the color list.
         :param width: the figure width in pixels.
         :param height: the figure height in pixels.
+        :param palette: color theme.
         :param out_path: the path to save the figure.
         :param out_dpi: the dpi when the figure is saved.
+        :param vmin: The value representing the lower limit of the color scale. Values smaller than vmin are plotted with the same color as vmin.
+        :param vmax: The value representing the lower limit of the color scale. Values smaller than vmin are plotted with the same color as vmin.
 
-        """
+        """  # noqa
         res = self.check_res_key(res_key)
         if cluster_key:
             cluster_res = self.check_res_key(cluster_key)
             n = len(set(cluster_res['group']))
             if title is None:
                 title = cluster_key
+            if not palette:
+                palette = stereo_conf.get_colors('stereo_30' if colors == 'stereo' else colors, n)
             return base_scatter(
                 res.values[:, 0],
                 res.values[:, 1],
                 hue=cluster_res['group'],
-                palette=stereo_conf.get_colors('stereo_30' if colors == 'stereo' else colors, n),
+                palette=palette,
                 title=title,
-                x_label=x_label, y_label=y_label, dot_size=dot_size,
                 color_bar=False,
-                width=width, height=height,
+                x_label=x_label,
+                y_label=y_label,
+                dot_size=dot_size,
+                width=width,
+                height=height,
                 **kwargs)
         else:
             self.data.array2sparse()
@@ -755,6 +783,8 @@ class PlotCollection:
                 color_bar=True,
                 width=width,
                 height=height,
+                vmin=vmin,
+                vmax=vmax,
                 **kwargs
             )
 
@@ -863,16 +893,22 @@ class PlotCollection:
             del kwargs['marker']
 
         fig = base_scatter(
-            # self.data.position[:, 0],
-            # self.data.position[:, 1],
             x, y,
             hue=group_list,
             palette=palette,
-            title=title, x_label=x_label, y_label=y_label,
-            dot_size=dot_size, invert_y=invert_y, hue_order=hue_order,
-            width=width, height=height,
-            base_image=base_image_data, base_cmap=base_cmap, base_boundary=base_boundary,
-            boundary=boundary, marker=marker,
+            title=title,
+            x_label=x_label,
+            y_label=y_label,
+            dot_size=dot_size,
+            invert_y=invert_y,
+            hue_order=hue_order,
+            width=width,
+            height=height,
+            base_image=base_image_data,
+            base_cmap=base_cmap,
+            base_boundary=base_boundary,
+            boundary=boundary,
+            marker=marker,
             **kwargs
         )
         return fig
@@ -1096,6 +1132,8 @@ class PlotCollection:
             width: Optional[str] = None,
             height: Optional[str] = None,
             title: Optional[str] = None,
+            vmin: float = None,
+            vmax: float = None,
             **kwargs
     ):
         """
@@ -1110,12 +1148,13 @@ class PlotCollection:
         :param out_path: the path to save the figure.
         :param out_dpi: the dpi when the figure is saved.
         :param title: the plot title.
-
-        """
+        :param vmin: The value representing the lower limit of the color scale. Values smaller than vmin are plotted with the same color as vmin.
+        :param vmax: The value representing the lower limit of the color scale. Values smaller than vmin are plotted with the same color as vmin.
+        """  # noqa
         res = self.check_res_key(res_key)
         scores = [res.module_scores[module] for module in range(1, res.modules.max() + 1)]
-        vmin = np.percentile(scores, 1)
-        vmax = np.percentile(scores, 99)
+        vmin = np.percentile(scores, 1) if not vmin else vmin
+        vmax = np.percentile(scores, 99) if not vmax else vmax
         title = [f"module {module}" for module in
                  range(1, res.modules.max() + 1)] if title is None and title != '' else title
         fig = multi_scatter(

@@ -61,7 +61,14 @@ class PlotVec(PlotBase):
                              tick_step, dpi_val)
 
     @plot_scale
-    def plot_time_scatter(self, group='leiden', **kwargs):
+    def plot_time_scatter(
+            self,
+            group='leiden',
+            vmin: float = None,
+            vmax: float = None,
+            palette: str = 'stereo',
+            **kwargs
+    ):
         data = self.stereo_exp_data
 
         data.cells[group] = data.cells[group].astype('category')
@@ -79,6 +86,9 @@ class PlotVec(PlotBase):
             color_bar=True,
             width=None,
             height=None,
+            palette=palette,
+            vmin=vmin,
+            vmax=vmax,
             **kwargs
         )
         return fig

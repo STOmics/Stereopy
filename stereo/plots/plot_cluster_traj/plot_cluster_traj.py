@@ -30,6 +30,7 @@ class PlotClusterTraj(PlotBase):
             text_size=5,
             n_per_inter=100,
             dpi_save=1000,
+            palette='stereo_30',
             **kwargs
     ):
         # generating data for plotting
@@ -46,7 +47,7 @@ class PlotClusterTraj(PlotBase):
         # plotting
         figure = plt.figure(dpi=dpi_save)
         if show_scatter:
-            figure = base_scatter(x_raw, y_raw, hue=np.array(ty), **kwargs)
+            figure = base_scatter(x_raw, y_raw, palette=palette, hue=np.array(ty), **kwargs)
 
         traj.show_ty_label(text_size, choose_ty, keep_ty)
 

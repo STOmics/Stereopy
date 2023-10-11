@@ -299,6 +299,8 @@ class PlotRegulatoryNetwork(PlotBase):
             palette: str = 'CET_L4',
             width: int = None,
             height: int = None,
+            vmin: float = None,
+            vmax: float = None,
             **kwargs):
         """
         Plot genes of one regulon on a 2D map
@@ -310,9 +312,11 @@ class PlotRegulatoryNetwork(PlotBase):
         :param palette: Color theme, defaults to 'CET_L4'
         :param height: height of drawing
         :param width: width of drawing
+        :param vmin: The value representing the lower limit of the color scale. Values smaller than vmin are plotted with the same color as vmin.
+        :param vmax: The value representing the lower limit of the color scale. Values smaller than vmin are plotted with the same color as vmin.
 
         :return: matplotlib.figure
-        """
+        """  # noqa
         logger.info('Please adjust the dot_size to prevent dots from covering each other')
 
         if network_res_key not in self.pipeline_res:
@@ -349,6 +353,8 @@ class PlotRegulatoryNetwork(PlotBase):
             color_bar_reverse=color_bar_reverse,
             width=width,
             height=height,
+            vmin=vmin,
+            vmax=vmax,
             **kwargs
         )
 

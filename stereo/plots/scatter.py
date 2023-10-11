@@ -22,19 +22,20 @@ from matplotlib.colors import ListedColormap
 from matplotlib.patches import PathPatch
 from matplotlib.path import Path
 from scipy.sparse import issparse
-from ..stereo_config import stereo_conf
-from ..log_manager import logger
+
 from ..constant import PLOT_SCATTER_SIZE_FACTOR
+from ..stereo_config import stereo_conf
+
 
 def _plot_scale(
-    x: np.ndarray,
-    y: np.ndarray,
-    ax: Axes,
-    plotting_scale_width: int,
-    data_bin_offset: int,
-    data_resolution: int,
-    invert_y: bool,
-    boundary: list
+        x: np.ndarray,
+        y: np.ndarray,
+        ax: Axes,
+        plotting_scale_width: int,
+        data_bin_offset: int,
+        data_resolution: int,
+        invert_y: bool,
+        boundary: list
 ):
     if boundary is None:
         min_x, max_x = np.min(x).astype(int), np.max(x).astype(int)
@@ -153,7 +154,7 @@ def base_scatter(
         x: Optional[Union[np.ndarray, list]],
         y: Optional[Union[np.ndarray, list]],
         hue: Optional[Union[np.ndarray, list]] = None,
-        ax=None,
+        ax: object = None,
         title: str = None,
         x_label: str = None,
         y_label: str = None,
@@ -164,24 +165,23 @@ def base_scatter(
         marker: str = 's',
         palette: Optional[Union[str, list]] = 'stereo_30',
         invert_y: bool = True,
-        legend_ncol=2,
-        show_legend=True,
-        show_ticks=False,
-        vmin=None,
-        vmax=None,
-        SegmentedColormap=None,
-        hue_order=None,
-        width=None,
-        height=None,
-        show_plotting_scale=False,
-        plotting_scale_width=2000,
-        data_resolution=None,
-        data_bin_offset=1,
-        foreground_alpha=0.5,
-        base_image=None,
-        base_cmap='Greys',
-        base_boundary=None,
-        boundary=None
+        legend_ncol: int = 2,
+        show_legend: bool = True,
+        show_ticks: bool = False,
+        vmin: float = None,
+        vmax: float = None,
+        hue_order: any = None,
+        width: float = None,
+        height: float = None,
+        show_plotting_scale: bool = False,
+        plotting_scale_width: float = 2000,
+        data_resolution: int = None,
+        data_bin_offset: int = 1,
+        foreground_alpha: float = 0.5,
+        base_image: list = None,
+        base_cmap: str = 'Greys',
+        base_boundary: float = None,
+        boundary: list = None
 ):  # scatter plot, Expression matrix spatial distribution after clustering
     """
     scatter plotter
@@ -202,8 +202,8 @@ def base_scatter(
     :param legend_ncol: number of legend columns
     :param show_legend
     :param show_ticks
-    :param vmin: min value to plot, default None means auto calculate.
-    :param vmax: max value to plot, default None means auto calculate.
+    :param vmin: The value representing the lower limit of the color scale. Values smaller than vmin are plotted with the same color as vmin.
+    :param vmax: The value representing the upper limit of the color scale. Values larger than vmax are plotted with the same color as vmax.
     :param width: the figure width in pixels.
     :param height: the figure height in pixels.
 
@@ -211,7 +211,7 @@ def base_scatter(
 
     color_values must be int array or list when color_bar is True
 
-    """
+    """  # noqa
     if not ax:
         if width is None or height is None:
             figsize = (7, 7)
@@ -235,14 +235,17 @@ def base_scatter(
         colors = stereo_conf.linear_colors(palette, reverse=color_bar_reverse)
         cmap = ListedColormap(colors)
         cmap.set_bad(bad_color)
-
-        sns.scatterplot(x=x, y=y, hue=hue, ax=ax, palette=cmap, size=hue, linewidth=0, marker=marker,
-                        sizes=(dot_size, dot_size), vmin=vmin, vmax=vmax, alpha=foreground_alpha)
         if vmin is None and vmax is None:
             norm = plt.Normalize(hue.min(), hue.max())
-            sm = plt.cm.ScalarMappable(cmap=cmap, norm=norm)
-            sm.set_array([])
-            ax.figure.colorbar(sm)
+        else:
+            vmin = hue.min() if vmin is None else vmin
+            vmax = hue.max() if vmax is None else vmax
+            norm = plt.Normalize(vmin, vmax)
+        sns.scatterplot(x=x, y=y, hue=hue, ax=ax, palette=cmap, size=hue, linewidth=0, marker=marker,
+                        sizes=(dot_size, dot_size), hue_norm=norm, vmin=vmin, vmax=vmax, alpha=foreground_alpha)
+        sm = plt.cm.ScalarMappable(cmap=cmap, norm=norm)
+        sm.set_array([])
+        ax.figure.colorbar(sm)
         if ax.legend_ is not None:
             ax.legend_.remove()
     else:
@@ -251,7 +254,7 @@ def base_scatter(
         g = natsorted(set(hue))
         if hue_order is not None:
             g = hue_order
-        colors = stereo_conf.get_colors(palette)
+        colors = stereo_conf.get_colors(palette, n=len(g))
         color_dict = collections.OrderedDict(dict([(g[i], colors[i]) for i in range(len(g))]))
         sns.scatterplot(x=x, y=y, hue=hue, hue_order=g, linewidth=0, marker=marker,
                         palette=color_dict, size=hue, sizes=(dot_size, dot_size), ax=ax, alpha=foreground_alpha)
@@ -266,9 +269,6 @@ def base_scatter(
     ax.set_title(title, fontsize=18, fontweight='bold')
     ax.set_ylabel(y_label, fontsize=15)  # set y-axis labels
     ax.set_xlabel(x_label, fontsize=15)  # set x-axis labels
-
-    # if invert_y:
-    #     ax.invert_yaxis()
 
     if show_plotting_scale:
         _plot_scale(

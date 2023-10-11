@@ -140,15 +140,6 @@ class ToolBase(object):
                 logger.error(f'can not download reference file from {u}')
         logger.info('download reference matrix done')
 
-    # def plot_top_gene_scatter(self, file_path=None):
-    #     df = pd.DataFrame(self.data.exp_matrix, columns=self.data.gene_names, index=self.data.cell_names)
-    #     sum_top_genes = list(df.sum().sort_values(ascending=False).index[:3])
-    #     plot_multi_scatter(self.data.position[:, 0], self.data.position[:, 1],
-    #                        color_values=np.array(df[sum_top_genes]).T,
-    #                        color_bar=True, ncols=2)
-    #     if file_path:
-    #         plt.savefig(file_path)
-
     def fit(self):
         pass
 

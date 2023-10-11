@@ -180,20 +180,27 @@ class Clustering(ToolBase):
         self.result.matrix = df
         return df
 
-    def plot_scatter(self, plot_dim_reduce=False, file_path=None):
+    def plot_scatter(
+            self,
+            plot_dim_reduce: bool = False,
+            file_path: str = None,
+            palette: str = 'stereo_30',
+    ):
         """
         plot scatter after
         :param plot_dim_reduce: plot cluster after dimension reduce if true
-        :param file_path:
+        :param file_path: the file path
+        :param palette: color theme.
+
         :return:
-        """
+        """  # noqa
         from ..plots.scatter import base_scatter, plt
 
         if plot_dim_reduce:
-            base_scatter(self.pca_x.matrix.values[:, 0], self.pca_x.matrix.values[:, 1],
+            base_scatter(self.pca_x.matrix.values[:, 0], self.pca_x.matrix.values[:, 1], palette=palette,
                          hue=np.array(self.result.matrix['cluster']))
         else:
-            base_scatter(self.data.position[:, 0], self.data.position[:, 1],
+            base_scatter(self.data.position[:, 0], self.data.position[:, 1], palette=palette,
                          hue=np.array(self.result.matrix['cluster']))
         if file_path:
             plt.savefig(file_path)

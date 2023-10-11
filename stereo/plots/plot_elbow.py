@@ -9,19 +9,19 @@ from .plot_base import PlotBase
 class PlotElbow(PlotBase):
 
     def elbow(
-        self,
-        pca_res_key: str = 'pca',
-        n_pcs: int = None,
-        width: Optional[int] = None,
-        height: Optional[int] = None,
-        title: str = 'Elbow Plot',
-        x_label: str = 'Principal Component',
-        y_label: str = 'Variance Explained',
-        line_width: int = 2,
-        color: str = 'blue',
-        marker: str = 'o',
-        marker_color: Optional[str] = None,
-        marker_size: int = 2
+            self,
+            pca_res_key: str = 'pca',
+            n_pcs: int = None,
+            width: Optional[int] = None,
+            height: Optional[int] = None,
+            title: str = 'Elbow Plot',
+            x_label: str = 'Principal Component',
+            y_label: str = 'Variance Explained',
+            line_width: int = 2,
+            color: str = 'blue',
+            marker: str = 'o',
+            marker_color: Optional[str] = None,
+            marker_size: int = 2
     ):
         """
         Plot elbow for pca.
@@ -42,12 +42,12 @@ class PlotElbow(PlotBase):
         """
         if pca_res_key not in self.pipeline_res:
             raise KeyError(f"Can not find the pca result in data.tl.result by key {pca_res_key}")
-        
+
         res_key = f'{pca_res_key}_variance_ratio'
         variance_ratio = self.pipeline_res[res_key]
         if n_pcs is not None:
             variance_ratio = variance_ratio[0:n_pcs]
-        
+
         pcs = np.arange(variance_ratio.size) + 1
 
         fig, ax = plt.subplots()
@@ -55,7 +55,7 @@ class PlotElbow(PlotBase):
             fig.set_figwidth(width)
         if height is not None:
             fig.set_figheight(height)
-        
+
         if marker_color is None:
             marker_color = color
 

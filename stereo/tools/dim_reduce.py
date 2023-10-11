@@ -113,27 +113,52 @@ class DimReduce(ToolBase):
         self.result = pd.DataFrame(x_reduce)
         return self.result
 
-    def plot_scatter(self,
-                     gene_name: Optional[list],
-                     file_path=None):
+    def plot_scatter(
+            self,
+            gene_name: Optional[list],
+            file_path: str = None,
+            palette: str = None,
+            vmin: float = None,
+            vmax: float = None,
+    ):
         """
         plot scatter after
 
         :param gene_name list of gene names
         :param file_path: the path of input file.
+        :param palette: the color theme.
+        :param vmin: The value representing the lower limit of the color scale. Values smaller than vmin are plotted with the same color as vmin.
+        :param vmax: The value representing the lower limit of the color scale. Values smaller than vmin are plotted with the same color as vmin.
 
         :return: None
-        """
+        """  # noqa
         from ..plots.scatter import plt, base_scatter, multi_scatter
 
         self.data.sparse2array()
-        if len(gene_name) > 1:
-            multi_scatter(self.result.matrix.values[:, 0], self.result.matrix.values[:, 1],
-                          hue=np.array(self.data.sub_by_name(gene_name=gene_name).exp_matrix).T,
-                          color_bar=True)
+
+        len_gene_name = len(gene_name)
+        if not palette:
+            palette = 'stereo' if len_gene_name > 1 else 'stereo_30'
+
+        if len_gene_name > 1:
+            multi_scatter(
+                self.result.matrix.values[:, 0],
+                self.result.matrix.values[:, 1],
+                hue=np.array(self.data.sub_by_name(gene_name=gene_name).exp_matrix).T,
+                color_bar=True,
+                vmin=vmin,
+                vmax=vmax,
+                palette=palette
+            )
         else:
-            base_scatter(self.result.matrix.values[:, 0], self.result.matrix.values[:, 1],
-                         hue=np.array(self.data.sub_by_name(gene_name=gene_name).exp_matrix[:, 0]),
-                         color_bar=True)
+            base_scatter(
+                self.result.matrix.values[:, 0],
+                self.result.matrix.values[:, 1],
+                hue=np.array(self.data.sub_by_name(gene_name=gene_name).exp_matrix[:, 0]),
+                color_bar=True,
+                vmin=vmin,
+                vmax=vmax,
+                palette=palette
+            )
         if file_path:
             plt.savefig(file_path)
