@@ -27,6 +27,8 @@ class BatchQc(AlgorithmBase):
         :param report_path: The path to save the reports of result, defaults to "./batch_qc".
         :param gpu: The gpu on which running this function, defaults to "0", it will run on cpu automatically if the machine doesn't have gpu.
         :param res_key: Set a key to store the result to data.tl.result, defaults to 'batch_qc'.
+        :param data_loader_num_workers: 'int',  will create `data_loader_num_workers` num of multiprocessing to work.
+        :param num_threads: 'int',  will create `num_threads` num of threads to work.
         """  # noqa
         if num_threads <= 0 or num_threads > cpu_count():
             num_threads = cpu_count()
