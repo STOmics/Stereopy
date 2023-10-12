@@ -48,8 +48,7 @@ class StereoConfig(object):
 
     @property
     def colormaps(self):
-        colormaps = {n: palette[n] for n in ['glasbey', 'glasbey_bw', 'glasbey_cool', 'glasbey_warm', 'glasbey_dark',
-                                             'glasbey_light', 'glasbey_category10', 'glasbey_hv']}
+        colormaps = palette
         colormaps['stereo_30'] = ["#E41A1C", "#377EB8", "#4DAF4A", "#984EA3", "#FF7F00", "#A65628", "#FFFF33",
                                   "#F781BF", "#999999", "#E5D8BD", "#B3CDE3", "#CCEBC5", "#FED9A6", "#FBB4AE",
                                   "#8DD3C7", "#BEBADA", "#80B1D3", "#B3DE69", "#FCCDE5", "#BC80BD", "#FFED6F",
@@ -59,8 +58,7 @@ class StereoConfig(object):
 
     @property
     def linear_colormaps(self):
-        colormaps = {n: palette[n] for n in
-                     ['rainbow', 'fire', 'bgy', 'bgyw', 'bmy', 'gray', 'kbc', 'CET_D4', 'blues', 'CET_L4']}
+        colormaps = palette
         stmap_colors = ['#0c3383', '#0a88ba', '#f2d338', '#f28f38', '#d91e1e']
         nodes = [0.0, 0.25, 0.50, 0.75, 1.0]
         mycmap = mpl_colors.LinearSegmentedColormap.from_list("mycmap", list(zip(nodes, stmap_colors)))
