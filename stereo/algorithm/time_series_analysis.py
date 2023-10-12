@@ -22,8 +22,24 @@ class TimeSeriesAnalysis(AlgorithmBase):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-    def main(self, run_method=RunMethodType.tvg_marker.value, use_col=UseColType.timepoint.value, branch=None,
-             p_val_combination=PValCombinationType.fdr.value, cluster_number=6):
+    def main(
+            self,
+            run_method=RunMethodType.tvg_marker.value,
+            use_col=UseColType.timepoint.value,
+            branch=None,
+            p_val_combination=PValCombinationType.fdr.value,
+            cluster_number=6
+    ):
+        """
+        :param run_method: the model type when the algorithm is run, default = `tvg_marker`.
+            `tvg_marker`: Calculate time variable gene based on expression of celltypes in branch
+            `other`: Use fuzzy C means cluster method to cluster genes based on 1-p_value of celltypes in branch
+        :param use_col: the col in obs representing celltype or clustering
+        :param branch: celltypes order in use_col
+        :param p_val_combination: p_value combination method to use, choosing from ['fisher', 'mean', 'FDR']
+        :param cluster_number: number of cluster
+
+        """
         if run_method == RunMethodType.tvg_marker.value:
             self.TVG_marker(
                 use_col=use_col,
