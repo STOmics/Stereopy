@@ -143,7 +143,7 @@ class Result(_BaseResult, dict):
             self._set_cluster_res(key, value)
         elif type == Result.CONNECTIVITY:
             self._set_connectivities_res(key, value)
-        elif type == Result.REDUCE:
+        elif type == Result.REDUCE and not key.endswith('variance_ratio'):
             self._set_reduce_res(key, value)
         elif type == Result.HVG:
             self._set_hvg_res(key, value)
@@ -223,9 +223,6 @@ class Result(_BaseResult, dict):
 
     def set_value(self, key, value):
         dict.__setitem__(self, key, value)
-
-    def get_value(self, key):
-        dict.__getitem__(self, key)
 
 
 class AnnBasedResult(_BaseResult, object):
@@ -332,7 +329,7 @@ class AnnBasedResult(_BaseResult, object):
             self._set_cluster_res(key, value)
         elif type == AnnBasedResult.CONNECTIVITY:
             self._set_connectivities_res(key, value)
-        elif type == AnnBasedResult.REDUCE:
+        elif type == AnnBasedResult.REDUCE  and not key.endswith('variance_ratio'):
             self._set_reduce_res(key, value)
         elif type == AnnBasedResult.HVG_NAMES:
             self._set_hvg_res(key, value)
@@ -417,3 +414,14 @@ class AnnBasedResult(_BaseResult, object):
 
     def _set_marker_genes_res(self, key, value):
         self.__based_ann_data.uns[key] = value
+
+    def set_value(self, key, value):
+        if hasattr(value, 'shape'):
+            if (len(value.shape) >= 1) and (value.shape[0] == self.__based_ann_data.shape[0]):
+                self.__based_ann_data.obsm[key] = value
+            elif (len(value.shape) >= 2) and (value.shape[1] == self.__based_ann_data.shape[1]):
+                self.__based_ann_data.varm[key] = value
+            else:
+                self.__based_ann_data.uns[key] = value
+        else:
+            self.__based_ann_data.uns[key] = value

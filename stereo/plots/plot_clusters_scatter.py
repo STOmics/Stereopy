@@ -66,6 +66,9 @@ class ClustersGenesScatter(PlotBase):
                 gene_names = np.array([gene_names], dtype='U')
             elif not isinstance(gene_names, np.ndarray):
                 gene_names = np.array(gene_names, dtype='U')
+        
+        if len(gene_names) == 0:
+            return None
 
         if groups is None or drg_res is not None:
             cluster_res: pd.DataFrame = self.pipeline_res[cluster_res_key]

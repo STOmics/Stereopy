@@ -21,7 +21,8 @@ class PlotElbow(PlotBase):
             color: str = 'blue',
             marker: str = 'o',
             marker_color: Optional[str] = None,
-            marker_size: int = 2
+            marker_size: int = 4,
+            cum: bool = False
     ):
         """
         Plot elbow for pca.
@@ -37,7 +38,8 @@ class PlotElbow(PlotBase):
         :param color: the color of the line in plot, defaults to 'blue'.
         :param marker: the marker style, defaults to 'o'.
         :param marker_color: the marker color, defaults to the same as line's color.
-        :param marker_size: the marker size, defaults to 2.
+        :param marker_size: the marker size, defaults to 4.
+        :param cum: setting to True means each marker represents a cumulation of current marker and all previous, default to False.
 
         """
         if pca_res_key not in self.pipeline_res:
@@ -47,7 +49,10 @@ class PlotElbow(PlotBase):
         variance_ratio = self.pipeline_res[res_key]
         if n_pcs is not None:
             variance_ratio = variance_ratio[0:n_pcs]
-
+        
+        if cum:
+            variance_ratio = np.cumsum(variance_ratio)
+        
         pcs = np.arange(variance_ratio.size) + 1
 
         fig, ax = plt.subplots()

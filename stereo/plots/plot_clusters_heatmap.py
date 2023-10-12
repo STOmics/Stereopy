@@ -38,8 +38,8 @@ class ClustersGenesHeatmap(PlotBase):
         :param dendrogram_res_key: the key to get dendrogram result, defaults to None to avoid show dendrogram on plot.
         :param gene_names: a list of genes to show, defaults to None to show all genes.
         :param groups: a list of cell clusters to show, defaults to None to show all cell clusters.
-        :param width: the figure width in pixels, defaults to None
-        :param height: the figure height in pixels, defaults to None
+        :param width: the figure width in pixels, defaults to None.
+        :param height: the figure height in pixels, defaults to None.
         :param colormap: colormap used on plot, defaults to 'Greens'
         :param standard_scale: Whether or not to standardize that dimension between 0 and 1,
                                 meaning for each gene or cluster,
@@ -67,6 +67,9 @@ class ClustersGenesHeatmap(PlotBase):
                 gene_names = np.array([gene_names], dtype='U')
             elif not isinstance(gene_names, np.ndarray):
                 gene_names = np.array(gene_names, dtype='U')
+        
+        if len(gene_names) == 0:
+            return None
 
         if groups is None or drg_res is not None:
             cluster_res: pd.DataFrame = self.pipeline_res[cluster_res_key]
