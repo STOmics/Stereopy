@@ -314,6 +314,17 @@ class PlotRegulatoryNetwork(PlotBase):
         :param width: width of drawing
         :param vmin: The value representing the lower limit of the color scale. Values smaller than vmin are plotted with the same color as vmin.
         :param vmax: The value representing the lower limit of the color scale. Values smaller than vmin are plotted with the same color as vmin.
+        :param reorganize_coordinate: if the data is merged from several slices, whether to reorganize the coordinates of the obs(cells), 
+                if set it to a number, like 2, the coordinates will be reorganized to 2 columns on coordinate system as below:
+                                ---------------
+                                | data1 data2
+                                | data3 data4
+                                | data5 ...  
+                                | ...   ...  
+                                ---------------
+                if set it to `False`, the coordinates will not be changed.
+        :param horizontal_offset_additional: the additional offset between each slice on horizontal direction while reorganizing coordinates.
+        :param vertical_offset_additional: the additional offset between each slice on vertical direction while reorganizing coordinates.
 
         :return: matplotlib.figure
         """  # noqa
