@@ -15,6 +15,7 @@ from typing import Union
 from warnings import warn
 
 import anndata
+import numba
 import numpy as np
 import pandas as pd
 from scipy.sparse import (
@@ -152,6 +153,14 @@ class StereoExpData(Data):
             self.genes = self.genes.sub_set(gene_index)
         return self
 
+    @numba.jit(cache=True, forceobj=True, nogil=True)
+    def get_index(self, data, names):
+        index_list = []
+        for name in names:
+            index_list.append(np.argwhere(data == name)[0][0])
+
+        return index_list
+
     def sub_by_name(self, cell_name: Optional[Union[np.ndarray, list]] = None,
                     gene_name: Optional[Union[np.ndarray, list]] = None):
         """
@@ -162,10 +171,8 @@ class StereoExpData(Data):
         :return:
         """
         data = copy.deepcopy(self)
-        cell_index = [np.argwhere(data.cells.cell_name == i)[0][0] for i in cell_name] \
-            if cell_name is not None else None
-        gene_index = [np.argwhere(data.genes.gene_name == i)[0][0] for i in gene_name] \
-            if gene_name is not None else None
+        cell_index = self.get_index(data.cells.cell_name, cell_name) if cell_name is not None else None
+        gene_index = self.get_index(data.genes.gene_name, gene_name) if gene_name is not None else None
         return data.sub_by_index(cell_index, gene_index)
 
     def sub_exp_matrix_by_name(
