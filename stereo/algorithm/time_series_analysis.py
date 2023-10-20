@@ -31,6 +31,7 @@ class TimeSeriesAnalysis(AlgorithmBase):
             cluster_number=6
     ):
         """
+
         :param run_method: the model type when the algorithm is run, default = `tvg_marker`.
             `tvg_marker`: Calculate time variable gene based on expression of celltypes in branch
             `other`: Use fuzzy C means cluster method to cluster genes based on 1-p_value of celltypes in branch
