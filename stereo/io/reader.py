@@ -41,7 +41,8 @@ def read_gem(
         sep: str = '\t',
         bin_type: str = "bins",
         bin_size: int = 100,
-        is_sparse: bool = True
+        is_sparse: bool = True,
+        bin_coor_offset: bool = False
 ):
     """
     Read the Stereo-seq GEM file, and generate the StereoExpData object.
@@ -58,6 +59,9 @@ def read_gem(
         the size of bin to merge, when `bin_type` is set to `'bins'`.
     is_sparse
         the expression matrix is sparse matrix, if `True`, otherwise `np.ndarray`.
+    bin_coor_offset
+        If set it to True, the coordinates of bins are calculated as 
+        ((gene_coordinates - min_coordinates) // bin_size) * bin_size + min_coordinates + bin_size/2
 
     Returns
     -------------
@@ -85,7 +89,10 @@ def read_gem(
     if data.bin_type == 'cell_bins':
         gdf = parse_cell_bin_coor(df)
     else:
-        df = parse_bin_coor(df, bin_size)
+        if bin_coor_offset:
+            df = parse_bin_coor(df, bin_size)
+        else:
+            df = parse_bin_coor_no_offset(df, bin_size)
     cells = df['cell_id'].unique()
     genes = df['geneID'].unique()
     cells_dict = dict(zip(cells, range(0, len(cells))))
@@ -98,7 +105,8 @@ def read_gem(
     data.genes = Gene(gene_name=genes)
     data.exp_matrix = exp_matrix if is_sparse else exp_matrix.toarray()
     if data.bin_type == 'bins':
-        data.position = df.loc[:, ['x_center', 'y_center']].drop_duplicates().values
+        # data.position = df.loc[:, ['x_center', 'y_center']].drop_duplicates().values
+        data.position = df.loc[:, ['bin_x', 'bin_y']].drop_duplicates().values
     else:
         data.position = gdf.loc[cells][['x_center', 'y_center']].values
         data.cells.cell_point = gdf.loc[cells]['cell_point'].values
@@ -135,8 +143,20 @@ def parse_bin_coor(df, bin_size):
     df['bin_x'] = merge_bin_coor(df['x'].values, x_min, bin_size)
     df['bin_y'] = merge_bin_coor(df['y'].values, y_min, bin_size)
     df['cell_id'] = df['bin_x'].astype(str) + '_' + df['bin_y'].astype(str)
-    df['x_center'] = get_bin_center(df['bin_x'], x_min, bin_size)
-    df['y_center'] = get_bin_center(df['bin_y'], y_min, bin_size)
+    df['bin_x'] = get_bin_center(df['bin_x'], x_min, bin_size)
+    df['bin_y'] = get_bin_center(df['bin_y'], y_min, bin_size)
+    return df
+
+
+def parse_bin_coor_no_offset(df: pd.DataFrame, bin_size: int):
+    df['bin_x'] = ((df['x'] // bin_size) * bin_size).astype(np.uint64)
+    df['bin_y'] = ((df['y'] // bin_size) * bin_size).astype(np.uint64)
+    df['cell_id'] = np.bitwise_or(
+        np.left_shift(df['bin_x'], 32),
+        df['bin_y']
+    )
+    df.sort_values(by=['geneID', 'cell_id'], inplace=True)
+    df['cell_id'] = df['cell_id'].astype('U')
     return df
 
 
