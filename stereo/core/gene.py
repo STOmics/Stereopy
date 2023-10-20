@@ -35,6 +35,11 @@ class Gene(object):
     def __setitem__(self, key, value):
         self._var[key] = value
 
+    def __getitem__(self, key):
+        if key not in self._var.columns:
+            return None
+        return self._var[key]
+
     @property
     def n_cells(self):
         if 'n_cells' not in self._var.columns:
@@ -96,27 +101,31 @@ class Gene(object):
         :param index: a numpy array of index info.
         :return: the subset of Gene object.
         """
-        if type(index) is list:
+        if isinstance(index, list) or isinstance(index, slice):
             self._var = self._var.iloc[index].copy()
-        elif index.dtype == bool:
-            self._var = self._var[index].copy()
-        else:
-            self._var = self._var.iloc[index].copy()
+        elif isinstance(index, np.ndarray):            
+            if index.dtype == bool:
+                self._var = self._var[index].copy()
+            else:
+                self._var = self._var.iloc[index].copy()
         return self
 
-    def to_df(self):
+    def to_df(self, copy=False):
         """
         Transform StereoExpData object to pd.DataFrame.
 
         :return: a dataframe of Gene.
         """
-        return self._var.copy(deep=True)
+        return self._var.copy(deep=True) if copy else self._var
 
     def __str__(self):
         format_genes = ['gene_name']
         for attr_name in self._var.columns:
             format_genes.append(attr_name)
         return f"\ngenes: {format_genes}" if format_genes else ""
+    
+    def _repr_html_(self):
+        return self._var._repr_html_()
 
 
 class AnnBasedGene(Gene):

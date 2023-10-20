@@ -696,6 +696,11 @@ def launch(data: StereoExpData,
     httpd = StoppableHTTPServer(server_address, DynamicRequstHander)
     ServerInstance.server = httpd
     # start endless waiting now...
-    print(f'Starting server on http://{ip}:{port}')
-    print(f'To ternimate this server , click: http://{ip}:{port}/endnow')
+    start_url = os.environ.get('stereopy_3d_visualization', None)
+    if start_url is None:
+        print(f'Starting server on http://{ip}:{port}')
+        print(f'To ternimate this server , click: http://{ip}:{port}/endnow')
+    else:
+        print(f'Starting server on {start_url}')
+        print(f'To ternimate this server , click: {start_url}/endnow')
     httpd.serve_forever()

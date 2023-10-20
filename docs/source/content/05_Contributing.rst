@@ -23,7 +23,7 @@ Contributing Guide
 
 3. **Add new functions** or **fix bugs** in your codebase, don't forget to follow the rules of `Code Style`_.
 
-4. After completing **code work**, we strongly recommend contributors to add `{your_work_tutorial}.ipynb`, whose style like `Spatial hotSpot tutorial <https://stereopy.readthedocs.io/en/latest/Tutorials/Spatial_Hotspot.html>`_, into `stereopy/docs/source/Tutorials/`.
+4. After completing **code work**, we strongly recommend contributors to add `{your_work_tutorial}.ipynb`, whose style like `Template <../Tutorials/Template.html>`_, into `stereopy/docs/source/Tutorials/`.
 
 5. **Run all tests**, and read `Test`_ for more details.
 

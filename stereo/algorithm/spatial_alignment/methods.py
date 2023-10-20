@@ -8,7 +8,7 @@ from .helper import intersect, kl_divergence_backend, to_dense_array, extract_da
 from stereo.core.stereo_exp_data import StereoExpData
 from stereo.core.cell import Cell
 from stereo.core.gene import Gene
-from stereo.log_manager import logger
+from stereo.log_manager import logger, LogManager
 
 def pairwise_align(
     sliceA: StereoExpData, 
@@ -85,8 +85,10 @@ def pairwise_align(
     # sliceB = sliceB[:, common_genes]
     if filter_gene:
         common_genes = np.intersect1d(sliceA.genes.gene_name, sliceB.genes.gene_name)
+        LogManager.stop_logging()
         sliceA.tl.filter_genes(gene_list=common_genes)
         sliceB.tl.filter_genes(gene_list=common_genes)
+        LogManager.start_logging()
 
     # check if slices are valid
     for s in [sliceA, sliceB]:
@@ -250,9 +252,11 @@ def center_align(
 
     # subset common genes
     # A = A[:, common_genes]
+    LogManager.stop_logging()
     initial_slice.tl.filter_genes(gene_list=common_genes)
     for i in range(len(slices)):
         slices[i].tl.filter_genes(gene_list=common_genes)
+    LogManager.start_logging()
     logger.info('Filtered all slices for common genes. There are ' + str(len(common_genes)) + ' common genes.')
 
     # Run initial NMF

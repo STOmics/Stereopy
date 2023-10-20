@@ -4,7 +4,6 @@
 @author: Ping Qiu  qiuping1@genomics.cn
 """
 
-
 import pandas as pd
 import numpy as np
 from scipy import stats
@@ -24,18 +23,23 @@ def corr_pvalues(pvals, method, n_genes):
     """
     pvals_adj = None
     if method == 'benjamini-hochberg':
-        pvals[np.isnan(pvals)] = 1
-        _, pvals_adj, _, _ = multipletests(pvals, alpha=0.05, method='fdr_bh')
+        pvals_adj = multipletests(pvals, alpha=0.05, method='fdr_bh')[1]
     elif method == 'bonferroni':
         pvals_adj = np.minimum(pvals * n_genes, 1.0)
     return pvals_adj
 
 
-def cal_log2fc(group, other_group):
-    g_mean = np.expm1(np.mean(group, axis=0)) + 1e-9
-    other_mean = np.expm1(np.mean(other_group, axis=0) )+ 1e-9
-    # log2fc = np.log2(g_mean/other_mean + 10e-5)
-    log2fc = np.log2(g_mean/other_mean)
+def cal_log2fc(group, other_group, mean_group=None, mean_rest=None):
+    if mean_group is None:
+        g_mean = np.expm1(np.mean(group, axis=0)) + 1e-9
+    else:
+        g_mean = np.expm1(mean_group) + 1e-9
+
+    if mean_rest is None:
+        other_mean = np.expm1(np.mean(other_group, axis=0)) + 1e-9
+    else:
+        other_mean = np.expm1(mean_rest) + 1e-9
+    log2fc = np.log2(g_mean / other_mean)
     return log2fc.A[0] if isinstance(log2fc, np.matrix) else log2fc
 
 
@@ -63,11 +67,13 @@ def wilcoxon(group, other_group, corr_method=None, ranks=None, tie_term=None, x_
     """
     s, p = mannwhitneyu(group, other_group, ranks=ranks, tie_term=tie_term, x_mask=x_mask)
     result = pd.DataFrame({'scores': s, 'pvalues': p})
-    # result['genes'] = list(group.columns)
     n_genes = result.shape[0]
+    if corr_method == 'benjamini-hochberg':
+        result['pvalues'][np.isnan(result['pvalues'])] = 1
     pvals_adj = corr_pvalues(result['pvalues'], corr_method, n_genes)
     if pvals_adj is not None:
         result['pvalues_adj'] = pvals_adj
+
     result['log2fc'] = cal_log2fc(group, other_group)
     return pd.DataFrame(result)
 
@@ -92,5 +98,5 @@ def ttest(group, other_group, corr_method=None):
     result = {'scores': scores, 'pvalues': pvals}
     if pvals_adj is not None:
         result['pvalues_adj'] = pvals_adj
-    result['log2fc'] = cal_log2fc(group, other_group)
+    result['log2fc'] = cal_log2fc(group, other_group, mean_group, mean_rest)
     return pd.DataFrame(result)

@@ -10,7 +10,7 @@ Import Stereopy as:
 Workflow
 ---------
 
-.. image:: ./../_static/Stereopy_workflow_v0.11.0.png
+.. image:: ./../_static/Stereopy_workflow_v0.14.0.png
     :alt: Title figure
     :width: 700px
     :align: center

@@ -4,6 +4,7 @@ from typing import Union
 from typing import Optional
 
 import numpy as np
+import pandas as pd
 from scipy.sparse import csr_matrix
 
 from .scale_data import ScaleData
@@ -20,7 +21,7 @@ def SCTransform(
         n_cells: Union[int, None] = 5000,
         residual_features: Union[list, np.ndarray, None] = None,
         variable_features_n: Union[int, None] = 3000,
-        variable_features_rv_th: Union[float] = 1.3,
+        variable_features_rv_th: float = 1.3,
         vars_to_regress: Union[str, list, None] = None,
         do_scale: Optional[bool] = False,
         do_center: Optional[bool] = True,
@@ -31,7 +32,7 @@ def SCTransform(
         **kwargs
 ):
     """
-    A Single-Cell RNA Sequencing Transform Method：
+    A Single-Cell RNA Sequencing Transform Method:
         Use regularized negative binomial regression to normalize UMI count data.
 
     :param umi:
@@ -110,6 +111,7 @@ def SCTransform(
     vst_args['return_gene_attr'] = True
     vst_args['return_corrected_umi'] = do_correct_umi
     vst_args['n_cells'] = min(n_cells, umi.shape[1])
+    vst_args['seed_use'] = seed_use
     # TODO: ignore `res_clip_range` used in 'conserve.memory' sct-method
     # res_clip_range = vst_args['res_clip_range'] if 'res_clip_range' in vst_args else [-math.sqrt(umi.shape[1]),
     #                                                                                  math.sqrt(umi.shape[1])]

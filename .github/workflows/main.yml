@@ -32,8 +32,7 @@ jobs:
           conda activate test_${{ inputs.python_version }}
 
           pip install -r requirements.txt -q
-          # TODO temporarily not install `tests/extra_requirements.txt`
-          # pip install -r tests/extra_requirements.txt -q
+          pip install -r tests/extra_requirements.txt -q
           pip install pathlib -q
 
           ~/anaconda3/envs/test_${{ inputs.python_version }}/bin/python setup.py develop

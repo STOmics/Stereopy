@@ -10,7 +10,7 @@
 change log:
     2021/07/06  create file.
 """
-from typing import Union, List
+from typing import Union, List, Tuple
 import pandas as pd
 import numpy as np
 import copy
@@ -158,7 +158,7 @@ def filter_by_clusters(
     groups: Union[str, np.ndarray, List[str]],
     excluded: bool = False,
     inplace: bool = True
-) -> StereoExpData:
+) -> Tuple[StereoExpData, pd.DataFrame]:
     """_summary_
 
     :param data: StereoExpData object.
@@ -175,4 +175,7 @@ def filter_by_clusters(
     if excluded:
         is_in_bool = ~is_in_bool
     data.sub_by_index(cell_index=is_in_bool)
-    return data, cluster_res[is_in_bool]
+    cluster_res = cluster_res[is_in_bool]
+    cluster_res['group'] = cluster_res['group'].to_numpy()
+    cluster_res['group'] = cluster_res['group'].astype('category')
+    return data, cluster_res

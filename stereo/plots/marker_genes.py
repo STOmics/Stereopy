@@ -178,7 +178,7 @@ def get_groups_marker(marker_res: dict, top_genes: int = 8, sort_key: str = 'sco
 
 def plot_heatmap(
         df,
-        show_labels=True,
+        show_xaxis=True,
         show_group=True,
         show_group_txt=True,
         group_position=None,
@@ -208,7 +208,7 @@ def plot_heatmap(
     cluster_block_width = kwargs.setdefault("cluster_block_width", 0.2) if show_group else 0
     if width is None or height is None:
         height = 10
-        if show_labels:
+        if show_xaxis:
             heatmap_width = len(df.columns) * 0.3
         else:
             heatmap_width = 8
@@ -253,7 +253,7 @@ def plot_heatmap(
 
     heatmap(df=df, ax=heatmap_ax,
             norm=Normalize(vmin=None, vmax=None), plot_colorbar=True, colorbar_ax=heatmap_cbar_ax,
-            show_labels=show_labels, plot_hline=True)
+            show_xaxis=show_xaxis, show_yaxis=False, plot_hline=True)
     if show_group:
         plot_categories_as_colorblocks(
             fig.add_subplot(axs[1, 0]), df, colors=cluster_colors_array, orientation='left'
@@ -351,7 +351,7 @@ class MarkerGenesScatterPlot:
         original_marker_genes_key = self.marker_genes_parameters.get('marker_genes_res_key')
         pct: pd.DataFrame = self.data.tl.result[original_marker_genes_key]['pct'] if original_marker_genes_key is not None else self.marker_genes_res['pct']
         marker_genes_res_dict = self._store_marker_genes_result_by_group()
-        mean_expressin_in_group = pipeline_utils.cell_cluster_to_gene_exp_cluster(self.data.tl, self.marker_genes_parameters['cluster_res_key'], kind='mean')
+        mean_expressin_in_group = pipeline_utils.cell_cluster_to_gene_exp_cluster(self.data, self.marker_genes_parameters['cluster_res_key'], kind='mean')
         # gene_isin = pct['genes'].isin(gene_names)
         for g in groups:
             if values_to_plot is None:
