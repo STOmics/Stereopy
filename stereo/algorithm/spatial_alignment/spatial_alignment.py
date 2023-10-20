@@ -27,6 +27,8 @@ class SpatialAlignment(MSDataAlgorithmBase):
         :param method: pairwise or center, defaults to 'pairwise'
         :param initial_slice: slice to use as the initialization for center alignment, defaults to None
         :param slices: list of slices to align, defaults to None
+
+        Other parameters refer to `algorithm.paste.pairwise_align` and `algorithm.paste.center_align`
         """
         if method not in ('pairwise', 'center'):
             raise ValueError(f'Error method({method}), it must be one of pairwise and center')
