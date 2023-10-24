@@ -38,10 +38,17 @@ class Plot3DBrowser(PlotBase):
         th.setDaemon(True)
         th.start()
 
-    def display_3d_mesh(self, width=1400, height=1200, port=7654):
+    def display_3d_mesh(self, width=1400, height=1200, ip='127.0.0.1', port=7654):
         import IPython
         sleep(5)
-        return IPython.display.IFrame(src=f"http://127.0.0.1:{port}", width=width, height=height)
+        start_url = os.environ.get('stereopy_3d_visualization', None)
+        if start_url is None:
+            print(f'Starting server on http://{ip}:{port}')
+            print(f'To ternimate this server , click: http://{ip}:{port}/endnow')
+        else:
+            print(f'Starting server on {start_url}')
+            print(f'To ternimate this server , click: {start_url}/endnow')
+        return IPython.display.IFrame(src=f"http://{ip}:{port}", width=width, height=height)
 
     def display_3d_ccc(self, *args, **kwargs):
         return self.display_3d_mesh(*args, **kwargs)
