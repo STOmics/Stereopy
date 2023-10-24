@@ -108,6 +108,8 @@ class Gene(object):
                 self._var = self._var[index].copy()
             else:
                 self._var = self._var.iloc[index].copy()
+        else:
+            self._var = self._var.iloc[index].copy()
         return self
 
     def to_df(self, copy=False):

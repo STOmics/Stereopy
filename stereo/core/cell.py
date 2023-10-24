@@ -153,6 +153,8 @@ class Cell(object):
                 self._obs = self._obs[index].copy()
             else:
                 self._obs = self._obs.iloc[index].copy()
+        else:
+            self._obs = self._obs.iloc[index].copy()
         return self
 
     def get_property(self, name):
