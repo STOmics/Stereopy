@@ -113,9 +113,9 @@ def reorganize_coordinate(func):
                 if vertical_offset_additional < 0:
                     vertical_offset_additional = 0
             if reorganize_coordinate:
-                data.position, data.position_offset = \
+                data.position, data.position_offset, data.position_min = \
                     reorganize_data_coordinates(
-                        data.cells.batch, data.position, data.position_offset,
+                        data.cells.batch, data.position, data.position_offset, data.position_min,
                         reorganize_coordinate, horizontal_offset_additional, vertical_offset_additional
                     )
         res = func(*args, **kwargs)

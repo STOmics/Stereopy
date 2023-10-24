@@ -86,12 +86,13 @@ def reorganize_data_coordinates(
         cells_batch: np.ndarray,
         data_position: np.ndarray,
         data_position_offset: dict = None,
+        data_position_min: dict = None,
         reorganize_coordinate: Union[bool, int] = 2,
         horizontal_offset_additional: Union[int, float] = 0,
-        vertical_offset_additional: Union[int, float] = 0,
+        vertical_offset_additional: Union[int, float] = 0
 ):
     if not reorganize_coordinate:
-        return data_position, data_position_offset
+        return data_position, data_position_offset, data_position_min
 
     batches = natsorted(np.unique(cells_batch))
     data_count = len(batches)
@@ -99,6 +100,15 @@ def reorganize_data_coordinates(
     position_column_count = reorganize_coordinate
     max_xs = [0] * (position_column_count + 1)
     max_ys = [0] * (position_row_count + 1)
+
+    if data_position_min is None:    
+        data_position_min = {}
+        for i, bno in enumerate(batches):
+            idx = np.where(cells_batch == bno)[0]
+            position_min = np.min(data_position[idx], axis=0)
+            data_position[idx] -= position_min
+            data_position_min[bno] = position_min
+
     for i, bno in enumerate(batches):
         idx = np.where(cells_batch == bno)[0]
         data_position[idx] -= data_position_offset[bno] if data_position_offset is not None else 0
@@ -125,7 +135,7 @@ def reorganize_data_coordinates(
         position_offset = np.array([x_add, y_add], dtype=data_position.dtype)
         data_position[idx] += position_offset
         data_position_offset[bno] = position_offset
-    return data_position, data_position_offset
+    return data_position, data_position_offset, data_position_min
 
 
 def merge(
@@ -252,8 +262,8 @@ def merge(
                     elif key == 'resolution':
                         new_data.attr['resolution'] = value
     if reorganize_coordinate:
-        new_data.position, new_data.position_offset = reorganize_data_coordinates(
-            new_data.cells.batch, new_data.position, new_data.position_offset,
+        new_data.position, new_data.position_offset, new_data.position_min = reorganize_data_coordinates(
+            new_data.cells.batch, new_data.position, new_data.position_offset, new_data.position_min,
             reorganize_coordinate, horizontal_offset_additional, vertical_offset_additional
         )
 
