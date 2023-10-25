@@ -533,13 +533,13 @@ class MSData(_MSDataStruct):
             _from: slice,
             type: Literal['obs', 'var'] = 'obs',
             item: Optional[list] = None,
-            fill=np.NaN
+            fill=np.NaN,
+            cluster: bool=True
     ):
         assert self.merged_data, "`to_integrate` need running function `integrate`"
         assert self._names[scope] == self._names[_from], f"`scope`: {scope} should equal with _from: {_from}"
         assert len(item) == len(self._names[_from]), "`item`'s length not equal to _from"
         scope_names = self._names[scope]
-        res_list = []
         if type == 'obs':
             self.merged_data.cells._obs[res_key] = fill
         elif type == 'var':
@@ -554,25 +554,21 @@ class MSData(_MSDataStruct):
                 new_index = res.index.astype('str') + f'-{sample_idx}'
                 res.index = new_index
                 self.merged_data.cells._obs.loc[new_index, res_key] = res
-                res_list.append(res.to_frame())
             elif type == 'var':
-                # res = stereo_exp_data.genes._var[res_key]
-                # res_list.append(res.to_frame())
                 raise NotImplementedError
             else:
                 raise Exception(f"`type`: {type} not in ['obs', 'var'], this should not happens!")
         if type == 'obs':
-            # res_sum = pd.concat(res_list)
-            # merged_bool_list = np.isin(self.merged_data.cells._obs.index.values, res_sum.index.values, invert=True)
-            # self.merged_data.cells._obs.insert(0, res_key, pd.concat(res_list))
-            # if fill is not np.NaN:
-            #     self.merged_data.cells._obs[merged_bool_list][res_key] = fill
             scope_key_name = "scope_[" + ",".join([str(self._names.index(name)) for name in scope_names]) + "]"
             self.tl.result.setdefault(scope_key_name, {})
-            self.tl.result[scope_key_name][res_key] = self.merged_data.cells._obs[res_key].to_frame()
+            if cluster:
+                self.tl.result[scope_key_name][res_key] = pd.DataFrame({
+                    'bins': self.merged_data.cell_names,
+                    'group': self.merged_data.cells._obs[res_key].astype('category')
+                })
+            else:
+                self.tl.result[scope_key_name][res_key] = self.merged_data.cells._obs[res_key].to_frame()
         elif type == 'var':
-            # self.merged_data.genes._var.insert(0, res_key, pd.concat(res_list))
-            # self.tl.result[scope][res_key] = self.merged_data.genes._var[res_key].to_frame()
             raise NotImplementedError
         else:
             raise Exception(f"`type`: {type} not in ['obs', 'var'], this should not happens!")
