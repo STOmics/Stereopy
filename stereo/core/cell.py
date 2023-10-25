@@ -187,6 +187,15 @@ class Cell(object):
     def _repr_html_(self):
         obs: pd.DataFrame = self.to_df()
         return obs._repr_html_()
+    
+    def to_ann_based_cell(self, based_ann_data: AnnData):
+        self = AnnBasedCell(
+            based_ann_data,
+            self.cell_name,
+            self.cell_border,
+            self.batch
+        )
+        return self
 
 
 class AnnBasedCell(Cell):
@@ -195,7 +204,10 @@ class AnnBasedCell(Cell):
                  cell_border: Optional[np.ndarray] = None,
                  batch: Optional[Union[np.ndarray, list, int, str]] = None):
         self.__based_ann_data = based_ann_data
-        super().__init__(cell_name, cell_border, batch)
+        # super().__init__(cell_name, cell_border, batch)
+        super().__init__(cell_name=cell_name, batch=batch)
+        if cell_border is not None:
+            self.cell_border = cell_border
         self.loc = self.__based_ann_data.obs.loc
 
     def __setattr__(self, key, value):
@@ -278,6 +290,17 @@ class AnnBasedCell(Cell):
     def n_genes_by_counts(self, new_n_genes_by_counts):
         if new_n_genes_by_counts is not None:
             self.__based_ann_data.obs['n_genes_by_counts'] = new_n_genes_by_counts
+    
+    @property
+    def cell_border(self):
+        return self.__based_ann_data.obsm.get('cell_border', None)
+    
+    @cell_border.setter
+    def cell_border(self, cell_border):
+        if not isinstance(cell_border, np.ndarray):
+            raise TypeError('cell border must be a np.ndarray object.')
+        self.__based_ann_data._n_obs = cell_border.shape[0]
+        self.__based_ann_data.obsm['cell_border'] = cell_border
 
     def to_df(self):
         return self.__based_ann_data.obs

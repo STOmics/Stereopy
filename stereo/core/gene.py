@@ -128,6 +128,12 @@ class Gene(object):
 
     def _repr_html_(self):
         return self._var._repr_html_()
+    
+    def to_ann_base_gene(self, based_ann_data: AnnData):
+        return AnnBasedGene(
+            based_ann_data=based_ann_data,
+            gene_name=self.gene_name
+        )
 
 
 class AnnBasedGene(Gene):

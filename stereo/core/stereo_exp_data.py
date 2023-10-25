@@ -10,7 +10,7 @@ change log:
     2021/08/12  add to_andata function , by wuyiran.
 """
 import copy
-from typing import Optional
+from typing import Mapping, Optional, Sequence
 from typing import Union
 from warnings import warn
 
@@ -18,6 +18,7 @@ import anndata
 import numba
 import numpy as np
 import pandas as pd
+from scipy import sparse
 from scipy.sparse import (
     spmatrix,
     issparse,
@@ -30,6 +31,497 @@ from .data import Data
 from .gene import AnnBasedGene
 from .gene import Gene
 from ..log_manager import logger
+
+class StereoAnnRaw(anndata.Raw):
+    def __init__(self, *args, **kwargs):
+        super(StereoAnnRaw, self).__init__(*args, **kwargs)
+        self._adata = self._adata.copy()
+
+    def to_adata(self):
+        return self._adata
+
+class StereoAnnData(anndata.AnnData):
+    def __init__(
+        self,
+        file_path: Optional[str] = None,
+        file_format: Optional[str] = None,
+        bin_type: Optional[str] = None,
+        bin_size: Optional[int] = 100,
+        exp_matrix: Optional[Union[np.ndarray, spmatrix]] = None,
+        genes: Optional[Union[np.ndarray, Gene]] = None,
+        cells: Optional[Union[np.ndarray, Cell]] = None,
+        position: Optional[np.ndarray] = None,
+        position_z: Optional[np.ndarray] = None,
+        output: Optional[str] = None,
+        partitions: Optional[int] = 1,
+        offset_x: Optional[str] = None,
+        offset_y: Optional[str] = None,
+        attr: Optional[dict] = None,
+        merged: bool = False,
+        base_anndata: anndata.AnnData = None
+    ):
+
+        if base_anndata is None:
+            obs = None
+            if cells is not None:
+                if isinstance(cells, np.ndarray):
+                    cells = Cell(cell_name=cells)
+                elif isinstance(cells, list):
+                    cells = Cell(cell_name=np.array(cells, dtype='U'))
+                obs = cells._obs
+            self._cells = cells if isinstance(cells, (AnnBasedCell, type(None))) else cells.to_ann_based_cell(self)
+            
+            var = None
+            if genes is not None:
+                if isinstance(genes, np.ndarray):
+                    genes = Gene(gene_name=genes)
+                elif isinstance(genes, list):
+                    genes = Gene(gene_name=np.array(genes, dtype='U'))
+                var = genes._var
+            self._genes = genes if isinstance(genes, (AnnBasedGene, type(None))) else genes.to_ann_base_gene(self)
+
+            super(StereoAnnData, self).__init__(X=exp_matrix, obs=obs, var=var)
+        else:
+            super(StereoAnnData, self).__init__(X=base_anndata)
+
+        if bin_type is not None:
+            self.uns['bin_type'] = bin_type
+        if bin_size is not None:
+            self.uns['bin_size'] = bin_size
+
+        
+        # if position is not None:
+        #     if position_z is not None:
+        #         spatial = np.concatenate(position, position_z)
+        #     else:
+        #         spatial = position
+        #     self.obsm['spatial'] = spatial
+        if position is not None:
+            self.position = position
+        
+        if position_z is not None:
+            self.position_z = position_z
+
+        # self.raw_position = None
+        self.position_offset = None
+        self.position_min = None
+        
+        self.offset_x = offset_x
+        self.offset_y = offset_y
+        self.attr = attr if attr is not None else {'resolution': 500}
+        self.merged = merged
+        self.sn = self.get_sn_from_path(file_path)
+
+        self.output = output
+
+        self._tl = None
+        self._plt = None      
+
+    def get_sn_from_path(self, file_path):
+        """
+        Get the SN information of input file.
+        """
+        if file_path is None:
+            return None
+
+        from os import path
+        return path.basename(file_path).split('.')[0].strip()
+
+    @staticmethod
+    def bin_type_check(bin_type):
+        """
+        Check whether the bin type is from specific options.
+
+        :param bin_type: bin type value, 'bins' or 'cell_bins'.
+        :return:
+        """
+        if (bin_type is not None) and (bin_type not in ['bins', 'cell_bins']):
+            logger.error(f"the bin type `{bin_type}` is not in the range, please check!")
+            raise Exception
+    
+    def sub_by_index(self, cell_index=None, gene_index=None):
+        if cell_index is not None:
+            self._inplace_subset_obs(cell_index)
+        if gene_index is not None:
+            self._inplace_subset_var(gene_index)
+        return self
+
+    def sub_by_name(self, cell_name=None, gene_name=None):
+        data = self.copy()
+        if cell_name is not None:
+            data._inplace_subset_obs(cell_name)
+        if gene_name is not None:
+            data._inplace_subset_var(gene_name)
+        return data
+
+    def sub_exp_matrix_by_name(
+            self,
+            cell_name: Optional[Union[np.ndarray, list, str, int]] = None,
+            gene_name: Optional[Union[np.ndarray, list, str]] = None,
+            order_preserving: bool = True
+    ) -> Union[np.ndarray, spmatrix]:
+        new_exp_matrix = self.exp_matrix
+        if cell_name is not None:
+            if isinstance(cell_name, str) or isinstance(cell_name, int):
+                cell_name = [cell_name]
+            if order_preserving:
+                index = [np.argwhere(self.cell_names == c)[0][0] for c in cell_name]
+            else:
+                index = np.isin(self.cell_names, cell_name)
+            new_exp_matrix = new_exp_matrix[index]
+        if gene_name is not None:
+            if isinstance(gene_name, str):
+                gene_name = [gene_name]
+            if order_preserving:
+                index = [np.argwhere(self.gene_names == g)[0][0] for g in gene_name]
+            else:
+                index = np.isin(self.gene_names, gene_name)
+            new_exp_matrix = new_exp_matrix[:, index]
+        return new_exp_matrix
+
+    @property
+    def plt(self):
+        """
+        Call the visualization module.        
+        """
+        if self._plt is None:
+            from ..plots.plot_collection import PlotCollection
+            self._plt = PlotCollection(self)
+        return self._plt
+
+    @property
+    def tl(self):
+        """
+        call StPipeline method.
+        """
+        if self._tl is None:
+            from .st_pipeline import StPipeline
+            self._tl = StPipeline(self)
+        return self._tl
+
+    @property
+    def gene_names(self):
+        """
+        Get the gene names.
+
+        :return:
+        """
+        return self.var_names.to_numpy().astype('U')
+
+    @property
+    def cell_names(self):
+        """
+        Get the cell names.
+
+        :return:
+        """
+        return self.obs_names.to_numpy().astype('U')
+
+    @property
+    def cell_borders(self):
+        """
+        Get the cell borders.
+        """
+        return self.cells.cell_border
+
+    @property
+    def genes(self):
+        """
+        Get the gene object.
+
+        :return:
+        """
+        return self._genes
+
+    @genes.setter
+    def genes(self, gene: Union[Gene, AnnBasedGene]):
+        """
+        set the value of self._genes.
+
+        :param gene: a object of Gene
+        :return:
+        """
+        self._genes = gene if isinstance(gene, AnnBasedGene) else gene.to_ann_base_gene(self)
+        self._n_vars = gene.gene_name.size
+        self._var = gene._var
+
+    @property
+    def genes_matrix(self):
+        """
+        Get the genes matrix.
+        """
+        return self._genes._matrix
+
+    @property
+    def genes_pairwise(self):
+        """
+        Get the genes pairwise.
+        """
+        return self._genes._pairwise
+
+    @property
+    def cells(self):
+        """
+        Get the cell object.
+
+        :return:
+        """
+        return self._cells
+
+    @cells.setter
+    def cells(self, cell: Union[Cell, AnnBasedCell]):
+        """
+        set the value of self._cells.
+
+        :param cell: a object of Cell
+        :return:
+        """
+        self._cells = cell if isinstance(cell, AnnBasedCell) else cell.to_ann_based_cell(self)
+        self._n_obs = cell.cell_name.size
+        self._obs = cell._obs
+
+    @property
+    def cells_matrix(self):
+        """
+        Get the cells matrix.
+        """
+        return self._cells._matrix
+
+    @property
+    def cells_pairwise(self):
+        """
+        Get the cells pairwise.
+        """
+        return self._cells._pairwise
+
+    @property
+    def exp_matrix(self) -> Union[np.ndarray, spmatrix]:
+        """
+        Get the expression matrix.
+
+        :return:
+        """
+        return self._X
+
+    @exp_matrix.setter
+    def exp_matrix(self, exp_matrix):
+        """
+        set the value of self._exp_matrix.
+
+        :param pos_array: np.ndarray or sparse.spmatrix.
+        :return:
+        """
+        self._n_obs, self._n_vars = exp_matrix.shape
+        self._X = exp_matrix
+
+    @property
+    def bin_type(self):
+        """
+        Get the bin type.
+
+        :return:
+        """
+        return self.uns.get('bin_type', 'bins')
+
+    @bin_type.setter
+    def bin_type(self, b_type):
+        """
+        set the value of self._bin_type.
+
+        :param b_type: the value of bin type, 'bins' or 'cell_bins'.
+        :return:
+        """
+        self.bin_type_check(b_type)
+        self.uns['bin_type'] = b_type
+
+    @property
+    def bin_size(self):
+        return self.uns.get('bin_size', 1)
+
+    @bin_size.setter
+    def bin_size(self, bin_size):
+        self.uns['bin_size'] = bin_size
+
+    @property
+    def raw_position(self):
+        return self.obsm.get('raw_spatial', None)
+
+    @raw_position.setter
+    def raw_position(self, raw_position):
+        self.obsm['raw_spatial'] = raw_position
+
+    @property
+    def position(self):
+        if 'spatial' in self.obsm:
+            return self.obsm['spatial'][:, [0, 1]]
+        return None
+
+    @position.setter
+    def position(self, position: np.ndarray):
+        assert isinstance(position, np.ndarray), 'the type of position must be ndarray.'
+        assert len(position.shape) == 2, 'the dimensions of position must be 2.'
+        assert position.shape[1] == 2, "the length of position's sceond dimension must be 2."
+        self._n_obs = position.shape[0]
+        if 'spatial' in self.obsm:
+            self.obsm['spatial'][:, [0, 1]] = position
+        else:
+            self.obsm['spatial'] = position
+
+    @property
+    def position_z(self):
+        if 'spatial' in self.obsm:
+            if self.obsm['spatial'].shape[1] >= 3:
+                return self.obsm['spatial'][:, [2]]
+            else:
+                return None
+        return None
+
+    @position_z.setter
+    def position_z(self, position_z):
+        assert isinstance(position_z, np.ndarray), 'the type of position_z must be ndarray.'
+        assert len(position_z.shape) == 1 or len(position_z.shape) == 2, 'the dimensions of position_z must be 1 or 2.'
+        if len(position_z.shape) == 2:
+            assert position_z.shape[1] == 1, "the length of position_z's sceond dimension must be 1."
+            position_z = position_z.reshape(-1)
+        
+        self._n_obs = position_z.shape[0]
+        if 'spatial' in self.obsm:
+            if self.obsm['spatial'].shape[1] >= 3:
+                self.obsm['spatial'][:, 2] = position_z
+            else:
+                self.obsm['spatial'] = np.concatenate([self.obsm['spatial'], position_z.reshape(-1, 1)], axis=1)
+
+    @property
+    def position_offset(self):
+        """
+        Get the offset of position in gef.
+
+        """
+        return self._position_offset
+
+    @position_offset.setter
+    def position_offset(self, position_offset):
+        self._position_offset = position_offset
+
+    @property
+    def offset_x(self):
+        """
+        Get the x value of the offset.
+
+        :return:
+        """
+        return self._offset_x
+
+    @offset_x.setter
+    def offset_x(self, min_x):
+        """
+
+        :param min_x: offset of x.
+        :return:
+        """
+        self._offset_x = min_x
+
+    @property
+    def offset_y(self):
+        """
+        Get the y value of the offset.
+
+        :return:
+        """
+        return self._offset_y
+
+    @offset_y.setter
+    def offset_y(self, min_y):
+        """
+
+        :param min_y: offset of y.
+        :return:
+        """
+        self._offset_y = min_y
+
+    @property
+    def attr(self):
+        """
+        Get the attribute information.
+
+        :return:
+        """
+        return self._attr
+
+    @attr.setter
+    def attr(self, attr):
+        """
+
+        :param attr: dict of attr.
+        :return:
+        """
+        self._attr = attr
+
+    @property
+    def merged(self):
+        """
+        Get the flag whether merged.
+        """
+        return self._merged
+
+    @merged.setter
+    def merged(self, merged):
+        self._merged = merged
+
+    @property
+    def sn(self):
+        """
+        Get the sample name.
+        """
+        return self._sn
+
+    @sn.setter
+    def sn(self, sn):
+        self._sn = sn
+
+    # @property
+    # def raw(self):
+    #     return self.raw
+
+    @property
+    def resolution(self):
+        if self.attr is not None and 'resolution' in self.attr:
+            return self.attr['resolution']
+        else:
+            return None
+        
+    # @property
+    # def raw(self):
+    #     return self._raw.to_adata()
+    
+    # @raw.setter
+    # def raw(self, _):
+    #     self._raw = StereoAnnRaw(
+    #         self,
+    #         self.X,
+    #         self.var,
+    #         self.varm
+    #     )
+
+    def sparse2array(self):
+        """
+        Transform expression matrix to array if it is parse matrix.
+
+        :return:
+        """
+        if issparse(self._X):
+            self._X = self._X.toarray()
+        return self._X
+
+    def array2sparse(self):
+        """
+        Transform expression matrix to sparse matrix if it is ndarray.
+
+        :return:
+        """
+        if not issparse(self._X):
+            self._X = csr_matrix(self._X)
+        return self._X
 
 
 class StereoExpData(Data):
@@ -95,6 +587,7 @@ class StereoExpData(Data):
         self._position = position
         self._position_z = position_z
         self._position_offset = None
+        self._position_min = None
         self._bin_type = bin_type
         self._bin_size = bin_size
         self._tl = None
@@ -414,6 +907,14 @@ class StereoExpData(Data):
     @position_offset.setter
     def position_offset(self, position_offset):
         self._position_offset = position_offset
+    
+    @property
+    def position_min(self):
+        return self._position_min
+    
+    @position_min.setter
+    def position_min(self, position_min):
+        self._position_min = position_min
 
     @property
     def offset_x(self):
@@ -589,7 +1090,17 @@ class StereoExpData(Data):
             for bno in batches:
                 idx = np.where(self.cells.batch == bno)[0]
                 self.position[idx] -= self.position_offset[bno]
+                self.position[idx] += self.position_min[bno]
         self.position_offset = None
+        self.position_min = None
+    
+    def __add__(self, other):
+        from stereo.core.ms_data import MSData
+        if isinstance(other, StereoExpData):
+            ms_data = MSData([self, other])
+        else:
+            raise TypeError
+        return ms_data
 
 
 class AnnBasedStereoExpData(StereoExpData):
@@ -653,6 +1164,10 @@ class AnnBasedStereoExpData(StereoExpData):
     #         return None
 
     @property
+    def adata(self):
+        return self._ann_data
+
+    @property
     def exp_matrix(self):
         return self._ann_data.X
 
@@ -701,10 +1216,10 @@ class AnnBasedStereoExpData(StereoExpData):
             return self._ann_data.obs[['x', 'y']].to_numpy()
         return None
 
-    @position.setter
-    def position(self, pos):
-        if 'spatial' in self._ann_data.obsm:
-            self._ann_data.obsm['spatial'][:, [0, 1]] = pos
+    # @position.setter
+    # def position(self, pos):
+    #     if 'spatial' in self._ann_data.obsm:
+    #         self._ann_data.obsm['spatial'][:, [0, 1]] = pos
 
     @property
     def position_z(self):
@@ -733,10 +1248,10 @@ class AnnBasedStereoExpData(StereoExpData):
 
     @position_z.setter
     def position_z(self, position_z: np.ndarray):
-        if (position_z.shape) == 1:
+        if len(position_z.shape) == 1:
             position_z = position_z.reshape(-1, 1)
         if 'spatial' in self._ann_data.obsm:
-            self._ann_data.obsm['spatial'][:, 2] = np.concatenate(
+            self._ann_data.obsm['spatial'] = np.concatenate(
                 [self._ann_data.obsm['spatial'][:, [0, 1]], position_z], axis=1)
         else:
             self._ann_data.obs['z'] = position_z

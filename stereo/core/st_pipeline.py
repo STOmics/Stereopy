@@ -29,6 +29,7 @@ from typing_extensions import Literal
 from .result import Result, AnnBasedResult
 from .stereo_exp_data import AnnBasedStereoExpData
 from .stereo_exp_data import StereoExpData
+from .stereo_exp_data import StereoAnnData
 from ..log_manager import logger
 from ..utils.time_consume import TimeConsume
 
@@ -56,7 +57,10 @@ class StPipeline(object):
         :param data: StereoExpData object.
         """
         self.data: Union[StereoExpData, AnnBasedStereoExpData] = data
-        self.result = Result(data)
+        if isinstance(data, StereoExpData):
+            self.result = Result(data)
+        else:
+            self.result = AnnBasedResult(based_ann_data=data)
         self._raw: Union[StereoExpData, AnnBasedStereoExpData] = None
         self.key_record = {'hvg': [], 'pca': [], 'neighbors': [], 'umap': [], 'cluster': [], 'marker_genes': []}
 
@@ -87,7 +91,10 @@ class StPipeline(object):
 
         :return:
         """
-        return self._raw
+        if isinstance(self.data, StereoAnnData):
+            return self.data.raw
+        else:
+            return self._raw
 
     @raw.setter
     def raw(self, value):
@@ -97,7 +104,10 @@ class StPipeline(object):
         :param value: StereoExpData.
         :return:
         """
-        self._raw = copy.deepcopy(value)
+        if isinstance(self.data, StereoAnnData):
+            self.data.raw = self.data
+        else:
+            self._raw = copy.deepcopy(value)
 
     def reset_raw_data(self):
         """
