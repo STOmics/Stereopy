@@ -41,9 +41,9 @@ class GetNiche(AlgorithmBase):
         coord_1 = data_1.position
         coord_2 = data_2.position
         if data_1.position_z is not None:
-            coord_1 = np.concatenate(coord_1, data_1.position_z, axis=1)
+            coord_1 = np.concatenate([coord_1, data_1.position_z], axis=1)
         if data_2.position_z is not None:
-            coord_2 = np.concatenate(coord_2, data_2.position_z, axis=1)
+            coord_2 = np.concatenate([coord_2, data_2.position_z], axis=1)
         dist_matrix = cdist(coord_1, coord_2)
         dist_df = pd.DataFrame(dist_matrix, index=data_1.cell_names, columns=data_2.cell_names)
 
