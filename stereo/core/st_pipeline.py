@@ -660,7 +660,7 @@ class StPipeline(object):
         from ..algorithm.dim_reduce import pca
         res = pca(data.exp_matrix, n_pcs, svd_solver=svd_solver)
         self.result[res_key] = pd.DataFrame(res['x_pca'])
-        self.result.set_value(f'{res_key}_variance_ratio', res['variance_ratio'])
+        self.result[f'{res_key}_variance_ratio'] = res['variance_ratio']
         key = 'pca'
         self.reset_key_record(key, res_key)
 
