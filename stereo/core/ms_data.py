@@ -552,8 +552,8 @@ class MSData(_MSDataStruct):
                 res = stereo_exp_data.cells._obs[item[idx]]
                 sample_idx = self._names.index(scope_names[idx])
                 new_index = res.index.astype('str') + f'-{sample_idx}'
-                res.index = new_index
-                self.merged_data.cells._obs.loc[new_index, res_key] = res
+                # res.index = new_index
+                self.merged_data.cells._obs.loc[new_index, res_key] = res.to_numpy()
             elif type == 'var':
                 raise NotImplementedError
             else:

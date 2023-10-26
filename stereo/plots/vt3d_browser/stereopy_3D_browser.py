@@ -445,7 +445,7 @@ class Stereo3DWebCache:
         """
         xyz = np.concatenate([self._data.position, self._data.position_z], axis=1)
         df = pd.DataFrame(data=xyz, columns=['x', 'y', 'z'])
-        df = df.astype(int)  # force convert to int to save space
+        # df = df.astype(int)  # force convert to int to save space
         if self._cluster_label in self._data.cells._obs.columns:
             df['anno'] = self._data.cells._obs[self._cluster_label].to_numpy()
         else:

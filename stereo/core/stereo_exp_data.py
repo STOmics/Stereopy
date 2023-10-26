@@ -95,6 +95,7 @@ class StereoExpData(Data):
         self._position = position
         self._position_z = position_z
         self._position_offset = None
+        self._position_min = None
         self._bin_type = bin_type
         self._bin_size = bin_size
         self._tl = None
@@ -414,6 +415,14 @@ class StereoExpData(Data):
     @position_offset.setter
     def position_offset(self, position_offset):
         self._position_offset = position_offset
+    
+    @property
+    def position_min(self):
+        return self._position_min
+    
+    @position_min.setter
+    def position_min(self, position_min):
+        self._position_min = position_min 
 
     @property
     def offset_x(self):
@@ -589,7 +598,9 @@ class StereoExpData(Data):
             for bno in batches:
                 idx = np.where(self.cells.batch == bno)[0]
                 self.position[idx] -= self.position_offset[bno]
+                self.position[idx] += self.position_min[bno]
         self.position_offset = None
+        self.position_min = None
 
 
 class AnnBasedStereoExpData(StereoExpData):
@@ -600,6 +611,7 @@ class AnnBasedStereoExpData(StereoExpData):
             based_ann_data: anndata.AnnData = None,
             bin_type: str = None,
             bin_size: int = None,
+            spatial_key: Union[str, list, np.ndarray] = 'spatial',
             *args,
             **kwargs
     ):
@@ -637,6 +649,8 @@ class AnnBasedStereoExpData(StereoExpData):
 
         if self._ann_data.raw:
             self._tl._raw = AnnBasedStereoExpData(based_ann_data=self._ann_data.raw.to_adata())
+        
+        self._spatial_key = spatial_key
 
     def __str__(self):
         return str(self._ann_data)

@@ -844,8 +844,8 @@ class PlotCollection:
         group_list = res['group'].to_numpy()
         n = np.unique(group_list).size
         palette = stereo_conf.get_colors(colors, n=n)
-        x = self.data.position[:, 0].astype(int)
-        y = self.data.position[:, 1].astype(int)
+        x = self.data.position[:, 0]
+        y = self.data.position[:, 1]
         x_min, x_max = x.min(), x.max()
         y_min, y_max = y.min(), y.max()
         boundary = [x_min, x_max, y_min, y_max]

@@ -72,7 +72,7 @@ class _CommunityDetection:
             elif 'spatial_stereoseq' in slice._ann_data.obsm:
                 slice._ann_data.obsm['spatial'] = np.array(slice._ann_data.obsm['spatial_stereoseq'].copy())
             # annotation data must be of string type
-            slice._ann_data.obs[annotation] = slice._ann_data.obs[annotation].astype('str')
+            # slice._ann_data.obs[annotation] = slice._ann_data.obs[annotation].astype('str')
             # create a set of existing cell types in all slices
             self.cell_types = self.cell_types.union(set(slice._ann_data.obs[annotation].unique()))
             # if any of the samples lacks the cell type palette, set the flag
@@ -232,6 +232,7 @@ class _CommunityDetection:
             self.slices[slice_id]._ann_data.obs.loc[
                 algo.adata.obs[f'tissue_{algo.method_key}'].index, 'cell_communities'] = algo.adata.obs[
                 f'tissue_{algo.method_key}']
+            self.slices[slice_id]._ann_data.obs['cell_communities'].fillna('unknown', inplace=True)
 
             # save anndata objects for further use
             if self.params['save_adata']:
@@ -306,7 +307,7 @@ class _CommunityDetection:
                                     resolution=self.params['resolution'])
             merged_tissue._ann_data.obs['leiden'] = merged_tissue._ann_data.obs['leiden'].astype('int')
             merged_tissue._ann_data.obs['leiden'] -= 1
-            merged_tissue._ann_data.obs['leiden'] = merged_tissue._ann_data.obs['leiden'].astype('str')
+            merged_tissue._ann_data.obs['leiden'] = merged_tissue._ann_data.obs['leiden'].astype('U')
             merged_tissue._ann_data.obs['leiden'] = merged_tissue._ann_data.obs['leiden'].astype('category')
         elif self.params['cluster_algo'] == 'spectral':
             merged_tissue._ann_data.obsm['X_pca_dummy'] = merged_tissue._ann_data.X

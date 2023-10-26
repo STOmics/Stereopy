@@ -53,6 +53,9 @@ class GetNiche(AlgorithmBase):
         # adata_result = adata_full[(list(result_target_sender.index) + list(result_target_sender.columns)), :]
         cell_list = list(result_target_sender.index) + list(result_target_sender.columns)
         data_result = filter_cells(data_full, cell_list=cell_list, inplace=inplace)
+        if not inplace:
+            data_result.tl.result.set_item_callback = None
+
         for res_key in data_result.tl.key_record['pca']:
             data_result.tl.result[res_key] = data_result.tl.result[res_key][
                 np.isin(data_full.cell_names, cell_list)].copy()
@@ -68,5 +71,8 @@ class GetNiche(AlgorithmBase):
                 index=data_result.cell_names,
                 dtype='category'
             )
-
+        
+        if not inplace:
+            data_result.tl.result.contain_method = None
+            data_result.tl.result.get_item_method = None
         return data_result
