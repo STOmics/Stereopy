@@ -566,6 +566,7 @@ class MSData(_MSDataStruct):
                     'bins': self.merged_data.cell_names,
                     'group': self.merged_data.cells._obs[res_key].astype('category')
                 })
+                self.tl.result[scope_key_name][res_key].index = np.arange(self.merged_data.cell_names.size)
             else:
                 self.tl.result[scope_key_name][res_key] = self.merged_data.cells._obs[res_key].to_frame()
         elif type == 'var':

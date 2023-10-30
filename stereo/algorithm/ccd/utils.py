@@ -63,14 +63,27 @@ def plot_spatial(
     ax.set_aspect("equal")
     sns.despine(bottom=True, left=True, ax=ax)
 
+original_rcParams = None
 
 def set_figure_params(
         dpi: int,
         facecolor: str,
 ):
+    global original_rcParams
+    if original_rcParams is None:
+        from copy import deepcopy
+        original_rcParams = deepcopy(rcParams)
     rcParams['figure.facecolor'] = facecolor
     rcParams['axes.facecolor'] = facecolor
     rcParams["figure.dpi"] = dpi
+
+def reset_figure_params():
+    global original_rcParams
+    if original_rcParams is not None:
+        for key in rcParams.keys():
+            if key in original_rcParams:
+                rcParams[key] = original_rcParams[key]
+        original_rcParams = None
 
 
 def csv_to_anndata(csv_file_path: str, annotation: str):

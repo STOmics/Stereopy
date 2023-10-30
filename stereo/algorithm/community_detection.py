@@ -22,6 +22,7 @@ from .ccd import (
     plot_spatial,
     generate_report,
     set_figure_params,
+    reset_figure_params,
     calculate_spatial_metrics,
     SlidingWindowMultipleSizes,
     COMMUNITY_DETECTION_DEFAULTS,
@@ -282,6 +283,7 @@ class _CommunityDetection:
 
         self.params['execution_time'] = end_time - start_time
         generate_report(self.params)
+        reset_figure_params()
 
     @timeit
     def cluster(self, merged_tissue):  # TODO, merged_tissue da bude AnnBasedStereoExpData

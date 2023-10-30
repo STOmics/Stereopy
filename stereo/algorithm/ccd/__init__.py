@@ -7,5 +7,6 @@ from .sliding_window import SlidingWindowMultipleSizes
 from .utils import (
     timeit,
     plot_spatial,
-    set_figure_params
+    set_figure_params,
+    reset_figure_params
 )

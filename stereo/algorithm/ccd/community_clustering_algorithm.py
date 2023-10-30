@@ -649,8 +649,8 @@ class CommunityClusteringAlgo(ABC):
     def plot_celltype_table(self):
         """Plot a table showing cell type abundance per cluster."""
 
-        set_figure_params(dpi=self.dpi, facecolor='white')
         sns.set(font_scale=1)
+        set_figure_params(dpi=self.dpi, facecolor='white')
 
         stats = self.tissue.uns['cell mixtures'].copy()
 

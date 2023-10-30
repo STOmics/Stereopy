@@ -161,7 +161,7 @@ def umap(
         except ImportError:
             raise ImportError(
                 "Your env don't have GPU related RAPIDS packages, if you want to run this option, follow the "
-                "guide at https://stereopy.readthedocs.io/en/latest/Tutorials/clustering_by_gpu.html")
+                "guide at https://stereopy.readthedocs.io/en/latest/Tutorials/Clustering_by_GPU.html")
 
         n_epochs = (
             500 if maxiter is None else maxiter
