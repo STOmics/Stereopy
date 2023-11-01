@@ -285,7 +285,8 @@ class CoOccurrence(AlgorithmBase):
             ret[ret_key] = pd.DataFrame(tmp, index=group_codes).T
         return ret
 
-    def ms_co_occur_integrate(self, ms_data, scope, use_col, res_key='co_occurrence'):
+    @staticmethod
+    def ms_co_occur_integrate(ms_data, scope, use_col, res_key='co_occurrence'):
         from collections import Counter
         if use_col not in ms_data.obs:
             tmp_list = []
