@@ -19,16 +19,14 @@ from stereo.constant import UseColType
 
 class TimeSeriesAnalysis(AlgorithmBase):
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-
     def main(
             self,
             run_method=RunMethodType.tvg_marker.value,
             use_col=UseColType.timepoint.value,
             branch=None,
             p_val_combination=PValCombinationType.fdr.value,
-            cluster_number=6
+            cluster_number=6,
+            **kwargs
     ):
         """
         :param run_method: the model type when the algorithm is run, default = `tvg_marker`.
@@ -39,6 +37,17 @@ class TimeSeriesAnalysis(AlgorithmBase):
         :param p_val_combination: p_value combination method to use, choosing from ['fisher', 'mean', 'FDR']
         :param cluster_number: number of cluster
 
+        The parameters below only for `other` run method.
+
+        :param spatial_weight: the weight to combine spatial feature
+        :param n_spatial_feature: n top features to combine of spatial feature
+        :param temporal_mean_threshold: filter out genes of which mean absolute temporal feature <= temporal_mean_threshold # noqa
+        :param temporal_top_threshold: filter out genes of which top absolute temporal feature < temporal_top_threshold
+        :param Epsilon: max value to finish iteration
+        :param w_size: window size to rasterizing spatial expression, see also data.tl.gene_spatial_feature
+        :param use_col: the col in obs representing celltype or clustering
+        :param branch: celltypes order in use_col
+
         """
         if run_method == RunMethodType.tvg_marker.value:
             self.TVG_marker(
@@ -47,7 +56,7 @@ class TimeSeriesAnalysis(AlgorithmBase):
                 p_val_combination=p_val_combination
             )
         else:
-            self.fuzzy_C_gene_pattern_cluster(cluster_number)
+            self.fuzzy_C_gene_pattern_cluster(cluster_number, **kwargs)
 
     def TVG_marker(self, use_col, branch, p_val_combination=PValCombinationType.fisher.value):
         """

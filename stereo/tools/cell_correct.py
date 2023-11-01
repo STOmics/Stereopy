@@ -289,21 +289,17 @@ def cell_correct(out_dir: str,
         * GEM and raw CGEF (not have been corrected)
         * BGEF and raw CGEF (not have been corrected)
 
-    :param out_dir: the path to save intermediate result, like mask (if generate from ssDNA image),
-        BGEF (generate from GEM), CGEF (generate from GEM and mask), etc. and final corrected result.
+    :param out_dir: the path to save intermediate result, like mask (if generated from ssDNA image),
+        BGEF (generated from GEM), CGEF (generated from GEM and mask), etc. and final corrected result.
     :param threshold: threshold size, default to 20.
     :param gem_path: the path to GEM file.
     :param bgef_path: the path to BGEF file.
     :param raw_cgef_path: the path to CGEF file which not has been corrected.
     :param mask_path: the path to mask file.
     :param process_count: the count of the processes or threads will be started when correct cells, defaults to None
-                by default, it will be set to 10 when `fast` is set to False and will be set to 1 when `fast` is set to v1 or v2.
+                by default, it will be set to 10 when `method` is set to 'GMM' and will be set to 1 when `method` is set to 'FAST' or 'EDM'.
                 if it is set to -1, all of the cores will be used.
 	:param only_save_result: if `True`, only save result to disk; if `False`, return an StereoExpData object.
-    :param fast: specify the version of algorithm, available values include [False, v1, v2], defaults to v2.
-                    False: the oldest and slowest version, it will uses multiprocessing if set `process_count` to more than 1.
-                    v1: the first fast version, it olny uses single process and single threading.
-                    v2: default and recommended algorithm, the latest fast version, faster and more accurate than v1, it will uses multithreading if set `process_count` to more than 1.
     :param method: correct in different method if `method` is set, otherwise `EDM`.
     :param distance: outspread distance based on cellular contour of cell segmentation image, in pixels, only available for v2 algorithm.
 

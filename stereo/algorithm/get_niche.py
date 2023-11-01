@@ -57,6 +57,8 @@ class GetNiche(AlgorithmBase):
             data_result.tl.result.set_item_callback = None
 
         for res_key in data_result.tl.key_record['pca']:
+            if data_result.tl.result[res_key].shape[0] == data_result.shape[0]:
+                continue
             data_result.tl.result[res_key] = data_result.tl.result[res_key][
                 np.isin(data_full.cell_names, cell_list)].copy()
         if cluster_res_key in data_result.cells:
