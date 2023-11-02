@@ -6,20 +6,8 @@ from torch.utils.data import Dataset
 
 def get_transforms():
     list_transforms = []
-
-    list_transforms.extend(
-        [
-            # HorizontalFlip(p=0.5),
-            # GaussNoise(p=0.4),
-        ])
-
-    # list_transforms.extend([transforms.ColorJitter(brightness=0.2, contrast=0.2, saturation=0.0, hue=0.0),])
-
-    list_transforms.extend(
-        [
-            # Normalize(mean=(0.485, 0.456, 0.406), std=(0.229, 0.224, 0.225), p=1),
-            ToTensorV2(),
-        ])
+    list_transforms.extend([])
+    list_transforms.extend([ToTensorV2()])
     list_trfms = Compose(list_transforms)
     return list_trfms
 

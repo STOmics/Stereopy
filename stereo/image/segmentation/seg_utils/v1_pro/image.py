@@ -1,12 +1,14 @@
-from os.path import split
-from os.path import splitext
+from os.path import (
+    splitext,
+    split
+)
 
 import cv2
+import glog
 import numpy as np
-import seg_utils.utils as utils
 import tifffile
 
-from stereo.log_manager import logger
+from .utils import transfer_16bit_to_8bit
 
 SPLIT_SIZE = 20000
 
@@ -14,7 +16,6 @@ SPLIT_SIZE = 20000
 class Image(object):
 
     def __init__(self, path):
-
         self.__file = split(path)[-1]
         self.__file_name = splitext(path)[0]
         self.__suffix = splitext(path)[-1]
@@ -34,7 +35,6 @@ class Image(object):
         self.score_mask = []
 
     def __imload(self, path):
-
         assert self.__suffix in ['.tif', '.png', '.jpg']
         if self.__suffix == '.tif':
             img = tifffile.imread(path)
@@ -43,14 +43,12 @@ class Image(object):
         return img
 
     def __convert_gray(self):
-
         if len(self.__img.shape) == 3:
-            logger.info('Image %s convert to gray!' % self.__file)
+            glog.info('Image %s convert to gray!' % self.__file)
             self.__img = self.__img[:, :, 0]
 
     def __trans16to8(self):
-
         assert self.__dtype in ['uint16', 'uint8']
         if self.__dtype != 'uint8':
-            logger.info('%s transfer to 8bit' % self.__file)
-            self.__img = utils.transfer_16bit_to_8bit(self.__img)
+            glog.info('%s transfer to 8bit' % self.__file)
+            self.__img = transfer_16bit_to_8bit(self.__img)

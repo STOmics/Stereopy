@@ -5,7 +5,7 @@ import numpy as np
 from PIL import Image
 from skimage import measure
 
-from . import utils as utils
+from .utils import transfer_16bit_to_8bit
 
 
 def down_sample(img, scale=5):
@@ -24,7 +24,7 @@ def up_sample(image, ori_shape):
 
 
 def hole_fill(binary_image):
-    ''' 孔洞填充 '''
+    '''孔洞填充'''
     hole = binary_image.copy()  # 空洞填充
     hole = cv2.copyMakeBorder(hole, 1, 1, 1, 1, cv2.BORDER_CONSTANT, value=[0])  # 首先将图像边缘进行扩充，防止空洞填充不完全
     hole2 = hole.copy()
@@ -51,7 +51,7 @@ def tissueSeg(ori_image_list):
         # binary
         ret1, mask_thumb = cv2.threshold(image_thumb, 125, 255, cv2.THRESH_OTSU)
         if mask_thumb.dtype != 'uint8':
-            mask_thumb = utils.transfer_16bit_to_8bit(mask_thumb)
+            mask_thumb = transfer_16bit_to_8bit(mask_thumb)
 
         kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (20, 20))  # 椭圆结构
         mask_thumb = cv2.morphologyEx(mask_thumb, cv2.MORPH_CLOSE, kernel, iterations=8)
@@ -86,20 +86,6 @@ def tissueSeg(ori_image_list):
 
 
 def tissue_seg_multi(input_list, processes):
-    pre_tissue = []
-    if processes > 1:
-        pool = mp.Pool(processes=processes)
-        try:
-            for result in pool.map(tissueSeg, input_list):
-                pre_tissue.append(result)
-        finally:
-            pool.close()
-    else:
-        pre_tissue.append(tissueSeg(input_list[0]))
+    with mp.Pool(processes=processes) as p:
+        pre_tissue = p.map(tissueSeg, input_list)
     return pre_tissue
-
-# if __name__=='__main__':
-#     import tifffile
-#     img = tifffile.imread(r'D:\limin\img\issue_img\21SD-GJ-006-C-ssDNA-B5-16bit_registered.tif')
-#     tissue = tissueSeg(img)
-#     tifffile.imsave(r'D:\limin\img\issue_img\21SD-GJ-006-C-ssDNA-B5-16bit_registered_tissue_mask.tif', tissue[0])

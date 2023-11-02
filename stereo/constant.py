@@ -90,3 +90,13 @@ class ColorType(Enum):
 
 class RunMethodType(Enum):
     tvg_marker = "tvg_marker"
+
+
+class VersionType(Enum):
+    v1 = 'v1'
+    v1_pro = 'v1_pro'
+    v3 = 'v3'
+
+    @staticmethod
+    def get_version_list():
+        return [key.value for key in VersionType]

@@ -7,7 +7,11 @@ import tensorflow as tf
 import torch
 from albumentations import Compose
 from albumentations.pytorch import ToTensorV2
-from seg_utils.utils import (
+from tqdm import tqdm
+
+from .dataset import data_batch
+from .resnet_unet import EpsaResUnet
+from .utils import (
     normalize,
     cell_watershed,
     resize,
@@ -16,25 +20,13 @@ from seg_utils.utils import (
     split,
     merge
 )
-from tqdm import tqdm
-
-from .dataset import data_batch
-from .resnet_unet import EpsaResUnet
 
 
 def get_transforms():
     list_transforms = []
 
-    list_transforms.extend(
-        [
-            # HorizontalFlip(p=0.5),
-            # GaussNoise(p=0.7),
-        ])
-    list_transforms.extend(
-        [
-            # Normalize(mean=(0.485, 0.456, 0.406), std=(0.229, 0.224, 0.225), p=1),
-            ToTensorV2(),
-        ])
+    list_transforms.extend([])
+    list_transforms.extend([ToTensorV2()])
     list_trfms = Compose(list_transforms)
     return list_trfms
 
