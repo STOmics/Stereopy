@@ -7,15 +7,16 @@ from .seg_utils import cell_seg_pipeline as pipeline
 
 
 def cell_seg_deepcell(
-        model_path: str,
         img_path: str,
         out_path: str,
+        model_path: str = None,
         depp_cro_size: int = 20000,
         overlap: int = 100,
         gpu: str = '-1',
         tissue_seg_model_path: str = None,
         tissue_seg_method: str = None,
-        post_processing_workers: int = 10
+        post_processing_workers: int = 10,
+        version: str = 'v1'
 ):
     """
     Implement cell segmentation by deep cell model.
@@ -40,10 +41,15 @@ def cell_seg_deepcell(
         the method of tissue segmentation, 1 is based on deep learning and 0 is based on OpenCV.
     post_processing_workers
         the number of processes for post-processing.
+    version
+        the version
+
     Returns
     ------------------
     None
     """
+    if version == 'v1' and not model_path:
+        raise Exception("cell_seg_deepcell() missing 1 required keyword argument: 'model_path'")
     try:
         import tensorflow as tf  # noqa
     except Exception:

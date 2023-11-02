@@ -37,9 +37,9 @@ class CellSegment(object):
         self.mask_out_path = os.path.join(self.mask_out_path, model_type)
         if model_type == 'deep-learning':
             cell_seg(
-                model_path,
                 self.image_path,
                 self.mask_out_path,
+                model_path,
                 depp_cro_size,
                 overlap,
                 self.gpu,
@@ -49,9 +49,9 @@ class CellSegment(object):
             )
         else:
             cell_seg_deepcell(
-                model_path,
                 self.image_path,
                 self.mask_out_path,
+                model_path,
                 depp_cro_size,
                 overlap,
                 self.gpu,
