@@ -70,8 +70,6 @@ def cell_seg(
     os.environ["CUDA_VISIBLE_DEVICES"] = str(gpu)
     if version in [VersionType.v1.value, VersionType.v3.value] and not model_path:
         raise Exception("cell_seg() missing 1 required keyword argument: 'model_path'")
-    import pdb
-    pdb.set_trace()
     if version == VersionType.v1.value:
         cell_seg_pipeline = CellSegPipeV1(
             img_path,
