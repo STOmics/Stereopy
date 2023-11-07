@@ -309,8 +309,8 @@ class _CommunityDetection:
                                     resolution=self.params['resolution'])
             merged_tissue._ann_data.obs['leiden'] = merged_tissue._ann_data.obs['leiden'].astype('int')
             merged_tissue._ann_data.obs['leiden'] -= 1
-            merged_tissue._ann_data.obs['leiden'] = merged_tissue._ann_data.obs['leiden'].astype('U')
-            merged_tissue._ann_data.obs['leiden'] = merged_tissue._ann_data.obs['leiden'].astype('category')
+            merged_tissue._ann_data.obs['leiden'] = merged_tissue._ann_data.obs['leiden'].astype('str')
+            # merged_tissue._ann_data.obs['leiden'] = merged_tissue._ann_data.obs['leiden'].astype('category')
         elif self.params['cluster_algo'] == 'spectral':
             merged_tissue._ann_data.obsm['X_pca_dummy'] = merged_tissue._ann_data.X
             merged_tissue.tl.neighbors(pca_res_key='X_pca_dummy', n_neighbors=15)

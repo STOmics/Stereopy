@@ -5,7 +5,7 @@ from collections import defaultdict
 import anndata as ad
 import numpy as np
 import pandas as pd
-import scanpy as sc
+# import scanpy as sc
 from anndata import AnnData
 from tqdm.auto import tqdm
 
@@ -70,7 +70,7 @@ class SlidingWindow(CommunityClusteringAlgo):
             self.calc_feature_matrix(self.win_sizes_list[0], self.sliding_steps_list[0])
         else:
             if self.tfile.endswith('.h5ad'):
-                self.tissue = sc.read(self.tfile)
+                self.tissue = ad.read_h5ad(self.tfile)
             else:
                 raise AttributeError(f"File '{self.tfile}' extension is not .h5ad")
 
@@ -133,7 +133,7 @@ class SlidingWindow(CommunityClusteringAlgo):
                     if window_key in ret.keys():
                         feature_matrix[subwindow] = {
                             k: feature_matrix[subwindow].get(k, 0) + ret[window_key].get(k, 0)
-                            for k in set(feature_matrix[subwindow]).union(ret[window_key])
+                            for k in sorted(set(feature_matrix[subwindow]).union(ret[window_key]))
                         }
 
         feature_matrix = pd.DataFrame(feature_matrix).T
@@ -238,7 +238,7 @@ class SlidingWindowMultipleSizes(SlidingWindow):
                 super().calc_feature_matrix(self.win_sizes_list[i], self.sliding_steps_list[i])
                 tissue_list.append(self.tissue)
 
-            self.tissue = ad.concat(tissue_list, axis=0, join='outer')
+            self.tissue = ad.concat(tissue_list, axis=0, join='outer', fill_value=0.0)
         else:
             super().run()
 
