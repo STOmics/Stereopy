@@ -206,12 +206,12 @@ class PlotCellCellCommunication(PlotBase):
             data=network,
             square=True,
             cmap=palette,
-            cbar_kws={'pad': 0.1, 'shrink': 0.5, 'location': 'bottom', 'orientation': 'horizontal'},
+            cbar_kws={'pad': 0.1, 'shrink': 0.5, 'location': 'top', 'orientation': 'horizontal'},
             ax=axes[0], **kwargs)
-        axes[0].yaxis.set_ticks_position('right')
+        axes[0].yaxis.set_ticks_position('left')
         axes[0].invert_yaxis()
         axes[0].tick_params(axis='x', labelsize=13, labelrotation=90)
-        axes[0].tick_params(axis='y', labelsize=13)
+        axes[0].tick_params(axis='y', labelsize=13, labelrotation=0)
         axes[0].set_xlabel('')
         axes[0].set_ylabel('')
         axes[0].set_title('count')
@@ -220,12 +220,12 @@ class PlotCellCellCommunication(PlotBase):
             data=log_network,
             square=True,
             cmap=palette,
-            cbar_kws={'pad': 0.1, 'shrink': 0.5, 'location': 'bottom', 'orientation': 'horizontal'},
+            cbar_kws={'pad': 0.1, 'shrink': 0.5, 'location': 'top', 'orientation': 'horizontal'},
             ax=axes[1], **kwargs)
         axes[1].yaxis.set_ticks_position('right')
         axes[1].invert_yaxis()
         axes[1].tick_params(axis='x', labelsize=13, labelrotation=90)
-        axes[1].tick_params(axis='y', labelsize=13)
+        axes[1].tick_params(axis='y', labelsize=13, labelrotation=0)
         axes[1].set_xlabel('')
         axes[1].set_ylabel('')
         axes[1].set_title('log_count')

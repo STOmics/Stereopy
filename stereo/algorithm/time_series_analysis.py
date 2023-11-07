@@ -37,11 +37,11 @@ class TimeSeriesAnalysis(AlgorithmBase):
         :param p_val_combination: p_value combination method to use, choosing from ['fisher', 'mean', 'FDR']
         :param cluster_number: number of cluster
 
-        The parameters below only for `other` run method.
+        The parameters below are all key word arguments and only for `other` `run_method`.
 
         :param spatial_weight: the weight to combine spatial feature
         :param n_spatial_feature: n top features to combine of spatial feature
-        :param temporal_mean_threshold: filter out genes of which mean absolute temporal feature <= temporal_mean_threshold # noqa
+        :param temporal_mean_threshold: filter out genes of which mean absolute temporal feature <= temporal_mean_threshold
         :param temporal_top_threshold: filter out genes of which top absolute temporal feature < temporal_top_threshold
         :param Epsilon: max value to finish iteration
         :param w_size: window size to rasterizing spatial expression, see also data.tl.gene_spatial_feature

@@ -31,3 +31,4 @@ from .plot_paga import PlotPaga
 from .plot_time_series import PlotTimeSeries
 from .plot_time_series import PlotTimeSeriesAnalysis
 from .plot_elbow import PlotElbow
+from .plot_genes_in_pseudotime import PlotGenesInPseudotime
