@@ -80,7 +80,8 @@ def write_h5ad(
         data.output = output
     else:
         if data.output is None:
-            logger.error("The output path must be set before writing.")
+            raise Exception("The output path must be set before writing.")
+
     with h5py.File(data.output, mode='w') as f:
         _write_one_h5ad(f, data, use_raw=use_raw, use_result=use_result, key_record=key_record)
 
