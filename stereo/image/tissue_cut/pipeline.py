@@ -161,7 +161,7 @@ class _TissueCut(object):
                 tifffile.imsave(self.dst_img_file_path[-1], tissue)
             else:
                 tifffile.imsave(self.dst_img_file_path[-1], (tissue > 0).astype(np.uint8))
-        logger.info('seg results saved in %s' % self.dst_img_path)
+        logger.info('seg results saved in %s' % self.dst_img_file_path[-1])
 
     # preprocess image for deep learning
     def get_thumb_img(self):

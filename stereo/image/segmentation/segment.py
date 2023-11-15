@@ -41,7 +41,7 @@ def cell_seg(
     overlap
         overlap size.
     gpu
-        set gpu id, if `'-1'`, use cpu for prediction.
+        set gpu id, if int(gpu)<0, use cpu for prediction, otherwise use gpu for prediction
     tissue_seg_model_path
         the path of deep learning model of tissue segmentation, if set it to None, it would use OpenCV to process.
     tissue_seg_method
@@ -67,9 +67,10 @@ def cell_seg(
     if version not in VersionType.get_version_list():
         raise Exception("version must be %s" % ('、'.join(VersionType.get_version_list())))
 
-    os.environ["CUDA_VISIBLE_DEVICES"] = str(gpu)
-    if version in [VersionType.v1.value, VersionType.v3.value] and not model_path:
+    if not model_path:
         raise Exception("cell_seg() missing 1 required keyword argument: 'model_path'")
+
+    os.environ["CUDA_VISIBLE_DEVICES"] = str(gpu)
     if version == VersionType.v1.value:
         cell_seg_pipeline = CellSegPipeV1(
             img_path,
@@ -88,11 +89,8 @@ def cell_seg(
             img_path,
             out_path,
             is_water,
-            deep_crop_size,
-            overlap,
-            tissue_seg_model_path=tissue_seg_model_path,
-            tissue_seg_method=tissue_seg_method,
-            post_processing_workers=post_processing_workers,
+            gpu=gpu,
+            num_threads=num_threads,
             model_path=model_path
         )
         cell_seg_pipeline.run()

@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from tifffile import tifffile
 
+from stereo import logger
 from . import CellBinElement
 from ..dnn.cseg.cell_trace import get_trace as get_t
 from ..dnn.cseg.detector import Segmentation
@@ -135,7 +136,10 @@ def cell_seg_v3(
         img = _get_img_filter(img, tissue_mask)
     mask = cell_bcdu.run(img)
     CellSegmentation.get_trace(mask)
-    tifffile.imwrite(out_path, mask)
+    file_name = img_path.split('.')[0].split('/')[-1]
+    file_path = '/'.join([out_path, file_name + r'.cell_cut.tif'])
+    tifffile.imwrite(file_path, mask)
+    logger.info('seg results saved in %s' % file_path)
 
 
 def transfer_16bit_to_8bit(image_16bit):
