@@ -9,13 +9,13 @@ import numpy as np
 from tqdm import trange
 
 from stereo.constant import MODEL_URL
+from stereo.log_manager import logger as models_logger
 from . import dynamics
 from . import plot
 from . import utils
 from .core import UnetModel
 from .core import assign_device
 from .core import parse_model_string
-from ... import logger as models_logger
 
 _MODEL_URL = MODEL_URL
 _MODEL_DIR_ENV = os.environ.get("CELLPOSE_LOCAL_MODELS_PATH")

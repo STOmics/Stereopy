@@ -1,5 +1,7 @@
 import numpy as np
 
+from stereo.image.cellbin.dnn.onnx_net import OnnxNet
+from stereo.image.cellbin.image.wsi_split import SplitWSI
 from . import CellSegmentation
 from .predict import CellPredict
 from .processing import (
@@ -11,8 +13,6 @@ from .processing import (
     f_padding,
     f_fusion
 )
-from ...dnn.onnx_net import OnnxNet
-from ...image.wsi_split import SplitWSI
 
 
 # TensorRT/ONNX

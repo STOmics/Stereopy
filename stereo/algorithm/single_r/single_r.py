@@ -14,13 +14,13 @@ from joblib import (
 )
 from tqdm import tqdm
 
+from stereo.core.stereo_exp_data import StereoExpData
+from stereo.log_manager import logger
 from .utils import (
     corr_spearman,
     apply_along_axis
 )
 from ..algorithm_base import AlgorithmBase
-from ...core.stereo_exp_data import StereoExpData
-from ...log_manager import logger
 
 
 class _TestData(object):

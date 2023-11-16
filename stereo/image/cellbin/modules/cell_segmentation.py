@@ -5,14 +5,14 @@ import numpy as np
 from tifffile import tifffile
 
 from stereo import logger
-from . import CellBinElement
-from ..dnn.cseg.cell_trace import get_trace as get_t
-from ..dnn.cseg.detector import Segmentation
-from ...tissue_cut import (
+from stereo.image.tissue_cut import (
     SingleStrandDNATissueCut,
     DEEP,
     INTENSITY
 )
+from . import CellBinElement
+from ..dnn.cseg.cell_trace import get_trace as get_t
+from ..dnn.cseg.detector import Segmentation
 
 
 class CellSegmentation(CellBinElement):

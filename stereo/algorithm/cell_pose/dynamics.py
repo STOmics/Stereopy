@@ -14,8 +14,11 @@ from scipy.ndimage import find_objects
 from scipy.ndimage import maximum_filter1d
 from tqdm import trange
 
-from . import utils, metrics
-from ... import logger as dynamics_logger
+from stereo.log_manager import logger as dynamics_logger
+from . import (
+    utils,
+    metrics
+)
 
 TORCH_ENABLED = True
 torch_GPU = torch.device('cuda')

@@ -17,7 +17,7 @@ from tqdm import trange, tqdm
 from . import metrics
 from . import resnet_torch
 from . import utils
-from ... import logger as core_logger
+from stereo.log_manager import logger as core_logger
 
 TORCH_ENABLED = True
 

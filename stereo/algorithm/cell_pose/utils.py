@@ -23,8 +23,8 @@ from scipy.ndimage import label
 from scipy.spatial import ConvexHull
 from tqdm import tqdm
 
+from stereo.log_manager import logger as transforms_logger
 from . import metrics
-from ... import logger as transforms_logger
 
 try:
     from skimage.morphology import remove_small_holes  # noqa

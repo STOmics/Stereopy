@@ -22,7 +22,7 @@ from matplotlib.axes import Axes
 from matplotlib.colors import Normalize
 from typing_extensions import Literal
 
-from ...log_manager import logger
+from stereo.log_manager import logger
 
 
 def heatmap(

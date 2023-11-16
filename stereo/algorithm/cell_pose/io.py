@@ -17,9 +17,9 @@ from roifile import ImagejRoi
 from roifile import roiwrite
 from tqdm import tqdm
 
+from stereo.log_manager import logger as io_logger
 from . import plot
 from . import utils
-from ... import logger as io_logger
 
 try:
     from PyQt5 import (  # noqa
