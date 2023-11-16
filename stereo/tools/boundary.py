@@ -100,7 +100,6 @@ class ConcaveHull(object):
         if recurse.k >= self.data_set.shape[0]:
             print(" max k reached, at k={0}".format(recurse.k))
             return None
-        print("k={0}".format(recurse.k))
         return recurse.calculate()
 
     def calculate(self):
@@ -170,7 +169,6 @@ class ConcaveHull(object):
                 i += 1
 
             if invalid_hull:
-                print("invalid hull for all nearest neibs")
                 return self.recurse_calculate()
 
             last_point = current_point  # record last point for clockwise angles # noqa
@@ -190,8 +188,6 @@ class ConcaveHull(object):
             pt = Point(self.data_set[ix, :])
             if poly.intersects(pt) or pt.within(poly):
                 count += 1
-            else:
-                print("recaculate nearest k value")
 
         if count == total:
             return hull

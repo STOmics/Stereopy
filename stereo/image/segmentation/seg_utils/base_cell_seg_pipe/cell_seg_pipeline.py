@@ -49,7 +49,7 @@ class CellSegPipe(object):
         self.convert_gray()
         self.out_path = out_path
         if not exists(out_path):
-            os.mkdir(out_path)
+            os.makedirs(out_path)
             logger.info('Create new dir : %s' % out_path)
         self.is_water = is_water
         t0 = time.time()

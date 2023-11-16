@@ -18,6 +18,7 @@ from holoviews.selection import link_selections
 from stereo.log_manager import logger
 from stereo.stereo_config import stereo_conf
 from stereo.tools.boundary import ConcaveHull
+from stereo.tools.tools import make_dirs
 
 link = link_selections.instance()
 pn.param.ParamMethod.loading_indicator = True
@@ -95,6 +96,9 @@ class InteractiveScatter:
         Returns:
 
         """
+        if not self.selected_exp_data:
+            raise Exception('Please select the data area in the picture first!')
+
         selected_pos = hv.Dataset(self.scatter_df).select(link.selection_expr).data.index
         self.generate_selected_expr_matrix(selected_pos, self.drop_checkbox.value)
         exp_matrix_data = self.selected_exp_data.position.tolist()
@@ -118,6 +122,7 @@ class InteractiveScatter:
 
         from gefpy.cgef_adjust_cy import CgefAdjust
         cg = CgefAdjust()
+        make_dirs(output_path)
         if cgef:
             cg.create_Region_Cgef(origin_file_path, output_path, coors)
         else:

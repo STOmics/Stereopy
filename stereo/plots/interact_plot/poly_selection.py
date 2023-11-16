@@ -12,6 +12,7 @@ from holoviews.util.transform import dim
 
 from stereo.stereo_config import stereo_conf
 from stereo.tools.boundary import ConcaveHull
+from stereo.tools.tools import make_dirs
 
 pn.extension()
 hv.extension('bokeh')
@@ -127,6 +128,8 @@ class PolySelection(object):
 
         from gefpy.cgef_adjust_cy import CgefAdjust
         cg = CgefAdjust()
+        make_dirs(output_path)
+
         if cgef:
             cg.create_Region_Cgef(origin_file_path, output_path, coors)
         else:

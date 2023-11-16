@@ -138,6 +138,8 @@ def cell_seg_v3(
     CellSegmentation.get_trace(mask)
     file_name = img_path.split('.')[0].split('/')[-1]
     file_path = '/'.join([out_path, file_name + r'.cell_cut.tif'])
+    if not os.path.exists(out_path):
+        os.makedirs(out_path)
     tifffile.imwrite(file_path, mask)
     logger.info('seg results saved in %s' % file_path)
 
