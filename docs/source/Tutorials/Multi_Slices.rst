@@ -9,8 +9,9 @@ Likewise, functions performed on one slice could also be used on multi-slice dat
 .. nbgallery::
     
     MSData_Clustering
-    3D_Cell_Cell_Communication
-    3D_Gene_Regulatory_Network
-    Time_Series_Analysis
     Batch_QC
     Batch_Effect
+    Comparative_Analysis
+    Time_Series_Analysis
+    3D_Cell_Cell_Communication
+    3D_Gene_Regulatory_Network
