@@ -61,7 +61,6 @@ class Paste(MSDataAlgorithmBase):
             assert len(slices) >= 2, "You should have at least 2 slices on 'center_align' method"
             if initial_slice is None:
                 initial_slice = deepcopy(slices[0])
-                initial_slice_name = slice_names[0]
             else:
                 initial_slice = deepcopy(self.ms_data[initial_slice])
             center_slice, pis = center_align(initial_slice, slices, *args, **kwargs)

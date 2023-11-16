@@ -6,9 +6,12 @@ import numpy as np
 import tifffile
 from skimage import measure
 
-from stereo.image.segmentation.seg_utils.v1 import utils, cell_infer
 from stereo.image.segmentation.seg_utils.base_cell_seg_pipe import grade
 from stereo.image.segmentation.seg_utils.base_cell_seg_pipe.cell_seg_pipeline import CellSegPipe
+from stereo.image.segmentation.seg_utils.v1 import (
+    utils,
+    cell_infer
+)
 from stereo.image.tissue_cut import (
     SingleStrandDNATissueCut,
     DEEP,

@@ -48,7 +48,7 @@ class TimeSeriesAnalysis(AlgorithmBase):
         :param use_col: the col in obs representing celltype or clustering
         :param branch: celltypes order in use_col
 
-        """
+        """  # noqa
         if run_method == RunMethodType.tvg_marker.value:
             self.TVG_marker(
                 use_col=use_col,

@@ -329,7 +329,7 @@ class AnnBasedResult(_BaseResult, object):
             self._set_cluster_res(key, value)
         elif type == AnnBasedResult.CONNECTIVITY:
             self._set_connectivities_res(key, value)
-        elif type == AnnBasedResult.REDUCE  and not key.endswith('variance_ratio'):
+        elif type == AnnBasedResult.REDUCE and not key.endswith('variance_ratio'):
             self._set_reduce_res(key, value)
         elif type == AnnBasedResult.HVG_NAMES:
             self._set_hvg_res(key, value)

@@ -1,22 +1,25 @@
 from typing import Literal
+
 import matplotlib.pylab as plt
-from matplotlib.axes import Axes
-from matplotlib.colors import Normalize
-from matplotlib.cm import ScalarMappable
-import seaborn as sns
 import pandas as pd
+import seaborn as sns
+from matplotlib.axes import Axes
+from matplotlib.cm import ScalarMappable
+from matplotlib.colors import Normalize
 
 from .plot_base import PlotBase
+
 
 class PlotGenesInPseudotime(PlotBase):
     __DEFAULT_FIGURE_WIDTH = 17
     __DEFAULT_AXES_HEIGHT = 3
     __FONT_SIZE = 10
+
     def plot_genes_in_pseudotime(
-        self,
-        marker_genes_res_key: str = 'marker_genes',
-        group: str = None,
-        sort_by: Literal[
+            self,
+            marker_genes_res_key: str = 'marker_genes',
+            group: str = None,
+            sort_by: Literal[
                 'scores',
                 'pvalues',
                 'pvalues_adj',
@@ -24,12 +27,12 @@ class PlotGenesInPseudotime(PlotBase):
                 'pct',
                 'pct_rest'
             ] = 'scores',
-        topn: int = 5,
-        cmap: str = 'plasma',
-        width: int = None,
-        height: int = None,
-        size: int = 30,
-        marker: str = '.'
+            topn: int = 5,
+            cmap: str = 'plasma',
+            width: int = None,
+            height: int = None,
+            size: int = 30,
+            marker: str = '.'
     ):
         """
         Distribution of expression count of marker genes along with pseudotime
@@ -44,13 +47,13 @@ class PlotGenesInPseudotime(PlotBase):
         :param size: The size of markers in plot, defaults to 30
         :param marker: The style of markers in plot, defaults to '.'
 
-        """
+        """  # noqa
         if group is None:
             raise ValueError('Must specify the group to plot.')
-        
+
         if marker_genes_res_key not in self.pipeline_res:
             raise KeyError(f"Can not find 'find_marker_genes' result by key '{marker_genes_res_key}'.")
-        
+
         if 'dpt_pseudotime' not in self.pipeline_res:
             raise KeyError("Can not find pseudotime infomation.")
 
@@ -64,13 +67,13 @@ class PlotGenesInPseudotime(PlotBase):
             if group == group_in_key:
                 marker_genes_res_used: pd.DataFrame = marker_genes_res[key]
                 break
-        
+
         if marker_genes_res_used is None:
             raise ValueError(f"Can not find the 'find_marker_genes' result related to group '{group}'.")
-        
+
         if sort_by not in marker_genes_res_used.columns:
             raise ValueError(f"The key '{sort_by}' used to sort Can not be found in 'find_marker_genes' result.")
-        
+
         marker_genes_res_used.sort_values(by=sort_by, ascending=False, inplace=True)
         topn = min(topn, marker_genes_res_used.shape[0])
         genes = marker_genes_res_used[0:topn]['genes'].to_numpy()
@@ -79,7 +82,7 @@ class PlotGenesInPseudotime(PlotBase):
 
         if width is None:
             width = self.__DEFAULT_FIGURE_WIDTH
-        
+
         if height is None:
             height = self.__DEFAULT_AXES_HEIGHT * len(genes)
 

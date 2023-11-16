@@ -534,7 +534,7 @@ class MSData(_MSDataStruct):
             type: Literal['obs', 'var'] = 'obs',
             item: Optional[list] = None,
             fill=np.NaN,
-            cluster: bool=True
+            cluster: bool = True
     ):
         assert self.merged_data, "`to_integrate` need running function `integrate`"
         assert self._names[scope] == self._names[_from], f"`scope`: {scope} should equal with _from: {_from}"

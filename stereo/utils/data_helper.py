@@ -101,7 +101,7 @@ def reorganize_data_coordinates(
     max_xs = [0] * (position_column_count + 1)
     max_ys = [0] * (position_row_count + 1)
 
-    if data_position_min is None:    
+    if data_position_min is None:
         data_position_min = {}
         for i, bno in enumerate(batches):
             idx = np.where(cells_batch == bno)[0]

@@ -212,8 +212,8 @@ class SingleR(AlgorithmBase):
     @staticmethod
     def check_gpu_env():
         try:
-            import cudf
-            import cugraph
+            import cudf  # noqa
+            import cugraph  # noqa
         except ImportError:
             raise ImportError(
                 "Your env don't have GPU related RAPIDS packages, if you want to run this option, follow the "

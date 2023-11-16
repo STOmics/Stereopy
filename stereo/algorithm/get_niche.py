@@ -73,7 +73,7 @@ class GetNiche(AlgorithmBase):
                 index=data_result.cell_names,
                 dtype='category'
             )
-        
+
         if not inplace:
             data_result.tl.result.contain_method = None
             data_result.tl.result.get_item_method = None

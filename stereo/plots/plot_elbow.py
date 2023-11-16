@@ -41,7 +41,7 @@ class PlotElbow(PlotBase):
         :param marker_size: the marker size, defaults to 4.
         :param cum: setting to True means each marker represents a cumulation of current marker and all previous, default to False.
 
-        """
+        """  # noqa
         if pca_res_key not in self.pipeline_res:
             raise KeyError(f"Can not find the pca result in data.tl.result by key {pca_res_key}")
 
@@ -49,10 +49,10 @@ class PlotElbow(PlotBase):
         variance_ratio = self.pipeline_res[res_key]
         if n_pcs is not None:
             variance_ratio = variance_ratio[0:n_pcs]
-        
+
         if cum:
             variance_ratio = np.cumsum(variance_ratio)
-        
+
         pcs = np.arange(variance_ratio.size) + 1
 
         fig, ax = plt.subplots()

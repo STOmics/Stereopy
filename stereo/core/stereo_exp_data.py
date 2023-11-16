@@ -415,14 +415,14 @@ class StereoExpData(Data):
     @position_offset.setter
     def position_offset(self, position_offset):
         self._position_offset = position_offset
-    
+
     @property
     def position_min(self):
         return self._position_min
-    
+
     @position_min.setter
     def position_min(self, position_min):
-        self._position_min = position_min 
+        self._position_min = position_min
 
     @property
     def offset_x(self):
@@ -649,7 +649,7 @@ class AnnBasedStereoExpData(StereoExpData):
 
         if self._ann_data.raw:
             self._tl._raw = AnnBasedStereoExpData(based_ann_data=self._ann_data.raw.to_adata())
-        
+
         self._spatial_key = spatial_key
 
     def __str__(self):

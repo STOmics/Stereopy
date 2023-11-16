@@ -63,7 +63,9 @@ def plot_spatial(
     ax.set_aspect("equal")
     sns.despine(bottom=True, left=True, ax=ax)
 
+
 original_rcParams = None
+
 
 def set_figure_params(
         dpi: int,
@@ -76,6 +78,7 @@ def set_figure_params(
     rcParams['figure.facecolor'] = facecolor
     rcParams['axes.facecolor'] = facecolor
     rcParams["figure.dpi"] = dpi
+
 
 def reset_figure_params():
     global original_rcParams

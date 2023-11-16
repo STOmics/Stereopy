@@ -60,7 +60,7 @@ def read_gem(
     is_sparse
         the expression matrix is sparse matrix, if `True`, otherwise `np.ndarray`.
     bin_coor_offset
-        If set it to True, the coordinates of bins are calculated as 
+        If set it to True, the coordinates of bins are calculated as
         ((gene_coordinates - min_coordinates) // bin_size) * bin_size + min_coordinates + bin_size/2
 
     Returns
