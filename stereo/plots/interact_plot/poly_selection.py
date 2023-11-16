@@ -85,6 +85,9 @@ class PolySelection(object):
         push selected area coords to list
         Returns:
         """
+        if not pa.selected.data:
+            raise Exception("The selected area's data cannot be empty!")
+
         self.list_poly_selection_coors.append(pa.selected.data)
 
     def get_selected_boundary_coors(self) -> list:
