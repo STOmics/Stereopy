@@ -3,7 +3,7 @@
 """
 @author: zhen bin  wenzhenbin@genomics.cn
 @last modified by: zhen bin
-@file:common.py
+@file:cell_pose.py
 @time:2023/08/24
 """
 from math import ceil
@@ -19,7 +19,7 @@ from stereo.algorithm.cell_pose import utils
 from stereo.utils.time_consume import log_consumed_time
 
 
-class Cellpose:
+class CellPose:
 
     def __init__(self,
                  img_path: str,
