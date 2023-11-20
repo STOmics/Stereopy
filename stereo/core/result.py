@@ -10,7 +10,7 @@ class _BaseResult(object):
         'phenograph_from_bins', 'annotation_from_bins', 'celltype', 'cell_type'
     }
     CONNECTIVITY_NAMES = {'neighbors'}
-    REDUCE_NAMES = {'umap', 'pca', 'tsne'}
+    REDUCE_NAMES = {'umap', 'pca', 'tsne', 'correct'}
     HVG_NAMES = {'highly_variable_genes', 'hvg', 'highly_variable'}
     MARKER_GENES_NAMES = {'marker_genes', 'rank_genes_groups'}
 
@@ -297,8 +297,8 @@ class AnnBasedResult(_BaseResult, object):
             return self.__based_ann_data.uns[name]
         elif name.startswith('gene_exp_'):
             return self.__based_ann_data.uns[name]
-        elif name.startswith('regulatory_network_inference'):
-            return self.__based_ann_data.uns[name]
+        # elif name.startswith('regulatory_network_inference'):
+        #     return self.__based_ann_data.uns[name]
 
         obsm_obj = self.__based_ann_data.obsm.get(f'X_{name}', None)
         if obsm_obj is not None:
@@ -349,11 +349,11 @@ class AnnBasedResult(_BaseResult, object):
                 if not key.startswith('gene_exp_') and like_name in key and self._real_set_item(name_type, key, value):
                     return
 
-        if key == "regulatory_network_inference":
-            self.__based_ann_data.uns[f'{key}_regulons'] = value['regulons']
-            self.__based_ann_data.uns[f'{key}_auc_matrix'] = value['auc_matrix']
-            self.__based_ann_data.uns[f'{key}_adjacencies'] = value['adjacencies']
-            return
+        # if key == "regulatory_network_inference":
+        #     self.__based_ann_data.uns[f'{key}_regulons'] = value['regulons']
+        #     self.__based_ann_data.uns[f'{key}_auc_matrix'] = value['auc_matrix']
+        #     self.__based_ann_data.uns[f'{key}_adjacencies'] = value['adjacencies']
+        #     return
 
         if type(value) is pd.DataFrame:
             if 'bins' in value.columns.values and 'group' in value.columns.values:

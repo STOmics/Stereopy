@@ -232,7 +232,7 @@ class AnnBasedCell(Cell):
 
         :return: cell name
         """
-        return self.__based_ann_data.obs_names.values.astype(str)
+        return self.__based_ann_data.obs_names.values.astype('U')
 
     @cell_name.setter
     def cell_name(self, name: np.ndarray):
@@ -244,7 +244,10 @@ class AnnBasedCell(Cell):
         """
         if not isinstance(name, np.ndarray):
             raise TypeError('cell name must be a np.ndarray object.')
-        self.__based_ann_data._inplace_subset_obs(name)
+        if name.size != self.__based_ann_data.n_obs:
+            raise ValueError(f'The length of cell names must be {self.__based_ann_data.n_obs}, but now is {name.size}')
+        self.__based_ann_data.obs_names = name
+        # self.__based_ann_data._inplace_subset_obs(name)
 
     @property
     def total_counts(self):

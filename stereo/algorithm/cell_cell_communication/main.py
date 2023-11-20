@@ -328,7 +328,10 @@ class CellCellCommunication(AlgorithmBase):
         cluster.rename({'group': 'cell_type'}, axis=1, inplace=True)
         cluster.set_index('bins', drop=True, inplace=True)
         cluster.index.name = 'cell'
-        data = pd.DataFrame(self.stereo_exp_data.exp_matrix.T.toarray())
+        if self.stereo_exp_data.issparse():
+            data = pd.DataFrame(self.stereo_exp_data.exp_matrix.T.toarray())
+        else:
+            data = pd.DataFrame(self.stereo_exp_data.exp_matrix.T)
         data.columns = self.stereo_exp_data.cell_names.astype(str)
         data.index = self.stereo_exp_data.gene_names
         return data, cluster

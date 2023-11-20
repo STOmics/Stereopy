@@ -38,6 +38,16 @@ class Plot3DBrowser(PlotBase):
         th.setDaemon(True)
         th.start()
 
+        # kwargs={
+        #     'meshes': meshes,
+        #     'cluster_label': cluster_res_key,
+        #     'paga_key': paga_res_key,
+        #     'ccc_key': ccc_res_key,
+        #     'grn_key': grn_res_key,
+        #     'port': port
+        # }
+        # launch(self.stereo_exp_data, **kwargs)
+
     def display_3d_mesh(self, width=1400, height=1200, ip='127.0.0.1', port=7654):
         import IPython
         sleep(5)

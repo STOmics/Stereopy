@@ -110,7 +110,7 @@ class PlotRegulatoryNetwork(PlotBase):
 
         if cluster_res_key in self.stereo_exp_data.cells._obs.columns:
             meta = pd.DataFrame({
-                'bin': self.stereo_exp_data.cells.cell_name,
+                'bins': self.stereo_exp_data.cells.cell_name,
                 'group': self.stereo_exp_data.cells._obs[cluster_res_key].tolist()
             })
         else:
@@ -265,7 +265,7 @@ class PlotRegulatoryNetwork(PlotBase):
         if network_res_key not in self.pipeline_res:
             logger.info(f"The result specified by {network_res_key} is not exists.")
 
-        fig = sns.clustermap(
+        g = sns.clustermap(
             self.pipeline_res[network_res_key]['auc_matrix'],
             pivot_kws=pivot_kws,
             method=method,
@@ -287,7 +287,7 @@ class PlotRegulatoryNetwork(PlotBase):
             cbar_pos=cbar_pos,
         )
 
-        return fig
+        return g.figure
 
     @plot_scale
     @reorganize_coordinate
@@ -552,13 +552,13 @@ class PlotRegulatoryNetwork(PlotBase):
             cbar_pos=cbar_pos,
         )
 
-        return g
+        return g.figure
 
     def spatial_scatter_by_regulon_3D(
             self,
             network_res_key: str = 'regulatory_network_inference',
             reg_name: str = None,
-            fn: str = None,
+            # fn: str = None,
             view_vertical: int = 0,
             view_horizontal: int = 0,
             show_axis: bool = False,
@@ -581,8 +581,8 @@ class PlotRegulatoryNetwork(PlotBase):
         elif '(+)' not in reg_name:
             reg_name = reg_name + '(+)'
 
-        if fn is None:
-            fn = f'{reg_name.strip("(+)")}.pdf'
+        # if fn is None:
+        #     fn = f'{reg_name.strip("(+)")}.pdf'
 
         # prepare plotting data
         arr2 = self.stereo_exp_data.position_z
@@ -621,7 +621,8 @@ class PlotRegulatoryNetwork(PlotBase):
             plt.box(False)
             plt.axis('off')
         plt.colorbar(sc, shrink=0.35)
-        plt.savefig(fn, format='pdf')
+        # plt.savefig(fn, format='pdf')
+        return fig
 
 
 def get_n_hls_colors(num):

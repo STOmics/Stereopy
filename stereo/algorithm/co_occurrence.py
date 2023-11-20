@@ -11,6 +11,7 @@ from stereo.algorithm.algorithm_base import AlgorithmBase
 from stereo.core.stereo_exp_data import AnnBasedStereoExpData
 # module in self project
 from stereo.core.stereo_exp_data import StereoExpData
+from stereo.core.ms_data import MSData
 
 
 # ----------------------------------------------#
@@ -286,7 +287,7 @@ class CoOccurrence(AlgorithmBase):
         return ret
 
     @staticmethod
-    def ms_co_occur_integrate(ms_data, scope, use_col, res_key='co_occurrence'):
+    def ms_co_occur_integrate(ms_data: MSData, scope, use_col, res_key='co_occurrence'):
         from collections import Counter
         if use_col not in ms_data.obs:
             tmp_list = []
@@ -296,11 +297,13 @@ class CoOccurrence(AlgorithmBase):
         ms_data.obs[use_col] = ms_data.obs[use_col].astype('category')
 
         slice_groups = scope.split('|')
+        slice_index = []
         if len(slice_groups) == 1:
             slices = slice_groups[0].split(",")
             ct_count = {}
             for x in slices:
                 ct_count[x] = dict(Counter(ms_data[x].cells[use_col]))
+                slice_index.append(ms_data.names.index(x))
 
             ct_count = pd.DataFrame(ct_count)
             ct_ratio = ct_count.div(ct_count.sum(axis=1), axis=0)
@@ -318,6 +321,7 @@ class CoOccurrence(AlgorithmBase):
                 ct_count = {}
                 for x in slices:
                     ct_count[x] = dict(Counter(ms_data[x].cells[use_col]))
+                    slice_index.append(ms_data.names.index(x))
 
                 ct_count = pd.DataFrame(ct_count)
                 ct_ratio = ct_count.div(ct_count.sum(axis=1), axis=0)
@@ -333,7 +337,10 @@ class CoOccurrence(AlgorithmBase):
             merge_co_occur_ret = {ct: ret[0][ct] - ret[1][ct] for ct in merge_co_occur_ret}
 
         else:
-            print('co-occurrence only compare case and control on two groups')
-            merge_co_occur_ret = None
+            raise Exception('co-occurrence only compare case and control on two groups')
+            # merge_co_occur_ret = None
 
-        return merge_co_occur_ret
+        # return merge_co_occur_ret
+        slice_index = np.unique(slice_index)
+        scope_key = "scope_[" + ",".join([str(i) for i in slice_index]) + "]"
+        ms_data.tl.result[scope_key][res_key] = merge_co_occur_ret

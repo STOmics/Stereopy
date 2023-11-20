@@ -59,6 +59,7 @@ class StPipeline(object):
         self.result = Result(data)
         self._raw: Union[StereoExpData, AnnBasedStereoExpData] = None
         self.key_record = {'hvg': [], 'pca': [], 'neighbors': [], 'umap': [], 'cluster': [], 'marker_genes': []}
+        self.reset_key_record = self._reset_key_record
 
     def __getattr__(self, item):
         dict_attr = self.__dict__.get(item, None)
@@ -122,7 +123,7 @@ class StPipeline(object):
         """
         self.raw = self.data
 
-    def reset_key_record(self, key, res_key):
+    def _reset_key_record(self, key, res_key):
         """
         reset key and coordinated res_key in key_record.
         :param key:
@@ -1310,16 +1311,37 @@ class StPipeline(object):
         assert cluster_res_key in self.result, f'{cluster_res_key} is not in the result, please check and run the ' \
                                                f'cluster func.'
 
-        df = copy.deepcopy(self.result[cluster_res_key])
-        if isinstance(annotation_information, list):
-            df.group.cat.categories = annotation_information
-        elif isinstance(annotation_information, dict):
-            new_annotation_list = []
-            for i in df.group.cat.categories:
-                new_annotation_list.append(annotation_information[i])
-            df.group.cat.categories = new_annotation_list
+        # df = copy.deepcopy(self.result[cluster_res_key])
+        # if isinstance(annotation_information, list):
+        #     df.group.cat.categories = np.unique(annotation_information)
+        # elif isinstance(annotation_information, dict):
+        #     new_annotation_list = []
+        #     for i in df.group.cat.categories:
+        #         new_annotation_list.append(annotation_information[i])
+        #     df.group.cat.categories = new_annotation_list
 
-        self.result[res_key] = df
+        cluster_res: pd.DataFrame = self.result[cluster_res_key]
+
+        if isinstance(annotation_information, (list, np.ndarray)) and len(annotation_information) != cluster_res['group'].cat.categories.size:
+            raise Exception(f"The length of annotation information is {len(annotation_information)}, \
+                            not equal to the categories of cluster result whoes lenght is {cluster_res['group'].cat.categories.size}.")
+        
+        if isinstance(annotation_information, (list, np.ndarray)):
+            new_categories = np.array(annotation_information, dtype='U')
+        elif isinstance(annotation_information, dict):
+            new_categories_list = []
+            for i in cluster_res['group'].cat.categories:
+                new_categories_list.append(annotation_information[i])
+            new_categories = np.array(new_categories_list, dtype='U')
+        else:
+            raise TypeError(f"The type of 'annotation_information' only supports list, ndarray or dict.")
+        
+        new_categories_values = new_categories[cluster_res['group'].cat.codes]
+
+        self.result[res_key] = pd.DataFrame(data={
+            'bins': cluster_res['bins'],
+            'group': pd.Series(new_categories_values, dtype='category')
+        })
 
         key = 'cluster'
         self.reset_key_record(key, res_key)

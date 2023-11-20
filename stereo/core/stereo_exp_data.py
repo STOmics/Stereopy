@@ -601,6 +601,14 @@ class StereoExpData(Data):
                 self.position[idx] += self.position_min[bno]
         self.position_offset = None
         self.position_min = None
+    
+    def __add__(self, other):
+        from stereo.core.ms_data import MSData
+        if isinstance(other, StereoExpData):
+            ms_data = MSData([self, other])
+        else:
+            raise TypeError
+        return ms_data
 
 
 class AnnBasedStereoExpData(StereoExpData):
@@ -632,6 +640,7 @@ class AnnBasedStereoExpData(StereoExpData):
 
         if 'resolution' in self._ann_data.uns:
             self.attr = {'resolution': self._ann_data.uns['resolution']}
+            del self._ann_data.uns['resolution']
 
         if bin_type is not None and 'bin_type' not in self._ann_data.uns:
             self._ann_data.uns['bin_type'] = bin_type
@@ -758,10 +767,19 @@ class AnnBasedStereoExpData(StereoExpData):
     @property
     def bin_type(self):
         return self._ann_data.uns.get('bin_type', 'bins')
+    
+    @bin_type.setter
+    def bin_type(self, bin_type):
+        self.bin_type_check(bin_type)
+        self._ann_data.uns['bin_type'] = bin_type
 
     @property
     def bin_size(self):
         return self._ann_data.uns.get('bin_size', 1)
+    
+    @bin_size.setter
+    def bin_size(self, bin_size):
+        self._ann_data.uns['bin_size'] = bin_size
 
     @property
     def sn(self):
@@ -775,6 +793,18 @@ class AnnBasedStereoExpData(StereoExpData):
                 for _, row in sn_data.iterrows():
                     sn[row['batch']] = row['sn']
         return sn
+    
+    @sn.setter
+    def sn(self, sn):
+        if isinstance(sn, str):
+            sn_list = [['-1', sn]]
+        elif isinstance(sn, dict):
+            sn_list = []
+            for bno, sn in sn.items():
+                sn_list.append([bno, sn])
+        else:
+            raise TypeError(f'sn must be type of str or dict, but now is {type(sn)}')
+        self._ann_data.uns['sn'] = pd.DataFrame(sn_list, columns=['batch', 'sn'])
 
     def sub_by_index(self, cell_index=None, gene_index=None):
         if cell_index is not None:

@@ -171,7 +171,7 @@ def _write_one_h5ad_result(data, f, key_record):
                 if 'mean_bin' in hvg_df.columns:
                     hvg_df.mean_bin = [str(interval) for interval in data.tl.result[res_key].mean_bin]
                 h5ad.write(hvg_df, f, f'{res_key}@hvg')  # -> dataframe
-            if analysis_key in ['pca', 'umap', 'totalVI']:
+            if analysis_key in ['pca', 'umap', 'totalVI', 'spatial_alignment_integration']:
                 h5ad.write(data.tl.result[res_key].values, f, f'{res_key}@{analysis_key}')  # -> array
             if analysis_key == 'neighbors':
                 for neighbor_key, value in data.tl.result[res_key].items():
@@ -266,15 +266,10 @@ def write_h5ms(ms_data, output: str):
         h5ad.write(ms_data.relationship, f, 'relationship')
         if ms_data.tl.result:
             mss_f = f.create_group('mss')
-            for key, value in ms_data.tl.result.items():
+            for key in ms_data.tl.result.keys():
                 data = StereoExpData()
                 data.tl.result = ms_data.tl.result[key]
-                # TODO only supported default name temporarily
-                for r_key in data.tl.result.keys():
-                    o_key = r_key
-                    if r_key in {'leiden', 'louvain', 'phenograph', 'annotation'}:
-                        o_key = 'cluster'
-                    data.tl.reset_key_record(o_key, r_key)
+                data.tl.key_record = ms_data.tl.key_record[key]
                 mss_f.create_group(key)
                 _write_one_h5ad_result(data, mss_f[key], data.tl.key_record)
 

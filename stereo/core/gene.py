@@ -164,7 +164,7 @@ class AnnBasedGene(Gene):
 
         :return: genes name.
         """
-        return self.__based_ann_data.var_names.values.astype(str)
+        return self.__based_ann_data.var_names.values.astype('U')
 
     @gene_name.setter
     def gene_name(self, name: np.ndarray):
@@ -176,7 +176,10 @@ class AnnBasedGene(Gene):
         """
         if not isinstance(name, np.ndarray):
             raise TypeError('gene name must be a np.ndarray object.')
-        self.__based_ann_data._inplace_subset_var(name)
+        if name.size != self.__based_ann_data.n_vars:
+            raise ValueError(f'The length of gene names must be {self.__based_ann_data.n_vars}, but now is {name.size}')
+        self.__based_ann_data.var_names = name
+        # self.__based_ann_data._inplace_subset_var(name)
 
     def to_df(self):
         return self.__based_ann_data.var

@@ -37,7 +37,7 @@ class TimeSeriesAnalysis(AlgorithmBase):
         :param p_val_combination: p_value combination method to use, choosing from ['fisher', 'mean', 'FDR']
         :param cluster_number: number of cluster
 
-        The parameters below are all key word arguments and only for `other` `run_method`.
+        All the parameters below are key word arguments and only for `other` `run_method`.
 
         :param spatial_weight: the weight to combine spatial feature
         :param n_spatial_feature: n top features to combine of spatial feature

@@ -225,7 +225,7 @@ def read_stereo_h5ad(
     return data
 
 
-def _read_stereo_h5ad_from_group(f, data: StereoExpData, use_raw, use_result, bin_type, bin_size):
+def _read_stereo_h5ad_from_group(f, data: StereoExpData, use_raw, use_result, bin_type=None, bin_size=None):
     # read data
     data.bin_type = bin_type if bin_type is not None else 'bins'
     data.bin_size = bin_size if bin_size is not None else 1
@@ -305,7 +305,7 @@ def _read_stereo_h5_result(key_record: dict, data, f):
                 # str to interval
                 hvg_df['mean_bin'] = [to_interval(interval_string) for interval_string in hvg_df['mean_bin']]
                 data.tl.result[res_key] = hvg_df
-            if analysis_key in ['pca', 'umap', 'totalVI']:
+            if analysis_key in ['pca', 'umap', 'totalVI', 'spatial_alignment_integration']:
                 data.tl.result[res_key] = pd.DataFrame(h5ad.read_dataset(f[f'{res_key}@{analysis_key}']))
             if analysis_key == 'neighbors':
                 data.tl.result[res_key] = {
@@ -379,7 +379,7 @@ def _read_stereo_h5_result(key_record: dict, data, f):
                             data.tl.result[res_key][key] = ast.literal_eval(h5ad.read_dataset(f[full_key]))
                         else:
                             data.tl.result[res_key][key] = h5ad.read_group(f[full_key])
-            if analysis_key in ['co_occurrence', 'res_totalVI']:
+            if analysis_key in ['co_occurrence']:
                 data.tl.result[res_key] = {}
                 for full_key in f.keys():
                     if not full_key.endswith(analysis_key):
@@ -417,6 +417,7 @@ def read_h5ms(file_path, use_raw=True, use_result=True):
             elif k == 'mss':
                 for key in f['mss'].keys():
                     data = StereoExpData()
+                    data.tl.result = {}
                     h5ad.read_key_record(f['mss'][key]['key_record'], data.tl.key_record)
                     _read_stereo_h5_result(data.tl.key_record, data, f['mss'][key])
                     result[key] = data.tl.result
@@ -841,7 +842,7 @@ def stereo_to_anndata(
                 adata.uns['sct_top_features'] = list(one_index_data['top_features'])
                 adata.uns['sct_cellname'] = list(one_index_data['umi_cells'].astype('str'))
                 adata.uns['sct_genename'] = list(one_index_data['umi_genes'])
-            elif key in ['pca', 'umap', 'tsne', 'totalVI']:
+            elif key in ['pca', 'umap', 'tsne', 'totalVI', 'spatial_alignment_integration']:
                 # pca :we do not keep variance and PCs(for varm which will be into feature.finding in pca of seurat.)
                 res_key = data.tl.key_record[key][-1]
                 sc_key = f'X_{key}'
@@ -868,19 +869,21 @@ def stereo_to_anndata(
                     adata.obs[res_key] = pd.DataFrame(data.tl.result[res_key]['group'].values, index=cell_name_index)
             elif key in ('gene_exp_cluster', 'cell_cell_communication'):
                 for res_key in data.tl.key_record[key]:
-                    logger.info(f"Adding data.tl.result['{res_key}'] into adata.uns['{key}@{res_key}']")
-                    adata.uns[f"{key}@{res_key}"] = data.tl.result[res_key]
-            elif key == 'regulatory_network_inference':
-                for res_key in data.tl.key_record[key]:
-                    logger.info(f"Adding data.tl.result['{res_key}'] into adata.uns['{res_key}'] .")
-                    regulon_key = f'{res_key}_regulons'
-                    res_key_data = data.tl.result[res_key]
-                    adata.uns[regulon_key] = res_key_data['regulons']
-                    auc_matrix_key = f'{res_key}_auc_matrix'
-                    adata.uns[auc_matrix_key] = res_key_data['auc_matrix']
-                    adjacencies_key = f'{res_key}_adjacencies'
-                    adata.uns[adjacencies_key] = res_key_data['adjacencies']
-            elif key == 'co_occurrence':
+                    # logger.info(f"Adding data.tl.result['{res_key}'] into adata.uns['{key}@{res_key}']")
+                    # adata.uns[f"{key}@{res_key}"] = data.tl.result[res_key]
+                    logger.info(f"Adding data.tl.result['{res_key}'] into adata.uns['{res_key}']")
+                    adata.uns[res_key] = data.tl.result[res_key]
+            # elif key == 'regulatory_network_inference':
+            #     for res_key in data.tl.key_record[key]:
+            #         logger.info(f"Adding data.tl.result['{res_key}'] into adata.uns['{res_key}'] .")
+            #         regulon_key = f'{res_key}_regulons'
+            #         res_key_data = data.tl.result[res_key]
+            #         adata.uns[regulon_key] = res_key_data['regulons']
+            #         auc_matrix_key = f'{res_key}_auc_matrix'
+            #         adata.uns[auc_matrix_key] = res_key_data['auc_matrix']
+            #         adjacencies_key = f'{res_key}_adjacencies'
+            #         adata.uns[adjacencies_key] = res_key_data['adjacencies']
+            elif key in ('co_occurrence', 'regulatory_network_inference'):
                 for res_key in data.tl.key_record[key]:
                     logger.info(f"Adding data.tl.result['{res_key}'] into adata.uns['{res_key}'] .")
                     adata.uns[res_key] = data.tl.result[res_key]
