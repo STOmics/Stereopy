@@ -39,14 +39,14 @@ class TimeSeriesAnalysis(AlgorithmBase):
 
         All the parameters below are key word arguments and only for `other` `run_method`.
 
-        :param spatial_weight: the weight to combine spatial feature
-        :param n_spatial_feature: n top features to combine of spatial feature
-        :param temporal_mean_threshold: filter out genes of which mean absolute temporal feature <= temporal_mean_threshold
-        :param temporal_top_threshold: filter out genes of which top absolute temporal feature < temporal_top_threshold
-        :param Epsilon: max value to finish iteration
-        :param w_size: window size to rasterizing spatial expression, see also data.tl.gene_spatial_feature
-        :param use_col: the col in obs representing celltype or clustering
-        :param branch: celltypes order in use_col
+        :param spatial_weight: the weight to combine spatial feature, defaults to 1.
+        :param n_spatial_feature: n top features to combine of spatial feature, defaults to 2.
+        :param temporal_mean_threshold: filter out genes of which mean absolute temporal feature <= temporal_mean_threshold, defaults to 0.85.
+        :param temporal_top_threshold: filter out genes of which top absolute temporal feature < temporal_top_threshold, defaults to 1.
+        :param Epsilon: max value to finish iteration, defaults to 1e-7.
+        :param w_size: window size to rasterizing spatial expression, default to 20.
+        :param use_col: the col in obs representing celltype or clustering, default to None.
+        :param branch: celltypes order in use_col, default to None.
 
         """  # noqa
         if run_method == RunMethodType.tvg_marker.value:
@@ -199,7 +199,7 @@ class TimeSeriesAnalysis(AlgorithmBase):
         self.stereo_exp_data.genes_matrix['spatial_feature'] = X_pca
 
     def fuzzy_C_gene_pattern_cluster(self, cluster_number, spatial_weight=1, n_spatial_feature=2,
-                                     temporal_mean_threshold=0.85, temporal_top_threshold=1, Epsilon=1e7, w_size=None,
+                                     temporal_mean_threshold=0.85, temporal_top_threshold=1, Epsilon=1e-7, w_size=None,
                                      use_col=None, branch=None):
         """
         Use fuzzy C means cluster method to cluster genes based on 1-p_value of celltypes in branch
