@@ -136,6 +136,7 @@ Version 0.12.1
 
     content/00_Installation
     content/01_Usage_principles
+    Tutorials(Multi-Samples)/Multi_Samples
     Tutorials/index
     content/03_API
     content/04_Community

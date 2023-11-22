@@ -390,6 +390,15 @@ def _read_stereo_h5_result(key_record: dict, data, f):
 
 @ReadWriteUtils.check_file_exists
 def read_h5ms(file_path, use_raw=True, use_result=True):
+    """
+    Load a h5ms file as an object of MSData
+
+    :param file_path: The path of h5ms file to be loaded.
+    :param use_raw: Whether to load the raw data of each StereoExpData in MSData, defaults to True.
+    :param use_result: Whether to load the analysis results which had been saved in h5ms file, defaults to True.
+
+    :return: An object of MSData
+    """
     from stereo.core.ms_data import MSData
     with h5py.File(file_path, mode='r') as f:
         ms_data = MSData()

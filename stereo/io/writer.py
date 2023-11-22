@@ -251,6 +251,12 @@ def _write_one_h5ad_result(data, f, key_record):
 
 
 def write_h5ms(ms_data, output: str):
+    """
+    Save an object of MSData into a h5 file whose suffix is 'h5ms'.
+
+    :param ms_data: The object of MSData to be saved.
+    :param output: The path of file into which MSData is saved.
+    """
     with h5py.File(output, mode='w') as f:
         f.create_group('sample')
         for idx, data in enumerate(ms_data._data_list):
