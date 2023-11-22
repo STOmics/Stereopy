@@ -276,9 +276,10 @@ class CommunityClusteringAlgo(ABC):
         stats_table = {}
         # calculate cell type mixtures for every cluster
         for label, cluster_data in cell_types_communities.groupby(clustering_labels):
-            cell_type_dict = {ct: 0 for ct in self.unique_cell_type}
-            for cell in cluster_data[self.annotation]:
-                cell_type_dict[cell] += 1
+            # cell_type_dict = {ct: 0 for ct in self.unique_cell_type}
+            # for cell in cluster_data[self.annotation]:
+            #     cell_type_dict[cell] += 1
+            cell_type_dict = {ct: np.sum(cluster_data[self.annotation] == ct) for ct in self.unique_cell_type}
 
             # remove excluded cell types
             cell_type_dict = {k: cell_type_dict[k] for k in self.tissue.var.index.sort_values()}

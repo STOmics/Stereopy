@@ -86,7 +86,7 @@ def reset_figure_params():
         for key in rcParams.keys():
             if key in original_rcParams:
                 rcParams[key] = original_rcParams[key]
-        original_rcParams = None
+        # original_rcParams = None
 
 
 def csv_to_anndata(csv_file_path: str, annotation: str):

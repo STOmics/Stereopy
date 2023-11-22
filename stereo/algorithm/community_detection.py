@@ -304,7 +304,8 @@ class _CommunityDetection:
         merged_tissue = AnnBasedStereoExpData(h5ad_file_path=None, based_ann_data=merged_tissue)
         if self.params['cluster_algo'] == 'leiden':
             merged_tissue._ann_data.obsm['X_pca_dummy'] = merged_tissue._ann_data.X
-            merged_tissue.tl.neighbors(pca_res_key='X_pca_dummy', n_neighbors=15)
+            merged_tissue.tl.neighbors(pca_res_key='X_pca_dummy', n_neighbors=15,
+                                       n_jobs=-1, res_key='neighbors')
             merged_tissue.tl.leiden(neighbors_res_key='neighbors', res_key='leiden',
                                     resolution=self.params['resolution'])
             merged_tissue._ann_data.obs['leiden'] = merged_tissue._ann_data.obs['leiden'].astype('int')
@@ -752,6 +753,7 @@ class _CommunityDetection:
         finally:
             self.params['hide_plots'] = orig_hide_plots
             self.algo_list[slice_id].hide_plots = orig_hide_plots
+            reset_figure_params()
 
 
 class CommunityDetection(AlgorithmBase, _CommunityDetection):
