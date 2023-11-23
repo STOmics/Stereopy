@@ -17,11 +17,11 @@ needs_sphinx = '2.0'  # Nicer param docs
 suppress_warnings = ['ref.citation']
 
 # General information
-project = 'stereopy'
+project = 'Stereopy'
 copyright = '2023, BGI'
 author = 'BGI'
-version = 'v0.10.0'
-release = 'v0.10.0'
+version = 'v1.0.0'
+release = 'v1.0.0'
 
 # default settings
 templates_path = ['_templates']

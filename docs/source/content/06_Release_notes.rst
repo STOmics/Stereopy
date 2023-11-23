@@ -7,7 +7,7 @@ Version 0.14.0b1 (Beta)
 ------------------------
 0.14.0b1 : 2023-9-15
 ~~~~~~~~~~~~~~~~~~~~~~~~
-Notice: this Beta version is specifically developed for multi-slice analysis.
+Notice: this Beta version is specifically developed for multi-sample analysis.
 
 Features:
 

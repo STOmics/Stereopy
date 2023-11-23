@@ -38,17 +38,16 @@ Meanwhile, we are still working on the improvement of performance and calculatio
 
 About MSData
 --------------
-For multi-slice data analysis, we have recently launched a simple-to-use method that can distinguish uni-slice \
-and multi-sclie when working on the parallel processings, but the results of two parties can be interacted.
+For multi-sample data analysis, we have recently launched a simple-to-use method that can distinguish uni-sample \
+and multi-sample when working on the parallel processings, but the results of two parties can be interacted.
 
-In order to adapt to the new parameters and concepts in MSData analysis, the current version is a Beta one, which means there are \
-inevitably a handful of bugs. We sincerely hope to receive your feedback and suggestions for MSData.
+We sincerely hope to receive your feedback and suggestions for MSData.
 
 
 Upcoming functions
 --------------------
-* New algorithm for Batch Effect Correction
-* GPU version for SingleR annotation
+* Acceleration on PCA calculating (based on CPU)
+* ...
 
 
 Highlights
@@ -76,7 +75,7 @@ Version 0.14.0b1 (Beta)
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 0.14.0b1 : 2023-9-15
 
-Notice: this Beta version is specifically developed for multi-slice analysis.
+Notice: this Beta version is specifically developed for multi-sample analysis.
 
 Features:
 
@@ -107,15 +106,15 @@ Version 0.13.0b1 (Beta)
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 0.13.0b1 : 2023-07-11
 
-Notice: this Beta version is specifically developed for multi-slice analysis. Major update points are listed below.
+Notice: this Beta version is specifically developed for multi-sample analysis. Major update points are listed below.
 
 1. Addition of 3D Cell-cell Communication.
 2. Addition of 3D Gene Regulatory Network.
 3. Addition of Trajectory Inference, including PAGA and DPT algorithms.
 4. Addition of Batch QC function for evaluation on batch effect.
 5. Addition of `st.io.read_h5ad` for improved compatibility with AnnData H5ad, we highly recommend that instead of `st.io.read_ann_h5ad`.
-6. Addition of analysis workflow tutorial based on multi-slice data, with assistant parameters `scope` and `mode`.
-7. Addition of resetting the image order of multi-slice analysis results.
+6. Addition of analysis workflow tutorial based on multi-sample data, with assistant parameters `scope` and `mode`.
+7. Addition of resetting the image order of multi-sample analysis results.
 8. Addition of 3D mesh visualization.
 9. Improved the performance of Gaussian Smoothing.
 
