@@ -32,12 +32,13 @@ class Cell(object):
         if batch is not None:
             self._obs['batch'] = self._set_batch(batch)
         self._cell_border = cell_border
+        self.cell_point = None
 
     def __contains__(self, item):
         return item in self._obs.columns
 
     def __setattr__(self, key, value):
-        if key in {'_obs', '_matrix', '_pairwise', '_cell_border', 'cell_name', 'cell_border', 'loc'}:
+        if key in {'_obs', '_matrix', '_pairwise', '_cell_border', 'cell_name', 'cell_border', 'loc', 'cell_point'}:
             object.__setattr__(self, key, value)
         elif key == 'batch':
             self._obs[key] = self._set_batch(value)

@@ -28,8 +28,7 @@ param==1.12.2
 hvplot==0.7.3
 colorcet==2.0.6
 datashader>=0.13.0,<=0.14.1rc1
-# anndata==0.7.5
-anndata
+anndata==0.7.5
 phenograph==1.5.7
 requests>=2.31.0
 urllib3==1.26.9

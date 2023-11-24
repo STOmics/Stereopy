@@ -233,7 +233,11 @@ class _CommunityDetection:
             self.slices[slice_id]._ann_data.obs.loc[
                 algo.adata.obs[f'tissue_{algo.method_key}'].index, 'cell_communities'] = algo.adata.obs[
                 f'tissue_{algo.method_key}']
-            self.slices[slice_id]._ann_data.obs['cell_communities'].fillna('unknown', inplace=True)
+            if np.nan in self.slices[slice_id]._ann_data.obs['cell_communities'].values:
+                if 'unknown' not in self.slices[slice_id]._ann_data.obs['cell_communities'].cat.categories:
+                    self.slices[slice_id]._ann_data.obs['cell_communities'] = self.slices[slice_id]._ann_data.obs['cell_communities'].cat.add_categories('unknown')
+                self.slices[slice_id]._ann_data.obs['cell_communities'].fillna('unknown', inplace=True)
+            # self.slices[slice_id]._ann_data.obs['cell_communities'].fillna('unknown', inplace=True)
 
             # save anndata objects for further use
             if self.params['save_adata']:
@@ -817,7 +821,7 @@ class CommunityDetection(AlgorithmBase, _CommunityDetection):
                                 If no value is provided, downsample_rate will be equal to 1/2 of minimal window size, default to None.
         :param num_threads: Number of threads that will be used to speed up community calling, default to 5.
         :param entropy_thres: Threshold value for spatial cell type entropy for filtering out overdispersed cell types, default to 1.0.
-        :param scatter_thres: Threshold value for spatial cell type scatteredness for filtering out overdispersed cell types, defaykt to 1.0.
+        :param scatter_thres: Threshold value for spatial cell type scatteredness for filtering out overdispersed cell types, default to 1.0.
         :param win_sizes: Comma separated list of window sizes for analyzing the cell community.
         :param sliding_steps: Comma separated list of sliding steps for sliding window.
         :param min_cluster_size: Minimum number of cell for cluster to be plotted in plot_stats(), default to 200.
