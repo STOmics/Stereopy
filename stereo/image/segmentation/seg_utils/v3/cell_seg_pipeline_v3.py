@@ -6,12 +6,13 @@ from cellbin.modules.cell_segmentation import CellSegmentation
 
 from stereo.image.segmentation.seg_utils.base_cell_seg_pipe.cell_seg_pipeline import CellSegPipe
 from stereo.log_manager import logger
+from stereo.tools.tools import make_dirs
 
 
-class CellSegPipeV1Pro(CellSegPipe):
+class CellSegPipeV3(CellSegPipe):
 
     def run(self):
-        logger.info('Start do cell mask, this will take some minutes.')
+        logger.info('Start do cell mask, the method is v3, this will take some minutes.')
         cell_seg = CellSegmentation(
             model_path=self.model_path,
             gpu=self.kwargs.get('gpu', '-1'),
@@ -29,6 +30,7 @@ class CellSegPipeV1Pro(CellSegPipe):
         self.save_cell_mask()
 
     def save_cell_mask(self):
+        make_dirs(self.out_path)
         cell_mask_path = os.path.join(self.out_path, f"{self.file_name[-1]}_mask.tif")
         Image.write_s(self.mask, cell_mask_path, compression=True)
         logger.info('Result saved : %s ' % (cell_mask_path))

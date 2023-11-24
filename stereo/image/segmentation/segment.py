@@ -5,8 +5,7 @@ import os
 
 from stereo.constant import VersionType
 from stereo.image.segmentation.seg_utils.v1 import CellSegPipeV1
-from stereo.image.segmentation.seg_utils.v1_pro import CellSegPipeV1Pro
-from ..cellbin.modules.cell_segmentation import cell_seg_v3
+from stereo.image.segmentation.seg_utils.v3 import CellSegPipeV3
 
 
 def cell_seg(
@@ -23,7 +22,7 @@ def cell_seg(
         tissue_seg_dst_img_path=None,
         num_threads: int = 0,
         need_tissue_cut=True,
-        version: str = 'v1',
+        method: str = 'v1',
 ):
     """
     Implement cell segmentation by deep learning model.
@@ -56,22 +55,22 @@ def cell_seg(
         multi threads num of the model reading process
     need_tissue_cut
         whether cut image as tissue before cell segmentation
-    version
-        the version, version must be `v1` , `v1_pro`, `v3`
+    method
+        the method, method must be `v1` , `v1_pro`, `v3`
 
     Returns
     ------------
     None
 
     """
-    if version not in VersionType.get_version_list():
+    if method not in VersionType.get_version_list():
         raise Exception("version must be %s" % ('、'.join(VersionType.get_version_list())))
 
     if not model_path:
         raise Exception("cell_seg() missing 1 required keyword argument: 'model_path'")
 
     os.environ["CUDA_VISIBLE_DEVICES"] = str(gpu)
-    if version == VersionType.v1.value:
+    if method == VersionType.v1.value:
         cell_seg_pipeline = CellSegPipeV1(
             img_path,
             out_path,
@@ -84,8 +83,8 @@ def cell_seg(
             model_path=model_path
         )
         cell_seg_pipeline.run()
-    elif version == VersionType.v1_pro.value:
-        cell_seg_pipeline = CellSegPipeV1Pro(
+    elif method == VersionType.v3.value:
+        cell_seg_pipeline = CellSegPipeV3(
             img_path,
             out_path,
             is_water,
@@ -94,15 +93,3 @@ def cell_seg(
             model_path=model_path
         )
         cell_seg_pipeline.run()
-    else:
-        cell_seg_v3(
-            model_path,
-            img_path,
-            out_path,
-            gpu=gpu,
-            num_threads=num_threads,
-            need_tissue_cut=need_tissue_cut,
-            tissue_seg_model_path=tissue_seg_model_path,
-            tissue_seg_method=tissue_seg_method,
-            tissue_seg_dst_img_path=tissue_seg_dst_img_path,
-        )
