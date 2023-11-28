@@ -30,6 +30,10 @@ References
    Laleh Haghverdi, Maren Büttner, F Alexander Wolf, Florian Buettner, Fabian J Theis,
    *Diffusion pseudotime robustly reconstructs lineage branching*, Nature Methods.
 
+.. [Marshall22]
+   Jamie L Marshall, Teia Noel, Qingbo S Wang, Haiqi Chen, Evan Murray, Ayshwarya Subramanian, Katherine A Vernon, Silvana Bazua-Valenti, Katie Liguori, Keith Keller, Robert R Stickels, Breanna McBean, Rowan M Heneghan, Astrid Weins, Evan Z Macosko, Fei Chen, Anna Greka,
+   *High-resolution Slide-seqV2 spatial transcriptomics enables discovery of disease-specific cell neighborhoods and pathways*, iScience.
+   
 .. [McInnes18] 
    Leland McInnes, John Healy, James Melville, 
    *UMAP: Uniform Manifold Approximation and Projection for Dimension Reduction*, arXiv.

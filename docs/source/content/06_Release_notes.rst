@@ -3,6 +3,34 @@ Release Notes
 
 .. role:: small
 
+Version 1.0.0
+------------------
+1.0.0 : 2023-11-30
+~~~~~~~~~~~~~~~~~~~
+
+Features:
+
+1. Addition of Batch Effect Removal funciton, `st.tl.spatial_alignment_integration`.
+2. Addition of GPU acceleration on SinlgeR for large-volume data, and optimized calculating based on CPU version.
+3. Addition of cell segmentation of `Deep Lenrning Model V1_Pro`, which is improved based on `V1`.
+4. Addition of `st.plt.elbow` to visualize PCA rtesult, for appropriate number of pcs.
+5. Addition of color, max, min setting for heatmap plotting.
+6. Supplemented parameters of `st.plt.auc_heatmap` and `st.plt.auc_heatmap_by_group`, full access to seaborn.clustermap, to give more freedom;
+7. Addition of thread and seed setting in UMAP, of which the default method have been changed to single thread with the sacrifice of computational efficiency to ensure reproducibility of results. More in https://umap-learn.readthedocs.io/en/latest/reproducibility.html.
+8. Modification of computing method of bin coordinates when reading GEM, consistent with GEF.
+9. Optimized `st.io.stereo_to_anndata` for format conversion efficiency.
+10. Renamed `st.tl.spatial_alignment` function as `st.tl.paste`.
+
+BUG Fixes:
+
+1. Occasional square-hollowing area in `Deep Lerning Model V3` of cell segmentation processing.
+2. The data object `ins.selected_exp_data` obtained from `st.plt.interact_spatial_scatter` could not be used for subsequent analysis.
+3. Part of file data was missing when performed `st.plt.interact_spatial_scatter` to output high-resolution matrix in GEF format.
+4. Some files met reading error, led by no default setting of `bin_type` and `bin_size` in `st.io.read_h5ms`.
+5. Error in Batch QC calculation due to data type problem.
+6. There is NaN in Cell Community Detection output after threshold filtering, resulting in a calculating error when performed Find marker genes based on it.
+7. `st.plt.paga_time_series_plot` indicated the image is too large to draw, leading to graph overlap, due to the limitation of matplotlib package.
+
 Version 0.14.0b1 (Beta)
 ------------------------
 0.14.0b1 : 2023-9-15
