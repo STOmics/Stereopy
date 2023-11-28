@@ -17,7 +17,6 @@ from holoviews.selection import link_selections
 
 from stereo.log_manager import logger
 from stereo.stereo_config import stereo_conf
-from stereo.tools.boundary import ConcaveHull
 from stereo.tools.tools import make_dirs
 
 link = link_selections.instance()
@@ -34,7 +33,8 @@ class InteractiveScatter:
     def __init__(
             self,
             data,
-            width: Optional[int] = 500, height: Optional[int] = 500,
+            width: Optional[int] = 500,
+            height: Optional[int] = 500,
             bgcolor='#2F2F4F',
     ):
         self.data = data
@@ -70,14 +70,13 @@ class InteractiveScatter:
         )
         self.download.on_click(self._download_callback)
         self.figure = self.interact_scatter()
-        self.list_poly_selection_exp_coors = []
 
     def generate_selected_expr_matrix(self, selected_pos, drop=False):
         if selected_pos is not None:
             selected_index = self.scatter_df.index.drop(selected_pos) if drop else selected_pos
             data_temp = copy.deepcopy(self.data)
-            self.selected_exp_data = data_temp.sub_by_index(
-                cell_index=selected_index)
+            self.selected_exp_data = data_temp.sub_by_index(cell_index=selected_index)
+            self.selected_exp_data = self.selected_exp_data.tl.filter_genes(mean_umi_gt=0)
         else:
             self.selected_exp_data = None
 
@@ -96,37 +95,43 @@ class InteractiveScatter:
         Returns:
 
         """
-        if not self.selected_exp_data:
+        if not self.selected_exp_data or self.selected_exp_data.shape == self.data.shape:
             raise Exception('Please select the data area in the picture first!')
 
         selected_pos = hv.Dataset(self.scatter_df).select(link.selection_expr).data.index
         self.generate_selected_expr_matrix(selected_pos, self.drop_checkbox.value)
-        exp_matrix_data = self.selected_exp_data.position.tolist()
-        init = ConcaveHull(exp_matrix_data, 3)
-        concave_hull = init.calculate().tolist()
-        concave_hull = [int(i) for k in concave_hull for i in k]
-        self.list_poly_selection_exp_coors.append(concave_hull)
-        return self.list_poly_selection_exp_coors
+        list_poly_selection_exp_coors = list()
+        data_set = set()
+        for label in self.selected_exp_data.position.tolist():
+            x_y = ','.join([str(label[0]), str(label[1])])
+            if x_y in data_set:
+                continue
+            data_set.add(x_y)
+            list_poly_selection_exp_coors.append(label)
+        return list_poly_selection_exp_coors
 
-    def export_high_res_area(self, origin_file_path: str, output_path: str, cgef: bool = False) -> str:
+    def export_high_res_area(self, origin_file_path: str, output_path: str) -> str:
         """
         export selected area in high resolution
         Args:
             origin_file_path: origin file path which you read
             output_path: location the high res file storaged
-            cgef: bool, default False, set True if read in cellbin
         Returns:
             output_path
         """
         coors = self.get_selected_boundary_coors()
+        print('coors length: %s' % len(coors))
+        if not coors:
+            raise Exception('Please select the data area in the picture first!')
 
+        make_dirs(output_path)
         from gefpy.cgef_adjust_cy import CgefAdjust
         cg = CgefAdjust()
-        make_dirs(output_path)
-        if cgef:
-            cg.create_Region_Cgef(origin_file_path, output_path, coors)
+        if self.data.bin_type == 'cell_bins':
+            cg.generate_cgef_by_coordinate(origin_file_path, output_path, coors)
         else:
-            cg.create_Region_Bgef(origin_file_path, output_path, coors)
+            cg.generate_bgef_by_coordinate(origin_file_path, output_path, coors, self.data.bin_size)
+
         return output_path
 
     def interact_scatter(self):
