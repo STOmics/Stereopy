@@ -601,7 +601,7 @@ class StereoExpData(Data):
                 self.position[idx] += self.position_min[bno]
         self.position_offset = None
         self.position_min = None
-    
+
     def __add__(self, other):
         from stereo.core.ms_data import MSData
         if isinstance(other, StereoExpData):
@@ -767,7 +767,7 @@ class AnnBasedStereoExpData(StereoExpData):
     @property
     def bin_type(self):
         return self._ann_data.uns.get('bin_type', 'bins')
-    
+
     @bin_type.setter
     def bin_type(self, bin_type):
         self.bin_type_check(bin_type)
@@ -776,7 +776,7 @@ class AnnBasedStereoExpData(StereoExpData):
     @property
     def bin_size(self):
         return self._ann_data.uns.get('bin_size', 1)
-    
+
     @bin_size.setter
     def bin_size(self, bin_size):
         self._ann_data.uns['bin_size'] = bin_size
@@ -793,7 +793,7 @@ class AnnBasedStereoExpData(StereoExpData):
                 for _, row in sn_data.iterrows():
                     sn[row['batch']] = row['sn']
         return sn
-    
+
     @sn.setter
     def sn(self, sn):
         if isinstance(sn, str):

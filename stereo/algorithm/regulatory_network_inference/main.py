@@ -92,7 +92,7 @@ class RegulatoryNetworkInference(AlgorithmBase):
         self.use_raw = use_raw
         if use_raw and self.stereo_exp_data.raw is None:
             raise Exception("The raw data is not found, you need to run 'raw_checkpoint()' first.")
-        
+
         if use_raw:
             logger.info('the raw expression matrix will be used.')
             matrix = self.stereo_exp_data.raw.to_df()
@@ -523,12 +523,12 @@ class RegulatoryNetworkInference(AlgorithmBase):
             w.writerows(regulon_dict.items())
 
     def to_loom(
-        self,
-        matrix: pd.DataFrame,
-        auc_matrix: pd.DataFrame,
-        regulons: list,
-        loom_fn: str = 'grn_output.loom',
-        fn_prefix: str = None
+            self,
+            matrix: pd.DataFrame,
+            auc_matrix: pd.DataFrame,
+            regulons: list,
+            loom_fn: str = 'grn_output.loom',
+            fn_prefix: str = None
     ):
         """
         Save GRN results in one loom file

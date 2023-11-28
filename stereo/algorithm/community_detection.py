@@ -235,7 +235,8 @@ class _CommunityDetection:
                 f'tissue_{algo.method_key}']
             if np.nan in self.slices[slice_id]._ann_data.obs['cell_communities'].values:
                 if 'unknown' not in self.slices[slice_id]._ann_data.obs['cell_communities'].cat.categories:
-                    self.slices[slice_id]._ann_data.obs['cell_communities'] = self.slices[slice_id]._ann_data.obs['cell_communities'].cat.add_categories('unknown')
+                    self.slices[slice_id]._ann_data.obs['cell_communities'] = self.slices[slice_id]._ann_data.obs[
+                        'cell_communities'].cat.add_categories('unknown')
                 self.slices[slice_id]._ann_data.obs['cell_communities'].fillna('unknown', inplace=True)
             # self.slices[slice_id]._ann_data.obs['cell_communities'].fillna('unknown', inplace=True)
 
