@@ -166,7 +166,7 @@ def cluster_bins_to_cellbins(
     :param cellbins_data: StereoExpData object of cellbins.
     :param bins_cluster_res_key: cluster result key in bins' result.
 
-    :return: cellbins_data
+    :return: The object of StereoExpData assigned to parameter `cellbins_data`.
     """
     if bins_cluster_res_key not in bins_data.tl.result:
         raise ValueError(f"the key {bins_cluster_res_key} is not in the bins' result.")

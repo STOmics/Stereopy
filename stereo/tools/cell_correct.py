@@ -286,8 +286,8 @@ def cell_correct(out_dir: str,
     Correct cells using one of file conbinations as following:
         * GEM and mask
         * BGEF and mask
-        * GEM and raw CGEF (not have been corrected)
-        * BGEF and raw CGEF (not have been corrected)
+        * GEM and raw CGEF (not corrected)
+        * BGEF and raw CGEF (not corrected)
 
     :param out_dir: the path to save intermediate result, like mask (if generated from ssDNA image),
         BGEF (generated from GEM), CGEF (generated from GEM and mask), etc. and final corrected result.
@@ -301,9 +301,10 @@ def cell_correct(out_dir: str,
                 if it is set to -1, all of the cores will be used.
 	:param only_save_result: if `True`, only save result to disk; if `False`, return an StereoExpData object.
     :param method: correct in different method if `method` is set, otherwise `EDM`.
-    :param distance: outspread distance based on cellular contour of cell segmentation image, in pixels, only available for v2 algorithm.
+    :param distance: outspread distance based on cellular contour of cell segmentation image, in pixels, only available for 'EDM' method.
 
-    :return: An StereoExpData object if `only_save_result` is set to `False`, otherwise none.
+    :return: An StereoExpData object if `only_save_result` is set to `False`, 
+                otherwise the path of corrected CGEF file.
     """  # noqa
 
     cc = CellCorrect(gem_path=gem_path, bgef_path=bgef_path, raw_cgef_path=raw_cgef_path, mask_path=mask_path,
