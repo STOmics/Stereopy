@@ -234,6 +234,10 @@ class CommunityClusteringAlgo(ABC):
         labels = np.unique(self.adata.obs[f'tissue_{self.method_key}'].values)
         if 'unknown' in labels:
             labels = labels[labels != 'unknown']
+        if len(labels) > len(self.cluster_palette):
+            logger.warning(f"Number of clusters ({len(labels)}) is larger than pallette size. All clusters will be colored gray.")
+            self.cluster_palette = {l: '#CCCCCC' for l in labels}
+            self.cluster_palette['unknown'] = '#CCCCCC'
         plot_spatial(self.adata, annotation=f'tissue_{self.method_key}', palette=self.cluster_palette,
                      spot_size=self.spot_size, ax=ax, title=f'{self.adata.uns["sample_name"]}')
         handles, labels = ax.get_legend_handles_labels()

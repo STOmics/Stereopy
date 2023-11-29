@@ -259,11 +259,11 @@ class _CommunityDetection:
                     try:
                         algo.plot_stats()
                     except Exception as e:
-                        print('plot_stats raise exception while running multi slice, err=%s', str(e))
+                        print('plot_stats raise exception while running multi slice, err=%s' % str(e))
                     try:
                         algo.plot_celltype_table()
                     except Exception as e:
-                        print('plot_celltype_table raise exception while running multi slice, err=%s', str(e))
+                        print('plot_celltype_table raise exception while running multi slice, err=%s' % str(e))
                 if self.params['plotting'] > 2:
                     algo.plot_cluster_mixtures()
                     algo.boxplot_stats()
@@ -442,6 +442,9 @@ class _CommunityDetection:
         for (algo, ax) in zip(self.algo_list, axes.flatten()):
             palette = algo.cluster_palette if clustering else algo.annotation_palette
             annotation = f'tissue_{self.algo_list[0].method_key}' if clustering else self.algo_list[0].annotation
+            clusters = np.unique(algo.adata.obs[annotation].values)
+            if len(clusters) > len(cluster_palette):
+                logger.warning(f"Number of clusters ({len(clusters)}) is larger than pallette size. All clusters will be colored gray.")
             plot_spatial(algo.adata, annotation=annotation, palette=palette, spot_size=algo.spot_size, ax=ax)
             ax.get_legend().remove()
             ax.set_title(f'{algo.filename}', fontsize=6, loc='center', wrap=True)

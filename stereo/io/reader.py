@@ -942,7 +942,7 @@ def stereo_to_anndata(
 
     if output is not None:
         adata.write_h5ad(output)
-        logger.info("Finished output to {output}")
+        logger.info(f"Finished output to {output}")
 
     return adata
 
