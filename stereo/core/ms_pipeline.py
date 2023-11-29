@@ -1,3 +1,4 @@
+import os
 from joblib import (
     Parallel,
     delayed,
@@ -6,7 +7,7 @@ from joblib import (
 
 from stereo import logger
 from stereo.core import StPipeline
-from stereo.plots.decorator import download
+from stereo.plots.decorator import download, download_only
 
 
 class _scope_slice(object):
@@ -161,6 +162,11 @@ class MSDataPipeLine(object):
         if new_attr:
             def log_delayed_task(idx, *arg, **kwargs):
                 logger.info(f'data_obj(idx={idx}) in ms_data start to run {item}')
+                if self.__class__.ATTR_NAME == 'plt':
+                    out_path = kwargs.get('out_path', None)
+                    if out_path is not None:
+                        path_name, ext = os.path.splitext(out_path)
+                        kwargs['out_path'] = f'{path_name}_{idx}{ext}'
                 new_attr(*arg, **kwargs)
 
             Parallel(n_jobs=n_jobs, backend='threading', verbose=100)(
@@ -178,6 +184,12 @@ class MSDataPipeLine(object):
             def log_delayed_task(idx, obj, *arg, **kwargs):
                 logger.info(f'data_obj(idx={idx}) in ms_data start to run {item}')
                 new_attr = base.get_attribute_helper(item, obj, obj.tl.result)
+                if base == PlotBase:
+                    out_path = kwargs.get('out_path', None)
+                    if out_path is not None:
+                        path_name, ext = os.path.splitext(out_path)
+                        kwargs['out_path'] = f'{path_name}_{idx}{ext}'
+                    new_attr = download_only(new_attr)
                 if new_attr:
                     new_attr(*arg, **kwargs)
                 else:

@@ -1321,6 +1321,8 @@ class StPipeline(object):
         #     df.group.cat.categories = new_annotation_list
 
         cluster_res: pd.DataFrame = self.result[cluster_res_key]
+        if cluster_res['group'].dtype.name != 'category':
+            cluster_res['group'] = cluster_res['group'].astype('category')
 
         if isinstance(annotation_information, (list, np.ndarray)) and \
                 len(annotation_information) != cluster_res['group'].cat.categories.size:
@@ -1333,7 +1335,10 @@ class StPipeline(object):
         elif isinstance(annotation_information, dict):
             new_categories_list = []
             for i in cluster_res['group'].cat.categories:
-                new_categories_list.append(annotation_information[i])
+                if i in annotation_information:
+                    new_categories_list.append(annotation_information[i])
+                else:
+                    new_categories_list.append(i)
             new_categories = np.array(new_categories_list, dtype='U')
         else:
             raise TypeError("The type of 'annotation_information' only supports list, ndarray or dict.")
