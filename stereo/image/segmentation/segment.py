@@ -9,9 +9,9 @@ from stereo.image.segmentation.seg_utils.v3 import CellSegPipeV3
 
 
 def cell_seg(
+        model_path: str,
         img_path: str,
         out_path: str,
-        model_path: str = None,
         deep_crop_size: int = 20000,
         overlap: int = 100,
         gpu: str = '-1',
@@ -19,7 +19,6 @@ def cell_seg(
         tissue_seg_method: str = None,
         post_processing_workers: int = 10,
         is_water: bool = False,
-        tissue_seg_dst_img_path=None,
         num_threads: int = 0,
         need_tissue_cut=True,
         method: str = 'v1',
@@ -49,8 +48,6 @@ def cell_seg(
         the number of processes for post-processing.
     is_water:
         The file name used to generate the mask. If true, the name ends with _watershed.
-    tissue_seg_dst_img_path
-        default to the img_path's directory.
     num_threads
         multi threads num of the model reading process
     need_tissue_cut
@@ -66,30 +63,34 @@ def cell_seg(
     if method not in VersionType.get_version_list():
         raise Exception("version must be %s" % ('、'.join(VersionType.get_version_list())))
 
-    if not model_path:
-        raise Exception("cell_seg() missing 1 required keyword argument: 'model_path'")
-
     os.environ["CUDA_VISIBLE_DEVICES"] = str(gpu)
     if method == VersionType.v1.value:
         cell_seg_pipeline = CellSegPipeV1(
+            model_path,
             img_path,
             out_path,
             is_water,
             deep_crop_size,
             overlap,
+            gpu=gpu,
+            need_tissue_cut=need_tissue_cut,
             tissue_seg_model_path=tissue_seg_model_path,
             tissue_seg_method=tissue_seg_method,
             post_processing_workers=post_processing_workers,
-            model_path=model_path
         )
         cell_seg_pipeline.run()
     elif method == VersionType.v3.value:
         cell_seg_pipeline = CellSegPipeV3(
+            model_path,
             img_path,
             out_path,
             is_water,
+            deep_crop_size,
+            overlap,
             gpu=gpu,
-            num_threads=num_threads,
-            model_path=model_path
+            need_tissue_cut=need_tissue_cut,
+            tissue_seg_model_path=tissue_seg_model_path,
+            tissue_seg_method=tissue_seg_method,
+            post_processing_workers=post_processing_workers,
         )
         cell_seg_pipeline.run()

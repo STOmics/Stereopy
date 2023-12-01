@@ -12,11 +12,6 @@ from stereo.image.segmentation.seg_utils.v1 import (
     utils,
     cell_infer
 )
-from stereo.image.tissue_cut import (
-    SingleStrandDNATissueCut,
-    DEEP,
-    INTENSITY
-)
 
 
 class CellSegPipeV1(CellSegPipe):
@@ -56,14 +51,6 @@ class CellSegPipeV1(CellSegPipe):
                                  self.file_name[0] + '_' + str(shapes[0]) + '_' + str(shapes[1]) + '_' +
                                  str(x_list[idx]) + '_' + str(y_list[idx]) + '.tif'), score_list[idx])
 
-    def trans16to8(self):
-        from stereo.log_manager import logger
-        for idx, img in enumerate(self.img_list):
-            assert img.dtype in ['uint16', 'uint8']
-            if img.dtype != 'uint8':
-                logger.info('%s transfer to 8bit' % self.file[idx])
-                self.img_list[idx] = utils.transfer_16bit_to_8bit(img)
-
     def get_roi(self):
         for idx, tissue_mask in enumerate(self.tissue_mask):
             label_image = measure.label(tissue_mask, connectivity=2)
@@ -79,37 +66,6 @@ class CellSegPipeV1(CellSegPipe):
                 self.tissue_mask[idx] = np.uint8(tissue_mask_filter > 0)
             self.tissue_num.append(len(filtered_props))
             self.tissue_bbox.append([p['bbox'] for p in filtered_props])
-
-    def get_tissue_mask(self, tissue_seg_model_path, tissue_seg_method):
-        if tissue_seg_method is None:
-            tissue_seg_method = DEEP
-        if not tissue_seg_model_path or len(tissue_seg_model_path) == 0:
-            tissue_seg_method = INTENSITY
-        ssDNA_tissue_cut = SingleStrandDNATissueCut(
-            src_img_path=self.img_path,
-            model_path=tissue_seg_model_path,
-            dst_img_path=self.out_path,
-            seg_method=tissue_seg_method
-        )
-        ssDNA_tissue_cut.tissue_seg()
-        self.tissue_mask = ssDNA_tissue_cut.mask
-
-    def tissue_label_filter(self, tissue_cell_label):
-        """filter cell mask in tissue area"""
-        tissue_cell_label_filter = []
-        for idx, label in enumerate(tissue_cell_label):
-            tissue_bbox = self.tissue_bbox[idx]
-            label_filter_list = []
-            for i in range(self.tissue_num[idx]):
-                tissue_bbox_temp = tissue_bbox[i]
-                label_filter = np.multiply(
-                    label[i],
-                    self.tissue_mask[idx][tissue_bbox_temp[0]: tissue_bbox_temp[2],
-                    tissue_bbox_temp[1]: tissue_bbox_temp[3]]  # noqa
-                ).astype(np.uint8)
-                label_filter_list.append(label_filter)
-            tissue_cell_label_filter.append(label_filter_list)
-        return tissue_cell_label_filter
 
     def tissue_cell_infer(self, q=None):
         """cell segmentation in tissue area by neural network"""
@@ -146,7 +102,6 @@ class CellSegPipeV1(CellSegPipe):
 
     def __get_img_filter(self):
         """get tissue image by tissue mask"""
-        # for idx, img in enumerate(self.img_list):
         for img, tissue_mask in zip(self.img_list, self.tissue_mask):
             img_filter = np.multiply(img, tissue_mask).astype(np.uint8)
             self.img_filter.append(img_filter)

@@ -13,7 +13,11 @@ import cv2
 import numpy as np
 import tifffile
 
-from stereo.image.tissue_cut import DEEP
+from stereo.image.tissue_cut import (
+    DEEP,
+    INTENSITY,
+    SingleStrandDNATissueCut
+)
 from stereo.log_manager import logger
 
 
@@ -21,6 +25,7 @@ class CellSegPipe(object):
 
     def __init__(
             self,
+            model_path,
             img_path,
             out_path,
             is_water,
@@ -29,7 +34,6 @@ class CellSegPipe(object):
             tissue_seg_model_path='',
             tissue_seg_method=DEEP,
             post_processing_workers=10,
-            model_path=None,
             *args,
             **kwargs
     ):
@@ -58,10 +62,12 @@ class CellSegPipe(object):
         logger.info('Transform 16bit to 8bit : %.2f' % (t1 - t0))
         self.tissue_mask = []
         self.tissue_mask_thumb = []
+        self.tissue_seg_model_path = tissue_seg_model_path
+        self.tissue_seg_method = tissue_seg_method
         self.tissue_num = []  # tissue num in each image
         self.tissue_bbox = []  # tissue roi bbox in each image
         self.img_filter = []  # image filtered by tissue mask
-        self.get_tissue_mask(tissue_seg_model_path, tissue_seg_method)
+        self.get_tissue_mask()
         self.get_roi()
         self.cell_mask = []
         self.post_mask_list = []
@@ -96,14 +102,44 @@ class CellSegPipe(object):
                 logger.info('Image %s convert to gray!' % self.file[idx])
                 self.img_list[idx] = img[:, :, 0]
 
+    @staticmethod
+    def transfer_32bit_to_8bit(image_32bit):
+        min_32bit = np.min(image_32bit)
+        max_32bit = np.max(image_32bit)
+        return np.array(np.rint(255 * ((image_32bit - min_32bit) / (max_32bit - min_32bit))), dtype=np.uint8)
+
+    @staticmethod
+    def transfer_16bit_to_8bit(image_16bit):
+        min_16bit = np.min(image_16bit)
+        max_16bit = np.max(image_16bit)
+        return np.array(np.rint(255 * ((image_16bit - min_16bit) / (max_16bit - min_16bit))), dtype=np.uint8)
+
     def trans16to8(self):
-        pass
+        from stereo.log_manager import logger
+        for idx, img in enumerate(self.img_list):
+            assert img.dtype in ['uint16', 'uint8']
+            if img.dtype != 'uint8':
+                logger.info('%s transfer to 8bit' % self.file[idx])
+                self.img_list[idx] = self.transfer_16bit_to_8bit(img)
 
     def save_each_file_result(self, file_name, idx):
         pass
 
-    def get_tissue_mask(self, tissue_seg_model_path, tissue_seg_method):
-        pass
+    def get_tissue_mask(self):
+        tissue_seg_model_path = self.tissue_seg_model_path
+        tissue_seg_method = self.tissue_seg_method
+        if tissue_seg_method is None:
+            tissue_seg_method = DEEP
+        if not tissue_seg_model_path or len(tissue_seg_model_path) == 0:
+            tissue_seg_method = INTENSITY
+        ss_dna_tissue_cut = SingleStrandDNATissueCut(
+            src_img_path=self.img_path,
+            model_path=tissue_seg_model_path,
+            dst_img_path=self.out_path,
+            seg_method=tissue_seg_method
+        )
+        ss_dna_tissue_cut.tissue_seg()
+        self.tissue_mask = ss_dna_tissue_cut.mask
 
     @staticmethod
     def filter_roi(props):
@@ -120,10 +156,24 @@ class CellSegPipe(object):
     def get_roi(self):
         pass
 
-    def tissue_cell_infer(self):
-        pass
-
     def tissue_label_filter(self, tissue_cell_label):
+        """filter cell mask in tissue area"""
+        tissue_cell_label_filter = []
+        for idx, label in enumerate(tissue_cell_label):
+            tissue_bbox = self.tissue_bbox[idx]
+            label_filter_list = []
+            for i in range(self.tissue_num[idx]):
+                tissue_bbox_temp = tissue_bbox[i]
+                label_filter = np.multiply(
+                    label[i],
+                    self.tissue_mask[idx][tissue_bbox_temp[0]: tissue_bbox_temp[2],
+                    tissue_bbox_temp[1]: tissue_bbox_temp[3]]  # noqa
+                ).astype(np.uint8)
+                label_filter_list.append(label_filter)
+            tissue_cell_label_filter.append(label_filter_list)
+        return tissue_cell_label_filter
+
+    def tissue_cell_infer(self):
         pass
 
     def mosaic(self, tissue_cell_label_filter):
