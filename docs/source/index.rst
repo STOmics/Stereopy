@@ -75,14 +75,14 @@ Latest Additions
 
 Version 1.0.0
 ~~~~~~~~~~~~~~
-1.0.0 : 2023-11-30
+1.0.0 : 2023-12-04
 
 Features:
 
 1. Addition of GPU acceleration on SinlgeR for large-volume data, and optimized calculating based on CPU version.
 2. Addition of `st.plt.elbow` to visualize PCA result, for appropriate number of pcs.
 3. Addition of color, max, min setting for colorbar, when plotting heatmap.
-4. Addition of cell segmentation of `Deep Lenrning Model V1_Pro`, which is improved based on `V1`.
+4. Addition of cell segmentation of `Deep Learning Model V1_Pro`, which is improved based on `V1`.
 5. Supplemented parameters of `st.plt.auc_heatmap` and `st.plt.auc_heatmap_by_group`, full access to `seaborn.clustermap`;
 6. Addition of thread and seed setting in `st.tl.umap`, of which the default method have been changed to single thread with the sacrifice of computational efficiency to ensure reproducibility of results. More in https://umap-learn.readthedocs.io/en/latest/reproducibility.html.
 7. Modification of computing method of bin coordinates when reading GEM, consistent with GEF.
@@ -91,7 +91,7 @@ Features:
 
 BUG Fixes:
 
-1. Occasional square-hollowing area in `Deep Lerning Model V3` of cell segmentation processing.
+1. Occasional square-hollowing area in `Deep Learning Model V3` of cell segmentation processing.
 2. `st.tl.annotation` could not set two or more clusters as a same name. 
 3. The data object `ins.selected_exp_data` obtained from `st.plt.interact_spatial_scatter` could not be used for subsequent analysis.
 4. Part of data was missing when performed `st.plt.interact_spatial_scatter` to output high-resolution matrix in GEF format.
