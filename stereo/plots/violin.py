@@ -9,9 +9,9 @@
 import matplotlib.pyplot as plt
 import seaborn
 
-from stereo.constant import TOTAL_COUNTS
-from stereo.constant import PCT_COUNTS_MT
 from stereo.constant import N_GENES_BY_COUNTS
+from stereo.constant import PCT_COUNTS_MT
+from stereo.constant import TOTAL_COUNTS
 
 
 def violin_distribution(data, width=None, height=None, y_label=None):  # Violin Statistics Chart
@@ -19,6 +19,9 @@ def violin_distribution(data, width=None, height=None, y_label=None):  # Violin 
     violin plot showing quality control index distribution
 
     :param data: StereoExpData object.
+    :param width: the figure width in pixels.
+    :param height: the figure height in pixels.
+    :param y_label: y label
 
     :return: None
     """

@@ -8,4 +8,5 @@ Coding this python-version SCTransform after learning from these R-packages:
 The R-package SCTransform is described in:
     https://genomebiology.biomedcentral.com/articles/10.1186/s13059-019-1874-1
 """
+# flake8: noqa
 from .sctransform import SCTransform

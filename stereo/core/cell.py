@@ -1,6 +1,6 @@
 """
 @file: cell.py
-@description: 
+@description:
 @author: Ping Qiu
 @email: qiuping1@genomics.cn
 @last modified by: Ping Qiu
@@ -9,7 +9,8 @@ change log:
     2021/06/29  create file.
     2021/08/17  add get_property and to_df function to file, by wuyiran.
 """
-from typing import Optional, Union
+from typing import Optional
+from typing import Union
 
 import numpy as np
 import pandas as pd
@@ -31,12 +32,13 @@ class Cell(object):
         if batch is not None:
             self._obs['batch'] = self._set_batch(batch)
         self._cell_border = cell_border
+        self.cell_point = None
 
     def __contains__(self, item):
         return item in self._obs.columns
 
     def __setattr__(self, key, value):
-        if key in {'_obs', '_matrix', '_pairwise', '_cell_border', 'cell_name', 'cell_border', 'loc'}:
+        if key in {'_obs', '_matrix', '_pairwise', '_cell_border', 'cell_name', 'cell_border', 'loc', 'cell_point'}:
             object.__setattr__(self, key, value)
         elif key == 'batch':
             self._obs[key] = self._set_batch(value)
@@ -125,7 +127,7 @@ class Cell(object):
             return None
 
         if not isinstance(batch, np.ndarray) and not isinstance(batch, list) \
-            and not isinstance(batch,int) and not isinstance(batch, str):
+                and not isinstance(batch, int) and not isinstance(batch, str):
             raise TypeError('batch must be np.ndarray or list or int or str')
 
         if isinstance(batch, int):
@@ -152,6 +154,8 @@ class Cell(object):
                 self._obs = self._obs[index].copy()
             else:
                 self._obs = self._obs.iloc[index].copy()
+        else:
+            self._obs = self._obs.iloc[index].copy()
         return self
 
     def get_property(self, name):
@@ -179,8 +183,8 @@ class Cell(object):
         format_cells = ['cell_name']
         for attr_name in self._obs.columns:
             format_cells.append(attr_name)
-        return f"\ncells: {format_cells}" if format_cells else ""    
-    
+        return f"\ncells: {format_cells}" if format_cells else ""
+
     def _repr_html_(self):
         obs: pd.DataFrame = self.to_df()
         return obs._repr_html_()
@@ -193,8 +197,6 @@ class AnnBasedCell(Cell):
                  batch: Optional[Union[np.ndarray, list, int, str]] = None):
         self.__based_ann_data = based_ann_data
         super().__init__(cell_name, cell_border, batch)
-        # self._obs = self.__based_ann_data.obs
-        # self.loc = self._obs.loc
         self.loc = self.__based_ann_data.obs.loc
 
     def __setattr__(self, key, value):
@@ -219,7 +221,7 @@ class AnnBasedCell(Cell):
 
     def __contains__(self, item):
         return item in self.__based_ann_data.obs.columns
-    
+
     @property
     def _obs(self):
         return self.__based_ann_data.obs
@@ -231,7 +233,7 @@ class AnnBasedCell(Cell):
 
         :return: cell name
         """
-        return self.__based_ann_data.obs_names.values.astype(str)
+        return self.__based_ann_data.obs_names.values.astype('U')
 
     @cell_name.setter
     def cell_name(self, name: np.ndarray):
@@ -243,7 +245,10 @@ class AnnBasedCell(Cell):
         """
         if not isinstance(name, np.ndarray):
             raise TypeError('cell name must be a np.ndarray object.')
-        self.__based_ann_data._inplace_subset_obs(name)
+        if name.size != self.__based_ann_data.n_obs:
+            raise ValueError(f'The length of cell names must be {self.__based_ann_data.n_obs}, but now is {name.size}')
+        self.__based_ann_data.obs_names = name
+        # self.__based_ann_data._inplace_subset_obs(name)
 
     @property
     def total_counts(self):

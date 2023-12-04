@@ -1,25 +1,30 @@
-from typing import Optional, Union, List
-from copy import deepcopy
+from typing import (
+    Optional,
+    Union,
+    List
+)
+
 import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib import gridspec
 
 from stereo.plots.ms_plot_base import MSDataPlotBase
 from stereo.plots.scatter import base_scatter
-from .decorator import download, plot_scale
+from .decorator import download
+from .decorator import plot_scale
 
 
 class MSPlot(MSDataPlotBase):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-    
+
     def __create_axes(
-        self,
-        plot_count=None,
-        ncols=2,
-        width=None,
-        height=None
+            self,
+            plot_count=None,
+            ncols=2,
+            width=None,
+            height=None
     ):
         if plot_count is None:
             plot_count = len(self.ms_data.data_list)
@@ -47,21 +52,22 @@ class MSPlot(MSDataPlotBase):
     @download
     @plot_scale
     def ms_spatial_aligned_scatter(
-        self,
-        ncols: int=2,
-        dot_size: int=None,
-        palette: str='stereo_30',
-        width: int=None,
-        height: int=None,
-        slices: Optional[List[Union[int, str]]]=None,
-        type: str="pairwise",
-        merged: bool=False,
-        use_raw: bool=False,
-        **kwargs
+            self,
+            ncols: int = 2,
+            dot_size: int = None,
+            palette: str = 'stereo_30',
+            width: int = None,
+            height: int = None,
+            slices: Optional[List[Union[int, str]]] = None,
+            type: str = "pairwise",
+            merged: bool = False,
+            use_raw: bool = False,
+            **kwargs
     ):
         if type == 'center':
             if not hasattr(self.ms_data, 'center_slice'):
-                raise Exception("There is no center slice, be sure that you have ran the spatial alignment whit `center` method.")
+                raise Exception(
+                    "There is no center slice, be sure that you have ran the spatial alignment whit `center` method.")
 
         if dot_size is None:
             max_cell_count = 0
@@ -69,8 +75,7 @@ class MSPlot(MSDataPlotBase):
                 if data.shape[0] > max_cell_count:
                     max_cell_count = data.shape[0]
             dot_size = 220000 / max_cell_count
-        
-        # data_count = len(self.ms_data.data_list)
+
         if slices is None:
             slices = list(range(len(self.ms_data.data_list)))
         slices_count = len(slices)
@@ -119,7 +124,8 @@ class MSPlot(MSDataPlotBase):
                     pos = np.concatenate([slice_a.raw_position, slice_b.raw_position], axis=0)
                 else:
                     pos = np.concatenate([slice_a.position, slice_b.position], axis=0)
-                hue = np.concatenate([np.repeat(slice_a_name, repeats=slice_a.shape[0]), np.repeat(slice_b_name, repeats=slice_b.shape[0])], axis=0)
+                hue = np.concatenate([np.repeat(slice_a_name, repeats=slice_a.shape[0]),
+                                      np.repeat(slice_b_name, repeats=slice_b.shape[0])], axis=0)
                 base_scatter(
                     x=pos[:, 0],
                     y=pos[:, 1],
@@ -135,7 +141,6 @@ class MSPlot(MSDataPlotBase):
                     **kwargs
                 )
         elif type == 'center':
-            slices_count
             fig, axes = self.__create_axes(plot_count=slices_count, ncols=ncols, width=width, height=height)
             center_slice = self.ms_data.center_slice
             for i, slice_idx in enumerate(slices):
@@ -145,7 +150,8 @@ class MSPlot(MSDataPlotBase):
                     pos = np.concatenate([center_slice.raw_position, slice.raw_position], axis=0)
                 else:
                     pos = np.concatenate([center_slice.position, slice.position], axis=0)
-                hue = np.concatenate([np.repeat('center', repeats=center_slice.shape[0]), np.repeat(slice_name, repeats=slice.shape[0])], axis=0)
+                hue = np.concatenate([np.repeat('center', repeats=center_slice.shape[0]),
+                                      np.repeat(slice_name, repeats=slice.shape[0])], axis=0)
                 base_scatter(
                     x=pos[:, 0],
                     y=pos[:, 1],
@@ -186,7 +192,8 @@ class MSPlot(MSDataPlotBase):
                 show_legend = True
                 hue_type = g
             ax = fig.add_subplot(axs[i])
-            data.plt.cluster_scatter(ax=ax, res_key=res_key, title=self.ms_data.names[i], show_legend=show_legend, hue_order=hue_type, **kwargs)
+            data.plt.cluster_scatter(ax=ax, res_key=res_key, title=self.ms_data.names[i], show_legend=show_legend,
+                                     hue_order=hue_type, **kwargs)
 
             res = data.tl.result[res_key]
             hue = np.array(res['group'])

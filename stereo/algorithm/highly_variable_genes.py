@@ -1,21 +1,27 @@
-import pandas as pd
-import numpy as np
-from typing import Optional
-from ..utils.hvg_utils import materialize_as_ndarray, get_mean_var, check_nonnegative_integers
-from ..log_manager import logger
 import warnings
+from typing import Optional
+
+import numpy as np
+import pandas as pd
 import scipy.sparse as sp_sparse
+
+from ..log_manager import logger
+from ..utils.hvg_utils import (
+    materialize_as_ndarray,
+    get_mean_var,
+    check_nonnegative_integers
+)
 
 
 def highly_variable_genes_single_batch(
-    data: Optional[sp_sparse.spmatrix],
-    min_disp: Optional[float] = 0.5,
-    max_disp: Optional[float] = np.inf,
-    min_mean: Optional[float] = 0.0125,
-    max_mean: Optional[float] = 3,
-    n_top_genes: Optional[int] = None,
-    n_bins: int = 20,
-    method: Optional[str] = 'seurat',
+        data: Optional[sp_sparse.spmatrix],
+        min_disp: Optional[float] = 0.5,
+        max_disp: Optional[float] = np.inf,
+        min_mean: Optional[float] = 0.0125,
+        max_mean: Optional[float] = 3,
+        n_top_genes: Optional[int] = None,
+        n_bins: int = 20,
+        method: Optional[str] = 'seurat',
 ) -> pd.DataFrame:
     """\
     See `highly_variable_genes`.
@@ -27,9 +33,9 @@ def highly_variable_genes_single_batch(
     """
     # TODO how to deal with log data
     # if method == 'seurat':
-        # if 'log1p' in adata.uns_keys() and adata.uns['log1p']['base'] is not None:
-        #     X *= np.log(adata.uns['log1p']['base'])
-        # data = np.expm1(data)
+    # if 'log1p' in adata.uns_keys() and adata.uns['log1p']['base'] is not None:
+    #     X *= np.log(adata.uns['log1p']['base'])
+    # data = np.expm1(data)
 
     if method == 'seurat':
         data = np.expm1(data)
@@ -70,9 +76,9 @@ def highly_variable_genes_single_batch(
         disp_mean_bin[one_gene_per_bin.values] = 0
         # actually do the normalization
         df['dispersions_norm'] = (
-            df['dispersions'].values  # use values here as index differs
-            - disp_mean_bin[df['mean_bin'].values].values
-        ) / disp_std_bin[df['mean_bin'].values].values
+                                         df['dispersions'].values  # use values here as index differs
+                                         - disp_mean_bin[df['mean_bin'].values].values
+                                 ) / disp_std_bin[df['mean_bin'].values].values
     elif method == 'cell_ranger':
         from statsmodels import robust
 
@@ -86,17 +92,14 @@ def highly_variable_genes_single_batch(
         with warnings.catch_warnings():
             warnings.simplefilter('ignore')
             disp_mad_bin = disp_grouped.apply(robust.mad)
-            df['dispersions_norm'] = (
-                df['dispersions'].values - disp_median_bin[df['mean_bin'].values].values
-            ) / disp_mad_bin[df['mean_bin'].values].values
+            df['dispersions_norm'] = (df['dispersions'].values - disp_median_bin[df['mean_bin'].values].values
+                                      ) / disp_mad_bin[df['mean_bin'].values].values
     else:
         raise ValueError('`flavor` needs to be "seurat" or "cell_ranger"')
     dispersion_norm = df['dispersions_norm'].values
     if n_top_genes is not None:
         dispersion_norm = dispersion_norm[~np.isnan(dispersion_norm)]
-        dispersion_norm[
-            ::-1
-        ].sort()  # interestingly, np.argpartition is slightly slower
+        dispersion_norm[::-1].sort()  # interestingly, np.argpartition is slightly slower
         if n_top_genes > data.shape[1]:
             logger.info('`n_top_genes` > `adata.n_var`, returning all genes.')
             n_top_genes = data.shape[1]
@@ -122,11 +125,11 @@ def highly_variable_genes_single_batch(
 
 
 def highly_variable_genes_seurat_v3(
-    data: Optional[sp_sparse.spmatrix],
-    n_top_genes: int = 2000,
-    batch_info: Optional[np.ndarray] = None,
-    check_values: bool = True,
-    span: float = 0.3,
+        data: Optional[sp_sparse.spmatrix],
+        n_top_genes: int = 2000,
+        batch_info: Optional[np.ndarray] = None,
+        check_values: bool = True,
+        span: float = 0.3,
 ) -> Optional[pd.DataFrame]:
     """\
     See `highly_variable_genes`.
@@ -214,9 +217,9 @@ def highly_variable_genes_seurat_v3(
             batch_counts_sum = batch_counts.sum(axis=0)
 
         norm_gene_var = (1 / ((N - 1) * np.square(reg_std))) * (
-            (N * np.square(mean))
-            + squared_batch_counts_sum
-            - 2 * batch_counts_sum * mean
+                (N * np.square(mean))
+                + squared_batch_counts_sum
+                - 2 * batch_counts_sum * mean
         )
         norm_gene_vars.append(norm_gene_var.reshape(1, -1))
 

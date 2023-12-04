@@ -1,8 +1,8 @@
 import numpy as np
 
 from stereo.plots.decorator import plot_scale
-from stereo.plots.plot_vec.vec import Vec
 from stereo.plots.plot_base import PlotBase
+from stereo.plots.plot_vec.vec import Vec
 
 
 class PlotVec(PlotBase):
@@ -49,11 +49,7 @@ class PlotVec(PlotBase):
         plt_avg_ptime_fil = vec.filter(plt_avg_ptime, filter_type, sigma_val, radius_val)
 
         plt_common_ty = vec.gen_arr_for_common(ty_raw)
-        # print('most common type in each pixel calculated.')
-
         u, v = vec.cal_param(plt_avg_ptime_fil)
-        # print('u, v calculated.')
-
         mask_nan = np.isnan(u) | np.isnan(v) | (u == 0) | (v == 0)
         u[mask_nan] = np.nan
         v[mask_nan] = np.nan
@@ -65,7 +61,14 @@ class PlotVec(PlotBase):
                              tick_step, dpi_val)
 
     @plot_scale
-    def plot_time_scatter(self, group='leiden', **kwargs):
+    def plot_time_scatter(
+            self,
+            group='leiden',
+            vmin: float = None,
+            vmax: float = None,
+            palette: str = 'stereo',
+            **kwargs
+    ):
         data = self.stereo_exp_data
 
         data.cells[group] = data.cells[group].astype('category')
@@ -83,6 +86,9 @@ class PlotVec(PlotBase):
             color_bar=True,
             width=None,
             height=None,
+            palette=palette,
+            vmin=vmin,
+            vmax=vmax,
             **kwargs
         )
         return fig

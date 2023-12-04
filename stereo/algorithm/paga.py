@@ -1,11 +1,11 @@
+from typing import Optional
+
 import numpy as np
 import scipy as sp
-
-from typing import Optional
 from scipy.sparse.csgraph import minimum_spanning_tree
 
-from .algorithm_base import AlgorithmBase
 from stereo.log_manager import logger
+from .algorithm_base import AlgorithmBase
 
 _AVAIL_MODELS = {'v1.0', 'v1.2'}
 
@@ -134,15 +134,6 @@ class Paga(AlgorithmBase):
         paga_res_dict['groups'] = groups
         stereo_exp_data.tl.result['paga'] = paga_res_dict
 
-        # if use_rna_velocity:
-        #     logger.info('    finished\n'
-        #                 + ' \'paga/transitions_confidence\', connectivities adjacency (stereo_exp_data.cells_pairwise)\n'
-        #                 + '\'paga/connectivities_tree\', connectivities subtree (stereo_exp_data.cells_pairwise)')
-        # else:
-        #     logger.info('    finished\n'
-        #                 + ' \'paga/connectivities\', connectivities adjacency (stereo_exp_data.cells_pairwise)\n'
-        #                 + '\'paga/connectivities_tree\', connectivities subtree (stereo_exp_data.cells_pairwise)')
-
         return stereo_exp_data if copy else None
 
 
@@ -152,7 +143,6 @@ class PAGA:
         self._stereo_exp_data = stereo_exp_data
 
         # do import here to avoid circular import
-        from stereo.algorithm.neighbors import Neighbors
 
         self._neighbors = {
             "neighbor": {"n_neighbors": 15},

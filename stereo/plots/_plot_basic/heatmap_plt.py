@@ -7,32 +7,38 @@
 @time:2021/03/15
 """
 
-from matplotlib.axes import Axes
+from typing import (
+    List,
+    Iterable,
+    Sequence,
+    Optional,
+    Tuple
+)
+
 import matplotlib.pyplot as plt
-from matplotlib.colors import Normalize
 import numpy as np
 import pandas as pd
-
-from typing import List, Iterable, Sequence, Optional, Tuple
+from matplotlib.axes import Axes
+from matplotlib.colors import Normalize
 from typing_extensions import Literal
 
-from ...log_manager import logger
+from stereo.log_manager import logger
 
 
 def heatmap(
-    df: pd.DataFrame = None,
-    ax: Axes = None,
-    cmap=None,
-    norm=None,
-    plot_colorbar=False,
-    colorbar_ax: Axes = None,
-    colorbar_orientation = 'vertical',
-    colorbar_ticklocation = 'right',
-    colorbar_title = None,
-    show_xaxis=True,
-    show_yaxis=True,
-    plot_hline=False,
-    **kwargs
+        df: pd.DataFrame = None,
+        ax: Axes = None,
+        cmap=None,
+        norm=None,
+        plot_colorbar=False,
+        colorbar_ax: Axes = None,
+        colorbar_orientation='vertical',
+        colorbar_ticklocation='right',
+        colorbar_title=None,
+        show_xaxis=True,
+        show_yaxis=True,
+        plot_hline=False,
+        **kwargs
 ):
     """
     :param df:
@@ -47,9 +53,9 @@ def heatmap(
     :return:
     """
 
-    if norm == None:
+    if norm is None:
         norm = Normalize(vmin=None, vmax=None)
-    if (plot_colorbar and colorbar_ax == None):
+    if (plot_colorbar and colorbar_ax is None):
         logger.warning("Colorbar ax is not provided.")
         plot_colorbar = False
 
@@ -58,8 +64,6 @@ def heatmap(
 
     ax.set_ylim(df.shape[0] - 0.5, -0.5)
     ax.set_xlim(-0.5, df.shape[1] - 0.5)
-    # ax.tick_params(axis='y', left=False, labelleft=False)
-    # ax.set_ylabel('')
     ax.grid(False)
 
     if show_xaxis:
@@ -68,13 +72,13 @@ def heatmap(
         ax.set_xticklabels(list(df.columns), rotation=90)
     else:
         ax.tick_params(axis='x', labelbottom=False, bottom=False)
-    
+
     if show_yaxis:
         ax.tick_params(axis='y', labelsize='small')
         ax.set_yticks(np.arange(df.shape[0]))
         ax.set_yticklabels(list(df.index))
     else:
-        ax.tick_params(axis='y', labelbottom=False, bottom=False)
+        ax.tick_params(axis='y', labelleft=False, left=False)
 
     if plot_colorbar:
         if colorbar_title is not None:
@@ -237,7 +241,7 @@ def plot_gene_groups_brackets(
                     va='bottom',
                     rotation=rotation,
                 )
-            except:
+            except Exception:
                 pass
     else:
         top = left
@@ -303,7 +307,6 @@ def _check_indices(
 
     alt_dim = ("obs", "var")[dim == "obs"]
 
-    alias_name = None
     if alias_index is not None:
         alt_names = pd.Series(alt_index, index=alias_index)
         alias_name = alias_index.name

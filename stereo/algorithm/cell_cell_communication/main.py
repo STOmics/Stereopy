@@ -1,35 +1,22 @@
 # python core module
-import os
-from typing import Tuple, Union
+from functools import partial
+from multiprocessing.pool import Pool
 from pathlib import Path
+from typing import Tuple
+from typing import Union
 
+import numpy as np
+import numpy_groupies as npg
+import pandas as pd
+from sqlalchemy import create_engine
 # third part module
 from tqdm import tqdm
-import numpy as np
-import pandas as pd
-import numpy_groupies as npg
-from functools import partial
-from sqlalchemy import create_engine
-from multiprocessing.pool import Pool
 
-# module in self project
-from stereo.log_manager import logger
-from stereo.stereo_config import stereo_conf
 from stereo.algorithm.algorithm_base import AlgorithmBase
-from stereo.algorithm.cell_cell_communication.utils.sqlalchemy_model import Base
-from stereo.algorithm.cell_cell_communication.utils.visualization_process import visualization_process
 from stereo.algorithm.cell_cell_communication.analysis_helper import (
     Subsampler,
     write_to_file,
     mouse2human
-)
-from stereo.algorithm.cell_cell_communication.utils.database_utils import Database, DatabaseManager
-from stereo.algorithm.cell_cell_communication.utils.sqlalchemy_repository import (
-    ComplexRepository,
-    GeneRepository,
-    InteractionRepository,
-    MultidataRepository,
-    ProteinRepository
 )
 from stereo.algorithm.cell_cell_communication.exceptions import (
     ProcessMetaException,
@@ -41,6 +28,19 @@ from stereo.algorithm.cell_cell_communication.exceptions import (
     PipelineResultInexistent,
     InvalidSpecies
 )
+from stereo.algorithm.cell_cell_communication.utils.database_utils import Database, DatabaseManager
+from stereo.algorithm.cell_cell_communication.utils.sqlalchemy_model import Base
+from stereo.algorithm.cell_cell_communication.utils.sqlalchemy_repository import (
+    ComplexRepository,
+    GeneRepository,
+    InteractionRepository,
+    MultidataRepository,
+    ProteinRepository
+)
+from stereo.algorithm.cell_cell_communication.utils.visualization_process import visualization_process
+# module in self project
+from stereo.log_manager import logger
+from stereo.stereo_config import stereo_conf
 
 
 class CellCellCommunication(AlgorithmBase):
@@ -100,7 +100,7 @@ class CellCellCommunication(AlgorithmBase):
         :param separator_interaction: separator of interactions used in the result and plots, e.g. '_'.
         :param iterations: number of iterations for the 'statistical' analysis type.
         :param threshold: threshold of percentage of gene expression, above which being considered as significant.
-        :param processes: number of processes used for doing the statistical analysis, on notebook just only support one process.
+        :param processes: number of processes used for doing the statistical analysis, on notebook just only support one process. # noqa
         :param pvalue: the cut-point of p-value, below which being considered significant.
         :param result_precision: result precision for the results, default=3.
         :param output_path: the path of directory to save the result files, set it to output the result to files.
@@ -117,17 +117,17 @@ class CellCellCommunication(AlgorithmBase):
 
         if species is None or species.upper() not in ('HUMAN', 'MOUSE'):
             raise InvalidSpecies(species)
-        
+
         if species.upper() == 'HUMAN' and database == 'celltalkdb':
             raise InvalidDatabase("The database 'celltalkdb' can not be used with species 'HUMAN'")
-        
+
         db_path = self._check_database(database)
         if db_path is None:
             raise InvalidDatabase()
-        
+
         logger.info(f'species: {species.upper()}')
         logger.info(f'database: {database}')
-        
+
         interactions, genes, complex_composition, complex_expanded = self._get_ref_database(db_path)
 
         counts, meta = self._prepare_data(cluster_res_key)
@@ -145,7 +145,8 @@ class CellCellCommunication(AlgorithmBase):
         human_genes_to_mouse = None
         if species.upper() == 'MOUSE' and (database == 'cellphonedb' or database == 'liana'):
             if homogene_path is None:
-                homogene_path = Path(stereo_conf.data_dir, 'algorithm/cell_cell_communication/database/mouse2human.csv').absolute().as_posix()
+                homogene_path = Path(stereo_conf.data_dir,
+                                     'algorithm/cell_cell_communication/database/mouse2human.csv').absolute().as_posix()
             genes_mouse = counts.index.tolist()
             genes_human, human_genes_to_mouse = mouse2human(genes_mouse, homogene_path)
             counts.index = genes_human
@@ -291,15 +292,14 @@ class CellCellCommunication(AlgorithmBase):
             lambda rank: rank if rank != 0 else (1 + max_rank))
         significant_means.sort_values('rank', inplace=True)  # min to max, 0s at the bottom
 
-        visualization_data = visualization_process(significant_means, separator_cluster, separator_interaction, human_genes_to_mouse)
+        visualization_data = visualization_process(significant_means, separator_cluster, separator_interaction,
+                                                   human_genes_to_mouse)
 
         self.pipeline_res[res_key] = {
             'means': means_result,
             'significant_means': significant_means,
             'deconvoluted': deconvoluted_result,
             'visualization_data': visualization_data
-            # 'interactions_filtered': interactions_filtered,
-            # 'interactions': interactions
         }
         if analysis_type == "statistical":
             self.pipeline_res[res_key]['pvalues'] = pvalues_result
@@ -311,10 +311,12 @@ class CellCellCommunication(AlgorithmBase):
 
         if output_path is not None:
             logger.info('Writing results to files')
-        # Todo: Test output_path in linux
+            # Todo: Test output_path in linux
             write_to_file(means_result, means_filename, output_path=output_path, output_format=output_format)
-            write_to_file(significant_means, significant_means_filename, output_path=output_path, output_format=output_format)
-            write_to_file(deconvoluted_result, deconvoluted_filename, output_path=output_path, output_format=output_format)
+            write_to_file(significant_means, significant_means_filename, output_path=output_path,
+                          output_format=output_format)
+            write_to_file(deconvoluted_result, deconvoluted_filename, output_path=output_path,
+                          output_format=output_format)
             if analysis_type == "statistical":
                 write_to_file(pvalues_result, pvalues_filename, output_path=output_path, output_format=output_format)
 
@@ -326,29 +328,31 @@ class CellCellCommunication(AlgorithmBase):
         cluster.rename({'group': 'cell_type'}, axis=1, inplace=True)
         cluster.set_index('bins', drop=True, inplace=True)
         cluster.index.name = 'cell'
-        data = pd.DataFrame(self.stereo_exp_data.exp_matrix.T.toarray())
+        if self.stereo_exp_data.issparse():
+            data = pd.DataFrame(self.stereo_exp_data.exp_matrix.T.toarray())
+        else:
+            data = pd.DataFrame(self.stereo_exp_data.exp_matrix.T)
         data.columns = self.stereo_exp_data.cell_names.astype(str)
         data.index = self.stereo_exp_data.gene_names
         return data, cluster
-    
+
     def _check_database(self, database: str):
         if (database is None) or (not isinstance(database, str)):
             return None
-        
+
         database_dir = Path(stereo_conf.data_dir, "algorithm/cell_cell_communication/database")
-        
+
         path = Path(database)
 
         if path.is_dir():
             return None
-        
+
         if path.is_file():
             return path.absolute().as_posix() if path.exists() else None
-        
+
         if database not in ('cellphonedb', 'liana', 'celltalkdb'):
             return None
-        return (database_dir/f'{database}.db').absolute().as_posix()
-
+        return (database_dir / f'{database}.db').absolute().as_posix()
 
     def _get_ref_database(self, db_path):
         """
@@ -378,7 +382,6 @@ class CellCellCommunication(AlgorithmBase):
 
         return interactions, genes, complex_composition, complex_expanded
 
-    
     def _check_meta_data(self, meta_raw: pd.DataFrame):
         """
         Preprocess the meta dataframe:
@@ -397,17 +400,17 @@ class CellCellCommunication(AlgorithmBase):
                 meta.set_index('cell', inplace=True, drop=True)
                 return meta
 
-            if type(meta_raw.index) == pd.core.indexes.multi.MultiIndex:
+            if type(meta_raw.index) == pd.core.indexes.multi.MultiIndex:  # noqa
                 raise ProcessMetaException
 
             elif 'cell_type' in meta_raw:
                 meta = meta_raw[['cell_type']]
-                if type(meta_raw.index) == pd.core.indexes.range.RangeIndex:
+                if type(meta_raw.index) == pd.core.indexes.range.RangeIndex:  # noqa
                     meta.set_index(meta_raw.iloc[:, 0], inplace=True)
                     meta.index.name = 'cell'
                     return meta
 
-                if type(meta_raw.index) == pd.core.indexes.base.Index:
+                if type(meta_raw.index) == pd.core.indexes.base.Index:  # noqa
                     meta.index.name = 'cell'
                     return meta
 
@@ -416,10 +419,9 @@ class CellCellCommunication(AlgorithmBase):
             meta.index.name = 'cell'
             meta.index = meta.index.astype(str)
             return meta
-        except:
+        except Exception:
             raise ProcessMetaException
 
-    
     def _check_counts_data(self, counts: pd.DataFrame, counts_data: str) -> None:
         """Naive check count data against counts gene names.
 
@@ -439,7 +441,6 @@ class CellCellCommunication(AlgorithmBase):
                            f"some genes seem to be in another format. "
                            f"Try using hgnc_symbol if all counts are filtered.")
 
-    
     def _counts_validations(self, counts: pd.DataFrame, meta: pd.DataFrame) -> pd.DataFrame:
         """
         Change counts type to np.float32.
@@ -450,7 +451,7 @@ class CellCellCommunication(AlgorithmBase):
         try:
             if np.any(counts.dtypes.values != np.dtype('float32')):
                 counts = counts.astype(np.float32)
-        except:
+        except Exception:
             raise ParseCountsException("Counts values cannot be changed to np.float32")
 
         meta.index = meta.index.astype(str)
@@ -464,7 +465,6 @@ class CellCellCommunication(AlgorithmBase):
             counts = counts.loc[:, counts.columns.isin(meta.index)].copy()
         return counts
 
-    
     def _check_microenvs_data(self, microenvs: pd.DataFrame, meta: pd.DataFrame) -> pd.DataFrame:
         """
         Runs validations to make sure the file has enough columns and that all the cell types in the microenvironment
@@ -478,13 +478,11 @@ class CellCellCommunication(AlgorithmBase):
         elif len_columns > 2:
             logger.warning(f"Microenvrionemnts expects 2 columns and got {len_columns}. Droppoing extra columns.")
         microenvs = microenvs.iloc[:, 0:2]
-        # if any(~microenvs.iloc[:, 0].isin(meta['cell_type'])):
         if not all(microenvs.iloc[:, 0].isin(meta['cell_type'])):
             raise Exception("Some clusters/cell_types in microenvironments are not present in meta")
         microenvs.columns = ["cell_type", "microenvironment"]
         return microenvs
 
-    
     def add_multidata_and_means_to_counts(self, counts: pd.DataFrame, genes: pd.DataFrame, counts_identifiers: str):
         """Adds multidata and means to counts.
 
@@ -528,7 +526,7 @@ class CellCellCommunication(AlgorithmBase):
             interactions: pd.DataFrame,
             counts: pd.DataFrame,
             complex_composition: pd.DataFrame
-        ):
+    ):
         """
         Filter complex_composition, interaction and counts.
         """
@@ -553,12 +551,11 @@ class CellCellCommunication(AlgorithmBase):
 
         return complex_composition_filtered, interactions_filtered, counts_filtered
 
-    
     def _filter_complex_composition_by_counts(
             self,
             counts: pd.DataFrame,
             complex_composition: pd.DataFrame
-        ) -> Tuple[pd.DataFrame, pd.DataFrame]:
+    ) -> Tuple[pd.DataFrame, pd.DataFrame]:
         """
         Filter the counts and complex_composition:
         - keep only complexes whose composing proteins are all in the counts.
@@ -605,13 +602,12 @@ class CellCellCommunication(AlgorithmBase):
 
         return complex_composition_filtered, counts_filtered
 
-    
     def _filter_interactions_by_counts(
             self,
             interactions: pd.DataFrame,
             counts: pd.DataFrame,
             complex_composition: pd.DataFrame
-        ) -> pd.DataFrame:
+    ) -> pd.DataFrame:
         """
         Use filtered complex_composition and unfiltered counts to filter interactions.
         - keep only interactions that both parts are in the complex or counts.
@@ -633,12 +629,11 @@ class CellCellCommunication(AlgorithmBase):
 
         return interactions_filtered
 
-    
     def _filter_counts_by_interactions(
             self,
             counts: pd.DataFrame,
             interactions: pd.DataFrame
-        ) -> pd.DataFrame:
+    ) -> pd.DataFrame:
         """
         Removes counts if is not defined in interactions components.
         """
@@ -649,14 +644,13 @@ class CellCellCommunication(AlgorithmBase):
 
         return counts_filtered
 
-    
     def build_clusters(
             self,
             meta: pd.DataFrame,
             counts: pd.DataFrame,
             complex_composition: pd.DataFrame,
             skip_percent: bool
-        ) -> dict:
+    ) -> dict:
         """
         Build the means and percent values for each cluster and stores the results in a dictionary with the
         following keys: 'names', 'means' and 'percents'.
@@ -717,7 +711,6 @@ class CellCellCommunication(AlgorithmBase):
 
         return {'names': cluster_names, 'means': cluster_means, 'percents': cluster_pcts}
 
-    
     def get_cluster_combinations(self, cluster_names: np.array, microenvs: pd.DataFrame = pd.DataFrame()) -> np.array:
         """
         Calculates and sorts combinations of clusters.
@@ -778,8 +771,8 @@ class CellCellCommunication(AlgorithmBase):
         logger.debug(f'Using {len(result)} cluster combinations for analysis')
         return result
 
-    
-    def build_result_matrix(self, interactions: pd.DataFrame, cluster_interactions: list, separator: str) -> pd.DataFrame:
+    def build_result_matrix(self, interactions: pd.DataFrame, cluster_interactions: list,
+                            separator: str) -> pd.DataFrame:
         """
         builds an empty cluster matrix to fill it later, index is id_interaction
         """
@@ -792,14 +785,13 @@ class CellCellCommunication(AlgorithmBase):
 
         return result
 
-    
     def mean_analysis(
             self,
             interactions: pd.DataFrame,
             clusters: dict,
             cluster_interactions: list,
             separator: str
-        ) -> pd.DataFrame:
+    ) -> pd.DataFrame:
         """
         Calculates the mean for the list of interactions and for each cluster interaction
 
@@ -873,7 +865,6 @@ class CellCellCommunication(AlgorithmBase):
 
         return result
 
-    
     def percent_analysis(
             self,
             clusters: dict,
@@ -881,7 +872,7 @@ class CellCellCommunication(AlgorithmBase):
             interactions: pd.DataFrame,
             cluster_interactions: list,
             separator: str
-        ) -> pd.DataFrame:
+    ) -> pd.DataFrame:
         """
         Calculates the percents for cluster interactions and for each gene
         interaction.
@@ -947,7 +938,7 @@ class CellCellCommunication(AlgorithmBase):
             real_mean_analysis: pd.DataFrame,
             processes: int,
             separator: str
-        ) -> list:
+    ) -> list:
         """
         Shuffles meta and calculates the means for each and saves it in a list.
 
@@ -956,18 +947,19 @@ class CellCellCommunication(AlgorithmBase):
         Note that on notebook just only support one process
         """
         statistical_analysis_thread = partial(self._statistical_analysis,
-                                            cluster_interactions,
-                                            counts,
-                                            interactions,
-                                            meta,
-                                            complex_composition,
-                                            separator,
-                                            real_mean_analysis)
+                                              cluster_interactions,
+                                              counts,
+                                              interactions,
+                                              meta,
+                                              complex_composition,
+                                              separator,
+                                              real_mean_analysis)
         if processes > 1:
             with Pool(processes=processes) as pool:
                 results = pool.map(statistical_analysis_thread, range(iterations))
         else:
-            results = [statistical_analysis_thread(i) for i in tqdm(range(iterations), desc='statistical analysis', ncols=100)]
+            results = [statistical_analysis_thread(i) for i in
+                       tqdm(range(iterations), desc='statistical analysis', ncols=100)]
         return results
 
     def _statistical_analysis(
@@ -1005,7 +997,6 @@ class CellCellCommunication(AlgorithmBase):
         result_mean_analysis = np.packbits(shuffled_mean_analysis.values > real_mean_analysis.values, axis=None)
         return result_mean_analysis
 
-    
     def build_pvalue_result(
             self,
             real_mean_analysis: pd.DataFrame,
@@ -1175,7 +1166,7 @@ class CellCellCommunication(AlgorithmBase):
             if column.dtype == bool:
                 return column.fillna(value=False)
             return column.fillna(value=-1)
-        
+
         pvalues_result = pvalues_result.apply(fillna_func, axis=0)
         means_result = means_result.apply(fillna_func, axis=0)
         significant_means_result = significant_means_result.apply(fillna_func, axis=0)
@@ -1183,7 +1174,6 @@ class CellCellCommunication(AlgorithmBase):
 
         return pvalues_result, means_result, significant_means_result, deconvoluted_result
 
-    
     def _interacting_pair_build(self, interactions: pd.DataFrame, separator) -> pd.Series:
         """
         Returns the interaction result formated with name1_name2
@@ -1211,7 +1201,7 @@ class CellCellCommunication(AlgorithmBase):
             real_mean_analysis: pd.DataFrame,
             result_percent: pd.DataFrame,
             min_significant_mean: float = None
-        ) -> Tuple[pd.Series, pd.DataFrame]:
+    ) -> Tuple[pd.Series, pd.DataFrame]:
         """
         Calculates the significant means and adds rank (number of non-empty entries divided by total entries)
         :param real_mean_analysis: the real mean results
@@ -1226,13 +1216,12 @@ class CellCellCommunication(AlgorithmBase):
         significant_mean_rank.name = 'rank'
         return significant_mean_rank, significant_means
 
-    
     def _get_significant_means(
             self,
             real_mean_analysis: pd.DataFrame,
             result_percent: pd.DataFrame,
             min_significant_mean: float = None
-        ) -> pd.DataFrame:
+    ) -> pd.DataFrame:
         """
         Get the significant means for gene1_gene2|cluster1_cluster2.
 
@@ -1279,27 +1268,17 @@ class CellCellCommunication(AlgorithmBase):
             counts: pd.DataFrame,
             genes: pd.DataFrame,
             counts_data: str
-        ) -> pd.DataFrame:
+    ) -> pd.DataFrame:
         genes_counts = list(counts.index)
         genes_filtered = genes[genes['id_multidata'].apply(lambda gene: gene in genes_counts)]
 
-        deconvoluted_complex_result_1 = self._deconvolute_complex_interaction_component(complex_compositions,
-                                                                                        genes_filtered,
-                                                                                        interactions,
-                                                                                        '_1',
-                                                                                        counts_data)
-        deconvoluted_simple_result_1 = self._deconvolute_interaction_component(interactions,
-                                                                               '_1',
-                                                                               counts_data)
+        deconvoluted_complex_result_1 = self._deconvolute_complex_interaction_component(
+            complex_compositions, genes_filtered, interactions, '_1', counts_data)
+        deconvoluted_simple_result_1 = self._deconvolute_interaction_component(interactions, '_1', counts_data)
 
-        deconvoluted_complex_result_2 = self._deconvolute_complex_interaction_component(complex_compositions,
-                                                                                        genes_filtered,
-                                                                                        interactions,
-                                                                                        '_2',
-                                                                                        counts_data)
-        deconvoluted_simple_result_2 = self._deconvolute_interaction_component(interactions,
-                                                                               '_2',
-                                                                               counts_data)
+        deconvoluted_complex_result_2 = self._deconvolute_complex_interaction_component(
+            complex_compositions, genes_filtered, interactions, '_2', counts_data)
+        deconvoluted_simple_result_2 = self._deconvolute_interaction_component(interactions, '_2', counts_data)
 
         deconvoluted_result = deconvoluted_complex_result_1.append(
             [deconvoluted_simple_result_1, deconvoluted_complex_result_2, deconvoluted_simple_result_2], sort=False)
@@ -1318,23 +1297,19 @@ class CellCellCommunication(AlgorithmBase):
 
         return deconvoluted_result
 
-    
     def _deconvolute_interaction_component(self, interactions, suffix, counts_data):
         interactions = interactions[~interactions['is_complex{}'.format(suffix)]]
         deconvoluted_result = pd.DataFrame()
         deconvoluted_result['gene'] = interactions['{}{}'.format(counts_data, suffix)]
-
-        deconvoluted_result[
-            ['multidata_id', 'protein_name', 'gene_name', 'name', 'is_complex', 'id_cp_interaction', 'receptor']] = \
-            interactions[
-                ['multidata{}_id'.format(suffix), 'protein_name{}'.format(suffix), 'gene_name{}'.format(suffix),
-                 'name{}'.format(suffix),
-                 'is_complex{}'.format(suffix), 'id_cp_interaction', 'receptor{}'.format(suffix)]]
+        interactions_index_data = interactions[
+            ['multidata{}_id'.format(suffix), 'protein_name{}'.format(suffix), 'gene_name{}'.format(suffix),
+             'name{}'.format(suffix), 'is_complex{}'.format(suffix), 'id_cp_interaction', 'receptor{}'.format(suffix)]]
+        deconvoluted_result[['multidata_id', 'protein_name', 'gene_name', 'name', 'is_complex', 'id_cp_interaction',
+                             'receptor']] = interactions_index_data
         deconvoluted_result['complex_name'] = np.nan
 
         return deconvoluted_result
 
-    
     def _deconvolute_complex_interaction_component(
             self,
             complex_compositions,
@@ -1342,7 +1317,7 @@ class CellCellCommunication(AlgorithmBase):
             interactions,
             suffix,
             counts_data
-        ):
+    ):
         return_properties = [counts_data, 'protein_name', 'gene_name', 'name', 'is_complex', 'id_cp_interaction',
                              'receptor', 'complex_name']
         if complex_compositions.empty:
@@ -1352,13 +1327,12 @@ class CellCellCommunication(AlgorithmBase):
         deconvoluted_result = pd.DataFrame()
         component = pd.DataFrame()
         component[counts_data] = interactions['{}{}'.format(counts_data, suffix)]
+        interactions_index_data = interactions[
+            ['{}{}'.format(counts_data, suffix), 'protein_name{}'.format(suffix), 'gene_name{}'.format(suffix),
+             'name{}'.format(suffix), 'is_complex{}'.format(suffix), 'id_cp_interaction',
+             'multidata{}_id'.format(suffix), 'receptor{}'.format(suffix)]]
         component[[counts_data, 'protein_name', 'gene_name', 'name', 'is_complex', 'id_cp_interaction', 'id_multidata',
-                   'receptor']] = \
-            interactions[
-                ['{}{}'.format(counts_data, suffix), 'protein_name{}'.format(suffix), 'gene_name{}'.format(suffix),
-                 'name{}'.format(suffix), 'is_complex{}'.format(suffix), 'id_cp_interaction',
-                 'multidata{}_id'.format(suffix), 'receptor{}'.format(suffix)]]
-
+                   'receptor']] = interactions_index_data
         deconvolution_complex = pd.merge(complex_compositions,
                                          component,
                                          left_on='complex_multidata_id',
@@ -1370,12 +1344,10 @@ class CellCellCommunication(AlgorithmBase):
                                          suffixes=['_complex', '_simple'])
 
         deconvoluted_result['gene'] = deconvolution_complex['{}_simple'.format(counts_data)]
-
-        deconvoluted_result[
-            ['multidata_id', 'protein_name', 'gene_name', 'name', 'is_complex', 'id_cp_interaction', 'receptor',
-             'complex_name']] = \
-            deconvolution_complex[
-                ['complex_multidata_id', 'protein_name_simple', 'gene_name_simple', 'name_simple',
-                 'is_complex_complex', 'id_cp_interaction', 'receptor_simple', 'name_complex']]
+        deconvolution_complex_index_data = deconvolution_complex[
+            ['complex_multidata_id', 'protein_name_simple', 'gene_name_simple', 'name_simple',
+             'is_complex_complex', 'id_cp_interaction', 'receptor_simple', 'name_complex']]
+        deconvoluted_result[['multidata_id', 'protein_name', 'gene_name', 'name', 'is_complex', 'id_cp_interaction',
+                             'receptor', 'complex_name']] = deconvolution_complex_index_data
 
         return deconvoluted_result

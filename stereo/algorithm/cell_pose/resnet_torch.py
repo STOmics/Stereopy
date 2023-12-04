@@ -188,10 +188,17 @@ class UpSample(nn.Module):
 
 
 class CPnet(nn.Module):
-    def __init__(self, nbase, nout, sz,
-                 residual_on=True, style_on=True,
-                 concatenation=False, mkldnn=False,
-                 diam_mean=30.):
+    def __init__(
+            self,
+            nbase,
+            nout,
+            sz,
+            residual_on=True,
+            style_on=True,
+            concatenation=False,
+            mkldnn=False,
+            diam_mean=30.
+    ):
         super(CPnet, self).__init__()
         self.nbase = nbase
         self.nout = nout

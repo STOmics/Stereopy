@@ -111,7 +111,7 @@ class _TissueCut(object):
 
         return image_8bit
 
-    def resize(self, img, l=512):
+    def resize(self, img, l=512):  # noqa
         h, w = img.shape[:2]
         ratio = l / max(h, w)
         show_h = int(h * ratio)
@@ -153,9 +153,6 @@ class _TissueCut(object):
         return dst
 
     def save_tissue_mask(self):
-
-        # for idx, tissue_thumb in enumerate(self.mask_thumb):
-        #     tifffile.imsave(os.path.join(self.dst_img_path, self.file_name[idx] + r'_tissue_cut_thumb.tif'), tissue_thumb)
         for idx, tissue in enumerate(self.mask):
             self.dst_img_file_path.append(os.path.join(self.dst_img_path, self.file_name[idx] + r'_tissue_cut.tif'))
             if np.sum(tissue) == 0:
@@ -164,7 +161,7 @@ class _TissueCut(object):
                 tifffile.imsave(self.dst_img_file_path[-1], tissue)
             else:
                 tifffile.imsave(self.dst_img_file_path[-1], (tissue > 0).astype(np.uint8))
-        logger.info('seg results saved in %s' % self.dst_img_path)
+        logger.info('seg results saved in %s' % self.dst_img_file_path[-1])
 
     # preprocess image for deep learning
     def get_thumb_img(self):
@@ -173,13 +170,11 @@ class _TissueCut(object):
         for ext, file in zip(self.file_ext, self.file):
             assert ext in {'.tif', '.tiff', '.png', '.jpg'}
             if ext == '.tif' or ext == '.tiff':
-
                 img = tifffile.imread(os.path.join(self.path, file))
                 img = np.squeeze(img)
                 if len(img.shape) == 3:
                     img = img[:, :, 0]
             else:
-
                 img = cv2.imread(os.path.join(self.path, file), 0)
 
             self.img.append(img)
@@ -200,8 +195,6 @@ class _TissueCut(object):
         logger.info('segment by intensity...')
         for idx, ori_image in enumerate(self.img):
             shapes = ori_image.shape
-
-            # down sample ori_image
             if not self.src_img_type:
                 ori_image = self._bin(ori_image)
 
@@ -233,8 +226,6 @@ class _TissueCut(object):
                 result += np.where(label_image != prop.label, 0, 1).astype(np.uint8)
 
             result_thumb = util.hole_fill(result)
-            # result_thumb = cv2.dilate(result_thumb, kernel, iterations=10)
-
             self.mask_thumb.append(np.uint8(result_thumb > 0))
 
         self.__get_roi()
@@ -247,7 +238,6 @@ class _TissueCut(object):
         else:
             filtered_props = []
             for id, p in enumerate(props):
-
                 black = np.sum(p['intensity_image'] == 0)
                 sum = p['bbox_area']
                 ratio_black = black / sum
@@ -257,10 +247,8 @@ class _TissueCut(object):
             return filtered_props
 
     def __get_roi(self):
-
         """get tissue area from ssdna"""
         for idx, tissue_mask in enumerate(self.mask_thumb):
-
             label_image = measure.label(tissue_mask, connectivity=2)
             props = measure.regionprops(label_image, intensity_image=self.img_thumb[idx])
 
@@ -288,17 +276,14 @@ class _TissueCut(object):
             for img in self.img_thumb:
                 try:
                     ret, pred, score = self.oj_bcdu.predict(img)
-                except:
+                except Exception:
                     logger.info("TissueCut predict error, Please check fov_stitched_transformed.tif")
                     raise Exception('SAW-A40007', "TissueCut predict error")
                 if ret:
                     self.mask.append(pred)
 
     def tissue_seg(self):
-
-        # try:
         if self.seg_method:
-            # self.tissue_infer_deep()
             self.tissue_infer_bcud()
         else:
             self.tissue_seg_intensity()
@@ -308,11 +293,11 @@ class _TissueCut(object):
 
 class RNATissueCut(_TissueCut):
 
-    def __init__(self, 
-                 dst_img_path: Optional[str] = None, 
-                 gef_path: Optional[str] = None, 
-                 gem_path: Optional[str] = None, 
-                 bin_size: int=20):
+    def __init__(self,
+                 dst_img_path: Optional[str] = None,
+                 gef_path: Optional[str] = None,
+                 gem_path: Optional[str] = None,
+                 bin_size: int = 20):
         """
         Tissue segmentation based on RNA expression.
 

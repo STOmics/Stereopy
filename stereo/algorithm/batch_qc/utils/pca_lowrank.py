@@ -5,8 +5,8 @@
 # @File    : pca_lowrank.py
 # @Software: PyCharm
 # @Email   : zhangchao5@genomics.cn
-import torch
 import scipy.sparse as sp
+import torch
 from anndata import AnnData
 
 

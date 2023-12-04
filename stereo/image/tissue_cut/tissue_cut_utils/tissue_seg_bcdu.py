@@ -1,10 +1,7 @@
-import os
-os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
-os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
-
-import sys
 import copy
 import math
+import os
+import sys
 import traceback
 
 import cv2
@@ -13,6 +10,10 @@ from skimage import filters
 
 from . import tissue_seg_bcdu_model as M
 from . import tissue_seg_bcdu_uity as uity
+
+os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
+os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
+
 
 class cl_bcdu(object):
     def __init__(self, model_path):
@@ -26,7 +27,7 @@ class cl_bcdu(object):
             self.model = M.BCDU_net_D3(input_size=(512, 512, 1))
             self.model.load_weights(self.model_path)
             self.is_init = True
-        except:
+        except Exception:
             traceback.print_exc()
             return False
         return True
@@ -37,7 +38,7 @@ class cl_bcdu(object):
         ti = 0
         for i in range(len(cnt2)):
             tx, ty = cnt2[i][0][:2]
-            l = math.sqrt((x0 - tx) ** 2 + (y0 - ty) ** 2)
+            l = math.sqrt((x0 - tx) ** 2 + (y0 - ty) ** 2)  # noqa
             if l < dis:
                 ti = i
                 dis = l
@@ -98,12 +99,12 @@ class cl_bcdu(object):
 
             if type == 1:
                 kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (21, 21))
-                morp = cv2.morphologyEx(morp, cv2.MORPH_DILATE, kernel, iterations=13) \
-                       - cv2.morphologyEx(morp, cv2.MORPH_DILATE, kernel, iterations=3)
+                morp = cv2.morphologyEx(morp, cv2.MORPH_DILATE, kernel, iterations=13) - cv2.morphologyEx(
+                    morp, cv2.MORPH_DILATE, kernel, iterations=3)
             else:
                 kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (21, 21))
-                morp = cv2.morphologyEx(morp, cv2.MORPH_ERODE, kernel, iterations=3) \
-                       - cv2.morphologyEx(morp, cv2.MORPH_ERODE, kernel, iterations=13)
+                morp = cv2.morphologyEx(morp, cv2.MORPH_ERODE, kernel, iterations=3) - cv2.morphologyEx(
+                    morp, cv2.MORPH_ERODE, kernel, iterations=13)
 
             morp = cv2.bitwise_and(morp, mask_not, mask=mask_not)
 
@@ -113,7 +114,7 @@ class cl_bcdu(object):
             for i in range(len(cont)):
                 if hier[0][i][3] != -1:
                     continue
-                l = cnt_len(cont[i])
+                l = cnt_len(cont[i])  # noqa
                 if l > 100 and hier[0][i][2] > -1:
                     tmp = []
                     for j in range(len(hier[0])):
@@ -185,8 +186,6 @@ class cl_bcdu(object):
             if not self.init_model():
                 return False, im, []
 
-        # src = np.squeeze(src)
-
         im = uity.ij_auto_contrast(src)
         if im.dtype != 'uint8':
             im = uity.ij_16_to_8(im)
@@ -203,11 +202,9 @@ class cl_bcdu(object):
         im[im < thea] = 0
         im[im >= thea] = 255
 
-        # _, im = cv2.threshold(im, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_TRIANGLE)
         im = uity.up_sample(im, src.shape[:2])
         im[im > 0] = 1
 
-        # in_score = self.eval_point(im_contrast, im, 2)
         avg_score = self.eval_point(im_contrast, im, 0)
         out_score = self.eval_point(im_contrast, im, 1)
 

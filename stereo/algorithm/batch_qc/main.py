@@ -1,20 +1,22 @@
-from typing import Union
 from multiprocessing import cpu_count
+from typing import Union
+
 from stereo.algorithm.algorithm_base import AlgorithmBase
 from .batchqc_raw import batchqc_raw
 
+
 class BatchQc(AlgorithmBase):
     def main(
-        self,
-        n_neighbors: int = 100,
-        condition: Union[str, list, None] = None,
-        count_key: str = "total_counts",
-        cluster_res_key: Union[str, None] = None,
-        report_path: str = "./batch_qc",
-        gpu: Union[str, int] = "0",
-        data_loader_num_workers: int = 10,
-        num_threads: int = -1,
-        res_key: str = 'batch_qc'
+            self,
+            n_neighbors: int = 100,
+            condition: Union[str, list, None] = None,
+            count_key: str = "total_counts",
+            cluster_res_key: Union[str, None] = None,
+            report_path: str = "./batch_qc",
+            gpu: Union[str, int] = "0",
+            data_loader_num_workers: int = 10,
+            num_threads: int = -1,
+            res_key: str = 'batch_qc'
     ):
         """_summary_
 
@@ -30,7 +32,7 @@ class BatchQc(AlgorithmBase):
         """  # noqa
         if num_threads <= 0 or num_threads > cpu_count():
             num_threads = cpu_count()
-        
+
         if data_loader_num_workers <= 0 or data_loader_num_workers > cpu_count():
             data_loader_num_workers = cpu_count()
 
@@ -45,4 +47,3 @@ class BatchQc(AlgorithmBase):
             data_loader_num_workers=data_loader_num_workers,
             num_threads=num_threads
         )
-        

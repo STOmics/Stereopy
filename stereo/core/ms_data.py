@@ -77,7 +77,7 @@ class _MSDataView(object):
         else:
             from copy import deepcopy
             self._merged_data = deepcopy(self._data_list[0])
-        
+
         obs_columns = self._merged_data.cells._obs.columns.tolist()
         obs_columns.remove('batch')
         if len(obs_columns) > 0:
@@ -99,7 +99,7 @@ class _MSDataStruct(object):
     Parameters
     ----------
     data_list: List[StereoExpData] `stereo_exp_data` array
-        An array of `stereo_exp_data` organized by some relationship defined by `_relationship` and `_relationship_info`.
+        An array of `stereo_exp_data` organized by some relationship defined by `_relationship` and `_relationship_info`
 
     merged_data: `stereo_exp_data` object
         An `stereo_exp_data` merged with `data_list` used batches integrate.
@@ -138,7 +138,7 @@ class _MSDataStruct(object):
     >>> from stereo.core.ms_data import MSData
     >>> data1 = read_gef("../demo_data/SS200000135TL_D1/SS200000135TL_D1.gef")
     >>> data2 = read_gef("../demo_data/SS200000135TL_D1/SS200000135TL_D1.tissue.gef")
-    >>> ms_data = MSData(_data_list=[data1, data2], _names=['raw', 'tissue'], _relationship='other', _var_type='intersect')
+    >>> ms_data = MSData(_data_list=[data1, data2], _names=['raw', 'tissue'], _relationship='other', _var_type='intersect') # noqa
     >>> ms_data
 
     ms_data: {'raw': (9004, 25523), 'tissue': (9111, 20816)}
@@ -242,7 +242,7 @@ class _MSDataStruct(object):
     @names.setter
     def names(self, value: List[str]):
         if len(value) != len(self._data_list):
-            raise Exception(f'new names\' length should be same as data_list')
+            raise Exception('new names\' length should be same as data_list')
         self._names = value
         self.reset_name(default_key=False)
 
@@ -259,7 +259,7 @@ class _MSDataStruct(object):
     @property
     def relationship_info(self):
         return self._relationship_info
-    
+
     def reset_position(self, mode='integrate'):
         if mode == 'integrate' and self.merged_data:
             self.merged_data.reset_position()
@@ -508,7 +508,8 @@ class MSData(_MSDataStruct):
         from stereo.utils.data_helper import merge
         if self._var_type not in {"union", "intersect"}:
             raise Exception("Please specify the operation on samples with the parameter '_var_type'")
-        self.merged_data = merge(*self.data_list, var_type=self._var_type, reorganize_coordinate=reorganize_coordinate, **kwargs)
+        self.merged_data = merge(*self.data_list, var_type=self._var_type, reorganize_coordinate=reorganize_coordinate,
+                                 **kwargs)
         obs_columns = self.merged_data.cells._obs.columns.tolist()
         obs_columns.remove('batch')
         if len(obs_columns) > 0:
@@ -532,46 +533,43 @@ class MSData(_MSDataStruct):
             _from: slice,
             type: Literal['obs', 'var'] = 'obs',
             item: Optional[list] = None,
-            fill=np.NaN
+            fill=np.NaN,
+            cluster: bool = True
     ):
-        assert self.merged_data, f"`to_integrate` need running function `integrate`"
+        assert self.merged_data, "`to_integrate` need running function `integrate`"
         assert self._names[scope] == self._names[_from], f"`scope`: {scope} should equal with _from: {_from}"
-        assert len(item) == len(self._names[_from]), f"`item`'s length not equal to _from"
+        assert len(item) == len(self._names[_from]), "`item`'s length not equal to _from"
         scope_names = self._names[scope]
-        res_list = []
         if type == 'obs':
             self.merged_data.cells._obs[res_key] = fill
         elif type == 'var':
             raise NotImplementedError
         else:
             raise Exception(f"`type`: {type} not in ['obs', 'var'], this should not happens!")
-        
+
         for idx, stereo_exp_data in enumerate(self._data_list[scope]):
             if type == 'obs':
                 res = stereo_exp_data.cells._obs[item[idx]]
                 sample_idx = self._names.index(scope_names[idx])
                 new_index = res.index.astype('str') + f'-{sample_idx}'
-                res.index = new_index
-                self.merged_data.cells._obs.loc[new_index, res_key] = res
-                res_list.append(res.to_frame())
+                # res.index = new_index
+                self.merged_data.cells._obs.loc[new_index, res_key] = res.to_numpy()
             elif type == 'var':
-                # res = stereo_exp_data.genes._var[res_key]
-                # res_list.append(res.to_frame())
                 raise NotImplementedError
             else:
                 raise Exception(f"`type`: {type} not in ['obs', 'var'], this should not happens!")
         if type == 'obs':
-            # res_sum = pd.concat(res_list)
-            # merged_bool_list = np.isin(self.merged_data.cells._obs.index.values, res_sum.index.values, invert=True)
-            # self.merged_data.cells._obs.insert(0, res_key, pd.concat(res_list))
-            # if fill is not np.NaN:
-            #     self.merged_data.cells._obs[merged_bool_list][res_key] = fill
             scope_key_name = "scope_[" + ",".join([str(self._names.index(name)) for name in scope_names]) + "]"
             self.tl.result.setdefault(scope_key_name, {})
-            self.tl.result[scope_key_name][res_key] = self.merged_data.cells._obs[res_key].to_frame()
+            if cluster:
+                self.tl.result[scope_key_name][res_key] = pd.DataFrame({
+                    'bins': self.merged_data.cell_names,
+                    'group': self.merged_data.cells._obs[res_key].astype('category')
+                })
+                self.tl.result[scope_key_name][res_key].index = np.arange(self.merged_data.cell_names.size)
+            else:
+                self.tl.result[scope_key_name][res_key] = self.merged_data.cells._obs[res_key].to_frame()
         elif type == 'var':
-            # self.merged_data.genes._var.insert(0, res_key, pd.concat(res_list))
-            # self.tl.result[scope][res_key] = self.merged_data.genes._var[res_key].to_frame()
             raise NotImplementedError
         else:
             raise Exception(f"`type`: {type} not in ['obs', 'var'], this should not happens!")
@@ -585,9 +583,9 @@ class MSData(_MSDataStruct):
             item: Optional[list] = None,
             fill=np.NaN
     ):
-        assert self.merged_data, f"`to_integrate` need running function `integrate`"
+        assert self.merged_data, "`to_integrate` need running function `integrate`"
         assert self._names[scope] == self._names[to], f"`scope`: {scope} should equal with to: {to}"
-        assert len(item) == len(self._names[to]), f"`item`'s length not equal to `to`"
+        assert len(item) == len(self._names[to]), "`item`'s length not equal to `to`"
 
         scope_names = self._names[scope]
         scope_key_name = "scope_[" + ",".join([str(self._names.index(name)) for name in scope_names]) + "]"

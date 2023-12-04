@@ -1,5 +1,6 @@
-import numpy as np
 import math
+
+import numpy as np
 from scipy.interpolate import CubicSpline
 
 
@@ -54,7 +55,7 @@ def generate_cubic_interp_points(x_known, y_known, n_per_inter):
     :param x_known: np.NdArray (n_nodes,)
     :param y_known: np.NdArray (n_nodes,)
     :param n_per_inter: number of interpolated points to generate between each pair of connected nodes
-    :return: x_unknown_li [np.NdArray, np.NdArray, ...], each ele of the list includes the x of points along a interval between two nodes, plus the nodes themselves
+    :return: x_unknown_li [np.NdArray, np.NdArray, ...], each ele of the list includes the x of points along a interval between two nodes, plus the nodes themselves # noqa
              y_unknown_li
              com_tra_wei_li_plt: [np.NdArray, np.NdArray, ...]:
     """

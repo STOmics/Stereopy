@@ -11,37 +11,37 @@ from . import io
 from . import utils
 
 try:
-    import matplotlib
+    import matplotlib  # noqa
 
     MATPLOTLIB_ENABLED = True
-except:
+except Exception:
     MATPLOTLIB_ENABLED = False
 
 try:
-    from skimage import color
+    from skimage import color  # noqa
     from skimage.segmentation import find_boundaries
 
     SKIMAGE_ENABLED = True
-except:
+except Exception:
     SKIMAGE_ENABLED = False
 
 
 # modified to use sinebow color
 def dx_to_circ(dP, transparency=False, mask=None):
-    """ dP is 2 x Y x X => 'optic' flow representation 
-    
+    """ dP is 2 x Y x X => 'optic' flow representation
+
     Parameters
     -------------
-    
+
     dP: 2xLyxLx array
         Flow field components [dy,dx]
-        
+
     transparency: bool, default False
         magnitude of flow controls opacity, not lightness (clear background)
-        
-    mask: 2D array 
+
+    mask: 2D array
         Multiplies each RGB component to suppress noise
-    
+
     """
 
     dP = np.array(dP)
@@ -66,10 +66,10 @@ def dx_to_circ(dP, transparency=False, mask=None):
 
 def show_segmentation(fig, img, maski, flowi, channels=[0, 0], file_name=None):
     """ plot segmentation results (like on website)
-    
+
     Can save each panel of figure with file_name option. Use channels option if
     img input is not an RGB image with 3 channels.
-    
+
     Parameters
     -------------
 
@@ -82,7 +82,7 @@ def show_segmentation(fig, img, maski, flowi, channels=[0, 0], file_name=None):
     maski: int, 2D array
         for image k, masks[k] output from Cellpose.eval, where 0=NO masks; 1,2,...=mask labels
 
-    flowi: int, 2D array 
+    flowi: int, 2D array
         for image k, flows[k][0] output from Cellpose.eval (RGB of flows)
 
     channels: list of int (optional, default [0,0])
@@ -90,10 +90,10 @@ def show_segmentation(fig, img, maski, flowi, channels=[0, 0], file_name=None):
 
     file_name: str (optional, default None)
         file name of image, if file_name is not None, figure panels are saved
-        
+
     seg_norm: bool (optional, default False)
         improve cell visibility under labels
-        
+
 
     """
     if not MATPLOTLIB_ENABLED:
@@ -279,9 +279,9 @@ def disk(med, r, Ly, Lx):
     return y, x
 
 
-def outline_view(img0, maski, color=[1, 0, 0], mode='inner'):
+def outline_view(img0, maski, color=[1, 0, 0], mode='inner'):  # noqa
     """
-    Generates a red outline overlay onto image. 
+    Generates a red outline overlay onto image.
     """
     if len(img0.shape) < 3:
         img0 = np.stack([img0] * 3, axis=-1)

@@ -16,4 +16,3 @@ def generate_palette(category_nums: int):
     """
     palette = [distinctipy.get_hex(c) for c in distinctipy.get_colors(category_nums, n_attempts=1000, rng=42)]
     return palette
-

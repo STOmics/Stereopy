@@ -4,22 +4,44 @@
 @author: qindanhua@genomics.cn
 @time:2021/08/31
 """
-from typing import Optional, Union, Sequence, Literal
-from natsort import natsorted
-import panel as pn
+from random import randint
+from typing import (
+    Optional,
+    Union,
+    Sequence,
+    Literal
+)
+
+import hvplot.pandas  # noqa
 import matplotlib.pyplot as plt
 import numpy as np
+import panel as pn
 import seaborn as sns
-from random import randint
-from .scatter import base_scatter, multi_scatter, marker_gene_volcano, highly_variable_genes
+import tifffile as tiff
+from natsort import natsorted
+
+from stereo.constant import (
+    N_GENES_BY_COUNTS,
+    PCT_COUNTS_MT,
+    TOTAL_COUNTS,
+    PLOT_SCATTER_SIZE_FACTOR,
+    PLOT_BASE_IMAGE_EXPANSION
+)
 from stereo.core.stereo_exp_data import StereoExpData
-from stereo.stereo_config import stereo_conf
 from stereo.log_manager import logger
+from stereo.stereo_config import stereo_conf
+from .decorator import (
+    plot_scale,
+    download,
+    reorganize_coordinate
+)
 from .plot_base import PlotBase
-from .decorator import plot_scale, download, reorganize_coordinate
-from stereo.constant import TOTAL_COUNTS
-from stereo.constant import PCT_COUNTS_MT
-from stereo.constant import N_GENES_BY_COUNTS
+from .scatter import (
+    base_scatter,
+    multi_scatter,
+    marker_gene_volcano,
+    highly_variable_genes
+)
 
 pn.param.ParamMethod.loading_indicator = True
 
@@ -52,7 +74,6 @@ class PlotCollection:
         if item.startswith('__'):
             raise AttributeError
 
-        # new_attr = download(PlotBase.get_attribute_helper(item, self.data, self.result))
         new_attr = PlotBase.get_attribute_helper(item, self.data, self.result)
         if getattr(new_attr, '__download__', True):
             new_attr = download(new_attr)
@@ -92,7 +113,7 @@ class PlotCollection:
         :param horizontal_offset_additional: the additional offset between each slice on horizontal direction while reorganizing coordinates.
         :param vertical_offset_additional: the additional offset between each slice on vertical direction while reorganizing coordinates.
 
-        """
+        """  # noqa
         res = self.check_res_key(res_key)
         from .interact_plot.spatial_cluster import interact_spatial_cluster
         import pandas as pd
@@ -137,7 +158,7 @@ class PlotCollection:
         :param horizontal_offset_additional: the additional offset between each slice on horizontal direction while reorganizing coordinates.
         :param vertical_offset_additional: the additional offset between each slice on vertical direction while reorganizing coordinates.
 
-        """
+        """  # noqa
         res = self.check_res_key(res_cluster_key)
         res_marker_gene = self.check_res_key(res_marker_gene_key)
         from .interact_plot.annotation_cluster import interact_spatial_cluster_annotation
@@ -175,8 +196,7 @@ class PlotCollection:
 
         """
         res = self.check_res_key(res_key)
-        return highly_variable_genes(res, width=width, height=height, xy_label=xy_label,
-                                     xyII_label=xyII_label)
+        return highly_variable_genes(res, width=width, height=height, xy_label=xy_label, xyII_label=xyII_label)
 
     @download
     def marker_genes_volcano(
@@ -243,6 +263,7 @@ class PlotCollection:
             y_label: Optional[list] = ["pct_counts_mt", "n_genes_by_counts"],
             ncols: Optional[int] = 2,
             dot_size: Optional[int] = None,
+            palette: Optional[str] = '#808080',
             width: Optional[int] = None,
             height: Optional[int] = None,
             **kwargs
@@ -254,12 +275,12 @@ class PlotCollection:
         :param y_label: list of y label.
         :param ncols: the number of columns.
         :param dot_size: the dot size.
+        :param palette: color theme.
         :param width: the figure width in pixels.
         :param height: the figure height in pixels.
         :param out_path: the path to save the figure.
         :param out_dpi: the dpi when the figure is saved.
-
-        """
+        """  # noqa
         import math
         import matplotlib.pyplot as plt
         from matplotlib import gridspec
@@ -291,7 +312,7 @@ class PlotCollection:
                 draw_data[:, 1],
                 hue=[0 for i in range(len(draw_data[:, 1]))],
                 ax=ax,
-                palette=['#808080'],
+                palette=[palette],
                 x_label=' '.join(xi.split('_')) if not set_xy_empty else '',
                 y_label=' '.join(yi.split('_')) if not set_xy_empty else '',
                 dot_size=dot_size,
@@ -317,6 +338,8 @@ class PlotCollection:
             x_label: Optional[list] = ['spatial1', 'spatial1'],
             y_label: Optional[list] = ['spatial2', 'spatial2'],
             title: Optional[str] = None,
+            vmin: float = None,
+            vmax: float = None,
             **kwargs
     ):
         """
@@ -345,8 +368,9 @@ class PlotCollection:
                 if set it to `False`, the coordinates will not be changed.
         :param horizontal_offset_additional: the additional offset between each slice on horizontal direction while reorganizing coordinates.
         :param vertical_offset_additional: the additional offset between each slice on vertical direction while reorganizing coordinates.
-
-        """
+        :param vmin: The value representing the lower limit of the color scale. Values smaller than vmin are plotted with the same color as vmin.
+        :param vmax: The value representing the lower limit of the color scale. Values smaller than vmin are plotted with the same color as vmin.
+        """  # noqa
         from .scatter import multi_scatter
         if title is None:
             title = [' '.join(i.split('_')) for i in cells_key]
@@ -363,6 +387,8 @@ class PlotCollection:
             color_bar=True,
             width=width,
             height=height,
+            vmin=vmin,
+            vmax=vmax,
             **kwargs
         )
         return fig
@@ -381,6 +407,8 @@ class PlotCollection:
             x_label: Optional[str] = 'spatial1',
             y_label: Optional[str] = 'spatial2',
             title: Optional[str] = None,
+            vmin: float = None,
+            vmax: float = None,
             **kwargs
     ):
         """Draw the spatial distribution of expression quantity of the gene specified by gene names.
@@ -408,9 +436,10 @@ class PlotCollection:
         :param x_label: the x label.
         :param y_label: the y label.
         :param title: the title label.
+        :param vmin: The value representing the lower limit of the color scale. Values smaller than vmin are plotted with the same color as vmin.
+        :param vmax: The value representing the lower limit of the color scale. Values smaller than vmin are plotted with the same color as vmin.
 
-        """
-
+        """  # noqa
         self.data.array2sparse()
         if isinstance(gene_name, str):
             gene_name = [gene_name]
@@ -431,6 +460,8 @@ class PlotCollection:
             color_bar_reverse=color_bar_reverse,
             width=width,
             height=height,
+            vmin=vmin,
+            vmax=vmax,
             **kwargs
         )
 
@@ -450,6 +481,8 @@ class PlotCollection:
             x_label: Optional[list] = ['spatial1', 'spatial1'],
             y_label: Optional[list] = ['spatial2', 'spatial2'],
             title: Optional[list] = None,
+            vmin: float = None,
+            vmax: float = None,
             **kwargs
     ):
         """Draw the spatial distribution of expression quantity of the gene specified by gene names,
@@ -478,18 +511,15 @@ class PlotCollection:
                 if set it to `False`, the coordinates will not be changed.
         :param horizontal_offset_additional: the additional offset between each slice on horizontal direction while reorganizing coordinates.
         :param vertical_offset_additional: the additional offset between each slice on vertical direction while reorganizing coordinates.
-
-        """
-        # self.data.tl.raw.sparse2array()
-        # self.data.sparse2array()
+        :param vmin: The value representing the lower limit of the color scale. Values smaller than vmin are plotted with the same color as vmin.
+        :param vmax: The value representing the lower limit of the color scale. Values smaller than vmin are plotted with the same color as vmin.
+        """  # noqa
         if gene_name is None:
             idx = randint(0, len(self.data.tl.raw.gene_names) - 1)
             gene_name = self.data.gene_names[idx]
         else:
-            # gene_names = self.data.gene_names.tolist()
             if gene_name not in self.data.gene_names:
                 raise Exception(f'gene {gene_name} do not exist in expression matrix')
-            # idx = gene_names.index(gene_name)
             idx = np.argwhere(self.data.gene_names == gene_name)[0][0]
 
         raw_exp_data = self.data.tl.raw.exp_matrix[:, idx].T
@@ -512,13 +542,19 @@ class PlotCollection:
             color_bar_reverse=color_bar_reverse,
             width=width,
             height=height,
+            vmin=vmin,
+            vmax=vmax,
             **kwargs
         )
         return fig
 
     @download
-    def violin(self, width: Optional[int] = None, height: Optional[int] = None,
-               y_label: Optional[list] = ['total counts', 'n genes by counts', 'pct counts mt']):
+    def violin(
+            self,
+            width: Optional[int] = None,
+            height: Optional[int] = None,
+            y_label: Optional[list] = ['total counts', 'n genes by counts', 'pct counts mt']
+    ):
         """
         Violin plot to show index distribution of quality control.
 
@@ -529,8 +565,7 @@ class PlotCollection:
         :param y_label: list of y label.
         """
         from .violin import violin_distribution
-        fig = violin_distribution(self.data, width=width, height=height, y_label=y_label)
-        return fig
+        return violin_distribution(self.data, width=width, height=height, y_label=y_label)
 
     @reorganize_coordinate
     def interact_spatial_scatter(
@@ -561,11 +596,10 @@ class PlotCollection:
         :param horizontal_offset_additional: the additional offset between each slice on horizontal direction while reorganizing coordinates.
         :param vertical_offset_additional: the additional offset between each slice on vertical direction while reorganizing coordinates.
 
-        """
+        """  # noqa
         from .interact_plot.interactive_scatter import InteractiveScatter
 
         fig = InteractiveScatter(self.data, width=width, height=height, bgcolor=bgcolor)
-        # fig = ins.interact_scatter()
         if poly_select:
             from stereo.plots.interact_plot.poly_selection import PolySelection
             fig = PolySelection(self.data, width=width, height=height, bgcolor=bgcolor)
@@ -622,9 +656,7 @@ class PlotCollection:
         batch_count = len(batch_number_unique)
         cmap = stereo_conf.get_colors(colors, batch_count)
         fig_all = umap_res.hvplot.scatter(
-            x='x', y='y',
-            c='batch', cmap=cmap, cnorm='eq_hist',
-            # datashade=True, dynspread=True
+            x='x', y='y', c='batch', cmap=cmap, cnorm='eq_hist',
         ).opts(
             width=main_width,
             height=main_height,
@@ -648,7 +680,6 @@ class PlotCollection:
             fig = sub_umap_res.hvplot.scatter(
                 x='x', y='y',
                 c='batch', color=c, cnorm='eq_hist',
-                # datashade=True, dynspread=True
             ).opts(
                 width=sub_width,
                 height=sub_height,
@@ -688,6 +719,9 @@ class PlotCollection:
             colors: Optional[Union[str, list]] = 'stereo',
             width: Optional[int] = None,
             height: Optional[int] = None,
+            palette: Optional[int] = None,
+            vmin: float = None,
+            vmax: float = None,
             **kwargs
     ):
         """
@@ -703,38 +737,43 @@ class PlotCollection:
         :param colors: the color list.
         :param width: the figure width in pixels.
         :param height: the figure height in pixels.
+        :param palette: color theme.
         :param out_path: the path to save the figure.
         :param out_dpi: the dpi when the figure is saved.
+        :param vmin: The value representing the lower limit of the color scale. Values smaller than vmin are plotted with the same color as vmin.
+        :param vmax: The value representing the lower limit of the color scale. Values smaller than vmin are plotted with the same color as vmin.
 
-        """
+        """  # noqa
         res = self.check_res_key(res_key)
         if cluster_key:
             cluster_res = self.check_res_key(cluster_key)
             n = len(set(cluster_res['group']))
             if title is None:
                 title = cluster_key
+            if not palette:
+                palette = stereo_conf.get_colors('stereo_30' if colors == 'stereo' else colors, n)
             return base_scatter(
                 res.values[:, 0],
                 res.values[:, 1],
-                # hue=np.array(cluster_res['group']),
                 hue=cluster_res['group'],
-                palette=stereo_conf.get_colors('stereo_30' if colors == 'stereo' else colors, n),
+                palette=palette,
                 title=title,
-                x_label=x_label, y_label=y_label, dot_size=dot_size,
                 color_bar=False,
-                width=width, height=height,
+                x_label=x_label,
+                y_label=y_label,
+                dot_size=dot_size,
+                width=width,
+                height=height,
                 **kwargs)
         else:
-            # self.data.sparse2array()
             self.data.array2sparse()
             if gene_names is None:
-                raise ValueError(f'gene name must be set if cluster_key is None')
+                raise ValueError('gene name must be set if cluster_key is None')
             if isinstance(gene_names, str):
                 gene_names = [gene_names]
             return multi_scatter(
                 res.values[:, 0],
                 res.values[:, 1],
-                # hue=np.array(self.data.sub_by_name(gene_name=gene_names).exp_matrix).T,
                 hue=self.data.sub_exp_matrix_by_name(gene_name=gene_names).T,
                 palette=colors,
                 title=gene_names if title is None else title,
@@ -744,6 +783,8 @@ class PlotCollection:
                 color_bar=True,
                 width=width,
                 height=height,
+                vmin=vmin,
+                vmax=vmax,
                 **kwargs
             )
 
@@ -753,7 +794,8 @@ class PlotCollection:
     def cluster_scatter(
             self,
             res_key: str,
-            groups: Union[str, list, np.ndarray] = None,
+            groups: Optional[Union[str, list, np.ndarray]] = None,
+            show_others: Optional[bool] = None,
             title: Optional[str] = None,
             x_label: Optional[str] = None,
             y_label: Optional[str] = None,
@@ -763,6 +805,8 @@ class PlotCollection:
             hue_order: Optional[set] = None,
             width: Optional[int] = None,
             height: Optional[int] = None,
+            base_image: Optional[str] = None,
+            base_cmap: Optional[str] = 'Greys',
             **kwargs
     ):
         """
@@ -795,38 +839,79 @@ class PlotCollection:
         :param vertical_offset_additional: the additional offset between each slice on vertical direction while reorganizing coordinates.
 
         :return: Spatial scatter distribution of clusters.
-        """
+        """  # noqa
         res = self.check_res_key(res_key)
         group_list = res['group'].to_numpy()
         n = np.unique(group_list).size
         palette = stereo_conf.get_colors(colors, n=n)
+        x = self.data.position[:, 0]
+        y = self.data.position[:, 1]
+        x_min, x_max = x.min(), x.max()
+        y_min, y_max = y.min(), y.max()
+        boundary = [x_min, x_max, y_min, y_max]
+        marker = 's'
+        if dot_size is None:
+            dot_size = PLOT_SCATTER_SIZE_FACTOR / group_list.size
         if groups is not None:
-            # if not isinstance(groups, str):
-            #     groups = str(groups)
             if isinstance(groups, str):
                 groups = [groups]
             isin = np.in1d(group_list, groups)
             if not np.all(isin):
-                group_list[~isin] = 'others'
-                n = np.unique(group_list).size
-                palette = palette[0:n - 1] + ['#828282']
-                hue_order = natsorted(np.unique(group_list[isin])) + ['others']
-                # palette = ['#B3CDE3', '#FF7F00']
-                # kwargs['show_legend'] = False
+                if show_others is None:
+                    if base_image is None:
+                        show_others = True
+                    else:
+                        show_others = False
+                if show_others:
+                    group_list[~isin] = 'others'
+                    n = np.unique(group_list).size
+                    palette = palette[0:n - 1] + ['#828282']
+                    hue_order = natsorted(np.unique(group_list[isin])) + ['others']
+                else:
+                    group_list = group_list[isin]
+                    n = np.unique(group_list).size
+                    palette = palette[0:n]
+                    hue_order = natsorted(np.unique(group_list))
+                    x = x[isin]
+                    y = y[isin]
+
+        base_boundary = None
+        base_image_data = None
+        if base_image is not None:
+            base_image_data = tiff.imread(base_image)
+            if x_min > 0 or y_min > 0:
+                x_min = max(0, x_min - PLOT_BASE_IMAGE_EXPANSION)
+                y_min = max(0, y_min - PLOT_BASE_IMAGE_EXPANSION)
+                x_max += PLOT_BASE_IMAGE_EXPANSION
+                y_max += PLOT_BASE_IMAGE_EXPANSION
+                base_image_data = base_image_data[y_min:(y_max + 1), x_min:(x_max + 1)]
+            base_boundary = [x_min, x_max, y_max, y_min]
+            marker = '.'
+
+        if 'marker' in kwargs:
+            marker = kwargs['marker']
+            del kwargs['marker']
 
         fig = base_scatter(
-            self.data.position[:, 0],
-            self.data.position[:, 1],
+            x, y,
             hue=group_list,
             palette=palette,
-            title=title, x_label=x_label, y_label=y_label, dot_size=dot_size, invert_y=invert_y,
+            title=title,
+            x_label=x_label,
+            y_label=y_label,
+            dot_size=dot_size,
+            invert_y=invert_y,
             hue_order=hue_order,
-            width=width, height=height,
+            width=width,
+            height=height,
+            base_image=base_image_data,
+            base_cmap=base_cmap,
+            base_boundary=base_boundary,
+            boundary=boundary,
+            marker=marker,
             **kwargs
         )
         return fig
-        # if file_path:
-        #     plt.savefig(file_path)
 
     @download
     def marker_genes_text(
@@ -844,7 +929,7 @@ class PlotCollection:
             **kwargs
     ):
         """
-        Scatter plot of maker genes. 
+        Scatter plot of maker genes.
 
         :param res_key: the result key of marker genes.
         :param groups: the group names.
@@ -982,7 +1067,7 @@ class PlotCollection:
         :param out_dpi: the dpi when the figure is saved.
         :param width: the figure width in pixels.
         :param height: the figure height in pixels.
-        """
+        """  # noqa
         from .marker_genes import MarkerGenesScatterPlot
         marker_genes_res = self.check_res_key(res_key)
         mgsp = MarkerGenesScatterPlot(self.data, marker_genes_res)
@@ -1013,7 +1098,7 @@ class PlotCollection:
     @download
     def hotspot_local_correlations(
             self,
-            res_key: str,
+            res_key: str = 'spatial_hotspot',
             width: Optional[int] = None,
             height: Optional[int] = None
     ):
@@ -1040,13 +1125,15 @@ class PlotCollection:
     @download
     def hotspot_modules(
             self,
-            res_key: str,
+            res_key: str = 'spatial_hotspot',
             ncols: Optional[int] = 2,
             dot_size: Optional[int] = None,
             palette: Optional[str] = 'stereo',
             width: Optional[str] = None,
             height: Optional[str] = None,
             title: Optional[str] = None,
+            vmin: float = None,
+            vmax: float = None,
             **kwargs
     ):
         """
@@ -1061,20 +1148,19 @@ class PlotCollection:
         :param out_path: the path to save the figure.
         :param out_dpi: the dpi when the figure is saved.
         :param title: the plot title.
-
-        """
+        :param vmin: The value representing the lower limit of the color scale. Values smaller than vmin are plotted with the same color as vmin.
+        :param vmax: The value representing the lower limit of the color scale. Values smaller than vmin are plotted with the same color as vmin.
+        """  # noqa
         res = self.check_res_key(res_key)
         scores = [res.module_scores[module] for module in range(1, res.modules.max() + 1)]
-        vmin = np.percentile(scores, 1)
-        vmax = np.percentile(scores, 99)
+        vmin = np.percentile(scores, 1) if not vmin else vmin
+        vmax = np.percentile(scores, 99) if not vmax else vmax
         title = [f"module {module}" for module in
                  range(1, res.modules.max() + 1)] if title is None and title != '' else title
         fig = multi_scatter(
             x=res.latent.iloc[:, 0],
             y=res.latent.iloc[:, 1],
             hue=scores,
-            # x_label=['spatial1', 'spatial1'],
-            # y_label=['spatial2', 'spatial2'],
             title=title,
             ncols=ncols,
             dot_size=dot_size,
@@ -1171,7 +1257,7 @@ class PlotCollection:
         :param horizontal_offset_additional: the additional offset between each slice on horizontal direction while reorganizing coordinates.
         :param vertical_offset_additional: the additional offset between each slice on vertical direction while reorganizing coordinates.
         :return: Cells distribution figure.
-        """
+        """  # noqa
         from .plot_cells import PlotCells
         pc = PlotCells(
             self.data,
@@ -1183,16 +1269,16 @@ class PlotCollection:
             base_image=base_image
         )
         return pc.show()
-    
+
     @download
     def correlation_heatmap(
-        self,
-        width: Optional[int] = None,
-        height: Optional[int] = None,
-        title: str = 'Correlation Heatmap',
-        x_label: str = 'x',
-        y_label: str = 'y',
-        cmap: str = 'coolwarm'
+            self,
+            width: Optional[int] = None,
+            height: Optional[int] = None,
+            title: str = 'Correlation Heatmap',
+            x_label: str = 'x',
+            y_label: str = 'y',
+            cmap: str = 'coolwarm'
     ):
         df = self.data.to_df()
         correlation_matrix = df.corr()
@@ -1209,7 +1295,7 @@ class PlotCollection:
             vmin=-1,
             cmap=cmap
         )
-        clustermap.ax_heatmap.set_title(title,  fontweight='bold', fontsize=13)
-        clustermap.ax_heatmap.set_xlabel(x_label,  fontweight='bold', fontsize=10)
-        clustermap.ax_heatmap.set_ylabel(y_label,  fontweight='bold', fontsize=10)
+        clustermap.ax_heatmap.set_title(title, fontweight='bold', fontsize=13)
+        clustermap.ax_heatmap.set_xlabel(x_label, fontweight='bold', fontsize=10)
+        clustermap.ax_heatmap.set_ylabel(y_label, fontweight='bold', fontsize=10)
         return clustermap.figure

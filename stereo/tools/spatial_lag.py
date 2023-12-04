@@ -6,14 +6,16 @@
 @file:spatial_lag.py
 @time:2021/04/19
 """
-from ..core.tool_base import ToolBase
-from pysal.model import spreg
-from pysal.lib import weights
+from random import sample
+
 import numpy as np
 import pandas as pd
+from pysal.lib import weights
+from pysal.model import spreg
 from tqdm import tqdm
-from random import sample
+
 from ..core.stereo_result import SpatialLagResult
+from ..core.tool_base import ToolBase
 from ..log_manager import logger
 
 
@@ -28,6 +30,7 @@ class SpatialLag(ToolBase):
     :param drop_dummy: drop specify clusters
     :param n_neighbors: number of neighbors
     """
+
     def __init__(
             self,
             data,
@@ -60,7 +63,7 @@ class SpatialLag(ToolBase):
         :return: cluster dummy codes and cluster names
         """
         group_num = self.groups['group'].value_counts()
-        max_group, min_group, min_group_ncells = group_num.index[0], group_num.index[-1], group_num[-1]
+        _, _, min_group_ncells = group_num.index[0], group_num.index[-1], group_num[-1]
         df = pd.DataFrame({'group': self.groups['group']})
         drop_columns = None
         if self.random_drop:
@@ -107,12 +110,11 @@ class SpatialLag(ToolBase):
             result[str(i) + '_lag_zstat'] = None
             result[str(i) + '_lag_pval'] = None
         data_pd = pd.DataFrame(self.data.exp_matrix, columns=self.data.gene_names, index=self.data.cell_names)
-        for i, cur_g in tqdm(enumerate(genes),
-                             desc="performing GM_lag_model and assign coefficient and p-val to cell type"):
+        for i, cur_g in tqdm(enumerate(genes), desc="performing GM_lag_model and assign coefficient and p-val to "
+                                                    "cell type"):
             x['log_exp'] = data_pd[cur_g].values
             try:
-                model = spreg.GM_Lag(x[['log_exp']].values, x.values,
-                                     w=knn, name_y='log_exp')
+                model = spreg.GM_Lag(x[['log_exp']].values, x.values, w=knn, name_y='log_exp')
                 a = pd.DataFrame(model.betas, model.name_x + ['W_log_exp'], columns=['coef'])
                 b = pd.DataFrame(model.z_stat, model.name_x + ['W_log_exp'], columns=['z_stat', 'p_val'])
                 df = a.merge(b, left_index=True, right_index=True)

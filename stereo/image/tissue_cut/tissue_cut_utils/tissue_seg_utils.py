@@ -1,14 +1,14 @@
-import torch
-import numpy as np
-from PIL import Image
 import cv2
-
+import numpy as np
+import torch
+from PIL import Image
 
 
 class ToTensor(object):
     '''
     mean and std should be of the channel order 'bgr'
     '''
+
     def __init__(self, mean=(0, 0, 0), std=(1., 1., 1.)):
         self.mean = mean
         self.std = std
@@ -21,7 +21,7 @@ class ToTensor(object):
         mean = torch.as_tensor(self.mean, dtype=dtype, device=device)[:, None, None]
         std = torch.as_tensor(self.std, dtype=dtype, device=device)[:, None, None]
         im = im.sub_(mean).div_(std).clone()
-        if not lb is None:
+        if not lb is None:  # noqa
             lb = torch.from_numpy(lb.astype(np.int64).copy()).clone()
         return dict(im=im, lb=lb)
 
@@ -39,7 +39,7 @@ def dice(y_true, y_pred):
 
 def hole_fill(binary_image):
     ''' 孔洞填充 '''
-    hole = binary_image.copy()  ## 空洞填充
+    hole = binary_image.copy()  # 空洞填充
     hole = cv2.copyMakeBorder(hole, 1, 1, 1, 1, cv2.BORDER_CONSTANT, value=[0])  # 首先将图像边缘进行扩充，防止空洞填充不完全
     hole2 = hole.copy()
     cv2.floodFill(hole, None, (0, 0), 255)  # 找到洞孔
@@ -49,7 +49,6 @@ def hole_fill(binary_image):
 
 
 def down_sample(img, shape):
-
     ori_image = Image.fromarray(img)
     image_thumb = ori_image.resize((shape[1], shape[0]), Image.NEAREST)
     image_thumb = np.array(image_thumb)
@@ -57,7 +56,6 @@ def down_sample(img, shape):
 
 
 def up_sample(image, ori_shape):
-
     mask_thumb = Image.fromarray(image)
     marker = mask_thumb.resize((ori_shape[1], ori_shape[0]), Image.NEAREST)
     marker = np.array(marker).astype(np.uint8)
@@ -65,7 +63,6 @@ def up_sample(image, ori_shape):
 
 
 def transfer_16bit_to_8bit(image_16bit):
-
     min_16bit = np.min(image_16bit)
     max_16bit = np.max(image_16bit)
     image_8bit = np.array(np.rint(255 * ((image_16bit - min_16bit) / (max_16bit - min_16bit))), dtype=np.uint8)
@@ -86,7 +83,6 @@ def contrast_adjust_by_max(img):
     mean = np.mean(img)
     std = np.std(img)
     if mean < 10 and std < 10:
-        
         image_c = np.rint(255 * ((img - min_img) / (max_img - min_img)))
     image_c[image_c > 255] = 255
     return image_c.astype(np.uint8)

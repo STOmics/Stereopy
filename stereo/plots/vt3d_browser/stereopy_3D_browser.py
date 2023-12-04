@@ -1,31 +1,41 @@
-import re,os,time,_thread,math,json
-from natsort import natsorted
+import json
+import math
+import os
+import re
+import time
+from http.server import BaseHTTPRequestHandler
+from http.server import HTTPServer
+from io import StringIO
+
 import numpy as np
 import pandas as pd
-from io import StringIO
-from http.server import BaseHTTPRequestHandler, HTTPServer
 from IPython.display import IFrame
-from time import sleep
+from natsort import natsorted
 from scipy import stats
-from .PAGA_traj import cal_plt_param_traj_clus_from_adata
 
 from stereo.core.stereo_exp_data import StereoExpData
-#import anndata as ad
+from .PAGA_traj import cal_plt_param_traj_clus_from_adata
+
+
+# import anndata as ad
 
 def updateItem(item):
-    if isinstance(item,str):
-        return re.sub("[^a-zA-Z0-9-]",'_',item)
-    if isinstance(item,int) or isinstance(item,float) or isinstance(item, np.int64) or isinstance(item, np.int32) or isinstance(item, np.float32) or isinstance(item, np.float64):
+    if isinstance(item, str):
+        return re.sub("[^a-zA-Z0-9-]", '_', item)
+    if isinstance(item, int) or isinstance(item, float) or isinstance(item, np.int64) or isinstance(
+            item, np.int32) or isinstance(item, np.float32) or isinstance(item, np.float64):
         if math.isnan(item):
             return 'NA'
         else:
             return f'{int(item)}'
+
 
 def UpdateList(xxxarr, return_ndarray=False):
     tmp = pd.DataFrame()
     tmp['v1'] = list(xxxarr)
     tmp['v2'] = tmp.apply(lambda row: updateItem(row['v1']), axis=1)
     return tmp['v2'].to_list() if not return_ndarray else tmp['v2'].to_numpy()
+
 
 class my_json_encoder(json.JSONEncoder):
     def default(self, obj):
@@ -35,10 +45,11 @@ class my_json_encoder(json.JSONEncoder):
             return float(obj)
         return json.JSONEncoder.default(self, obj)
 
-def getPAGACurves(data,ty_col='annotation', choose_ty=None, trim=True, paga_key='paga', mesh_key='mesh'):
-    x_unknown_li_all_tra, y_unknown_li_all_tra, z_unknown_li_all_tra, com_tra_li, com_tra_wei_li = \
-        cal_plt_param_traj_clus_from_adata(data, ty_col=ty_col, choose_ty=choose_ty, trim=trim, type_traj='curve', paga_key=paga_key, mesh_key=mesh_key)
-    traj_all = []
+
+def getPAGACurves(data, ty_col='annotation', choose_ty=None, trim=True, paga_key='paga', mesh_key='mesh'):
+    parameters_data = cal_plt_param_traj_clus_from_adata(data, ty_col=ty_col, choose_ty=choose_ty, trim=trim,
+                                                         type_traj='curve', paga_key=paga_key, mesh_key=mesh_key)
+    x_unknown_li_all_tra, y_unknown_li_all_tra, z_unknown_li_all_tra, com_tra_li, com_tra_wei_li = parameters_data
     traj_names = []
     traj_lines = []
     traj_widths = []
@@ -57,10 +68,12 @@ def getPAGACurves(data,ty_col='annotation', choose_ty=None, trim=True, paga_key=
             traj_widths.append(traj_W)
     return [traj_names, traj_lines, traj_widths]
 
+
 def getPAGALines(data, ty_col='annotation', choose_ty=None, trim=True, paga_key='paga', mesh_key='mesh'):
-    x_unknown_li_all_tra, y_unknown_li_all_tra, z_unknown_li_all_tra, com_tra_li, com_tra_wei_li =\
-        cal_plt_param_traj_clus_from_adata(data, ty_col=ty_col, choose_ty=choose_ty, trim=trim, type_traj='line', paga_key=paga_key, mesh_key=mesh_key)
-    traj_all = []
+    parameters_data = cal_plt_param_traj_clus_from_adata(data, ty_col=ty_col, choose_ty=choose_ty, trim=trim,
+                                                         type_traj='line', paga_key=paga_key, mesh_key=mesh_key)
+    x_unknown_li_all_tra, y_unknown_li_all_tra, z_unknown_li_all_tra, com_tra_li, com_tra_wei_li = parameters_data
+
     traj_names = []
     traj_lines = []
     traj_widths = []
@@ -150,7 +163,7 @@ class Meshes:
 
     def _add_mesh_str(self, meshname, objfile):
         mesh_io = StringIO(Meshes.MesheStr(objfile))
-        cache = pd.read_csv(mesh_io, sep='\s+', header=None, compression='infer', comment='#')
+        cache = pd.read_csv(mesh_io, sep='\s+', header=None, compression='infer', comment='#')  # noqa
         cache.columns = ['type', 'v1', 'v2', 'v3']
         vectors = cache[cache['type'] == 'v'].copy()
         vectors = vectors[['v1', 'v2', 'v3']].copy()
@@ -220,19 +233,18 @@ class Stereo3DWebCache:
     """
 
     def __init__(
-        self,
-        data: StereoExpData,
-        meshes={},
-        cluster_label=None,
-        spatial_label='spatial_rigid',
-        exp_cutoff=0,
-        paga_key='paga',
-        grn_key='regulatory_network_inference',
-        ccc_key='cell_cell_communication'
+            self,
+            data: StereoExpData,
+            meshes={},
+            cluster_label=None,
+            spatial_label='spatial_rigid',
+            exp_cutoff=0,
+            paga_key='paga',
+            grn_key='regulatory_network_inference',
+            ccc_key='cell_cell_communication'
     ):
         self._data = data
         self.__subdata = None
-        # self._annokeys = cluster_label
         self._cluster_label = cluster_label
         self._spatkey = spatial_label
         self._grn_key = grn_key
@@ -266,8 +278,8 @@ class Stereo3DWebCache:
                 legend2int[key] = i
                 int2legend[i] = key
             self._summary['annomapper'][f'{self._cluster_label}_legend2int'] = legend2int
-            self._summary['annomapper'][f'{self._cluster_label}_int2legend'] = int2legend    
-        # prepare box-space
+            self._summary['annomapper'][f'{self._cluster_label}_int2legend'] = int2legend
+            # prepare box-space
         self._summary['box'] = {}
         self._summary['box']['xmin'] = np.min(self._data.position[:, 0])
         self._summary['box']['xmax'] = np.max(self._data.position[:, 0])
@@ -288,22 +300,25 @@ class Stereo3DWebCache:
         }
         if self._cluster_label is not None:
             self._summary['option']['CellTypes'] = True
-        if  (self._paga_key is not None) and (self._paga_key in self._data.tl.result):
+        if (self._paga_key is not None) and (self._paga_key in self._data.tl.result):
             self._summary['option']['PAGA_trajectory'] = True
             self._summary['option']['default'] = 'PAGA_trajectory'
         if (self._ccc_key is not None) and (self._ccc_key in self._data.tl.result):
             self._summary['option']['Cell_Cell_Communication'] = True
-            # self._summary['option']['CellTypes'] = False
             self._summary['option']['default'] = 'Cell_Cell_Communication'
-            self._data.tl.result[self._ccc_key]['visualization_data']['celltype1'] = UpdateList(self._data.tl.result[self._ccc_key]['visualization_data']['celltype1'])
-            self._data.tl.result[self._ccc_key]['visualization_data']['celltype2'] = UpdateList(self._data.tl.result[self._ccc_key]['visualization_data']['celltype2'])
-            self._data.tl.result[self._ccc_key]['visualization_data']['ligand'] = UpdateList(self._data.tl.result[self._ccc_key]['visualization_data']['ligand'])
-            self._data.tl.result[self._ccc_key]['visualization_data']['receptor'] = UpdateList(self._data.tl.result[self._ccc_key]['visualization_data']['receptor'])
+            self._data.tl.result[self._ccc_key]['visualization_data']['celltype1'] = UpdateList(
+                self._data.tl.result[self._ccc_key]['visualization_data']['celltype1'])
+            self._data.tl.result[self._ccc_key]['visualization_data']['celltype2'] = UpdateList(
+                self._data.tl.result[self._ccc_key]['visualization_data']['celltype2'])
+            self._data.tl.result[self._ccc_key]['visualization_data']['ligand'] = UpdateList(
+                self._data.tl.result[self._ccc_key]['visualization_data']['ligand'])
+            self._data.tl.result[self._ccc_key]['visualization_data']['receptor'] = UpdateList(
+                self._data.tl.result[self._ccc_key]['visualization_data']['receptor'])
         if (self._grn_key is not None) and (self._grn_key in self._data.tl.result):
             self._summary['option']['GRN_Regulons'] = True
             self._summary['option']['default'] = 'GRN_Regulons'
-            self._data.tl.result[self._grn_key]['auc_matrix'].columns = UpdateList(self._data.tl.result[self._grn_key]['auc_matrix'].columns)
-            
+            self._data.tl.result[self._grn_key]['auc_matrix'].columns = UpdateList(
+                self._data.tl.result[self._grn_key]['auc_matrix'].columns)
 
     def _init_meshes(self, meshes):
         """
@@ -345,7 +360,7 @@ class Stereo3DWebCache:
             self.__subdata = self._data.sub_by_name(cell_name=auc_mtx.index.to_numpy())
         xyz = np.concatenate([self.__subdata.position, self.__subdata.position_z], axis=1)
         sub_zscore = auc_mtx[regulonname]
-        df = pd.DataFrame(data=xyz, columns=['x','y','z'])
+        df = pd.DataFrame(data=xyz, columns=['x', 'y', 'z'])
         df['zscore'] = stats.zscore(sub_zscore.to_numpy())
         return json.dumps(df.to_numpy().tolist(), cls=my_json_encoder)
 
@@ -373,8 +388,6 @@ class Stereo3DWebCache:
         return json.dumps(ret_dict, cls=my_json_encoder)
 
     def get_ccc_ct_gene(self, celltype, genename):
-        # anno_res = self._data.tl.result[self._cluster_label]
-        # cell_names = anno_res[anno_res['group'] == celltype]['bins'].to_numpy()
         if self._cluster_label in self._data.cells._obs.columns:
             is_in_bool = self._data.cells._obs[self._cluster_label].isin([celltype])
         else:
@@ -382,7 +395,7 @@ class Stereo3DWebCache:
         cell_names = self._data.cell_names[is_in_bool]
         subdata: StereoExpData = self._data.sub_by_name(cell_name=cell_names, gene_name=[genename])
         xyz = np.concatenate([subdata.position, subdata.position_z], axis=1)
-        df = pd.DataFrame(data=xyz,columns=['x','y','z'])
+        df = pd.DataFrame(data=xyz, columns=['x', 'y', 'z'])
         df['exp'] = subdata.exp_matrix.toarray() if subdata.issparse() else subdata.exp_matrix
         df = df[df['exp'] > self._expcutoff].copy()
         return json.dumps(df.to_numpy().tolist(), cls=my_json_encoder)
@@ -418,14 +431,12 @@ class Stereo3DWebCache:
         """
         return the paga_line.json
         """
-        # return json.dumps(getPAGALines(self._data, ty_col=self._annokeys[0], paga_key=self._paga_key))
         return json.dumps(getPAGALines(self._data, ty_col=self._cluster_label, paga_key=self._paga_key))
 
     def get_paga(self):
         """
         return the paga.json
         """
-        # return json.dumps(getPAGACurves(self._data, ty_col=self._annokeys[0], paga_key=self._paga_key))
         return json.dumps(getPAGACurves(self._data, ty_col=self._cluster_label, paga_key=self._paga_key))
 
     def get_anno(self):
@@ -434,12 +445,11 @@ class Stereo3DWebCache:
         """
         xyz = np.concatenate([self._data.position, self._data.position_z], axis=1)
         df = pd.DataFrame(data=xyz, columns=['x', 'y', 'z'])
-        df = df.astype(int)  # force convert to int to save space
+        # df = df.astype(int)  # force convert to int to save space
         if self._cluster_label in self._data.cells._obs.columns:
             df['anno'] = self._data.cells._obs[self._cluster_label].to_numpy()
         else:
             df['anno'] = self._data.tl.result[self._cluster_label]['group'].to_numpy()
-        # df['anno'] = self._data.tl.result[self._cluster_label]['group'].to_numpy()
         mapper = self._summary['annomapper'][f'{self._cluster_label}_legend2int']
         df['annoid'] = df.apply(lambda row: mapper[row['anno']], axis=1)
         return json.dumps(df[['x', 'y', 'z', 'annoid']].to_numpy().tolist(), cls=my_json_encoder)
@@ -525,7 +535,7 @@ class DynamicRequstHander(BaseHTTPRequestHandler):
             f = open(visit_path, 'rb')
             self.wfile.write(f.read())
             f.close()
-        except:
+        except Exception:
             self._ret_404()
 
     def _ret_jsonstr(self, jsonstr):
@@ -590,7 +600,6 @@ class DynamicRequstHander(BaseHTTPRequestHandler):
                 genename = match_API_gene.group(1)
                 self._ret_jsonstr(ServerInstance.data_hook.get_gene(genename))
             elif match_API_anno:
-                annoname = match_API_anno.group(1)
                 self._ret_jsonstr(ServerInstance.data_hook.get_anno())
             elif match_API_CCC:
                 celltype = match_API_CCC.group(1)
@@ -603,31 +612,33 @@ class DynamicRequstHander(BaseHTTPRequestHandler):
 
 
 def server_task(httpd, ip, port):
-    #start endless waiting now...
+    # start endless waiting now...
     print('Server staring now ...')
     print(f'Call endServer("{ip}",{port}) to end this server')
     httpd.serve_forever()
 
+
 def endServer(ip='127.0.0.1', port=7654):
-    return IFrame(src=f'http://{ip}:{port}/endnow',width=500, height=50)
+    return IFrame(src=f'http://{ip}:{port}/endnow', width=500, height=50)
+
 
 def launch(data: StereoExpData,
-           cluster_label = None,
-           spatial_label:str = 'spatial_rigid',
+           cluster_label=None,
+           spatial_label: str = 'spatial_rigid',
            meshes={},
            paga_key: str = None,
            grn_key: str = None,
            ccc_key: str = None,
-           geneset = None,
-           exp_cutoff = 0,
+           geneset=None,
+           exp_cutoff=0,
            width=1600,
            height=1000,
            ip='127.0.0.1',
            port=7654,
-          ):
+           ):
     """
     Launch a data browser server based on input data
-    
+
     :param datas: an AnnData object or a list of AnnData objects
     :param cluster_label: the keyword in obs for cluster/annotation info
     :param spatial_label: the keyword in obsm for 3D spatial coordinate
@@ -642,36 +653,22 @@ def launch(data: StereoExpData,
     :parma port: the port id
 
     :return:
-    """
-
-    # TODO merge multi slices
-    # merge anndata if necessary
-    # if type(datas) == list:
-    #     if len(datas) < 1:
-    #         print('No data provided, return without any data browsing server...')
-    #         return
-    #     adata = datas[0]
-    #     if len(datas) > 1:
-    #         for i in range(1, len(datas)):
-    #             adata = adata.concatenate(datas[i])
-    # else:
-    #     adata = datas
-    #sanity check for parameters
+    """  # noqa
     if paga_key is None and grn_key is None and ccc_key is None:
         raise Exception
 
-    if grn_key is None:     
+    if grn_key is None:
         if paga_key is not None:
             cluster_label = data.tl.result[paga_key]['groups']
         else:
             cluster_label = data.tl.result[ccc_key]['parameters']['cluster_res_key']
-    
+
     if cluster_label is not None:
         if cluster_label in data.cells._obs.columns:
             data.cells._obs[cluster_label] = UpdateList(data.cells._obs[cluster_label])
         else:
             data.tl.result[cluster_label]['group'] = UpdateList(data.tl.result[cluster_label]['group'])
-        
+
     for meshname in meshes:
         meshfile = meshes[meshname]
         if isinstance(meshfile, str):
@@ -686,7 +683,7 @@ def launch(data: StereoExpData,
     if geneset is not None:
         data = data.sub_by_name(gene_name=geneset)  # notice, invalid gene will case program raising exceptions
     data.genes.gene_name = UpdateList(data.genes.gene_name, return_ndarray=True).astype('U')
-    #create core datacache
+    # create core datacache
     datacache = Stereo3DWebCache(data, meshes, cluster_label, spatial_label, exp_cutoff, paga_key, grn_key, ccc_key)
     ServerInstance.data_hook = datacache
     ServerInstance.front_dir = os.path.dirname(os.path.abspath(__file__)) + '/vt3d_browser'

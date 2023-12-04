@@ -5,12 +5,13 @@
 # @File    : variance_test.py
 # @Software: PyCharm
 # @Email   : zhangchao5@genomics.cn
+from io import BytesIO
+
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import seaborn as sn
-import matplotlib.pyplot as plt
 from anndata import AnnData
-from io import BytesIO
 from scipy import stats
 
 

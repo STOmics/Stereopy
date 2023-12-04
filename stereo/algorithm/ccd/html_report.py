@@ -2,12 +2,17 @@ import base64
 import os
 import subprocess
 import time
-
 from collections import defaultdict
-from .utils import timeit
 from pathlib import Path
 
-from .constants import BOXPLT_C_INDEX, COLORPLT_C_INDEX, CMIXT_C_INDEX, CT_COLORPLT_INDEX
+from .constants import (
+    BOXPLT_C_INDEX,
+    COLORPLT_C_INDEX,
+    CMIXT_C_INDEX,
+    CT_COLORPLT_INDEX
+)
+from .utils import timeit
+
 
 def get_base64_encoded_img(path):
     """
@@ -32,7 +37,7 @@ def get_css():
     """
 
     return r'''
-        img { 
+        img {
             width:100%;
             height:100%
         }
@@ -52,9 +57,9 @@ def get_css():
             max-width: 50vw;
         }
         table.center {
-            margin-left: auto; 
+            margin-left: auto;
             margin-right: auto;
-        } 
+        }
         footer {
             position: absolute;
             bottom: 0;
@@ -134,7 +139,8 @@ def all_slices_get_figure(project_root, figure_name, plotting_level):
     otherwise an empty string.
     """
     if plotting_level > 0:
-        return get_base64_encoded_img(f"{project_root}/{figure_name}") if os.path.isfile(f"{project_root}/{figure_name}") else ""
+        return get_base64_encoded_img(f"{project_root}/{figure_name}") if os.path.isfile(
+            f"{project_root}/{figure_name}") else ""
 
 
 def per_slice_content(path, plotting_level):
@@ -154,7 +160,7 @@ def per_slice_content(path, plotting_level):
     """
 
     content = ""
-    for root, dirs, files in os.walk(path): 
+    for root, dirs, files in os.walk(path):
         for name in dirs:
             content += get_table_plots(os.path.join(root, name), plotting_level)
     return content
@@ -189,7 +195,7 @@ def get_table_plots(path, plotting_level):
                 hist_cell_number = os.path.join(root, name)
             if name.startswith("ct_colorplot"):
                 ct_colorplots[name.split("_")[CT_COLORPLT_INDEX]].append(os.path.join(root, name))
-    
+
     return f'''
         <table>
             <thead>
@@ -209,7 +215,8 @@ def get_table_plots(path, plotting_level):
             {make_table(ct_colorplots, columns=2, comment="Cell type colorplots") if plotting_level > 4 else ""}
         </div>
         <hr>
-    '''
+    '''  # noqa
+
 
 def per_community_content(path, plotting_level):
     """
@@ -236,7 +243,7 @@ def per_community_content(path, plotting_level):
     boxplots_dict = defaultdict(list)
     colorplot_dict = defaultdict(list)
 
-    for root, dirs, files in os.walk(path): 
+    for root, dirs, files in os.walk(path):
         for name in dirs:
             slice_path = os.path.join(path, name)
             for file in os.listdir(slice_path):
@@ -249,7 +256,7 @@ def per_community_content(path, plotting_level):
                 if file.startswith("colorplot"):
                     cluster = int(Path(file).stem.split("_")[COLORPLT_C_INDEX][1:])
                     colorplot_dict[cluster].append(os.path.join(slice_path, file))
-    
+
     content += make_table(cmixtures_dict, columns=2, comment="Cell types that are present in each community")
     content += make_table(boxplots_dict, columns=2, comment="Boxplots of cell types that are present in each community")
     if plotting_level == 5:
@@ -279,8 +286,8 @@ def make_table(plot_dict, columns, comment):
     for _, plots in sorted(plot_dict.items()):
         rows = ""
         plots = [f'<td class="shrink"><img src={get_base64_encoded_img(plot)}></td>' for plot in plots]
-        for i in range(0,len(plots),columns):
-            row = "".join(plots[i:i+columns])
+        for i in range(0, len(plots), columns):
+            row = "".join(plots[i:i + columns])
             rows += f'<tr>{row}</tr>'
         content += f'''
         <table style="border: 1px solid black;">
@@ -303,6 +310,7 @@ def make_table(plot_dict, columns, comment):
         <hr>
         <br>
     '''
+
 
 def annotation_and_communities_figures(path):
     """
@@ -333,6 +341,7 @@ def annotation_and_communities_figures(path):
     else:
         return (annotations[0], communities[0])
 
+
 @timeit
 def generate_report(params):
     """
@@ -349,8 +358,8 @@ def generate_report(params):
         return
 
     command = "python main.py "
-    for k,v in params.items():
-        if v == None or k == 'out_path' or k == 'project_name' or k == "skip_stats" or k == "save_adata":
+    for k, v in params.items():
+        if v == None or k == 'out_path' or k == 'project_name' or k == "skip_stats" or k == "save_adata":  # noqa
             continue
         if k == 'dev' and v is False:
             continue
@@ -360,9 +369,9 @@ def generate_report(params):
 
     dev = params.get('dev', False)
 
-    commit_date = None
     if dev:
-        commit_date = subprocess.check_output(r'git log --pretty=format:"%h%x09%x09%ad%x09%s" -n 1', shell=True).expandtabs()
+        commit_date = subprocess.check_output(r'git log --pretty=format:"%h%x09%x09%ad%x09%s" -n 1',
+                                              shell=True).expandtabs()
         created_time = f"Report created from commit: {commit_date}"
     else:
         commit_date = time.strftime("%I:%M%p  %B %d, %Y")
@@ -400,13 +409,13 @@ def generate_report(params):
     }}
 
     function remove_elements(){{
-	let allEls = document.querySelectorAll('.testRemove')
-	allEls.forEach(el => {{
-		if (el.getAttribute('data-value') == "remove"){{
-			el.style.display = 'none';
-			}}
-		}});
-	}}
+    let allEls = document.querySelectorAll('.testRemove')
+    allEls.forEach(el => {{
+        if (el.getAttribute('data-value') == "remove"){{
+            el.style.display = 'none';
+            }}
+        }});
+        }}
     </script>
 
     <title>Cell Communities Report</title>
@@ -543,7 +552,7 @@ def generate_report(params):
     </div>
     </body>
     </html>
-    '''
+    '''  # noqa
 
     with open(f"{params['out_path']}/report.html", "w") as f:
         f.write(htmlstr)

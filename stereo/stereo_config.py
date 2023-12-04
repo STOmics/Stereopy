@@ -6,12 +6,15 @@
 @file:config.py
 @time:2021/03/05
 """
-from typing import Union, Optional
-from pathlib import Path
 import os
-from matplotlib import rcParams, rcParamsDefault
+from pathlib import Path
+from typing import Optional
+from typing import Union
+
 import matplotlib.colors as mpl_colors
 from colorcet import palette
+from matplotlib import rcParams
+from matplotlib import rcParamsDefault
 
 
 class StereoConfig(object):
@@ -29,7 +32,8 @@ class StereoConfig(object):
             n_jobs=1,
             log_file: Union[str, Path, None] = None,
             log_level: str = "info",
-            log_format: str = "[%(asctime)s][%(name)s][%(process)d][%(threadName)s][%(thread)d][%(module)s][%(lineno)d][%(levelname)s]: %(message)s",
+            log_format: str = "[%(asctime)s][%(name)s][%(process)d][%(threadName)s][%(thread)d][%(module)s]"
+                              "[%(lineno)d][%(levelname)s]: %(message)s",
             output: str = "./output",
             data_dir: str = None
     ):
@@ -44,8 +48,7 @@ class StereoConfig(object):
 
     @property
     def colormaps(self):
-        colormaps = {n: palette[n] for n in ['glasbey', 'glasbey_bw', 'glasbey_cool', 'glasbey_warm', 'glasbey_dark',
-                                             'glasbey_light', 'glasbey_category10', 'glasbey_hv']}
+        colormaps = palette
         colormaps['stereo_30'] = ["#E41A1C", "#377EB8", "#4DAF4A", "#984EA3", "#FF7F00", "#A65628", "#FFFF33",
                                   "#F781BF", "#999999", "#E5D8BD", "#B3CDE3", "#CCEBC5", "#FED9A6", "#FBB4AE",
                                   "#8DD3C7", "#BEBADA", "#80B1D3", "#B3DE69", "#FCCDE5", "#BC80BD", "#FFED6F",
@@ -55,7 +58,7 @@ class StereoConfig(object):
 
     @property
     def linear_colormaps(self):
-        colormaps = {n: palette[n] for n in ['rainbow', 'fire', 'bgy', 'bgyw', 'bmy', 'gray', 'kbc', 'CET_D4', 'blues', 'CET_L4']}
+        colormaps = palette
         stmap_colors = ['#0c3383', '#0a88ba', '#f2d338', '#f28f38', '#d91e1e']
         nodes = [0.0, 0.25, 0.50, 0.75, 1.0]
         mycmap = mpl_colors.LinearSegmentedColormap.from_list("mycmap", list(zip(nodes, stmap_colors)))
@@ -94,7 +97,6 @@ class StereoConfig(object):
     def log_file(self) -> Union[str, Path, None]:
         """
         get the file path of log.
-        :return:
         """
         return self._log_file
 
@@ -102,8 +104,8 @@ class StereoConfig(object):
     def log_file(self, value):
         """
         set file path of log.
+
         :param value: value of log file path
-        :return:
         """
         if value:
             dir_path = os.path.dirname(value)
@@ -115,7 +117,6 @@ class StereoConfig(object):
     def log_format(self) -> str:
         """
         get the format of log.
-        :return:
         """
         return self._log_format
 
@@ -123,8 +124,8 @@ class StereoConfig(object):
     def log_format(self, value):
         """
         set file path of log.
+
         :param value: value of log format
-        :return:
         """
         self._log_format = value
 
@@ -132,7 +133,6 @@ class StereoConfig(object):
     def log_level(self) -> str:
         """
         get log level
-        :return:
         """
         return self._log_level
 
@@ -140,8 +140,8 @@ class StereoConfig(object):
     def log_level(self, value):
         """
         set log level
+
         :param value: the value of log level
-        :return:
         """
         if value.lower() not in ['info', 'warning', 'debug', 'error', 'critical']:
             print('the log level is out of range, please check and it is not modified.')
@@ -152,7 +152,6 @@ class StereoConfig(object):
     def auto_show(self):
         """
         Auto show figures if `auto_show == True` (default `True`).
-        :return:
         """
         return self._auto_show
 
@@ -160,8 +159,8 @@ class StereoConfig(object):
     def auto_show(self, value):
         """
         set value of auto_show
+
         :param value: value of auto_show
-        :return:
         """
         self._auto_show = value
 
@@ -169,7 +168,6 @@ class StereoConfig(object):
     def file_format(self) -> str:
         """
         file format of saving anndata object
-        :return:
         """
         return self._file_format
 
@@ -177,8 +175,8 @@ class StereoConfig(object):
     def file_format(self, value):
         """
         set the value of file format
+
         :param value: the value of file format
-        :return:
         """
         self._file_format = value
 
@@ -191,8 +189,13 @@ class StereoConfig(object):
         self._n_jobs = value
 
     @staticmethod
-    def set_plot_param(fontsize: int = 14, figsize: Optional[int] = None, color_map: Optional[str] = None,
-                       facecolor: Optional[str] = None, transparent: bool = False, ):
+    def set_plot_param(
+            fontsize: int = 14,
+            figsize: Optional[int] = None,
+            color_map: Optional[str] = None,
+            facecolor: Optional[str] = None,
+            transparent: bool = False
+    ):
         if fontsize is not None:
             rcParams['font.size'] = fontsize
         if color_map is not None:
@@ -209,7 +212,6 @@ class StereoConfig(object):
     def set_rcparams_defaults():
         """
         reset `matplotlib.rcParams` to defaults.
-        :return:
         """
         rcParams.update(rcParamsDefault)
 

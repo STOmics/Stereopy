@@ -40,9 +40,9 @@ which is compromised of basic preprocessing, embedding, clustering, and so on.
     core.StPipeline.annotation
     algorithm.single_r.SingleR.main
     algorithm.batch_qc.BatchQc.main
-    algorithm.spatial_alignment.SpatialAlignment.main
-    algorithm.spatial_alignment.pairwise_align
-    algorithm.spatial_alignment.center_align
+    algorithm.paste.Paste.main
+    algorithm.paste.pairwise_align
+    algorithm.paste.center_align
     algorithm.get_niche.GetNiche.main
     algorithm.gen_ccc_micro_envs.GenCccMicroEnvs.main
     algorithm.cell_cell_communication.CellCellCommunication.main

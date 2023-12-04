@@ -40,7 +40,8 @@ setup(
     long_description_content_type="text/markdown",
     url='https://github.com/STOmics/Stereopy',
     author='STOmics',
-    author_email='xujunhao@genomics.cn',
+    author_email='tanliwei@stomics.tech',
+    license='MIT License',
     python_requires='>=3.8,<3.9',
     install_requires=[
         l.strip() for l in Path('requirements.txt').read_text('utf-8').splitlines()
