@@ -1,5 +1,4 @@
 import logging
-import os
 
 import numpy as np
 import tensorflow as tf
@@ -31,7 +30,7 @@ class CellInfer(object):
                  format_model_output_fn=None,
                  dataset_metadata=None,
                  model_metadata=None):
-        model_path = os.path.join(os.path.split(__file__)[0], 'model') if model is None else model
+        model_path = model
         self.model = tf.keras.models.load_model(model_path, compile=False)
         self.model_image_shape = self.model.input_shape[1:]
         # Require dimension 1 larger than model_input_shape due to addition of batch dimension

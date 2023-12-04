@@ -48,8 +48,6 @@ def cell_seg_deepcell(
     ------------------
     None
     """
-    if version == 'v1' and not model_path:
-        raise Exception("cell_seg_deepcell() missing 1 required keyword argument: 'model_path'")
     try:
         import tensorflow as tf  # noqa
     except Exception:
