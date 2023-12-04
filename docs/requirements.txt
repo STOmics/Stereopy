@@ -2,7 +2,7 @@ absl-py==1.0.0
 alabaster==0.7.13
 albumentations==0.4.6
 alembic==1.9.4
-anndata==0.7.5
+anndata>=0.7.5
 arboreto==0.1.6
 argcomplete==2.0.0
 argon2-cffi==21.3.0
@@ -55,7 +55,7 @@ holoviews==1.14.5
 hotspot @ git+https://github.com/yoseflab/Hotspot.git@45555a0feb6cc46cb52aa09230f0ed801559bb87
 hvplot==0.7.3
 idna==3.3
-igraph==0.9.11
+# igraph==0.9.11
 imagecodecs==2021.11.20
 imageio==2.31.1
 imagesize==1.4.1
@@ -82,11 +82,11 @@ keras==2.7.0
 Keras-Preprocessing==1.1.2
 keyring==23.5.0
 kiwisolver==1.4.4
-leidenalg==0.8.10
+leidenalg>=0.10.1
 libclang==15.0.6.1
 llvmlite==0.39.1
 locket==1.0.0
-louvain==0.7.1
+louvain>=0.8.0
 Mako==1.2.4
 Markdown==3.4.1
 MarkupSafe==2.1.2
@@ -140,7 +140,7 @@ pyparsing==3.0.9
 pyrsistent==0.19.3
 python-dateutil==2.8.2
 python-gflags==3.1.2
-python-igraph==0.9.11
+# python-igraph==0.9.11
 python-snappy==0.6.0
 pytz==2022.7.1
 pyviz-comms==2.2.0
@@ -172,7 +172,7 @@ slideio==0.5.225
 snowballstemmer==2.2.0
 sortedcontainers==2.4.0
 squidpy==1.2.2
-statsmodels==0.12.2
+statsmodels>=0.14.0
 stdlib-list==0.8.0
 tables==3.7.0
 tblib==1.7.0
