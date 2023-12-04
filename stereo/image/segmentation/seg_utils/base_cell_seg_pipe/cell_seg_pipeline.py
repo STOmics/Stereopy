@@ -102,6 +102,12 @@ class CellSegPipe(object):
                 logger.info('Image %s convert to gray!' % self.file[idx])
                 self.img_list[idx] = img[:, :, 0]
 
+    def get_img_filter(self):
+        """get tissue image by tissue mask"""
+        for img, tissue_mask in zip(self.img_list, self.tissue_mask):
+            img_filter = np.multiply(img, tissue_mask).astype(np.uint8)
+            self.img_filter.append(img_filter)
+
     @staticmethod
     def transfer_32bit_to_8bit(image_32bit):
         min_32bit = np.min(image_32bit)
