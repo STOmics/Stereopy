@@ -51,4 +51,3 @@ which is compromised of basic preprocessing, embedding, clustering, and so on.
     algorithm.community_detection.CommunityDetection.main
     algorithm.time_series_analysis.TimeSeriesAnalysis.main
     algorithm.dendrogram.Dendrogram.main
-    algorithm.spatial_alignment_integration.SpatialAlignmentIntegration.main
