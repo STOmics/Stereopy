@@ -1098,7 +1098,7 @@ class PlotCollection:
     @download
     def hotspot_local_correlations(
             self,
-            res_key: str,
+            res_key: str = 'spatial_hotspot',
             width: Optional[int] = None,
             height: Optional[int] = None
     ):
@@ -1125,7 +1125,7 @@ class PlotCollection:
     @download
     def hotspot_modules(
             self,
-            res_key: str,
+            res_key: str = 'spatial_hotspot',
             ncols: Optional[int] = 2,
             dot_size: Optional[int] = None,
             palette: Optional[str] = 'stereo',

@@ -112,7 +112,7 @@ def read_gem(
         data.cells.cell_point = gdf.loc[cells]['cell_point'].values
     data.offset_x = df['x'].min()
     data.offset_y = df['y'].min()
-    resolution = 0
+    resolution = 500
     for chip_name in CHIP_RESOLUTION.keys():
         if data.sn[0:len(chip_name)] == chip_name:
             resolution = CHIP_RESOLUTION[chip_name]
