@@ -30,7 +30,7 @@ def get_transforms():
     return list_trfms
 
 
-def cellInfer(file, size, overlap=100):
+def cellInfer(file, size, model_path, overlap=100):
     if isinstance(file, list):
         file_list = file
     else:
@@ -38,12 +38,12 @@ def cellInfer(file, size, overlap=100):
 
     result = []
 
-    model_path = os.path.join(os.path.split(__file__)[0], 'model')
-    model_dir = os.path.join(model_path, 'best_model.pth')
-    logger.info(f'CellCut_model infer path {model_dir}...')
+    # model_dir = os.path.join(os.path.split(__file__)[0], 'model')
+    # model_path = os.path.join(model_dir, 'best_model.pth')
+    logger.info(f'CellCut_model infer path {model_path}...')
     model = EpsaResUnet(out_channels=6)
-    logger.info('Load model from: {}'.format(model_dir))
-    model.load_state_dict(torch.load(model_dir, map_location=lambda storage, loc: storage), strict=True)
+    logger.info('Load model from: {}'.format(model_path))
+    model.load_state_dict(torch.load(model_path, map_location=lambda storage, loc: storage), strict=True)
     model.eval()
     logger.info('Load model ok.')
 
@@ -53,7 +53,7 @@ def cellInfer(file, size, overlap=100):
     logger.info(f"using device: {device}")
     model.to(device)
     for idx, image in enumerate(file_list):
-        logger.info(image.shape)
+        logger.info(f"image shape: {image.shape}")
 
         t1 = time.time()
         logger.info('median filter using cpu')
