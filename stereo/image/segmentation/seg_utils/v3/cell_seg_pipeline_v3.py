@@ -44,7 +44,7 @@ class CellSegPipeV3(CellSegPipe):
 
         if self.kwargs.get('need_tissue_cut', None):
             self.get_tissue_mask()
-            img = self._get_img_filter(img, self.tissue_mask)
+            img = self._get_img_filter(img, self.tissue_mask[0])
 
         # Run cell segmentation
         mask = cell_seg.run(img)
