@@ -88,6 +88,7 @@ Features:
 7. Modification of computing method of bin coordinates when reading GEM, consistent with GEF.
 8. Optimized `st.io.stereo_to_anndata` for efficient format conversion.
 9. Renamed `st.tl.spatial_alignment` function as `st.tl.paste`.
+10. `export_high_res_area` removed parameter `cgef`.
 
 BUG Fixes:
 
