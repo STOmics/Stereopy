@@ -3,7 +3,6 @@ import os
 import time
 
 import cv2
-import glog
 import numpy as np
 # import tensorflow as tf
 import torch
@@ -43,15 +42,15 @@ def cellInfer(file, size, overlap=100):
     model_dir = os.path.join(model_path, 'best_model.pth')
     logger.info(f'CellCut_model infer path {model_dir}...')
     model = EpsaResUnet(out_channels=6)
-    glog.info('Load model from: {}'.format(model_dir))
+    logger.info('Load model from: {}'.format(model_dir))
     model.load_state_dict(torch.load(model_dir, map_location=lambda storage, loc: storage), strict=True)
     model.eval()
     logger.info('Load model ok.')
 
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     if torch.cuda.is_available():
-        glog.info('GPU type is {}'.format(torch.cuda.get_device_name(0)))
-    glog.info(f"using device: {device}")
+        logger.info('GPU type is {}'.format(torch.cuda.get_device_name(0)))
+    logger.info(f"using device: {device}")
     model.to(device)
     for idx, image in enumerate(file_list):
         logger.info(image.shape)
