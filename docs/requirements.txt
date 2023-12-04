@@ -43,7 +43,7 @@ flatbuffers==2.0.7
 fonttools==4.38.0
 fsspec==2023.1.0
 gast==0.4.0
-gefpy>=0.7.6
+gefpy>=0.7.10
 glog==0.3.1
 google-auth==2.16.1
 google-auth-oauthlib==0.4.6
@@ -90,7 +90,7 @@ louvain>=0.8.0
 Mako==1.2.4
 Markdown==3.4.1
 MarkupSafe==2.1.2
-matplotlib>=3.4.2,<=3.5.3
+matplotlib==3.7.1
 matplotlib-inline==0.1.6
 mistune==2.0.5
 msgpack==1.0.4
@@ -143,7 +143,7 @@ python-gflags==3.1.2
 # python-igraph==0.9.11
 python-snappy==0.6.0
 pytz==2022.7.1
-pyviz-comms==2.2.0
+pyviz-comms==2.2.1
 PyWavelets==1.4.1
 PyYAML==6.0
 pyzmq==22.3.0
@@ -192,7 +192,7 @@ toolz==0.11.2
 torch==1.10.0
 torchvision==0.11.1
 tornado==6.1
-tqdm==4.60.0
+tqdm>=4.60.0
 traitlets==5.1.1
 twine==3.7.1
 typing-extensions==4.3.0
