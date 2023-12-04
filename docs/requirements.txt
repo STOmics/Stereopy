@@ -228,6 +228,8 @@ plotly>=5.15.0
 patchify
 fastremap
 roifile
+cusingler
+cell-bin==1.2.8.1
 
 Sphinx>=7.1.2
 nbsphinx>=0.9.3
