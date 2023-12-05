@@ -1,36 +1,36 @@
 """
 Copright © 2023 Howard Hughes Medical Institute, Authored by Carsen Stringer and Marius Pachitariu.
 """
-import io
-import os
-import cv2
-import torch
-import shutil
-import logging
-import warnings
-
-import tempfile
 import colorsys
-import numpy as np
-from tqdm import tqdm
+import io
+import logging
+import os
+import shutil
+import tempfile
+import warnings
 from multiprocessing import Pool
 from multiprocessing import cpu_count
-from scipy.ndimage import label
 from urllib.request import urlopen
-from scipy.spatial import ConvexHull
+
+import cv2
+import numpy as np
+import torch
+from scipy.ndimage import binary_fill_holes
 from scipy.ndimage import find_objects
 from scipy.ndimage import gaussian_filter
-from scipy.ndimage import binary_fill_holes
 from scipy.ndimage import generate_binary_structure
+from scipy.ndimage import label
+from scipy.spatial import ConvexHull
+from tqdm import tqdm
 
-from ... import logger as transforms_logger
+from stereo.log_manager import logger as transforms_logger
 from . import metrics
 
 try:
-    from skimage.morphology import remove_small_holes
+    from skimage.morphology import remove_small_holes  # noqa
 
     SKIMAGE_ENABLED = True
-except:
+except Exception:
     SKIMAGE_ENABLED = False
 
 
@@ -151,11 +151,11 @@ def distance_to_boundary(masks):
 
 
 def masks_to_edges(masks, threshold=1.0):
-    """ get edges of masks as a 0-1 array 
-    
+    """ get edges of masks as a 0-1 array
+
     Parameters
     ----------------
-    masks: int, 2D or 3D array 
+    masks: int, 2D or 3D array
         size [Ly x Lx] or [Lz x Ly x Lx], 0=NO masks; 1,2,...=mask labels
 
     Returns
@@ -172,11 +172,11 @@ def masks_to_edges(masks, threshold=1.0):
 
 def remove_edge_masks(masks, change_index=True):
     """ remove masks with pixels on edge of image
-    
+
     Parameters
     ----------------
 
-    masks: int, 2D or 3D array 
+    masks: int, 2D or 3D array
         size [Ly x Lx] or [Lz x Ly x Lx], 0=NO masks; 1,2,...=mask labels
 
     change_index: bool (optional, default True)
@@ -185,7 +185,7 @@ def remove_edge_masks(masks, change_index=True):
     Returns
     ----------------
 
-    outlines: 2D or 3D array 
+    outlines: 2D or 3D array
         size [Ly x Lx] or [Lz x Ly x Lx], 0=NO masks; 1,2,...=mask labels
 
     """
@@ -208,18 +208,18 @@ def remove_edge_masks(masks, change_index=True):
 
 
 def masks_to_outlines(masks):
-    """ get outlines of masks as a 0-1 array 
-    
+    """ get outlines of masks as a 0-1 array
+
     Parameters
     ----------------
 
-    masks: int, 2D or 3D array 
+    masks: int, 2D or 3D array
         size [Ly x Lx] or [Lz x Ly x Lx], 0=NO masks; 1,2,...=mask labels
 
     Returns
     ----------------
 
-    outlines: 2D or 3D array 
+    outlines: 2D or 3D array
         size [Ly x Lx] or [Lz x Ly x Lx], True pixels are outlines
 
     """
@@ -304,8 +304,6 @@ def get_perimeter(points):
 
 def get_mask_compactness(masks):
     perimeters = get_mask_perimeters(masks)
-    # outlines = masks_to_outlines(masks)
-    # perimeters = np.unique(outlines*masks, return_counts=True)[1][1:]
     npoints = np.unique(masks, return_counts=True)[1][1:]
     areas = npoints
     compactness = 4 * np.pi * areas / perimeters ** 2
@@ -370,13 +368,12 @@ def get_mask_stats(masks_true):
                 hull = ConvexHull(points)
                 convex_perimeters[ic] = hull.area
                 convex_areas[ic] = hull.volume
-            except:
+            except Exception:
                 convex_perimeters[ic] = 0
 
     convexity[mask_perimeters > 0.0] = (convex_perimeters[mask_perimeters > 0.0] /
                                         mask_perimeters[mask_perimeters > 0.0])
-    solidity[convex_areas > 0.0] = (areas[convex_areas > 0.0] /
-                                    convex_areas[convex_areas > 0.0])
+    solidity[convex_areas > 0.0] = (areas[convex_areas > 0.0] / convex_areas[convex_areas > 0.0])
     convexity = np.clip(convexity, 0.0, 1.0)
     solidity = np.clip(solidity, 0.0, 1.0)
     compactness = np.clip(compactness, 0.0, 1.0)
@@ -481,11 +478,11 @@ def process_cells(M0, npix=20):
 
 def fill_holes_and_remove_small_masks(masks, min_size=15):
     """ fill holes in masks (2D/3D) and discard masks smaller than min_size (2D)
-    
+
     fill holes in each mask using scipy.ndimage.morphology.binary_fill_holes
 
     (might have issues at borders between cells, todo: check and fix)
-    
+
     Parameters
     ----------------
 
@@ -500,10 +497,10 @@ def fill_holes_and_remove_small_masks(masks, min_size=15):
     ---------------
 
     masks: int, 2D or 3D array
-        masks with holes filled and masks smaller than min_size removed, 
+        masks with holes filled and masks smaller than min_size removed,
         0=NO masks; 1,2,...=mask labels,
         size [Ly x Lx] or [Lz x Ly x Lx]
-    
+
     """
 
     if masks.ndim > 3 or masks.ndim < 2:
@@ -534,8 +531,10 @@ def _taper_mask(ly=224, lx=224, sig=7.5):
     xm = np.abs(xm - xm.mean())
     mask = 1 / (1 + np.exp((xm - (bsize / 2 - 20)) / sig))
     mask = mask * mask[:, np.newaxis]
-    mask = mask[bsize // 2 - ly // 2: bsize // 2 + ly // 2 + ly % 2,
-           bsize // 2 - lx // 2: bsize // 2 + lx // 2 + lx % 2]
+    mask = mask[
+           bsize // 2 - ly // 2: bsize // 2 + ly // 2 + ly % 2,
+           bsize // 2 - lx // 2: bsize // 2 + lx // 2 + lx % 2
+           ]
     return mask
 
 
@@ -765,9 +764,7 @@ def update_axis(m_axis, to_squeeze, ndim):
     return m_axis
 
 
-def convert_image(x, channels, channel_axis=None, z_axis=None,
-                  do_3D=False, normalize=True, invert=False,
-                  nchan=2):
+def convert_image(x, channels, channel_axis=None, z_axis=None, do_3D=False, normalize=True, invert=False, nchan=2):
     """ return image with z first, channels last and normalized intensities """
 
     # check if image is a torch array instead of numpy array
@@ -1131,12 +1128,12 @@ def pad_image_ND(img0, div=16, extra=1):
     else:
         pads = np.array([[0, 0], [xpad1, xpad2], [ypad1, ypad2]])
 
-    I = np.pad(img0, pads, mode='constant')
+    i = np.pad(img0, pads, mode='constant')
 
     Ly, Lx = img0.shape[-2:]
     ysub = np.arange(xpad1, xpad1 + Ly)
     xsub = np.arange(ypad1, ypad1 + Lx)
-    return I, ysub, xsub
+    return i, ysub, xsub
 
 
 def normalize_field(mu):
@@ -1202,8 +1199,16 @@ def _image_resizer(img, resize=512, to_uint8=False):
     return img
 
 
-def random_rotate_and_resize(X, Y=None, scale_range=1., xy=(224, 224),
-                             do_flip=True, rescale=None, unet=False, random_per_image=True):
+def random_rotate_and_resize(
+        X,
+        Y=None,
+        scale_range=1.,
+        xy=(224, 224),
+        do_flip=True,
+        rescale=None,
+        unet=False,
+        random_per_image=True
+):
     """ augmentation by random rotation and resizing
         X and Y are lists or arrays of length nimg, with dims channels x Ly x Lx (channels optional)
         Parameters
@@ -1271,9 +1276,11 @@ def random_rotate_and_resize(X, Y=None, scale_range=1., xy=(224, 224),
             cc = np.array([Lx / 2, Ly / 2])
             cc1 = cc - np.array([Lx - xy[1], Ly - xy[0]]) / 2 + dxy
             pts1 = np.float32([cc, cc + np.array([1, 0]), cc + np.array([0, 1])])
-            pts2 = np.float32([cc1,
-                               cc1 + scale[n] * np.array([np.cos(theta), np.sin(theta)]),
-                               cc1 + scale[n] * np.array([np.cos(np.pi / 2 + theta), np.sin(np.pi / 2 + theta)])])
+            pts2 = np.float32([
+                cc1,
+                cc1 + scale[n] * np.array([np.cos(theta), np.sin(theta)]),
+                cc1 + scale[n] * np.array([np.cos(np.pi / 2 + theta), np.sin(np.pi / 2 + theta)])
+            ])
             M = cv2.getAffineTransform(pts1, pts2)
 
         img = X[n].copy()

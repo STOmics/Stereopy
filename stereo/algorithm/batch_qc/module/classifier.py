@@ -7,21 +7,20 @@
 # @Email   : zhangchao5@genomics.cn
 import os
 import os.path as osp
-import time
-
-from multiprocessing import cpu_count
-import numpy as np
 import random
+from multiprocessing import cpu_count
+
+import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from torch.utils.data import DataLoader
 
-# from module import MultiCEFocalLoss, DnnDataset, EarlyStopping
-from .loss import MultiCEFocalLoss
+from stereo.log_manager import logger
 from .dataset import DnnDataset
 from .early_stop import EarlyStopping
-from stereo.log_manager import logger
+from .loss import MultiCEFocalLoss
+
 
 class BatchModel(nn.Module):
     def __init__(self, input_dims, n_batch):
@@ -42,7 +41,16 @@ class BatchModel(nn.Module):
 
 
 class BatchClassifier:
-    def __init__(self, input_dims, n_batch, data_x, batch_idx, batch_size=4096, gpu="0", data_loader_num_workers=-1, num_threads=-1):
+    def __init__(
+            self,
+            input_dims,
+            n_batch,
+            data_x,
+            batch_idx,
+            batch_size=4096,
+            gpu="0",
+            data_loader_num_workers=-1,
+            num_threads=-1):
         self.set_seed(num_threads=num_threads)
         if isinstance(gpu, (str, int)) and torch.cuda.is_available():
             self.device = torch.device(f"cuda:{gpu}")
@@ -51,7 +59,9 @@ class BatchClassifier:
             self.device = torch.device("cpu")
         self.model = BatchModel(input_dims, n_batch)
         self.model.to(self.device)
-        self.train_loader, self.test_loader = self.convert_loader(data=data_x, batch_idx=batch_idx, batch_size=batch_size, num_workers=data_loader_num_workers)
+        self.train_loader, self.test_loader = self.convert_loader(data=data_x, batch_idx=batch_idx,
+                                                                  batch_size=batch_size,
+                                                                  num_workers=data_loader_num_workers)
         self.loss_fn = MultiCEFocalLoss(n_batch, gamma=2, alpha=.25, reduction="mean")
         self.optimizer = torch.optim.Adam(self.model.parameters(), lr=1e-3, weight_decay=5e-4)
         # self.scaler = torch.cuda.amp.GradScaler()
@@ -105,9 +115,9 @@ class BatchClassifier:
             epoch_loss = []
             for idx, data in enumerate(self.train_loader):
                 x, y = data
-                x = x.to(self.device, non_blocking=True)
+                x = x.float().to(self.device, non_blocking=True)
                 y = y.long().to(self.device)
-                if torch.cuda.is_available():
+                if self.device.type == 'cuda' and torch.cuda.is_available():
                     with torch.cuda.amp.autocast():
                         y_hat = self.model(x)
                         loss = self.loss_fn(y_hat, y)
@@ -131,8 +141,6 @@ class BatchClassifier:
             if early_stop.counter == 0:
                 torch.save(self.model.state_dict(), osp.join(save_path, "batch_model.bgi"))
             if early_stop.stop_flag:
-                # print(f"{time.strftime('%Y-%m-%d %H:%M:%S', time.localtime())} Model Training Finished!")
-                # print(f"{time.strftime('%Y-%m-%d %H:%M:%S', time.localtime())} Trained checkpoint file has been saved to {save_path}")
                 logger.info("Model Training Finished!")
                 logger.info(f"Trained checkpoint file has been saved to {save_path}")
                 break
@@ -149,7 +157,7 @@ class BatchClassifier:
         batch_acc = []
         for idx, data in enumerate(self.train_loader):
             x, y = data
-            x = x.to(self.device)
+            x = x.float().to(self.device)
             y = y.long().to(self.device)
             with torch.no_grad():
                 y_hat = self.model(x)
@@ -171,7 +179,7 @@ class BatchClassifier:
         batch_acc = []
         for idx, data in enumerate(self.test_loader):
             x, y = data
-            x = x.to(self.device)
+            x = x.float().to(self.device)
             y = y.long().to(self.device)
             with torch.no_grad():
                 y_hat = self.model(x)
@@ -182,5 +190,3 @@ class BatchClassifier:
             batch_acc.append(acc)
         acc_mean = np.mean(batch_acc)
         return acc_mean
-
-

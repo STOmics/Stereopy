@@ -9,14 +9,16 @@
 change log:
     rewritten by: qindanhua. 2021/06/15
 """
-from stereo.log_manager import logger
-import pandas as pd
-from ..core.stereo_exp_data import StereoExpData
-from typing import Optional
-import requests
-import os
-import importlib
 import functools
+import importlib
+import os
+from typing import Optional
+
+import pandas as pd
+import requests
+
+from stereo.log_manager import logger
+from ..core.stereo_exp_data import StereoExpData
 
 
 class ToolBase(object):
@@ -39,6 +41,7 @@ class ToolBase(object):
     1   cell_2       2
     :param: method : the core method of the analysis
     """
+
     def __init__(
             self,
             data: Optional[StereoExpData] = None,
@@ -104,7 +107,7 @@ class ToolBase(object):
             pass
         else:
             if not isinstance(groups, pd.DataFrame):
-                raise ValueError(f'the format of group data must be pd.DataFrame.')
+                raise ValueError('the format of group data must be pd.DataFrame.')
             group_index = groups.index
             if list(group_index) == list(self.data.cell_names):
                 logger.info(f'read group information, grouping by {groups.columns[0]} column.')
@@ -114,7 +117,7 @@ class ToolBase(object):
                 #  which mean group result should follow this rule
                 cells = groups.iloc[:, 0].values
                 if not list(cells) == list(self.data.cell_names):
-                    raise ValueError(f'cell index is not match')
+                    raise ValueError('cell index is not match')
                 else:
                     logger.info(f'read group information, grouping by {groups.columns[1]} column.')
                     group_info = pd.DataFrame({'group': groups.iloc[:, 1].values}, index=cells)
@@ -137,15 +140,6 @@ class ToolBase(object):
                 logger.error(f'can not download reference file from {u}')
         logger.info('download reference matrix done')
 
-    # def plot_top_gene_scatter(self, file_path=None):
-    #     df = pd.DataFrame(self.data.exp_matrix, columns=self.data.gene_names, index=self.data.cell_names)
-    #     sum_top_genes = list(df.sum().sort_values(ascending=False).index[:3])
-    #     plot_multi_scatter(self.data.position[:, 0], self.data.position[:, 1],
-    #                        color_values=np.array(df[sum_top_genes]).T,
-    #                        color_bar=True, ncols=2)
-    #     if file_path:
-    #         plt.savefig(file_path)
-
     def fit(self):
         pass
 
@@ -157,6 +151,7 @@ class ToolBase(object):
             logger.info('start to run...')
             func(*args, **kwargs)
             logger.info('end to run.')
+
         return wrapper
 
     @staticmethod

@@ -1,8 +1,18 @@
-import numpy as np
-import os
 import logging
+
+import numpy as np
 import tensorflow as tf
-from .utils import normalize, cell_watershed, resize, tile_image, untile_image, split, merge, outline, view_bar
+
+from .utils import (
+    normalize,
+    cell_watershed,
+    resize,
+    tile_image,
+    untile_image,
+    split,
+    merge,
+    view_bar
+)
 
 
 class CellInfer(object):
@@ -20,7 +30,7 @@ class CellInfer(object):
                  format_model_output_fn=None,
                  dataset_metadata=None,
                  model_metadata=None):
-        model_path = os.path.join(os.path.split(__file__)[0], 'model') if model is None else model
+        model_path = model
         self.model = tf.keras.models.load_model(model_path, compile=False)
         self.model_image_shape = self.model.input_shape[1:]
         # Require dimension 1 larger than model_input_shape due to addition of batch dimension
@@ -45,7 +55,6 @@ class CellInfer(object):
         if self.format_model_output_fn is not None and not callable(self.format_model_output_fn):
             raise ValueError('Format_model_output_fn must be a callable function.')
 
-
     def _resize_input(self, image, image_mpp):
         """Checks if there is a difference between image and model resolution
         and resizes if they are different. Otherwise returns the unmodified
@@ -69,7 +78,6 @@ class CellInfer(object):
 
         return image
 
-
     def _preprocess(self, image, **kwargs):
         """Preprocess ``image`` if ``preprocessing_fn`` is defined.
         Otherwise return ``image`` unmodified.
@@ -82,7 +90,6 @@ class CellInfer(object):
             numpy.array: The pre-processed ``image``.
         """
         if self.preprocessing_fn is not None:
-
             image = self.preprocessing_fn(image, **kwargs)
 
         return image
@@ -103,8 +110,7 @@ class CellInfer(object):
         """
         if len(image.shape) != 4:
             raise ValueError('deepcell_toolbox.tile_image only supports 4d images.'
-                             'Image submitted for predict has {} dimensions'.format(
-                                 len(image.shape)))
+                             'Image submitted for predict has {} dimensions'.format(len(image.shape)))
 
         # Check difference between input and model image size
         x_diff = image.shape[1] - self.model_image_shape[0]
@@ -132,7 +138,6 @@ class CellInfer(object):
                                            stride_ratio=0.75, pad_mode=pad_mode)
 
         return tiles, tiles_info
-
 
     def _untile_output(self, output_tiles, tiles_info):
         """Untiles either a single array or a list of arrays
@@ -182,7 +187,6 @@ class CellInfer(object):
         else:
             return output_images
 
-
     def _run_model(self,
                    image,
                    batch_size=4,
@@ -209,7 +213,6 @@ class CellInfer(object):
         # Run images through model
         output_tiles = self.model.predict(tiles, batch_size=batch_size)
 
-
         # Untile images
         output_images = self._untile_output(output_tiles, tiles_info)
 
@@ -217,7 +220,6 @@ class CellInfer(object):
         formatted_images = self._format_model_output(output_images)
 
         return formatted_images
-
 
     def _postprocess(self, image, **kwargs):
         """Applies postprocessing function to image if one has been defined.
@@ -242,7 +244,6 @@ class CellInfer(object):
             image = image[0]
 
         return image
-
 
     def _resize_output(self, image, original_shape):
         """Rescales input if the shape does not match the original shape
@@ -282,14 +283,13 @@ class CellInfer(object):
 
         return image
 
-
     def predict_image(self,
-                image,
-                batch_size=4,
-                image_mpp=None,
-                pad_mode='reflect',
-                preprocess_kwargs=None,
-                postprocess_kwargs=None):
+                      image,
+                      batch_size=4,
+                      image_mpp=None,
+                      pad_mode='reflect',
+                      preprocess_kwargs=None,
+                      postprocess_kwargs=None):
         if preprocess_kwargs is None:
             preprocess_kwargs = {}
 
@@ -305,13 +305,11 @@ class CellInfer(object):
         # Check input size of image
         if len(image.shape) != self.required_rank:
             raise ValueError('Input data must have {} dimensions. '
-                             'Input data only has {} dimensions'.format(
-                self.required_rank, len(image.shape)))
+                             'Input data only has {} dimensions'.format(self.required_rank, len(image.shape)))
 
         if image.shape[-1] != self.required_channels:
             raise ValueError('Input data must have {} channels. '
-                             'Input data only has {} channels'.format(
-                self.required_channels, image.shape[-1]))
+                             'Input data only has {} channels'.format(self.required_channels, image.shape[-1]))
 
         # Resize image, returns unmodified if appropriate
         resized_image = self._resize_input(image, image_mpp)
@@ -328,12 +326,10 @@ class CellInfer(object):
         # Resize label_image back to original resolution if necessary
         label_image = self._resize_output(label_image, image.shape)
 
-
         return label_image
 
 
 def cellInfer(file, size, overlap=100, model_path=None):
-
     # split -> predict -> merge
     if isinstance(file, list):
         file_list = file
@@ -351,11 +347,9 @@ def cellInfer(file, size, overlap=100, model_path=None):
         seg_app = CellInfer(model=model_path)
 
         label_list = []
-        label_list_outline = []
         # deepcell predict
         total_num = len(img_list)
         for idy, img in enumerate(img_list):
-
 
             img = np.expand_dims(img, axis=0)
             img = np.expand_dims(img, axis=-1)
@@ -367,14 +361,14 @@ def cellInfer(file, size, overlap=100, model_path=None):
 
             label_list.append(label)
             # label_list_outline.append(outline(label))
-            view_bar('【image %d/%d】 batch' % (idx + 1, len(file_list)), idy + 1, total_num, end='\n' if idy + 1 == total_num else '')
-
+            view_bar('【image %d/%d】 batch' % (idx + 1, len(file_list)), idy + 1, total_num,
+                     end='\n' if idy + 1 == total_num else '')
 
         # merge mask and save
         # merge_label_outline = merge(label_list_outline, x_list, y_list, image.shape)
         merge_label = merge(label_list, x_list, y_list, image.shape)
 
-        merge_label = np.where(merge_label !=0, 1, 0).astype(np.uint8)
-        result.append(merge_label) #, merge_label_outline
+        merge_label = np.where(merge_label != 0, 1, 0).astype(np.uint8)
+        result.append(merge_label)  # , merge_label_outline
 
     return result

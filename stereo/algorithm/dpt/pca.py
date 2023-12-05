@@ -1,9 +1,14 @@
-from typing import Optional, Union
-from anndata import AnnData
+from typing import Optional
+from typing import Union
+
 import numpy as np
-from scipy.sparse import issparse, spmatrix
-from scipy.sparse.linalg import LinearOperator, svds
-from sklearn.utils import check_array, check_random_state
+from anndata import AnnData
+from scipy.sparse import issparse
+from scipy.sparse import spmatrix
+from scipy.sparse.linalg import LinearOperator
+from scipy.sparse.linalg import svds
+from sklearn.utils import check_array
+from sklearn.utils import check_random_state
 from sklearn.utils.extmath import svd_flip
 
 from stereo.log_manager import logger
@@ -11,19 +16,19 @@ from stereo.utils.hvg_utils import get_mean_var
 
 
 def pca(
-    data: Union[AnnData, np.ndarray, spmatrix],
-    n_comps: Optional[int] = None,
-    zero_center: Optional[bool] = True,
-    svd_solver: str = 'arpack',
-    random_state = 0,
-    return_info: bool = False,
-    use_highly_variable: Optional[bool] = None,
-    dtype: str = 'float32',
-    copy: bool = False,
-    chunked: bool = False,
-    chunk_size: Optional[int] = None,
+        data: Union[AnnData, np.ndarray, spmatrix],
+        n_comps: Optional[int] = None,
+        zero_center: Optional[bool] = True,
+        svd_solver: str = 'arpack',
+        random_state=0,
+        return_info: bool = False,
+        use_highly_variable: Optional[bool] = None,
+        dtype: str = 'float32',
+        copy: bool = False,
+        chunked: bool = False,
+        chunk_size: Optional[int] = None,
 ) -> Union[AnnData, np.ndarray, spmatrix]:
-    """\
+    """
     Principal component analysis [Pedregosa11]_.
 
     Computes PCA coordinates, loadings and variance decomposition.
@@ -134,9 +139,7 @@ def pca(
         use_highly_variable = True if 'highly_variable' in adata.var.keys() else False
     if use_highly_variable:
         logger.info('    on highly variable genes')
-    adata_comp = (
-        adata[:, adata.var['highly_variable']] if use_highly_variable else adata
-    )
+    adata_comp = (adata[:, adata.var['highly_variable']] if use_highly_variable else adata)
 
     if n_comps is None:
         min_dim = min(adata_comp.n_vars, adata_comp.n_obs)
@@ -146,7 +149,7 @@ def pca(
         else:
             n_comps = 20
 
-    logger.info(f'    with n_comps={n_comps}')
+    logger.info(f'with n_comps={n_comps}')
 
     random_state = check_random_state(random_state)
 
@@ -236,7 +239,7 @@ def pca(
             adata.varm['PCs'] = pca_.components_.T
         adata.uns['pca']['variance'] = pca_.explained_variance_
         adata.uns['pca']['variance_ratio'] = pca_.explained_variance_ratio_
-        logger.info('    finished', time=logg_start)
+        logger.info('finished', time=logg_start)
         logger.debug(
             'and added\n'
             '    \'X_pca\', the PCA coordinates (adata.obs)\n'
@@ -246,7 +249,7 @@ def pca(
         )
         return adata if copy else None
     else:
-        logger.info('    finished', time=logg_start)
+        logger.info('finished', time=logg_start)
         if return_info:
             return (
                 X_pca,
@@ -315,4 +318,3 @@ def _pca_with_sparse(X, npcs, solver='arpack', mu=None, random_state=None):
         'components': v,
     }
     return output
-

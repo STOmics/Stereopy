@@ -6,11 +6,15 @@
 @file:__init__.py.py
 @time:2021/03/05
 """
-import shutil
+# Ignore errors for entire file
+# flake8: noqa
+
 import os
-from .correlation import pearson_corr, spearmanr_corr
+import shutil
+
+from .correlation import pearson_corr
+from .correlation import spearmanr_corr
 from .pipeline_utils import cluster_bins_to_cellbins
-# from .data_helper import select_group
 
 
 def remove_file(path):

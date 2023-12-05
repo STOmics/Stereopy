@@ -1,14 +1,20 @@
 from copy import deepcopy
-from typing import Optional, Tuple, Sequence, List
+from typing import (
+    Optional,
+    Tuple,
+    Sequence,
+    List
+)
 
 import numpy as np
-import scipy as sp
 import pandas as pd
+import scipy as sp
 from natsort import natsorted
 
 from stereo.algorithm.algorithm_base import AlgorithmBase
+from stereo.algorithm.dpt.struct import Neighbors
+from stereo.algorithm.dpt.struct import OnFlySymMatrix
 from stereo.log_manager import logger
-from stereo.algorithm.dpt.struct import Neighbors, OnFlySymMatrix
 
 
 def _diffmap(stereo_exp_data, n_comps=15, neighbors_key=None, random_state=0):
@@ -110,20 +116,9 @@ class DPTClass(Neighbors):
                     if jseg != iseg:
                         # take the inner tip, the "second tip" of the segment
                         for itip in range(2):
-                            if (
+                            if (self.distances_dpt[segs_tips[jseg][1], segs_tips[iseg][itip]] < 0.5 *
                                     self.distances_dpt[
-                                        segs_tips[jseg][1], segs_tips[iseg][itip]
-                                    ]
-                                    < 0.5
-                                    * self.distances_dpt[
-                                segs_tips[iseg][~itip], segs_tips[iseg][itip]
-                            ]
-                            ):
-                                # logg.debug(
-                                #     '    group', iseg, 'with tip', segs_tips[iseg][itip],
-                                #     'connects with', jseg, 'with tip', segs_tips[jseg][1],
-                                # )
-                                # logg.debug('    do not use the tip for "triangulation"')
+                                        segs_tips[iseg][~itip], segs_tips[iseg][itip]]):
                                 third_maximizer = itip
             # map the global position to the position within the segment
             tips = [np.where(allindices[seg] == tip)[0][0] for tip in segs_tips[iseg]]
@@ -229,10 +224,7 @@ class DPTClass(Neighbors):
         segs_connects = [[]]
         segs_undecided = [True]
         segs_adjacency = [[]]
-        logger.debug(
-            '    do not consider groups with less than '
-            f'{self.min_group_size} points for splitting'
-        )
+        logger.debug(f'do not consider groups with less than {self.min_group_size} points for splitting')
         for ibranch in range(self.n_branchings):
             iseg, tips3 = self.select_segment(segs, segs_tips, segs_undecided)
             if iseg == -1:
@@ -290,7 +282,7 @@ class DPTClass(Neighbors):
         self.segs_names = segs_names
 
     def order_pseudotime(self):
-        """\
+        """
         Define indices that reflect segment and pseudotime order.
 
         Writes
@@ -387,7 +379,7 @@ class DPTClass(Neighbors):
         List[List[int]],
         int,
     ]:
-        """\
+        """
         Detect branching on given segment.
 
         Call function __detect_branching three times for all three orderings of
@@ -639,40 +631,26 @@ class DPTClass(Neighbors):
         pos_old = sp.stats.kendalltau(a[:min_length], b[:min_length])[0]
         neg_old = sp.stats.kendalltau(a[min_length:], b[min_length:])[0]
         for ii, i in enumerate(idx_range):
-            if True:
-                # compute differences in concordance when adding a[i] and b[i]
-                # to the first subsequence, and removing these elements from
-                # the second subsequence
-                diff_pos, diff_neg = self._kendall_tau_diff(a, b, i)
-                pos = pos_old + self._kendall_tau_add(i, diff_pos, pos_old)
-                neg = neg_old + self._kendall_tau_subtract(n - i, diff_neg, neg_old)
-                pos_old = pos
-                neg_old = neg
-            if False:
-                # computation using sp.stats.kendalltau, takes much longer!
-                # just for debugging purposes
-                pos = sp.stats.kendalltau(a[: i + 1], b[: i + 1])[0]
-                neg = sp.stats.kendalltau(a[i + 1:], b[i + 1:])[0]
-            if False:
-                # the following is much slower than using sp.stats.kendalltau,
-                # it is only good for debugging because it allows to compute the
-                # tau-a version, which does not account for ties, whereas
-                # sp.stats.kendalltau computes tau-b version, which accounts for
-                # ties
-                pos = sp.stats.mstats.kendalltau(a[:i], b[:i], use_ties=False)[0]
-                neg = sp.stats.mstats.kendalltau(a[i:], b[i:], use_ties=False)[0]
+            # compute differences in concordance when adding a[i] and b[i]
+            # to the first subsequence, and removing these elements from
+            # the second subsequence
+            diff_pos, diff_neg = self._kendall_tau_diff(a, b, i)
+            pos = pos_old + self._kendall_tau_add(i, diff_pos, pos_old)
+            neg = neg_old + self._kendall_tau_subtract(n - i, diff_neg, neg_old)
+            pos_old = pos
+            neg_old = neg
             corr_coeff[ii] = pos - neg
         iimax = np.argmax(corr_coeff)
         imax = min_length + iimax
         corr_coeff_max = corr_coeff[iimax]
         if corr_coeff_max < 0.3:
-            logg.debug('    is root itself, never obtain significant correlation')
+            logger.debug('is root itself, never obtain significant correlation')
         return imax
 
     def __detect_branching_haghverdi16(
             self, Dseg: np.ndarray, tips: np.ndarray
     ) -> np.ndarray:
-        """\
+        """
         Detect branching on given segment.
 
         Compute point that maximizes kendall tau correlation of the sequences of
@@ -698,20 +676,10 @@ class DPTClass(Neighbors):
         # two tip points, which only increase when being close to `tips[0]`
         # where they become correlated
         # at the point where this happens, we define a branching point
-        if True:
-            imax = self.kendall_tau_split(
-                Dseg[tips[1]][idcs],
-                Dseg[tips[2]][idcs],
-            )
-        if False:
-            # if we were in euclidian space, the following should work
-            # as well, but here, it doesn't because the scales in Dseg are
-            # highly different, one would need to write the following equation
-            # in terms of an ordering, such as exploited by the kendall
-            # correlation method above
-            imax = np.argmin(
-                Dseg[tips[0]][idcs] + Dseg[tips[1]][idcs] + Dseg[tips[2]][idcs]
-            )
+        imax = self.kendall_tau_split(
+            Dseg[tips[1]][idcs],
+            Dseg[tips[2]][idcs],
+        )
         # init list to store new segments
         ssegs = []  # noqa: F841  # TODO Look into this
         # first new segment: all points until, but excluding the branching point
@@ -741,7 +709,7 @@ class DPTClass(Neighbors):
             iseg: int,
             tips3: np.ndarray,
     ):
-        """\
+        """
         Detect branching on given segment.
 
         Updates all list parameters inplace.
@@ -860,8 +828,6 @@ class DPTClass(Neighbors):
                             closest_points_in_jseg[-1], closest_points_in_kseg[-1]
                         ]
                     )
-                    # print(jseg, '(', segs_tips[jseg][0], closest_points_in_jseg[-1], ')',
-                    #       kseg, '(', segs_tips[kseg][0], closest_points_in_kseg[-1], ') :', distances[-1])
                 idx = np.argmin(distances)
                 kseg_min = kseg_list[idx]
                 segs_adjacency[jseg][pos] = kseg_min
@@ -925,19 +891,16 @@ class DPTClass(Neighbors):
                         segs_connects[jseg_min].append(closest_points_in_kseg[idx])
                         segs_adjacency[kseg].append(jseg_min)
                         segs_connects[kseg].append(closest_points_in_jseg[idx])
-                        logger.debug(f'    attaching new segment {kseg} at {jseg_min}')
+                        logger.debug(f'attaching new segment {kseg} at {jseg_min}')
                         # if we split the cluster, we should not attach kseg
                         do_not_attach_kseg = True
                     else:
-                        logger.debug(
-                            f'    cannot attach new segment {kseg} at {jseg_min} '
-                            '(would produce cycle)'
-                        )
+                        logger.debug(f'cannot attach new segment {kseg} at {jseg_min} (would produce cycle)')
                         if kseg != kseg_list[-1]:
-                            logger.debug('        continue')
+                            logger.debug('continue')
                             continue
                         else:
-                            logger.debug('        do not add another link')
+                            logger.debug('do not add another link')
                             break
                 if jseg_min in kseg_list and not do_not_attach_kseg:
                     segs_adjacency[jseg_min].append(kseg)
@@ -959,12 +922,12 @@ class DPT(AlgorithmBase):
             neighbors_key: Optional[str] = None,
             copy: bool = False,
     ):
-        """\
+        """
         Infer progression of cells through geodesic distance along the graph.
 
         Reconstruct the progression of a biological process from snapshot
-        data. Here, we use a further developed version, which is able to deal with disconnected graphs [Wolf19]_ 
-        and can be run in a `hierarchical` mode by setting the parameter `n_branchings>1`. 
+        data. Here, we use a further developed version, which is able to deal with disconnected graphs [Wolf19]_
+        and can be run in a `hierarchical` mode by setting the parameter `n_branchings>1`.
         We recommend, however, to only use :func:`~stereo.tl.dpt` for computing pseudotime (`n_branchings=0`) and
         to detect branchings via :func:`~stereo.tl.paga`. For pseudotime, you need
         to annotate your data with a root cell. For instance::
@@ -1039,11 +1002,11 @@ class DPT(AlgorithmBase):
         )
         logger.info(f'computing Diffusion Pseudotime using n_dcs={n_dcs}')
         if n_branchings > 1:
-            logger.info('    this uses a hierarchical implementation')
+            logger.info('this uses a hierarchical implementation')
         if dpt.iroot is not None:
             dpt._set_pseudotime()  # pseudotimes are distances from root point
-            stereo_exp_data.tl.result[
-                'iroot'] = dpt.iroot  # update iroot, might have changed when subsampling, for example
+            # update iroot, might have changed when subsampling, for example
+            stereo_exp_data.tl.result['iroot'] = dpt.iroot
             stereo_exp_data.tl.result['dpt_pseudotime'] = dpt.pseudotime
         # detect branchings and partition the data into segments
         if n_branchings > 0:

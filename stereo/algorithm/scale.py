@@ -4,14 +4,15 @@
 @author: Junhao Xu  xujunhao@genomics.cn
 """
 
+from functools import singledispatch
 
 import numba
 import numpy as np
-from functools import singledispatch
 from scipy import sparse
-from scipy.sparse import spmatrix
 from scipy.sparse import issparse
+from scipy.sparse import spmatrix
 from sklearn.utils import sparsefuncs
+
 from ..log_manager import logger
 
 
@@ -32,10 +33,10 @@ def scale(x, zero_center, max_value):
 def scale_array(x, zero_center, max_value):
     if not zero_center and max_value is not None:
         logger.info('Be careful when using `max_value` without `zero_center` is False')
-    
+
     if np.issubdtype(x.dtype, np.integer):
         x = x.astype(float)
-    
+
     mean, var = _get_mean_var(x)
     std = np.sqrt(var)
     std[std == 0] = 1
@@ -77,7 +78,7 @@ def _get_mean_var(x, *, axis=0):
     else:
         mean = np.mean(x, axis=0, dtype=np.float64)
         mean_sq = np.multiply(x, x).mean(axis=0, dtype=np.float64)
-        var = mean_sq - mean**2
+        var = mean_sq - mean ** 2
 
     var *= x.shape[0] / (x.shape[0] - 1)
 
@@ -95,7 +96,7 @@ def sparse_mean_variance(data, indices, major_len, minor_len):
     :param minor_len: minor len.
     :return: means and variances values.
     """
-    
+
     dtype = np.float64
     non_zero = indices.shape[0]
 
@@ -120,6 +121,5 @@ def sparse_mean_variance(data, indices, major_len, minor_len):
     for i in range(minor_len):
         variances[i] += (major_len - counts[i]) * means[i] ** 2
         variances[i] /= major_len
-
 
     return means, variances

@@ -1,18 +1,20 @@
-import pandas as pd
 import numpy as np
+import pandas as pd
 from scipy.spatial.distance import cdist
+
 from stereo.algorithm.algorithm_base import AlgorithmBase
-from stereo.preprocess.filter import filter_by_clusters, filter_cells
+from stereo.preprocess.filter import filter_by_clusters
+from stereo.preprocess.filter import filter_cells
 
 
 class GetNiche(AlgorithmBase):
     def main(
-        self,
-        niche_distance: float,
-        cluster_1: str,
-        cluster_2: str,
-        cluster_res_key: str = None,
-        inplace: bool = False
+            self,
+            niche_distance: float,
+            cluster_1: str,
+            cluster_2: str,
+            cluster_res_key: str = None,
+            inplace: bool = False
     ):
         """
         To ensure the accuracy and specificity of this juxtacrine signaling model,
@@ -24,7 +26,7 @@ class GetNiche(AlgorithmBase):
         :param cluster_2: the other cell cluster in the interaction.
         :param coord_key: the key which specifies the coordiate of cells.
         :param cluster_res_key: the key which specifies the clustering result in data.tl.result.
-        :param inplace: whether to inplace the previous express matrix or get a new StereoExpData object with the new express matrix, default by False.
+        :param inplace: whether to inplace the previous express matrix or get a new StereoExpData object with the new express matrix, default by False. # noqa
         """
         assert cluster_1 != cluster_2, "cluster_1 can not equal to cluster_2."
 
@@ -39,9 +41,9 @@ class GetNiche(AlgorithmBase):
         coord_1 = data_1.position
         coord_2 = data_2.position
         if data_1.position_z is not None:
-            coord_1 = np.concatenate(coord_1, data_1.position_z, axis=1)
+            coord_1 = np.concatenate([coord_1, data_1.position_z], axis=1)
         if data_2.position_z is not None:
-            coord_2 = np.concatenate(coord_2, data_2.position_z, axis=1)
+            coord_2 = np.concatenate([coord_2, data_2.position_z], axis=1)
         dist_matrix = cdist(coord_1, coord_2)
         dist_df = pd.DataFrame(dist_matrix, index=data_1.cell_names, columns=data_2.cell_names)
 
@@ -51,8 +53,14 @@ class GetNiche(AlgorithmBase):
         # adata_result = adata_full[(list(result_target_sender.index) + list(result_target_sender.columns)), :]
         cell_list = list(result_target_sender.index) + list(result_target_sender.columns)
         data_result = filter_cells(data_full, cell_list=cell_list, inplace=inplace)
+        if not inplace:
+            data_result.tl.result.set_item_callback = None
+
         for res_key in data_result.tl.key_record['pca']:
-            data_result.tl.result[res_key] = data_result.tl.result[res_key][np.isin(data_full.cell_names, cell_list)].copy()
+            if data_result.tl.result[res_key].shape[0] == data_result.shape[0]:
+                continue
+            data_result.tl.result[res_key] = data_result.tl.result[res_key][
+                np.isin(data_full.cell_names, cell_list)].copy()
         if cluster_res_key in data_result.cells:
             data_result.cells[cluster_res_key] = pd.Series(
                 data_result.cells[cluster_res_key].to_numpy(),
@@ -65,5 +73,8 @@ class GetNiche(AlgorithmBase):
                 index=data_result.cell_names,
                 dtype='category'
             )
-            
+
+        if not inplace:
+            data_result.tl.result.contain_method = None
+            data_result.tl.result.get_item_method = None
         return data_result

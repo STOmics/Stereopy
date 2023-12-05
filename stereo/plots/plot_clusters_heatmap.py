@@ -1,19 +1,18 @@
-from typing import Union, Sequence, Optional
-from natsort import natsorted
+from typing import Optional
+from typing import Sequence
+
 import matplotlib.pylab as plt
-from matplotlib.axes import Axes
-from matplotlib import gridspec
 import numpy as np
 import pandas as pd
+from matplotlib import gridspec
 
-from stereo.plots.plot_base import PlotBase
-from ._plot_basic.heatmap_plt import heatmap
-from stereo.utils.pipeline_utils import calc_pct_and_pct_rest, cell_cluster_to_gene_exp_cluster
 from stereo.log_manager import logger
+from stereo.plots.plot_base import PlotBase
+from stereo.utils.pipeline_utils import cell_cluster_to_gene_exp_cluster
+from ._plot_basic.heatmap_plt import heatmap
 
 
 class ClustersGenesHeatmap(PlotBase):
-
     __category_width = 0.37
     __category_height = 0.35
     __legend_width = 2
@@ -21,15 +20,15 @@ class ClustersGenesHeatmap(PlotBase):
     __title_font_size = 8
 
     def clusters_genes_heatmap(
-        self,
-        cluster_res_key: str,
-        dendrogram_res_key: Optional[str] = None,
-        gene_names: Optional[Sequence[str]] = None,
-        groups: Optional[Sequence[str]] = None,
-        width: int = None,
-        height: int = None,
-        colormap: str = 'Greens',
-        standard_scale: str = 'gene'
+            self,
+            cluster_res_key: str,
+            dendrogram_res_key: Optional[str] = None,
+            gene_names: Optional[Sequence[str]] = None,
+            groups: Optional[Sequence[str]] = None,
+            width: int = None,
+            height: int = None,
+            colormap: str = 'Greens',
+            standard_scale: str = 'gene'
     ):
         """
 
@@ -39,8 +38,8 @@ class ClustersGenesHeatmap(PlotBase):
         :param dendrogram_res_key: the key to get dendrogram result, defaults to None to avoid show dendrogram on plot.
         :param gene_names: a list of genes to show, defaults to None to show all genes.
         :param groups: a list of cell clusters to show, defaults to None to show all cell clusters.
-        :param width: the figure width in pixels, defaults to None
-        :param height: the figure height in pixels, defaults to None
+        :param width: the figure width in pixels, defaults to None.
+        :param height: the figure height in pixels, defaults to None.
         :param colormap: colormap used on plot, defaults to 'Greens'
         :param standard_scale: Whether or not to standardize that dimension between 0 and 1,
                                 meaning for each gene or cluster,
@@ -57,8 +56,10 @@ class ClustersGenesHeatmap(PlotBase):
             else:
                 drg_res = self.pipeline_res[dendrogram_res_key]
                 if cluster_res_key != drg_res['cluster_res_key'][0]:
-                    raise KeyError(f'The cluster result used in dendrogram may not be the same as that specified by key {cluster_res_key}')
-        
+                    raise KeyError(
+                        f'The cluster result used in dendrogram may not be the same as that specified '
+                        f'by key {cluster_res_key}')
+
         if gene_names is None:
             gene_names = self.stereo_exp_data.gene_names
         else:
@@ -66,6 +67,9 @@ class ClustersGenesHeatmap(PlotBase):
                 gene_names = np.array([gene_names], dtype='U')
             elif not isinstance(gene_names, np.ndarray):
                 gene_names = np.array(gene_names, dtype='U')
+
+        if len(gene_names) == 0:
+            return None
 
         if groups is None or drg_res is not None:
             cluster_res: pd.DataFrame = self.pipeline_res[cluster_res_key]
@@ -132,7 +136,6 @@ class ClustersGenesHeatmap(PlotBase):
             width_ratios=width_ratios,
             height_ratios=height_ratios,
             wspace=(0.15 / main_area_width),
-            # hspace=(0.13 / main_area_height)
             hspace=0
         )
 
@@ -142,7 +145,6 @@ class ClustersGenesHeatmap(PlotBase):
             width_ratios=[main_area_width],
             height_ratios=[self.__dendrogram_height, main_area_height],
             wspace=0,
-            # hspace=(0.13 / main_area_height),
             hspace=0,
             subplot_spec=axs[0, 0]
         )
@@ -150,7 +152,6 @@ class ClustersGenesHeatmap(PlotBase):
         axs_on_right = gridspec.GridSpecFromSubplotSpec(
             nrows=2,
             ncols=1,
-            # width_ratios=[main_area_width / 3, main_area_width / 6, main_area_width / 2],
             height_ratios=[0.95, 0.05],
             subplot_spec=axs[0, 1],
             hspace=0.1
@@ -174,7 +175,6 @@ class ClustersGenesHeatmap(PlotBase):
         if drg_res is not None:
             from .plot_dendrogram import PlotDendrogram
             ax_drg = fig.add_subplot(axs_main[0, 0], sharex=ax_heatmap)
-            # ax_drg = fig.add_subplot(axs_main[0, 0])
             plt_drg = PlotDendrogram(self.stereo_exp_data, self.pipeline_res)
             plt_drg.dendrogram(
                 orientation='top',

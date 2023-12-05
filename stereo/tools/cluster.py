@@ -2,7 +2,7 @@
 # coding: utf-8
 """
 @file: cluster.py
-@description: 
+@description:
 @author: Ping Qiu
 @email: qiuping1@genomics.cn
 @last modified by: Ping Qiu
@@ -10,16 +10,17 @@
 change log:
     2021/07/23  create file.
 """
-import numpy as np
+from typing import Optional
+
 import leidenalg as la
+import numpy as np
+import pandas as pd
+import phenograph
+
+from stereo.algorithm.neighbors import Neighbors
 from ..core.tool_base import ToolBase
 from ..log_manager import logger
-from stereo.algorithm.neighbors import Neighbors
 from ..preprocess.normalize import Normalizer
-import pandas as pd
-from typing import Optional
-import colorcet as cc
-import phenograph
 
 
 class Cluster(ToolBase):
@@ -34,6 +35,7 @@ class Cluster(ToolBase):
     if pca_x is None and normalization is True.
 
     """
+
     def __init__(
             self,
             data=None,
@@ -186,20 +188,35 @@ class Cluster(ToolBase):
         self.logger.info('finish...')
         return df
 
-    def plot_scatter(self, plot_dim_reduce=False, file_path=None):
+    def plot_scatter(
+            self,
+            plot_dim_reduce=False,
+            file_path=None,
+            palette='stereo_30',
+    ):
         """
         plot scatter after
+
         :param plot_dim_reduce: plot cluster after dimension reduce if true
-        :param file_path:
+        :param file_path: the file path
+        :param palette: color theme.
         :return:
-        """
+        """  # noqa
         from ..plots.scatter import base_scatter, plt
 
         if plot_dim_reduce:
-            base_scatter(self.pca_x.values[:, 0], self.pca_x.values[:, 1],
-                         hue=np.array(self.result['cluster']))
+            base_scatter(
+                self.pca_x.values[:, 0],
+                self.pca_x.values[:, 1],
+                palette=palette,
+                hue=np.array(self.result['cluster']),
+            )
         else:
-            base_scatter(self.data.position[:, 0], self.data.position[:, 1],
-                         hue=np.array(self.result['cluster']))
+            base_scatter(
+                self.data.position[:, 0],
+                self.data.position[:, 1],
+                palette=palette,
+                hue=np.array(self.result['cluster']),
+            )
         if file_path:
             plt.savefig(file_path)

@@ -62,3 +62,5 @@ The plot collection for StereoExpData object.
     plots.PlotTimeSeries.fuzz_cluster_plot
     plots.PlotTimeSeriesAnalysis.time_series_tree_plot
     plots.PlotTimeSeriesAnalysis.ms_paga_time_series_plot
+    plots.PlotElbow.elbow
+    plots.PlotGenesInPseudotime.plot_genes_in_pseudotime

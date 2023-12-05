@@ -4,11 +4,11 @@
 @author: Ping Qiu  qiuping1@genomics.cn
 """
 
+from functools import singledispatch
 
 import numpy as np
-from scipy import stats
 import scipy.spatial as spatial
-from functools import singledispatch
+from scipy import stats
 from scipy.sparse import spmatrix
 from sklearn.utils import sparsefuncs
 

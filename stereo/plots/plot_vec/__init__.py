@@ -1,1 +1,1 @@
-from .plot_vec import PlotVec
+from .plot_vec import PlotVec  # noqa

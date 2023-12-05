@@ -18,7 +18,7 @@ def get_ksim(
         beta: float = 0.9,
         n_neighbors: int = 30):
     """"Calculate the kSIM acceptance rate metric of the data regarding a specific sample attribute and embedding.
-    The kSIM acceptance rate requires ground truth cell type information and measures whether the neighbors of a cell have the same cell type as it does.
+    The kSIM acceptance rate requires ground truth cell type information and measures whether the neighbors of a cell have the same cell type as it does. # noqa
     If a method overcorrects the batch effects, it will have a low kSIM acceptance rate.
 
     Parameters
@@ -28,7 +28,7 @@ def get_ksim(
     key: ``str``
         The sample attribute to be consider. Must exist in ``data.obs``.
     use_rep: ``str``
-         The embedding representation to be used. The key must be exist in ``data.obsm``. By default, use UMAP coordinates.
+         The embedding representation to be used. The key must be exist in ``data.obsm``. By default, use UMAP coordinates. # noqa
     beta: ``float``
         Acceptance rate threshold. A cell  is accepted is its kMIS rate is larger than or equal to `bata`.
     n_neighbors: ``int``
@@ -46,7 +46,9 @@ def get_ksim(
     get_neighbors(data, n_neighbors=n_neighbors, use_rep=use_rep)
 
     # add itself into the knn connectivity graph
-    assert f"{use_rep}_knn_connectivity" in data.obsm_keys(), f"Error, can not found '{use_rep}_knn_connectivity' in .obsm_keys(). Please calculate nearest neighbors graph first."
+    assert f"{use_rep}_knn_connectivity" in data.obsm_keys(), \
+        f"Error, can not found '{use_rep}_knn_connectivity' " \
+        f"in .obsm_keys(). Please calculate nearest neighbors graph first."
     indices = np.concatenate((np.arange(n_sample).reshape(-1, 1), data.obsm[f"{use_rep}_knn_connectivity"][:, :-1]),
                              axis=1)
     labels = data.obs[key].values[indices.flatten()].reshape(-1, 1)
@@ -57,4 +59,3 @@ def get_ksim(
     ksim_accept_rate = (correct_rates >= beta).sum() / n_sample
 
     return ksim_mean, ksim_accept_rate
-

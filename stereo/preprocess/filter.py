@@ -2,7 +2,7 @@
 # coding: utf-8
 """
 @file: filter.py
-@description: 
+@description:
 @author: Ping Qiu
 @email: qiuping1@genomics.cn
 @last modified by: Ping Qiu
@@ -10,23 +10,21 @@
 change log:
     2021/07/06  create file.
 """
-from typing import Union, List, Tuple
-import pandas as pd
-import numpy as np
 import copy
-from .qc import (
-    cal_qc,
-    cal_cells_indicators,
-    cal_genes_indicators,
-    cal_total_counts,
-    cal_pct_counts_mt,
-    cal_n_genes_by_counts,
-    cal_n_cells_by_counts,
-    cal_n_cells,
-    cal_gene_mean_umi,
-    cal_per_gene_counts
+from typing import (
+    Union,
+    List,
+    Tuple
 )
+
+import numpy as np
+import pandas as pd
+
 from stereo.core.stereo_exp_data import StereoExpData
+from .qc import (
+    cal_cells_indicators,
+    cal_genes_indicators
+)
 
 
 def filter_cells(
@@ -49,6 +47,7 @@ def filter_cells(
     :param pct_counts_mt: Maximum number of  pct_counts_mt for a cell pass filtering.
     :param cell_list: the list of cells which will be filtered.
     :param inplace: whether inplace the original data or return a new data.
+
     :return: StereoExpData object.
     """
     data = data if inplace else copy.deepcopy(data)
@@ -78,12 +77,12 @@ def filter_cells(
 
 
 def filter_genes(
-    data: StereoExpData,
-    min_cell=None,
-    max_cell=None,
-    gene_list=None,
-    mean_umi_gt=None,
-    inplace=True
+        data: StereoExpData,
+        min_cell=None,
+        max_cell=None,
+        gene_list=None,
+        mean_umi_gt=None,
+        inplace=True
 ):
     """
     filter genes based on the numbers of cells.
@@ -94,6 +93,7 @@ def filter_genes(
     :param mean_umi_gt: Filter genes whose mean umi greater than this value.
     :param gene_list: the list of genes which will be filtered.
     :param inplace: whether inplace the original data or return a new data.
+
     :return: StereoExpData object.
     """
     data = data if inplace else copy.deepcopy(data)
@@ -116,12 +116,12 @@ def filter_genes(
 
 
 def filter_coordinates(
-    data: StereoExpData,
-    min_x=None,
-    max_x=None,
-    min_y=None,
-    max_y=None,
-    inplace=True
+        data: StereoExpData,
+        min_x=None,
+        max_x=None,
+        min_y=None,
+        max_y=None,
+        inplace=True
 ):
     """
     filter cells based on the coordinates of cells.
@@ -132,6 +132,7 @@ def filter_coordinates(
     :param min_y: Minimum of y for a cell pass filtering.
     :param max_y: Maximum of y for a cell pass filtering.
     :param inplace: whether inplace the original data or return a new data.
+
     :return: StereoExpData object
     """
     data = data if inplace else copy.deepcopy(data)
@@ -152,12 +153,13 @@ def filter_coordinates(
     cal_genes_indicators(data)
     return data
 
+
 def filter_by_clusters(
-    data: StereoExpData,
-    cluster_res: pd.DataFrame,
-    groups: Union[str, np.ndarray, List[str]],
-    excluded: bool = False,
-    inplace: bool = True
+        data: StereoExpData,
+        cluster_res: pd.DataFrame,
+        groups: Union[str, np.ndarray, List[str]],
+        excluded: bool = False,
+        inplace: bool = True
 ) -> Tuple[StereoExpData, pd.DataFrame]:
     """_summary_
 
@@ -165,6 +167,7 @@ def filter_by_clusters(
     :param cluster_res: clustering result.
     :param groups: the groups in clustering result which will be filtered.
     :param inplace: whether inplace the original data or return a new data.
+    :param excluded: bool type.
     :return: StereoExpData object
     """
     data = data if inplace else copy.deepcopy(data)

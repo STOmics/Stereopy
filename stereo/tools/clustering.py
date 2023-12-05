@@ -9,16 +9,16 @@ change log:
     2021/06/20 adjust for restructure base class . by: qindanhua.
     2021/06/29 last modified by qindanhua.
 """
-import time
-import numpy as np
+from typing import Optional
+
 import leidenalg as la
+import numpy as np
+import pandas as pd
+
+from stereo.algorithm.neighbors import Neighbors
 from ..core.tool_base import ToolBase
 from ..log_manager import logger
-from stereo.algorithm.neighbors import Neighbors
 from ..preprocess.normalize import Normalizer
-# from .dim_reduce import DimReduce
-import pandas as pd
-from typing import Optional
 
 
 class Clustering(ToolBase):
@@ -37,7 +37,7 @@ class Clustering(ToolBase):
 
     >>> from stereo.tools.clustering import Clustering
     >>> import pandas as pd
-    >>> test_exp_matrix = pd.DataFrame({'gene_1': [0, 1, 2, 0, 3, 4], 'gene_2': [1, 3, 2, 0, 3, 0], 'gene_3': [0, 0, 2, 0, 3, 1]}, index=['cell_1', 'cell_2', 'cell_3', 'cell_4', 'cell_5', 'cell_6'])
+    >>> test_exp_matrix = pd.DataFrame({'gene_1': [0, 1, 2, 0, 3, 4], 'gene_2': [1, 3, 2, 0, 3, 0], 'gene_3': [0, 0, 2, 0, 3, 1]}, index=['cell_1', 'cell_2', 'cell_3', 'cell_4', 'cell_5', 'cell_6']) # noqa
     >>> test_exp_matrix
             gene_1  gene_2  gene_3
     cell_1       0       1       0
@@ -50,6 +50,7 @@ class Clustering(ToolBase):
     >>> ct.fit()
     >>> ct.result.matrix
     """
+
     def __init__(
             self,
             data=None,
@@ -60,9 +61,7 @@ class Clustering(ToolBase):
     ):
         super(Clustering, self).__init__(data=data, method=method)
         self._neighbors = n_neighbors if n_neighbors < len(self.data.cell_names) else int(len(self.data.cell_names) / 2)
-        # self.neighbors = n_neighbors
         self.normalization = normalization
-        # self._pca_x = pca_x
         self.pca_x = pca_x
 
     @property
@@ -179,24 +178,29 @@ class Clustering(ToolBase):
         info = {'bins': self.data.cell_names, 'cluster': cluster}
         df = pd.DataFrame(info)
         self.result.matrix = df
-        # TODO  added for find marker
-        # self.data.obs[self.name] = cluster
         return df
 
-    def plot_scatter(self, plot_dim_reduce=False, file_path=None):
+    def plot_scatter(
+            self,
+            plot_dim_reduce: bool = False,
+            file_path: str = None,
+            palette: str = 'stereo_30',
+    ):
         """
         plot scatter after
         :param plot_dim_reduce: plot cluster after dimension reduce if true
-        :param file_path:
+        :param file_path: the file path
+        :param palette: color theme.
+
         :return:
-        """
+        """  # noqa
         from ..plots.scatter import base_scatter, plt
 
         if plot_dim_reduce:
-            base_scatter(self.pca_x.matrix.values[:, 0], self.pca_x.matrix.values[:, 1],
+            base_scatter(self.pca_x.matrix.values[:, 0], self.pca_x.matrix.values[:, 1], palette=palette,
                          hue=np.array(self.result.matrix['cluster']))
         else:
-            base_scatter(self.data.position[:, 0], self.data.position[:, 1],
+            base_scatter(self.data.position[:, 0], self.data.position[:, 1], palette=palette,
                          hue=np.array(self.result.matrix['cluster']))
         if file_path:
             plt.savefig(file_path)

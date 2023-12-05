@@ -5,13 +5,14 @@
 # @File    : kbet.py
 # @Software: PyCharm
 # @Email   : zhangchao5@genomics.cn
-import psutil
-import pandas as pd
-import numpy as np
-from anndata import AnnData
-from scipy.stats import chi2
 from functools import partial
 from multiprocessing import Pool
+
+import numpy as np
+import pandas as pd
+import psutil
+from anndata import AnnData
+from scipy.stats import chi2
 
 from .get_neighbors import get_neighbors
 
@@ -33,7 +34,7 @@ def get_kbet(
         use_rep: str = "X_umap",
         alpha: float = 0.05,
         n_neighbors: int = 30):
-    """ Calculate the K-nearest neighbors Batch Effects Test (K-BET) metric of the data regarding a specific sample attribute and embedding.
+    """ Calculate the K-nearest neighbors Batch Effects Test (K-BET) metric of the data regarding a specific sample attribute and embedding. # noqa
     The K-BET metric measures if cells from different samples mix well in their local neighborhood.
 
     Parameters
@@ -43,7 +44,7 @@ def get_kbet(
     key: ``str``
         The sample attribute to be consider. Must exist in ``data.obs``.
     use_rep: ``str``
-         The embedding representation to be used. The key must be exist in ``data.obsm``. By default, use UMAP coordinates.
+         The embedding representation to be used. The key must be exist in ``data.obsm``. By default, use UMAP coordinates. # noqa
     n_neighbors: ``int``
         Number of nearest neighbors.
     alpha: ``float``
@@ -64,12 +65,12 @@ def get_kbet(
 
     ideal_distribution = data.obs[key].value_counts(normalize=True, sort=False)
     n_sample = data.shape[0]
-    n_batch = data.obs[key].cat.categories.size
     get_neighbors(data, n_neighbors=n_neighbors, use_rep=use_rep)
 
     # add itself into the knn connectivity graph
-    assert f"{use_rep}_knn_connectivity" in data.obsm_keys(), f"Error, can not found '{use_rep}_knn_connectivity' in " \
-                                                              f".obsm_keys(). Please calculate nearest neighbors graph first."
+    assert f"{use_rep}_knn_connectivity" in data.obsm_keys(), \
+        f"Error, can not found '{use_rep}_knn_connectivity' in " \
+        f".obsm_keys(). Please calculate nearest neighbors graph first."
     indices = np.concatenate((np.arange(n_sample).reshape(-1, 1), data.obsm[f"{use_rep}_knn_connectivity"][:, :-1]),
                              axis=1)
     partial_kbet = partial(
@@ -89,9 +90,7 @@ def get_kbet(
     stat_mean = results[:, 0].mean()
     pvalue_mean = results[:, 1].mean()
     accept_rate = (results[:, 1] >= alpha).sum() / n_sample
-    # accept_rate = np.mean(results[:, 1] >= alpha)
 
     reject_score = np.mean(results[:, 1] < alpha)
 
     return reject_score, stat_mean, pvalue_mean, accept_rate
-

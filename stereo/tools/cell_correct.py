@@ -4,25 +4,32 @@
 # @Email    : tanliwei@genomics.cnW
 import os
 import time
-from typing import Union, Literal
 from multiprocessing import cpu_count
-import pandas as pd
-import numpy as np
+from typing import Literal
+
 import numba
-from ..algorithm.cell_correction import CellCorrection
+import numpy as np
+import pandas as pd
+from gefpy import (
+    cgef_writer_cy,
+    bgef_writer_cy,
+    cgef_adjust_cy,
+    gef_to_gem_cy
+)
+
 from ..algorithm import cell_correction_fast
 from ..algorithm import cell_correction_fast_by_mask
+from ..algorithm.cell_correction import CellCorrection
 from ..algorithm.draw_contours import DrawContours
-from ..io import read_gem, read_gef
+from ..io import read_gef
 from ..log_manager import logger
-from gefpy import cgef_writer_cy, bgef_writer_cy, cgef_adjust_cy, gef_to_gem_cy
-from ..utils.time_consume import TimeConsume, log_consumed_time
-from .gem_filter import gem_filter
+from ..utils.time_consume import TimeConsume
+from ..utils.time_consume import log_consumed_time
+
 
 @log_consumed_time
 @numba.njit(cache=True, parallel=True, nogil=True)
 def generate_cell_and_dnb(adjusted_data: np.ndarray):
-    # ['x', 'y', 'UMICount', 'label', 'geneid']
     cells_list = adjusted_data[:, 3]
     cells_idx_sorted = np.argsort(cells_list)
     adjusted_data = adjusted_data[cells_idx_sorted]
@@ -45,9 +52,10 @@ def generate_cell_and_dnb(adjusted_data: np.ndarray):
     cell_data.append((cellid, offset, count))
     return cell_data, dnb_data
 
+
 class CellCorrect(object):
 
-    def __init__(self, gem_path=None, bgef_path=None, raw_cgef_path=None, mask_path=None, out_dir=None,):
+    def __init__(self, gem_path=None, bgef_path=None, raw_cgef_path=None, mask_path=None, out_dir=None):
         self.tc = TimeConsume()
         self.gem_path = gem_path
         self.bgef_path = bgef_path
@@ -69,10 +77,10 @@ class CellCorrect(object):
             self.out_dir = f"./cell_correct_result_{now}"
         if not os.path.exists(self.out_dir):
             os.makedirs(self.out_dir)
-        
+
         if self.bgef_path is None:
             self.bgef_path = self.generate_bgef()
-    
+
     def get_sn(self):
         if self.bgef_path is not None:
             file_name = os.path.basename(self.bgef_path)
@@ -92,7 +100,6 @@ class CellCorrect(object):
         else:
             return f"{file_prefix}.{ext}"
 
-
     @log_consumed_time
     def generate_bgef(self, threads=10):
         file_name = self.get_file_name('bgef')
@@ -101,7 +108,7 @@ class CellCorrect(object):
             os.remove(bgef_path)
         bgef_writer_cy.generate_bgef(self.gem_path, bgef_path, n_thread=threads, bin_sizes=[1])
         return bgef_path
-    
+
     def generate_cgef_with_mask(self, mask_path, ext_in_ext):
         file_name = self.get_file_name(f'{ext_in_ext}.cellbin.gef')
         cgef_path = os.path.join(self.out_dir, file_name)
@@ -110,7 +117,8 @@ class CellCorrect(object):
             os.remove(cgef_path)
         tk = self.tc.start()
         cgef_writer_cy.generate_cgef(cgef_path, self.bgef_path, mask_path, [256, 256])
-        logger.info(f"generate cellbin gef finished, time consumed : {self.tc.get_time_consumed(key=tk, restart=False)}")
+        logger.info(
+            f"generate cellbin gef finished, time consumed : {self.tc.get_time_consumed(key=tk, restart=False)}")
         return cgef_path
 
     def get_data_from_bgef_and_cgef(self, bgef_path, cgef_path, sample_n=-1):
@@ -127,15 +135,14 @@ class CellCorrect(object):
         logger.info(f"merged genes to data, time consumed : {self.tc.get_time_consumed(tk)}")
 
         return genes, data
-    
+
     @log_consumed_time
     def generate_raw_data(self, sample_n=-1):
         if self.raw_cgef_path is None:
             self.raw_cgef_path = self.generate_cgef_with_mask(self.mask_path, 'raw')
-        
+
         logger.info("start to generate raw data")
         genes, raw_data = self.get_data_from_bgef_and_cgef(self.bgef_path, self.raw_cgef_path, sample_n=sample_n)
-        # self.generate_raw_gem(raw_data)
         return genes, raw_data
 
     @log_consumed_time
@@ -148,8 +155,14 @@ class CellCorrect(object):
     def generate_adjusted_cgef(self, adjusted_data: pd.DataFrame, outline_path):
         adjusted_data_np = adjusted_data[['x', 'y', 'UMICount', 'label', 'geneid']].to_numpy(dtype=np.uint32)
         cell_data, dnb_data = generate_cell_and_dnb(adjusted_data_np)
-        cell_type = np.dtype({'names':['cellid', 'offset', 'count'], 'formats':[np.uint32, np.uint32, np.uint32]}, align=True)
-        dnb_type = np.dtype({'names':['x', 'y', 'count', 'gene_id'], 'formats':[np.int32, np.int32, np.uint16, np.uint32]}, align=True)
+        cell_type = np.dtype({
+            'names': ['cellid', 'offset', 'count'],
+            'formats': [np.uint32, np.uint32, np.uint32]
+        }, align=True)
+        dnb_type = np.dtype({
+            'names': ['x', 'y', 'count', 'gene_id'],
+            'formats': [np.int32, np.int32, np.uint16, np.uint32]
+        }, align=True)
         cell = np.array(cell_data, dtype=cell_type)
         dnb = np.array(dnb_data, dtype=dnb_type)
         file_name = self.get_file_name('adjusted.cellbin.gef')
@@ -162,18 +175,18 @@ class CellCorrect(object):
             self.cad.write_cgef_adjustdata(cgef_file_adjusted, cell, dnb)
         logger.info(f"generate adjusted cellbin gef finished ({cgef_file_adjusted})")
         return cgef_file_adjusted
-    
+
     @log_consumed_time
     def generate_adjusted_gem(self, adjusted_data: pd.DataFrame):
         file_name = self.get_file_name("adjusted.gem")
         gem_file_adjusted = os.path.join(self.out_dir, file_name)
-        columns=['geneID', 'x', 'y', 'UMICount', 'label']
+        columns = ['geneID', 'x', 'y', 'UMICount', 'label']
         if 'tag' in adjusted_data.columns:
             columns.append('tag')
         adjusted_data.to_csv(gem_file_adjusted, sep="\t", index=False, columns=columns)
         logger.info(f"generate adjusted gem finished ({gem_file_adjusted})")
         return gem_file_adjusted
-    
+
     @log_consumed_time
     def cgef_to_gem(self, cgef_path):
         file_name = self.get_file_name("adjusted.gem")
@@ -193,7 +206,7 @@ class CellCorrect(object):
         if process_count is not None:
             if not isinstance(process_count, int):
                 raise TypeError("the type of prameter 'process_count' must be int.")
-            
+
         if method == 'GMM':
             if process_count is None or process_count == 0:
                 process_count = 10 if cpu_count() > 10 else cpu_count()
@@ -211,7 +224,15 @@ class CellCorrect(object):
         return process_count
 
     @log_consumed_time
-    def correcting(self, threshold=20, process_count=None, only_save_result=False, sample_n=-1, method='EDM', distance=10, **kwargs):
+    def correcting(self,
+                   threshold=20,
+                   process_count=None,
+                   only_save_result=False,
+                   sample_n=-1,
+                   method='EDM',
+                   distance=10,
+                   **kwargs
+                   ):
         if method is None:
             method = 'EDM'
         method = method.upper()
@@ -225,14 +246,19 @@ class CellCorrect(object):
             adjusted_data = cell_correction_fast.cell_correct(raw_data, self.mask_path)
         elif method == 'EDM':
             n_split_data_jobs = kwargs.get('n_split_data_jobs', -1)
-            new_mask_path = cell_correction_fast_by_mask.main(self.mask_path, n_jobs=process_count, distance=distance, out_path=self.out_dir, n_split_data_jobs=n_split_data_jobs)
+            new_mask_path = cell_correction_fast_by_mask.main(
+                self.mask_path,
+                n_jobs=process_count,
+                distance=distance,
+                out_path=self.out_dir,
+                n_split_data_jobs=n_split_data_jobs
+            )
             cgef_file_adjusted = self.generate_cgef_with_mask(new_mask_path, 'adjusted')
-            gem_file_adjusted = self.cgef_to_gem(cgef_file_adjusted)
         else:
-            raise ValueError(f"Unexpected value({method}) for parameter method, available values include ['GMM', 'FAST', 'EDM'].")
+            raise ValueError(
+                f"Unexpected value({method}) for parameter method, available values include ['GMM', 'FAST', 'EDM'].")
 
         if method in ('GMM', 'FAST'):
-            gem_file_adjusted = self.generate_adjusted_gem(adjusted_data)
             dc = DrawContours(adjusted_data, self.out_dir)
             outline_path = dc.get_contours()
             cgef_file_adjusted = self.generate_adjusted_cgef(adjusted_data, outline_path)
@@ -242,47 +268,46 @@ class CellCorrect(object):
         else:
             return cgef_file_adjusted
 
-@log_consumed_time    
-def cell_correct(out_dir: str,
-                threshold: int=20,
-                gem_path: str=None,
-                bgef_path: str=None,
-                raw_cgef_path: str=None,
-                mask_path: str=None,
-                process_count: int=None,
-                only_save_result: bool=False,
-                # fast: Union[bool, str]='v2',
-                method: Literal['GMM', 'FAST', 'EDM']='EDM',
-                distance: int=10,
-                **kwargs
-):
 
+@log_consumed_time
+def cell_correct(out_dir: str,
+                 threshold: int = 20,
+                 gem_path: str = None,
+                 bgef_path: str = None,
+                 raw_cgef_path: str = None,
+                 mask_path: str = None,
+                 process_count: int = None,
+                 only_save_result: bool = False,
+                 method: Literal['GMM', 'FAST', 'EDM'] = 'EDM',
+                 distance: int = 10,
+                 **kwargs
+                 ):
     """
     Correct cells using one of file conbinations as following:
         * GEM and mask
         * BGEF and mask
-        * GEM and raw CGEF (not have been corrected)
-        * BGEF and raw CGEF (not have been corrected)
+        * GEM and raw CGEF (not corrected)
+        * BGEF and raw CGEF (not corrected)
 
-    :param out_dir: the path to save intermediate result, like mask (if generate from ssDNA image), 
-        BGEF (generate from GEM), CGEF (generate from GEM and mask), etc. and final corrected result.
+    :param out_dir: the path to save intermediate result, like mask (if generated from ssDNA image),
+        BGEF (generated from GEM), CGEF (generated from GEM and mask), etc. and final corrected result.
     :param threshold: threshold size, default to 20.
     :param gem_path: the path to GEM file.
     :param bgef_path: the path to BGEF file.
     :param raw_cgef_path: the path to CGEF file which not has been corrected.
     :param mask_path: the path to mask file.
     :param process_count: the count of the processes or threads will be started when correct cells, defaults to None
-                by default, it will be set to 10 when `fast` is set to False and will be set to 1 when `fast` is set to v1 or v2.
+                by default, it will be set to 10 when `method` is set to 'GMM' and will be set to 1 when `method` is set to 'FAST' or 'EDM'.
                 if it is set to -1, all of the cores will be used.
 	:param only_save_result: if `True`, only save result to disk; if `False`, return an StereoExpData object.
-    :param fast: specify the version of algorithm, available values include [False, v1, v2], defaults to v2.
-                    False: the oldest and slowest version, it will uses multiprocessing if set `process_count` to more than 1.
-                    v1: the first fast version, it olny uses single process and single threading.
-                    v2: default and recommended algorithm, the latest fast version, faster and more accurate than v1, it will uses multithreading if set `process_count` to more than 1.
-    :param distance: outspread distance based on cellular contour of cell segmentation image, in pixels, only available for v2 algorithm.
+    :param method: correct in different method if `method` is set, otherwise `EDM`.
+    :param distance: outspread distance based on cellular contour of cell segmentation image, in pixels, only available for 'EDM' method.
 
-    :return: An StereoExpData object if `only_save_result` is set to `False`, otherwise none.
-    """
+    :return: An StereoExpData object if `only_save_result` is set to `False`, 
+                otherwise the path of corrected CGEF file.
+    """  # noqa
 
-    cc = CellCorrect(gem_path=gem_path, bgef_path=bgef_path, raw_cgef_path=raw_cgef_path, mask_path=mask_path, out_dir=out_dir)
-    return cc.correcting(threshold=threshold, process_count=process_count, only_save_result=only_save_result, method=method, distance=distance, **kwargs)
+    cc = CellCorrect(gem_path=gem_path, bgef_path=bgef_path, raw_cgef_path=raw_cgef_path, mask_path=mask_path,
+                     out_dir=out_dir)
+    return cc.correcting(threshold=threshold, process_count=process_count, only_save_result=only_save_result,
+                         method=method, distance=distance, **kwargs)

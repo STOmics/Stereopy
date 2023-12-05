@@ -1,5 +1,5 @@
-import numpy as np
 import matplotlib.pyplot as plt
+import numpy as np
 
 from .traj import Traj
 from .. import base_scatter
@@ -30,6 +30,7 @@ class PlotClusterTraj(PlotBase):
             text_size=5,
             n_per_inter=100,
             dpi_save=1000,
+            palette='stereo_30',
             **kwargs
     ):
         # generating data for plotting
@@ -37,7 +38,7 @@ class PlotClusterTraj(PlotBase):
         traj.assign_ty_rep()
         _, keep_ty = traj.filter_minority(count_thresh)
         traj.revise_con_based_on_selection(keep_ty)
-        if not choose_ty is None:
+        if not choose_ty is None:  # noqa
             traj.revise_con_based_on_selection(choose_ty)
         traj.estimate_avg_dis()
         traj.cal_repre_x_y_by_ty(eps_co, check_surr_co)
@@ -46,8 +47,7 @@ class PlotClusterTraj(PlotBase):
         # plotting
         figure = plt.figure(dpi=dpi_save)
         if show_scatter:
-            # traj.show_scatter(spot_size, spot_alpha, seed_val, num_legend_per_col, tick_step, mask_keep)
-            figure = base_scatter(x_raw, y_raw, hue=np.array(ty), **kwargs)
+            figure = base_scatter(x_raw, y_raw, palette=palette, hue=np.array(ty), **kwargs)
 
         traj.show_ty_label(text_size, choose_ty, keep_ty)
 

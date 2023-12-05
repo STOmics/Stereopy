@@ -2,7 +2,7 @@
 # coding: utf-8
 """
 @file: mannwhitneyu.py
-@description: 
+@description:
 @author: Ping Qiu
 @email: qiuping1@genomics.cn
 @last modified by: Ping Qiu
@@ -10,9 +10,9 @@
 change log:
     2021/11/05  create file.
 """
-import numpy as np
-from dataclasses import make_dataclass
 from collections import namedtuple
+
+import numpy as np
 from scipy import special
 from scipy import stats
 
@@ -30,6 +30,7 @@ def _broadcast_concatenate(x, y, axis):
 
 class _MWU:
     '''Distribution of MWU statistic under the null hypothesis'''
+
     # Possible improvement: if m and n are small enough, use integer arithmetic
 
     def __init__(self):
@@ -58,7 +59,7 @@ class _MWU:
         '''Survival function'''
         # Use the fact that the distribution is symmetric; i.e.
         # _f(m, n, m*n-k) = _f(m, n, k), and sum from the left
-        k = m*n - k
+        k = m * n - k
         # Note that both CDF and SF include the PMF at k. The p-value is
         # calculated from the SF and should include the mass at k, so this
         # is desirable
@@ -68,10 +69,10 @@ class _MWU:
         '''If necessary, expand the array that remembers PMF values'''
         # could probably use `np.pad` but I'm not sure it would save code
         shape_old = np.array(self._fmnks.shape)
-        shape_new = np.array((m+1, n+1, k+1))
+        shape_new = np.array((m + 1, n + 1, k + 1))
         if np.any(shape_new > shape_old):
             shape = np.maximum(shape_old, shape_new)
-            fmnks = -np.ones(shape)             # create the new array
+            fmnks = -np.ones(shape)  # create the new array
             m0, n0, k0 = shape_old
             fmnks[:m0, :n0, :k0] = self._fmnks  # copy remembered values
             self._fmnks = fmnks
@@ -80,7 +81,7 @@ class _MWU:
         '''Recursive implementation of function of [3] Theorem 2.5'''
 
         # [3] Theorem 2.5 Line 1
-        if k < 0 or m < 0 or n < 0 or k > m*n:
+        if k < 0 or m < 0 or n < 0 or k > m * n:
             return 0
 
         # if already calculated, return the value
@@ -89,8 +90,8 @@ class _MWU:
 
         if k == 0 and m >= 0 and n >= 0:  # [3] Theorem 2.5 Line 2
             fmnk = 1
-        else:   # [3] Theorem 2.5 Line 3 / Equation 3
-            fmnk = self._f(m-1, n, k-n) + self._f(m, n-1, k)
+        else:  # [3] Theorem 2.5 Line 3 / Equation 3
+            fmnk = self._f(m - 1, n, k - n) + self._f(m, n - 1, k)
 
         self._fmnks[m, n, k] = fmnk  # remember result
 
@@ -105,7 +106,7 @@ def _tie_term(ranks):
     """Tie correction term"""
     # element i of t is the number of elements sharing rank i
     _, t = np.unique(ranks, return_counts=True, axis=-1)
-    return (t**3 - t).sum(axis=-1)
+    return (t ** 3 - t).sum(axis=-1)
 
 
 def cal_tie_term(ranks):
@@ -121,9 +122,9 @@ def _get_mwu_z(U, n1, n2, tie_term, continuity=True):
     # Tie correction according to [2]
     # tie_term = np.apply_along_axis(_tie_term, -1, ranks)
     if tie_term is None:
-        s = np.sqrt(n1*n2*(n+1)/12)
+        s = np.sqrt(n1 * n2 * (n + 1) / 12)
     else:
-        s = np.sqrt(n1*n2/12 * ((n + 1) - tie_term/(n*(n-1))))
+        s = np.sqrt(n1 * n2 / 12 * ((n + 1) - tie_term / (n * (n - 1))))
     numerator = U - mu
     if continuity:
         numerator -= 0.5
@@ -260,9 +261,9 @@ def mannwhitneyu(x, y, use_continuity=True, alternative="two-sided",
     if ranks is None:
         ranks = stats.rankdata(xy, axis=-1)  # method 2, step
 
-    R1 = ranks[..., :n1].sum(axis=-1) if x_mask is None else ranks[..., x_mask].sum(axis=-1)   # method 2, step 2
-    U1 = R1 - n1*(n1+1)/2                # method 2, step 3
-    U2 = n1 * n2 - U1                    # as U1 + U2 = n1 * n2
+    R1 = ranks[..., :n1].sum(axis=-1) if x_mask is None else ranks[..., x_mask].sum(axis=-1)  # method 2, step 2
+    U1 = R1 - n1 * (n1 + 1) / 2  # method 2, step 3
+    U2 = n1 * n2 - U1  # as U1 + U2 = n1 * n2
 
     if alternative == "greater":
         U, f = U1, 1  # U is the statistic to use for p-value, f is a factor

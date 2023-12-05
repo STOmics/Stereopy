@@ -1,13 +1,16 @@
-from typing import Sequence, Optional
+from typing import Optional
+from typing import Sequence
+
 import matplotlib.pylab as plt
-from matplotlib.axes import Axes
-from matplotlib import gridspec
 import numpy as np
 import pandas as pd
+from matplotlib import gridspec
+from matplotlib.axes import Axes
 
-from stereo.plots.plot_base import PlotBase
-from stereo.utils.pipeline_utils import calc_pct_and_pct_rest, cell_cluster_to_gene_exp_cluster
 from stereo.log_manager import logger
+from stereo.plots.plot_base import PlotBase
+from stereo.utils.pipeline_utils import calc_pct_and_pct_rest
+from stereo.utils.pipeline_utils import cell_cluster_to_gene_exp_cluster
 
 
 class ClustersGenesScatter(PlotBase):
@@ -18,15 +21,15 @@ class ClustersGenesScatter(PlotBase):
     __title_font_size = 8
 
     def clusters_genes_scatter(
-        self,
-        cluster_res_key: str,
-        dendrogram_res_key: Optional[str] = None,
-        gene_names: Optional[Sequence[str]] = None,
-        groups: Optional[Sequence[str]] = None,
-        width: int = None,
-        height: int = None,
-        colormap: str = 'Reds',
-        standard_scale: str = 'gene'
+            self,
+            cluster_res_key: str,
+            dendrogram_res_key: Optional[str] = None,
+            gene_names: Optional[Sequence[str]] = None,
+            groups: Optional[Sequence[str]] = None,
+            width: int = None,
+            height: int = None,
+            colormap: str = 'Reds',
+            standard_scale: str = 'gene'
     ):
         """
         Scatter representing mean expression of genes on each cell cluster.
@@ -53,8 +56,9 @@ class ClustersGenesScatter(PlotBase):
             else:
                 drg_res = self.pipeline_res[dendrogram_res_key]
                 if cluster_res_key != drg_res['cluster_res_key'][0]:
-                    raise KeyError(f'The cluster result used in dendrogram may not be the same as that specified by key {cluster_res_key}')
-        
+                    raise KeyError(f'The cluster result used in dendrogram may not be the same as that '
+                                   f'specified by key {cluster_res_key}')
+
         if gene_names is None:
             gene_names = self.stereo_exp_data.gene_names
         else:
@@ -62,6 +66,9 @@ class ClustersGenesScatter(PlotBase):
                 gene_names = np.array([gene_names], dtype='U')
             elif not isinstance(gene_names, np.ndarray):
                 gene_names = np.array(gene_names, dtype='U')
+
+        if len(gene_names) == 0:
+            return None
 
         if groups is None or drg_res is not None:
             cluster_res: pd.DataFrame = self.pipeline_res[cluster_res_key]
@@ -77,7 +84,7 @@ class ClustersGenesScatter(PlotBase):
                 group_codes = np.array([group_codes], dtype='U')
             elif not isinstance(group_codes, np.ndarray):
                 group_codes = np.array(group_codes, dtype='U')
-        
+
         pct, _ = calc_pct_and_pct_rest(
             self.stereo_exp_data,
             cluster_res_key,
@@ -143,7 +150,6 @@ class ClustersGenesScatter(PlotBase):
             width_ratios=width_ratios,
             height_ratios=height_ratios,
             wspace=(0.15 / main_area_width),
-            # hspace=(0.13 / main_area_height)
             hspace=0
         )
 
@@ -153,7 +159,6 @@ class ClustersGenesScatter(PlotBase):
             width_ratios=[main_area_width],
             height_ratios=[self.__dendrogram_height, main_area_height],
             wspace=0,
-            # hspace=(0.13 / main_area_height),
             hspace=0,
             subplot_spec=axs[0, 0]
         )
@@ -164,7 +169,6 @@ class ClustersGenesScatter(PlotBase):
         if drg_res is not None:
             from .plot_dendrogram import PlotDendrogram
             ax_drg = fig.add_subplot(axs_main[0, 0], sharex=ax_scatter)
-            # ax_drg = fig.add_subplot(axs_main[0, 0])
             plt_drg = PlotDendrogram(self.stereo_exp_data, self.pipeline_res)
             plt_drg.dendrogram(
                 orientation='top',
@@ -177,7 +181,6 @@ class ClustersGenesScatter(PlotBase):
         axs_on_right = gridspec.GridSpecFromSubplotSpec(
             nrows=4,
             ncols=1,
-            # width_ratios=[main_area_width / 3, main_area_width / 6, main_area_width / 2],
             height_ratios=[0.55, 0.05, 0.2, 0.1],
             subplot_spec=axs[0, 1],
             hspace=0.1
@@ -190,14 +193,14 @@ class ClustersGenesScatter(PlotBase):
         self._plot_dot_size_map(ax_dot_size_map)
 
         return fig
-    
+
     def _dotplot(
-        self,
-        ax: Axes,
-        dot_plot_data: pd.DataFrame,
-        group_codes: Sequence[str],
-        gene_names: Sequence[str],
-        colormap: str
+            self,
+            ax: Axes,
+            dot_plot_data: pd.DataFrame,
+            group_codes: Sequence[str],
+            gene_names: Sequence[str],
+            colormap: str
     ):
         ax.set_xlim(left=-1, right=len(group_codes))
         ax.xaxis.set_ticks(range(len(group_codes)), group_codes)
@@ -213,19 +216,19 @@ class ClustersGenesScatter(PlotBase):
         )
 
     def _plot_colorbar(
-        self,
-        ax: Axes,
-        im
+            self,
+            ax: Axes,
+            im
     ):
         ax.set_title('Mean expression in group', fontdict={'fontsize': self.__title_font_size})
         plt.colorbar(im, cax=ax, orientation='horizontal', ticklocation='bottom')
 
     def _create_dot_plot_data(
-        self,
-        pct: pd.DataFrame,
-        mean_expression: pd.DataFrame,
-        group_codes: Sequence[str],
-        gene_names: Sequence[str]
+            self,
+            pct: pd.DataFrame,
+            mean_expression: pd.DataFrame,
+            group_codes: Sequence[str],
+            gene_names: Sequence[str]
     ):
         x = [i for i in range(len(group_codes))]
         data_list = []
@@ -242,8 +245,8 @@ class ClustersGenesScatter(PlotBase):
         return pd.concat(data_list, axis=0)
 
     def _plot_dot_size_map(
-        self,
-        ax: Axes
+            self,
+            ax: Axes
     ):
         ax.set_title('Fraction of cells in group(%)', fontdict={'fontsize': self.__title_font_size})
         ax.set_xlim(left=5, right=105)

@@ -1,19 +1,21 @@
-from typing import Sequence, Dict, Any, Optional, Union, Literal
+from typing import Optional
+
 import pandas as pd
-import numpy as np
+
 from stereo.algorithm.algorithm_base import AlgorithmBase
 from stereo.log_manager import logger
 
+
 class Dendrogram(AlgorithmBase):
     def main(
-        self,
-        cluster_res_key: str,
-        pca_res_key: Optional[str] = 'pca',
-        use_raw: Optional[bool] = False,
-        cor_method: str = 'pearson',
-        linkage_method: str = 'complete',
-        optimal_ordering: bool = False,
-        res_key: str = 'dendrogram',
+            self,
+            cluster_res_key: str,
+            pca_res_key: Optional[str] = 'pca',
+            use_raw: Optional[bool] = False,
+            cor_method: str = 'pearson',
+            linkage_method: str = 'complete',
+            optimal_ordering: bool = False,
+            res_key: str = 'dendrogram',
     ):
         """
         Computes a hierarchical clustering for the given `cluster_res_key` categories.
@@ -54,12 +56,12 @@ class Dendrogram(AlgorithmBase):
         #         gene_names = [gene_names]
         #     rep_df: pd.DataFrame = self._prepare_dataframe(gene_names, use_raw)
         rep_df: pd.DataFrame = self._choose_representation(pca_res_key, use_raw)
-        categorical:pd.Series = cluster_res_list[0]
+        categorical: pd.Series = cluster_res_list[0]
         if len(cluster_res_list) > 1:
             for group in cluster_res_list[1:]:
                 # create new category by merging the given groupby categories
                 categorical = (
-                    categorical.astype(str) + "_" + group.astype(str)
+                        categorical.astype(str) + "_" + group.astype(str)
                 ).astype('category')
         categorical.name = "_".join(cluster_res_key)
 
@@ -92,7 +94,7 @@ class Dendrogram(AlgorithmBase):
         )
 
         self.pipeline_res[res_key] = dat
-    
+
     def _choose_representation(self, pca_res_key, use_raw):
         if pca_res_key is not None:
             if pca_res_key not in self.pipeline_res:
@@ -101,14 +103,14 @@ class Dendrogram(AlgorithmBase):
         else:
             exp_matrix = self.stereo_exp_data.exp_matrix if not use_raw else self.stereo_exp_data.raw.exp_matrix
             return pd.DataFrame(exp_matrix.toarray())
-    
+
     def _prepare_dataframe(self, gene_names, use_raw):
         all_gene_names = pd.Index(self.stereo_exp_data.genes.gene_name)
         gene_idx = all_gene_names.get_indexer(gene_names)
         if use_raw and self.stereo_exp_data.raw is None:
-            logger.warning(f"there is no raw data, using current data instead.")
+            logger.warning("there is no raw data, using current data instead.")
             use_raw = False
-        sub_exp_matrix = self.stereo_exp_data.exp_matrix[:, gene_idx] if not use_raw else self.stereo_exp_data.raw.exp_matrix[:, gene_idx]
+        sub_exp_matrix = self.stereo_exp_data.exp_matrix[:, gene_idx] if not use_raw else \
+            self.stereo_exp_data.raw.exp_matrix[:, gene_idx]
         sub_exp_matrix_df = pd.DataFrame(sub_exp_matrix.toarray(), columns=gene_names)
         return sub_exp_matrix_df
-    

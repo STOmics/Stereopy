@@ -16,8 +16,7 @@ def print_time(function):
         t1 = time.time()
         print(f"{time.strftime('%Y-%m-%d %H:%M:%S', time.localtime())} BatchQC Done!")
         t = t1 - t0
-        print(f"Total Running Time: {t // 60:}min {t%60:.4f}s")
+        print(f"Total Running Time: {t // 60:}min {t % 60:.4f}s")
         return res
 
     return func_time
-

@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 # coding: utf-8
+# flake8: noqa
 try:
     from .pyramid import merge_pyramid, create_pyramid
     from .segmentation.segment import cell_seg
-    from .cellbin.modules.cell_segmentation import cell_seg_v3
+    from .segmentation.seg_utils.v3 import CellSegPipeV3 as cell_seg_v3
 
     from . import tissue_cut
     from .segmentation_deepcell.segment import cell_seg_deepcell

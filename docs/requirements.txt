@@ -2,7 +2,7 @@ absl-py==1.0.0
 alabaster==0.7.13
 albumentations==0.4.6
 alembic==1.9.4
-anndata==0.7.5
+anndata>=0.7.5
 arboreto==0.1.6
 argcomplete==2.0.0
 argon2-cffi==21.3.0
@@ -43,7 +43,7 @@ flatbuffers==2.0.7
 fonttools==4.38.0
 fsspec==2023.1.0
 gast==0.4.0
-gefpy>=0.7.6
+gefpy>=0.7.10
 glog==0.3.1
 google-auth==2.16.1
 google-auth-oauthlib==0.4.6
@@ -55,8 +55,8 @@ holoviews==1.14.5
 hotspot @ git+https://github.com/yoseflab/Hotspot.git@45555a0feb6cc46cb52aa09230f0ed801559bb87
 hvplot==0.7.3
 idna==3.3
-igraph==0.9.11
-imagecodecs==2021.11.20
+# igraph==0.9.11
+imagecodecs>=2023.3.16
 imageio==2.31.1
 imagesize==1.4.1
 imgaug==0.4.0
@@ -82,15 +82,15 @@ keras==2.7.0
 Keras-Preprocessing==1.1.2
 keyring==23.5.0
 kiwisolver==1.4.4
-leidenalg==0.8.10
+leidenalg>=0.10.1
 libclang==15.0.6.1
 llvmlite==0.39.1
 locket==1.0.0
-louvain==0.7.1
+louvain>=0.8.0
 Mako==1.2.4
 Markdown==3.4.1
 MarkupSafe==2.1.2
-matplotlib>=3.4.2,<=3.5.3
+matplotlib==3.7.1
 matplotlib-inline==0.1.6
 mistune==2.0.5
 msgpack==1.0.4
@@ -140,10 +140,10 @@ pyparsing==3.0.9
 pyrsistent==0.19.3
 python-dateutil==2.8.2
 python-gflags==3.1.2
-python-igraph==0.9.11
+# python-igraph==0.9.11
 python-snappy==0.6.0
 pytz==2022.7.1
-pyviz-comms==2.2.0
+pyviz-comms==2.2.1
 PyWavelets==1.4.1
 PyYAML==6.0
 pyzmq==22.3.0
@@ -172,7 +172,7 @@ slideio==0.5.225
 snowballstemmer==2.2.0
 sortedcontainers==2.4.0
 squidpy==1.2.2
-statsmodels==0.12.2
+statsmodels>=0.14.0
 stdlib-list==0.8.0
 tables==3.7.0
 tblib==1.7.0
@@ -192,7 +192,7 @@ toolz==0.11.2
 torch==1.10.0
 torchvision==0.11.1
 tornado==6.1
-tqdm==4.60.0
+tqdm>=4.60.0
 traitlets==5.1.1
 twine==3.7.1
 typing-extensions==4.3.0
@@ -221,13 +221,15 @@ SQLAlchemy==1.4.46
 fbpca>=1.0
 geosketch>=1.2
 pyscenic>=0.12.1
-onnxruntime==1.14.1
+onnxruntime==1.15.1
 POT==0.8.1.0
 pycirclize>=0.5.0
 plotly>=5.15.0
 patchify
 fastremap
 roifile
+cusingler
+cell-bin==1.2.8.1
 
 Sphinx>=7.1.2
 nbsphinx>=0.9.3

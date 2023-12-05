@@ -1,27 +1,30 @@
+import json
 import os
-from typing import Union, List, Dict, Optional
 from pathlib import Path
-import natsort
+from typing import (
+    Union,
+    List,
+    Dict,
+    Optional
+)
 
+import matplotlib.pyplot as plt
+import natsort
+import networkx as nx
 # third part module
 import numpy as np
 import pandas as pd
-import seaborn as sns
-import matplotlib.pyplot as plt
-from pycirclize import Circos
-import networkx as nx
-import json
 import plotly.graph_objects as go
-from plotly.offline import iplot
-from stereo.core.stereo_exp_data import StereoExpData, AnnBasedStereoExpData
+import seaborn as sns
+from pycirclize import Circos
 
+from stereo.algorithm.cell_cell_communication.analysis_helper import mouse2human
+from stereo.algorithm.cell_cell_communication.exceptions import PipelineResultInexistent
 # module in self project
 from stereo.log_manager import logger
-from stereo.stereo_config import stereo_conf
 from stereo.plots.plot_base import PlotBase
+from stereo.stereo_config import stereo_conf
 
-from stereo.algorithm.cell_cell_communication.exceptions import PipelineResultInexistent
-from stereo.algorithm.cell_cell_communication.analysis_helper import mouse2human
 
 class PlotCellCellCommunication(PlotBase):
     def __init__(self, *args, **kwargs):
@@ -64,8 +67,10 @@ class PlotCellCellCommunication(PlotBase):
         :param separator_cluster: the symbol for joining the clusters1 and clusters2, defaults to '|'
         :param palette: plot palette, defaults to 'Reds'
         :param res_key: the key which specifies the cell cell communication result in data.tl.result, defaults to 'cell_cell_communication'
+        :param width: the figure width in pixels, defaults to None
+        :param height: the figure height in pixels, defaults to None
         :return: matplotlib.figure
-        """
+        """  # noqa
         logger.info('Generating dot plot')
 
         if res_key not in self.pipeline_res:
@@ -82,8 +87,9 @@ class PlotCellCellCommunication(PlotBase):
         if interacting_pairs is None:
             interacting_pairs = means_df['interacting_pair'].tolist()
         else:
-            if all(np.isin(interacting_pairs, means_df['interacting_pair']) == False):
-                raise Exception("there is no interacting pairs to show, maybe the parameter 'interacting_pairs' you set is not in result.")
+            if all(np.isin(interacting_pairs, means_df['interacting_pair']) == False):  # noqa
+                raise Exception("there is no interacting pairs to show, maybe the parameter 'interacting_pairs' "
+                                "you set is not in result.")
 
         clusters1 = self._parse_interacting_pairs_or_clusters(clusters1)
         clusters2 = self._parse_interacting_pairs_or_clusters(clusters2)
@@ -96,10 +102,13 @@ class PlotCellCellCommunication(PlotBase):
             cluster_pairs = [f'{c1}{separator_cluster}{c2}' for c1 in clusters1 for c2 in clusters2]
             cluster_pairs = natsort.natsorted([x for x in cluster_pairs if x in means_df.columns])
             if len(cluster_pairs) == 0:
-                raise Exception("there is no cluster pairs to show, maybe the parameter 'clusters' you set is not in result.")
+                raise Exception(
+                    "there is no cluster pairs to show, maybe the parameter 'clusters' you set is not in result.")
 
-        means_selected: pd.DataFrame = means_df[means_df['interacting_pair'].isin(interacting_pairs)][['interacting_pair'] + cluster_pairs]
-        pvalues_selected: pd.DataFrame = pvalues_df[pvalues_df['interacting_pair'].isin(interacting_pairs)][['interacting_pair'] + cluster_pairs]
+        means_selected: pd.DataFrame = means_df[means_df['interacting_pair'].isin(interacting_pairs)][
+            ['interacting_pair'] + cluster_pairs]
+        pvalues_selected: pd.DataFrame = pvalues_df[pvalues_df['interacting_pair'].isin(interacting_pairs)][
+            ['interacting_pair'] + cluster_pairs]
 
         nrows, ncols = means_selected.shape
 
@@ -107,8 +116,8 @@ class PlotCellCellCommunication(PlotBase):
         means['log2(mean+1)'] = np.log2(means['mean'] + 1)
 
         pvalues = pvalues_selected.melt(id_vars='interacting_pair', value_vars=cluster_pairs, value_name='pvalue')
-        pvalues['-log10(pvalue)'] = pvalues['pvalue'].apply(lambda x: -np.log10(0.000001) if x == 0 else (-np.log10(x) if x != 1 else 0))
-        # pvalues['log10(pvalue+1)'] = np.log10(pvalues['pvalue'] + 1)
+        pvalues['-log10(pvalue)'] = pvalues['pvalue'].apply(
+            lambda x: -np.log10(0.000001) if x == 0 else (-np.log10(x) if x != 1 else 0))
 
         result = pd.merge(means, pvalues, on=["interacting_pair", "variable"])
         result = result.rename(columns={'variable': 'cluster_pair'})
@@ -120,12 +129,8 @@ class PlotCellCellCommunication(PlotBase):
             width = width / 100 if width >= 100 else int(5 + max(3, ncols * 0.8))
             height = height / 100 if height >= 100 else int(3 + max(5, nrows * 0.5))
         fig, ax = plt.subplots(figsize=(width, height))
-        # fig.subplots_adjust(bottom=0.2, left=0.18, right=0.85)
-        sns.scatterplot(data=result, x="cluster_pair", y="interacting_pair", palette=palette, 
+        sns.scatterplot(data=result, x="cluster_pair", y="interacting_pair", palette=palette,
                         hue='log2(mean+1)', size='-log10(pvalue)', sizes=(100, 300), legend='auto', ax=ax, **kw_args)
-        # legend_position = kw_args.get('legend_position', 'lower right')
-        # legend_coodinate = kw_args.get('legend_coodinate')
-        # ax.legend(fontsize=12, frameon=False, ncol=1, loc=legend_position, bbox_to_anchor=legend_coodinate)
         ax.legend(fontsize=12, frameon=False, ncol=1, loc=(1.02, 0))
         ax.tick_params(axis='x', labelsize=12, labelrotation=90)
         ax.tick_params(axis='y', labelsize=12)
@@ -151,7 +156,7 @@ class PlotCellCellCommunication(PlotBase):
         :param separator_cluster: the symbol for joining the first and second cluster in cluster pairs, defaults to '|'
         :param res_key: the key which specifies the cell cell communication result in data.tl.result, defaults to 'cell_cell_communication'
         :return: _description_
-        """
+        """  # noqa
         logger.info('Generating heatmap plot')
 
         if res_key not in self.pipeline_res:
@@ -178,7 +183,8 @@ class PlotCellCellCommunication(PlotBase):
                 if col1 == col2:
                     network.loc[index, 'number'] = (pvalues_df[col1] <= pvalue).sum()
                 else:
-                    network.loc[index, 'number'] = (pvalues_df[col1] <= pvalue).sum() + (pvalues_df[col2] <= pvalue).sum()
+                    network.loc[index, 'number'] = (pvalues_df[col1] <= pvalue).sum() + (
+                            pvalues_df[col2] <= pvalue).sum()
             else:
                 network.loc[index, 'number'] = 0
 
@@ -196,30 +202,35 @@ class PlotCellCellCommunication(PlotBase):
             height = height / 100 if height >= 100 else int(3 + max(3, n_cluster * 0.5))
         fig, axes = plt.subplots(nrows=1, ncols=2, figsize=(width, height), gridspec_kw={'wspace': 0})
 
-        sns.heatmap(data=network, square=True, cmap=palette,
-                    cbar_kws={'pad': 0.1, 'shrink': 0.5, 'location': 'bottom', 'orientation': 'horizontal'},
-                    ax=axes[0], **kwargs)
-        axes[0].yaxis.set_ticks_position('right')
+        sns.heatmap(
+            data=network,
+            square=True,
+            cmap=palette,
+            cbar_kws={'pad': 0.1, 'shrink': 0.5, 'location': 'top', 'orientation': 'horizontal'},
+            ax=axes[0], **kwargs)
+        axes[0].yaxis.set_ticks_position('left')
         axes[0].invert_yaxis()
         axes[0].tick_params(axis='x', labelsize=13, labelrotation=90)
-        axes[0].tick_params(axis='y', labelsize=13)
+        axes[0].tick_params(axis='y', labelsize=13, labelrotation=0)
         axes[0].set_xlabel('')
         axes[0].set_ylabel('')
         axes[0].set_title('count')
 
-        sns.heatmap(data=log_network, square=True, cmap=palette,
-                    cbar_kws={'pad': 0.1, 'shrink': 0.5, 'location': 'bottom', 'orientation': 'horizontal'},
-                    ax=axes[1], **kwargs)
+        sns.heatmap(
+            data=log_network,
+            square=True,
+            cmap=palette,
+            cbar_kws={'pad': 0.1, 'shrink': 0.5, 'location': 'top', 'orientation': 'horizontal'},
+            ax=axes[1], **kwargs)
         axes[1].yaxis.set_ticks_position('right')
         axes[1].invert_yaxis()
         axes[1].tick_params(axis='x', labelsize=13, labelrotation=90)
-        axes[1].tick_params(axis='y', labelsize=13)
+        axes[1].tick_params(axis='y', labelsize=13, labelrotation=0)
         axes[1].set_xlabel('')
         axes[1].set_ylabel('')
         axes[1].set_title('log_count')
 
         return fig
-
 
     def ccc_circos_plot(
             self,
@@ -235,17 +246,17 @@ class PlotCellCellCommunication(PlotBase):
         Circos plot of number of interactions in each cluster pairs.
 
         :param separator_cluster: separator used for cell cluster pairs.
-        :param cluster_pair: if None, use all cluster pairs in the significant result; else list selected cluster pairs used in the plot.
+        :param cluster_pair: if None, use all cluster pairs in the significant result; else list selected cluster pairs used in the plot. # noqa
         :param palette: colormap used.
         :param width: the figure width in pixels.
         :param height: the figure height in pixels.
-        :param res_key: the key which specifies the cell cell communication result in data.tl.result, defaults to 'cell_cell_communication'.
+        :param res_key: the key which specifies the cell cell communication result in data.tl.result, defaults to 'cell_cell_communication'. # noqa
         """
         logger.info('Generating circos plot')
 
         if res_key not in self.pipeline_res:
             PipelineResultInexistent(res_key)
-        
+
         significant_df: pd.DataFrame = self.pipeline_res[res_key]['significant_means']
 
         if cluster_pair is None:
@@ -280,7 +291,6 @@ class PlotCellCellCommunication(PlotBase):
         circos.plotfig(ax=ax)
         return fig
 
-
     def ccc_sankey_plot(
             self,
             sender_cluster: str,
@@ -301,13 +311,13 @@ class PlotCellCellCommunication(PlotBase):
             res_key: str = 'cell_cell_communication',
     ):
         """
-        Sankey-plot showing inter- and/or intra-cellular gene interaction. Left pillar is ligands, middle pillar receptors,
+        Sankey-plot showing inter- and/or intra-cellular gene interaction. Left pillar is ligands, middle pillar receptors, # noqa
         right pillar TFs. The width of each band is the average expression of the two genes.
 
         :param sender_cluster: sender cell type
         :param receiver_cluster: receiver cell type
         :param homo_transfer: If species is 'MOUSE' but database is 'cellphonedb' or 'liana', the gene names in the
-                                significant result have been transferred to 'HUMAN', we need to transfer them back 
+                                significant result have been transferred to 'HUMAN', we need to transfer them back
                                 in order to match the gene names in counts.
         :param homogene_path: path to the file storing mouse-human homologous genes ralations.
         :param separator_cluster: separator used for cell cluster pairs
@@ -321,8 +331,8 @@ class PlotCellCellCommunication(PlotBase):
         :param width: the figure width in pixels.
         :param height: the figure height in pixels.
         :param out_path: the path to save the plot.
-        :param res_key: the key which specifies the cell cell communication result in data.tl.result, defaults to 'cell_cell_communication'.
-        
+        :param res_key: the key which specifies the cell cell communication result in data.tl.result, defaults to 'cell_cell_communication'. # noqa
+
         """
 
         if res_key not in self.pipeline_res:
@@ -348,8 +358,9 @@ class PlotCellCellCommunication(PlotBase):
                 return pd.NaT
             else:
                 return row
-        
-        significant_df = significant_df.apply(__clean_significant_df, axis=1, result_type='broadcast', cluster_pair_key=cluster_pair_key)
+
+        significant_df = significant_df.apply(__clean_significant_df, axis=1, result_type='broadcast',
+                                              cluster_pair_key=cluster_pair_key)
         significant_df.dropna(
             how='any',
             subset=['partner_a', 'partner_b', cluster_pair_key],
@@ -369,7 +380,8 @@ class PlotCellCellCommunication(PlotBase):
 
         if homo_transfer:
             if homogene_path is None:
-                homogene_path = Path(stereo_conf.data_dir, 'algorithm/cell_cell_communication/database/mouse2human.csv').absolute().as_posix()
+                homogene_path = Path(stereo_conf.data_dir,
+                                     'algorithm/cell_cell_communication/database/mouse2human.csv').absolute().as_posix()
             genes_mouse = self.stereo_exp_data.gene_names
             genes_human, human_genes_to_mouse = mouse2human(genes_mouse, homogene_path)
             ligands = [human_genes_to_mouse[x] for x in ligands]
@@ -379,7 +391,8 @@ class PlotCellCellCommunication(PlotBase):
                 interaction1, interaction2 = lr.split(separator_interaction)
                 if interaction1 not in human_genes_to_mouse or interaction2 not in human_genes_to_mouse:
                     continue
-                significant_pairs_tmp.append(human_genes_to_mouse[interaction1] + separator_interaction + human_genes_to_mouse[interaction2])
+                significant_pairs_tmp.append(
+                    human_genes_to_mouse[interaction1] + separator_interaction + human_genes_to_mouse[interaction2])
             significant_pairs = significant_pairs_tmp
 
         # Construct expressed weighted gene regulatory network
@@ -387,7 +400,8 @@ class PlotCellCellCommunication(PlotBase):
         expressed_genes_receiver = self._get_expressed_genes(counts_receiver, pct_expressed)
 
         weighted_network_lr_sig = pd.read_csv(weighted_network_path, sep='\t')
-        weighted_network_lr_sig_expressed = self._get_expressed_network(weighted_network_lr_sig, expressed_genes_receiver)
+        weighted_network_lr_sig_expressed = self._get_expressed_network(weighted_network_lr_sig,
+                                                                        expressed_genes_receiver)
         weighted_network_lr_sig_expressed['distance'] = 1 / weighted_network_lr_sig_expressed['weight']
 
         # return genes_mouse_obtained, counts_receiver, expressed_genes_receiver, weighted_network_lr_sig_expressed
@@ -422,7 +436,7 @@ class PlotCellCellCommunication(PlotBase):
                     source_rtf.append(receptor)
                     target_rtf.append(tf)
                     length_rtf.append(len(path))
-                except:
+                except Exception:
                     source_rtf.append(receptor)
                     target_rtf.append(tf)
                     paths.append([])
@@ -440,7 +454,7 @@ class PlotCellCellCommunication(PlotBase):
 
         # Generate final data for plotting
         label = ligands + receptors + tfs
-        counts_sender = self._get_cell_counts(cluster_res_key, sender_cluster)       
+        counts_sender = self._get_cell_counts(cluster_res_key, sender_cluster)
 
         # The left part of Ligand-Receptor interaction
         source_lr = []
@@ -450,15 +464,11 @@ class PlotCellCellCommunication(PlotBase):
             for j, receptor in enumerate(receptors):
                 current_pair = ligand + separator_interaction + receptor
                 if current_pair in significant_pairs:
-                    # source_lr.append(label.index(ligand))
-                    # target_lr.append(label.index(receptor))
                     source_lr.append(i)
                     target_lr.append(len(ligands) + j)
                     mean_expression = (self._calculate_mean_expression(counts_sender, ligand) +
                                        self._calculate_mean_expression(counts_receiver, receptor)) / 2
                     value_lr.append(mean_expression)
-
-        # data_left = pd.DataFrame({'source_lr': source_lr, 'target_lr': target_lr, 'value_lr': value_lr})
 
         # The right part of Receptor-TF interaction
         source_rtf = []
@@ -471,34 +481,27 @@ class PlotCellCellCommunication(PlotBase):
                 if df.empty:
                     continue
                 else:
-                    # source_rtf.append(label.index(receptor))
-                    # target_rtf.append(label.index(tf))
                     source_rtf.append(len(ligands) + i)
                     target_rtf.append(len(ligands) + len(receptors) + j)
                     mean_expression = (self._calculate_mean_expression(counts_receiver, receptor) +
                                        self._calculate_mean_expression(counts_receiver, tf)) / 2
                     value_rtf.append(mean_expression)
 
-        # data_right = pd.DataFrame({'source_rtf': source_rtf, 'target_rtf': target_rtf, 'value_rtf': value_rtf})
-
         # Generate sankey plot
         node = dict(thickness=8, pad=2, label=label)
         link = dict(source=source_lr + source_rtf, target=target_lr + target_rtf, value=value_lr + value_rtf)
 
-        # fig = go.Figure(
         fig = go.Figure(
             data=[
                 go.Sankey(
-                node=node,
-                link=link)
+                    node=node,
+                    link=link)
             ])
         fig.update_layout(height=height, width=width, font_size=12, font_family='Arial')
-        # iplot(fig, image='png')
-        # fig.show()
         if out_path is not None:
             fig.write_image(out_path)
         return fig
-    
+
     def _get_cell_counts(self, cluster_res_key, cluster):
         cluster_res: pd.DataFrame = self.pipeline_res[cluster_res_key]
         isin = cluster_res['group'].isin([cluster]).to_numpy()
@@ -528,11 +531,10 @@ class PlotCellCellCommunication(PlotBase):
         counts_gene = counts.loc[gene, :]
         return np.mean(counts_gene)
 
-
     def _parse_interacting_pairs_or_clusters(self, interacting_pairs_or_clusters: Union[str, list, np.ndarray]):
         if isinstance(interacting_pairs_or_clusters, list) or isinstance(interacting_pairs_or_clusters, np.ndarray):
             return np.unique(interacting_pairs_or_clusters)
-        
+
         if isinstance(interacting_pairs_or_clusters, str):
             path = Path(interacting_pairs_or_clusters)
             if not path.is_file() and not path.is_dir():
@@ -540,10 +542,9 @@ class PlotCellCellCommunication(PlotBase):
             if path.is_file() and path.exists():
                 with path.open('r') as fp:
                     return np.unique([line.strip() for line in fp.readlines()])
-        
+
         return None
 
-    
     def _ensure_path_exists(self, path: str):
         expanded_path = os.path.expanduser(path)
 

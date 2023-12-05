@@ -1,5 +1,7 @@
 import numpy as np
-from scipy.sparse import issparse, csr_matrix
+from scipy.sparse import csr_matrix
+from scipy.sparse import issparse
+
 from stereo.algorithm.sctransform import SCTransform
 
 

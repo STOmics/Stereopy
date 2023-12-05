@@ -1,4 +1,5 @@
 import os
+
 from ..log_manager import logger
 
 
@@ -33,7 +34,7 @@ def _download(url: str, dir_str: str = "./stereopy_data/", file_name: str = None
             if content_disposition:
                 remote_file_name = content_disposition.split(';')[1].split('=')[1].replace('\"', '')
             else:
-                raise Exception(f'remote file not exists')
+                raise Exception('remote file not exists')
 
             from pathlib import Path
             if not dir_str:
