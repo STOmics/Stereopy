@@ -9,7 +9,8 @@ from typing import (
     Optional,
     Union,
     Sequence,
-    Literal
+    Literal,
+    Iterable
 )
 
 import hvplot.pandas  # noqa
@@ -18,6 +19,7 @@ import numpy as np
 import panel as pn
 import seaborn as sns
 import tifffile as tiff
+from matplotlib.axes import Axes
 from natsort import natsorted
 
 from stereo.constant import (
@@ -551,21 +553,61 @@ class PlotCollection:
     @download
     def violin(
             self,
-            width: Optional[int] = None,
-            height: Optional[int] = None,
-            y_label: Optional[list] = ['total counts', 'n genes by counts', 'pct counts mt']
+            keys: Union[str, Sequence[str]],
+            x_label: Optional[str] = '',
+            y_label: Optional[list] = None,
+            show_stripplot: Optional[bool] = False,
+            jitter: Optional[float] = 0.2,
+            size: Optional[float] = 0.8,
+            log: Optional[bool] = False,
+            rotation_angle: Optional[int] = 0,
+            group_by: Optional[str] = None,
+            multi_panel: bool = None,
+            scale: Literal['area', 'count', 'width'] = 'width',
+            ax: Optional[Axes] = None,
+            order: Optional[Iterable[str]] = None,
+            use_raw: Optional[bool] = None,
     ):
         """
         Violin plot to show index distribution of quality control.
 
-        :param width: the figure width in pixels.
-        :param height: the figure height in pixels.
+        :param keys: Keys for accessing variables of .cells.
+        :param x_label: x label.
+        :param y_label: y label.
+        :param show_stripplot: whether to overlay a stripplot of specific percentage values.
+        :param jitter: adjust the dispersion of points.
+        :param size: dot size.
+        :param log: plot a graph on a logarithmic axis.
+        :param rotation_angle: rotation of xtick labels.
+        :param group_by: the key of the observation grouping to consider.
+        :param multi_panel: Display keys in multiple panels also when groupby is not None.
+        :param scale: The method used to scale the width of each violin. If ‘width’ (the default), each violin will
+                have the same width. If ‘area’, each violin will have the same area.
+                If ‘count’, a violin’s width corresponds to the number of observations.
+        :param ax: a matplotlib axes object. only works if plotting a single component.
+        :param order: Order in which to show the categories.
+        :param use_raw: Whether to use raw attribute of adata. Defaults to True if .raw is present.
         :param out_path: the path to save the figure.
         :param out_dpi: the dpi when the figure is saved.
-        :param y_label: list of y label.
         """
         from .violin import violin_distribution
-        return violin_distribution(self.data, width=width, height=height, y_label=y_label)
+        return violin_distribution(
+            self.data,
+            keys=keys,
+            x_label=x_label,
+            y_label=y_label,
+            show_stripplot=show_stripplot,
+            jitter=jitter,
+            size=size,
+            log=log,
+            rotation_angle=rotation_angle,
+            group_by=group_by,
+            multi_panel=multi_panel,
+            scale=scale,
+            ax=ax,
+            order=order,
+            use_raw=use_raw
+        )
 
     @reorganize_coordinate
     def interact_spatial_scatter(
