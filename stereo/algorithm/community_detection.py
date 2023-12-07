@@ -444,7 +444,8 @@ class _CommunityDetection:
             annotation = f'tissue_{self.algo_list[0].method_key}' if clustering else self.algo_list[0].annotation
             clusters = np.unique(algo.adata.obs[annotation].values)
             if len(clusters) > len(cluster_palette):
-                logger.warning(f"Number of clusters ({len(clusters)}) is larger than pallette size. All clusters will be colored gray.")
+                logger.warning(f"Number of clusters ({len(clusters)}) is larger than pallette size. All clusters "
+                               f"will be colored gray.")
             plot_spatial(algo.adata, annotation=annotation, palette=palette, spot_size=algo.spot_size, ax=ax)
             ax.get_legend().remove()
             ax.set_title(f'{algo.filename}', fontsize=6, loc='center', wrap=True)
