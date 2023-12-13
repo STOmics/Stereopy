@@ -566,7 +566,7 @@ class PlotCollection:
             scale: Literal['area', 'count', 'width'] = 'width',
             ax: Optional[Axes] = None,
             order: Optional[Iterable[str]] = None,
-            use_raw: Optional[bool] = None,
+            use_raw: Optional[bool] = False,
             palette: Optional[str] = None
     ):
         """

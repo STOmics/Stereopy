@@ -134,24 +134,6 @@ def _get_array_values(
     return matrix
 
 
-def _get_obs_rep(adata, *, use_raw=False):
-    """
-    Choose array aligned with obs annotation.
-    """
-    if not isinstance(use_raw, bool):
-        raise TypeError(f"use_raw expected to be bool, was {type(use_raw)}.")
-
-    is_raw = use_raw is not False
-    choices_made = sum((is_raw))
-    assert choices_made <= 1
-    if choices_made == 0:
-        return adata.to_df().values
-    elif use_raw:
-        return adata.tl.raw.to_df().values
-    else:
-        assert False, "That was unexpected. "
-
-
 def get_data_attr(adata, keys, use_raw, gene_symbols: str = None, obsm_keys: Iterable[Tuple[str, int]] = ()):
     """Obtain relevant data from data and perform related processing."""
     if use_raw:
@@ -177,9 +159,12 @@ def get_data_attr(adata, keys, use_raw, gene_symbols: str = None, obsm_keys: Ite
 
     # add var values
     if len(var_idx_keys) > 0:
-        matrix = _get_array_values(_get_obs_rep(adata, use_raw=use_raw), var.index, var_idx_keys, axis=1,
-                                   backed=adata.isbacked)
-        df = pd.concat([df, pd.DataFrame(matrix, columns=var_symbols, index=adata.cells.cell_name)], axis=1, )
+        if use_raw:
+            if not adata.tl.raw:
+                raise Exception('The tl.raw_checkpoint() command is not executed, there is no data in raw!')
+            df = pd.concat([df, adata.tl.raw.to_df()[var_idx_keys]], axis=1)
+        else:
+            df = pd.concat([df, adata.to_df()[var_idx_keys]], axis=1)
 
     # add obs values
     if len(obs_cols) > 0:
@@ -217,7 +202,7 @@ def violin_distribution(
         scale: Literal['area', 'count', 'width'] = 'width',
         ax: Optional[Axes] = None,
         order: Optional[Iterable[str]] = None,
-        use_raw: Optional[bool] = None,
+        use_raw: Optional[bool] = False,
         palette: Optional[str] = None
 ):  # Violin Statistics Chart
     """
