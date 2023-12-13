@@ -553,12 +553,12 @@ class PlotCollection:
     @download
     def violin(
             self,
-            keys: Union[str, Sequence[str]],
+            keys: Union[str, Sequence[str]] = [N_GENES_BY_COUNTS, PCT_COUNTS_MT, TOTAL_COUNTS],
             x_label: Optional[str] = '',
             y_label: Optional[list] = None,
             show_stripplot: Optional[bool] = False,
             jitter: Optional[float] = 0.2,
-            size: Optional[float] = 0.8,
+            dot_size: Optional[float] = 0.8,
             log: Optional[bool] = False,
             rotation_angle: Optional[int] = 0,
             group_by: Optional[str] = None,
@@ -567,6 +567,7 @@ class PlotCollection:
             ax: Optional[Axes] = None,
             order: Optional[Iterable[str]] = None,
             use_raw: Optional[bool] = None,
+            palette: Optional[str] = None
     ):
         """
         Violin plot to show index distribution of quality control.
@@ -576,7 +577,7 @@ class PlotCollection:
         :param y_label: y label.
         :param show_stripplot: whether to overlay a stripplot of specific percentage values.
         :param jitter: adjust the dispersion of points.
-        :param size: dot size.
+        :param dot_size: dot size.
         :param log: plot a graph on a logarithmic axis.
         :param rotation_angle: rotation of xtick labels.
         :param group_by: the key of the observation grouping to consider.
@@ -586,7 +587,9 @@ class PlotCollection:
                 If ‘count’, a violin’s width corresponds to the number of observations.
         :param ax: a matplotlib axes object. only works if plotting a single component.
         :param order: Order in which to show the categories.
-        :param use_raw: Whether to use raw attribute of adata. Defaults to True if .raw is present.
+        :param use_raw: Whether to use raw attribute of data. Defaults to True if .raw is present.
+        :param palette: color theme.
+            For more color theme selection reference: https://seaborn.pydata.org/tutorial/color_palettes.html
         :param out_path: the path to save the figure.
         :param out_dpi: the dpi when the figure is saved.
         """
@@ -598,7 +601,7 @@ class PlotCollection:
             y_label=y_label,
             show_stripplot=show_stripplot,
             jitter=jitter,
-            size=size,
+            dot_size=dot_size,
             log=log,
             rotation_angle=rotation_angle,
             group_by=group_by,
@@ -606,7 +609,8 @@ class PlotCollection:
             scale=scale,
             ax=ax,
             order=order,
-            use_raw=use_raw
+            use_raw=use_raw,
+            palette=palette
         )
 
     @reorganize_coordinate

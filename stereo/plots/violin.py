@@ -209,7 +209,7 @@ def violin_distribution(
         y_label: Optional[str] = None,
         show_stripplot: Optional[bool] = True,
         jitter: Optional[float] = 0.2,
-        size: Optional[float] = 0.8,
+        dot_size: Optional[float] = 0.8,
         log: Optional[bool] = False,
         rotation_angle: Optional[int] = 0,
         group_by: Optional[str] = None,
@@ -218,6 +218,7 @@ def violin_distribution(
         ax: Optional[Axes] = None,
         order: Optional[Iterable[str]] = None,
         use_raw: Optional[bool] = None,
+        palette: Optional[str] = None
 ):  # Violin Statistics Chart
     """
     violin plot showing quality control index distribution
@@ -228,7 +229,7 @@ def violin_distribution(
     :param y_label: y label.
     :param show_stripplot: whether to overlay a stripplot of specific percentage values.
     :param jitter: adjust the dispersion of points.
-    :param size: dot size.
+    :param dot_size: dot size.
     :param log: plot a graph on a logarithmic axis.
     :param rotation_angle: rotation of xtick labels.
     :param group_by: the key of the observation grouping to consider.
@@ -239,6 +240,7 @@ def violin_distribution(
     :param ax: a matplotlib axes object. only works if plotting a single component.
     :param order: Order in which to show the categories.
     :param use_raw: Whether to use raw attribute of adata. Defaults to True if .raw is present.
+    :param palette: color theme.
 
     :return: None
     """
@@ -270,6 +272,10 @@ def violin_distribution(
     else:
         x, ys = group_by, keys
 
+    index_ys = ys[0]
+    if not isinstance(obs_df.iloc[0][index_ys], float):
+        obs_df[index_ys] = pd.to_numeric(obs_df[index_ys], errors='coerce')
+
     if multi_panel and group_by is None and len(ys) == 1:
         y = ys[0]
         g = sns.catplot(
@@ -283,6 +289,7 @@ def violin_distribution(
             order=keys,
             cut=0,
             inner=None,
+            palette=palette
         )
 
         if show_stripplot:
@@ -292,7 +299,7 @@ def violin_distribution(
                     y=y,
                     data=grouped_df.get_group(key),
                     jitter=jitter,
-                    size=size,
+                    size=dot_size,
                     color="black",
                     ax=g.axes[0, ax_id],
                 )
@@ -308,7 +315,8 @@ def violin_distribution(
         else:
             axs = [ax]
         for ax, y, ylab in zip(axs, ys, y_label):
-            ax = sns.violinplot(x=x, y=y, data=obs_df, order=order, orient='vertical', scale=scale, ax=ax)
+            ax = sns.violinplot(x=x, y=y, data=obs_df, order=order, orient='vertical', scale=scale, ax=ax,
+                                palette=palette)
             if show_stripplot:
                 ax = sns.stripplot(
                     x=x,
@@ -317,7 +325,7 @@ def violin_distribution(
                     order=order,
                     jitter=jitter,
                     color='black',
-                    size=size,
+                    size=dot_size,
                     ax=ax,
                 )
             if x_label == '' and group_by is not None and rotation_angle is None:
