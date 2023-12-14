@@ -567,7 +567,8 @@ class PlotCollection:
             ax: Optional[Axes] = None,
             order: Optional[Iterable[str]] = None,
             use_raw: Optional[bool] = False,
-            palette: Optional[str] = None
+            palette: Optional[str] = None,
+            title: Optional[str, Sequence[str]] = None,
     ):
         """
         Violin plot to show index distribution of quality control.
@@ -588,6 +589,7 @@ class PlotCollection:
         :param ax: a matplotlib axes object. only works if plotting a single component.
         :param order: Order in which to show the categories.
         :param use_raw: Whether to use raw attribute of data. Defaults to True if .raw is present.
+        :param title: the title.
         :param palette: color theme.
             For more color theme selection reference: https://seaborn.pydata.org/tutorial/color_palettes.html
         :param out_path: the path to save the figure.
@@ -610,7 +612,8 @@ class PlotCollection:
             ax=ax,
             order=order,
             use_raw=use_raw,
-            palette=palette
+            palette=palette,
+            title=title
         )
 
     @reorganize_coordinate

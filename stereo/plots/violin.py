@@ -203,7 +203,8 @@ def violin_distribution(
         ax: Optional[Axes] = None,
         order: Optional[Iterable[str]] = None,
         use_raw: Optional[bool] = False,
-        palette: Optional[str] = None
+        palette: Optional[str] = None,
+        title: Optional[str] = None
 ):  # Violin Statistics Chart
     """
     violin plot showing quality control index distribution
@@ -226,6 +227,7 @@ def violin_distribution(
     :param order: Order in which to show the categories.
     :param use_raw: Whether to use raw attribute of adata. Defaults to True if .raw is present.
     :param palette: color theme.
+    :param title: the title.
 
     :return: None
     """
@@ -261,6 +263,9 @@ def violin_distribution(
     if not isinstance(obs_df.iloc[0][index_ys], float):
         obs_df[index_ys] = pd.to_numeric(obs_df[index_ys], errors='coerce')
 
+    if title and not isinstance(title, list):
+        title = [title]
+
     if multi_panel and group_by is None and len(ys) == 1:
         y = ys[0]
         g = sns.catplot(
@@ -291,6 +296,9 @@ def violin_distribution(
         if log:
             g.set(yscale='log')
         g.set_titles(col_template='{col_name}').set_xlabels('')
+        if title:
+            for ax in g.axes[0]:
+                ax.set_title(title.pop(0) if title else '')
         if rotation_angle is not None:
             for ax in g.axes[0]:
                 ax.tick_params(axis='x', labelrotation=rotation_angle)
@@ -322,6 +330,8 @@ def violin_distribution(
                 ax.set_yscale('log')
             if rotation_angle is not None:
                 ax.tick_params(axis='x', labelrotation=rotation_angle)
+            if title:
+                ax.set_title(title.pop(0) if title else '')
     pl.show()
 
 
