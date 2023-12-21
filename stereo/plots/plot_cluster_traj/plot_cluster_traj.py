@@ -33,6 +33,29 @@ class PlotClusterTraj(PlotBase):
             palette='stereo_30',
             **kwargs
     ):
+        """
+        Plot trajectory between different cell clusters.
+        
+        :param con: connectivities matrix or connectivities_tree matrix output by PAGA
+        :param x_raw: 1d NdArray, involving raw x coordinates of all cells, or bin sets
+        :param y_raw: 1d NdArray, involving raw y coordinates of all cells, or bin sets
+        :param ty: 1d NdArray, involving cell types of all cells, or bin sets, can take the format of either string, int, or float
+        :param count_thresh: Threshold value that filters out all cell types with number of cells or bin sets lower than it
+        :param eps_co: eps parameter for computing DBSCAN when postprocessing each cluster, check sklearn.cluster.DBSCAN for more details
+        :param check_surr_co: a point has to have points that are check_surr_co* average spot-wise distance for it to be considered representative point of the cluster.
+        :param choose_ty: cell types to plot, chosen by users
+        :param type_traj: Type of visualization, either in curve (parameter value: 'curve'), or in straight lines (parameter value: 'straight')
+        :param lower_thresh_not_equal: Threshold value that neglects all element in parameter: con with value lower than it
+        :param show_scatter: show spots as scatters or not
+        :param line_alpha: alpha of lines, 0-1
+        :param line_width_co: linewidth
+        :param line_color: color of line
+        :param uni_lwidth: lines between different clusters to have different width or not
+        :param text_size: size of labels of each cluster
+        :param n_per_inter: number of interpolated points between each two clusters when plotting
+        :param dpi_save: dpi when saving figures
+        :param palette: palette
+        """
         # generating data for plotting
         traj = Traj(con, x_raw, y_raw, ty)
         traj.assign_ty_rep()
