@@ -64,3 +64,6 @@ The plot collection for StereoExpData object.
     plots.PlotTimeSeriesAnalysis.ms_paga_time_series_plot
     plots.PlotElbow.elbow
     plots.PlotGenesInPseudotime.plot_genes_in_pseudotime
+    plots.PlotVec.plot_vec
+    plots.PlotVec.plot_time_scatter
+    plots.PlotVec3D.plot_vec_3d

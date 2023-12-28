@@ -91,6 +91,15 @@ class PlotVec(PlotBase):
             palette: str = 'stereo',
             **kwargs
     ):
+        """
+        Spatial distribution of pseudotime.
+
+        :param group: The key to get clustering result, now it will be ignored, defaults to 'leiden'.
+        :param vmin: Define the data range that the colormap covers, defaults to None.
+        :param vmax: Define the data range that the colormap covers, defaults to None.
+        :param palette: colormap, defaults to 'stereo'.
+        
+        """
         data = self.stereo_exp_data
 
         data.cells[group] = data.cells[group].astype('category')
