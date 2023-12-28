@@ -22,6 +22,10 @@ References
    Mirjana Efremova, Miquel Vento-Tormo, Sarah A. Teichmann, Roser Vento-Tormo,
    *CellPhoneDB: inferring cell-cell communication from combined expression of multi-subunit ligand-receptor complexes*, Nature Protocols.
 
+.. [Fang23]
+   Shuangsang Fang, Mengyang Xu, Lei Cao, Xiaobin Liu, Marija Bezulj, Liwei Tan, Zhiyuan Yuan, Yao Li, Tianyi Xia, Longyu Guo, Vladimir Kovacevic, Junhou Hui, Lidong Guo, Chao Liu, Mengnan Cheng, Li'ang Lin, Zhenbin Wen, Bojana Josic, Nikola Milicevic, Ping Qiu, Qin Lu, Yumei Li, Leying Wang, Luni Hu, Chao Zhang, Qiang Kang, Fengzhen Chen, Ziqing Deng, Junhua Li, Mei Li, Shengkang Li, Yi Zhao, Guangyi Fan, Yong Zhang, Ao Chen, Yuxiang Li, Xun Xu,
+   *Stereopy: modeling comparative and spatiotemporal cellular heterogeneity via multi-sample spatial transcriptomics*, bioRxiv.
+
 .. [Hafemeister19] 
    Christoph Hafemeister, Rahul Satija, 
    *Normalization and variance stabilization of single-cell RNA-seq data using regularized negative binomial regression*, Genome Biology.

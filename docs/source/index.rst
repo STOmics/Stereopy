@@ -36,18 +36,16 @@ Meanwhile, we are still working on the improvement of performance and calculatio
 * Open to discuss and provide feedback on `Github <https://github.com/STOmics/stereopy>`_.
 * Follow changes in `Release Notes <https://stereopy.readthedocs.io/en/latest/content/06_Release_notes.html>`_.
 
-About MSData
+News
 --------------
-For multi-sample data analysis, we have recently launched a simple-to-use method that can distinguish uni-sample \
-and multi-sample when working on the parallel processings, but the results of two parties can be interacted.
+The paper of Stereopy has been pre-printed on bioRxiv!
 
-We sincerely hope to receive your feedback and suggestions for MSData.
+[*Stereopy: modeling comparative and spatiotemporal cellular heterogeneity via multi-sample spatial transcriptomics*](https://doi.org/10.1101/2023.12.04.569485).
 
 
 Upcoming functions
 --------------------
 * Batch Effect removal funciton
-* Acceleration on PCA calculating (based on CPU)
 * Lasso expression matrix and image simultaneously
 * ...
 
