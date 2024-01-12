@@ -5,6 +5,7 @@
 # @File    : batchqc_raw.py
 # @Software: PyCharm
 # @Email   : zhangchao5@genomics.cn
+import getpass
 import os
 import os.path as osp
 import time
@@ -204,7 +205,7 @@ def generate_report(data_dict: dict, save_path: str, type: str = 'html') -> None
     html = etree.HTML(html_data)
 
     # -------- set username & run time --------
-    embed_text(html, pos="h4", name="username", text=f"Report By: {os.getlogin()}")
+    embed_text(html, pos="h4", name="username", text=f"Report By: {getpass.getuser()}")
     embed_text(html, pos="h5", name="runtime",
                text=f"Report Time: {time.strftime('%Y-%m-%d %H:%M:%S', time.localtime())}")
 
