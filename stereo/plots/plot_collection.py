@@ -568,7 +568,7 @@ class PlotCollection:
             order: Optional[Iterable[str]] = None,
             use_raw: Optional[bool] = False,
             palette: Optional[str] = None,
-            title: Optional[str, Sequence[str]] = None,
+            title: Optional[str] = None,
     ):
         """
         Violin plot to show index distribution of quality control.
