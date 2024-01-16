@@ -173,15 +173,17 @@ def base_scatter(
         hue_order: any = None,
         width: float = None,
         height: float = None,
+        boundary: list = None,
         show_plotting_scale: bool = False,
         plotting_scale_width: float = 2000,
         data_resolution: int = None,
         data_bin_offset: int = 1,
         foreground_alpha: float = 0.5,
         base_image: list = None,
-        base_cmap: str = 'Greys',
-        base_boundary: float = None,
-        boundary: list = None
+        base_im_cmap: str = 'Greys',
+        base_im_boundary: list = None,
+        base_im_value_range: tuple = None,
+        base_im_to_gray: bool = False
 ):  # scatter plot, Expression matrix spatial distribution after clustering
     """
     scatter plotter
@@ -227,7 +229,24 @@ def base_scatter(
         ax.invert_yaxis()
 
     if base_image is not None:
-        ax.imshow(base_image, cmap=base_cmap, extent=base_boundary)
+        if len(base_image.shape) == 3 and base_im_to_gray:
+            from cv2 import cvtColor, COLOR_BGR2GRAY
+            base_image = cvtColor(base_image[:, :, [2, 1, 0]], COLOR_BGR2GRAY)
+        if len(base_image.shape) == 3 and base_image.dtype == np.uint16:
+            if base_im_value_range is not None:
+                bmin, bmax = base_image.min(), base_image.max()
+            else:
+                bmin, bmax = base_im_value_range
+            base_image = plt.Normalize(bmin, bmax)(base_image).data
+        if len(base_image.shape) == 3:
+            bg_pixel = np.array([0, 0, 0], dtype=base_image.dtype)
+            if base_image.dtype == np.uint8:
+                bg_value = 255
+            else:
+                bg_value = 1.0
+            bg_mask = np.where(base_image == bg_pixel, bg_value, 0)
+            base_image += bg_mask
+        ax.imshow(base_image, cmap=base_im_cmap, extent=base_im_boundary)
     else:
         foreground_alpha = 1
 
@@ -242,12 +261,12 @@ def base_scatter(
             vmax = hue.max() if vmax is None else vmax
             norm = plt.Normalize(vmin, vmax)
         sns.scatterplot(x=x, y=y, hue=hue, ax=ax, palette=cmap, size=hue, linewidth=0, marker=marker,
-                        sizes=(dot_size, dot_size), hue_norm=norm, vmin=vmin, vmax=vmax, alpha=foreground_alpha)
+                        sizes=(dot_size, dot_size), hue_norm=norm, alpha=foreground_alpha, legend=False)
         sm = plt.cm.ScalarMappable(cmap=cmap, norm=norm)
         sm.set_array([])
         ax.figure.colorbar(sm)
-        if ax.legend_ is not None:
-            ax.legend_.remove()
+        # if ax.legend_ is not None:
+        #     ax.legend_.remove()
     else:
         from natsort import natsorted
         import collections
@@ -259,11 +278,11 @@ def base_scatter(
         sns.scatterplot(x=x, y=y, hue=hue, hue_order=g, linewidth=0, marker=marker,
                         palette=color_dict, size=hue, sizes=(dot_size, dot_size), ax=ax, alpha=foreground_alpha)
         handles, labels = ax.get_legend_handles_labels()
-        ax.legend_.remove()
-        ax.legend(handles, labels, ncol=legend_ncol, bbox_to_anchor=(1.02, 1),
+        # ax.legend_.remove()
+        legd = ax.legend(handles, labels, ncol=legend_ncol, bbox_to_anchor=(1.02, 1),
                   loc='upper left', borderaxespad=0, frameon=False)
-        for lh in ax.legend_.legendHandles:
-            lh.set_alpha(1)
+        for lh in legd.legendHandles:
+            # lh.set_alpha(1)
             lh._sizes = [40]
 
     ax.set_title(title, fontsize=18, fontweight='bold')

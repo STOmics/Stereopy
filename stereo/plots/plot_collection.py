@@ -855,7 +855,8 @@ class PlotCollection:
             width: Optional[int] = None,
             height: Optional[int] = None,
             base_image: Optional[str] = None,
-            base_cmap: Optional[str] = 'Greys',
+            base_im_cmap: Optional[str] = 'Greys',
+            base_im_to_gray : bool = False,
             **kwargs
     ):
         """
@@ -895,8 +896,8 @@ class PlotCollection:
         palette = stereo_conf.get_colors(colors, n=n)
         x = self.data.position[:, 0]
         y = self.data.position[:, 1]
-        x_min, x_max = x.min(), x.max()
-        y_min, y_max = y.min(), y.max()
+        x_min, x_max = int(x.min()), int(x.max())
+        y_min, y_max = int(y.min()), int(y.max())
         boundary = [x_min, x_max, y_min, y_max]
         marker = 's'
         if dot_size is None:
@@ -924,17 +925,25 @@ class PlotCollection:
                     x = x[isin]
                     y = y[isin]
 
-        base_boundary = None
+        base_im_boundary = None
         base_image_data = None
+        base_im_value_range = None
         if base_image is not None:
-            base_image_data = tiff.imread(base_image)
-            if x_min > 0 or y_min > 0:
-                x_min = max(0, x_min - PLOT_BASE_IMAGE_EXPANSION)
-                y_min = max(0, y_min - PLOT_BASE_IMAGE_EXPANSION)
-                x_max += PLOT_BASE_IMAGE_EXPANSION
-                y_max += PLOT_BASE_IMAGE_EXPANSION
-                base_image_data = base_image_data[y_min:(y_max + 1), x_min:(x_max + 1)]
-            base_boundary = [x_min, x_max, y_max, y_min]
+            # base_image_data = tiff.imread(base_image)
+            with tiff.TiffFile(base_image) as tif:
+                base_image_data = tif.asarray()
+                if x_min > 0 or y_min > 0:
+                    x_min = max(0, x_min - PLOT_BASE_IMAGE_EXPANSION)
+                    y_min = max(0, y_min - PLOT_BASE_IMAGE_EXPANSION)
+                    x_max += PLOT_BASE_IMAGE_EXPANSION
+                    y_max += PLOT_BASE_IMAGE_EXPANSION
+                    base_image_data = base_image_data[y_min:(y_max + 1), x_min:(x_max + 1)]
+                base_im_boundary = [x_min, x_max, y_max, y_min]
+                shaped_metadata = tif.shaped_metadata
+                if shaped_metadata is not None:
+                    metadata = shaped_metadata[0]
+                    if 'value_range' in metadata:
+                        base_im_value_range = metadata['value_range']
             marker = '.'
 
         if 'marker' in kwargs:
@@ -949,15 +958,17 @@ class PlotCollection:
             x_label=x_label,
             y_label=y_label,
             dot_size=dot_size,
+            marker=marker,
             invert_y=invert_y,
             hue_order=hue_order,
             width=width,
             height=height,
-            base_image=base_image_data,
-            base_cmap=base_cmap,
-            base_boundary=base_boundary,
             boundary=boundary,
-            marker=marker,
+            base_image=base_image_data,
+            base_im_cmap=base_im_cmap,
+            base_im_boundary=base_im_boundary,
+            base_im_value_range=base_im_value_range,
+            base_im_to_gray=base_im_to_gray,
             **kwargs
         )
         return fig
@@ -1276,17 +1287,21 @@ class PlotCollection:
     @reorganize_coordinate
     def cells_plotting(
             self,
-            cluster_res_key: str = 'cluster',
+            color_by: Literal['total_count', 'n_genes_by_counts', 'gene', 'cluster'] = 'total_count',
+            color_key: Optional[str] = None,
             bgcolor: Optional[str] = '#2F2F4F',
             width: Optional[int] = None,
             height: Optional[int] = None,
             fg_alpha: Optional[float] = 0.5,
-            base_image: Optional[str] = None
+            base_image: Optional[str] = None,
+            base_im_to_gray: bool = False
     ):
         """Plot the cells.
 
-        :param cluster_res_key: result key of clustering, defaults to `'cluster'`
-                color by cluster result if cluster result is not None, or by `total_counts`.
+        :param color_by: spcify the way of coloring, default to 'total_count'.
+                            if set to 'gene', you need to specify a gene name or a list of gene names by `color_key`.
+                            if set to 'cluster', you need to specify the key to get cluster result by `color_key`.
+        :param color_key: the key to get the data to color the plot, it is ignored when the `color_by` is set to 'total_count' or 'n_genes_by_counts'.
         :param bgcolor: set background color.
         :param width: the figure width in pixels.
         :param height: the figure height in pixels.
@@ -1308,14 +1323,20 @@ class PlotCollection:
         :return: Cells distribution figure.
         """  # noqa
         from .plot_cells import PlotCells
+        if color_by in ('cluster', 'gene'):
+            if not isinstance(color_key, str):
+                raise TypeError(f"the 'color_key' must be the type of string, but now is {type(color_key)}.")
         pc = PlotCells(
             self.data,
-            cluster_res_key=cluster_res_key,
+            color_by=color_by,
+            color_key=color_key,
+            # cluster_res_key=cluster_res_key,
             bgcolor=bgcolor,
             width=width,
             height=height,
             fg_alpha=fg_alpha,
-            base_image=base_image
+            base_image=base_image,
+            base_im_to_gray=base_im_to_gray
         )
         return pc.show()
 
