@@ -1,8 +1,13 @@
 Installation
 ============
 
-.. attention::
+.. important::
     Our tool could be installed on Linux/Windows with Python3.8.
+
+
+.. attention::
+    When installing Stereopy <= 1.0.0, please use `conda install stereopy` or `conda install stereopy==1.0.0` commands. Because a third-party package removed its historical versions which would lead to an installation failure.
+
 
 Anaconda
 ---------
