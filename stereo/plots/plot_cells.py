@@ -269,10 +269,10 @@ class PlotCells:
             if color_by_value == 'gene':
                 self.color_key = gene_names_value
                 self.gene_names.visible = True
-                self.gene_names.disabled = False
+                # self.gene_names.disabled = False
             else:
                 self.gene_names.visible = False
-                self.gene_names.disabled = True
+                # self.gene_names.disabled = True
             
             polygons_detail, hover_tool, vdims = self._create_polygons(color_by_value)
 
