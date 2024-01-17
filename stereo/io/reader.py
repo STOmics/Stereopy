@@ -42,7 +42,8 @@ def read_gem(
         bin_type: str = "bins",
         bin_size: int = 100,
         is_sparse: bool = True,
-        bin_coor_offset: bool = False
+        bin_coor_offset: bool = False,
+        gene_name_index: bool = False
 ):
     """
     Read the Stereo-seq GEM file, and generate the StereoExpData object.
@@ -60,8 +61,13 @@ def read_gem(
     is_sparse
         the expression matrix is sparse matrix, if `True`, otherwise `np.ndarray`.
     bin_coor_offset
-        If set it to True, the coordinates of bins are calculated as
+        if set it to True, the coordinates of bins are calculated as
         ((gene_coordinates - min_coordinates) // bin_size) * bin_size + min_coordinates + bin_size/2
+    gene_name_index
+        In a v0.1 gem file, the column geneID is the gene name actually, but in a v0.2,
+        geneID just a ID for genes and there is an additional column called geneName where is the gene name,
+        When the version of gem file is v0.2, set `gene_name_index` to True to set column geneName as index, otherwise,
+        set column geneID, if a v0.1 gem file, `gene_name_index` will be ignored and column geneID is set as index.
 
     Returns
     -------------
@@ -80,6 +86,9 @@ def read_gem(
     dropna_subset = ['geneID', 'x', 'y', 'UMICount']
     if 'cell_id' in df.columns:
         dropna_subset.append('cell_id')
+    if 'geneName' in df.columns:
+        dropna_subset.append('geneName')
+
     df.dropna(
         subset=dropna_subset,
         axis=0,
@@ -99,10 +108,21 @@ def read_gem(
     genes_dict = dict(zip(genes, range(0, len(genes))))
     rows = df['cell_id'].map(cells_dict)
     cols = df['geneID'].map(genes_dict)
-    logger.info(f'the martrix has {len(cells)} cells, and {len(genes)} genes.')
+    # logger.info(f'the martrix has {len(cells)} cells, and {len(genes)} genes.')
     exp_matrix = csr_matrix((df['UMICount'], (rows, cols)), shape=(cells.shape[0], genes.shape[0]), dtype=np.int32)
     data.cells = Cell(cell_name=cells)
-    data.genes = Gene(gene_name=genes)
+
+    if 'geneName' in df.columns:
+        gene_names = df['geneName'].unique().astype('U')
+        if gene_name_index:
+            exp_matrix, gene_names = __integrate_genes(gene_names, exp_matrix)
+            data.genes = Gene(gene_name=gene_names)
+        else:
+            data.genes = Gene(gene_name=genes)
+            data.genes['gene_name_underline'] = gene_names
+            data.genes['real_gene_name'] = __remove_gene_number(gene_names)
+    else:
+        data.genes = Gene(gene_name=genes)
     data.exp_matrix = exp_matrix if is_sparse else exp_matrix.toarray()
     if data.bin_type == 'bins':
         # data.position = df.loc[:, ['x_center', 'y_center']].drop_duplicates().values
@@ -126,6 +146,7 @@ def read_gem(
         'maxExp': data.exp_matrix.max(),  # noqa
         'resolution': resolution,
     }
+    logger.info(f'the martrix has {data.cell_names.size} cells, and {data.gene_names.size} genes.')
     return data
 
 
@@ -1017,7 +1038,8 @@ def read_gef(
         bin_size: int = 100,
         is_sparse: bool = True,
         gene_list: Optional[list] = None,
-        region: Optional[list] = None
+        region: Optional[list] = None,
+        gene_name_index: Optional[bool] = False
 ):
     """
     Read the GEF (.h5) file, and generate the StereoExpData object.
@@ -1036,6 +1058,10 @@ def read_gef(
         select targeted data based on the gene list.
     region
         restrict data to the region condition, like [minX, maxX, minY, maxY].
+    gene_name_index
+        `True` to set gene name as index if the version of gef file is 4 or greater,
+        otherwise to set gene id, if the version is 3 or less, `gene_name_index` would
+        be forced to `True` because there is no gene id in this case.
 
     Returns
     ------------------------
@@ -1073,22 +1099,59 @@ def read_gef(
             data.cells = Cell(cell_name=uniq_cell, cell_border=uniq_cell_borders)
             data.cells['dnbCount'] = dnb_cnt
             data.cells['area'] = cell_area
-            data.genes = Gene(gene_name=gene_names)
+
+            if len(gene_id[0]) == 0:
+                gene_name_index = True
+            if gene_name_index:
+                if len(gene_id[0]) > 0:
+                    exp_matrix, gene_names = __integrate_genes(gene_names, exp_matrix)
+                data.genes = Gene(gene_name=gene_names)
+            else:
+                data.genes = Gene(gene_name=gene_id)
+                # data.genes['gene_name_underline'] = gene_names
+                data.genes['real_gene_name'] = __remove_gene_number(gene_names)
 
             data.exp_matrix = exp_matrix if is_sparse else exp_matrix.toarray()
         else:
-            from gefpy.cell_exp_reader import CellExpReader
-            cell_bin_gef = CellExpReader(file_path)
-            data.position = cell_bin_gef.positions
-            logger.info(f'the matrix has {cell_bin_gef.cell_num} cells, and {cell_bin_gef.gene_num} genes.')
-            exp_matrix = csr_matrix((cell_bin_gef.count, (cell_bin_gef.rows, cell_bin_gef.cols)),
-                                    shape=(cell_bin_gef.cell_num, cell_bin_gef.gene_num), dtype=np.uint32)
-            data.cells = Cell(cell_name=cell_bin_gef.cells, cell_border=cell_borders)
-            data.cells['dnbCount'] = cell_bin_gef.dnbCount
-            data.cells['area'] = cell_bin_gef.area
-            data.genes = Gene(gene_name=cell_bin_gef.genes)
-            data.exp_matrix = exp_matrix if is_sparse else exp_matrix.toarray()
+            # from gefpy.cell_exp_reader import CellExpReader
+            # cell_bin_gef = CellExpReader(file_path)
+            # data.position = cell_bin_gef.positions
+            # logger.info(f'the matrix has {cell_bin_gef.cell_num} cells, and {cell_bin_gef.gene_num} genes.')
+            # exp_matrix = csr_matrix((cell_bin_gef.count, (cell_bin_gef.rows, cell_bin_gef.cols)),
+            #                         shape=(cell_bin_gef.cell_num, cell_bin_gef.gene_num), dtype=np.uint32)
+            # data.cells = Cell(cell_name=cell_bin_gef.cells, cell_border=cell_borders)
+            # data.cells['dnbCount'] = cell_bin_gef.dnbCount
+            # data.cells['area'] = cell_bin_gef.area
+            # data.genes = Gene(gene_name=cell_bin_gef.genes)
+            # data.exp_matrix = exp_matrix if is_sparse else exp_matrix.toarray()
+            cell_names = gef.get_cell_names()
+            cell_num = gef.get_cell_num()
+            gene_names, gene_id = gef.get_gene_names()
+            gene_names = gene_names.astype('U')
+            gene_id = gene_id.astype('U')
+            gene_num = gef.get_gene_num()
+            # logger.info(f'the matrix has {cell_num} cells, and {gene_num} genes.')
+            indices, indptr, count = gef.get_sparse_matrix_indices(order='cell')
+            exp_matrix = csr_matrix((count, indices, indptr), shape=(cell_num, gene_num), dtype=np.uint32)
+            data.cells = Cell(cell_name=cell_names, cell_border=cell_borders)
+            cells = gef.get_cells()
+            data.cells['dnbCount'] = cells['dnbCount']
+            data.cells['area'] = cells['area']
+            data.position = np.zeros(shape=(cell_num, 2), dtype=np.uint32)
+            data.position[:, 0] = cells['x']
+            data.position[:, 1] = cells['y']
+            if len(gene_id[0]) == 0:
+                gene_name_index = True
+            if gene_name_index:
+                if len(gene_id[0]) > 0:
+                    exp_matrix, gene_names = __integrate_genes(gene_names, exp_matrix)
+                data.genes = Gene(gene_name=gene_names)
+            else:
+                data.genes = Gene(gene_name=gene_id)
+                # data.genes['gene_name_underline'] = gene_names
+                data.genes['real_gene_name'] = __remove_gene_number(gene_names)
 
+            data.exp_matrix = exp_matrix if is_sparse else exp_matrix.toarray()
         data.attr = {
             'resolution': read_gef_info(file_path)['resolution']
         }
@@ -1127,22 +1190,52 @@ def read_gef(
             data.position = np.array(
                 list((zip(np.right_shift(uniq_cell, 32), np.bitwise_and(uniq_cell, 0xffffffff))))).astype('uint32')
             data.cells = Cell(cell_name=uniq_cell)
-            data.genes = Gene(gene_name=gene_names)
 
             exp_matrix = csr_matrix((count, (cell_ind, gene_ind)), shape=(cell_num, gene_num), dtype=np.uint32)
+            if len(gene_id[0]) == 0:
+                gene_name_index = True
+            if gene_name_index:
+                if len(gene_id[0]) > 0:
+                    exp_matrix, gene_names = __integrate_genes(gene_names, exp_matrix)
+                data.genes = Gene(gene_name=gene_names)
+            else:
+                data.genes = Gene(gene_name=gene_id)
+                # data.genes['gene_name_underline'] = gene_names
+                data.genes['real_gene_name'] = __remove_gene_number(gene_names)
 
             data.exp_matrix = exp_matrix if is_sparse else exp_matrix.toarray()
         else:
+            # gene_num = gef.get_gene_num()
+            # uniq_cells, rows, count = gef.get_exp_data()
+            # cell_num = len(uniq_cells)
+            # logger.info(f'the matrix has {cell_num} cells, and {gene_num} genes.')
+            # cols, uniq_genes, _ = gef.get_gene_data()
+            # data.position = np.array(list(
+            #     (zip(np.right_shift(uniq_cells, 32), np.bitwise_and(uniq_cells, 0xffffffff))))).astype('uint32')
+            # exp_matrix = csr_matrix((count, (rows, cols)), shape=(cell_num, gene_num), dtype=np.uint32)
+            # data.cells = Cell(cell_name=uniq_cells)
+            # data.genes = Gene(gene_name=uniq_genes)
+            # data.exp_matrix = exp_matrix if is_sparse else exp_matrix.toarray()
+            cell_names = gef.get_cell_names()
+            cell_num = gef.get_cell_num()
+            gene_names, gene_id = gef.get_gene_names()
             gene_num = gef.get_gene_num()
-            uniq_cells, rows, count = gef.get_exp_data()
-            cell_num = len(uniq_cells)
-            logger.info(f'the matrix has {cell_num} cells, and {gene_num} genes.')
-            cols, uniq_genes, _ = gef.get_gene_data()
             data.position = np.array(list(
-                (zip(np.right_shift(uniq_cells, 32), np.bitwise_and(uniq_cells, 0xffffffff))))).astype('uint32')
-            exp_matrix = csr_matrix((count, (rows, cols)), shape=(cell_num, gene_num), dtype=np.uint32)
-            data.cells = Cell(cell_name=uniq_cells)
-            data.genes = Gene(gene_name=uniq_genes)
+                (zip(np.right_shift(cell_names, 32), np.bitwise_and(cell_names, 0xffffffff))))).astype('uint32')
+            data.cells = Cell(cell_name=cell_names)
+            if len(gene_id[0]) == 0: # an old version gef file, no gene id
+                gene_name_index = True
+            
+            cell_ind, gene_ind, count = gef.get_sparse_matrix_indices2()
+            exp_matrix = csr_matrix((count, (cell_ind, gene_ind)), shape=(cell_num, gene_num), dtype=np.uint32)
+            if gene_name_index:
+                if len(gene_id[0]) > 0:
+                    exp_matrix, gene_names = __integrate_genes(gene_names, exp_matrix)
+                data.genes = Gene(gene_name=gene_names)
+            else:
+                data.genes = Gene(gene_name=gene_id)
+                # data.genes['gene_name_underline'] = gene_names
+                data.genes['real_gene_name'] = __remove_gene_number(gene_names)
             data.exp_matrix = exp_matrix if is_sparse else exp_matrix.toarray()
             
         logger.info(f'the matrix has {data.cell_names.size} cells, and {data.gene_names.size} genes.')
