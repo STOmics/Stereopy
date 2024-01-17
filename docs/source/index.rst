@@ -73,13 +73,13 @@ Latest Additions
 
 Version 1.1.0
 ~~~~~~~~~~~~~~
-1.1.0 : 2024-01-16
+1.1.0 : 2024-01-17
 
 Features:
 
 1. Reconstructed `st.plt.violin` visualizing function which is now not only applied to display QC indicators;
 2. `ins.export_high_res_area` can handle expression matrix and image simultaneously, to lasso region of interest and corresponding sub-image.
-3. Interactive visualizing `st.plt.cells_plotting` supported displaying expression heat map and spatial distribution of a single gene.
+3. Interactive visualizing `st.plt.cells_plotting` supported displaying expression heatmap and spatial distribution of a single gene.
 4. When input GEF and GEM at cell level, information of DNB count and cell area would be added into `cells` / `obs`, and cell border would be added into `cells_matrix` / `obsm`.
 
 BUG Fixes:
