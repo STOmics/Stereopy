@@ -1299,7 +1299,7 @@ class PlotCollection:
         """Plot the cells.
 
         :param color_by: spcify the way of coloring, default to 'total_count'.
-                            if set to 'gene', you need to specify a gene name or a list of gene names by `color_key`.
+                            if set to 'gene', you need to specify a gene name by `color_key`.
                             if set to 'cluster', you need to specify the key to get cluster result by `color_key`.
         :param color_key: the key to get the data to color the plot, it is ignored when the `color_by` is set to 'total_count' or 'n_genes_by_counts'.
         :param bgcolor: set background color.
