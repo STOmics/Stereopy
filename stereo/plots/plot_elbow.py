@@ -31,6 +31,8 @@ class PlotElbow(PlotBase):
         :param n_pcs: number of PCs to be displayed, defaults to None to show all PCs.
         :param width: the figure width in pixels, defaults to None.
         :param height: the figure height in pixels, defaults to None.
+                        if width or height is None, they will be set to default value by matplotlib,
+                        width defaults to 6.4 inches and height defaults to 4.8 inches.  
         :param title: the tilte of the plot, defaults to 'Elbow Plot'.
         :param x_label: the label of the x-axis, defaults to 'Principal Component'.
         :param y_label: the label of the y-axis, defaults to 'Variance Explained'.

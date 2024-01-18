@@ -36,18 +36,16 @@ Meanwhile, we are still working on the improvement of performance and calculatio
 * Open to discuss and provide feedback on `Github <https://github.com/STOmics/stereopy>`_.
 * Follow changes in `Release Notes <https://stereopy.readthedocs.io/en/latest/content/06_Release_notes.html>`_.
 
-About MSData
+News
 --------------
-For multi-sample data analysis, we have recently launched a simple-to-use method that can distinguish uni-sample \
-and multi-sample when working on the parallel processings, but the results of two parties can be interacted.
+The paper of Stereopy has been pre-printed on bioRxiv!
 
-We sincerely hope to receive your feedback and suggestions for MSData.
+`Stereopy: modeling comparative and spatiotemporal cellular heterogeneity via multi-sample spatial transcriptomics <https://doi.org/10.1101/2023.12.04.569485>`_.
 
 
 Upcoming functions
 --------------------
 * Batch Effect removal funciton
-* Acceleration on PCA calculating (based on CPU)
 * Lasso expression matrix and image simultaneously
 * ...
 
@@ -72,6 +70,23 @@ Workflow
 
 Latest Additions
 ------------------
+
+Version 1.1.0
+~~~~~~~~~~~~~~
+1.1.0 : 2024-01-17
+
+Features:
+
+1. Reconstructed `st.plt.violin` visualizing function which is now not only applied to display QC indicators;
+2. `ins.export_high_res_area` can handle expression matrix and image simultaneously, to lasso region of interest and corresponding sub-image.
+3. Interactive visualizing `st.plt.cells_plotting` supported displaying expression heatmap and spatial distribution of a single gene.
+4. When input GEF and GEM at cell level, information of DNB count and cell area would be added into `cells` / `obs`, and cell border would be added into `cells_matrix` / `obsm`.
+
+BUG Fixes:
+
+1. `slideio` package removed historical versions, resulting in an installation failure.
+2. Calculating error when performing `ms_data.tl.batch_qc`, due to abnormal `os.getlogin`.
+3. `st.plt.paga_time_series_plot` indicated that the image was too large to draw, due to unprocessed boundary values when computing median.
 
 Version 1.0.0
 ~~~~~~~~~~~~~~
@@ -131,22 +146,6 @@ BUG Fixes:
 2. Fixed the issue that output Seurat h5ad could not be transformed into R format.
 3. Fixed the issue that clustering output of Leiden was in wrong data type under the scene of GPU acceleration, leading to errors in subsequent analysis which work on the clustering result.
 4. Fixed the issue that clustering result could not be written into GEF file, using `st.io.update_gef`, caused by data type error. From v0.12.1 on, `date.cells.cell_name` has changed from int to string. 
-
-Version 0.13.0b1 (Beta)
-~~~~~~~~~~~~~~~~~~~~~~~~~
-0.13.0b1 : 2023-07-11
-
-Notice: this Beta version is specifically developed for multi-sample analysis. Major update points are listed below.
-
-1. Addition of 3D Cell-cell Communication.
-2. Addition of 3D Gene Regulatory Network.
-3. Addition of Trajectory Inference, including PAGA and DPT algorithms.
-4. Addition of Batch QC function for evaluation on batch effect.
-5. Addition of `st.io.read_h5ad` for improved compatibility with AnnData H5ad, we highly recommend that instead of `st.io.read_ann_h5ad`.
-6. Addition of analysis workflow tutorial based on multi-sample data, with assistant parameters `scope` and `mode`.
-7. Addition of resetting the image order of multi-sample analysis results.
-8. Addition of 3D mesh visualization.
-9. Improved the performance of Gaussian Smoothing.
 
 
 .. toctree::

@@ -350,8 +350,10 @@ class PlotTimeSeries(PlotBase):
         max_vertex_right = {}
         for x in internal_df.groupby(TMP):
             tmp = x[1][[0, 1]].to_numpy()
-            tmp_left = tmp[(np.percentile(tmp[:, 0], 40) <= tmp[:, 0]) & (tmp[:, 0] <= np.percentile(tmp[:, 0], 60))]
-            tmp_right = tmp[(np.percentile(tmp[:, 0], 40) <= tmp[:, 0]) & (tmp[:, 0] <= np.percentile(tmp[:, 0], 60))]
+            tmp_left = tmp[(np.percentile(tmp[:, 0], 40, interpolation='nearest') <= tmp[:, 0]) & (
+                        tmp[:, 0] <= np.percentile(tmp[:, 0], 60, interpolation='nearest'))]
+            tmp_right = tmp[(np.percentile(tmp[:, 0], 40, interpolation='nearest') <= tmp[:, 0]) & (
+                        tmp[:, 0] <= np.percentile(tmp[:, 0], 60, interpolation='nearest'))]
             min_vertex_left[x[0]] = [np.mean(tmp_left[:, 0]), 0 - np.percentile(tmp_left[:, 1], 10)]
             min_vertex_right[x[0]] = [np.mean(tmp_right[:, 0]), 0 - np.percentile(tmp_right[:, 1], 10)]
             max_vertex_left[x[0]] = [np.mean(tmp_left[:, 0]), 0 - np.percentile(tmp_left[:, 1], 90)]

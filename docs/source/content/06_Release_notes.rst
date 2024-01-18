@@ -3,6 +3,24 @@ Release Notes
 
 .. role:: small
 
+Version 1.1.0
+------------------
+1.1.0 : 2024-01-17
+~~~~~~~~~~~~~~~~~~~
+
+Features:
+
+1. Reconstructed `st.plt.violin` visualizing function which is now not only applied to display QC indicators;
+2. `ins.export_high_res_area` can handle expression matrix and image simultaneously, to lasso region of interest and corresponding sub-image.
+3. Interactive visualizing `st.plt.cells_plotting` supported displaying expression heatmap and spatial distribution of a single gene.
+4. When input GEF and GEM at cell level, information of DNB count and cell area would be added into `cells` / `obs`, and cell border would be added into `cells_matrix` / `obsm`.
+
+BUG Fixes:
+
+1. `slideio` package removed historical versions, resulting in an installation failure.
+2. Calculating error when performing `ms_data.tl.batch_qc`, due to abnormal `os.getlogin`.
+3. `st.plt.paga_time_series_plot` indicated that the image was too large to draw, due to unprocessed boundary values when computing median.
+
 Version 1.0.0
 ------------------
 1.0.0 : 2023-12-04

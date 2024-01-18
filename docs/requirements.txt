@@ -168,7 +168,7 @@ shapely>=2.0.0
 sinfo==0.3.4
 six==1.16.0
 slicerator==1.1.0
-slideio==0.5.225
+slideio>=1.0.0
 snowballstemmer==2.2.0
 sortedcontainers==2.4.0
 squidpy==1.2.2

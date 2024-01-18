@@ -239,8 +239,12 @@ def merge(
             elif var_type == "union":
                 old_gene_name = new_data.genes.gene_name
                 new_data.genes.gene_name = np.union1d(new_data.genes.gene_name, data.genes.gene_name)
+                if new_data.issparse():
+                    new_data.sparse2array()
+                if data.issparse():
+                    data.sparse2array()
                 new_data.exp_matrix = _union_merge(
-                    new_data.exp_matrix.toarray(), data.exp_matrix.toarray(), new_data.genes.gene_name, old_gene_name,
+                    new_data.exp_matrix, data.exp_matrix, new_data.genes.gene_name, old_gene_name,
                     data.genes.gene_name
                 )
             else:
@@ -267,6 +271,8 @@ def merge(
             reorganize_coordinate, horizontal_offset_additional, vertical_offset_additional
         )
 
+    if not new_data.issparse():
+        new_data.array2sparse()
     return new_data
 
 
