@@ -15,6 +15,7 @@ change log:
 from copy import deepcopy
 from typing import Optional
 from typing import Union
+from natsort import natsorted
 
 import h5py
 import numpy as np
@@ -31,6 +32,7 @@ from stereo.core.gene import Gene
 from stereo.core.stereo_exp_data import AnnBasedStereoExpData
 from stereo.core.stereo_exp_data import StereoExpData
 from stereo.io import h5ad
+from stereo.io.utils import remove_genes_number, integrate_matrix_by_genes
 from stereo.log_manager import logger
 from stereo.utils.read_write_utils import ReadWriteUtils
 
@@ -114,13 +116,15 @@ def read_gem(
 
     if 'geneName' in df.columns:
         gene_names = df['geneName'].unique().astype('U')
+        gene_names = remove_genes_number(gene_names)
         if gene_name_index:
-            exp_matrix, gene_names = __integrate_genes(gene_names, exp_matrix)
+            exp_matrix, gene_names = integrate_matrix_by_genes(gene_names, cells.shape[0],
+                                                       exp_matrix.data, exp_matrix.indices, exp_matrix.indptr)
             data.genes = Gene(gene_name=gene_names)
         else:
             data.genes = Gene(gene_name=genes)
-            data.genes['gene_name_underline'] = gene_names
-            data.genes['real_gene_name'] = __remove_gene_number(gene_names)
+            # data.genes['gene_name_underline'] = gene_names
+            data.genes['real_gene_name'] = gene_names
     else:
         data.genes = Gene(gene_name=genes)
     data.exp_matrix = exp_matrix if is_sparse else exp_matrix.toarray()
@@ -919,6 +923,46 @@ def stereo_to_anndata(
                 for res_key in data.tl.key_record[key]:
                     logger.info(f"Adding data.tl.result['{res_key}'] into adata.uns['{res_key}'] .")
                     adata.uns[res_key] = data.tl.result[res_key]
+            elif key == 'marker_genes':
+                for res_key in data.tl.key_record[key]:
+                    marker_genes_result = {}
+                    method = data.tl.result[res_key]['parameters']['method']
+                    if method == 't_test':
+                        method = 't-test'
+                    elif method == 'wilcoxon_test':
+                        method = 'wilcoxon'
+                    marker_genes_result['params'] = {
+                        'groupby': data.tl.result[res_key]['parameters']['cluster_res_key'],
+                        'reference': data.tl.result[res_key]['parameters']['control_groups'],
+                        'method': method,
+                        'use_raw': data.tl.result[res_key]['parameters']['use_raw'],
+                        'layer': None,
+                        'corr_method': data.tl.result[res_key]['parameters']['corr_method']
+                    }
+                    marker_genes_result['pts'] = data.tl.result[res_key]['pct'].set_index('genes')
+                    marker_genes_result['pts_rest'] = data.tl.result[res_key]['pct_rest'].set_index('genes')
+                    groups_key = natsorted([k for k in  data.tl.result[res_key] if '.vs.' in k])
+                    key_map = {
+                        'genes': 'names',
+                        'scores': 'scores', 
+                        'pvalues': 'pvals',
+                        'pvalues_adj': 'pvals_adj',
+                        'log2fc': 'logfoldchanges'
+                    }
+                    for k1, k2 in key_map.items():
+                        dtype = []
+                        for k in groups_key:
+                            group = k.split('.vs.')[0]
+                            dtype.append((group, data.tl.result[res_key][k][k1].dtype))
+                        recarr = np.recarray(shape=data.tl.result[res_key][k].shape[0], dtype=dtype)
+                        for k in groups_key:
+                            group = k.split('.vs.')[0]
+                            recarr[group] = data.tl.result[res_key][k][k1].to_numpy()
+                        marker_genes_result[k2] = recarr
+                    if res_key == key:
+                        adata.uns['rank_genes_groups'] = marker_genes_result
+                    else:
+                        adata.uns[res_key] = marker_genes_result
             else:
                 continue
 
@@ -1102,14 +1146,16 @@ def read_gef(
 
             if len(gene_id[0]) == 0:
                 gene_name_index = True
+            gene_names = remove_genes_number(gene_names)
             if gene_name_index:
                 if len(gene_id[0]) > 0:
-                    exp_matrix, gene_names = __integrate_genes(gene_names, exp_matrix)
+                    exp_matrix, gene_names = integrate_matrix_by_genes(gene_names, cell_num,
+                                                               exp_matrix.data, exp_matrix.indices, exp_matrix.indptr)
                 data.genes = Gene(gene_name=gene_names)
             else:
                 data.genes = Gene(gene_name=gene_id)
                 # data.genes['gene_name_underline'] = gene_names
-                data.genes['real_gene_name'] = __remove_gene_number(gene_names)
+                data.genes['real_gene_name'] = gene_names
 
             data.exp_matrix = exp_matrix if is_sparse else exp_matrix.toarray()
         else:
@@ -1142,14 +1188,15 @@ def read_gef(
             data.position[:, 1] = cells['y']
             if len(gene_id[0]) == 0:
                 gene_name_index = True
+            gene_names = remove_genes_number(gene_names)
             if gene_name_index:
                 if len(gene_id[0]) > 0:
-                    exp_matrix, gene_names = __integrate_genes(gene_names, exp_matrix)
+                    exp_matrix, gene_names = integrate_matrix_by_genes(gene_names, cell_num, count, indices, indptr)
                 data.genes = Gene(gene_name=gene_names)
             else:
                 data.genes = Gene(gene_name=gene_id)
                 # data.genes['gene_name_underline'] = gene_names
-                data.genes['real_gene_name'] = __remove_gene_number(gene_names)
+                data.genes['real_gene_name'] = gene_names
 
             data.exp_matrix = exp_matrix if is_sparse else exp_matrix.toarray()
         data.attr = {
@@ -1194,14 +1241,16 @@ def read_gef(
             exp_matrix = csr_matrix((count, (cell_ind, gene_ind)), shape=(cell_num, gene_num), dtype=np.uint32)
             if len(gene_id[0]) == 0:
                 gene_name_index = True
+            gene_names = remove_genes_number(gene_names)
             if gene_name_index:
                 if len(gene_id[0]) > 0:
-                    exp_matrix, gene_names = __integrate_genes(gene_names, exp_matrix)
+                    exp_matrix, gene_names = integrate_matrix_by_genes(gene_names, cell_num,
+                                                               exp_matrix.data, exp_matrix.indices, exp_matrix.indptr)
                 data.genes = Gene(gene_name=gene_names)
             else:
                 data.genes = Gene(gene_name=gene_id)
                 # data.genes['gene_name_underline'] = gene_names
-                data.genes['real_gene_name'] = __remove_gene_number(gene_names)
+                data.genes['real_gene_name'] = gene_names
 
             data.exp_matrix = exp_matrix if is_sparse else exp_matrix.toarray()
         else:
@@ -1228,67 +1277,22 @@ def read_gef(
             
             cell_ind, gene_ind, count = gef.get_sparse_matrix_indices2()
             exp_matrix = csr_matrix((count, (cell_ind, gene_ind)), shape=(cell_num, gene_num), dtype=np.uint32)
+            gene_names = remove_genes_number(gene_names)
             if gene_name_index:
                 if len(gene_id[0]) > 0:
-                    exp_matrix, gene_names = __integrate_genes(gene_names, exp_matrix)
+                    exp_matrix, gene_names = integrate_matrix_by_genes(gene_names, cell_num,
+                                                               exp_matrix.data, exp_matrix.indices, exp_matrix.indptr)
                 data.genes = Gene(gene_name=gene_names)
             else:
                 data.genes = Gene(gene_name=gene_id)
                 # data.genes['gene_name_underline'] = gene_names
-                data.genes['real_gene_name'] = __remove_gene_number(gene_names)
+                data.genes['real_gene_name'] = gene_names
             data.exp_matrix = exp_matrix if is_sparse else exp_matrix.toarray()
             
         logger.info(f'the matrix has {data.cell_names.size} cells, and {data.gene_names.size} genes.')
     logger.info('read_gef end.')
 
     return data
-
-def __remove_gene_number(gene_names):
-    underline = np.char.find(gene_names, '_', start=1, end=-1)
-    underline = (underline > 0)
-    gene_idx = np.arange(gene_names.size, dtype=np.uint64)
-    gene_names_with_underline = gene_names[underline]
-    gene_idx_with_underline = gene_idx[underline]
-    for gul_idx, gul in zip(gene_idx_with_underline, gene_names_with_underline):
-        tmp = gul.split('_')
-        if not tmp[-1].isnumeric():
-            continue
-        gnul = '_'.join(tmp[0:-1])
-        gene_names[gul_idx] = gnul
-    return gene_names
-
-def __integrate_genes(gene_names, exp_matrix):
-    if isinstance(exp_matrix, csr_matrix):
-        exp_matrix = exp_matrix.toarray()
-    underline = np.char.find(gene_names, '_', start=1, end=-1)
-    underline = (underline > 0)
-    gene_idx = np.arange(gene_names.size, dtype=np.uint64)
-    gene_names_with_underline = gene_names[underline]
-    gene_idx_with_underline = gene_idx[underline]
-    sort_flag = np.argsort(gene_idx_with_underline)
-    gene_names_with_underline = gene_names_with_underline[sort_flag]
-    gene_idx_with_underline = gene_idx_with_underline[sort_flag]
-    gnul_idx_dict = {}
-    for gul_idx, gul in zip(gene_idx_with_underline, gene_names_with_underline):
-        tmp = gul.split('_')
-        if not tmp[-1].isnumeric():
-            continue
-        gnul = '_'.join(tmp[0:-1])
-        if gnul not in gnul_idx_dict:
-            gnul_idx_dict[gnul] = gul_idx
-            gene_names[gul_idx] = gnul
-        else:
-            gnul_idx = gnul_idx_dict[gnul]
-            exp_matrix[:, gnul_idx] += exp_matrix[:, gul_idx]
-            exp_matrix[:, gul_idx] = 0
-
-    # exp_matrix = exp_matrix.tocsr()
-    filter_flag = (exp_matrix.sum(axis=0) > 0)
-    exp_matrix = exp_matrix[:, filter_flag]
-    gene_names = gene_names[filter_flag]
-    
-
-    return csr_matrix(exp_matrix), gene_names
 
 
 @ReadWriteUtils.check_file_exists

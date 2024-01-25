@@ -93,6 +93,13 @@ class Gene(object):
         if not isinstance(name, np.ndarray):
             raise TypeError('gene name must be a np.ndarray object.')
         self._var = self._var.reindex(name)
+    
+    @property
+    def real_gene_name(self):
+        if 'real_gene_name' in self._var.columns:
+            return self._var['real_gene_name'].to_numpy().astype('U')
+        else:
+            return None
 
     def sub_set(self, index):
         """
@@ -180,6 +187,13 @@ class AnnBasedGene(Gene):
             raise ValueError(f'The length of gene names must be {self.__based_ann_data.n_vars}, but now is {name.size}')
         self.__based_ann_data.var_names = name
         # self.__based_ann_data._inplace_subset_var(name)
+    
+    @property
+    def real_gene_name(self):
+        if 'real_gene_name' in self.__based_ann_data.var.columns:
+            return self.__based_ann_data.var['real_gene_name'].to_numpy().astype('U')
+        else:
+            return None
 
     def to_df(self):
         return self.__based_ann_data.var
