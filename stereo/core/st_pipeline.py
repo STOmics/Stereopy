@@ -657,9 +657,16 @@ class StPipeline(object):
         """  # noqa
         if use_highly_genes and hvg_res_key not in self.result:
             raise Exception(f'{hvg_res_key} is not in the result, please check and run the highly_var_genes func.')
-        data = self.subset_by_hvg(hvg_res_key, inplace=False) if use_highly_genes else self.data
+        # data = self.subset_by_hvg(hvg_res_key, inplace=False) if use_highly_genes else self.data
         from ..algorithm.dim_reduce import pca
-        res = pca(data.exp_matrix, n_pcs, svd_solver=svd_solver)
+
+        if use_highly_genes:
+            hvgs = self.result[hvg_res_key]['highly_variable']
+            exp_matrix = self.data.exp_matrix[:, hvgs]
+        else:
+            exp_matrix = self.data.exp_matrix
+        res = pca(exp_matrix, n_pcs, svd_solver=svd_solver)
+
         self.result[res_key] = pd.DataFrame(res['x_pca'])
         self.result[f'{res_key}_variance_ratio'] = res['variance_ratio']
         key = 'pca'
@@ -1033,17 +1040,26 @@ class StPipeline(object):
         if n_jobs <= 0:
             n_jobs = cpu_count()
 
+        from stereo.utils.pipeline_utils import calc_pct_and_pct_rest, cell_cluster_to_gene_exp_cluster
+        pct, pct_rest = calc_pct_and_pct_rest(self.data, cluster_res_key)
+        mean_count_in_cluster = cell_cluster_to_gene_exp_cluster(self.data, cluster_res_key, kind='mean')
+
         tool = FindMarker(data=data, groups=self.result[cluster_res_key], method=method, case_groups=case_groups,
-                          control_groups=control_groups, corr_method=corr_method, raw_data=self.raw, sort_by=sort_by,
-                          n_genes=n_genes, ascending=ascending, n_jobs=n_jobs)
+                          control_groups=control_groups, corr_method=corr_method, sort_by=sort_by,
+                          n_genes=n_genes, ascending=ascending, n_jobs=n_jobs, pct=pct, pct_rest=pct_rest, mean_count=mean_count_in_cluster)
         self.result[res_key] = tool.result
         self.result[res_key]['parameters'] = {}
         self.result[res_key]['parameters']['cluster_res_key'] = cluster_res_key
         self.result[res_key]['parameters']['method'] = method
+        self.result[res_key]['parameters']['control_groups'] = control_groups
+        self.result[res_key]['parameters']['corr_method'] = corr_method
+        self.result[res_key]['parameters']['use_raw'] = use_raw
         if output is not None:
             import natsort
             result = self.result[res_key]
-            show_cols = ['scores', 'pvalues', 'pvalues_adj', 'log2fc', 'genes', 'pct', 'pct_rest']
+            show_cols = ['genes', 'scores', 'pvalues', 'pvalues_adj', 'log2fc', 'pct', 'pct_rest', 'mean_count']
+            if self.data.genes.real_gene_name is not None:
+                show_cols.insert(1, 'gene_name')
             groups = natsort.natsorted([key for key in result.keys() if '.vs.' in key])
             dat = pd.concat(
                 [

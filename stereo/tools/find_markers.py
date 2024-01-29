@@ -56,22 +56,29 @@ class FindMarker(ToolBase):
             control_groups: str = 'rest',
             corr_method: str = 'benjamini-hochberg',
             tie_term: bool = False,
-            raw_data=None,
+            # raw_data=None,
             sort_by='scores',
             n_genes: Union[str, int] = 'all',
             ascending: bool = False,
-            n_jobs: int = 4
+            n_jobs: int = 4,
+            pct: pd.DataFrame = None,
+            pct_rest: pd.DataFrame = None,
+            mean_count: pd.DataFrame = None
     ):
         super(FindMarker, self).__init__(data=data, groups=groups, method=method)
         self.corr_method = corr_method.lower()
         self.case_groups = case_groups
         self.control_groups = control_groups
         self.tie_term = tie_term
-        self.raw_data = raw_data
+        # self.raw_data = raw_data
         self.sort_by = sort_by
         self.n_genes = n_genes
         self.ascending = ascending
         self.n_jobs = n_jobs
+        self.result = {}
+        self.result['pct'] = pct
+        self.result['pct_rest'] = pct_rest
+        self.result['mean_count'] = mean_count        
         self.fit()
 
     @ToolBase.method.setter
@@ -162,6 +169,8 @@ class FindMarker(ToolBase):
                 g_index
             )
         result['genes'] = self.data.gene_names
+        if self.data.genes.real_gene_name is not None:
+            result['gene_name'] = self.data.genes.real_gene_name
         result.sort_values(by=self.sort_by, ascending=self.ascending, inplace=True)
 
         if self.n_genes != 'all':
@@ -175,8 +184,11 @@ class FindMarker(ToolBase):
         if self.control_groups != 'rest':
             control_str = '-'.join(other_g)
         self.result[f"{g}.vs.{control_str}"] = result
-        self.result[f"{g}.vs.{control_str}"]['pct'] = self.result['pct'].iloc[result.index][g].values
-        self.result[f"{g}.vs.{control_str}"]['pct_rest'] = self.result['pct_rest'].iloc[result.index][g].values
+        pct = self.result['pct'].set_index('genes')
+        pct_rest = self.result['pct_rest'].set_index('genes')
+        self.result[f"{g}.vs.{control_str}"]['pct'] = pct.loc[result['genes']][g].to_numpy()
+        self.result[f"{g}.vs.{control_str}"]['pct_rest'] = pct_rest.loc[result['genes']][g].to_numpy()
+        self.result[f"{g}.vs.{control_str}"]['mean_count'] = self.result['mean_count'].loc[result['genes']][g].to_numpy()
 
     @ToolBase.fit_log
     def fit(self):
@@ -199,7 +211,7 @@ class FindMarker(ToolBase):
             case_groups = self.case_groups
         case_groups = natsorted(case_groups)
         control_str = self.control_groups if isinstance(self.control_groups, str) else '-'.join(self.control_groups)
-        self.result = {}
+        # self.result = {}
         # only used when method is wilcoxon
         ranks = None
         tie_term = None
@@ -213,7 +225,7 @@ class FindMarker(ToolBase):
         self.temp_logres_score = None
         if self.case_groups == 'all' and self.control_groups == 'rest' and self.method == 'logreg':
             self.temp_logres_score = self.logres_score()
-        self.result['pct'], self.result['pct_rest'] = self.calc_pct_and_pct_rest()
+        # self.result['pct'], self.result['pct_rest'] = self.calc_pct_and_pct_rest()
         from joblib import Parallel, delayed
         self.len_case_groups = len(case_groups)
         n_jobs = min(cpu_count(), self.n_jobs)
@@ -223,48 +235,48 @@ class FindMarker(ToolBase):
         )
         del self.temp_logres_score
 
-    @log_consumed_time
-    def calc_pct_and_pct_rest(self):
-        raw_cells_isin_data = np.isin(self.raw_data.cell_names, self.data.cell_names)
-        raw_genes_isin_data = np.isin(self.raw_data.gene_names, self.data.gene_names)
-        raw_exp_matrix = self.raw_data.exp_matrix[np.ix_(raw_cells_isin_data, raw_genes_isin_data)]
-        exp_matrix_one_hot = (raw_exp_matrix > 0).astype(np.uint8)
-        cluster_result: pd.DataFrame = self.groups.copy()
-        cluster_result.reset_index(drop=True, inplace=True)
-        cluster_result.reset_index(inplace=True)
-        cluster_result.sort_values(by=['group', 'index'], inplace=True)
-        group_index = cluster_result.groupby('group').agg(cell_index=('index', list))
-        group_check = group_index.apply(lambda x: 1 if len(x[0]) <= 0 else 0, axis=1, result_type='broadcast')
-        group_empty_index_list = group_check[group_check['cell_index'] == 1].index.tolist()
-        group_index.drop(index=group_empty_index_list, inplace=True)
+    # @log_consumed_time
+    # def calc_pct_and_pct_rest(self):
+    #     raw_cells_isin_data = np.isin(self.raw_data.cell_names, self.data.cell_names)
+    #     raw_genes_isin_data = np.isin(self.raw_data.gene_names, self.data.gene_names)
+    #     raw_exp_matrix = self.raw_data.exp_matrix[np.ix_(raw_cells_isin_data, raw_genes_isin_data)]
+    #     exp_matrix_one_hot = (raw_exp_matrix > 0).astype(np.uint8)
+    #     cluster_result: pd.DataFrame = self.groups.copy()
+    #     cluster_result.reset_index(drop=True, inplace=True)
+    #     cluster_result.reset_index(inplace=True)
+    #     cluster_result.sort_values(by=['group', 'index'], inplace=True)
+    #     group_index = cluster_result.groupby('group').agg(cell_index=('index', list))
+    #     group_check = group_index.apply(lambda x: 1 if len(x[0]) <= 0 else 0, axis=1, result_type='broadcast')
+    #     group_empty_index_list = group_check[group_check['cell_index'] == 1].index.tolist()
+    #     group_index.drop(index=group_empty_index_list, inplace=True)
 
-        def _calc(a, exp_matrix_one_hot):
-            cell_index = a[0]
-            if isinstance_ndarray:
-                sub_exp = exp_matrix_one_hot[cell_index].sum(axis=0)
-                sub_exp_rest = exp_matrix_one_hot_number - sub_exp
-            else:
-                sub_exp = exp_matrix_one_hot[cell_index].sum(axis=0).A[0]
-                sub_exp_rest = exp_matrix_one_hot_number - sub_exp
-            sub_pct = sub_exp / len(cell_index)
-            sub_pct_rest = sub_exp_rest / (cell_names_size - len(cell_index))
-            return sub_pct, sub_pct_rest
+    #     def _calc(a, exp_matrix_one_hot):
+    #         cell_index = a[0]
+    #         if isinstance_ndarray:
+    #             sub_exp = exp_matrix_one_hot[cell_index].sum(axis=0)
+    #             sub_exp_rest = exp_matrix_one_hot_number - sub_exp
+    #         else:
+    #             sub_exp = exp_matrix_one_hot[cell_index].sum(axis=0).A[0]
+    #             sub_exp_rest = exp_matrix_one_hot_number - sub_exp
+    #         sub_pct = sub_exp / len(cell_index)
+    #         sub_pct_rest = sub_exp_rest / (cell_names_size - len(cell_index))
+    #         return sub_pct, sub_pct_rest
 
-        cell_names_size = self.data.cell_names.size
-        exp_matrix_one_hot_number = exp_matrix_one_hot.sum(axis=0)
-        isinstance_ndarray = isinstance(exp_matrix_one_hot, np.ndarray)
-        if not isinstance_ndarray:
-            exp_matrix_one_hot_number = exp_matrix_one_hot_number.A[0]
-        pct_all = np.apply_along_axis(_calc, 1, group_index.values, exp_matrix_one_hot)
-        pct = pd.DataFrame(pct_all[:, 0], columns=self.data.gene_names, index=group_index.index).T
-        pct_rest = pd.DataFrame(pct_all[:, 1], columns=self.data.gene_names, index=group_index.index).T
-        pct.columns.name = None
-        pct.reset_index(inplace=True)
-        pct.rename(columns={'index': 'genes'}, inplace=True)
-        pct_rest.columns.name = None
-        pct_rest.reset_index(inplace=True)
-        pct_rest.rename(columns={'index': 'genes'}, inplace=True)
-        return pct, pct_rest
+    #     cell_names_size = self.data.cell_names.size
+    #     exp_matrix_one_hot_number = exp_matrix_one_hot.sum(axis=0)
+    #     isinstance_ndarray = isinstance(exp_matrix_one_hot, np.ndarray)
+    #     if not isinstance_ndarray:
+    #         exp_matrix_one_hot_number = exp_matrix_one_hot_number.A[0]
+    #     pct_all = np.apply_along_axis(_calc, 1, group_index.values, exp_matrix_one_hot)
+    #     pct = pd.DataFrame(pct_all[:, 0], columns=self.data.gene_names, index=group_index.index).T
+    #     pct_rest = pd.DataFrame(pct_all[:, 1], columns=self.data.gene_names, index=group_index.index).T
+    #     pct.columns.name = None
+    #     pct.reset_index(inplace=True)
+    #     pct.rename(columns={'index': 'genes'}, inplace=True)
+    #     pct_rest.columns.name = None
+    #     pct_rest.reset_index(inplace=True)
+    #     pct_rest.rename(columns={'index': 'genes'}, inplace=True)
+    #     return pct, pct_rest
 
     def logres_score(self):
         from ..algorithm.statistics import logreg
