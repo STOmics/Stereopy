@@ -6,7 +6,7 @@ import numba
 import numpy as np
 import pandas as pd
 import scipy
-from cusingler import cusingler
+
 from joblib import (
     Parallel,
     delayed,
@@ -102,6 +102,7 @@ class SingleR(AlgorithmBase):
         test_exp_data = self.stereo_exp_data.sub_by_name(gene_name=interact_genes)
         ref_exp_data = ref_exp_data.sub_by_name(gene_name=interact_genes)
         if not cluster_res_key and method == 'rapids':
+            from cusingler import cusingler
             self.check_gpu_env()
 
             qry_data = test_exp_data.exp_matrix.data.tolist()
