@@ -1,6 +1,7 @@
 from warnings import warn
 
 import pandas as pd
+import numpy as np
 from anndata import AnnData
 
 
@@ -12,7 +13,7 @@ class _BaseResult(object):
     CONNECTIVITY_NAMES = {'neighbors'}
     REDUCE_NAMES = {'umap', 'pca', 'tsne', 'correct'}
     HVG_NAMES = {'highly_variable_genes', 'hvg', 'highly_variable'}
-    MARKER_GENES_NAMES = {'marker_genes', 'rank_genes_groups'}
+    MARKER_GENES_NAMES = {'marker_genes', 'marker_genes_filtered', 'rank_genes_groups'}
 
     RENAME_DICT = {'highly_variable_genes': 'hvg', 'marker_genes': 'rank_genes_groups'}
 
@@ -294,7 +295,7 @@ class AnnBasedResult(_BaseResult, object):
             # TODO ignore `mean_bin`, really need?
             return self.__based_ann_data.var.loc[:, ["means", "dispersions", "dispersions_norm", "highly_variable"]]
         elif name in AnnBasedResult.MARKER_GENES_NAMES:
-            return self.__based_ann_data.uns[name]
+            return self._get_marker_genes_res(name)
         elif name.startswith('gene_exp_'):
             return self.__based_ann_data.uns[name]
         # elif name.startswith('regulatory_network_inference'):
@@ -411,9 +412,62 @@ class AnnBasedResult(_BaseResult, object):
         self.__based_ann_data.uns[key] = {'params': {}, 'source': 'stereopy', 'method': key}
         self.__based_ann_data.var.loc[:, ["means", "dispersions", "dispersions_norm", "highly_variable"]] = \
             value.loc[:, ["means", "dispersions", "dispersions_norm", "highly_variable"]].values
+    
+    def _get_marker_genes_res(self, name):
+        if name in self.__based_ann_data.uns:
+            marker_genes_result = self.__based_ann_data.uns[name]
+        else:
+            renamed = AnnBasedResult.RENAME_DICT.get(name, None)
+            if renamed is None:
+                return self.__based_ann_data.uns[name] # in order to throw an error.
+            else:
+                marker_genes_result = self.__based_ann_data.uns[renamed]
+        marker_genes_result_reconstructed = {}
+        if marker_genes_result['params']['method'] == 't-test':
+            method = 't_test'
+        elif marker_genes_result['params']['method'] == 'wilcoxon':
+            method = 'wilcoxon_test'
+        else:
+            method = marker_genes_result['params']['method']
+        marker_genes_result_reconstructed['parameters'] = {
+            'cluster_res_key': marker_genes_result['params']['groupby'],
+            'method': method,
+            'control_groups': marker_genes_result['params']['reference'],
+            'corr_method': marker_genes_result['params']['corr_method'],
+            'use_raw': marker_genes_result['params']['use_raw']
+        }
+        if 'marker_genes_res_key' in marker_genes_result['params']:
+            marker_genes_result_reconstructed['parameters']['marker_genes_res_key'] = \
+                                                                                marker_genes_result['params']['marker_genes_res_key']
+        if 'pts' in marker_genes_result:
+            marker_genes_result_reconstructed['pct'] = marker_genes_result['pts'].reset_index()
+            marker_genes_result_reconstructed['pct_rest'] = marker_genes_result['pts_rest'].reset_index()
+        clusters = self.__based_ann_data.obs[marker_genes_result['params']['groupby']].cat.categories
+        key_map = {
+            'scores': 'scores', 
+            'pvalues': 'pvals',
+            'pvalues_adj': 'pvals_adj',
+            'log2fc': 'logfoldchanges',
+            'genes': 'names',
+        }
+        control_groups = marker_genes_result_reconstructed['parameters']['control_groups']
+        for c in clusters:
+            df_data = {k1: marker_genes_result[k2][c] for k1, k2 in key_map.items()}
+            df = pd.DataFrame(df_data)
+            if 'real_gene_name' in self.__based_ann_data.var.columns:
+                df['gene_name'] = self.__based_ann_data.var['real_gene_name'].loc[df['genes']].to_numpy()
+            df['pct'] = marker_genes_result['pts'][c].loc[df['genes']].to_numpy()
+            df['pct_rest'] = marker_genes_result['pts_rest'][c].loc[df['genes']].to_numpy()
+            marker_genes_result_reconstructed[f'{c}.vs.{control_groups}'] = df
+        return marker_genes_result_reconstructed
 
     def _set_marker_genes_res(self, key, value):
-        self.__based_ann_data.uns[key] = value
+        # self.__based_ann_data.uns[key] = value
+        from stereo.io.utils import transform_marker_genes_to_anndata
+        if key == 'marker_genes':
+            self.__based_ann_data.uns['rank_genes_groups'] = transform_marker_genes_to_anndata(value)
+        else:
+            self.__based_ann_data.uns[key] = transform_marker_genes_to_anndata(value)
 
     def set_value(self, key, value):
         if hasattr(value, 'shape'):

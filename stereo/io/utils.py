@@ -1,3 +1,4 @@
+from natsort import natsorted
 import numpy as np
 from scipy.sparse import csr_matrix
 
@@ -59,3 +60,42 @@ def integrate_matrix_by_genes(
     gene_names_unique = gene_names[gene_extraction_flag]
     exp_matrix = csr_matrix((data, indices, indptr), shape=(cell_num, gene_names_unique.size))
     return exp_matrix, gene_names_unique
+
+def transform_marker_genes_to_anndata(marker_genes_res: dict):
+    marker_genes_result = {}
+    method = marker_genes_res['parameters']['method']
+    if method == 't_test':
+        method = 't-test'
+    elif method == 'wilcoxon_test':
+        method = 'wilcoxon'
+    marker_genes_result['params'] = {
+        'groupby': marker_genes_res['parameters']['cluster_res_key'],
+        'reference': marker_genes_res['parameters']['control_groups'],
+        'method': method,
+        'use_raw': marker_genes_res['parameters']['use_raw'],
+        'layer': None,
+        'corr_method': marker_genes_res['parameters']['corr_method']
+    }
+    if 'marker_genes_res_key' in marker_genes_res['parameters']:
+        marker_genes_result['params']['marker_genes_res_key'] = marker_genes_res['parameters']['marker_genes_res_key']
+    marker_genes_result['pts'] = marker_genes_res['pct'].set_index('genes')
+    marker_genes_result['pts_rest'] = marker_genes_res['pct_rest'].set_index('genes')
+    groups_key = natsorted([k for k in  marker_genes_res if '.vs.' in k])
+    key_map = {
+        'genes': 'names',
+        'scores': 'scores', 
+        'pvalues': 'pvals',
+        'pvalues_adj': 'pvals_adj',
+        'log2fc': 'logfoldchanges'
+    }
+    for k1, k2 in key_map.items():
+        dtype = []
+        for k in groups_key:
+            group = k.split('.vs.')[0]
+            dtype.append((group, marker_genes_res[k][k1].dtype))
+        recarr = np.recarray(shape=marker_genes_res[k].shape[0], dtype=dtype)
+        for k in groups_key:
+            group = k.split('.vs.')[0]
+            recarr[group] = marker_genes_res[k][k1].to_numpy()
+        marker_genes_result[k2] = recarr
+    return marker_genes_result

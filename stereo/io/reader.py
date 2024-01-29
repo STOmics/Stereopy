@@ -32,7 +32,7 @@ from stereo.core.gene import Gene
 from stereo.core.stereo_exp_data import AnnBasedStereoExpData
 from stereo.core.stereo_exp_data import StereoExpData
 from stereo.io import h5ad
-from stereo.io.utils import remove_genes_number, integrate_matrix_by_genes
+from stereo.io.utils import remove_genes_number, integrate_matrix_by_genes, transform_marker_genes_to_anndata
 from stereo.log_manager import logger
 from stereo.utils.read_write_utils import ReadWriteUtils
 
@@ -770,7 +770,8 @@ def stereo_to_anndata(
         reindex: bool = False,
         output: str = None,
         base_adata: AnnData = None,
-        split_batches: bool = True
+        split_batches: bool = True,
+        compression: Optional[Literal["gzip", "lzf"]] = 'gzip'
 ):
     """
     Transform the StereoExpData object into Anndata format.
@@ -791,6 +792,8 @@ def stereo_to_anndata(
         the input Anndata object.
     split_batches
         Whether to save each batch to a single file if it is a merged data, default to True.
+    compression:
+        The compression method to be used when saving data as a h5ad file, None means uncompressed, default to gzip.
     Returns
     -----------------
     An object of Anndata.
@@ -925,44 +928,10 @@ def stereo_to_anndata(
                     adata.uns[res_key] = data.tl.result[res_key]
             elif key == 'marker_genes':
                 for res_key in data.tl.key_record[key]:
-                    marker_genes_result = {}
-                    method = data.tl.result[res_key]['parameters']['method']
-                    if method == 't_test':
-                        method = 't-test'
-                    elif method == 'wilcoxon_test':
-                        method = 'wilcoxon'
-                    marker_genes_result['params'] = {
-                        'groupby': data.tl.result[res_key]['parameters']['cluster_res_key'],
-                        'reference': data.tl.result[res_key]['parameters']['control_groups'],
-                        'method': method,
-                        'use_raw': data.tl.result[res_key]['parameters']['use_raw'],
-                        'layer': None,
-                        'corr_method': data.tl.result[res_key]['parameters']['corr_method']
-                    }
-                    marker_genes_result['pts'] = data.tl.result[res_key]['pct'].set_index('genes')
-                    marker_genes_result['pts_rest'] = data.tl.result[res_key]['pct_rest'].set_index('genes')
-                    groups_key = natsorted([k for k in  data.tl.result[res_key] if '.vs.' in k])
-                    key_map = {
-                        'genes': 'names',
-                        'scores': 'scores', 
-                        'pvalues': 'pvals',
-                        'pvalues_adj': 'pvals_adj',
-                        'log2fc': 'logfoldchanges'
-                    }
-                    for k1, k2 in key_map.items():
-                        dtype = []
-                        for k in groups_key:
-                            group = k.split('.vs.')[0]
-                            dtype.append((group, data.tl.result[res_key][k][k1].dtype))
-                        recarr = np.recarray(shape=data.tl.result[res_key][k].shape[0], dtype=dtype)
-                        for k in groups_key:
-                            group = k.split('.vs.')[0]
-                            recarr[group] = data.tl.result[res_key][k][k1].to_numpy()
-                        marker_genes_result[k2] = recarr
                     if res_key == key:
-                        adata.uns['rank_genes_groups'] = marker_genes_result
+                        adata.uns['rank_genes_groups'] = transform_marker_genes_to_anndata(data.tl.result[res_key])
                     else:
-                        adata.uns[res_key] = marker_genes_result
+                        adata.uns[res_key] = transform_marker_genes_to_anndata(data.tl.result[res_key])
             else:
                 continue
 
@@ -1008,7 +977,7 @@ def stereo_to_anndata(
     logger.info("Finished conversion to anndata.")
 
     if output is not None:
-        adata.write_h5ad(output)
+        adata.write_h5ad(output, compression=compression)
         logger.info(f"Finished output to {output}")
 
     return adata

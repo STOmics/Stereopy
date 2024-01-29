@@ -1047,17 +1047,19 @@ class StPipeline(object):
         tool = FindMarker(data=data, groups=self.result[cluster_res_key], method=method, case_groups=case_groups,
                           control_groups=control_groups, corr_method=corr_method, sort_by=sort_by,
                           n_genes=n_genes, ascending=ascending, n_jobs=n_jobs, pct=pct, pct_rest=pct_rest, mean_count=mean_count_in_cluster)
-        self.result[res_key] = tool.result
-        self.result[res_key]['parameters'] = {}
-        self.result[res_key]['parameters']['cluster_res_key'] = cluster_res_key
-        self.result[res_key]['parameters']['method'] = method
-        self.result[res_key]['parameters']['control_groups'] = control_groups
-        self.result[res_key]['parameters']['corr_method'] = corr_method
-        self.result[res_key]['parameters']['use_raw'] = use_raw
+        result = tool.result
+        result['parameters'] = {
+            'cluster_res_key': cluster_res_key,
+            'method': method,
+            'control_groups': control_groups,
+            'corr_method': corr_method,
+            'use_raw': use_raw
+        }
+        self.result[res_key] = result
         if output is not None:
             import natsort
             result = self.result[res_key]
-            show_cols = ['genes', 'scores', 'pvalues', 'pvalues_adj', 'log2fc', 'pct', 'pct_rest', 'mean_count']
+            show_cols = ['genes', 'scores', 'pvalues', 'pvalues_adj', 'log2fc', 'pct', 'pct_rest']
             if self.data.genes.real_gene_name is not None:
                 show_cols.insert(1, 'gene_name')
             groups = natsort.natsorted([key for key in result.keys() if '.vs.' in key])
@@ -1384,7 +1386,6 @@ class StPipeline(object):
             min_in_group_fraction=0.25,
             max_out_group_fraction=0.5,
             compare_abs=False,
-            remove_mismatch=True,
             res_key='marker_genes_filtered',
             output=None
     ):
@@ -1395,9 +1396,6 @@ class StPipeline(object):
         :param min_in_group_fraction:  Minimum fraction of cells expressing the genes for each group, defaults to None
         :param max_out_group_fraction: Maximum fraction of cells from the union of the rest of each group expressing the genes, defaults to None
         :param compare_abs: If `True`, compare absolute values of log fold change with `min_fold_change`, defaults to False
-        :param remove_mismatch: If `True`, remove the records which are mismatch conditions from the find_marker_genes result,
-                                if `False`, these records will be set to np.nan,
-                                defaults to True
         :param res_key: the key of the result of this function to be set to self.result, defaults to 'marker_genes_filtered'
         :param output: path of output_file(.csv). If None, do not generate the output file.
         """  # noqa
@@ -1405,38 +1403,33 @@ class StPipeline(object):
             raise Exception(
                 f'{marker_genes_res_key} is not in the result, please check and run the find_marker_genes func.')
 
-        self.result[res_key] = {}
-        self.result[res_key]['parameters'] = {}
-        self.result[res_key]['parameters']['marker_genes_res_key'] = marker_genes_res_key
-        self.result[res_key]['parameters']['cluster_res_key'] = self.result[marker_genes_res_key]['parameters'][
-            'cluster_res_key']
-        self.result[res_key]['parameters']['method'] = self.result[marker_genes_res_key]['parameters']['method']
-        pct = self.result[marker_genes_res_key]['pct']
-        pct_rest = self.result[marker_genes_res_key]['pct_rest']
+        new_result = {}
+        new_result['parameters'] = copy.deepcopy(self.result[marker_genes_res_key]['parameters'])
+        new_result['parameters']['marker_genes_res_key'] = marker_genes_res_key
+        new_result['pct'] = pct = self.result[marker_genes_res_key]['pct']
+        new_result['pct_rest'] = pct_rest = self.result[marker_genes_res_key]['pct_rest']
         for key, res in self.result[marker_genes_res_key].items():
             if '.vs.' not in key:
                 continue
             new_res = res.copy()
             group_name = key.split('.vs.')[0]
             if not compare_abs:
-                gene_set_1 = res[res['log2fc'] < min_fold_change]['genes'].values if min_fold_change is not None else []
+                gene_set_1 = res[res['log2fc'] < min_fold_change]['genes'].values if min_fold_change is not None else []  # noqa
             else:
-                gene_set_1 = res[res['log2fc'].abs() < min_fold_change][
-                    'genes'].values if min_fold_change is not None else []
-            gene_set_2 = pct[pct[group_name] < min_in_group_fraction][
-                'genes'].values if min_in_group_fraction is not None else []
-            gene_set_3 = pct_rest[pct_rest[group_name] > max_out_group_fraction][
-                'genes'].values if max_out_group_fraction is not None else []
-            flag = res['genes'].isin(np.union1d(gene_set_1, np.union1d(gene_set_2, gene_set_3)))
-            if remove_mismatch:
-                new_res = new_res[flag == False]  # noqa
-            else:
-                new_res[flag == True] = np.nan  # noqa
-            self.result[res_key][key] = new_res
+                gene_set_1 = res[res['log2fc'].abs() < min_fold_change]['genes'].values if min_fold_change is not None else []  # noqa
+            gene_set_2 = pct[pct[group_name] < min_in_group_fraction]['genes'].values if min_in_group_fraction is not None else []  # noqa
+            gene_set_3 = pct_rest[pct_rest[group_name] > max_out_group_fraction]['genes'].values if max_out_group_fraction is not None else []  # noqa
+            flag = res['genes'].isin(np.union1d(gene_set_1, np.union1d(gene_set_2, gene_set_3))).to_numpy()
+            columns = new_res.columns[~new_res.columns.isin(['genes'])].to_numpy()
+            new_res.loc[flag, columns] = np.nan  # noqa
+            new_result[key] = new_res
+        self.result[res_key] = new_result
         if output is not None:
             import natsort
             result = self.result[res_key]
-            show_cols = ['scores', 'pvalues', 'pvalues_adj', 'log2fc', 'genes', 'pct', 'pct_rest']
+            show_cols = ['genes', 'scores', 'pvalues', 'pvalues_adj', 'log2fc', 'pct', 'pct_rest']
+            if self.data.genes.real_gene_name is not None:
+                show_cols.insert(1, 'gene_name')
             groups = natsort.natsorted([key for key in result.keys() if '.vs.' in key])
             dat = pd.concat(
                 [
@@ -1481,13 +1474,13 @@ class AnnBasedStPipeline(StPipeline):
         self.__based_ann_data = based_ann_data
         self.result = AnnBasedResult(based_ann_data)
 
-    def subset_by_hvg(self, hvg_res_key, use_raw=False, inplace=True):
-        data: AnnBasedStereoExpData = self.data if inplace else copy.deepcopy(self.data)
-        if hvg_res_key not in self.result:
-            raise Exception(f'{hvg_res_key} is not in the result, please check and run the normalization func.')
-        df = self.result[hvg_res_key]
-        data._ann_data._inplace_subset_var(df['highly_variable'].values)
-        return data
+    # def subset_by_hvg(self, hvg_res_key, use_raw=False, inplace=True):
+    #     data: AnnBasedStereoExpData = self.data if inplace else copy.deepcopy(self.data)
+    #     if hvg_res_key not in self.result:
+    #         raise Exception(f'{hvg_res_key} is not in the result, please check and run the normalization func.')
+    #     df = self.result[hvg_res_key]
+    #     data._ann_data._inplace_subset_var(df['highly_variable'].values)
+    #     return data
 
     # def raw_checkpoint(self):
     #     from .stereo_exp_data import AnnBasedStereoExpData

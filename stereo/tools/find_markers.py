@@ -171,7 +171,7 @@ class FindMarker(ToolBase):
         result['genes'] = self.data.gene_names
         if self.data.genes.real_gene_name is not None:
             result['gene_name'] = self.data.genes.real_gene_name
-        result.sort_values(by=self.sort_by, ascending=self.ascending, inplace=True)
+        result.sort_values(by=self.sort_by, ascending=self.ascending, inplace=True, ignore_index=True)
 
         if self.n_genes != 'all':
             if self.n_genes == 'auto':

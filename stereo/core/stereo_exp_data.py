@@ -659,7 +659,7 @@ class AnnBasedStereoExpData(StereoExpData):
         if self._ann_data.raw:
             self._tl._raw = AnnBasedStereoExpData(based_ann_data=self._ann_data.raw.to_adata())
 
-        self._spatial_key = spatial_key
+        self.spatial_key = spatial_key
 
     def __str__(self):
         return str(self._ann_data)
@@ -718,22 +718,22 @@ class AnnBasedStereoExpData(StereoExpData):
 
     @property
     def position(self):
-        if 'spatial' in self._ann_data.obsm:
-            return self._ann_data.obsm['spatial'][:, [0, 1]]
+        if self.spatial_key in self._ann_data.obsm:
+            return self._ann_data.obsm[self.spatial_key][:, [0, 1]]
         elif 'x' in self._ann_data.obs.columns and 'y' in self._ann_data.obs.columns:
             return self._ann_data.obs[['x', 'y']].to_numpy()
         return None
 
-    @position.setter
-    def position(self, pos):
-        if 'spatial' in self._ann_data.obsm:
-            self._ann_data.obsm['spatial'][:, [0, 1]] = pos
+    # @position.setter
+    # def position(self, pos):
+    #     if 'spatial' in self._ann_data.obsm:
+    #         self._ann_data.obsm['spatial'][:, [0, 1]] = pos
 
     @property
     def position_z(self):
-        if 'spatial' in self._ann_data.obsm:
-            if self._ann_data.obsm['spatial'].shape[1] >= 3:
-                return self._ann_data.obsm['spatial'][:, [2]]
+        if self.spatial_key in self._ann_data.obsm:
+            if self._ann_data.obsm[self.spatial_key].shape[1] >= 3:
+                return self._ann_data.obsm[self.spatial_key][:, [2]]
             else:
                 return None
         elif 'z' in self._ann_data.obs.columns:
@@ -746,21 +746,21 @@ class AnnBasedStereoExpData(StereoExpData):
             raise ValueError("the shape of position must be 2 dimensions.")
         if position.shape[1] != 2:
             raise ValueError("the length of position's second dimension must be 2.")
-        if 'spatial' in self._ann_data.obsm:
-            self._ann_data.obsm['spatial'][:, [0, 1]] = position
+        if self.spatial_key in self._ann_data.obsm:
+            self._ann_data.obsm[self.spatial_key][:, [0, 1]] = position
         elif 'x' in self._ann_data.obs.columns and 'y' in self._ann_data.obs.columns:
             self._ann_data.obs['x'] = position[:, 0]
             self._ann_data.obs['y'] = position[:, 1]
         else:
-            self._ann_data.obsm['spatial'] = position
+            self._ann_data.obsm[self.spatial_key] = position
 
     @position_z.setter
     def position_z(self, position_z: np.ndarray):
         if (position_z.shape) == 1:
             position_z = position_z.reshape(-1, 1)
-        if 'spatial' in self._ann_data.obsm:
-            self._ann_data.obsm['spatial'][:, 2] = np.concatenate(
-                [self._ann_data.obsm['spatial'][:, [0, 1]], position_z], axis=1)
+        if self.spatial_key in self._ann_data.obsm:
+            self._ann_data.obsm[self.spatial_key][:, 2] = np.concatenate(
+                [self._ann_data.obsm[self.spatial_key][:, [0, 1]], position_z], axis=1)
         else:
             self._ann_data.obs['z'] = position_z
 
