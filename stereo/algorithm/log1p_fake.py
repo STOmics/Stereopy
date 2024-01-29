@@ -5,10 +5,11 @@ from copy import deepcopy
 # third part module
 import numpy as np
 
+from .algorithm_base import AlgorithmBase
+from .algorithm_base import ErrorCode
 # module in self project
 from ..log_manager import logger
 from ..plots.plot_base import PlotBase
-from .algorithm_base import AlgorithmBase, ErrorCode
 
 
 # plot example
@@ -23,7 +24,6 @@ class PlotLog1pFake(PlotBase):
 
 
 class Log1pFake(AlgorithmBase):
-
     DEMO_DATA_URL = 'https://pan.genomics.cn/ucdisk/api/2.0/share/link/download?' \
                     'shareEventId=share_2022928142945896_010df2aa7d344d97a610557de7bad81b&' \
                     'nodeId=8a80804a837dc46f018382c40ca51af0&code='
@@ -38,8 +38,6 @@ class Log1pFake(AlgorithmBase):
             :return:
         """
 
-        not_used_variable = None
-        ircorrect_spell_word = 'should be `incorrect`'
         the_very_beginning_time = time.time()
 
         if inplace:
@@ -75,6 +73,7 @@ class Log1pFake(AlgorithmBase):
         # without dir_path, will download to default path `./stereopy_data/`
         file_path = _download(Log1pFake.DEMO_DATA_URL)
         return read_gef(file_path)
+
 
 if __name__ == "__main__":
     from stereo.io.reader import read_gef

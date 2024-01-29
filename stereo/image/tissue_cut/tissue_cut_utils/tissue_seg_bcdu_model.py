@@ -1,8 +1,10 @@
+# flake8: noqa
 from __future__ import division
+
+import numpy as np
+from tensorflow.keras.layers import *
 from tensorflow.keras.models import Model
 from tensorflow.keras.optimizers import *
-from tensorflow.keras.layers import *
-import numpy as np
 
 
 def BCDU_net_D3(input_size=(256, 256, 1)):

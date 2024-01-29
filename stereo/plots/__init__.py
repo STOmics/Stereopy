@@ -6,9 +6,11 @@
 @file:__init__.py.py
 @time:2021/03/05
 """
+# flake8: noqa
 from .violin import violin_distribution
 from .scatter import base_scatter
-from .marker_genes import marker_genes_text, marker_genes_heatmap
+from .marker_genes import marker_genes_text
+from .marker_genes import marker_genes_heatmap
 from .plot_collection import PlotCollection
 from .interact_plot.spatial_cluster import interact_spatial_cluster
 from .interact_plot.annotation_cluster import interact_spatial_cluster_annotation
@@ -28,3 +30,5 @@ from .plot_clusters_heatmap import ClustersGenesHeatmap
 from .plot_paga import PlotPaga
 from .plot_time_series import PlotTimeSeries
 from .plot_time_series import PlotTimeSeriesAnalysis
+from .plot_elbow import PlotElbow
+from .plot_genes_in_pseudotime import PlotGenesInPseudotime

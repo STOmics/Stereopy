@@ -39,10 +39,15 @@ which is compromised of basic preprocessing, embedding, clustering, and so on.
     core.StPipeline.gaussian_smooth
     core.StPipeline.annotation
     algorithm.single_r.SingleR.main
+    algorithm.batch_qc.BatchQc.main
+    algorithm.paste.Paste.main
+    algorithm.paste.pairwise_align
+    algorithm.paste.center_align
     algorithm.get_niche.GetNiche.main
     algorithm.gen_ccc_micro_envs.GenCccMicroEnvs.main
     algorithm.cell_cell_communication.CellCellCommunication.main
     algorithm.regulatory_network_inference.RegulatoryNetworkInference.main
     algorithm.co_occurrence.CoOccurrence.main
     algorithm.community_detection.CommunityDetection.main
+    algorithm.time_series_analysis.TimeSeriesAnalysis.main
     algorithm.dendrogram.Dendrogram.main

@@ -11,17 +11,23 @@ change log:
     Refactor the code and add the quantile_norm function. by Ping Qiu. 2021/03/17
     add the zscore_disksmooth function. by Ping Qiu. 2021/05/28
 """
-import pandas as pd
-from ..log_manager import logger
-from ..core.tool_base import ToolBase
-from ..algorithm.normalization import normalize_total, quantile_norm, zscore_disksmooth
 from typing import Optional
+
+import pandas as pd
+
+from ..algorithm.normalization import (
+    normalize_total,
+    quantile_norm,
+    zscore_disksmooth
+)
+from ..core.tool_base import ToolBase
 
 
 class Normalizer(ToolBase):
     """
     Normalizer of stereo.
     """
+
     def __init__(
             self,
             data,

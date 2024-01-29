@@ -1,8 +1,13 @@
 Installation
 ============
 
-.. attention::
+.. important::
     Our tool could be installed on Linux/Windows with Python3.8.
+
+
+.. attention::
+    When installing Stereopy <= 1.0.0, please use `conda install stereopy` or `conda install stereopy==1.0.0` commands. Because a third-party package removed its historical versions which would lead to an installation failure.
+
 
 Anaconda
 ---------
@@ -23,7 +28,7 @@ Use the installation command with conda:
 
 .. code-block:: 
 
-    conda install stereopy -c stereopy -c grst -c numba -c conda-forge -c bioconda
+    conda install stereopy -c stereopy -c grst -c numba -c conda-forge -c bioconda -c fastai
 
 PyPI
 ----
@@ -62,6 +67,8 @@ Use the latest version of dev branch on Github, you need to clone the repository
     git clone -b dev https://github.com/STOmics/stereopy.git
 
     cd stereopy
+
+    pip install -r requirements.txt
 
     python setup.py install
 

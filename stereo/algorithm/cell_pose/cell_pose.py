@@ -3,32 +3,36 @@
 """
 @author: zhen bin  wenzhenbin@genomics.cn
 @last modified by: zhen bin
-@file:common.py
+@file:cell_pose.py
 @time:2023/08/24
 """
-import cv2
-import patchify
-import numpy as np
 from math import ceil
 from typing import Optional
 
+import cv2
+import numpy as np
+import patchify
 from scipy.ndimage import distance_transform_edt
-from stereo.algorithm.cell_pose import utils
+
 from stereo.algorithm.cell_pose import models
+from stereo.algorithm.cell_pose import utils
 from stereo.utils.time_consume import log_consumed_time
 
 
-class Cellpose:
+class CellPose:
 
-    def __init__(self,
-                 img_path: str,
-                 out_path: str,
-                 photo_size: Optional[int] = 2048,
-                 photo_step: Optional[int] = 2000,
-                 model_type: Optional[str] = 'cyto2',
-                 dmin: Optional[int] = 10,
-                 dmax: Optional[int] = 40,
-                 step: Optional[int] = 10):
+    def __init__(
+            self,
+            img_path: str,
+            out_path: str,
+            photo_size: Optional[int] = 2048,
+            photo_step: Optional[int] = 2000,
+            model_type: Optional[str] = 'cyto2',
+            dmin: Optional[int] = 10,
+            dmax: Optional[int] = 40,
+            step: Optional[int] = 10,
+            gpu: Optional[bool] = False
+    ):
         """
 
         :param img_path: input file path.
@@ -43,6 +47,7 @@ class Cellpose:
         :param dmin: cell minimum diameter, default is 10.
         :param dmax: cell diameter, default is 40.
         :param step: the step size of cell diameter search, default is 10.
+        :param gpu: Whether to use gpu acceleration, the default is False.
         """
         self.img_path = img_path
         self.out_path = out_path
@@ -50,6 +55,7 @@ class Cellpose:
         self.photo_step = photo_step
         self.dmin = dmin
         self.dmax = dmax
+        self.gpu = gpu
         self.step = step
         self.model_type = model_type
         self.segment_cells()
@@ -74,7 +80,7 @@ class Cellpose:
         patches = patchify.patchify(regray_image, (self.photo_size, self.photo_size), step=self.photo_step)
         wid = patches.shape[0]
         high = patches.shape[1]
-        model = models.Cellpose(gpu=True, model_type=self.model_type)
+        model = models.Cellpose(gpu=self.gpu, model_type=self.model_type)
         a_patches = np.full((wid, high, (self.photo_step), (self.photo_step)), 255)
         for i in range(wid):
             for j in range(high):
@@ -89,15 +95,15 @@ class Cellpose:
                     if num0 < num0min:
                         num0min = num0
                         outlines = utils.masks_to_outlines(masks)
-                        outlines = (outlines == True).astype(int) * 255
+                        outlines = (outlines == True).astype(int) * 255  # noqa
 
                         try:
                             a_patches[i, j, :, :] = outlines[act_step:(self.photo_step + act_step),
-                                                    act_step:(self.photo_step + act_step)]
+                                                    act_step:(self.photo_step + act_step)]  # noqa
                             output = masks.copy()
-                        except:
+                        except Exception:
                             a_patches[i, j, :, :] = output[act_step:(self.photo_step + act_step),
-                                                    act_step:(self.photo_step + act_step)]
+                                                    act_step:(self.photo_step + act_step)]  # noqa
         patch_nor = patchify.unpatchify(a_patches, ((wid) * (self.photo_step), (high) * (self.photo_step)))
         nor_imgdata = np.array(patch_nor)
         cropped_1 = nor_imgdata[0:gray_image.shape[0], 0:gray_image.shape[1]]
@@ -113,7 +119,7 @@ class Cellpose:
         for y, x in contour_coords:
             mask = distance_transform[y, x] <= contour_thickness
             expanded_image[y - contour_thickness:y + contour_thickness + 1,
-            x - contour_thickness:x + contour_thickness + 1] = mask * 255
+            x - contour_thickness:x + contour_thickness + 1] = mask * 255  # noqa
         contours, _ = cv2.findContours(expanded_image, cv2.RETR_LIST, cv2.CHAIN_APPROX_NONE)
         height, width = process_image.shape
         black_background = np.zeros((height, width), dtype=np.uint8)

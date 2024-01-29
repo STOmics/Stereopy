@@ -6,40 +6,42 @@
 @file:constant.py
 @time:2023/08/01
 """
+# flake8: noqa
 
-import numpy as np
-import pandas as pd
+from collections import defaultdict
 from typing import List
 from typing import Optional
 
 import matplotlib.pyplot as plt
-from collections import defaultdict
+import numpy as np
+import pandas as pd
 
-from stereo.constant import TMP
-from stereo.constant import GROUP
-from stereo.constant import BATCH
-from stereo.constant import PAGA
-from stereo.constant import SANKEY
-from stereo.constant import INDEX
-from stereo.constant import LOG_FC
-from stereo.constant import SIMPLE
-from stereo.constant import CATEGORY
-from stereo.constant import ColorType
 from stereo.constant import ANNOTATION
-from stereo.constant import DptColType
-from stereo.constant import LESS_PVALUE
-from stereo.constant import PaletteType
-from stereo.constant import _LOG_PVALUE
-from stereo.constant import CELLTYPE_STD
+from stereo.constant import BATCH
 from stereo.constant import BatchColType
-from stereo.constant import DirectionType
+from stereo.constant import CATEGORY
 from stereo.constant import CELLTYPE_MEAN
+from stereo.constant import CELLTYPE_MEAN_SCALE
+from stereo.constant import CELLTYPE_STD
+from stereo.constant import CONNECTIVITIES_TREE
+from stereo.constant import ColorType
+from stereo.constant import DirectionType
+from stereo.constant import DptColType
 from stereo.constant import FUZZY_C_WEIGHT
 from stereo.constant import GREATER_PVALUE
-from stereo.constant import CONNECTIVITIES_TREE
-from stereo.constant import CELLTYPE_MEAN_SCALE
-from stereo.plots.plot_base import PlotBase
+from stereo.constant import GROUP
+from stereo.constant import INDEX
+from stereo.constant import LESS_PVALUE
+from stereo.constant import LOG_FC
+from stereo.constant import PAGA
+from stereo.constant import PaletteType
+from stereo.constant import SANKEY
+from stereo.constant import SIMPLE
+from stereo.constant import TMP
+from stereo.constant import _LOG_PVALUE
+from stereo.plots.decorator import reorganize_coordinate
 from stereo.plots.ms_plot_base import MSDataPlotBase
+from stereo.plots.plot_base import PlotBase
 
 
 class PlotTimeSeries(PlotBase):
@@ -67,10 +69,13 @@ class PlotTimeSeries(PlotBase):
         branch2exp = defaultdict(dict)
         stereo_exp_data = self.stereo_exp_data
         for x in branch:
-            cell_list = stereo_exp_data.cells.to_df().loc[stereo_exp_data.cells[use_col] == x, :].index
-            tmp_exp_data = stereo_exp_data.sub_by_name(cell_name=cell_list)
+            # cell_list = stereo_exp_data.cells.to_df().loc[stereo_exp_data.cells[use_col] == x, :].index
+            # tmp_exp_data = stereo_exp_data.sub_by_name(cell_name=cell_list)
+            cell_flag = (stereo_exp_data.cells[use_col] == x).to_numpy()
+            tmp_exp_data = stereo_exp_data.exp_matrix[cell_flag]
             for gene in genes:
-                branch2exp[gene][x] = tmp_exp_data.sub_by_name(gene_name=[gene]).exp_matrix.toarray().flatten()
+                # branch2exp[gene][x] = tmp_exp_data.sub_by_name(gene_name=[gene]).exp_matrix.toarray().flatten()
+                branch2exp[gene][x] = tmp_exp_data[:, stereo_exp_data.gene_names == gene].toarray().flatten()
 
         fig = plt.figure(figsize=(4 * len(genes), 6))
         ax = fig.subplots(1, len(genes))
@@ -78,8 +83,8 @@ class PlotTimeSeries(PlotBase):
             for i, g in enumerate(genes):
                 ax.boxplot(list(branch2exp[g].values()), labels=list(branch2exp[g].keys()))
                 ax.set_title(g if title != '' else '')
-                if vmax != None:
-                    if vmin == None:
+                if vmax != None:  # noqa
+                    if vmin == None:  # noqa
                         ax.set_ylim(0, vmax)
                     else:
                         ax.set_ylim(vmin, vmax)
@@ -164,7 +169,18 @@ class PlotTimeSeries(PlotBase):
 
         return fig
 
-    def bezierpath(self, rs, re, qs, qe, ry, qy, v=True, col=ColorType.green.value, alpha=0.2, label='', lw=0,
+    def bezierpath(self,
+                   rs,
+                   re,
+                   qs,
+                   qe,
+                   ry,
+                   qy,
+                   v=True,
+                   col=ColorType.green.value,
+                   alpha=0.2,
+                   label='',
+                   lw=0,
                    zorder=0):
         """
         bezierpath patch for plot the connection of same organ in different batches
@@ -213,6 +229,7 @@ class PlotTimeSeries(PlotBase):
         patch = patches.PathPatch(path, facecolor=col, lw=lw, alpha=alpha, label=label, edgecolor=col, zorder=zorder)
         return patch
 
+    @reorganize_coordinate
     def paga_time_series_plot(self,
                               use_col: str,
                               batch_col: str,
@@ -235,13 +252,24 @@ class PlotTimeSeries(PlotBase):
         :param link_alpha: alpha of the bezierpath, from 0 to 1.
         :param spot_size: the size of each cell scatter.
         :param dpt_col: the col in obs representing dpt pseudotime.
+        :param reorganize_coordinate: if the data is merged from several slices, whether to reorganize the coordinates of the obs(cells), 
+                if set it to a number, like 2, the coordinates will be reorganized to 2 columns on coordinate system as below:
+                                ---------------
+                                | data1 data2
+                                | data3 data4
+                                | data5 ...  
+                                | ...   ...  
+                                ---------------
+                if set it to `False`, the coordinates will not be changed.
+        :param horizontal_offset_additional: the additional offset between each slice on horizontal direction while reorganizing coordinates.
+        :param vertical_offset_additional: the additional offset between each slice on vertical direction while reorganizing coordinates.
 
         :return: a fig object
-        """
-
+        """  # noqa
         import networkx as nx
         import seaborn as sns
         from scipy import stats
+        import copy
         stereo_exp_data = self.stereo_exp_data
 
         # 细胞类型的列表
@@ -253,8 +281,10 @@ class PlotTimeSeries(PlotBase):
         # 生成每个细胞类型的颜色对应
         colors = sns.color_palette(palette, len(ct_list))
         ct2color = dict(zip(ct_list, colors))
-        stereo_exp_data.cells[TMP] = stereo_exp_data.cells[use_col].astype(str) + '|' + stereo_exp_data.cells[
-            batch_col].astype(str)
+        internal_df = copy.deepcopy(stereo_exp_data.cells.to_df())
+        internal_df[0] = stereo_exp_data.position[:, 0].astype(float)
+        internal_df[1] = stereo_exp_data.position[:, 1].astype(float)
+        internal_df[TMP] = internal_df[use_col].astype(str) + '|' + internal_df[batch_col].astype(str)
 
         # 读取paga结果
         G = pd.DataFrame(stereo_exp_data.tl.result[PAGA][CONNECTIVITIES_TREE].todense())
@@ -266,10 +296,10 @@ class PlotTimeSeries(PlotBase):
                 G[x][y] = G[y][x] = G[x][y] + G[y][x]
 
         # 利用伪时序计算结果推断方向
-        if dpt_col in stereo_exp_data.cells:
+        if dpt_col in internal_df:
             ct2dpt = {}
 
-            for x, y in stereo_exp_data.cells.groupby(use_col):
+            for x, y in internal_df.groupby(use_col):
                 ct2dpt[x] = y[dpt_col].to_numpy()
 
             dpt_ttest = defaultdict(dict)
@@ -318,10 +348,12 @@ class PlotTimeSeries(PlotBase):
         min_vertex_right = {}
         max_vertex_left = {}
         max_vertex_right = {}
-        for x in stereo_exp_data.cells.to_df().groupby(TMP):
-            tmp = stereo_exp_data.sub_by_name(cell_name=x[1].index).position
-            tmp_left = tmp[(np.percentile(tmp[:, 0], 40) <= tmp[:, 0]) & (tmp[:, 0] <= np.percentile(tmp[:, 0], 60))]
-            tmp_right = tmp[(np.percentile(tmp[:, 0], 40) <= tmp[:, 0]) & (tmp[:, 0] <= np.percentile(tmp[:, 0], 60))]
+        for x in internal_df.groupby(TMP):
+            tmp = x[1][[0, 1]].to_numpy()
+            tmp_left = tmp[(np.percentile(tmp[:, 0], 40, interpolation='nearest') <= tmp[:, 0]) & (
+                        tmp[:, 0] <= np.percentile(tmp[:, 0], 60, interpolation='nearest'))]
+            tmp_right = tmp[(np.percentile(tmp[:, 0], 40, interpolation='nearest') <= tmp[:, 0]) & (
+                        tmp[:, 0] <= np.percentile(tmp[:, 0], 60, interpolation='nearest'))]
             min_vertex_left[x[0]] = [np.mean(tmp_left[:, 0]), 0 - np.percentile(tmp_left[:, 1], 10)]
             min_vertex_right[x[0]] = [np.mean(tmp_right[:, 0]), 0 - np.percentile(tmp_right[:, 1], 10)]
             max_vertex_left[x[0]] = [np.mean(tmp_left[:, 0]), 0 - np.percentile(tmp_left[:, 1], 90)]
@@ -332,8 +364,8 @@ class PlotTimeSeries(PlotBase):
                     alpha=0.8)
 
         # 细胞散点元素
-        for x in stereo_exp_data.cells.to_df().groupby(use_col):
-            tmp = stereo_exp_data.sub_by_name(cell_name=x[1].index).position
+        for x in internal_df.groupby(use_col):
+            tmp = x[1][[0, 1]].to_numpy()
             ax.scatter(tmp[:, 0], 0 - tmp[:, 1], label=x[0], color=ct2color[x[0]], s=spot_size)
 
         # 决定箭头曲率方向的阈值
@@ -350,13 +382,11 @@ class PlotTimeSeries(PlotBase):
                     if (y1 + y2) / 2 < threshold_y:
                         ax.annotate('', (x2, y2), (x1, y1),
                                     arrowprops=dict(connectionstyle="arc3,rad=0.4", ec=ColorType.black.value,
-                                                    color='#f9f8e6',
-                                                    arrowstyle=SIMPLE, alpha=0.5))
+                                                    color='#f9f8e6', arrowstyle=SIMPLE, alpha=0.5))
                     else:
                         ax.annotate('', (x2, y2), (x1, y1),
                                     arrowprops=dict(connectionstyle="arc3,rad=-0.4", ec=ColorType.black.value,
-                                                    color='#f9f8e6',
-                                                    arrowstyle=SIMPLE, alpha=0.5))
+                                                    color='#f9f8e6', arrowstyle=SIMPLE, alpha=0.5))
 
         # 贝塞尔曲线流形显示
         if len(groups) == 1:
@@ -364,15 +394,22 @@ class PlotTimeSeries(PlotBase):
                 for bc in range(len(bc_list) - 1):
                     edge0, edge1 = g + '|' + bc_list[bc], g + '|' + bc_list[bc + 1]
                     if (edge0 in median_center) and (edge1 in median_center):
-                        p = self.bezierpath(min_vertex_right[edge0][1], max_vertex_right[edge0][1],
-                                            min_vertex_left[edge1][1], max_vertex_right[edge1][1],
-                                            min_vertex_right[edge0][0], min_vertex_left[edge1][0], True,
-                                            col=ct2color[g], alpha=link_alpha)
+                        p = self.bezierpath(
+                            min_vertex_right[edge0][1],
+                            max_vertex_right[edge0][1],
+                            min_vertex_left[edge1][1],
+                            max_vertex_right[edge1][1],
+                            min_vertex_right[edge0][0],
+                            min_vertex_left[edge1][0],
+                            True,
+                            col=ct2color[g],
+                            alpha=link_alpha
+                        )
                         ax.add_patch(p)
 
         # 显示时期的label
-        for x in stereo_exp_data.cells.to_df().groupby(batch_col):
-            tmp = stereo_exp_data.sub_by_name(cell_name=x[1].index).position
+        for x in internal_df.groupby(batch_col):
+            tmp = x[1][[0, 1]].to_numpy()
             ax.text(np.mean(tmp[:, 0]), 0 - np.min(tmp[:, 1]) + 1, s=x[0], c=ColorType.black.value, fontsize=20,
                     ha=DirectionType.center.value, va=DirectionType.bottom.value)
 
@@ -508,7 +545,7 @@ class PlotTimeSeriesAnalysis(MSDataPlotBase, PlotTimeSeries):
 
         :param use_result: the col in obs representing celltype or clustering.
         :param method: choose from sankey and dot, choose the way to display.
-        :param edges: a parameter to add arrow to illustrate development trajectory. if edges=='page', use paga result, otherwise use a list of tuple of celltype pairs as father node and child node.
+        :param edges: a parameter to add arrow to illustrate development trajectory. if edges=='page', use paga result, otherwise use a list of tuple of celltype pairs as father node and child node. # flake8: noqa
         :param dot_size_scale: only used for method='dot', to adjust dot relatively size.
         :param palette: color palette to paint different celltypes.
         :param ylabel_pos: position to plot y labels.
@@ -536,8 +573,7 @@ class PlotTimeSeriesAnalysis(MSDataPlotBase, PlotTimeSeries):
         ret = defaultdict(dict)
         for t in bc_list:
             for x in ct_list:
-                ret[x][t] = ms_data[t].tl.result[use_result].loc[ms_data[t].tl.result[use_result][GROUP] == x].shape[
-                    0]
+                ret[x][t] = ms_data[t].tl.result[use_result].loc[ms_data[t].tl.result[use_result][GROUP] == x].shape[0]
 
         # order the celltype
         ret_df = pd.DataFrame(ret)
@@ -675,7 +711,6 @@ class PlotTimeSeriesAnalysis(MSDataPlotBase, PlotTimeSeries):
 
         :return: a fig object.
         """
-
         import networkx as nx
         import seaborn as sns
         from scipy import stats
@@ -802,13 +837,11 @@ class PlotTimeSeriesAnalysis(MSDataPlotBase, PlotTimeSeries):
                     if (y1 + y2) / 2 < threshold_y:
                         ax.annotate('', (x2, y2), (x1, y1),
                                     arrowprops=dict(connectionstyle="arc3,rad=0.4", ec=ColorType.black.value,
-                                                    color='#f9f8e6',
-                                                    arrowstyle=SIMPLE, alpha=0.5))
+                                                    color='#f9f8e6', arrowstyle=SIMPLE, alpha=0.5))
                     else:
                         ax.annotate('', (x2, y2), (x1, y1),
                                     arrowprops=dict(connectionstyle="arc3,rad=-0.4", ec=ColorType.black.value,
-                                                    color='#f9f8e6',
-                                                    arrowstyle=SIMPLE, alpha=0.5))
+                                                    color='#f9f8e6', arrowstyle=SIMPLE, alpha=0.5))
 
         # 贝塞尔曲线流形显示
         if len(groups) == 1:
@@ -816,10 +849,17 @@ class PlotTimeSeriesAnalysis(MSDataPlotBase, PlotTimeSeries):
                 for bc in range(len(bc_list) - 1):
                     edge0, edge1 = g + '|' + bc_list[bc], g + '|' + bc_list[bc + 1]
                     if (edge0 in median_center) and (edge1 in median_center):
-                        p = self.bezierpath(min_vertex_right[edge0][1], max_vertex_right[edge0][1],
-                                            min_vertex_left[edge1][1], max_vertex_right[edge1][1],
-                                            min_vertex_right[edge0][0], min_vertex_left[edge1][0], True,
-                                            col=ct2color[g], alpha=link_alpha)
+                        p = self.bezierpath(
+                            min_vertex_right[edge0][1],
+                            max_vertex_right[edge0][1],
+                            min_vertex_left[edge1][1],
+                            max_vertex_right[edge1][1],
+                            min_vertex_right[edge0][0],
+                            min_vertex_left[edge1][0],
+                            True,
+                            col=ct2color[g],
+                            alpha=link_alpha
+                        )
                         ax.add_patch(p)
 
         # 显示时期的label

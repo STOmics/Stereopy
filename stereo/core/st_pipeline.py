@@ -2,7 +2,7 @@
 # coding: utf-8
 """
 @file: st_pipeline.py
-@description: 
+@description:
 @author: Ping Qiu
 @email: qiuping1@genomics.cn
 @last modified by: Ping Qiu
@@ -13,20 +13,24 @@ change log:
 
 import copy
 from functools import wraps
-from typing import Optional, Union, List
 from multiprocessing import cpu_count
-from typing_extensions import Literal
+from typing import (
+    Optional,
+    Union,
+    List
+)
 
 import numpy as np
 import pandas as pd
 from anndata import AnnData
 from scipy.sparse import issparse
+from typing_extensions import Literal
 
-from ..log_manager import logger
 from .result import Result, AnnBasedResult
-from .stereo_exp_data import StereoExpData, AnnBasedStereoExpData
+from .stereo_exp_data import AnnBasedStereoExpData
+from .stereo_exp_data import StereoExpData
+from ..log_manager import logger
 from ..utils.time_consume import TimeConsume
-from ..algorithm.algorithm_base import AlgorithmBase
 
 tc = TimeConsume()
 
@@ -55,6 +59,7 @@ class StPipeline(object):
         self.result = Result(data)
         self._raw: Union[StereoExpData, AnnBasedStereoExpData] = None
         self.key_record = {'hvg': [], 'pca': [], 'neighbors': [], 'umap': [], 'cluster': [], 'marker_genes': []}
+        self.reset_key_record = self._reset_key_record
 
     def __getattr__(self, item):
         dict_attr = self.__dict__.get(item, None)
@@ -65,6 +70,7 @@ class StPipeline(object):
         if item.startswith('__'):
             raise AttributeError
 
+        from ..algorithm.algorithm_base import AlgorithmBase
         new_attr = AlgorithmBase.get_attribute_helper(item, self.data, self.result)
         if new_attr:
             self.__setattr__(item, new_attr)
@@ -96,7 +102,7 @@ class StPipeline(object):
 
     def reset_raw_data(self):
         """
-        Reset `self.data` to the raw data saved in `self.raw` when you want data 
+        Reset `self.data` to the raw data saved in `self.raw` when you want data
         get raw expression matrix.
 
         :return:
@@ -105,7 +111,7 @@ class StPipeline(object):
 
     def raw_checkpoint(self):
         """
-        Save current data to `self.raw`. Running this function will be a convinent choice, 
+        Save current data to `self.raw`. Running this function will be a convinent choice,
         when your data have gone through several steps of basic preprocessing.
 
         Parameters
@@ -117,7 +123,7 @@ class StPipeline(object):
         """
         self.raw = self.data
 
-    def reset_key_record(self, key, res_key):
+    def _reset_key_record(self, key, res_key):
         """
         reset key and coordinated res_key in key_record.
         :param key:
@@ -193,7 +199,8 @@ class StPipeline(object):
         data = filter_cells(self.data, min_gene, max_gene, min_n_genes_by_counts, max_n_genes_by_counts, pct_counts_mt,
                             cell_list, inplace)
         if data.raw is not None and filter_raw:
-            filter_cells(data.raw, min_gene, max_gene, min_n_genes_by_counts, max_n_genes_by_counts, pct_counts_mt, cell_list, True)
+            filter_cells(data.raw, min_gene, max_gene, min_n_genes_by_counts, max_n_genes_by_counts, pct_counts_mt,
+                         cell_list, True)
         return data
 
     @logit
@@ -216,12 +223,12 @@ class StPipeline(object):
         gene_list
             the list of genes to be retained.
         mean_umi_gt
-			genes mean umi should greater than this.
+            genes mean umi should greater than this.
         filter_raw
             whether to filter raw data meanwhile.
         inplace
             whether to inplace the previous data or return a new data.
-        
+
         Returns
         --------------------
         An object of StereoExpData.
@@ -232,10 +239,10 @@ class StPipeline(object):
         if data.raw is not None and filter_raw:
             filter_genes(data.raw, min_cell, max_cell, gene_list, mean_umi_gt, True)
         return data
-    
+
     @logit
     def filter_by_hvgs(self,
-                       hvg_res_key: str='highly_variable_genes',
+                       hvg_res_key: str = 'highly_variable_genes',
                        filter_raw: bool = True,
                        inplace: bool = False):
         """
@@ -249,7 +256,7 @@ class StPipeline(object):
             whether to filter raw data meanwhile.
         inplace
             whether to inplace the previous data or return a new data.
-        
+
         Returns
         --------------------
         An object of StereoExpData.
@@ -257,7 +264,7 @@ class StPipeline(object):
         """
         if hvg_res_key not in self.result:
             raise KeyError(f'Can not find result of highly_variable_genes function by key {hvg_res_key}.')
-        
+
         from ..preprocess import filter_genes
         hvgs_flag = self.result[hvg_res_key]['highly_variable'].to_numpy()
         hvgs = self.data.gene_names[hvgs_flag]
@@ -306,12 +313,12 @@ class StPipeline(object):
 
     @logit
     def filter_by_clusters(
-        self,
-        cluster_res_key: str = 'cluster',
-        groups: Union[str, np.ndarray, List[str]] = None,
-        excluded: bool = False,
-        filter_raw: Optional[bool] = True,
-        inplace: bool = False
+            self,
+            cluster_res_key: str = 'cluster',
+            groups: Union[str, np.ndarray, List[str]] = None,
+            excluded: bool = False,
+            filter_raw: Optional[bool] = True,
+            inplace: bool = False
     ):
         """
         Filter cells based on clustering result.
@@ -338,7 +345,7 @@ class StPipeline(object):
 
         if cluster_res_key not in self.result:
             raise Exception(f'{cluster_res_key} is not in the result, please check and run the func of cluster.')
-        
+
         data, cluster_res = filter_by_clusters(self.data, self.result[cluster_res_key], groups, excluded, inplace)
         data.tl.result[cluster_res_key] = cluster_res
         gene_exp_cluster_key = f'gene_exp_{cluster_res_key}'
@@ -386,7 +393,7 @@ class StPipeline(object):
         Parameters
         -----------------------
         target_sum
-            the number of total counts per cell after normalization, if `None`, each cell has a 
+            the number of total counts per cell after normalization, if `None`, each cell has a
             total count equal to the median of total counts for all cells before normalization.
         inplace
             whether to inplcae previous data or get a new express matrix after normalize_total.
@@ -518,7 +525,7 @@ class StPipeline(object):
         from ..preprocess.filter import filter_genes
         data = self.data if inplace else copy.deepcopy(self.data)
         self.result[res_key] = sc_transform(data, n_cells, n_genes, filter_hvgs, var_features_n,
-                                                exp_matrix_key=exp_matrix_key, seed_use=seed_use, **kwargs)
+                                            exp_matrix_key=exp_matrix_key, seed_use=seed_use, **kwargs)
         key = 'sct'
         self.reset_key_record(key, res_key)
 
@@ -539,42 +546,42 @@ class StPipeline(object):
             n_bins: int = 20,
             res_key='highly_variable_genes'
     ):
-        """\
-        Annotate highly variable genes, refering to Scanpy. 
-        Which method to implement depends on `flavor`,including Seurat [Satija15]_ , 
+        """
+        Annotate highly variable genes, refering to Scanpy.
+        Which method to implement depends on `flavor`,including Seurat [Satija15]_ ,
         Cell Ranger [Zheng17]_ and Seurat v3 [Stuart19]_.
 
         Parameters
         ----------------------
         groups
-            if specified, highly variable genes are selected within each batch separately and merged, 
-            which simply avoids the selection of batch-specific genes and acts as a lightweight batch 
+            if specified, highly variable genes are selected within each batch separately and merged,
+            which simply avoids the selection of batch-specific genes and acts as a lightweight batch
             correction method. For all flavors, genes are first sorted by how many batches they are a HVG.
-            For dispersion-based flavors ties are broken by normalized dispersion. If `flavor` 
+            For dispersion-based flavors ties are broken by normalized dispersion. If `flavor`
             is `'seurat_v3'`, ties are broken by the median (across batches) rank based on within-
             batch normalized variance.
         method
-            Choose the flavor to identify highly variable genes. For the dispersion-based methods in 
+            Choose the flavor to identify highly variable genes. For the dispersion-based methods in
             their default workflows, Seurat passes the cutoffs whereas Cell Ranger passes `n_top_genes`.
         n_top_genes
             number of highly variable genes to keep. Mandatory if `flavor='seurat_v3'`.
         min_disp
-            if `n_top_genes` is not None, this and all other cutoffs for the means and the normalized 
+            if `n_top_genes` is not None, this and all other cutoffs for the means and the normalized
             dispersions are ignored. Ignored if `flavor='seurat_v3'`.
         max_disp
-            if `n_top_genes` is not None, this and all other cutoffs for the means and the normalized 
+            if `n_top_genes` is not None, this and all other cutoffs for the means and the normalized
             dispersions are ignored. Ignored if `flavor='seurat_v3'`.
         min_mean
-            if `n_top_genes` is not None, this and all other cutoffs for the means and the normalized 
+            if `n_top_genes` is not None, this and all other cutoffs for the means and the normalized
             dispersions are ignored. Ignored if `flavor='seurat_v3'`.
         max_mean
-            if `n_top_genes` is not None, this and all other cutoffs for the means and the normalized 
+            if `n_top_genes` is not None, this and all other cutoffs for the means and the normalized
             dispersions are ignored. Ignored if `flavor='seurat_v3'`.
         span
-            the fraction of data (cells) used when estimating the variance in the Loess model fit 
+            the fraction of data (cells) used when estimating the variance in the Loess model fit
             if `flavor='seurat_v3'`.
         n_bins
-            number of bins for binning the mean gene expression. Normalization is done with respect to 
+            number of bins for binning the mean gene expression. Normalization is done with respect to
             each bin. If just a single gene falls into a bin, the normalized dispersion is artificially set to 1.
         res_key
             the key for getting the result from `self.result`.
@@ -582,7 +589,7 @@ class StPipeline(object):
         Returns
         -----------------
         An object of StereoExpData with the result of highly variable genes.
-        
+
         """
         from ..tools.highly_variable_genes import HighlyVariableGenes
         hvg = HighlyVariableGenes(self.data, groups=groups, method=method, n_top_genes=n_top_genes, min_disp=min_disp,
@@ -645,15 +652,23 @@ class StPipeline(object):
 
         :param hvg_res_key: the key of highly variable genes to get targeted result,`use_highly_genes=True` is a necessary prerequisite.
         :param res_key: the key for storage of PCA result.
-        
+
         :return: Computation result of principal component analysis is stored in `self.result` where the result key is `'pca'`.
-        """
+        """  # noqa
         if use_highly_genes and hvg_res_key not in self.result:
             raise Exception(f'{hvg_res_key} is not in the result, please check and run the highly_var_genes func.')
-        data = self.subset_by_hvg(hvg_res_key, inplace=False) if use_highly_genes else self.data
+        # data = self.subset_by_hvg(hvg_res_key, inplace=False) if use_highly_genes else self.data
         from ..algorithm.dim_reduce import pca
-        res = pca(data.exp_matrix, n_pcs, svd_solver=svd_solver)
+
+        if use_highly_genes:
+            hvgs = self.result[hvg_res_key]['highly_variable']
+            exp_matrix = self.data.exp_matrix[:, hvgs]
+        else:
+            exp_matrix = self.data.exp_matrix
+        res = pca(exp_matrix, n_pcs, svd_solver=svd_solver)
+
         self.result[res_key] = pd.DataFrame(res['x_pca'])
+        self.result[f'{res_key}_variance_ratio'] = res['variance_ratio']
         key = 'pca'
         self.reset_key_record(key, res_key)
 
@@ -678,7 +693,9 @@ class StPipeline(object):
             gamma: float = 1.0,
             negative_sample_rate: int = 5,
             init_pos: str = 'spectral',
-            method: str = 'umap'
+            method: str = 'umap',
+            random_state: int = 0,
+            parallel: bool = False
     ):
         """
         Embed the neighborhood graph using UMAP [McInnes18]_.
@@ -707,7 +724,7 @@ class StPipeline(object):
                         Options are:
                             `'spectral'`: use a spectral embedding of the graph.
                             `'random'`: assign initial embedding positions at random.
-
+        :param method: Use the original 'umap' implementation, or 'rapids' (experimental, GPU only)
         :return: UMAP result is stored in `self.result` where the result key is `'umap'`.
         """
         from ..algorithm.umap import umap
@@ -716,9 +733,21 @@ class StPipeline(object):
         if neighbors_res_key not in self.result:
             raise Exception(f'{neighbors_res_key} is not in the result, please check and run the neighbors func.')
         _, connectivities, _ = self.get_neighbors_res(neighbors_res_key)
-        x_umap = umap(x=self.result[pca_res_key], neighbors_connectivities=connectivities,
-                      min_dist=min_dist, spread=spread, n_components=n_components, maxiter=maxiter, alpha=alpha,
-                      gamma=gamma, negative_sample_rate=negative_sample_rate, init_pos=init_pos, method=method)
+        x_umap = umap(
+            x=self.result[pca_res_key],
+            neighbors_connectivities=connectivities,
+            min_dist=min_dist,
+            spread=spread,
+            n_components=n_components,
+            maxiter=maxiter,
+            alpha=alpha,
+            gamma=gamma,
+            negative_sample_rate=negative_sample_rate,
+            init_pos=init_pos,
+            method=method,
+            random_state=random_state,
+            parallel=parallel
+        )
         self.result[res_key] = pd.DataFrame(x_umap)
         key = 'umap'
         self.reset_key_record(key, res_key)
@@ -763,10 +792,10 @@ class StPipeline(object):
                             * yule
         :param n_pcs: the number of principle components to run neighbors, default is None such that `self.X` is used.
         :param n_neighbors: the size of nearest neighbors.
-        :param knn: if `True`, use a hard threshold to restrict the number of neighbors to `n_neighbors`, 
-                    namely consider a knn graph. Otherwise, use a Gaussian Kernel to assign low weights 
+        :param knn: if `True`, use a hard threshold to restrict the number of neighbors to `n_neighbors`,
+                    namely consider a knn graph. Otherwise, use a Gaussian Kernel to assign low weights
                     to neighbors more distant than the `n_neighbors` nearest neighbors.
-        :param n_jobs: the number of parallel running jobs for neighbors, if set to `-1`, all CPUs will 
+        :param n_jobs: the number of parallel running jobs for neighbors, if set to `-1`, all CPUs will
                     be used. Notice that extremely high value of `n_jobs` may cause segment fault.
         :param res_key: the key for storing result of neighbors, default is `neighbors`.
 
@@ -848,12 +877,12 @@ class StPipeline(object):
                             Higher values lead to more clusters.
                             Set to `None` if overriding `partition_type`
                             to one that doesn’t accept a `resolution_parameter`.
-        :param use_weights: if `True`, edge weights from the graph are used in computation, more emphasis should be placed on stronger edges.
+        :param use_weights: if `True`, edge weights from the graph are used in computation, more emphasis should be placed on stronger edges. # noqa
         :param random_state: change the initialization of the optimization.
         :param n_iterations: how many iterations of the Leiden clustering algorithm to perform.
                              Positive values above 2 define the total number of iterations to perform,
                              `-1` has the algorithm run until it reaches its optimal clustering.
-
+        :param method: Use the original 'normal' implementation, or 'rapids' (experimental, GPU only)
         :return: Clustering result of Leiden is stored in `self.result` where the key is `'leiden'`.
         """
         neighbor, connectivities, _ = self.get_neighbors_res(neighbors_res_key)
@@ -864,7 +893,6 @@ class StPipeline(object):
             from ..algorithm.leiden import leiden as le
             clusters = le(neighbor=neighbor, adjacency=connectivities, directed=directed, resolution=resolution,
                           use_weights=use_weights, random_state=random_state, n_iterations=n_iterations)
-        # self.data.cells[res_key] = clusters
         df = pd.DataFrame({'bins': self.data.cell_names, 'group': clusters})
         self.result[res_key] = df
         key = 'cluster'
@@ -891,16 +919,16 @@ class StPipeline(object):
 
         :param neighbors_res_key: the key of neighbors to get corresponding result from `self.result`.
         :param res_key: the key for storing result of Louvain clustering.
-        :param resolution: a parameter value to control the coarseness of clustering where higher value 
+        :param resolution: a parameter value to control the coarseness of clustering where higher value
                             leads to more clusters.
         :param random_state: change the initialization of the optimization.
         :param flavor: choose among of packages for computing the clustering.
-                        `'vtraag'` is much more powerful, and the default. 
-                        Set to `None` if overriding `partition_type` to one that 
+                        `'vtraag'` is much more powerful, and the default.
+                        Set to `None` if overriding `partition_type` to one that
                         doesn't accept a `resolution_parameter`.
         :param directed: if `True`, treat the graph as directed. If `False`, undirected.
         :param use_weights: use weights from knn graph.
-        
+
         :return: Clustering result of Louvain is stored in `self.result` where the key is `'louvain'`.
         """
         neighbor, connectivities, _ = self.get_neighbors_res(neighbors_res_key)
@@ -908,7 +936,6 @@ class StPipeline(object):
         from ..utils.pipeline_utils import cell_cluster_to_gene_exp_cluster
         clusters = lo(neighbor=neighbor, resolution=resolution, random_state=random_state,
                       adjacency=connectivities, flavor=flavor, directed=directed, use_weights=use_weights)
-        # self.data.cells[res_key] = clusters
         df = pd.DataFrame({'bins': self.data.cell_names, 'group': clusters})
         self.result[res_key] = df
         key = 'cluster'
@@ -931,10 +958,10 @@ class StPipeline(object):
 
         :param phenograph_k: the k value of Phenograph.
         :param pca_res_key: the key of PCA analysis to get corresponding result from `self.result`.
-        :param n_jobs: the number of parallel jobs to run for neighbors search. If set to `-1`, all CPUs will be used. 
+        :param n_jobs: the number of parallel jobs to run for neighbors search. If set to `-1`, all CPUs will be used.
                     Too high value may cause segment fault.
         :param res_key: the key for storing result of Phenograph clustering.
-
+        :param seed: leiden initialization of the optimization.
         :return: Clustering result of Phenograph is stored in `self.result` where the key is `'phenograph'`.
         """
         if pca_res_key not in self.result:
@@ -949,8 +976,6 @@ class StPipeline(object):
             values=communities.astype('U'),
             categories=natsorted(map(str, np.unique(communities))),
         )
-        # clusters = communities.astype(str)
-        # self.data.cells[res_key] = clusters
         df = pd.DataFrame({'bins': self.data.cell_names, 'group': clusters})
         self.result[res_key] = df
         key = 'cluster'
@@ -979,7 +1004,7 @@ class StPipeline(object):
                           n_jobs: int = 4
                           ):
         """
-        A tool to find maker genes. For each group, find statistical test different genes 
+        A tool to find maker genes. For each group, find statistical test different genes
         between one group and the rest groups using `t_test` or `wilcoxon_test`.
 
         :param cluster_res_key: the key of clustering to get corresponding result from `self.result`.
@@ -996,6 +1021,7 @@ class StPipeline(object):
         :param n_genes: default to 0, means will auto calculate n_genes by N = 10000/K². K is cluster number, and N is
                 larger or equal to 1, less or equal to 50.
         :param ascending: default to False.
+        :param n_jobs: the number of parallel jobs to run. default to 4.
         :return: The result of marker genes is stored in `self.result` where the key is `'marker_genes'`.
         """
         from ..tools.find_markers import FindMarker
@@ -1003,28 +1029,39 @@ class StPipeline(object):
         if use_highly_genes and hvg_res_key not in self.result:
             raise Exception(f'{hvg_res_key} is not in the result, please check and run the highly_var_genes func.')
         if use_raw and not self.raw:
-            raise Exception(f'self.raw must be set if use_raw is True.')
+            raise Exception('self.raw must be set if use_raw is True.')
         if cluster_res_key not in self.result:
             raise Exception(f'{cluster_res_key} is not in the result, please check and run the func of cluster.')
         if self.result[cluster_res_key]['group'].unique().size <= 1:
-            raise Exception(f'this function must be based on a cluster result which includes at least two groups.')
+            raise Exception('this function must be based on a cluster result which includes at least two groups.')
         data = self.raw if use_raw else self.data
         data = self.subset_by_hvg(hvg_res_key, use_raw=use_raw, inplace=False) if use_highly_genes else data
 
         if n_jobs <= 0:
             n_jobs = cpu_count()
 
+        from stereo.utils.pipeline_utils import calc_pct_and_pct_rest, cell_cluster_to_gene_exp_cluster
+        pct, pct_rest = calc_pct_and_pct_rest(self.data, cluster_res_key)
+        mean_count_in_cluster = cell_cluster_to_gene_exp_cluster(self.data, cluster_res_key, kind='mean')
+
         tool = FindMarker(data=data, groups=self.result[cluster_res_key], method=method, case_groups=case_groups,
-                          control_groups=control_groups, corr_method=corr_method, raw_data=self.raw, sort_by=sort_by,
-                          n_genes=n_genes, ascending=ascending, n_jobs=n_jobs)
-        self.result[res_key] = tool.result
-        self.result[res_key]['parameters'] = {}
-        self.result[res_key]['parameters']['cluster_res_key'] = cluster_res_key
-        self.result[res_key]['parameters']['method'] = method
+                          control_groups=control_groups, corr_method=corr_method, sort_by=sort_by,
+                          n_genes=n_genes, ascending=ascending, n_jobs=n_jobs, pct=pct, pct_rest=pct_rest, mean_count=mean_count_in_cluster)
+        result = tool.result
+        result['parameters'] = {
+            'cluster_res_key': cluster_res_key,
+            'method': method,
+            'control_groups': control_groups,
+            'corr_method': corr_method,
+            'use_raw': use_raw
+        }
+        self.result[res_key] = result
         if output is not None:
             import natsort
             result = self.result[res_key]
-            show_cols = ['scores', 'pvalues', 'pvalues_adj', 'log2fc', 'genes', 'pct', 'pct_rest']
+            show_cols = ['genes', 'scores', 'pvalues', 'pvalues_adj', 'log2fc', 'pct', 'pct_rest']
+            if self.data.genes.real_gene_name is not None:
+                show_cols.insert(1, 'gene_name')
             groups = natsort.natsorted([key for key in result.keys() if '.vs.' in key])
             dat = pd.concat(
                 [
@@ -1078,7 +1115,7 @@ class StPipeline(object):
         from ..algorithm.spatial_pattern_score import spatial_pattern_score
 
         if use_raw and not self.raw:
-            raise Exception(f'self.raw must be set if use_raw is True.')
+            raise Exception('self.raw must be set if use_raw is True.')
         data = self.raw if use_raw else self.data
         x = data.exp_matrix.toarray() if issparse(data.exp_matrix) else data.exp_matrix
         df = pd.DataFrame(x, columns=data.gene_names, index=data.cell_names)
@@ -1110,8 +1147,8 @@ class StPipeline(object):
         :param n_neighbors: the neighborhood size.
         :param n_jobs: the number of parallel jobs to run.
         :param fdr_threshold: correlation threshold at which to stop assigning genes into modules.
-        :param min_gene_threshold: threshold that controls how small the modules could be. 
-            Increase if there are too many modules being formed, 
+        :param min_gene_threshold: threshold that controls how small the modules could be.
+            Increase if there are too many modules being formed,
             and decrease if substructre is not being captured.
         :param outdir: the path to output file(`hotspot.pkl`), containing total hotspot object.
         :param res_key: the key for storing result of spatial hotspot.
@@ -1122,9 +1159,8 @@ class StPipeline(object):
         from ..algorithm.spatial_hotspot import spatial_hotspot
         if use_highly_genes and hvg_res_key not in self.result:
             raise Exception(f'{hvg_res_key} is not in the result, please check and run the highly_var_genes func.')
-        # data = self.subset_by_hvg(hvg_res_key, inplace=False) if use_highly_genes else self.data
         if use_raw and not self.raw:
-            raise Exception(f'self.raw must be set if use_raw is True.')
+            raise Exception('self.raw must be set if use_raw is True.')
         data = copy.deepcopy(self.raw) if use_raw else copy.deepcopy(self.data)
         if use_highly_genes:
             df = self.result[hvg_res_key]
@@ -1132,8 +1168,6 @@ class StPipeline(object):
             data = data.sub_by_name(gene_name=highly_genes_name)
         hs = spatial_hotspot(data, model=model, n_neighbors=n_neighbors, n_jobs=n_jobs, fdr_threshold=fdr_threshold,
                              min_gene_threshold=min_gene_threshold, outdir=outdir)
-        # res = {"results":hs.results, "local_cor_z": hs.local_correlation_z, "modules": hs.modules,
-        #        "module_scores": hs.module_scores}
         self.result[res_key] = hs
 
     @logit
@@ -1143,17 +1177,17 @@ class StPipeline(object):
                         pca_res_key: str = 'pca',
                         n_jobs: int = -1,
                         inplace: bool = True
-        ):
+                        ):
         """
         Smooth the express matrix by the algorithm of Gaussian smoothing [Shen22]_.
 
-        :param n_neighbors: the number of the nearest points to search. 
+        :param n_neighbors: the number of the nearest points to search.
             Too high value may cause overfitting, and too low value may cause porr smoothing effect.
-        :param smooth_threshold: the threshold that indicates Gaussian variance with a value between 20 and 100. 
+        :param smooth_threshold: the threshold that indicates Gaussian variance with a value between 20 and 100.
             Also too high value may cause overfitting, and low value may cause poor smoothing effect.
         :param pca_res_key: the key of PCA to get targeted result from `self.result`.
         :param n_jobs: the number of parallel jobs to run, if `-1`, all CPUs will be used.
-        :param inplace: whether to inplace the previous express matrix or get a new StereoExpData object with the new express matrix.
+        :param inplace: whether to inplace the previous express matrix or get a new StereoExpData object with the new express matrix. # noqa
 
         :return: An object of StereoExpData with the express matrix processed by Gaussian smooting.
         """
@@ -1163,7 +1197,6 @@ class StPipeline(object):
         assert smooth_threshold >= 20 and smooth_threshold <= 100, 'smooth_threshold must be between 20 and 100'
 
         pca_exp_matrix = self.result[pca_res_key].to_numpy()
-        # raw_exp_matrix = self.raw.exp_matrix.toarray() if issparse(self.raw.exp_matrix) else self.raw.exp_matrix
         raw_exp_matrix = self.raw.exp_matrix if self.raw.issparse() else self.raw.array2sparse()
 
         if pca_exp_matrix.shape[0] != raw_exp_matrix.shape[0]:
@@ -1174,7 +1207,6 @@ class StPipeline(object):
                 """
             )
 
-        # logger.info(f"raw exp matrix size: {raw_exp_matrix.shape}")
         from ..algorithm.gaussian_smooth import gaussian_smooth
 
         if n_jobs <= 0 or n_jobs > cpu_count():
@@ -1188,7 +1220,6 @@ class StPipeline(object):
             smooth_threshold=smooth_threshold,
             n_jobs=n_jobs
         )
-        # logger.info(f"smoothed exp matrix size: {result.shape}")
         data = self.data if inplace else copy.deepcopy(self.data)
         data.exp_matrix = result
         return data
@@ -1206,8 +1237,8 @@ class StPipeline(object):
             n_pairs: int = 1000,
             adj_method: str = "fdr_bh",
             bin_scale: int = 1,
-            n_jobs=4,
-            res_key='lr_score'
+            n_jobs: int = 4,
+            res_key: str = 'lr_score'
     ):
         """calculate cci score for each LR pair and do permutation test
 
@@ -1231,8 +1262,12 @@ class StPipeline(object):
             number of pairs to random sample, by default 1000
         adj_method : str, optional
             adjust method of p value, by default "fdr_bh"
-        n_wokers : int, optional
-            num of worker when calculate_score, by default 4
+        bin_scale : int, optional
+            to scale the distance `distance = bin_scale * distance`, by default 1
+        n_jobs: int, optional
+            the number of parallel jobs to run, by default 4
+        res_key:  str, optional
+            the key for getting the result after integrating from the self.result, defaults to 'lr_score'
 
         Raises
         ------
@@ -1263,11 +1298,11 @@ class StPipeline(object):
         """integrate different experiments base on the pca result
 
         :param pca_res_key: the key of original pca to get from self.result, defaults to 'pca'
-        :param res_key: the key for getting the result after integrating from the self.result, defaults to 'pca_integrated'
+        :param res_key: the key for getting the result after integrating from the self.result, defaults to 'pca_integrated' # noqa
         """
         import harmonypy as hm
         assert pca_res_key in self.result, f'{pca_res_key} is not in the result, please check and run the pca method.'
-        assert self.data.cells.batch is not None, f'this is not a data were merged from different experiments'
+        assert self.data.cells.batch is not None, 'this is not a data were merged from different experiments'
 
         out = hm.run_harmony(self.result[pca_res_key], self.data.cells.to_df(), 'batch', **kwargs)
         self.result[res_key] = pd.DataFrame(out.Z_corr.T)
@@ -1284,25 +1319,54 @@ class StPipeline(object):
         """
         Set annotation to clusters.
 
-        :param annotation_information: describe the annotation information to the clusters in a list or dictionary format.
+        :param annotation_information: describe the annotation information to the clusters in a list or dictionary format. # noqa
         :param cluster_res_key: get the targeted cluster result to add annotation.
         :param res_key: the key for storing annotation result in `self.result`.
 
         :return: Annotation result is stored in `self.result` where the key is `'annotation'`.
         """
 
-        assert cluster_res_key in self.result, f'{cluster_res_key} is not in the result, please check and run the cluster func.'
+        assert cluster_res_key in self.result, f'{cluster_res_key} is not in the result, please check and run the ' \
+                                               f'cluster func.'
 
-        df = copy.deepcopy(self.result[cluster_res_key])
-        if isinstance(annotation_information, list):
-            df.group.cat.categories = annotation_information
+        # df = copy.deepcopy(self.result[cluster_res_key])
+        # if isinstance(annotation_information, list):
+        #     df.group.cat.categories = np.unique(annotation_information)
+        # elif isinstance(annotation_information, dict):
+        #     new_annotation_list = []
+        #     for i in df.group.cat.categories:
+        #         new_annotation_list.append(annotation_information[i])
+        #     df.group.cat.categories = new_annotation_list
+
+        cluster_res: pd.DataFrame = self.result[cluster_res_key]
+        if cluster_res['group'].dtype.name != 'category':
+            cluster_res['group'] = cluster_res['group'].astype('category')
+
+        if isinstance(annotation_information, (list, np.ndarray)) and \
+                len(annotation_information) != cluster_res['group'].cat.categories.size:
+            raise Exception(f"The length of annotation information is {len(annotation_information)}, \
+                            not equal to the categories of cluster result whoes"
+                            f" lenght is {cluster_res['group'].cat.categories.size}.")
+
+        if isinstance(annotation_information, (list, np.ndarray)):
+            new_categories = np.array(annotation_information, dtype='U')
         elif isinstance(annotation_information, dict):
-            new_annotation_list = []
-            for i in df.group.cat.categories:
-                new_annotation_list.append(annotation_information[i])
-            df.group.cat.categories = new_annotation_list
+            new_categories_list = []
+            for i in cluster_res['group'].cat.categories:
+                if i in annotation_information:
+                    new_categories_list.append(annotation_information[i])
+                else:
+                    new_categories_list.append(i)
+            new_categories = np.array(new_categories_list, dtype='U')
+        else:
+            raise TypeError("The type of 'annotation_information' only supports list, ndarray or dict.")
 
-        self.result[res_key] = df
+        new_categories_values = new_categories[cluster_res['group'].cat.codes]
+
+        self.result[res_key] = pd.DataFrame(data={
+            'bins': cluster_res['bins'],
+            'group': pd.Series(new_categories_values, dtype='category')
+        })
 
         key = 'cluster'
         self.reset_key_record(key, res_key)
@@ -1322,7 +1386,6 @@ class StPipeline(object):
             min_in_group_fraction=0.25,
             max_out_group_fraction=0.5,
             compare_abs=False,
-            remove_mismatch=True,
             res_key='marker_genes_filtered',
             output=None
     ):
@@ -1333,48 +1396,40 @@ class StPipeline(object):
         :param min_in_group_fraction:  Minimum fraction of cells expressing the genes for each group, defaults to None
         :param max_out_group_fraction: Maximum fraction of cells from the union of the rest of each group expressing the genes, defaults to None
         :param compare_abs: If `True`, compare absolute values of log fold change with `min_fold_change`, defaults to False
-        :param remove_mismatch: If `True`, remove the records which are mismatch conditions from the find_marker_genes result, 
-                                if `False`, these records will be set to np.nan,
-                                defaults to True
         :param res_key: the key of the result of this function to be set to self.result, defaults to 'marker_genes_filtered'
         :param output: path of output_file(.csv). If None, do not generate the output file.
-        """
+        """  # noqa
         if marker_genes_res_key not in self.result:
             raise Exception(
                 f'{marker_genes_res_key} is not in the result, please check and run the find_marker_genes func.')
 
-        self.result[res_key] = {}
-        self.result[res_key]['parameters'] = {}
-        self.result[res_key]['parameters']['marker_genes_res_key'] = marker_genes_res_key
-        self.result[res_key]['parameters']['cluster_res_key'] = self.result[marker_genes_res_key]['parameters'][
-            'cluster_res_key']
-        self.result[res_key]['parameters']['method'] = self.result[marker_genes_res_key]['parameters']['method']
-        pct = self.result[marker_genes_res_key]['pct']
-        pct_rest = self.result[marker_genes_res_key]['pct_rest']
+        new_result = {}
+        new_result['parameters'] = copy.deepcopy(self.result[marker_genes_res_key]['parameters'])
+        new_result['parameters']['marker_genes_res_key'] = marker_genes_res_key
+        new_result['pct'] = pct = self.result[marker_genes_res_key]['pct']
+        new_result['pct_rest'] = pct_rest = self.result[marker_genes_res_key]['pct_rest']
         for key, res in self.result[marker_genes_res_key].items():
             if '.vs.' not in key:
                 continue
             new_res = res.copy()
             group_name = key.split('.vs.')[0]
             if not compare_abs:
-                gene_set_1 = res[res['log2fc'] < min_fold_change]['genes'].values if min_fold_change is not None else []
+                gene_set_1 = res[res['log2fc'] < min_fold_change]['genes'].values if min_fold_change is not None else []  # noqa
             else:
-                gene_set_1 = res[res['log2fc'].abs() < min_fold_change][
-                    'genes'].values if min_fold_change is not None else []
-            gene_set_2 = pct[pct[group_name] < min_in_group_fraction][
-                'genes'].values if min_in_group_fraction is not None else []
-            gene_set_3 = pct_rest[pct_rest[group_name] > max_out_group_fraction][
-                'genes'].values if max_out_group_fraction is not None else []
-            flag = res['genes'].isin(np.union1d(gene_set_1, np.union1d(gene_set_2, gene_set_3)))
-            if remove_mismatch:
-                new_res = new_res[flag == False]
-            else:
-                new_res[flag == True] = np.nan
-            self.result[res_key][key] = new_res
+                gene_set_1 = res[res['log2fc'].abs() < min_fold_change]['genes'].values if min_fold_change is not None else []  # noqa
+            gene_set_2 = pct[pct[group_name] < min_in_group_fraction]['genes'].values if min_in_group_fraction is not None else []  # noqa
+            gene_set_3 = pct_rest[pct_rest[group_name] > max_out_group_fraction]['genes'].values if max_out_group_fraction is not None else []  # noqa
+            flag = res['genes'].isin(np.union1d(gene_set_1, np.union1d(gene_set_2, gene_set_3))).to_numpy()
+            columns = new_res.columns[~new_res.columns.isin(['genes'])].to_numpy()
+            new_res.loc[flag, columns] = np.nan  # noqa
+            new_result[key] = new_res
+        self.result[res_key] = new_result
         if output is not None:
             import natsort
             result = self.result[res_key]
-            show_cols = ['scores', 'pvalues', 'pvalues_adj', 'log2fc', 'genes', 'pct', 'pct_rest']
+            show_cols = ['genes', 'scores', 'pvalues', 'pvalues_adj', 'log2fc', 'pct', 'pct_rest']
+            if self.data.genes.real_gene_name is not None:
+                show_cols.insert(1, 'gene_name')
             groups = natsort.natsorted([key for key in result.keys() if '.vs.' in key])
             dat = pd.concat(
                 [
@@ -1419,13 +1474,13 @@ class AnnBasedStPipeline(StPipeline):
         self.__based_ann_data = based_ann_data
         self.result = AnnBasedResult(based_ann_data)
 
-    def subset_by_hvg(self, hvg_res_key, use_raw=False, inplace=True):
-        data: AnnBasedStereoExpData = self.data if inplace else copy.deepcopy(self.data)
-        if hvg_res_key not in self.result:
-            raise Exception(f'{hvg_res_key} is not in the result, please check and run the normalization func.')
-        df = self.result[hvg_res_key]
-        data._ann_data._inplace_subset_var(df['highly_variable'].values)
-        return data
+    # def subset_by_hvg(self, hvg_res_key, use_raw=False, inplace=True):
+    #     data: AnnBasedStereoExpData = self.data if inplace else copy.deepcopy(self.data)
+    #     if hvg_res_key not in self.result:
+    #         raise Exception(f'{hvg_res_key} is not in the result, please check and run the normalization func.')
+    #     df = self.result[hvg_res_key]
+    #     data._ann_data._inplace_subset_var(df['highly_variable'].values)
+    #     return data
 
     # def raw_checkpoint(self):
     #     from .stereo_exp_data import AnnBasedStereoExpData

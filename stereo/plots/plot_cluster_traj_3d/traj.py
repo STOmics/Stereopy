@@ -1,14 +1,14 @@
-import numpy as np
 import itertools
-
 from collections import Counter
 
-from .interp import generate_linear_interp_points, generate_cubic_interp_points
+import numpy as np
+
+from .interp import generate_cubic_interp_points
+from .interp import generate_linear_interp_points
 
 
 class Traj:
     def __init__(self, con, x_raw, y_raw, z_raw, ty, choose_ty):
-        # TODO: 插入断言
         self.con = con
         self.x_raw = x_raw
         self.y_raw = y_raw
@@ -48,8 +48,6 @@ class Traj:
         """
         choose_i = np.array([np.where(self.ty_all_no_dup_same_ord == ele)[0][0] for ele in choose_ty])
         choose_ind = np.array([ele for ele in itertools.permutations(choose_i, 2)])  # np.NdArray, (n,2)
-        # choose_ind = choose_ind.transpose()
-
         choose_mtx = np.zeros(self.con.shape, dtype=bool)
         choose_mtx[(choose_ind[:, 0], choose_ind[:, 1])] = 1
 
@@ -61,7 +59,7 @@ class Traj:
         of spots region, or else as the same coordinate with a random spot within the type of spots
         :param: ty_repre: dictionary. keys mean name of type, values are np array of representing points coordinates
         :return: x_rep: (n_type,), y_rep：(n_type,), z_rep：(n_type,)
-        """
+        """  # noqa
         x_rep_li = []
         y_rep_li = []
         z_rep_li = []
@@ -85,13 +83,11 @@ class Traj:
         :return: ndarray, (n,2)
         """
         pi_index = np.where(self.con > lower_thresh_not_equal)
-        pi_index_li = [[pi_index[0][i], pi_index[1][i]] for i in
-                       range(pi_index[0].shape[0])]  # 将clus的关系从邻接矩阵转化成[[], []]存储
+        # 将clus的关系从邻接矩阵转化成[[], []]存储
+        pi_index_li = [[pi_index[0][i], pi_index[1][i]] for i in range(pi_index[0].shape[0])]
         pi_index_li = [li for li in pi_index_li if not li[0] == li[1]]  # 去掉起始和终点相同的li
         pi_index_li = [sorted(li) for li in pi_index_li]  # 是li从较小index到较大index
-        # pi_index_li = np.array([li for li, _ in itertools.groupby(pi_index_li)])  # 去掉重复的li
         pi_index_li = np.unique(np.array(pi_index_li), axis=0)
-
         self.con_pair = pi_index_li
         return
 
@@ -100,7 +96,7 @@ class Traj:
         Compute a list of complete trajectories
         :param lower_thresh_not_equal: threshold value that element on con matrix should surpass, to be considered a valid connection
         :return: com_tra_li: list of list of indices, e.g. [[0,1], [1,3,5,2]]
-        """
+        """  # noqa
 
         def find_end_p_gathering_from_intervals(pi_index_arr):
             """
@@ -150,9 +146,7 @@ class Traj:
 
         # 2. 计算完整轨迹的集合
         pi_index_arr = np.array(self.con_pair)  # 待选线段的集合，每次循环都会更新 (n, 2)
-        # print('pi_index_arr', pi_index_arr)
         edge_arr = find_end_p_gathering_from_intervals(pi_index_arr)
-        # print('edge_arr', edge_arr)
         com_tra_li = []  # list of complete trajectories, 每次循环都会更新, [[], [], ...]
         while edge_arr.shape[0] >= 1:
             # 找到一个边界点
@@ -171,8 +165,8 @@ class Traj:
         calculate position parameter for plotting curve
         :param n_per_inter: number of interpolated points per interval
         :return: x_unknown_li_all_tra: [[np.NdArray]], y_unknown_li_all_tra: [[np.NdArray]], z_unknown_li_all_tra: [[np.NdArray]]
-        """
-        # self.com_tra_li: [[1, 18, 10], [2, 12, 18], [3, 16, 0, 15, 12], [6, 7, 8, 19], [8, 11], [13, 4, 7, 9, 5, 17, 16], [9, 14]]
+        """  # noqa
+        # self.com_tra_li: [[1, 18, 10], [2, 12, 18], [3, 16, 0, 15, 12], [6, 7, 8, 19], [8, 11], [13, 4, 7, 9, 5, 17, 16], [9, 14]]  # noqa
         x_unknown_li_all_tra = []
         y_unknown_li_all_tra = []
         z_unknown_li_all_tra = []
@@ -195,15 +189,18 @@ class Traj:
                     x_known = np.insert(x_known, 1, (x_known[0] + x_known[1]) / 2)
                     y_known = np.insert(y_known, 1, (y_known[0] + y_known[1]) / 2)
                     z_known = np.insert(z_known, 1, (z_known[0] + z_known[1]) / 2)
-
-                    x_unknown_li, y_unknown_li, z_unknown_li = generate_cubic_interp_points(x_known, y_known, z_known, n_per_inter)  # [arr, arr, ...]
+                    # [arr, arr, ...]
+                    x_unknown_li, y_unknown_li, z_unknown_li = generate_cubic_interp_points(x_known, y_known, z_known,
+                                                                                            n_per_inter)
 
                     # 将多引入导致的两段，重新合并在一起
                     x_unknown_li = [np.concatenate((x_unknown_li[0], x_unknown_li[1]))] + x_unknown_li[2:]
                     y_unknown_li = [np.concatenate((y_unknown_li[0], y_unknown_li[1]))] + y_unknown_li[2:]
                     z_unknown_li = [np.concatenate((z_unknown_li[0], z_unknown_li[1]))] + z_unknown_li[2:]
                 else:
-                    x_unknown_li, y_unknown_li, z_unknown_li = generate_cubic_interp_points(x_known, y_known, z_known, n_per_inter)  # [arr, arr, ...]
+                    # [arr, arr, ...]
+                    x_unknown_li, y_unknown_li, z_unknown_li = generate_cubic_interp_points(x_known, y_known, z_known,
+                                                                                            n_per_inter)
 
             x_unknown_li_all_tra.append(x_unknown_li)  # [[arr, arr, ...], [arr, arr, ...], ]
             y_unknown_li_all_tra.append(y_unknown_li)
@@ -266,7 +263,3 @@ class Traj:
             wei_val = np.max(np.array([self.con[edge_1, edge_2], self.con[edge_2, edge_1]]))
             wei_li.append(wei_val)
         return wei_li
-
-
-
-

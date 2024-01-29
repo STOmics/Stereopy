@@ -1,8 +1,13 @@
-from joblib import Parallel, delayed, cpu_count
+import os
+from joblib import (
+    Parallel,
+    delayed,
+    cpu_count
+)
 
 from stereo import logger
 from stereo.core import StPipeline
-from stereo.plots.decorator import download
+from stereo.plots.decorator import download, download_only
 
 
 class _scope_slice(object):
@@ -20,6 +25,8 @@ class MSDataPipeLine(object):
         super().__init__()
         self.ms_data = _ms_data
         self._result = dict()
+        self._key_record = dict()
+        # self._scope_data = dict()
 
     @property
     def result(self):
@@ -29,10 +36,19 @@ class MSDataPipeLine(object):
     def result(self, new_result):
         self._result = new_result
 
+    @property
+    def key_record(self):
+        return self._key_record
+
+    @key_record.setter
+    def key_record(self, key_record):
+        self._key_record = key_record
+
+    # @property
+    # def scope_data(self):
+    #     return self._scope_data
+
     def _use_integrate_method(self, item, *args, **kwargs):
-        # if item == "batches_integrate":
-        #     raise AttributeError
-        
         if "mode" in kwargs:
             del kwargs["mode"]
 
@@ -51,6 +67,10 @@ class MSDataPipeLine(object):
         if not ms_data_view.merged_data:
             ms_data_view.integrate(result=self.ms_data.tl.result)
 
+        # key_name = "scope_[" + ",".join(
+        #     [str(self.ms_data._names.index(name)) for name in ms_data_view._names]) + "]"
+        # self._scope_data[key_name] = self.ms_data._merged_data
+
         def callback_func(key, value):
             key_name = "scope_[" + ",".join(
                 [str(self.ms_data._names.index(name)) for name in ms_data_view._names]) + "]"
@@ -66,9 +86,6 @@ class MSDataPipeLine(object):
             if scope_result is None:
                 raise KeyError
             method_result = scope_result.get(name, None)
-            # if method_result is None:
-            #     raise KeyError
-            # return method_result
             return method_result
 
         ms_data_view._merged_data.tl.result.get_item_method = get_item_method
@@ -86,6 +103,15 @@ class MSDataPipeLine(object):
 
         ms_data_view._merged_data.tl.result.contain_method = contain_method
 
+        def reset_key_record(key, res_key):
+            key_name = "scope_[" + ",".join(
+                [str(self.ms_data._names.index(name)) for name in ms_data_view._names]) + "]"
+
+            ms_data_view._merged_data.tl._reset_key_record(key, res_key)
+            self._key_record[key_name] = ms_data_view._merged_data.tl.key_record
+
+        ms_data_view._merged_data.tl.reset_key_record = reset_key_record
+
         new_attr = self.__class__.BASE_CLASS.__dict__.get(item, None)
         if new_attr is None:
             if self.__class__.ATTR_NAME == "tl":
@@ -102,7 +128,7 @@ class MSDataPipeLine(object):
                 if new_attr:
                     logger.info(f'register plot_func {item} to {type(merged_data)}-{id(merged_data)}')
                     return new_attr(*args, **kwargs)
-        
+
         logger.info(f'data_obj(idx=0) in ms_data start to run {item}')
         return new_attr(
             ms_data_view.merged_data.__getattribute__(self.__class__.ATTR_NAME),
@@ -113,7 +139,7 @@ class MSDataPipeLine(object):
         # def log_delayed_task(idx, *arg, **kwargs):
         #     logger.info(f'data_obj(idx={idx}) in ms_data start to run {item}')
         #     return new_attr(*arg, **kwargs)
-        
+
         # return log_delayed_task(
         #     0,
         #     ms_data_view.merged_data.__getattribute__(self.__class__.ATTR_NAME),
@@ -136,6 +162,11 @@ class MSDataPipeLine(object):
         if new_attr:
             def log_delayed_task(idx, *arg, **kwargs):
                 logger.info(f'data_obj(idx={idx}) in ms_data start to run {item}')
+                if self.__class__.ATTR_NAME == 'plt':
+                    out_path = kwargs.get('out_path', None)
+                    if out_path is not None:
+                        path_name, ext = os.path.splitext(out_path)
+                        kwargs['out_path'] = f'{path_name}_{idx}{ext}'
                 new_attr(*arg, **kwargs)
 
             Parallel(n_jobs=n_jobs, backend='threading', verbose=100)(
@@ -149,9 +180,16 @@ class MSDataPipeLine(object):
             else:
                 from stereo.plots.plot_base import PlotBase
                 base = PlotBase
+
             def log_delayed_task(idx, obj, *arg, **kwargs):
                 logger.info(f'data_obj(idx={idx}) in ms_data start to run {item}')
                 new_attr = base.get_attribute_helper(item, obj, obj.tl.result)
+                if base == PlotBase:
+                    out_path = kwargs.get('out_path', None)
+                    if out_path is not None:
+                        path_name, ext = os.path.splitext(out_path)
+                        kwargs['out_path'] = f'{path_name}_{idx}{ext}'
+                    new_attr = download_only(new_attr)
                 if new_attr:
                     new_attr(*arg, **kwargs)
                 else:
@@ -170,7 +208,7 @@ class MSDataPipeLine(object):
         # start with __ may not be our algorithm function, and will cause import problem
         if item.startswith('__'):
             raise AttributeError
-        
+
         if self.__class__.ATTR_NAME == 'tl':
             from stereo.algorithm.ms_algorithm_base import MSDataAlgorithmBase
             run_method = MSDataAlgorithmBase.get_attribute_helper(item, self.ms_data, self.result)

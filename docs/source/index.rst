@@ -36,19 +36,18 @@ Meanwhile, we are still working on the improvement of performance and calculatio
 * Open to discuss and provide feedback on `Github <https://github.com/STOmics/stereopy>`_.
 * Follow changes in `Release Notes <https://stereopy.readthedocs.io/en/latest/content/06_Release_notes.html>`_.
 
-About MSData
+News
 --------------
-For multi-slice data analysis, we have recently launched a simple-to-use method that can distinguish uni-slice \
-and multi-sclie when working on the parallel processings, but the results of two parties can be interacted.
+The paper of Stereopy has been pre-printed on bioRxiv!
 
-In order to adapt to the new parameters and concepts in MSData analysis, the current version is a Beta one, which means there are \
-inevitably a handful of bugs. We sincerely hope to receive your feedback and suggestions for MSData.
+`Stereopy: modeling comparative and spatiotemporal cellular heterogeneity via multi-sample spatial transcriptomics <https://doi.org/10.1101/2023.12.04.569485>`_.
 
 
 Upcoming functions
 --------------------
-* New algorithm for Batch Effect Correction
-* GPU version for SingleR annotation
+* Batch Effect removal funciton
+* Lasso expression matrix and image simultaneously
+* ...
 
 
 Highlights
@@ -64,7 +63,7 @@ Highlights
 Workflow
 ----------
 
-.. image:: ./_static/Stereopy_workflow_v0.14.0.png
+.. image:: ./_static/Stereopy_workflow_v1.0.0.png
     :alt: Title figure
     :width: 700px
     :align: center
@@ -72,11 +71,56 @@ Workflow
 Latest Additions
 ------------------
 
+Version 1.1.0
+~~~~~~~~~~~~~~
+1.1.0 : 2024-01-17
+
+Features:
+
+1. Reconstructed `st.plt.violin` visualizing function which is now not only applied to display QC indicators;
+2. `ins.export_high_res_area` can handle expression matrix and image simultaneously, to lasso region of interest and corresponding sub-image.
+3. Interactive visualizing `st.plt.cells_plotting` supported displaying expression heatmap and spatial distribution of a single gene.
+4. When input GEF and GEM at cell level, information of DNB count and cell area would be added into `cells` / `obs`, and cell border would be added into `cells_matrix` / `obsm`.
+
+BUG Fixes:
+
+1. `slideio` package removed historical versions, resulting in an installation failure.
+2. Calculating error when performing `ms_data.tl.batch_qc`, due to abnormal `os.getlogin`.
+3. `st.plt.paga_time_series_plot` indicated that the image was too large to draw, due to unprocessed boundary values when computing median.
+
+Version 1.0.0
+~~~~~~~~~~~~~~
+1.0.0 : 2023-12-04
+
+Features:
+
+1. Addition of GPU acceleration on SinlgeR for large-volume data, and optimized calculating based on CPU version.
+2. Addition of `st.plt.elbow` to visualize PCA result, for appropriate number of pcs.
+3. Addition of color, max, min setting for colorbar, when plotting heatmap.
+4. Addition of cell segmentation of `Deep Learning Model V1_Pro`, which is improved based on `V1`.
+5. Supplemented parameters of `st.plt.auc_heatmap` and `st.plt.auc_heatmap_by_group`, full access to `seaborn.clustermap`;
+6. Addition of thread and seed setting in `st.tl.umap`, of which the default method have been changed to single thread with the sacrifice of computational efficiency to ensure reproducibility of results. More in https://umap-learn.readthedocs.io/en/latest/reproducibility.html.
+7. Modification of computing method of bin coordinates when reading GEM, consistent with GEF.
+8. Optimized `st.io.stereo_to_anndata` for efficient format conversion.
+9. Renamed `st.tl.spatial_alignment` function as `st.tl.paste`.
+10. `export_high_res_area` removed parameter `cgef`.
+
+BUG Fixes:
+
+1. Occasional square-hollowing area in `Deep Learning Model V3` of cell segmentation processing.
+2. `st.tl.annotation` could not set two or more clusters as a same name. 
+3. The data object `ins.selected_exp_data` obtained from `st.plt.interact_spatial_scatter` could not be used for subsequent analysis.
+4. Part of data was missing when performed `st.plt.interact_spatial_scatter` to output high-resolution matrix in GEF format.
+5. Some files met reading error, led by no default setting of `bin_type` and `bin_size` in `st.io.read_h5ms`.
+6. Error in Batch QC calculation due to data type problem.
+7. There is NaN in Cell Community Detection output after threshold filtering, resulting in a calculating error when performed Find marker genes based on it.
+8. `st.plt.paga_time_series_plot` indicated the image is too large to draw, leading to graph overlap, due to the limitation of matplotlib package.
+
 Version 0.14.0b1 (Beta)
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 0.14.0b1 : 2023-9-15
 
-Notice: this Beta version is specifically developed for multi-slice analysis.
+Notice: this Beta version is specifically developed for multi-sample analysis.
 
 Features:
 
@@ -103,31 +147,6 @@ BUG Fixes:
 3. Fixed the issue that clustering output of Leiden was in wrong data type under the scene of GPU acceleration, leading to errors in subsequent analysis which work on the clustering result.
 4. Fixed the issue that clustering result could not be written into GEF file, using `st.io.update_gef`, caused by data type error. From v0.12.1 on, `date.cells.cell_name` has changed from int to string. 
 
-Version 0.13.0b1 (Beta)
-~~~~~~~~~~~~~~~~~~~~~~~~~
-0.13.0b1 : 2023-07-11
-
-Notice: this Beta version is specifically developed for multi-slice analysis. Major update points are listed below.
-
-1. Addition of 3D Cell-cell Communication.
-2. Addition of 3D Gene Regulatory Network.
-3. Addition of Trajectory Inference, including PAGA and DPT algorithms.
-4. Addition of Batch QC function for evaluation on batch effect.
-5. Addition of `st.io.read_h5ad` for improved compatibility with AnnData H5ad, we highly recommend that instead of `st.io.read_ann_h5ad`.
-6. Addition of analysis workflow tutorial based on multi-slice data, with assistant parameters `scope` and `mode`.
-7. Addition of resetting the image order of multi-slice analysis results.
-8. Addition of 3D mesh visualization.
-9. Improved the performance of Gaussian Smoothing.
-
-Version 0.12.1
-~~~~~~~~~~~~~~
-0.12.1 : 2023-06-21
-
-1. Addition of the pretreatment of calculating quality control metrics at the start of `st.tl.filter_genes` and `st.tl.filter_cells`.
-2. Fixed the bug that loaded data from GEF file had the same expression matrix but in different row order, through updating gefpy package to v0.6.24.
-3. Fixed the bug that `scale.data` had `np.nan` value in `st.tl.sctransform` , caused by data type limitation.
-4. Fixed the bug that dot symbol ( '.' ) caused identification error of cluster name in `.csv` output, when doing `st.tl.find_marker_genes`.
-
 
 .. toctree::
     :titlesonly:
@@ -136,6 +155,7 @@ Version 0.12.1
 
     content/00_Installation
     content/01_Usage_principles
+    Tutorials(Multi-sample)/Multi_sample
     Tutorials/index
     content/03_API
     content/04_Community

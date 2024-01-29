@@ -6,7 +6,6 @@
 # @Software: PyCharm
 # @Email   : zhangchao5@genomics.cn
 import numpy as np
-
 from anndata import AnnData
 from sklearn.linear_model import LinearRegression
 

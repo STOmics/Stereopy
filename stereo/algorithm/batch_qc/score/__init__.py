@@ -5,8 +5,8 @@
 # @File    : __init__.py.py
 # @Software: PyCharm
 # @Email   : zhangchao5@genomics.cn
+# flake8: noqa
 from .get_neighbors import get_neighbors
 from .kbet import get_kbet
-from .lisi import get_lisi
 from .ksim import get_ksim
-
+from .lisi import get_lisi

@@ -4,11 +4,14 @@
 @author: qindanhua
 @time:2021/08/12
 """
-from ..core.tool_base import ToolBase
 from typing import Optional
+
 import numpy as np
 import pandas as pd
-from ..algorithm.highly_variable_genes import highly_variable_genes_seurat_v3, highly_variable_genes_single_batch
+
+from ..algorithm.highly_variable_genes import highly_variable_genes_seurat_v3
+from ..algorithm.highly_variable_genes import highly_variable_genes_single_batch
+from ..core.tool_base import ToolBase
 from ..utils.hvg_utils import filter_genes
 
 
@@ -53,6 +56,7 @@ class HighlyVariableGenes(ToolBase):
 
     :return:
     """
+
     def __init__(
             self,
             data,
@@ -73,7 +77,7 @@ class HighlyVariableGenes(ToolBase):
         self.max_mean = max_mean
         self.span = span
         self.n_bins = n_bins
-        super(HighlyVariableGenes, self).__init__(data=data,  groups=groups,  method=method)
+        super(HighlyVariableGenes, self).__init__(data=data, groups=groups, method=method)
 
     @ToolBase.method.setter
     def method(self, method):
@@ -81,7 +85,6 @@ class HighlyVariableGenes(ToolBase):
         self._method_check(method, m_range)
 
     def fit(self):
-        # group_info = None if self.groups is None else np.array(self.groups['group'])
         group_info = None if self.groups is None else self.groups['group'].astype('category')
         if self.method == 'seurat_v3':
             df = highly_variable_genes_seurat_v3(
@@ -93,7 +96,6 @@ class HighlyVariableGenes(ToolBase):
             df.index = self.data.gene_names
         else:
             if self.groups is None:
-                # print('groups none')
                 df = highly_variable_genes_single_batch(
                     self.data.exp_matrix,
                     min_disp=self.min_disp,
@@ -106,7 +108,6 @@ class HighlyVariableGenes(ToolBase):
                 )
                 df.index = self.data.gene_names
             else:
-                # print('groups not none')
                 batches = set(group_info)
                 df = []
                 gene_list = self.data.gene_names
@@ -114,7 +115,6 @@ class HighlyVariableGenes(ToolBase):
                     data_subset = self.data.exp_matrix[group_info == batch]
                     # Filter to genes that are in the dataset
                     # with settings.verbosity.override(Verbosity.error):
-                    #
                     filt = filter_genes(data_subset, min_cells=1)[0]
                     data_subset = data_subset[:, filt]
 
@@ -129,7 +129,6 @@ class HighlyVariableGenes(ToolBase):
                         method=self.method,
                     )
                     hvg.index = gene_list[filt]
-                    # hvg.index = gene_list
                     # Add 0 values for genes that were filtered out
                     missing_hvg = pd.DataFrame(
                         np.zeros((np.sum(~filt), len(hvg.columns))),

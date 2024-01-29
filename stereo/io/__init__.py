@@ -6,6 +6,7 @@
 @file:__init__.py.py
 @time:2021/03/05
 """
+# flake8: noqa
 from .reader import (
     read_gef,
     read_gem,
@@ -15,7 +16,8 @@ from .reader import (
     stereo_to_anndata,
     read_gef_info,
     read_seurat_h5ad,
-    read_h5ad
+    read_h5ad,
+    read_h5ms
 )
 from .writer import (
     write,

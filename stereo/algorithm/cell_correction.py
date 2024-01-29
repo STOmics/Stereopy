@@ -1,15 +1,22 @@
-from warnings import filterwarnings
-filterwarnings('ignore')
 import os
 from math import ceil
-import time
-import pandas as pd
+from multiprocessing import (
+    Process,
+    Queue,
+    Lock
+)
+from warnings import filterwarnings
+
 import numpy as np
-from tqdm import tqdm
+import pandas as pd
 from sklearn.mixture import GaussianMixture
-from multiprocessing import Process, Queue, Lock
+from tqdm import tqdm
+
 from ..log_manager import logger
 from ..utils.time_consume import log_consumed_time
+
+filterwarnings('ignore')
+
 
 def parse_head(gem):
     """
@@ -25,15 +32,15 @@ def parse_head(gem):
 
     num_of_header_lines = 0
     for i, l in enumerate(f):
-        l = l.decode("utf-8") # read in as binary, decode first
-        if not l.startswith('#'): # header lines always start with '#'
+        l = l.decode("utf-8")  # read in as binary, decode first # noqa
+        if not l.startswith('#'):  # header lines always start with '#'
             break
         num_of_header_lines += 1
 
     return num_of_header_lines
 
 
-def creat_cell_gxp(maskFile, geneFile ,transposition=False):
+def creat_cell_gxp(maskFile, geneFile, transposition=False):
     """
     %prog <CellMask><Gene expression matrix> <output Path>
 
@@ -64,9 +71,9 @@ def creat_cell_gxp(maskFile, geneFile ,transposition=False):
     header = parse_head(geneFile)
     genedf = pd.read_csv(geneFile, header=header, sep='\t', dtype=type_column)
     if "UMICount" in genedf.columns:
-        genedf = genedf.rename(columns={'UMICount':'MIDCount'})
+        genedf = genedf.rename(columns={'UMICount': 'MIDCount'})
     if "MIDCounts" in genedf.columns:
-        genedf = genedf.rename(columns={'MIDCounts':'MIDCount'})
+        genedf = genedf.rename(columns={'MIDCounts': 'MIDCount'})
 
     tissuedf = pd.DataFrame()
     dst = np.nonzero(maskImg)
@@ -76,7 +83,7 @@ def creat_cell_gxp(maskFile, geneFile ,transposition=False):
     tissuedf['y'] = dst[0] + genedf['y'].min()
     tissuedf['label'] = maskImg[dst]
 
-    res = pd.merge(genedf, tissuedf, on=['x', 'y'], how='left').fillna(0) # keep background data
+    res = pd.merge(genedf, tissuedf, on=['x', 'y'], how='left').fillna(0)  # keep background data
     return res
 
 
@@ -101,7 +108,7 @@ class CellCorrection(object):
             data = creat_cell_gxp(self.mask_file, self.gem_file, transposition=False)
         else:
             raise Exception("error gem data")
-        
+
         logger.info(f"data size : rows {data.shape[0]}, cols {data.shape[1]}")
 
         if 'MIDCounts' in data.columns:
@@ -128,8 +135,8 @@ class CellCorrection(object):
             try:
                 clf = GaussianMixture(n_components=3, covariance_type='spherical')
                 # Gaussian Mixture Model GPU version
-                cell_test = data[(data.x < cell_coor.loc[i].x + radius) & (data.x > cell_coor.loc[i].x - radius) 
-                                & (data.y > cell_coor.loc[i].y - radius) & (data.y < cell_coor.loc[i].y + radius)]
+                cell_test = data[(data.x < cell_coor.loc[i].x + radius) & (data.x > cell_coor.loc[i].x - radius)
+                                 & (data.y > cell_coor.loc[i].y - radius) & (data.y < cell_coor.loc[i].y + radius)]
                 # fit GaussianMixture Model
                 clf.fit(cell_test[cell_test.label == cell_coor.loc[i].label][['x', 'y', 'UMICount']].values)
                 # cell_test_bg = cell_test[cell_test.label == 0]
@@ -137,7 +144,7 @@ class CellCorrection(object):
                 # score = pd.Series(-clf.score_samples(cell_test_bg[['x', 'y', 'UMICount']].values))
                 cell_test_bg_ori = cell_test[cell_test.label == 0]
                 bg_group = cell_test_bg_ori.groupby(['x', 'y']).agg(UMI_max=('UMICount', 'max')).reset_index()
-                cell_test_bg = pd.merge(cell_test_bg_ori, bg_group, on=['x', 'y'])		
+                cell_test_bg = pd.merge(cell_test_bg_ori, bg_group, on=['x', 'y'])
                 # threshold 20
                 score = pd.Series(-clf.score_samples(cell_test_bg[['x', 'y', 'UMI_max']].values))
                 cell_test_bg['score'] = score.values
@@ -184,14 +191,16 @@ class CellCorrection(object):
             err_log_path = os.path.join(self.err_log_dir, 'err.log')
             try:
                 err_log_fp = open(err_log_path, 'w')
-            except:
+            except Exception:
                 pass
         for i in range(self.process):
             idx = np.arange(i * qs, min((i + 1) * qs, len(cell_coor.index)))
-            if len(idx) == 0: continue
+            if len(idx) == 0:
+                continue
             # q = Queue()
             # queues.append(q)
-            p = Process(target=self.gmm_score_func, args=(data, idx, cell_coor, self.radius, self.threshold, i, queue, lock, err_log_fp))
+            p = Process(target=self.gmm_score_func,
+                        args=(data, idx, cell_coor, self.radius, self.threshold, i, queue, lock, err_log_fp))
             p.start()
             processes.append(p)
             bar = tqdm(total=len(idx), desc=f"correcting process-{i}", position=i)
@@ -208,24 +217,25 @@ class CellCorrection(object):
                     bg_adjust_label[pid] = result
                 else:
                     bars[pid].update(result)
-            except:
+            except Exception:
                 pass
             if all(finished):
                 break
-        
+
         [p.join() for p in processes]
         [bar.close() for bar in bars]
         if err_log_fp:
             err_log_fp.close()
         return bg_adjust_label
-    
+
     @log_consumed_time
     def gmm_correction(self, cell_data, bg_adjust_label):
         bg_data = []
         for tmp in bg_adjust_label:
             bg_data.append(tmp[tmp.label != 0])
         adjust_data = pd.concat(bg_data).sort_values('score')
-        adjust_data = adjust_data.drop_duplicates(subset=['geneID', 'x', 'y', 'UMICount'], keep='first').rename(columns={'score':'tag'})
+        adjust_data = adjust_data.drop_duplicates(subset=['geneID', 'x', 'y', 'UMICount'], keep='first').rename(
+            columns={'score': 'tag'})
         adjust_data['tag'] = 'adjust'
         cell_data['tag'] = 'raw'
         adjust_data['label'] = adjust_data['label'].astype('uint32')

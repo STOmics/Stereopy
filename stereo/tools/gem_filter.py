@@ -4,20 +4,20 @@ Created on Fri Dec  2 16:42:58 2022
 
 @author: ywu28328
 """
-import os
-from pathlib import Path
 import cv2
-import tifffile as tif
-import numpy as np
 import numba as nb
+import numpy as np
+import tifffile as tif
 from pandas import DataFrame
-from stereo.utils.time_consume import log_consumed_time, TimeConsume
+
 from stereo.log_manager import logger
+from stereo.utils.time_consume import TimeConsume
+from stereo.utils.time_consume import log_consumed_time
 
 tc = TimeConsume()
 
-def transfer_16bit_to_8bit(image_16bit):
 
+def transfer_16bit_to_8bit(image_16bit):
     min_16bit = np.min(image_16bit)
     max_16bit = np.max(image_16bit)
 
@@ -25,11 +25,12 @@ def transfer_16bit_to_8bit(image_16bit):
 
     return image_8bit
 
+
 @log_consumed_time
 def gem_filter(tissue_mask_path: str, data: DataFrame):
     '''
     Filter gem.gz with tissue mask at low cost of memory.
-    
+
     Parameters
     ----------
     tissue_mask_path : tissue mask path
@@ -45,13 +46,8 @@ def gem_filter(tissue_mask_path: str, data: DataFrame):
     logger.info(f"reading and findContours: {tc.get_time_consumed(key=tk)}")
     logger.info(f"count of contours: {len(contours)}")
 
-    # logger.info("drawContours")
-    # img = np.zeros((tissue_mask.shape[0], tissue_mask.shape[1]), dtype=np.int8)
-    # cv2.drawContours(img, contours, -1, color=(1), thickness=cv2.FILLED)
-    # logger.info(f"drawContours: {tc.get_time_consumed(key=tk)}")
-
     logger.info("get min and max coordinate")
-    min_and_max = lambda c: [np.min(c[:, :, 0]), np.min(c[:, :, 1]), -np.max(c[:, :, 0]), -np.max(c[:, :, 1])]
+    min_and_max = lambda c: [np.min(c[:, :, 0]), np.min(c[:, :, 1]), -np.max(c[:, :, 0]), -np.max(c[:, :, 1])] # noqa
     a = np.array([min_and_max(c) for c in contours], dtype=np.int32)
     min_x, min_y, max_x, max_y = np.abs(a.min(axis=0))
     logger.info(f"get min and max coordinate: {tc.get_time_consumed(key=tk)}")
@@ -68,6 +64,7 @@ def gem_filter(tissue_mask_path: str, data: DataFrame):
 
     return data_filtered
 
+
 # def filter_data(data_coordinates, min_x, min_y, max_x, max_y, tissue_mask):
 #     x, y = data_coordinates[:, 0], data_coordinates[:, 1]
 #     x_flag_1 = (x >= min_x)
@@ -81,11 +78,11 @@ def gem_filter(tissue_mask_path: str, data: DataFrame):
 @nb.njit(cache=True, nogil=True, parallel=True)
 def filter_data(data_coordinates, min_x, min_y, max_x, max_y, tissue_mask):
     data_count = data_coordinates.shape[0]
-    filter_flag = np.zeros((data_count, ), dtype=np.uint8).astype(np.bool8)
+    filter_flag = np.zeros((data_count,), dtype=np.uint8).astype(np.bool8)
     for i in nb.prange(data_count):
         x = data_coordinates[i][0]
         y = data_coordinates[i][1]
         tissue_value = tissue_mask[y, x]
         if (x >= min_x) and (x <= max_x) and (y >= min_y) and (y <= max_y) and (tissue_value > 0):
             filter_flag[i] = True
-    return filter_flag 
+    return filter_flag

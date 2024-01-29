@@ -1,18 +1,21 @@
 import numba
 import numpy as np
 import pandas as pd
-
-from joblib import Parallel, delayed, cpu_count
-from patsy.highlevel import dmatrix
-from scipy.special import polygamma, digamma
-from scipy import interpolate
 from KDEpy import FFTKDE
+from joblib import (
+    Parallel,
+    delayed,
+    cpu_count
+)
+from patsy.highlevel import dmatrix
+from scipy import interpolate
+from scipy.special import digamma
+from scipy.special import polygamma
 
 from .bw import bwSJ
 
 
-def multi_pearson_residual(i, model_pars_final, regressor_data_final, umi, residual_type, min_variance,
-                           genes, bin_ind):
+def multi_pearson_residual(i, model_pars_final, regressor_data_final, umi, residual_type, min_variance, genes, bin_ind):
     min_var = min_variance
     genes_bin = genes[bin_ind == i]
     mu = np.exp(np.dot(model_pars_final.loc[genes_bin, ['Intercept', 'log_umi']], regressor_data_final.T))

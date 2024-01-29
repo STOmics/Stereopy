@@ -2,7 +2,7 @@
 # coding: utf-8
 """
 @file: get_hotspot.py
-@description: 
+@description:
 @author: Yiran Wu
 @email: wuyiran@genomics.cn
 @last modified by: Yiran Wu
@@ -11,8 +11,10 @@ change log:
     2021/10/14 create file.
 """
 import copy
-import pandas as pd
+
 import hotspot
+import pandas as pd
+
 from ..log_manager import logger
 
 
@@ -58,15 +60,15 @@ def spatial_hotspot(data, model='normal', n_neighbors=30, n_jobs=20, fdr_thresho
     logger.info(f'Remain {len(hs_genes)} genes whose FDR < {fdr_threshold}.')
     # Compute pair-wise local correlations between these genes
     logger.info('Start compute_local_correlations.')
-    lcz = hs.compute_local_correlations(hs_genes, jobs=n_jobs)
+    hs.compute_local_correlations(hs_genes, jobs=n_jobs)
     logger.info(f'Start create_modules with min_gene_threshold={min_gene_threshold}, fdr_threshold={fdr_threshold}.')
-    modules = hs.create_modules(
+    hs.create_modules(
         min_gene_threshold=min_gene_threshold, core_only=False, fdr_threshold=fdr_threshold,
     )
     logger.info('Start calculate_module_scores in per cell.')
     module_scores = hs.calculate_module_scores()
     if module_scores.shape[1] == 0:
-        logger.error(f'No modules be created. Please decrease min_gene_threshold.')
+        logger.error('No modules be created. Please decrease min_gene_threshold.')
     if outdir is not None:
         from stereo.io.writer import save_pkl
         save_pkl(hs, output=f"{outdir}/hotspot.pkl")
@@ -75,5 +77,3 @@ def spatial_hotspot(data, model='normal', n_neighbors=30, n_jobs=20, fdr_thresho
         module_gene.to_csv(f"{outdir}/module_gene.csv", sep="\t", index=False)
 
     return hs
-
-

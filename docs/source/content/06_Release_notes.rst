@@ -3,11 +3,58 @@ Release Notes
 
 .. role:: small
 
+Version 1.1.0
+------------------
+1.1.0 : 2024-01-17
+~~~~~~~~~~~~~~~~~~~
+
+Features:
+
+1. Reconstructed `st.plt.violin` visualizing function which is now not only applied to display QC indicators;
+2. `ins.export_high_res_area` can handle expression matrix and image simultaneously, to lasso region of interest and corresponding sub-image.
+3. Interactive visualizing `st.plt.cells_plotting` supported displaying expression heatmap and spatial distribution of a single gene.
+4. When input GEF and GEM at cell level, information of DNB count and cell area would be added into `cells` / `obs`, and cell border would be added into `cells_matrix` / `obsm`.
+
+BUG Fixes:
+
+1. `slideio` package removed historical versions, resulting in an installation failure.
+2. Calculating error when performing `ms_data.tl.batch_qc`, due to abnormal `os.getlogin`.
+3. `st.plt.paga_time_series_plot` indicated that the image was too large to draw, due to unprocessed boundary values when computing median.
+
+Version 1.0.0
+------------------
+1.0.0 : 2023-12-04
+~~~~~~~~~~~~~~~~~~~
+
+Features:
+
+1. Addition of GPU acceleration on SinlgeR for large-volume data, and optimized calculating based on CPU version.
+2. Addition of `st.plt.elbow` to visualize PCA result, for appropriate number of pcs.
+3. Addition of color, max, min setting for colorbar, when plotting heatmap.
+4. Addition of cell segmentation of `Deep Learning Model V1_Pro`, which is improved based on `V1`.
+5. Supplemented parameters of `st.plt.auc_heatmap` and `st.plt.auc_heatmap_by_group`, full access to `seaborn.clustermap`;
+6. Addition of thread and seed setting in `st.tl.umap`, of which the default method have been changed to single thread with the sacrifice of computational efficiency to ensure reproducibility of results. More in https://umap-learn.readthedocs.io/en/latest/reproducibility.html.
+7. Modification of computing method of bin coordinates when reading GEM, consistent with GEF.
+8. Optimized `st.io.stereo_to_anndata` for efficient format conversion.
+9. Renamed `st.tl.spatial_alignment` function as `st.tl.paste`.
+10. `export_high_res_area` removed parameter `cgef`.
+
+BUG Fixes:
+
+1. Occasional square-hollowing area in `Deep Learning Model V3` of cell segmentation processing.
+2. `st.tl.annotation` could not set two or more clusters as a same name. 
+3. The data object `ins.selected_exp_data` obtained from `st.plt.interact_spatial_scatter` could not be used for subsequent analysis.
+4. Part of data was missing when performed `st.plt.interact_spatial_scatter` to output high-resolution matrix in GEF format.
+5. Some files met reading error, led by no default setting of `bin_type` and `bin_size` in `st.io.read_h5ms`.
+6. Error in Batch QC calculation due to data type problem.
+7. There is NaN in Cell Community Detection output after threshold filtering, resulting in a calculating error when performed Find marker genes based on it.
+8. `st.plt.paga_time_series_plot` indicated the image is too large to draw, leading to graph overlap, due to the limitation of matplotlib package.
+
 Version 0.14.0b1 (Beta)
 ------------------------
 0.14.0b1 : 2023-9-15
 ~~~~~~~~~~~~~~~~~~~~~~~~
-Notice: this Beta version is specifically developed for multi-slice analysis.
+Notice: this Beta version is specifically developed for multi-sample analysis.
 
 Features:
 

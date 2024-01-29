@@ -1,22 +1,24 @@
-import numpy as np
 import numba as nb
-import scipy.sparse as sp
-from scipy.sparse import csr_matrix, csc_matrix
-from scipy.spatial import distance
+import numpy as np
+from scipy.sparse import csc_matrix
+from scipy.sparse import csr_matrix
 from sklearn.neighbors import NearestNeighbors
+
 from ..log_manager import logger
 from ..utils.time_consume import TimeConsume
 
+
 def _gaussian_c(dis, gs=0.95, a=1, b=0):
-    return np.sqrt(-(dis - b)**2 / 2 / np.log(gs / a))
+    return np.sqrt(-(dis - b) ** 2 / 2 / np.log(gs / a))
+
 
 def _gaussian_weight(dis, a=1, b=0, c=12500):
-    gs = a * np.exp(-(dis - b)**2 / 2 / (c**2))
+    gs = a * np.exp(-(dis - b) ** 2 / 2 / (c ** 2))
     return gs
 
 
 def _sp_graph_weight(m, a=1, b=0, c=12500):
-    m.data = a * np.exp(-(m.data - b)**2 / 2 / (c**2))
+    m.data = a * np.exp(-(m.data - b) ** 2 / 2 / (c ** 2))
     return m
 
 
@@ -33,10 +35,10 @@ def _calculate_points_distance(cells_position: np.ndarray):
 
 
 def _create_nnd_matrix(
-    points_count: int,
-    n_neighbors: int,
-    points_distance: np.ndarray,
-    knn_graph_matrix: csr_matrix
+        points_count: int,
+        n_neighbors: int,
+        points_distance: np.ndarray,
+        knn_graph_matrix: csr_matrix
 ):
     @nb.njit(cache=True, nogil=True)
     def __get_dist_idx(points_count, row_idx, cols_idx):
@@ -55,11 +57,11 @@ def _create_nnd_matrix(
 
     @nb.njit(cache=True, nogil=True, parallel=True)
     def __creator(
-        points_count: int,
-        n_neighbors: int,
-        points_distance: np.ndarray,
-        knn_gm_indptr: np.ndarray,
-        knn_gm_indices: np.ndarray,
+            points_count: int,
+            n_neighbors: int,
+            points_distance: np.ndarray,
+            knn_gm_indptr: np.ndarray,
+            knn_gm_indices: np.ndarray,
     ):
         new_indptr = np.zeros(len(knn_gm_indptr), dtype=knn_gm_indptr.dtype)
         new_indices = np.zeros(len(knn_gm_indices) - points_count, dtype=knn_gm_indices.dtype)
@@ -74,7 +76,7 @@ def _create_nnd_matrix(
             dist_idx = __get_dist_idx(points_count, i, new_indices[new_s:new_e])
             new_data[new_s:new_e] = points_distance[dist_idx]
         return new_indptr, new_indices, new_data
-    
+
     new_indptr, new_indices, new_data = __creator(
         points_count,
         n_neighbors,
@@ -84,12 +86,13 @@ def _create_nnd_matrix(
     )
     return csr_matrix((new_data, new_indices, new_indptr), shape=(points_count, points_count))
 
+
 def _update_express_matrix(
-    exp_matrix: csr_matrix,
-    nnd_matrix: csr_matrix,
-    a: float = 1,
-    b: float = 0,
-    c: float = None
+        exp_matrix: csr_matrix,
+        nnd_matrix: csr_matrix,
+        a: float = 1,
+        b: float = 0,
+        c: float = None
 ):
     nnd_matrix = _sp_graph_weight(nnd_matrix, a, b, c)
     temp_nor_para = np.squeeze(np.asarray(np.sum(nnd_matrix, axis=1)))
@@ -97,15 +100,16 @@ def _update_express_matrix(
     temp_matrix.data /= temp_nor_para[temp_matrix.indices]
     return temp_matrix.tocsr()
 
+
 def gaussian_smooth(
-    pca_exp_matrix: np.ndarray,
-    raw_exp_matrix: csr_matrix,
-    cells_position: np.ndarray,
-    n_neighbors: int = 10,
-    smooth_threshold: float = 90,
-    a: float = 1,
-    b: float = 0,
-    n_jobs: int = -1
+        pca_exp_matrix: np.ndarray,
+        raw_exp_matrix: csr_matrix,
+        cells_position: np.ndarray,
+        n_neighbors: int = 10,
+        smooth_threshold: float = 90,
+        a: float = 1,
+        b: float = 0,
+        n_jobs: int = -1
 ):
     orig_jobs = nb.get_num_threads()
     nb.set_num_threads(n_jobs)
@@ -136,7 +140,7 @@ def gaussian_smooth(
         c = _gaussian_c(dist_threshold)
         logger.debug(f'_gaussian_c: {tc.get_time_consumed(tk)}')
 
-        ##### smoothing
+        # smoothing
         logger.info('Update express matrix.')
         new_expression_matrix = _update_express_matrix(raw_exp_matrix, nnd_matrix, a, b, c)
         logger.debug(f'_update_expression_matrix: {tc.get_time_consumed(tk, restart=False)}')

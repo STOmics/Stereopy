@@ -2,7 +2,7 @@
 # coding: utf-8
 """
 @file: phenograph.py
-@description: 
+@description:
 @author: Ping Qiu
 @email: qiuping1@genomics.cn
 @last modified by: Ping Qiu
@@ -10,8 +10,8 @@
 change log:
     2021/08/27  create file.
 """
-import phenograph
 import numpy as np
+import phenograph
 
 
 def run_phenograph(x: np.ndarray, phenograph_k: int):

@@ -1,29 +1,56 @@
 import numpy as np
 import pandas as pd
 
-from stereo.constant import LOG_FC
-from stereo.constant import SCORES
-from stereo.constant import LESS_P
-from stereo.constant import GREATER_P
-from stereo.constant import FEATURE_P
-from stereo.constant import UseColType
-from stereo.constant import LESS_PVALUE
-from stereo.constant import RunMethodType
-from stereo.constant import FUZZY_C_WEIGHT
-from stereo.constant import FUZZY_C_RESULT
-from stereo.constant import GREATER_PVALUE
-from stereo.constant import AlternativeType
-from stereo.constant import PValCombinationType
 from stereo.algorithm.algorithm_base import AlgorithmBase
+from stereo.constant import AlternativeType
+from stereo.constant import FEATURE_P
+from stereo.constant import FUZZY_C_RESULT
+from stereo.constant import FUZZY_C_WEIGHT
+from stereo.constant import GREATER_P
+from stereo.constant import GREATER_PVALUE
+from stereo.constant import LESS_P
+from stereo.constant import LESS_PVALUE
+from stereo.constant import LOG_FC
+from stereo.constant import PValCombinationType
+from stereo.constant import RunMethodType
+from stereo.constant import SCORES
+from stereo.constant import UseColType
 
 
 class TimeSeriesAnalysis(AlgorithmBase):
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+    def main(
+            self,
+            run_method=RunMethodType.tvg_marker.value,
+            use_col=UseColType.timepoint.value,
+            branch=None,
+            p_val_combination=PValCombinationType.fdr.value,
+            cluster_number=6,
+            **kwargs
+    ):
+        """
+        :param run_method: the model type when the algorithm is run, default = `tvg_marker`.
+            `tvg_marker`: Calculate time variable gene based on expression of celltypes in branch
+            `other`: Use fuzzy C means cluster method to cluster genes based on 1-p_value of celltypes in branch
+        :param use_col: the col in obs representing celltype or clustering
+        :param branch: celltypes order in use_col
+        :param p_val_combination: p_value combination method to use, choosing from ['fisher', 'mean', 'FDR']
+        :param cluster_number: number of cluster
 
-    def main(self, run_method=RunMethodType.tvg_marker.value, use_col=UseColType.timepoint.value, branch=None,
-             p_val_combination=PValCombinationType.fdr.value, cluster_number=6):
+        .. note::
+            
+            All the parameters below are key word arguments and only for `other` run_method.
+
+        :param spatial_weight: the weight to combine spatial feature, defaults to 1.
+        :param n_spatial_feature: n top features to combine of spatial feature, defaults to 2.
+        :param temporal_mean_threshold: filter out genes of which mean absolute temporal feature <= temporal_mean_threshold, defaults to 0.85.
+        :param temporal_top_threshold: filter out genes of which top absolute temporal feature < temporal_top_threshold, defaults to 1.
+        :param Epsilon: max value to finish iteration, defaults to 1e-7.
+        :param w_size: window size to rasterizing spatial expression, default to 20.
+        :param use_col: the col in obs representing celltype or clustering, default to None.
+        :param branch: celltypes order in use_col, default to None.
+
+        """  # noqa
         if run_method == RunMethodType.tvg_marker.value:
             self.TVG_marker(
                 use_col=use_col,
@@ -31,7 +58,7 @@ class TimeSeriesAnalysis(AlgorithmBase):
                 p_val_combination=p_val_combination
             )
         else:
-            self.fuzzy_C_gene_pattern_cluster(cluster_number)
+            self.fuzzy_C_gene_pattern_cluster(cluster_number, **kwargs)
 
     def TVG_marker(self, use_col, branch, p_val_combination=PValCombinationType.fisher.value):
         """
@@ -99,7 +126,7 @@ class TimeSeriesAnalysis(AlgorithmBase):
     def fuzzy_C(self, data, cluster_number, MAX=10000, m=2, Epsilon=1e-7):
         """
         fuzzy C means algorithm to cluster, helper function used in fuzzy_C_gene_pattern_cluster
-        :param data: pd.DataFrame object for fuzzy C means cluster, each col represent a feature, each row represent a obsversion
+        :param data: pd.DataFrame object for fuzzy C means cluster, each col represent a feature, each row represent a obsversion # noqa
         :param cluster_number: number of cluster
         :param MAX: max value to random initialize
         :param m: degree of membership, default = 2
@@ -174,14 +201,14 @@ class TimeSeriesAnalysis(AlgorithmBase):
         self.stereo_exp_data.genes_matrix['spatial_feature'] = X_pca
 
     def fuzzy_C_gene_pattern_cluster(self, cluster_number, spatial_weight=1, n_spatial_feature=2,
-                                     temporal_mean_threshold=0.85, temporal_top_threshold=1, Epsilon=1e7, w_size=None,
+                                     temporal_mean_threshold=0.85, temporal_top_threshold=1, Epsilon=1e-7, w_size=None,
                                      use_col=None, branch=None):
         """
         Use fuzzy C means cluster method to cluster genes based on 1-p_value of celltypes in branch
         :param cluster_number: number of cluster
         :param spatial_weight: the weight to combine spatial feature
         :param n_spatial_feature: n top features to combine of spatial feature
-        :param temporal_mean_threshold: filter out genes of which mean absolute temporal feature <= temporal_mean_threshold
+        :param temporal_mean_threshold: filter out genes of which mean absolute temporal feature <= temporal_mean_threshold # noqa
         :param temporal_top_threshold: filter out genes of which top absolute temporal feature < temporal_top_threshold
         :param Epsilon: max value to finish iteration
         :param w_size: window size to rasterizing spatial expression, see also data.tl.gene_spatial_feature
@@ -190,7 +217,7 @@ class TimeSeriesAnalysis(AlgorithmBase):
         :return: stereo_exp_data contains fuzzy_C_result
         """
         if (GREATER_P not in self.stereo_exp_data.genes_matrix) or (LESS_P not in self.stereo_exp_data.genes_matrix):
-            if use_col == None:
+            if use_col == None:  # noqa
                 print('greater_p and less_p not in stereo_exp_data.genes_matrix, you should run get_gene_pattern first')
             else:
                 self.TVG_marker(use_col=use_col, branch=branch)
@@ -204,9 +231,9 @@ class TimeSeriesAnalysis(AlgorithmBase):
 
         # filtter useless gene
         useful_index_1 = (
-                    np.mean(np.abs(self.stereo_exp_data.genes_matrix[FEATURE_P]), axis=1) > temporal_mean_threshold)
+                np.mean(np.abs(self.stereo_exp_data.genes_matrix[FEATURE_P]), axis=1) > temporal_mean_threshold)
         useful_index_2 = (
-                    np.max(np.abs(self.stereo_exp_data.genes_matrix[FEATURE_P]), axis=1) >= temporal_top_threshold)
+                np.max(np.abs(self.stereo_exp_data.genes_matrix[FEATURE_P]), axis=1) >= temporal_top_threshold)
         useful_index = useful_index_1 & useful_index_2
         useless_index = ~useful_index
 

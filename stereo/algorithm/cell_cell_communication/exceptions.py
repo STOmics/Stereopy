@@ -41,8 +41,10 @@ class NoInteractionsFound(Exception):
 class InvalidDatabase(Exception):
     def __init__(self, description: str = None):
         if description is None:
-            description = 'Invalid database. Please choose from cellphonedb, liana and celltalkdb, or input a path of database.'
+            description = 'Invalid database. Please choose from cellphonedb, liana and celltalkdb, ' \
+                          'or input a path of database.'
         super(InvalidDatabase, self).__init__(description)
+
 
 class PipelineResultInexistent(Exception):
     def __init__(self, res_key: str = None):
@@ -52,6 +54,7 @@ class PipelineResultInexistent(Exception):
             description = "The result is not exists."
         super(PipelineResultInexistent, self).__init__(description)
 
+
 class InvalidSpecies(Exception):
     def __init__(self, species: str = None):
         if species is None:
@@ -59,6 +62,7 @@ class InvalidSpecies(Exception):
         else:
             description = f"Species {species.upper()} is invalid, please choose from HUMAN and MOUSE."
         super(InvalidSpecies, self).__init__(description)
+
 
 class InvalidMicroEnvInput(Exception):
     def __init__(self, description: str = None):

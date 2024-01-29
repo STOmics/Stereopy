@@ -6,8 +6,8 @@
 @file:qc.py
 @time:2021/03/26
 """
-from scipy.sparse import issparse
 import numpy as np
+from scipy.sparse import issparse
 
 
 def cal_qc(data):
@@ -22,12 +22,14 @@ def cal_qc(data):
     cal_genes_indicators(data)
     return data
 
+
 def cal_cells_indicators(data):
     exp_matrix = data.exp_matrix
     data.cells.total_counts = cal_total_counts(exp_matrix)
     data.cells.n_genes_by_counts = cal_n_genes_by_counts(exp_matrix)
     data.cells.pct_counts_mt = cal_pct_counts_mt(data)
     return data
+
 
 def cal_genes_indicators(data):
     exp_matrix = data.exp_matrix
@@ -36,6 +38,7 @@ def cal_genes_indicators(data):
     data.genes.mean_umi = cal_gene_mean_umi(data)
     return data
 
+
 def cal_total_counts(exp_matrix):
     """
     calculate the total gene counts of per cell.
@@ -43,8 +46,7 @@ def cal_total_counts(exp_matrix):
     :param exp_matrix: the express matrix.
     :return:
     """
-    total_count = np.array(exp_matrix.sum(1)).reshape(-1)
-    return total_count
+    return np.array(exp_matrix.sum(1)).reshape(-1)
 
 
 def cal_per_gene_counts(exp_matrix):
@@ -54,18 +56,17 @@ def cal_per_gene_counts(exp_matrix):
     :param exp_matrix: the express matrix.
     :return:
     """
-    gene_counts = np.array(exp_matrix.sum(axis=0)).reshape(-1)
-    return gene_counts
+    return np.array(exp_matrix.sum(axis=0)).reshape(-1)
 
 
 def cal_n_cells_by_counts(exp_matrix):
     """
     total counts of each gene.
+
     :param exp_matrix: the express matrix.
     :return:
     """
-    n_cells_by_counts = np.array(exp_matrix.sum(0)).reshape(-1)
-    return n_cells_by_counts
+    return np.array(exp_matrix.sum(0)).reshape(-1)
 
 
 def cal_n_cells(exp_matrix):
@@ -75,8 +76,7 @@ def cal_n_cells(exp_matrix):
     :param exp_matrix: the express matrix.
     :return:
     """
-    n_cells = exp_matrix.getnnz(axis=0) if issparse(exp_matrix) else np.count_nonzero(exp_matrix, axis=0)
-    return n_cells
+    return exp_matrix.getnnz(axis=0) if issparse(exp_matrix) else np.count_nonzero(exp_matrix, axis=0)
 
 
 def cal_gene_mean_umi(data):
@@ -89,8 +89,7 @@ def cal_gene_mean_umi(data):
 
 
 def cal_n_genes_by_counts(exp_matrix):
-    n_genes_by_counts = exp_matrix.getnnz(axis=1) if issparse(exp_matrix) else np.count_nonzero(exp_matrix, axis=1)
-    return n_genes_by_counts
+    return exp_matrix.getnnz(axis=1) if issparse(exp_matrix) else np.count_nonzero(exp_matrix, axis=1)
 
 
 def cal_pct_counts_mt(data):

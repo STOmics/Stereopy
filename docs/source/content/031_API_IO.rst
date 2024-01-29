@@ -26,6 +26,7 @@ In output part, we support writing StereoExpData as H5ad file for storage.
         :toctree: .
 
         core.StereoExpData
+        core.ms_data.MSData
 
 
 .. autosummary::
@@ -43,3 +44,7 @@ In output part, we support writing StereoExpData as H5ad file for storage.
     io.write_h5ad
     io.write_mid_gef
     io.update_gef
+    io.read_h5ms
+    io.write_h5ms
+    core.ms_data.MSData.to_integrate
+    core.ms_data.MSData.to_isolated

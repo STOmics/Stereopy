@@ -1,8 +1,8 @@
 from abc import ABCMeta
 from typing import Union
 
-from ..core import StereoExpData
 from ..core.stereo_exp_data import AnnBasedStereoExpData
+from ..core.stereo_exp_data import StereoExpData
 
 
 class PlotBase(metaclass=ABCMeta):
@@ -27,7 +27,7 @@ class PlotBase(metaclass=ABCMeta):
 
         try:
             __import__(f"{names[0]}")
-        except:
+        except Exception:
             raise AttributeError(f"No module named '{names[0]}'")
 
         for sub_cls in PlotBase.__subclasses__():

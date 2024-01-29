@@ -2,7 +2,7 @@
 # coding: utf-8
 """
 @file: leiden.py
-@description: 
+@description:
 @author: Yiran Wu
 @email: wuyiran@genomics.cn
 @last modified by: Yiran Wu
@@ -11,13 +11,18 @@ change log:
     2021/09/07  create file.
 """
 
-import numpy as np
-from scipy import sparse
+from typing import (
+    Optional,
+    Type,
+    Union
+)
+
 import leidenalg
+import numpy as np
 import pandas as pd
-from typing import Optional, Type, Union
 from natsort import natsorted
 from numpy import random
+from scipy import sparse
 
 AnyRandom = Union[None, int, random.RandomState]
 
@@ -28,7 +33,7 @@ except ImportError:
         pass
 
 
-    MutableVertexPartition.__module__ = 'leidenalg.VertexPartition'
+    MutableVertexPartition.__module__ = 'leidenalg.VertexPartition'  # noqa
 
 
 def leiden(
@@ -133,7 +138,9 @@ def leiden_rapids(adjacency, resolution=1.0):
     leiden_parts, _ = cugraph.leiden(g, resolution=resolution)
 
     # Format output
-    clusters = leiden_parts.to_pandas().sort_values('vertex')[['partition']].to_numpy().ravel().astype('U')
+    clusters = leiden_parts.to_pandas().sort_values('vertex')[['partition']].to_numpy().ravel()
+    clusters += 1
+    clusters = clusters.astype('U')
     clusters = pd.Categorical(clusters)
 
     return clusters

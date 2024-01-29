@@ -19,7 +19,7 @@ try:
     import pymeshfix as mf
     import pyacvd
 
-except ImportError as e:
+except ImportError:
     errmsg = """
 ************************************************
 * Some necessary modules may not be installed. *
@@ -54,7 +54,7 @@ class ThreeDimGroup():
                              eps_val if a cell type region is splitted into too many subregions. Try increase this value if
                              too many cells are excluded as outliers.
         :param thresh_num: minimum number of cells in a group to be considered to display a mesh
-        """
+        """  # noqa
         self.xli = xli
         self.yli = yli
         self.zli = zli
@@ -67,8 +67,9 @@ class ThreeDimGroup():
             # todo: 是否有必要：增加前处理：全部点云作为整体，去除异常值？郭力东老师建议：不要增加此步骤，以免掩盖tissue cut不到位出现的问题
             scatter_li = [{'x': np.array(self.xli), 'y': np.array(self.yli), 'z': np.array(self.zli), 'ty': 'all'}]
         else:
+            # list, length equals to number of spatial clusters of this type
             scatter_li = self._select_split_and_remove_outlier(eps_val, min_samples,
-                                                               thresh_num)  # list, length equals to number of spatial clusters of this type
+                                                               thresh_num)
 
         self.scatter_li = scatter_li
 
@@ -183,7 +184,7 @@ class ThreeDimGroup():
         :param tol: If method in 'delaunay', 'delaunay_3d', cells smaller than this will be degenerated and merged.
 
         :return: mesh
-        """
+        """  # noqa
 
         mesh_li = []
         for scatter in self.scatter_li:
@@ -195,21 +196,21 @@ class ThreeDimGroup():
 
             elif method in ['ball', 'ball_pivot']:
                 _args = {"radii": [1]}
-                if not radii is None:
+                if not radii is None:  # noqa
                     _args['radii'] = radii
                 mesh = self._create_mesh_ball_pivot(scatter, radii=_args['radii'])
 
             elif method in ['poisson', 'poisson_surface']:
                 _args = {"depth": 8, "width": 0, "scale": 1.1, "linear_fit": False, "density_threshold": None}
-                if not depth is None:
+                if not depth is None:  # noqa
                     _args['depth'] = depth
-                if not width is None:
+                if not width is None:  # noqa
                     _args['width'] = width
-                if not scale is None:
+                if not scale is None:  # noqa
                     _args['scale'] = scale
-                if not linear_fit is None:
+                if not linear_fit is None:  # noqa
                     _args['linear_fit'] = linear_fit
-                if not density_threshold is None:
+                if not density_threshold is None:  # noqa
                     _args['density_threshold'] = density_threshold
 
                 mesh = self._create_mesh_poisson_surface(scatter,
@@ -220,17 +221,17 @@ class ThreeDimGroup():
 
             elif method in ['delaunay', 'delaunay_3d']:
                 _args = {'alpha': 0, 'tol': 0.01}
-                if not alpha is None:
+                if not alpha is None:  # noqa
                     _args['alpha'] = alpha
-                if not tol is None:
+                if not tol is None:  # noqa
                     _args['tol'] = tol
                 mesh = self._create_mesh_delaunay(scatter, alpha=_args['alpha'], tol=_args['tol'])  # or 1.5?
 
             elif method in ['march', 'march_cubes']:
                 _args = {"levelset": 0, "mc_scale_factor": 1}
-                if not levelset is None:
+                if not levelset is None:  # noqa
                     _args['levelset'] = 0
-                if not mc_scale_factor is None:
+                if not mc_scale_factor is None:  # noqa
                     _args['mc_scale_factor'] = mc_scale_factor
 
                 mesh = self._create_mesh_march_cubes(scatter,
@@ -356,8 +357,6 @@ class ThreeDimGroup():
         points_po = pv.PolyData(xyz)
         points_po_sel = points_po.select_enclosed_points(mesh_li[ind_max_vol])
         xyz = points_po_sel.points
-        xyz_min = np.min(xyz, axis=0)
-        xyz_max = np.max(xyz, axis=0)
         # self.plt_3d(xyz, xyz_min, xyz_max)
 
         # 3. Pick up points falling on median slicing positions (z coordinate value) of above points
@@ -382,8 +381,8 @@ class ThreeDimGroup():
         xyz = dic2arr(scatter_max_clus)
         # self.plt_3d(xyz, xyz_min, xyz_max)
         xyz_sel = xyz[(xyz[:, 0] >= (x_mean - x_ran_sin)) & (xyz[:, 0] <= (x_mean + x_ran_sin))]  # (n, 3)
-        assert xyz_sel.shape[
-                   0] >= 1, "No points fall into [x_mean - x_ran_sin, x_mean + x_ran_sin] range, try increasing x_ran_sin"
+        assert xyz_sel.shape[0] >= 1, "No points fall into [x_mean - x_ran_sin, x_mean + x_ran_sin] range," \
+                                      " try increasing x_ran_sin"
 
         # self.plt_3d(xyz_sel, xyz_min, xyz_max)
         # 6. Find out the cluster of above points with the biggest approximate volume
@@ -436,7 +435,7 @@ class ThreeDimGroup():
     def _create_mesh_poisson_surface(self, scatter, depth, width, scale, linear_fit, density_threshold):
 
         try:
-            import open3d
+            import open3d  # noqa
         except ImportError:
             raise ImportError("Need to install open3d")
 
@@ -453,7 +452,7 @@ class ThreeDimGroup():
             raise ValueError(
                 f"The point cloud cannot generate a surface mesh with `poisson` method and depth == {depth}.")
 
-        # A low density value means that the vertex is only supported by a low number of points from the input point cloud.
+        # A low density value means that the vertex is only supported by a low number of points from the input point cloud. # noqa
         if not (density_threshold is None):
             mesh.remove_vertices_by_mask(np.asarray(density) < np.quantile(density, density_threshold))
 
@@ -512,7 +511,7 @@ class ThreeDimGroup():
         # print('v', v, v.shape)
         # print('f', f, f.shape)
         if len(v) == 0:
-            raise ValueError(f"The point cloud cannot generate a surface mesh with `marching_cube` method.")
+            raise ValueError("The point cloud cannot generate a surface mesh with `marching_cube` method.")
 
         # post_process: transform coordinates, datatypes
         v = np.asarray(v).astype(np.float64)  # 每一行表示一个节点的坐标
@@ -536,9 +535,8 @@ class ThreeDimGroup():
             # Check the distance.
             distance = distance if isinstance(distance, (tuple, list)) else [distance] * 3
             if len(distance) != 3:
-                raise ValueError(
-                    "`distance` value is wrong. \nWhen `distance` is a list or tuple, it can only contain three elements."
-                )
+                raise ValueError("`distance` value is wrong. \nWhen `distance` is a list or tuple, it can only"
+                                 " contain three elements.")
 
             # Check the scaling center.
             scale_center = model.center if scale_center is None else scale_center
@@ -601,7 +599,7 @@ class ThreeDimGroup():
 
             Returns:
                 model_s: The scaled model.
-            """
+            """  # noqa
 
             model_s = model.copy() if not inplace else model
 
@@ -696,7 +694,8 @@ class ThreeDimGroup():
         row, col = np.diag_indices_from(dist)
         dist[row, col] = None
         max_dist = np.nanmin(dist, axis=1).max()  # the maximum neighbor-wise distance
-        mc_sf = max_dist * mc_scale_factor  # so that mc_scale_factor times of maximum neighbor-wise distance equals to width of one voxel
+        # so that mc_scale_factor times of maximum neighbor-wise distance equals to width of one voxel
+        mc_sf = max_dist * mc_scale_factor
 
         scale_pc = scale_model(model=pc, scale_factor=1 / mc_sf)
         scale_pc_points = np.ceil(np.asarray(scale_pc.points)).astype(np.int64)
@@ -716,7 +715,7 @@ class ThreeDimGroup():
         volume_array = mcubes.smooth(volume_array)
         vertices, triangles = mcubes.marching_cubes(volume_array, levelset)
         if len(vertices) == 0:
-            raise ValueError(f"The point cloud cannot generate a surface mesh with `marching_cube` method.")
+            raise ValueError("The point cloud cannot generate a surface mesh with `marching_cube` method.")
         v = np.asarray(vertices).astype(np.float64)
         f = np.asarray(triangles).astype(np.int64)
         f = np.c_[np.full(len(f), 3), f]
@@ -738,8 +737,8 @@ class ThreeDimGroup():
 
         Args:
             mesh: A mesh model.
-            nsub: Number of subdivisions. Each subdivision creates 4 new triangles, so the number of resulting triangles is
-                  nface*4**nsub where nface is the current number of faces.
+            nsub: Number of subdivisions. Each subdivision creates 4 new triangles, so the number of resulting
+                triangles is nface*4**nsub where nface is the current number of faces.
             nclus: Number of voronoi clustering.
 
         Returns:
@@ -765,8 +764,8 @@ class ThreeDimGroup():
     def _uniform_larger_pc(self, pc, alpha=0, nsub=3, nclus=20000, type='pv'):
         """
         Generates a uniform point cloud with a larger number of points.
-        If the number of points in the original point cloud is too small or the distribution of the original point cloud is
-        not uniform, making it difficult to construct the surface, this method can be used for preprocessing.
+        If the number of points in the original point cloud is too small or the distribution of the original point
+        cloud is not uniform, making it difficult to construct the surface, this method can be used for preprocessing.
 
         Args:
             pc: A point cloud model.
@@ -779,7 +778,7 @@ class ThreeDimGroup():
 
         Returns:
             new_pc: A uniform point cloud with a larger number of points.
-        """
+        """  # noqa
         coords = np.asarray(pc.points)
         coords_z = np.unique(coords[:, 2])
 
@@ -845,9 +844,8 @@ class ThreeDimGroup():
             fixed_mesh = meshfix.mesh.triangulate().clean()
 
             if fixed_mesh.n_points == 0:
-                raise ValueError(
-                    f"The surface cannot be Repaired. " f"\nPlease change the method or parameters of surface reconstruction."
-                )
+                raise ValueError("The surface cannot be Repaired. \nPlease change the method or parameters of "
+                                 "surface reconstruction.")
             return fixed_mesh
 
         fixed_surfs = []
@@ -913,7 +911,7 @@ class ThreeDimGroup():
         :param thresh_num: minimum number of cells in a group to be considered to display a mesh
         :return: List of dictionary of inner volumes. Each dictionary includes keys of 'x', 'y', 'z', with values in
                 NumPy.NdArray, and 'ty' with values of datatype str.
-        """
+        """  # noqa
 
         # scatter_li = []
         # for ty in list(dict.fromkeys(self.tyli)):
@@ -956,16 +954,16 @@ class ThreeDimGroup():
 
 class GenMesh(AlgorithmBase):
     def main(
-        self,
-        cluster_res_key=None,
-        ty_name_li=None,
-        method='march',
-        eps_val=2,
-        min_samples=5,
-        thresh_num=10,
-        key_name='mesh',
-        alpha=None, radii=None, depth=None, width=None, scale=None, linear_fit=None, density_threshold=None,
-        mc_scale_factor=None, levelset=None, tol=None):
+            self,
+            cluster_res_key=None,
+            ty_name_li=None,
+            method='march',
+            eps_val=2,
+            min_samples=5,
+            thresh_num=10,
+            key_name='mesh',
+            alpha=None, radii=None, depth=None, width=None, scale=None, linear_fit=None, density_threshold=None,
+            mc_scale_factor=None, levelset=None, tol=None):
         # todo: 在 __init__中暴露出去
         """
 
@@ -1078,12 +1076,12 @@ class GenMesh(AlgorithmBase):
         :param tol: If method in 'delaunay', 'delaunay_3d', cells smaller than this will be degenerated and merged.
 
         :return: adata, mesh written in stereo_exp_data.tl.result['mesh']
-        """
+        """  # noqa
 
         def scatter2xyz(scatter):
             xyz = np.concatenate([np.expand_dims(scatter['x'], axis=1),
-                                np.expand_dims(scatter['y'], axis=1),
-                                np.expand_dims(scatter['z'], axis=1)], axis=1)
+                                  np.expand_dims(scatter['y'], axis=1),
+                                  np.expand_dims(scatter['z'], axis=1)], axis=1)
             return xyz
 
         stereo_exp_data = self.stereo_exp_data
@@ -1096,7 +1094,7 @@ class GenMesh(AlgorithmBase):
         else:
             tyli = self.pipeline_res[cluster_res_key]['group'].tolist()
 
-        if not 'mesh' in self.pipeline_res:
+        if not 'mesh' in self.pipeline_res:  # noqa
             self.pipeline_res['mesh'] = {}
         self.pipeline_res['mesh'][key_name] = {}
 
@@ -1124,7 +1122,7 @@ class GenMesh(AlgorithmBase):
                 # print(tdg.find_repre_point(mesh_li, x_ran_sin=2.25))
                 # mesh = tdg.create_mesh_of_type('CNS', method='alpha', alpha=10)
                 # mesh = tdg.create_mesh_of_type('CNS', method='ball', radii=[50])
-                # mesh = tdg.create_mesh_of_type('CNS', method='poisson', depth=5, scale=2.5, density_threshold=0.3)  # 'density_threshold'
+                # mesh = tdg.create_mesh_of_type('CNS', method='poisson', depth=5, scale=2.5, density_threshold=0.3)
                 # mesh = tdg.create_mesh_of_type('all', method='delaunay', tol=0.001)  # alpha
                 # mesh.plot()
 
@@ -1136,11 +1134,11 @@ class GenMesh(AlgorithmBase):
 
                 # _ = pl.add_mesh(mesh)
 
-                # tdg = ThreeDimGroup(xli, yli, zli, tyli, ty_name='all', eps_val=2, min_samples=5, thresh_num=10)  # 1.5, 8
+                # tdg = ThreeDimGroup(xli, yli, zli, tyli, ty_name='all', eps_val=2, min_samples=5, thresh_num=10)  # 1.5, 8 # noqa
                 # mesh, mesh_li = tdg.create_mesh_of_type(method='march', mc_scale_factor=1.5)
                 # mesh = tdg.uniform_re_mesh_and_smooth(mesh)
                 # _ = pl.add_mesh(mesh)
-                # pl.export_obj('E:/REGISTRATION_SOFTWARE/algorithm/cell_level_regist/paste_based/data/fruitfly_embryo/bin_recons_spot_level/scene.obj')
+                # pl.export_obj('E:/REGISTRATION_SOFTWARE/algorithm/cell_level_regist/paste_based/data/fruitfly_embryo/bin_recons_spot_level/scene.obj') # noqa
 
                 # mesh.save()
 
@@ -1158,12 +1156,12 @@ class GenMesh(AlgorithmBase):
                 # fig.show()
                 self.pipeline_res['mesh'][key_name][ty_name] = {}
                 self.pipeline_res['mesh'][key_name][ty_name]['points'] = np.ndarray(shape=mesh.points.shape,
-                                                                                            dtype=mesh.points.dtype,
-                                                                                            buffer=mesh.points)
+                                                                                    dtype=mesh.points.dtype,
+                                                                                    buffer=mesh.points)
                 mfaces = mesh.faces.reshape(-1, 4)
                 self.pipeline_res['mesh'][key_name][ty_name]['faces'] = np.ndarray(shape=mfaces.shape,
-                                                                                        dtype=mfaces.dtype,
-                                                                                        buffer=mfaces)
+                                                                                   dtype=mfaces.dtype,
+                                                                                   buffer=mfaces)
             except Exception as e:
                 print(e)
 

@@ -2,7 +2,7 @@
 # coding: utf-8
 """
 @file: spmatrix_helper.py
-@description: 
+@description:
 @author: Ping Qiu
 @email: qiuping1@genomics.cn
 @last modified by: Ping Qiu

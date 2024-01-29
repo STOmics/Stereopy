@@ -148,7 +148,7 @@ if __name__ == "__main__":
     function `bw_pair_cnts`'s result from R using example-1
     [[1]]
     [1] 0.0004203446
-    
+
     [[2]]
        [1] 385   0   0   0   0   0   0   0   0   0   0   0   0
       [14]   0   0   0   0   0   0   0   0   0   0   0   0   0

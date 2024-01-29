@@ -24,5 +24,3 @@ class DnnDataset(Dataset):
         x = self.data[idx].squeeze()
         y = self.batch_idx[idx]
         return x, y
-
-

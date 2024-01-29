@@ -6,17 +6,29 @@
 @file:neighbors.py
 @time:2021/09/01
 """
-from ..log_manager import logger
-from scipy.sparse import issparse, coo_matrix, csr_matrix
-from sklearn.neighbors import NearestNeighbors
-from sklearn.utils import check_random_state
-from numpy import random
+from types import MappingProxyType
+from typing import (
+    Union,
+    Any,
+    Mapping,
+    Optional,
+    Callable
+)
+
 import igraph as ig
 import numpy as np
-from typing import Union, Any, Mapping, Optional, Callable
-from typing_extensions import Literal
-from types import MappingProxyType
+from numpy import random
+from scipy.sparse import (
+    issparse,
+    coo_matrix,
+    csr_matrix
+)
 from sklearn.metrics import pairwise_distances
+from sklearn.neighbors import NearestNeighbors
+from sklearn.utils import check_random_state
+from typing_extensions import Literal
+
+from ..log_manager import logger
 
 AnyRandom = Union[None, int, random.RandomState]
 
@@ -194,9 +206,9 @@ class Neighbors(object):
 
     def check_setting(self):
         if self.method == 'umap' and not self.knn:
-            logger.error(f'`method=\'umap\' only with knn=True`.')
+            logger.error('`method=\'umap\' only with knn=True`.')
         if self.method not in {'umap', 'gauss', 'rapids'}:
-            logger.error(f'`method=\'umap\' or method=\'gauss\'`.')
+            logger.error('`method=\'umap\' or method=\'gauss\'`.')
 
     def choose_x(self):
         self.x = self.x[:, :self.n_pcs]

@@ -2,7 +2,7 @@
 # coding: utf-8
 """
 @file: pyramid.py
-@description: 
+@description:
 @author: Ping Qiu
 @email: qiuping1@genomics.cn
 @last modified by: Ping Qiu
@@ -11,6 +11,7 @@ change log:
     2021/06/11  create file.
 """
 import time
+
 import h5py
 import numpy as np
 import tifffile as tifi
@@ -63,8 +64,8 @@ def split_image(im, img_size, h5_path, bin_size):
 
 
 def merge_pyramid(
-        h5_path: str, 
-        bin_size: int, 
+        h5_path: str,
+        bin_size: int,
         out_path: str):
     """
     Merge image patches back to large image.
@@ -110,11 +111,11 @@ def merge_pyramid(
 
 
 def create_pyramid(
-        img_path: str, 
-        h5_path: str, 
-        img_size: int, 
-        x_start: int, 
-        y_start: int, 
+        img_path: str,
+        h5_path: str,
+        img_size: int,
+        x_start: int,
+        y_start: int,
         mag):
     """
     Create image pyramid and save to `.h5`.
@@ -134,7 +135,7 @@ def create_pyramid(
         start value of y.
     mag
         mag
-    
+
     Returns
     -----------
     None

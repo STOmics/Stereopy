@@ -14,10 +14,30 @@ References
    Vincent D Blondel, Jean-Loup Guillaume, Renaud Lambiotte, Etienne Lefebvrel, 
    *Fast unfolding of communities in large networks*, J. Stat. Mech..
 
+.. [DeTomaso21]
+   David DeTomaso, Nir Yosef,
+   *Hotspot identifies informative gene modules across modalities of single-cell genomics*, Cell Systems.
+
+.. [Efremova20]
+   Mirjana Efremova, Miquel Vento-Tormo, Sarah A. Teichmann, Roser Vento-Tormo,
+   *CellPhoneDB: inferring cell-cell communication from combined expression of multi-subunit ligand-receptor complexes*, Nature Protocols.
+
+.. [Fang23]
+   Shuangsang Fang, Mengyang Xu, Lei Cao, Xiaobin Liu, Marija Bezulj, Liwei Tan, Zhiyuan Yuan, Yao Li, Tianyi Xia, Longyu Guo, Vladimir Kovacevic, Junhou Hui, Lidong Guo, Chao Liu, Mengnan Cheng, Li'ang Lin, Zhenbin Wen, Bojana Josic, Nikola Milicevic, Ping Qiu, Qin Lu, Yumei Li, Leying Wang, Luni Hu, Chao Zhang, Qiang Kang, Fengzhen Chen, Ziqing Deng, Junhua Li, Mei Li, Shengkang Li, Yi Zhao, Guangyi Fan, Yong Zhang, Ao Chen, Yuxiang Li, Xun Xu,
+   *Stereopy: modeling comparative and spatiotemporal cellular heterogeneity via multi-sample spatial transcriptomics*, bioRxiv.
+
 .. [Hafemeister19] 
    Christoph Hafemeister, Rahul Satija, 
-   *Normalization and variance stabilization of single-cell RNA-seq data using regularized negative binomial regression*, Genome Biol.
+   *Normalization and variance stabilization of single-cell RNA-seq data using regularized negative binomial regression*, Genome Biology.
 
+.. [Haghverdi16]
+   Laleh Haghverdi, Maren Büttner, F Alexander Wolf, Florian Buettner, Fabian J Theis,
+   *Diffusion pseudotime robustly reconstructs lineage branching*, Nature Methods.
+
+.. [Marshall22]
+   Jamie L Marshall, Teia Noel, Qingbo S Wang, Haiqi Chen, Evan Murray, Ayshwarya Subramanian, Katherine A Vernon, Silvana Bazua-Valenti, Katie Liguori, Keith Keller, Robert R Stickels, Breanna McBean, Rowan M Heneghan, Astrid Weins, Evan Z Macosko, Fei Chen, Anna Greka,
+   *High-resolution Slide-seqV2 spatial transcriptomics enables discovery of disease-specific cell neighborhoods and pathways*, iScience.
+   
 .. [McInnes18] 
    Leland McInnes, John Healy, James Melville, 
    *UMAP: Uniform Manifold Approximation and Projection for Dimension Reduction*, arXiv.
@@ -42,7 +62,14 @@ References
    Bram Van de Sande, Christopher Flerin, Kristofer Davie, Maxime De Waegeneer, Gert Hulselmans, Sara Aibar, Ruth Seurinck, Wouter Saelens, Robrecht Cannoodt, Quentin Rouchon, Toni Verbeiren, Dries De Maeyer, Joke Reumers, Yvan Saeys & Stein Aerts,
    *A scalable SCENIC workflow for single-cell gene regulatory network analysis*, Nature Protocols.
 
+.. [Wolf19]
+   F. Alexander Wolf, Fiona K. Hamey, Mireya Plass, Jordi Solana, Joakim S. Dahlin, Berthold Göttgens, Nikolaus Rajewsky, Lukas Simon, Fabian J. Theis,
+   *PAGA: graph abstraction reconciles clustering with trajectory inference through a topology preserving map of single cells*, Genome Biology
+
+.. [Zhang23]
+   Chao Zhang, Qiang Kang, Mei Li, Hongqing Xie, Shuangsang Fang, Xun Xu,
+   *BatchEval Pipeline: Batch Effect Evaluation Workflow for Multiple Datasets Joint Analysis*, bioRxiv
+
 .. [Zheng17] 
    Grace X Y Zheng, Jessica M Terry, Phillip Belgrader, Paul Ryvkin, Zachary W Bent, Ryan Wilson, Solongo B Ziraldo, Tobias D Wheeler, Geoff P McDermott, Junjie Zhu, Mark T Gregory, Joe Shuga, Luz Montesclaros, Jason G Underwood, Donald A Masquelier, Stefanie Y Nishimura, Michael Schnall-Levin, Paul W Wyatt, Christopher M Hindson, Rajiv Bharadwaj, Alexander Wong, Kevin D Ness, Lan W Beppu, H Joachim Deeg, Christopher McFarland, Keith R Loeb, William J Valente, Nolan G Ericson, Emily A Stevens, Jerald P Radich, Tarjei S Mikkelsen, Benjamin J Hindson, Jason H Bielas, 
    *Massively parallel digital transcriptional profiling of single cells*, Nature Communications.
-
