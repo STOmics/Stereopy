@@ -126,7 +126,7 @@ def plot_categories_as_colorblocks(
     labels = []
     label2code = {}  # dictionary of numerical values asigned to each label
     for code, (label, value) in enumerate(
-            obs_tidy.index.value_counts(sort=False).iteritems()
+            obs_tidy.index.value_counts(sort=False).items()
     ):
         if value == 0:
             continue
