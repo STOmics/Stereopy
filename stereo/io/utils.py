@@ -79,7 +79,10 @@ def transform_marker_genes_to_anndata(marker_genes_res: dict):
     if 'marker_genes_res_key' in marker_genes_res['parameters']:
         marker_genes_result['params']['marker_genes_res_key'] = marker_genes_res['parameters']['marker_genes_res_key']
     marker_genes_result['pts'] = marker_genes_res['pct'].set_index('genes')
+    marker_genes_result['pts'].index.name = None
     marker_genes_result['pts_rest'] = marker_genes_res['pct_rest'].set_index('genes')
+    marker_genes_result['pts_rest'].index.name = None
+    marker_genes_result['mean_count'] = marker_genes_res['mean_count']
     groups_key = natsorted([k for k in  marker_genes_res if '.vs.' in k])
     key_map = {
         'genes': 'names',

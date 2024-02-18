@@ -13,9 +13,16 @@ class _BaseResult(object):
     CONNECTIVITY_NAMES = {'neighbors'}
     REDUCE_NAMES = {'umap', 'pca', 'tsne', 'correct'}
     HVG_NAMES = {'highly_variable_genes', 'hvg', 'highly_variable'}
-    MARKER_GENES_NAMES = {'marker_genes', 'marker_genes_filtered', 'rank_genes_groups'}
+    MARKER_GENES_NAMES = {
+        'marker_genes', 'marker_genes_filtered',
+        'rank_genes_groups', 'rank_genes_groups_filtered'
+    }
 
-    RENAME_DICT = {'highly_variable_genes': 'hvg', 'marker_genes': 'rank_genes_groups'}
+    RENAME_DICT = {
+        'highly_variable_genes': 'hvg',
+        'marker_genes': 'rank_genes_groups',
+        'marker_genes_filtered': 'rank_genes_groups_filtered'
+    }
 
     CLUSTER, CONNECTIVITY, REDUCE, HVG, MARKER_GENES = 0, 1, 2, 3, 4
     TYPE_NAMES_DICT = {
@@ -231,6 +238,10 @@ class AnnBasedResult(_BaseResult, object):
     def __init__(self, based_ann_data: AnnData):
         super().__init__()
         self.__based_ann_data = based_ann_data
+    
+    @property
+    def adata(self):
+        return self.__based_ann_data
 
     def __contains__(self, item):
         if item in AnnBasedResult.CLUSTER_NAMES:
@@ -411,7 +422,7 @@ class AnnBasedResult(_BaseResult, object):
     def _set_hvg_res(self, key, value):
         self.__based_ann_data.uns[key] = {'params': {}, 'source': 'stereopy', 'method': key}
         self.__based_ann_data.var.loc[:, ["means", "dispersions", "dispersions_norm", "highly_variable"]] = \
-            value.loc[:, ["means", "dispersions", "dispersions_norm", "highly_variable"]].values
+            value.loc[:, ["means", "dispersions", "dispersions_norm", "highly_variable"]].to_numpy()
     
     def _get_marker_genes_res(self, name):
         if name in self.__based_ann_data.uns:
@@ -419,7 +430,7 @@ class AnnBasedResult(_BaseResult, object):
         else:
             renamed = AnnBasedResult.RENAME_DICT.get(name, None)
             if renamed is None:
-                return self.__based_ann_data.uns[name] # in order to throw an error.
+                return self.__based_ann_data.uns[name] # just for throwing an error.
             else:
                 marker_genes_result = self.__based_ann_data.uns[renamed]
         marker_genes_result_reconstructed = {}
@@ -440,8 +451,10 @@ class AnnBasedResult(_BaseResult, object):
             marker_genes_result_reconstructed['parameters']['marker_genes_res_key'] = \
                                                                                 marker_genes_result['params']['marker_genes_res_key']
         if 'pts' in marker_genes_result:
-            marker_genes_result_reconstructed['pct'] = marker_genes_result['pts'].reset_index()
-            marker_genes_result_reconstructed['pct_rest'] = marker_genes_result['pts_rest'].reset_index()
+            marker_genes_result_reconstructed['pct'] = marker_genes_result['pts'].reset_index(names='genes')
+            marker_genes_result_reconstructed['pct_rest'] = marker_genes_result['pts_rest'].reset_index(names='genes')
+        if 'mean_count' in marker_genes_result:
+            marker_genes_result_reconstructed['mean_count'] = marker_genes_result['mean_count']
         clusters = self.__based_ann_data.obs[marker_genes_result['params']['groupby']].cat.categories
         key_map = {
             'scores': 'scores', 
@@ -456,18 +469,19 @@ class AnnBasedResult(_BaseResult, object):
             df = pd.DataFrame(df_data)
             if 'real_gene_name' in self.__based_ann_data.var.columns:
                 df['gene_name'] = self.__based_ann_data.var['real_gene_name'].loc[df['genes']].to_numpy()
-            df['pct'] = marker_genes_result['pts'][c].loc[df['genes']].to_numpy()
-            df['pct_rest'] = marker_genes_result['pts_rest'][c].loc[df['genes']].to_numpy()
+            if 'pts' in marker_genes_result:
+                df['pct'] = marker_genes_result['pts'][c].loc[df['genes']].to_numpy()
+                df['pct_rest'] = marker_genes_result['pts_rest'][c].loc[df['genes']].to_numpy()
+            if 'mean_count' in marker_genes_result:
+                df['mean_count'] = marker_genes_result['mean_count'][c].loc[df['genes']].to_numpy()
             marker_genes_result_reconstructed[f'{c}.vs.{control_groups}'] = df
         return marker_genes_result_reconstructed
 
     def _set_marker_genes_res(self, key, value):
         # self.__based_ann_data.uns[key] = value
         from stereo.io.utils import transform_marker_genes_to_anndata
-        if key == 'marker_genes':
-            self.__based_ann_data.uns['rank_genes_groups'] = transform_marker_genes_to_anndata(value)
-        else:
-            self.__based_ann_data.uns[key] = transform_marker_genes_to_anndata(value)
+        key = AnnBasedResult.RENAME_DICT.get(key, key)
+        self.__based_ann_data.uns[key] = transform_marker_genes_to_anndata(value)
 
     def set_value(self, key, value):
         if hasattr(value, 'shape'):

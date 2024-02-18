@@ -1403,22 +1403,24 @@ class StPipeline(object):
             raise Exception(
                 f'{marker_genes_res_key} is not in the result, please check and run the find_marker_genes func.')
 
+        old_result = self.result[marker_genes_res_key]
         new_result = {}
-        new_result['parameters'] = copy.deepcopy(self.result[marker_genes_res_key]['parameters'])
+        new_result['parameters'] = copy.deepcopy(old_result['parameters'])
         new_result['parameters']['marker_genes_res_key'] = marker_genes_res_key
-        new_result['pct'] = pct = self.result[marker_genes_res_key]['pct']
-        new_result['pct_rest'] = pct_rest = self.result[marker_genes_res_key]['pct_rest']
-        for key, res in self.result[marker_genes_res_key].items():
+        new_result['pct'] = pct = old_result['pct']
+        new_result['pct_rest'] = pct_rest = old_result['pct_rest']
+        new_result['mean_count'] = old_result['mean_count']
+        for key, res in old_result.items():
             if '.vs.' not in key:
                 continue
             new_res = res.copy()
             group_name = key.split('.vs.')[0]
             if not compare_abs:
-                gene_set_1 = res[res['log2fc'] < min_fold_change]['genes'].values if min_fold_change is not None else []  # noqa
+                gene_set_1 = res[res['log2fc'] < min_fold_change]['genes'].to_numpy() if min_fold_change is not None else []  # noqa
             else:
-                gene_set_1 = res[res['log2fc'].abs() < min_fold_change]['genes'].values if min_fold_change is not None else []  # noqa
-            gene_set_2 = pct[pct[group_name] < min_in_group_fraction]['genes'].values if min_in_group_fraction is not None else []  # noqa
-            gene_set_3 = pct_rest[pct_rest[group_name] > max_out_group_fraction]['genes'].values if max_out_group_fraction is not None else []  # noqa
+                gene_set_1 = res[res['log2fc'].abs() < min_fold_change]['genes'].to_numpy() if min_fold_change is not None else []  # noqa
+            gene_set_2 = pct[pct[group_name] < min_in_group_fraction]['genes'].to_numpy() if min_in_group_fraction is not None else []  # noqa
+            gene_set_3 = pct_rest[pct_rest[group_name] > max_out_group_fraction]['genes'].to_numpy() if max_out_group_fraction is not None else []  # noqa
             flag = res['genes'].isin(np.union1d(gene_set_1, np.union1d(gene_set_2, gene_set_3))).to_numpy()
             columns = new_res.columns[~new_res.columns.isin(['genes'])].to_numpy()
             new_res.loc[flag, columns] = np.nan  # noqa

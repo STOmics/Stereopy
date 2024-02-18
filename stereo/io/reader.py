@@ -31,6 +31,7 @@ from stereo.core.constants import CHIP_RESOLUTION
 from stereo.core.gene import Gene
 from stereo.core.stereo_exp_data import AnnBasedStereoExpData
 from stereo.core.stereo_exp_data import StereoExpData
+from stereo.core.result import _BaseResult
 from stereo.io import h5ad
 from stereo.io.utils import remove_genes_number, integrate_matrix_by_genes, transform_marker_genes_to_anndata
 from stereo.log_manager import logger
@@ -328,7 +329,8 @@ def _read_stereo_h5_result(key_record: dict, data, f):
             if analysis_key == 'hvg':
                 hvg_df = h5ad.read_group(f[f'{res_key}@hvg'])
                 # str to interval
-                hvg_df['mean_bin'] = [to_interval(interval_string) for interval_string in hvg_df['mean_bin']]
+                if 'mean_bin' in hvg_df.columns:
+                    hvg_df['mean_bin'] = [to_interval(interval_string) for interval_string in hvg_df['mean_bin']]
                 data.tl.result[res_key] = hvg_df
             if analysis_key in ['pca', 'umap', 'totalVI', 'spatial_alignment_integration']:
                 data.tl.result[res_key] = pd.DataFrame(h5ad.read_dataset(f[f'{res_key}@{analysis_key}']))
@@ -379,9 +381,13 @@ def _read_stereo_h5_result(key_record: dict, data, f):
                     else:
                         parameters_df: pd.DataFrame = h5ad.read_group(f[cluster_key])
                         data.tl.result[res_key]['parameters'] = {}
-                        for i, row in parameters_df.iterrows():
+                        for _, row in parameters_df.iterrows():
                             name = row['name']
                             value = row['value']
+                            if value.lower() == 'true':
+                                value = True
+                            elif value.lower() == 'false':
+                                value = False
                             data.tl.result[res_key]['parameters'][name] = value
             if analysis_key == 'cell_cell_communication':
                 data.tl.result[res_key] = {}
@@ -928,10 +934,8 @@ def stereo_to_anndata(
                     adata.uns[res_key] = data.tl.result[res_key]
             elif key == 'marker_genes':
                 for res_key in data.tl.key_record[key]:
-                    if res_key == key:
-                        adata.uns['rank_genes_groups'] = transform_marker_genes_to_anndata(data.tl.result[res_key])
-                    else:
-                        adata.uns[res_key] = transform_marker_genes_to_anndata(data.tl.result[res_key])
+                    uns_key = _BaseResult.RENAME_DICT.get(res_key, res_key)
+                    adata.uns[uns_key] = transform_marker_genes_to_anndata(data.tl.result[res_key])
             else:
                 continue
 
