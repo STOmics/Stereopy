@@ -19,6 +19,7 @@ which is compromised of basic preprocessing, embedding, clustering, and so on.
     core.StPipeline.cal_qc
     core.StPipeline.filter_cells
     core.StPipeline.filter_genes
+    core.StPipeline.filter_coordinates
     core.StPipeline.filter_by_clusters
     core.StPipeline.filter_by_hvgs
     core.StPipeline.raw_checkpoint
