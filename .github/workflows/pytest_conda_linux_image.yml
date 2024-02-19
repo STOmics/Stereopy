@@ -32,6 +32,8 @@ jobs:
           echo "use python in $(which python)"
       - name: Install Stereopy dependencies
         run: |
+          echo "use conda in $(which conda)"
+          conda activate test_image
           echo "use pip in $(which pip)"
           echo "use python in $(which python)"
 
@@ -45,6 +47,7 @@ jobs:
       - name: Show Env Info
         run: |
           echo "use conda in $(which conda)"
+          conda activate test_image
           echo "use pip in $(which pip)"
           echo "use python in $(which python)"
           conda info
@@ -52,5 +55,7 @@ jobs:
           pip list
       - name: Test with pytest
         run: |
+          echo "use conda in $(which conda)"
+          conda activate test_image
           echo "use python in $(which python)"
           python -m pytest -m "cell_cut_env" --durations=0
