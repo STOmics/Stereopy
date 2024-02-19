@@ -13,50 +13,58 @@ jobs:
     runs-on: cpu
     steps:
       - uses: actions/checkout@v3
-      - name: Add conda to system path
-        run: |
-          # $CONDA_PREFIX is an environment variable pointing to the root of the miniconda directory
-          echo $CONDA_PREFIX/bin >> $GITHUB_PATH
+    #   - name: Add conda to system path
+    #     run: |
+    #       # $CONDA_PREFIX is an environment variable pointing to the root of the miniconda directory
+    #       echo $CONDA_PREFIX/bin >> $GITHUB_PATH
       - name: Install dependencies
         run: |
+          echo "use conda in $(which conda)"
           conda env update --file tests/workflows_conf/environment_linux_py38.yml --name test -q
-      - name: Install Stereopy dependencies
+      - name: Activate conda enviroment
         run: |
+          echo "use conda in $(which conda)"
           conda init bash
           source ~/.bashrc
           conda activate test
+          echo "use pip in $(which pip)"
+          echo "use python in $(which python)"
+      - name: Install Stereopy dependencies
+        run: |
+          echo "use pip in $(which pip)"
+          echo "use python in $(which python)"
 
           pip install -r requirements.txt -q
           pip install -r tests/extra_requirements.txt -q
           pip install pathlib -q
           pip install pytest-xdist
 
-          $CONDA_PREFIX/envs/test/bin/python setup.py develop
+          python setup.py develop
       - name: Show Env Info
         run: |
-          conda init bash
-          source ~/.bashrc
-          conda activate test
-          which python
+          echo "use conda in $(which conda)"
+          echo "use pip in $(which pip)"
+          echo "use python in $(which python)"
           conda info
           env
           pip list
       - name: Test with pytest
         run: |
+          echo "use python in $(which python)"
           # TODO ~/anaconda3/envs/test/bin/python -m pytest -m "not gpu and not heavy and not cell_cut_env" --durations=0
-          $CONDA_PREFIX/envs/test/bin/python -m pytest -m "not gpu and not heavy and not cell_cut_env" --durations=0
+          python -m pytest -m "not gpu and not heavy and not cell_cut_env" --durations=0
 
-          $CONDA_PREFIX/envs/test/bin/python setup.py develop
+          python setup.py develop
       - name: Show Env Info
         run: |
-          conda init bash
-          source ~/.bashrc
-          conda activate test
-          which python
+          echo "use conda in $(which conda)"
+          echo "use pip in $(which pip)"
+          echo "use python in $(which python)"
           conda info
           env
           pip list
       - name: Test with pytest
         run: |
+          echo "use python in $(which python)"
           # TODO ~/anaconda3/envs/test/bin/python -m pytest -m "not gpu and not heavy and not cell_cut_env" --durations=0
-          $CONDA_PREFIX/envs/test/bin/python -m pytest -m "not gpu and not heavy and not cell_cut_env" --durations=0
+          python -m pytest -m "not gpu and not heavy and not cell_cut_env" --durations=0
