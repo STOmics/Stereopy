@@ -10,7 +10,6 @@ from settings import DEMO_DATA_URL, TEST_DATA_PATH, DEMO_DATA_135_TISSUE_GEM_GZ_
 
 
 class TestIO(unittest.TestCase):
-    
     OBS_KEYS = {'total_counts', 'pct_counts_mt', 'n_genes_by_counts', 'orig.ident', 'x', 'y', 'leiden'}
     VAR_KEYS = {'n_counts', 'n_cells', 'means', 'dispersions', 'dispersions_norm', 'highly_variable'}
     UNS_KEYS = {'gene_exp_cluster@gene_exp_leiden', 'hvg', 'neighbors', 'sn'}
