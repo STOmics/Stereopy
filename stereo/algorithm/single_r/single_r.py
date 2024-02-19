@@ -6,7 +6,6 @@ import numba
 import numpy as np
 import pandas as pd
 import scipy
-
 from joblib import (
     Parallel,
     delayed,
@@ -95,8 +94,9 @@ class SingleR(AlgorithmBase):
 
         :return: `pandas.DataFrame`
         """  # noqa
-        interact_genes = pd.Index(self.stereo_exp_data.gene_names) & pd.Index(ref_exp_data.gene_names)
-        assert not interact_genes.empty, "no gene of `test_exp_data.gene_names` in `ref_exp_data.gene_names`"
+        temp_res = set(self.stereo_exp_data.gene_names) & set(ref_exp_data.gene_names)
+        interact_genes = [gene for gene in self.stereo_exp_data.gene_names.tolist() if gene in temp_res]
+        assert interact_genes, "no gene of `test_exp_data.gene_names` in `ref_exp_data.gene_names`"
 
         total_start_time = time.time()
         test_exp_data = self.stereo_exp_data.sub_by_name(gene_name=interact_genes)
