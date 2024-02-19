@@ -24,7 +24,7 @@ jobs:
       - name: Activate conda enviroment
         run: |
           echo "use conda in $(which conda)"
-          conda init bash
+          conda init --all
           source ~/.bashrc
           conda activate test
           echo "use pip in $(which pip)"
@@ -32,6 +32,8 @@ jobs:
       - name: Install Stereopy dependencies
         run: |
           echo "use conda in $(which conda)"
+          conda init --all
+          source ~/.bashrc
           conda activate test
           echo "use pip in $(which pip)"
           echo "use python in $(which python)"
@@ -45,6 +47,8 @@ jobs:
       - name: Show Env Info
         run: |
           echo "use conda in $(which conda)"
+          conda init --all
+          source ~/.bashrc
           conda activate test
           echo "use pip in $(which pip)"
           echo "use python in $(which python)"
@@ -54,6 +58,8 @@ jobs:
       - name: Test with pytest
         run: |
           echo "use conda in $(which conda)"
+          conda init --all
+          source ~/.bashrc
           conda activate test
           echo "use python in $(which python)"
           # TODO ~/anaconda3/envs/test/bin/python -m pytest -m "not gpu and not heavy and not cell_cut_env" --durations=0
@@ -63,6 +69,8 @@ jobs:
       - name: Show Env Info
         run: |
           echo "use conda in $(which conda)"
+          conda init --all
+          source ~/.bashrc
           conda activate test
           echo "use pip in $(which pip)"
           echo "use python in $(which python)"
@@ -72,6 +80,8 @@ jobs:
       - name: Test with pytest
         run: |
           echo "use conda in $(which conda)"
+          conda init --all
+          source ~/.bashrc
           conda activate test
           echo "use python in $(which python)"
           # TODO ~/anaconda3/envs/test/bin/python -m pytest -m "not gpu and not heavy and not cell_cut_env" --durations=0
