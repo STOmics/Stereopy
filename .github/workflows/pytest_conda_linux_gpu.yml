@@ -13,8 +13,8 @@ jobs:
       - uses: actions/checkout@v3
       - name: Add conda to system path
         run: |
-          # $CONDA is an environment variable pointing to the root of the miniconda directory
-          echo $CONDA/bin >> $GITHUB_PATH
+          # $CONDA_PREFIX is an environment variable pointing to the root of the miniconda directory
+          echo $CONDA_PREFIX/bin >> $GITHUB_PATH
       - name: Install dependencies
         run: |
           conda env update --file tests/workflows_conf/environment_linux_gpu.yml --name rapids-22.12 -q
@@ -26,7 +26,7 @@ jobs:
           pip install -r requirements.txt -q
           pip install pathlib -q
           pip install pytest -q
-          ~/anaconda3/envs/rapids-22.12/bin/python setup.py develop
+          $CONDA_PREFIX/envs/rapids-22.12/bin/python setup.py develop
       - name: Test with pytest
         run: |
-          ~/anaconda3/envs/rapids-22.12/bin/python -m pytest -m "gpu"
+          $CONDA_PREFIX/envs/rapids-22.12/bin/python -m pytest -m "gpu"
