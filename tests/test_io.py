@@ -9,7 +9,6 @@ from settings import DEMO_DATA_URL, TEST_DATA_PATH, DEMO_DATA_135_TISSUE_GEM_GZ_
     DEMO_135_CELL_BIN_GEM_URL, DEMO_H5AD_URL
 
 
-
 class TestIO(unittest.TestCase):
     OBS_KEYS = {'total_counts', 'pct_counts_mt', 'n_genes_by_counts', 'orig.ident', 'x', 'y', 'leiden'}
     VAR_KEYS = {'n_counts', 'n_cells', 'means', 'dispersions', 'dispersions_norm', 'highly_variable'}
