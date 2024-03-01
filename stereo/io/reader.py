@@ -818,6 +818,9 @@ def stereo_to_anndata(
 
     from scipy.sparse import issparse
 
+    if isinstance(data, AnnBasedStereoExpData) and base_adata is None:
+        base_adata = data._ann_data.copy()
+
     if base_adata is None:
         adata = AnnData(shape=data.exp_matrix.shape, dtype=np.float64, obs=data.cells.to_df(), var=data.genes.to_df())
         adata.X = data.exp_matrix

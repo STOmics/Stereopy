@@ -550,6 +550,9 @@ H5ADToH5Seurat <- function(
     # Add cell embeddings
     if (inherits(x = source[['obsm']], what = 'H5Group')) {
       for (reduc in names(x = source[['obsm']])) {
+        if (reduc == 'cell_border') {
+            next
+        }
         sreduc <- gsub(pattern = '^X_', replacement = '', x = reduc)
         reduc.group <- dfile[['reductions']]$create_group(name = sreduc)
         message("Adding ", reduc, " as cell embeddings for ", sreduc)

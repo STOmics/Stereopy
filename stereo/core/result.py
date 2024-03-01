@@ -294,7 +294,8 @@ class AnnBasedResult(_BaseResult, object):
         elif name in AnnBasedResult.HVG_NAMES:
             # TODO ignore `mean_bin`, really need?
             return self.__based_ann_data.var.loc[:, ["means", "dispersions", "dispersions_norm", "highly_variable"]]
-        elif name in AnnBasedResult.MARKER_GENES_NAMES:
+        elif name in AnnBasedResult.MARKER_GENES_NAMES or \
+            any([n in name for n in AnnBasedResult.MARKER_GENES_NAMES]):
             return self._get_marker_genes_res(name)
         elif name.startswith('gene_exp_'):
             return self.__based_ann_data.uns[name]
@@ -440,9 +441,12 @@ class AnnBasedResult(_BaseResult, object):
             marker_genes_result_reconstructed['parameters']['marker_genes_res_key'] = \
                                                                                 marker_genes_result['params']['marker_genes_res_key']
         if 'pts' in marker_genes_result:
-            marker_genes_result_reconstructed['pct'] = marker_genes_result['pts'].reset_index()
-            marker_genes_result_reconstructed['pct_rest'] = marker_genes_result['pts_rest'].reset_index()
-        clusters = self.__based_ann_data.obs[marker_genes_result['params']['groupby']].cat.categories
+            marker_genes_result_reconstructed['pct'] = marker_genes_result['pts'].reset_index(names='genes')
+            marker_genes_result_reconstructed['pct_rest'] = marker_genes_result['pts_rest'].reset_index(names='genes')
+        if 'mean_count' in marker_genes_result:
+            marker_genes_result_reconstructed['mean_count'] = marker_genes_result['mean_count']
+        # clusters = self.__based_ann_data.obs[marker_genes_result['params']['groupby']].cat.categories
+        clusters = marker_genes_result['names'].dtype.names
         key_map = {
             'scores': 'scores', 
             'pvalues': 'pvals',
@@ -456,9 +460,16 @@ class AnnBasedResult(_BaseResult, object):
             df = pd.DataFrame(df_data)
             if 'real_gene_name' in self.__based_ann_data.var.columns:
                 df['gene_name'] = self.__based_ann_data.var['real_gene_name'].loc[df['genes']].to_numpy()
-            df['pct'] = marker_genes_result['pts'][c].loc[df['genes']].to_numpy()
-            df['pct_rest'] = marker_genes_result['pts_rest'][c].loc[df['genes']].to_numpy()
-            marker_genes_result_reconstructed[f'{c}.vs.{control_groups}'] = df
+            if 'pts' in marker_genes_result:
+                df['pct'] = marker_genes_result['pts'][c].loc[df['genes']].to_numpy()
+                df['pct_rest'] = marker_genes_result['pts_rest'][c].loc[df['genes']].to_numpy()
+            if 'mean_count' in marker_genes_result:
+                df['mean_count'] = marker_genes_result['mean_count'][c].loc[df['genes']].to_numpy()
+            if isinstance(control_groups, (list, np.ndarray)):
+                control_str = '-'.join([cg for cg in control_groups if cg != c])
+            else:
+                control_str = control_groups
+            marker_genes_result_reconstructed[f'{c}.vs.{control_str}'] = df
         return marker_genes_result_reconstructed
 
     def _set_marker_genes_res(self, key, value):

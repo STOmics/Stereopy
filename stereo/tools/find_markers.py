@@ -144,25 +144,31 @@ class FindMarker(ToolBase):
             return
 
         g_index = select_group(groups=g, cluster=group_info, all_groups=all_groups)
+        g_data = self.data.exp_matrix[g_index]
+        if self.control_groups == 'rest':
+            others_data = self.data.exp_matrix[~g_index]
+        else:
+            others_index = select_group(groups=other_g, cluster=group_info, all_groups=all_groups)
+            others_data = self.data.exp_matrix[others_index]
         if self.method == 't_test':
-            result = statistics.ttest(self.data.exp_matrix[g_index], self.data.exp_matrix[~g_index], self.corr_method)
+            result = statistics.ttest(g_data, others_data, self.corr_method)
         elif self.method == 'logreg':
             if self.temp_logres_score is None:
                 self.temp_logres_score = self.logres_score()
             result = self.run_logres(
                 self.temp_logres_score,
-                self.data.exp_matrix[g_index],
-                self.data.exp_matrix[~g_index],
+                g_data,
+                others_data,
                 g
             )
         else:
             if self.control_groups != 'rest' and self.tie_term:
-                xy = np.vstack((self.data.exp_matrix[g_index].values, self.data.exp_matrix[~g_index].values))
+                xy = np.vstack((g_data, others_data))
                 ranks = stats.rankdata(xy, axis=-1)
                 tie_term = mannwhitneyu.cal_tie_term(ranks)
             result = statistics.wilcoxon(
-                self.data.exp_matrix[g_index],
-                self.data.exp_matrix[~g_index],
+                g_data,
+                others_data,
                 self.corr_method,
                 ranks,
                 tie_term,
