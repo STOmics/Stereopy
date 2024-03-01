@@ -1314,6 +1314,7 @@ class StPipeline(object):
             self,
             annotation_information: Union[list, dict],
             cluster_res_key: str = 'cluster',
+            default: str = None,
             res_key: str = 'annotation'
     ):
         """
@@ -1321,6 +1322,7 @@ class StPipeline(object):
 
         :param annotation_information: describe the annotation information to the clusters in a list or dictionary format. # noqa
         :param cluster_res_key: get the targeted cluster result to add annotation.
+        :param default: the default value for the groups that haven't been annotated, if None, remain the original value.
         :param res_key: the key for storing annotation result in `self.result`.
 
         :return: Annotation result is stored in `self.result` where the key is `'annotation'`.
@@ -1342,24 +1344,34 @@ class StPipeline(object):
         if cluster_res['group'].dtype.name != 'category':
             cluster_res['group'] = cluster_res['group'].astype('category')
 
-        if isinstance(annotation_information, (list, np.ndarray)) and \
-                len(annotation_information) != cluster_res['group'].cat.categories.size:
-            raise Exception(f"The length of annotation information is {len(annotation_information)}, \
-                            not equal to the categories of cluster result whoes"
-                            f" lenght is {cluster_res['group'].cat.categories.size}.")
+        # if isinstance(annotation_information, (list, np.ndarray)) and \
+        #         len(annotation_information) != cluster_res['group'].cat.categories.size:
+        #     raise Exception(f"The length of annotation information is {len(annotation_information)}, \
+        #                     not equal to the categories of cluster result whose"
+        #                     f" length is {cluster_res['group'].cat.categories.size}.")
 
         if isinstance(annotation_information, (list, np.ndarray)):
-            new_categories = np.array(annotation_information, dtype='U')
+            if len(annotation_information) < cluster_res['group'].cat.categories.size:
+                new_categories_list = []
+                for i in range(cluster_res['group'].cat.categories.size):
+                    if i < len(annotation_information):
+                        new_categories_list.append(annotation_information[i])
+                    else:
+                        new_categories_list.append(cluster_res['group'].cat.categories[i] if default is None else default)
+            else:
+                new_categories_list = np.array(annotation_information, dtype='U')
         elif isinstance(annotation_information, dict):
             new_categories_list = []
             for i in cluster_res['group'].cat.categories:
                 if i in annotation_information:
                     new_categories_list.append(annotation_information[i])
                 else:
-                    new_categories_list.append(i)
-            new_categories = np.array(new_categories_list, dtype='U')
+                    new_categories_list.append(i if default is None else default)
+            # new_categories = np.array(new_categories_list, dtype='U')
         else:
             raise TypeError("The type of 'annotation_information' only supports list, ndarray or dict.")
+        
+        new_categories = np.array(new_categories_list, dtype='U')
 
         new_categories_values = new_categories[cluster_res['group'].cat.codes]
 
