@@ -959,7 +959,7 @@ def stereo_to_anndata(
             raw_exp = data.tl.raw.exp_matrix
             raw_genes = data.tl.raw.genes.to_df()
             raw_genes.dropna(axis=1, how='all', inplace=True)
-            raw_adata = AnnData(shape=raw_exp.toarray().shape, var=raw_genes, dtype=np.float64)
+            raw_adata = AnnData(shape=raw_exp.shape, var=raw_genes, dtype=np.float64)
             raw_adata.X = raw_exp
             adata.raw = raw_adata
 
