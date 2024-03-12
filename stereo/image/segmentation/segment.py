@@ -17,7 +17,7 @@ def cell_seg(
         overlap: int = 100,
         gpu: str = '-1',
         tissue_seg_model_path: str = None,
-        tissue_seg_method: str = None,
+        tissue_seg_method: int = None,
         post_processing_workers: int = 10,
         is_water: bool = False,
         num_threads: int = 0,
