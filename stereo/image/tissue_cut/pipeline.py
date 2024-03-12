@@ -155,6 +155,10 @@ class _TissueCut(object):
     def save_tissue_mask(self):
         for idx, tissue in enumerate(self.mask):
             self.dst_img_file_path.append(os.path.join(self.dst_img_path, self.file_name[idx] + r'_tissue_cut.tif'))
+            dir_path = self.dst_img_file_path[-1].rsplit('/', 1)[0]
+            if not os.path.exists(dir_path):
+                os.makedirs(dir_path)
+
             if np.sum(tissue) == 0:
                 h, w = tissue.shape[:2]
                 tissue = np.ones((h, w), dtype=np.uint8)

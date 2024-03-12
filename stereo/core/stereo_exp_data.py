@@ -836,3 +836,8 @@ class AnnBasedStereoExpData(StereoExpData):
     #     from anndata import concat
     #     ann_data = concat([d._ann_data for d in data], axis=0, merge='same', label=batch_key, index_unique='-')
     #     return AnnBasedStereoExpData(based_ann_data=ann_data)
+    
+    
+    @property
+    def adata(self):
+        return self._ann_data

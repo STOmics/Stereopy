@@ -75,6 +75,7 @@ def cell_cluster_to_gene_exp_cluster(
             exp_tmp = exp_matrix[cell_index].mean(axis=0).A[0]
         tmp.append(exp_tmp)
     cluster_exp_matrix = np.vstack(tmp)
+    group_index.index.name = None
     return pd.DataFrame(cluster_exp_matrix, columns=gene_names, index=group_index.index).T
 
 

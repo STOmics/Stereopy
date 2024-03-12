@@ -199,7 +199,7 @@ def _write_one_h5ad_result(data, f, key_record):
                             value.append(pvalue)
                         parameters_df = pd.DataFrame({
                             'name': name,
-                            'value': value
+                            'value': str(value)
                         })
                         h5ad.write(parameters_df, f, f'{cluster}@{res_key}@marker_genes')  # -> dataframe
             if analysis_key == 'sct':
