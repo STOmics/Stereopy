@@ -1458,6 +1458,75 @@ class StPipeline(object):
         key = 'marker_genes'
         self.reset_key_record(key, res_key)
 
+
+    @logit
+    def adjusted_rand_score(
+        self,
+        cluster_res_key_a=None,
+        cluster_res_key_b=None
+    ):
+        """
+        Calculate Adjusted Rand index between two cluster results.
+
+        The first cluster result can be seen as true labels while the second as predicted labels.
+
+        :param cluster_res_key_a: the key to get the first cluster result, defaults to None
+        :param cluster_res_key_b: the key to get the second cluster result, defaults to None
+
+        """
+        from sklearn.metrics import adjusted_rand_score
+
+        if cluster_res_key_a is None or cluster_res_key_a not in self.data.cells:
+            raise ValueError(f"Cann't found cluster result by key {cluster_res_key_a}")
+        
+        if cluster_res_key_b is None or cluster_res_key_b not in self.data.cells:
+            raise ValueError(f"Cann't found cluster result by key {cluster_res_key_b}")
+        
+        res_key = f'adjusted_rand_score_{cluster_res_key_a}_{cluster_res_key_b}'
+        self.result[res_key] = adjusted_rand_score(
+            self.data.cells[cluster_res_key_a],
+            self.data.cells[cluster_res_key_b]
+        )
+
+
+    @logit
+    def silhouette_score(
+        self,
+        cluster_res_key: str = None,
+        metric: str = 'euclidean',
+        sample_size: int = None,
+        random_number: int = 10086,
+    ):
+        """
+        Calculate the mean Silhouette Coefficient for a cluster result.
+
+        :param cluster_res_key: the key to get cluster result from cells, defaults to None
+        :param metric: The metric to use when calculating distance between cells/bins based on exp_matrix, defaults to 'euclidean'.
+                       It must be one of the options allowed by <sklearn.metrics.pairwise.pairwise_distances>.
+        :param sample_size: The size of the sample to use when computing the Silhouette Coefficient
+                            on a random subset of the data, if it is None, no sampling is used.
+        :param random_number: random number for selecting a subset of samples,
+                              used when sample_size is not None, defaults to 10086,
+                              give fixed value in multiple calls for reproducible results.
+
+        """
+        from sklearn.metrics import silhouette_score
+        if not self.data.issparse():
+            self.data.array2sparse()
+        
+        if cluster_res_key is None or cluster_res_key not in self.data.cells:
+            raise ValueError(f"Cann't found cluster result by key {cluster_res_key}")
+        
+        res_key = f'silhouette_score_{cluster_res_key}'
+        self.result[res_key] = silhouette_score(
+            self.data.exp_matrix,
+            self.data.cells[cluster_res_key],
+            metric=metric,
+            sample_size=sample_size,
+            random_state=random_number
+        )
+
+
     # def scenic(self, tfs, motif, database_dir, res_key='scenic', use_raw=True, outdir=None,):
     #     """
     #
