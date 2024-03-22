@@ -19,7 +19,7 @@ USING_CROP = False
 CROP_SIZE = 10000
 
 
-def gef2image(gef_file_path, dump_to_disk: bool = False, out_dir: str = "./", bin_size=20):
+def gef2image(gef_file_path, dump_to_disk: bool = False, out_dir: str = "./", bin_size=1):
     """
     Convert gef file to tif image.
 

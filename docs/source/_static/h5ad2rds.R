@@ -1497,7 +1497,7 @@ if (outfile=='None'){
 }else{
     filename = outfile
 }
-outfile = paste0('./',filename)
+# outfile = paste0('./',filename)
 saveRDS(object, outfile)
 print("Finished RDS.")
 quit('yes', 0)
