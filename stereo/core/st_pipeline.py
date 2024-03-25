@@ -1462,8 +1462,8 @@ class StPipeline(object):
     @logit
     def adjusted_rand_score(
         self,
-        cluster_res_key_a=None,
-        cluster_res_key_b=None
+        cluster_res_key_a: str,
+        cluster_res_key_b: str
     ):
         """
         Calculate Adjusted Rand index between two cluster results.
@@ -1492,9 +1492,9 @@ class StPipeline(object):
     @logit
     def silhouette_score(
         self,
-        cluster_res_key: str = None,
+        cluster_res_key: str,
         metric: str = 'euclidean',
-        sample_size: int = None,
+        sample_size: Optional[int] = None,
         random_number: int = 10086,
     ):
         """
