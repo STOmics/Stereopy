@@ -167,7 +167,8 @@ class PlotPaga(PlotBase):
             cmap: str = 'tab20',
             ax: Optional[plt.Axes] = None,
             width: Optional[int] = None,
-            height: Optional[int] = None
+            height: Optional[int] = None,
+            dot_size: Optional[int] = 30
     ):
         """
         abstract paga plot for the paga result.
@@ -180,6 +181,8 @@ class PlotPaga(PlotBase):
         :param ax: subplot to plot.
         :param width: the figure width.
         :param height: the figure height.
+        :param dot_size: The marker size in points**2 (typographic points are 1/72 in.).
+            Default is 30.
 
         """
         # calculate node positions
@@ -210,7 +213,7 @@ class PlotPaga(PlotBase):
         if height is not None:
             ax.get_figure().set_figheight(height)
 
-        ax.scatter(pos[:, 0], pos[:, 1], c=color_list.colors, zorder=1)
+        ax.scatter(pos[:, 0], pos[:, 1], c=color_list.colors, zorder=1, s=dot_size)
         for i in range(len(ct_list)):
             ax.text(pos[i, 0], pos[i, 1], s=ct_list[i], zorder=2)
         for i, j in Edges:
@@ -393,7 +396,8 @@ class PlotPaga(PlotBase):
             random_state: int = 0,
             cmap: str = 'tab20',
             width: int = 15,
-            height: int = 6
+            height: int = 6,
+            dot_size: int = 30
     ):
         """
         abstract paga plot for the paga result and cell distribute around paga.
@@ -407,14 +411,16 @@ class PlotPaga(PlotBase):
         :param cmap: colormap to use, default with tab20.
         :param width: the figure width.
         :param height: the figure height.
+        :param dot_size: The marker size in points**2 (typographic points are 1/72 in.).
+            Default is 30.
 
         """
         # parameter setting
         fig = plt.figure(figsize=(width, height))
         ax = plt.subplot(1, 2, 1)
         # network
-        self.paga_plot(adjacency=adjacency, threshold=threshold, layout=layout, random_state=random_state,
-                       cmap=cmap, ax=ax)
+        self.paga_plot(adjacency=adjacency, threshold=threshold, random_state=random_state, cmap=cmap, ax=ax,
+                       dot_size=dot_size)
 
         # cell position
         cell_pos = self._draw_graph(layout=layout)
@@ -431,7 +437,12 @@ class PlotPaga(PlotBase):
         if color in self.stereo_exp_data.cells:
             if self.stereo_exp_data.cells[color].dtype == 'category':
                 ax.scatter(cell_pos[:, 0], cell_pos[:, 1], s=size,
-                           c=self.stereo_exp_data.cells[color].cat.codes.to_numpy())
+                           c=self.stereo_exp_data.cells[color].cat.codes.to_numpy(), cmap=cmap)
+                cell_pos_df = pd.DataFrame(cell_pos)
+                cell_pos_df[color] = self.stereo_exp_data.cells[color].to_list()
+                cell_center_pos_df = cell_pos_df.groupby(color).mean()
+                for s, row in cell_center_pos_df.iterrows():
+                    ax.text(row[0], row[1], s)
             else:
                 ax.scatter(cell_pos[:, 0], cell_pos[:, 1], s=size, c=self.stereo_exp_data.cells[color])
         elif color in self.stereo_exp_data.gene_names:
