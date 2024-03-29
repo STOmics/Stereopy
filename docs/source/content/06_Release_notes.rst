@@ -3,6 +3,26 @@ Release Notes
 
 .. role:: small
 
+Version 1.2.0
+------------------
+1.2.0 : 2024-03-30
+~~~~~~~~~~~~~~~~~~~
+
+Features:
+
+1. `st.io.read_gem` and `st.io.read_gef` support expression matrix files with geneID information.
+2. Analysis results of `find_marker_genes`  will be saved into the output AnnData h5ad.
+3. Upgraded tissue segmentation algorithm.
+4. Addition of `st.tl.adjusted_rand_score` to calculate the adjusted Rand coefficient between two clusters.
+5. Addition of `st.tl.silhouette_score` to calculate the average silhouette coefficient of a cluster.
+6. `h5ad2rds.R` is compatible with AnnData version > 0.7.5, to convert from h5ad to rds files.
+7. Addition of the clustering category labels to the graph of `st.plt.paga_compare`.
+
+BUG Fixes:
+
+1. Fixed the error of high memory consumption when converting `X.raw` into AnnData.
+
+
 Version 1.1.0
 ------------------
 1.1.0 : 2024-01-17
