@@ -90,6 +90,10 @@ torch==1.10.0
 torchvision==0.11.1  
 albumentations==0.4.6
 protobuf~=3.20.0
+ipykernel==6.17.1
+ipython==8.10.0
+ipython-genutils==0.2.0
+ipywidgets==8.0.4
 
 Sphinx>=7.1.2
 nbsphinx>=0.9.3
