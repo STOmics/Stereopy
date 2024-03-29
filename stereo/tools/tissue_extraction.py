@@ -25,11 +25,9 @@ def tissue_extraction_to_bgef(
         dst_bgef_path: Optional[str],
         dst_mask_dir_path: Optional[str],
         staining_type: Optional[str] = None,
-        # seg_method: Optional[int] = DEEP,
         model_path: Optional[str] = "",
         src_img_path: Optional[str] = "",
         rna_tissue_cut_bin_size: Optional[int] = 1,
-        save_result_bgef: Optional[bool] = True,
         gpu: Union[int, str] = '-1',
         num_threads: int = -1
 ):
@@ -43,11 +41,10 @@ def tissue_extraction_to_bgef(
     :param model_path: the path if model used to generated mask.tif, it has to be matched with staining type.
     :param src_img_path: the path of regist.tif which is used to generated mask.tif.
     :param rna_tissue_cut_bin_size: fixed value 1.
-    :param save_result_bgef: True to return None, but save gef to disk; False for returning a `StereoExpData`.
     :param gpu: the gpu on which the model will work, -1 means working on cpu.
     :param num_threads: the number of threads when model work on cpu, -1 means using all the cores.
 
-    :return: None or StereoExpData
+    :return: the dst_bgef_path
     """
     if staining_type is None:
         raise ValueError("staining_type didn't be gave.")
@@ -90,34 +87,37 @@ def tissue_extraction_to_bgef(
 
     # gef extraction
     bc = BgefCreater()
-    if save_result_bgef:
-        bc.create_bgef(src_gef_path, extract_bin_size, mask_file_path, dst_bgef_path)
-        logger.info(f'gef extraction finish, extracted gef save at {dst_bgef_path}')
-    else:
-        # TODO: has not finished, need recheck
-        data = StereoExpData(bin_size=1)
-        uniq_cells, uniq_genes, count, cell_ind, gene_ind = bc.get_stereo_data(
-            src_gef_path, extract_bin_size, mask_file_path)
-        logger.info(f'the matrix has {len(uniq_cells)} cells, and {len(uniq_genes)} genes.')
+    bc.create_bgef(src_gef_path, extract_bin_size, mask_file_path, dst_bgef_path)
+    logger.info(f'gef extraction finish, extracted gef save at {dst_bgef_path}')
+    # if save_result_bgef:
+    #     bc.create_bgef(src_gef_path, extract_bin_size, mask_file_path, dst_bgef_path)
+    #     logger.info(f'gef extraction finish, extracted gef save at {dst_bgef_path}')
+    # else:
+    #     # TODO: has not finished, need recheck
+    #     data = StereoExpData(bin_size=1)
+    #     uniq_cells, uniq_genes, count, cell_ind, gene_ind = bc.get_stereo_data(
+    #         src_gef_path, extract_bin_size, mask_file_path)
+    #     logger.info(f'the matrix has {len(uniq_cells)} cells, and {len(uniq_genes)} genes.')
 
-        data.position = np.array(
-            list((zip(np.right_shift(uniq_cells, 32), np.bitwise_and(uniq_cells, 0xffff))))).astype('uint32')
-        data.offset_x = data.position[0].min()
-        data.offset_y = data.position[1].min()
-        data.attr = {
-            'minX': data.offset_x,
-            'minY': data.offset_y,
-            'maxX': data.position[0].max(),
-            'maxY': data.position[1].max(),
-            'minExp': count.min(),
-            'maxExp': count.max(),
-            'resolution': 0,
-        }
-        data.cells = Cell(cell_name=uniq_cells)
-        data.genes = Gene(gene_name=uniq_genes)
-        data.exp_matrix = csr_matrix(
-            (count, (cell_ind, gene_ind)),
-            shape=(len(uniq_cells), len(uniq_genes)),
-            dtype=np.uint32
-        )
-        return data
+    #     data.position = np.array(
+    #         list((zip(np.right_shift(uniq_cells, 32), np.bitwise_and(uniq_cells, 0xffff))))).astype('uint32')
+    #     data.offset_x = data.position[0].min()
+    #     data.offset_y = data.position[1].min()
+    #     data.attr = {
+    #         'minX': data.offset_x,
+    #         'minY': data.offset_y,
+    #         'maxX': data.position[0].max(),
+    #         'maxY': data.position[1].max(),
+    #         'minExp': count.min(),
+    #         'maxExp': count.max(),
+    #         'resolution': 0,
+    #     }
+    #     data.cells = Cell(cell_name=uniq_cells)
+    #     data.genes = Gene(gene_name=uniq_genes)
+    #     data.exp_matrix = csr_matrix(
+    #         (count, (cell_ind, gene_ind)),
+    #         shape=(len(uniq_cells), len(uniq_genes)),
+    #         dtype=np.uint32
+    #     )
+    #     return data
+    return dst_bgef_path

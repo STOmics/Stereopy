@@ -89,8 +89,8 @@ class SingleR(AlgorithmBase):
                                 If it is set to num(eg: 5), it will only loop only 5 times, and choose the first one.
         :param n_jobs: `joblib` parameter, will create `n_jobs` num of threads to work.
         :param res_key: default to `annotation`, means the result will be stored as key `annotation` in the `tl.result`.
-        :param methods：whether to use GPU acceleration, if methods is `rapids`, it means using, It is not used by default.
-        :param gpuid：slots used by gpu, default to 0.
+        :param methods: whether to use GPU acceleration, if methods is `rapids`, it means using, It is not used by default.
+        :param gpuid: slots used by gpu, default to 0.
 
         :return: `pandas.DataFrame`
         """  # noqa
@@ -101,6 +101,13 @@ class SingleR(AlgorithmBase):
         total_start_time = time.time()
         test_exp_data = self.stereo_exp_data.sub_by_name(gene_name=interact_genes)
         ref_exp_data = ref_exp_data.sub_by_name(gene_name=interact_genes)
+
+        if not cluster_res_key and method == 'rapids':
+            try:
+                from cusingler import cusingler
+            except ImportError:
+                logger.warning("The cusingler dosen't be installed, it will use cpu to process!")
+                method = 'default'
         if not cluster_res_key and method == 'rapids':
             from cusingler import cusingler
             self.check_gpu_env()

@@ -1322,10 +1322,9 @@ class StPipeline(object):
 
         :param annotation_information: describe the annotation information to the clusters in a list or dictionary format. # noqa
         :param cluster_res_key: get the targeted cluster result to add annotation.
-        :param default: the default value for the groups that haven't been annotated, if None, remain the original value.
+        :param default: the default value for the groups without being annotated, if None, remain the original value.
         :param res_key: the key for storing annotation result in `self.result`.
 
-        :return: Annotation result is stored in `self.result` where the key is `'annotation'`.
         """
 
         assert cluster_res_key in self.result, f'{cluster_res_key} is not in the result, please check and run the ' \
