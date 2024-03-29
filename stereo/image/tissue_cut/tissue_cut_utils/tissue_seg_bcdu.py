@@ -11,8 +11,8 @@ from skimage import filters
 from . import tissue_seg_bcdu_model as M
 from . import tissue_seg_bcdu_uity as uity
 
-os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
-os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
+# os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
+# os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
 
 
 class cl_bcdu(object):

@@ -30,11 +30,12 @@ def _download(url: str, dir_str: str = "./stereopy_data/", file_name: str = None
             open_url = urlopen(req, context=create_default_context(cafile=where()))
 
         with open_url as resp:
-            content_disposition = resp.info().get("content-disposition", None)
-            if content_disposition:
-                remote_file_name = content_disposition.split(';')[1].split('=')[1].replace('\"', '')
-            else:
-                raise Exception('remote file not exists')
+            if file_name is None:
+                content_disposition = resp.info().get("content-disposition", None)
+                if content_disposition:
+                    file_name = content_disposition.split(';')[1].split('=')[1].replace('\"', '')
+                else:
+                    raise Exception('remote file not exists')
 
             from pathlib import Path
             if not dir_str:
@@ -45,13 +46,13 @@ def _download(url: str, dir_str: str = "./stereopy_data/", file_name: str = None
             if not path.is_dir():
                 path.mkdir()
 
-            path = Path(path.__str__() + '/' + remote_file_name)
+            path = Path(path.__str__() + '/' + file_name)
             if path.is_file():
                 return path.__str__()
 
             total = resp.info().get("content-length", None)
             total_mb = str('%.4f') % (int(total) / 1024 / 1024)
-            logger.info(f'You are starting to download a {total_mb} MB file named {remote_file_name}...')
+            logger.info(f'You are starting to download a {total_mb} MB file named {file_name}...')
 
             with tqdm(
                     unit="B",

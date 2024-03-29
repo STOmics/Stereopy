@@ -20,25 +20,33 @@ class Gene(object):
         self._var = pd.DataFrame(index=gene_name if gene_name is None else gene_name.astype('U'))
         self._matrix = dict()
         self._pairwise = dict()
-        self.loc = self._var.loc
+        # self.loc = self._var.loc
 
     def __contains__(self, item):
         return item in self._var.columns
 
-    def __setattr__(self, key, value):
-        if key in {'_var', '_matrix', '_pairwise', 'gene_name', 'loc'}:
-            object.__setattr__(self, key, value)
-        else:
-            if value is not None:
-                self._var[key] = value
+    # def __setattr__(self, key, value):
+    #     if key in {'_var', '_matrix', '_pairwise', 'gene_name', 'loc'}:
+    #         object.__setattr__(self, key, value)
+    #     else:
+    #         if value is not None:
+    #             self._var[key] = value
 
     def __setitem__(self, key, value):
         self._var[key] = value
 
     def __getitem__(self, key):
-        if key not in self._var.columns:
-            return None
+        # if key not in self._var.columns:
+        #     return None
         return self._var[key]
+    
+    @property
+    def loc(self):
+        return self._var.loc
+    
+    @property
+    def iloc(self):
+        return self._var.iloc
 
     @property
     def n_cells(self):
@@ -93,6 +101,13 @@ class Gene(object):
         if not isinstance(name, np.ndarray):
             raise TypeError('gene name must be a np.ndarray object.')
         self._var = self._var.reindex(name)
+    
+    @property
+    def real_gene_name(self):
+        if 'real_gene_name' in self._var.columns:
+            return self._var['real_gene_name'].to_numpy().astype('U')
+        else:
+            return None
 
     def sub_set(self, index):
         """
@@ -132,9 +147,9 @@ class Gene(object):
 
 class AnnBasedGene(Gene):
 
-    def __init__(self, based_ann_data: AnnData, gene_name: Optional[np.ndarray]):
+    def __init__(self, based_ann_data: AnnData, gene_name: Optional[np.ndarray] = None):
         self.__based_ann_data = based_ann_data
-        super().__init__(gene_name)
+        super(AnnBasedGene, self).__init__(gene_name)
 
     def __setattr__(self, key, value):
         if key == '_var':
@@ -156,6 +171,14 @@ class AnnBasedGene(Gene):
     @property
     def _var(self):
         return self.__based_ann_data.var
+    
+    # @property
+    # def loc(self):
+    #     return self.__based_ann_data.var.loc
+    
+    # @property
+    # def iloc(self):
+    #     return self.__based_ann_data.var.iloc
 
     @property
     def gene_name(self) -> np.ndarray:
@@ -180,6 +203,13 @@ class AnnBasedGene(Gene):
             raise ValueError(f'The length of gene names must be {self.__based_ann_data.n_vars}, but now is {name.size}')
         self.__based_ann_data.var_names = name
         # self.__based_ann_data._inplace_subset_var(name)
+    
+    @property
+    def real_gene_name(self):
+        if 'real_gene_name' in self.__based_ann_data.var.columns:
+            return self.__based_ann_data.var['real_gene_name'].to_numpy().astype('U')
+        else:
+            return None
 
     def to_df(self):
         return self.__based_ann_data.var

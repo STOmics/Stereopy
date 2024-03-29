@@ -15,8 +15,8 @@ class TestIO(unittest.TestCase):
     UNS_KEYS = {'gene_exp_cluster@gene_exp_leiden', 'hvg', 'neighbors', 'sn'}
     OBSM_KEYS = {'X_pca', 'X_umap', 'spatial'}
     OBSP_KEYS = {'connectivities', 'distances'}
-    SCT_UNS_KEYS = {'sn', 'hvg', 'sct_counts', 'sct_data', 'sct_scale', 'sct_scale_genename', 'sct_top_features',
-                    'sct_cellname', 'sct_genename'}
+    SCT_UNS_KEYS = {'sn', 'hvg', 'sct_counts', 'sct_data', 'sct_scale', 'sct_scale_genename',
+                    'sct_top_features', 'sct_cellname', 'sct_genename'}
 
     @classmethod
     def setUpClass(cls) -> None:

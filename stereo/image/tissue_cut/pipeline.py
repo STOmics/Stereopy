@@ -5,369 +5,228 @@
 
 import copy
 import os
-from typing import Optional
+from typing import Optional, Union, List
 
 import cv2
 import numpy as np
 import tifffile
 from skimage import measure
+import glob
+
+from functools import partial
+from multiprocessing import cpu_count
+from cellbin.modules.tissue_segmentation import TissueSegmentation
 
 from stereo.log_manager import logger
-from .tissue_cut_utils import tissue_seg_bcdu as bcdu
-from .tissue_cut_utils import tissue_seg_utils as util
-
-np.random.seed(123)
-
-# source image type enum
-RNA = 0
-ssDNA = 1  # NOTE: ssDNA is stranded DNA
-SRC_IMG_TYPE_SET = {RNA, ssDNA}
-
-# segmentation method
-INTENSITY = 0
-DEEP = 1  # NOTE: deep learning
-SEG_METHOD_SET = {INTENSITY, DEEP}
 
 
-class _TissueCut(object):
-
+class SingleStrandDNATissueCut(object):
     def __init__(
             self,
-            src_img_path: Optional[str],
-            model_path: Optional[str] = "",
-            src_img_type: Optional[int] = ssDNA,
-            dst_img_path: Optional[str] = "",
-            seg_method: Optional[int] = DEEP,
-    ):
+            src_img_path: Union[str, List[str]] = None,
+            staining_type: str = None,
+            model_path: str = None,
+            dst_img_path: str = None,
+            gpu: Union[int, str] = -1,
+            num_threads: int = -1
+        ):
         """
-        Tissue segmentation based on ssDNA images.
+        Tissue Segmentation based on regist.tif
 
-            :param src_img_path: source image path, specify one image to transforming
-            :param model_path: should specify when using `src_img_type` as `ssDNA`
-            :param src_img_type: choose one of `RNA`, `ssDNA`,
-            :param dst_img_path: result image path, default to working path
-            :param seg_method: choose one of `INTENSITY`, `DEEP`
+        :param src_img_path: the path of regist.tif, defaults to None
+        :param staining_type: the staining type of regist.tif, available values include 'ssDNA', 'dapi',  'HE' and 'mIF', defaults to None
+        :param model_path: the path of model, it has to be matched with staining type, defaults to None
+        :param dst_img_path: the path of directory to save result mask.tif, defaults to save into the directory of regist.tif.
+        :param gpu: the gpu on which the model will work, -1 means working on cpu.
+        :param num_threads: the number of threads when model work on cpu, -1 means using all the cores.
         """
-        # FIXME: `RNA` can not use seg_method `DEEP`
-        if src_img_type == RNA and seg_method == DEEP:
-            seg_method = INTENSITY
-            logger.warning("`RNA` type image can not use deep-learning segmentation method, auto change to `INTENSITY`")
-        elif seg_method == DEEP and not model_path:
-            raise Exception("Found no `model path`, please assign `model_path` to your local h5df model path")
-        self.src_img_path = src_img_path
-        self.src_img_type = src_img_type
+
+        self._check_staining_type(staining_type)
+
+        if num_threads <= 0:
+            num_threads = cpu_count()
+
+        self.seg_instance = TissueSegmentation(
+            model_path=model_path,
+            stype=staining_type,
+            gpu=gpu,
+            num_threads=num_threads
+        )
+        self.images_data, self.files_dir, self.files_prefix = self.load_images(src_img_path)
+        if dst_img_path is not None:
+            os.makedirs(dst_img_path, exist_ok=True)
         self.dst_img_path = dst_img_path
-        self.dst_img_file_path = []
-        self.seg_method = seg_method
-        self.model_path = model_path
-
-        logger.info('source image type: %s' % ('ssdna' if self.src_img_type else 'RNA'))
-        logger.info('segmentation method: %s' % ('deep learning' if seg_method else 'intensity segmentation'))
-        # init property
-        self.img = []
-        self.shape = []
-        self.img_thumb = []
-        self.mask_thumb = []
         self.mask = []
-        self.file = []
-        self.file_name = []
-        self.file_ext = []
+        self.mask_paths = []
 
-        self._preprocess_file(self.src_img_path)
+    def _check_image_type(self, image_path_or_name: str):
+        return image_path_or_name.endswith('tif') or \
+                image_path_or_name.endswith('tiff') or \
+                image_path_or_name.endswith('TIF') or \
+                image_path_or_name.endswith('TIFF')
+    
+    def _check_staining_type(self, staining_type: str):
+        if staining_type is None:
+            raise ValueError("staining_type didn't be gave.")
+        
+        if staining_type.lower() not in ('ssdna', 'dapi',  'he', 'mif'):
+            raise ValueError("staining_type only can be 'ssDNA', 'dapi',  'HE' or 'mIF'.")
 
-        self.is_init_bcdu = False
-        self.oj_bcdu = None
-
-    # parse file name
-    def _preprocess_file(self, path):
-
-        if os.path.isdir(path):
-            self.path = path
-            file_list = os.listdir(path)
-            self.file = file_list
-            self.file_name = [os.path.splitext(f)[0] for f in file_list]
-            self.file_ext = [os.path.splitext(f)[1] for f in file_list]
-        else:
-            self.path = os.path.split(path)[0]
-            self.file = [os.path.split(path)[-1]]
-            self.file_name = [os.path.splitext(self.file[0])[0]]
-            self.file_ext = [os.path.splitext(self.file[0])[-1]]
-
-    # RNA image bin
-    def _bin(self, img):
-        logger.debug("RNA image dType=%s" % img.dtype)
-        if img.dtype == 'uint8':
-            bin_size = 20
-        else:
-            bin_size = 200
-        kernel = np.ones((bin_size, bin_size), dtype=np.uint8)
-        return cv2.filter2D(img, -1, kernel)
-
-    def transfer_16bit_to_8bit(self, image_16bit):
-        min_16bit = np.min(image_16bit)
-        max_16bit = np.max(image_16bit)
-
-        image_8bit = np.array(np.rint(255 * ((image_16bit - min_16bit) / (max_16bit - min_16bit))), dtype=np.uint8)
-
-        return image_8bit
-
-    def resize(self, img, l=512):  # noqa
-        h, w = img.shape[:2]
-        ratio = l / max(h, w)
-        show_h = int(h * ratio)
-        show_w = int(w * ratio)
-        img_out = cv2.resize(img, (show_w, show_h))
-        return img_out
-
-    def ij_auto_contrast(self, img):
-        limit = img.size / 10
-        threshold = img.size / 5000
-        if img.dtype != 'uint8':
-            bit_max = 65536
-        else:
-            bit_max = 256
-        hist, _ = np.histogram(img.flatten(), 256, [0, bit_max])
-        hmin = 0
-        hmax = bit_max - 1
-        for i in range(1, len(hist) - 1):
-            count = hist[i]
-            if count > limit:
-                continue
-            if count > threshold:
-                hmin = i
-                break
-        for i in range(len(hist) - 2, 0, -1):
-            count = hist[i]
-            if count > limit:
-                continue
-            if count > threshold:
-                hmax = i
-                break
-        dst = copy.deepcopy(img)
-        if hmax > hmin:
-            hmax = int(hmax * bit_max / 256)
-            hmin = int(hmin * bit_max / 256)
-            dst[dst < hmin] = hmin
-            dst[dst > hmax] = hmax
-            cv2.normalize(dst, dst, 0, bit_max - 1, cv2.NORM_MINMAX)
-        return dst
-
-    def save_tissue_mask(self):
-        for idx, tissue in enumerate(self.mask):
-            self.dst_img_file_path.append(os.path.join(self.dst_img_path, self.file_name[idx] + r'_tissue_cut.tif'))
-            if np.sum(tissue) == 0:
-                h, w = tissue.shape[:2]
-                tissue = np.ones((h, w), dtype=np.uint8)
-                tifffile.imsave(self.dst_img_file_path[-1], tissue)
+    def get_image_paths(self, image_path):
+        if isinstance(image_path, str):
+            if not os.path.isfile(image_path) and not os.path.isdir(image_path):
+                raise ValueError(f'{image_path} is not a path of file or directory.')
+            if not os.path.exists(image_path):
+                raise FileNotFoundError(f'{image_path} is not Found.')
+            if os.path.isfile(image_path):
+                if not self._check_image_type(image_path):
+                    raise TypeError(f'Error type image ({image_path}).')
+                image_path_list = [image_path]
             else:
-                tifffile.imsave(self.dst_img_file_path[-1], (tissue > 0).astype(np.uint8))
-        logger.info('seg results saved in %s' % self.dst_img_file_path[-1])
-
-    # preprocess image for deep learning
-    def get_thumb_img(self):
-        logger.info('image loading and preprocessing...')
-
-        for ext, file in zip(self.file_ext, self.file):
-            assert ext in {'.tif', '.tiff', '.png', '.jpg'}
-            if ext == '.tif' or ext == '.tiff':
-                img = tifffile.imread(os.path.join(self.path, file))
-                img = np.squeeze(img)
-                if len(img.shape) == 3:
-                    img = img[:, :, 0]
-            else:
-                img = cv2.imread(os.path.join(self.path, file), 0)
-
-            self.img.append(img)
-
-            self.shape.append(img.shape)
-
-            if self.seg_method:
-                self.img_thumb.append(img)
-
-    # tissue segmentation by intensity filter
-    def tissue_seg_intensity(self):
-
-        def getArea(elem):
-            return elem.area
-
-        self.get_thumb_img()
-
-        logger.info('segment by intensity...')
-        for idx, ori_image in enumerate(self.img):
-            shapes = ori_image.shape
-            if not self.src_img_type:
-                ori_image = self._bin(ori_image)
-
-            image_thumb = util.down_sample(ori_image, shape=(shapes[0] // 5, shapes[1] // 5))
-
-            if image_thumb.dtype != 'uint8':
-                image_thumb = util.transfer_16bit_to_8bit(image_thumb)
-
-            self.img_thumb.append(image_thumb)
-
-            # binary
-            ret1, mask_thumb = cv2.threshold(image_thumb, 125, 255, cv2.THRESH_OTSU)
-
-            kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (20, 20))  # oval-shaped
-            mask_thumb = cv2.morphologyEx(mask_thumb, cv2.MORPH_CLOSE, kernel, iterations=8)
-
-            # choose tissue prop
-            label_image = measure.label(mask_thumb, connectivity=2)
-            props = measure.regionprops(label_image, intensity_image=mask_thumb)
-            props.sort(key=getArea, reverse=True)
-            areas = [p['area'] for p in props]
-            if np.std(areas) * 10 < np.mean(areas):
-                label_num = len(areas)
-            else:
-                label_num = int(np.sum(areas >= np.mean(areas)))
-            result = np.zeros((image_thumb.shape)).astype(np.uint8)
-            for i in range(label_num):
-                prop = props[i]
-                result += np.where(label_image != prop.label, 0, 1).astype(np.uint8)
-
-            result_thumb = util.hole_fill(result)
-            self.mask_thumb.append(np.uint8(result_thumb > 0))
-
-        self.__get_roi()
-
-    # filter noise tissue
-    def __filter_roi(self, props):
-
-        if len(props) == 1:
-            return props
+                image_path_list = []
+                for path in glob.glob(os.path.join(image_path, f'*')):
+                    if os.path.isfile(path):
+                        if not self._check_image_type(path):
+                            raise TypeError(f'Error type image ({path}).')
+                        image_path_list.append(path)
+                    elif os.path.isdir(path):
+                        image_path_list.extend(self.get_image_paths(path))
+        elif isinstance(image_path, list):
+            image_path_list = []
+            for path in image_path:
+                image_path_list.extend(self.get_image_paths(path))
         else:
-            filtered_props = []
-            for id, p in enumerate(props):
-                black = np.sum(p['intensity_image'] == 0)
-                sum = p['bbox_area']
-                ratio_black = black / sum
-                pixel_light_sum = np.sum(np.unique(p['intensity_image']) > 128)
-                if ratio_black < 0.75 and pixel_light_sum > 20:
-                    filtered_props.append(p)
-            return filtered_props
+            raise ValueError('src_img_path must be type of string or list.')
+        if len(image_path_list) == 0:
+            raise Exception('There are no images can be processed.')
+        return image_path_list
+    
+    def load_images(self, image_path):
+        image_paths = self.get_image_paths(image_path)
+        images_data = []
+        files_dir = []
+        files_prefix = []
+        for path in image_paths:
+            image_data = tifffile.imread(path)
+            file_dir = os.path.dirname(path)
+            file_name = os.path.basename(path)
+            file_prefix, _ = os.path.splitext(file_name)
+            images_data.append(image_data)
+            files_dir.append(file_dir)
+            files_prefix.append(file_prefix)
+        return images_data, files_dir, files_prefix
 
-    def __get_roi(self):
-        """get tissue area from ssdna"""
-        for idx, tissue_mask in enumerate(self.mask_thumb):
-            label_image = measure.label(tissue_mask, connectivity=2)
-            props = measure.regionprops(label_image, intensity_image=self.img_thumb[idx])
-
-            # remove noise tissue mask
-            filtered_props = self.__filter_roi(props)
-            if len(props) != len(filtered_props):
-                tissue_mask_filter = np.zeros((tissue_mask.shape), dtype=np.uint8)
-                for tissue_tile in filtered_props:
-                    bbox = tissue_tile['bbox']
-                    tissue_mask_filter[bbox[0]: bbox[2], bbox[1]: bbox[3]] += tissue_tile['image']
-                self.mask_thumb[idx] = np.uint8(tissue_mask_filter > 0)
-            self.mask.append(util.up_sample(self.mask_thumb[idx], self.img[idx].shape))
-
-    def tissue_infer_bcud(self):
-        logger.info('tissueCut_model infer...')
-        if not self.is_init_bcdu:
-            if self.model_path:
-                self.oj_bcdu = bcdu.cl_bcdu(self.model_path)
-                self.is_init_bcdu = True
-            else:
-                raise Exception("Found no `model path`, please assign `model_path` to your local h5df model path")
-
-        self.get_thumb_img()
-        if self.oj_bcdu is not None:
-            for img in self.img_thumb:
-                try:
-                    ret, pred, score = self.oj_bcdu.predict(img)
-                except Exception:
-                    logger.info("TissueCut predict error, Please check fov_stitched_transformed.tif")
-                    raise Exception('SAW-A40007', "TissueCut predict error")
-                if ret:
-                    self.mask.append(pred)
+        
 
     def tissue_seg(self):
-        if self.seg_method:
-            self.tissue_infer_bcud()
-        else:
-            self.tissue_seg_intensity()
+        for image_data, file_dir, file_prefix in zip(self.images_data, self.files_dir, self.files_prefix):
+            mask = self.seg_instance.run(image_data)
+            # mask = np.multiply(mask, 255).astype(np.uint8)
+            self.mask.append(mask)
+            save_file_name = f"{file_prefix}_tissue_cut.tif"
+            if self.dst_img_path is not None:
+                save_file_path = os.path.join(self.dst_img_path, save_file_name)
+            else:
+                save_file_path = os.path.join(file_dir, save_file_name)
+            tifffile.imwrite(save_file_path, mask)
+            self.mask_paths.append(save_file_path)
+        return self.mask_paths
 
-        self.save_tissue_mask()
-
-
-class RNATissueCut(_TissueCut):
-
-    def __init__(self,
-                 dst_img_path: Optional[str] = None,
-                 gef_path: Optional[str] = None,
-                 gem_path: Optional[str] = None,
-                 bin_size: int = 20):
+class RNATissueCut(SingleStrandDNATissueCut):
+    
+    def __init__(
+            self,
+            dst_img_path: Optional[str] = None,
+            gef_path: Optional[str] = None,
+            gem_path: Optional[str] = None,
+            bin_size: int = 1,
+            model_path: str = None,
+            gpu: Union[int, str] = -1,
+            num_threads: int = -1
+        ):
         """
-        Tissue segmentation based on RNA expression.
+        Tissue Segmentation based on raw.gef/raw.gem.
 
-        :param dst_img_path: the result image path, default to working path.
+        :param dst_img_path: the path of directory to save result mask.tif, defaults to save into the directory of regist.tif.
         :param gef_path: choose one of `gef_path` and `gem_path`.
         :param gem_path: just like `gef_path`.
         :param bin_size: set 1 mean `bin1` for high quality, or use `bin100` for efficiency.
+        :param model_path: the path of model.
+        :param gpu: the gpu on which the model will work, -1 means working on cpu.
+        :param num_threads: the number of threads when model work on cpu, -1 means using all the cores.
         """
         # Don't need source image type, this class will read data from gef/gem(txt)
-        super().__init__(src_img_path="", src_img_type=RNA, seg_method=INTENSITY, dst_img_path=dst_img_path)
-        if gef_path and gem_path:
-            raise Exception("Using only one image path")
-        elif gef_path:
-            self.get_img_from_x2tif_gef(gef_path, bin_size)
-        elif gem_path:
-            self.get_img_from_x2tif_gem(gem_path)
-        else:
-            raise Exception("Got no image path to cut")
+        # super().__init__(src_img_path="", src_img_type=RNA, seg_method=INTENSITY, dst_img_path=dst_img_path)
+        if gef_path is not None and gem_path is not None:
+            raise Exception("only one of the gef_path and gem_path can be input.")
+        if gef_path is None and gem_path is None:
+            raise Exception("one of the gef_path and gem_path must be input.")
+        
+        # self.bin_size = bin_size
 
-    def _preprocess_file(self, path):
+        if gef_path is not None:
+            self.load_images = partial(self.get_img_from_x2tif_gef, bin_size=bin_size)
+        else:
+            self.load_images = self.get_img_from_x2tif_gem
+
+        super(RNATissueCut, self).__init__(
+            src_img_path=gef_path  if gef_path is not None else gem_path,
+            dst_img_path=dst_img_path,
+            model_path=model_path,
+            staining_type='RNA',
+            gpu=gpu,
+            num_threads=num_threads
+        )
+        
+        # if gef_path:
+        #     self.get_img_from_x2tif_gef(gef_path, bin_size)
+        # elif gem_path:
+        #     self.get_img_from_x2tif_gem(gem_path)
+
+    # def _preprocess_file(self, path):
+    #     pass
+
+    # def tissue_seg(self):
+    #     self.tissue_seg_intensity()
+    #     self.save_tissue_mask()
+
+    # def get_thumb_img(self):
+    #     logger.info('image loading and preprocessing...')
+
+    #     self.img_from_x2tif = np.squeeze(self.img_from_x2tif)
+    #     if len(self.img_from_x2tif.shape) == 3:
+    #         self.img_from_x2tif = self.img_from_x2tif[:, :, 0]
+
+    #     self.img.append(self.img_from_x2tif)
+    #     self.shape.append(self.img_from_x2tif.shape)
+        
+    def _check_staining_type(self, staining_type: str):
         pass
 
-    def tissue_seg(self):
-        self.tissue_seg_intensity()
-        self.save_tissue_mask()
-
-    def get_thumb_img(self):
-        logger.info('image loading and preprocessing...')
-
-        self.img_from_x2tif = np.squeeze(self.img_from_x2tif)
-        if len(self.img_from_x2tif.shape) == 3:
-            self.img_from_x2tif = self.img_from_x2tif[:, :, 0]
-
-        self.img.append(self.img_from_x2tif)
-        self.shape.append(self.img_from_x2tif.shape)
-
-    def get_img_from_x2tif_gef(self, gef_path, bin_size=20):
+    def get_img_from_x2tif_gef(self, gef_path, bin_size=1):
         from stereo.image.x2tif.x2tif import gef2image
-        self.img_from_x2tif = gef2image(gef_path, bin_size=bin_size)
-        self.file = [os.path.split(gef_path)[-1]]
-        self.file_name = [os.path.splitext(self.file[0])[0]]
+        # self.img_from_x2tif = gef2image(gef_path, bin_size=bin_size)
+        # self.file = [os.path.split(gef_path)[-1]]
+        # self.file_name = [os.path.splitext(self.file[0])[0]]
+        images_data = [gef2image(gef_path, bin_size=bin_size)]
+        files_dir = [os.path.dirname(gef_path)]
+        file_name = os.path.basename(gef_path)
+        files_prefix = [os.path.splitext(file_name)[0]]
+        return images_data, files_dir, files_prefix
 
     def get_img_from_x2tif_gem(self, gem_path):
         from stereo.image.x2tif.x2tif import txt2image
-        self.img_from_x2tif = txt2image(gem_path)
-        self.file = [os.path.split(gem_path)[-1]]
-        self.file_name = [os.path.splitext(self.file[0])[0]]
-
-
-class SingleStrandDNATissueCut(_TissueCut):
-
-    def __init__(self,
-                 src_img_path: Optional[str] = None,
-                 model_path: Optional[str] = None,
-                 dst_img_path: Optional[str] = None,
-                 seg_method: Optional[int] = DEEP
-                 ):
-        """
-        Tissue segmentation based on ssDNA images.
-
-        :param src_img_path: source image path, specify one image to transforming.
-        :param model_path: should specify when using `src_img_type` as `ssDNA`.
-        :param dst_img_path: result image path, default to working path.
-        :param seg_method: choose one of `'INTENSITY'`, `'DEEP'`.
-
-        """
-        super().__init__(
-            src_img_type=ssDNA,
-            src_img_path=src_img_path,
-            seg_method=seg_method,
-            dst_img_path=dst_img_path,
-            model_path=model_path
-        )
+        # self.img_from_x2tif = txt2image(gem_path)
+        # self.file = [os.path.split(gem_path)[-1]]
+        # self.file_name = [os.path.splitext(self.file[0])[0]]
+        images_data = [txt2image(gem_path)]
+        files_dir = [os.path.dirname(gem_path)]
+        file_name = os.path.basename(gem_path)
+        files_prefix = [os.path.splitext(file_name)[0]]
+        return images_data, files_dir, files_prefix
+    
+    # def load_images(self, gef_gem_path):
+    #     if 'gef' in gef_gem_path:
+    #         return self.get_img_from_x2tif_gef(gef_gem_path, self.bin_size)
+    #     else:
+    #         return self.get_img_from_x2tif_gem(gef_gem_path)

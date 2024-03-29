@@ -4,11 +4,13 @@ if os.name == 'nt':
     TEST_IMAGE_PATH = os.path.dirname(__file__) + '\\test_image\\'
     os.makedirs(TEST_IMAGE_PATH, exist_ok=True)
     TEST_DATA_PATH = os.path.dirname(__file__) + '\\test_data\\'
+    os.makedirs(TEST_DATA_PATH, exist_ok=True)
 else:
     # os.name == 'posix' or os.name == 'mac' and other OSs
     TEST_IMAGE_PATH = os.path.dirname(__file__) + '/test_image/'
     os.makedirs(TEST_IMAGE_PATH, exist_ok=True)
     TEST_DATA_PATH = os.path.dirname(__file__) + '/test_data/'
+    os.makedirs(TEST_DATA_PATH, exist_ok=True)
 
 # SS200000132BR_A1.bin1.Lasso.gem.gz
 DEMO_132BR_A1_URL = 'https://pan.genomics.cn/ucdisk/api/2.0/share/link/download?' \

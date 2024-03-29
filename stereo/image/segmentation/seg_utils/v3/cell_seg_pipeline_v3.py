@@ -21,10 +21,14 @@ class CellSegPipeV3(CellSegPipe):
 
     def run(self):
         logger.info('Start do cell mask, the method is v3, this will take some minutes.')
+        num_threads = self.kwargs.get('num_threads', 0)
+        if num_threads <= 0:
+            from multiprocessing import cpu_count
+            num_threads = cpu_count()
         cell_seg = CellSegmentation(
             model_path=self.model_path,
-            gpu=self.kwargs.get('gpu', '-1'),
-            num_threads=self.kwargs.get('num_threads', 0),
+            gpu=self.gpu,
+            num_threads=num_threads,
         )
         logger.info(f"Load {self.model_path}) finished.")
         if self.img_path.split('.')[-1] == "tif":
@@ -42,8 +46,9 @@ class CellSegPipeV3(CellSegPipe):
         if img.dtype == np.uint16:
             img = self.transfer_16bit_to_8bit(img)
 
-        if self.kwargs.get('need_tissue_cut', None):
-            self.get_tissue_mask()
+        # if self.kwargs.get('need_tissue_cut', None):
+            # self.get_tissue_mask()
+        if self.tissue_mask is not None:
             img = self._get_img_filter(img, self.tissue_mask[0])
 
         # Run cell segmentation

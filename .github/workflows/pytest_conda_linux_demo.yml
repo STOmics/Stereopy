@@ -11,14 +11,9 @@ on:
 jobs:
   build-linux-and-start-pytest:
     runs-on: cpu
-    defaults:
-      run:
-        shell: bash
     steps:
-    #   - uses: actions/checkout@v3
-      - name: Activate Conda Enviroment
+      - name: 'See Working Dir'
         run: |
-          echo "using conda $(which conda)"
-          conda activate test
+          echo "working dir is $(pwd)"
 
-          echo "using python $(which python)"
+      - uses: actions/checkout@v3

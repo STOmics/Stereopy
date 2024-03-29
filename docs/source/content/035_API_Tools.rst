@@ -16,3 +16,4 @@ The module helps correct cell segmentation and generates corresponding CGEF file
 
     tools.cell_correct.cell_correct
     tools.cell_cut.CellCut.cell_cut
+    tools.tissue_extraction.tissue_extraction_to_bgef
