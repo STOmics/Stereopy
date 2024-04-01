@@ -21,12 +21,15 @@ which is compromised of basic preprocessing, embedding, clustering, and so on.
     core.StPipeline.filter_genes
     core.StPipeline.filter_coordinates
     core.StPipeline.filter_by_clusters
+    core.StPipeline.filter_marker_genes
     core.StPipeline.filter_by_hvgs
     core.StPipeline.raw_checkpoint
     core.StPipeline.sctransform
     core.StPipeline.normalize_total
     core.StPipeline.log1p
     core.StPipeline.scale
+    core.StPipeline.disksmooth_zscore
+    core.StPipeline.quantile
     core.StPipeline.highly_variable_genes
     core.StPipeline.pca
     core.StPipeline.neighbors
@@ -37,6 +40,7 @@ which is compromised of basic preprocessing, embedding, clustering, and so on.
     core.StPipeline.phenograph
     core.StPipeline.find_marker_genes
     core.StPipeline.spatial_hotspot
+    core.StPipeline.batches_integrate
     core.StPipeline.gaussian_smooth
     core.StPipeline.annotation
     core.StPipeline.adjusted_rand_score
