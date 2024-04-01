@@ -23,7 +23,7 @@ class CellSegPipeV1Pro(CellSegPipe):
             tissue_bbox = self.tissue_bbox[idx]
             tissue_img = [img[p[0]: p[2], p[1]: p[3]] for p in tissue_bbox]
 
-            label_list = cellInfer(tissue_img, self.deep_crop_size, self.model_path, self.overlap)
+            label_list = cellInfer(tissue_img, self.deep_crop_size, self.model_path, self.overlap, self.gpu)
             self.tissue_cell_label.append(label_list)
         return 0
 

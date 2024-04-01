@@ -18,7 +18,7 @@ from .utils import (
     split_preproc
 )
 
-os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
+# os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
 
 
 def get_transforms():
@@ -30,7 +30,7 @@ def get_transforms():
     return list_trfms
 
 
-def cellInfer(file, size, model_path, overlap=100):
+def cellInfer(file, size, model_path, overlap=100, gpu='-1'):
     if isinstance(file, list):
         file_list = file
     else:
@@ -46,8 +46,8 @@ def cellInfer(file, size, model_path, overlap=100):
     model.load_state_dict(torch.load(model_path, map_location=lambda storage, loc: storage), strict=True)
     model.eval()
     logger.info('Load model ok.')
-
-    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+    gpu = int(gpu)
+    device = torch.device(f"cuda:{gpu}" if torch.cuda.is_available() and gpu >= 0 else "cpu")
     if torch.cuda.is_available():
         logger.info('GPU type is {}'.format(torch.cuda.get_device_name(0)))
     logger.info(f"using device: {device}")

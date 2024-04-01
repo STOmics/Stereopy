@@ -10,6 +10,9 @@ class _BaseResult(object):
         'leiden', 'louvain', 'phenograph', 'annotation', 'leiden_from_bins', 'louvain_from_bins',
         'phenograph_from_bins', 'annotation_from_bins', 'celltype', 'cell_type'
     }
+    NOT_CLUSTER_PREFIX = {
+        'gene_exp', 'silhouette_score', 'adjusted_rand_score'
+    }
     CONNECTIVITY_NAMES = {'neighbors'}
     REDUCE_NAMES = {'umap', 'pca', 'tsne', 'correct'}
     HVG_NAMES = {'highly_variable_genes', 'hvg', 'highly_variable'}
@@ -148,6 +151,9 @@ class Result(_BaseResult, dict):
 
     def _real_set_item(self, type, key, value):
         if type == Result.CLUSTER:
+            for prefix in Result.NOT_CLUSTER_PREFIX:
+                if key.startswith(prefix):
+                    return False
             self._set_cluster_res(key, value)
         elif type == Result.CONNECTIVITY:
             self._set_connectivities_res(key, value)
@@ -170,7 +176,8 @@ class Result(_BaseResult, dict):
                 return
         for name_type, name_dict in Result.TYPE_NAMES_DICT.items():
             for like_name in name_dict:
-                if not key.startswith('gene_exp_') and like_name in key and self._real_set_item(name_type, key, value):
+                # if not key.startswith('gene_exp_') and like_name in key and self._real_set_item(name_type, key, value):
+                if like_name in key and self._real_set_item(name_type, key, value):
                     return
         if type(value) is pd.DataFrame:
             if 'bins' in value.columns.values and 'group' in value.columns.values:
@@ -339,6 +346,9 @@ class AnnBasedResult(_BaseResult, object):
 
     def _real_set_item(self, type, key, value):
         if type == AnnBasedResult.CLUSTER:
+            for prefix in AnnBasedResult.NOT_CLUSTER_PREFIX:
+                if key.startswith(prefix):
+                    return False
             self._set_cluster_res(key, value)
         elif type == AnnBasedResult.CONNECTIVITY:
             self._set_connectivities_res(key, value)
@@ -359,7 +369,8 @@ class AnnBasedResult(_BaseResult, object):
 
         for name_type, name_dict in AnnBasedResult.TYPE_NAMES_DICT.items():
             for like_name in name_dict:
-                if not key.startswith('gene_exp_') and like_name in key and self._real_set_item(name_type, key, value):
+                # if not key.startswith('gene_exp_') and like_name in key and self._real_set_item(name_type, key, value):
+                if like_name in key and self._real_set_item(name_type, key, value):
                     return
 
         # if key == "regulatory_network_inference":

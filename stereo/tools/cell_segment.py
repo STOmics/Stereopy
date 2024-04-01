@@ -29,8 +29,10 @@ class CellSegment(object):
             model_type='deep-learning',
             depp_cro_size=20000,
             overlap=100,
-            tissue_seg_model_path=None,
-            tissue_seg_method=None,
+            tissue_seg_model_path: str = None,
+            # tissue_seg_method: int = None,
+            tissue_seg_staining_type: str = None,
+            tissue_seg_num_threads: int = -1,
             post_processing_workers=10,
             method='v3'
     ):
@@ -44,9 +46,11 @@ class CellSegment(object):
                 self.mask_out_path,
                 depp_cro_size,
                 overlap,
-                self.gpu,
+                gpu=self.gpu,
                 tissue_seg_model_path=tissue_seg_model_path,
-                tissue_seg_method=tissue_seg_method,
+                # tissue_seg_method=tissue_seg_method,
+                tissue_seg_staining_type=tissue_seg_staining_type,
+                tissue_seg_num_threads=tissue_seg_num_threads,
                 post_processing_workers=post_processing_workers,
                 method=method
             )
@@ -57,9 +61,11 @@ class CellSegment(object):
                 model_path,
                 depp_cro_size,
                 overlap,
-                self.gpu,
+                gpu=self.gpu,
                 tissue_seg_model_path=tissue_seg_model_path,
-                tissue_seg_method=tissue_seg_method,
+                # tissue_seg_method=tissue_seg_method,
+                tissue_seg_staining_type=tissue_seg_staining_type,
+                tissue_seg_num_threads=tissue_seg_num_threads,
                 post_processing_workers=post_processing_workers
             )
         logger.info(f"generate mask end, the results is saved in {self.mask_out_path}")

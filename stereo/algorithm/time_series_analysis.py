@@ -195,7 +195,7 @@ class TimeSeriesAnalysis(AlgorithmBase):
         X = normalization.normalize_total(X, target_sum=1e4)
         X = np.log1p(X)
         X = scale.scale(X, zero_center=True, max_value=None)
-        X_pca = dim_reduce.pca(X, 50)['x_pca']
+        X_pca = dim_reduce.pca(X, min(50 , X.shape[1] -1))['x_pca']
 
         self.stereo_exp_data.tl.result['spatial_feature'] = X_pca
         self.stereo_exp_data.genes_matrix['spatial_feature'] = X_pca

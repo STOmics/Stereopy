@@ -71,6 +71,24 @@ Workflow
 Latest Additions
 ------------------
 
+Version 1.2.0
+~~~~~~~~~~~~~~~~~~~
+1.2.0 : 2024-03-30
+
+Features:
+
+1. `st.io.read_gem` and `st.io.read_gef` support expression matrix files with geneID information.
+2. Analysis results of `find_marker_genes`  will be saved into the output AnnData h5ad.
+3. Upgraded tissue segmentation algorithm.
+4. Addition of `st.tl.adjusted_rand_score` to calculate the adjusted Rand coefficient between two clusters.
+5. Addition of `st.tl.silhouette_score` to calculate the average silhouette coefficient of a cluster.
+6. `h5ad2rds.R` is compatible with AnnData version > 0.7.5, to convert from h5ad to rds files.
+7. Addition of the clustering category labels to the graph of `st.plt.paga_compare`.
+
+BUG Fixes:
+
+1. Fixed the error of high memory consumption when converting `X.raw` into AnnData.
+
 Version 1.1.0
 ~~~~~~~~~~~~~~
 1.1.0 : 2024-01-17
@@ -115,37 +133,6 @@ BUG Fixes:
 6. Error in Batch QC calculation due to data type problem.
 7. There is NaN in Cell Community Detection output after threshold filtering, resulting in a calculating error when performed Find marker genes based on it.
 8. `st.plt.paga_time_series_plot` indicated the image is too large to draw, leading to graph overlap, due to the limitation of matplotlib package.
-
-Version 0.14.0b1 (Beta)
-~~~~~~~~~~~~~~~~~~~~~~~~~
-0.14.0b1 : 2023-9-15
-
-Notice: this Beta version is specifically developed for multi-sample analysis.
-
-Features:
-
-1. Addition of Cell Community Detection (CCD) analysis.
-2. Addition of Cell Co-occurrence analysis.
-3. Addition of Cellpose in cell segmentation, especially for cell cytoplasm using `model_type='cyto2'`.
-4. Addition of circos (`st.plt.ccc_circos_plot`) and sankey (`st.plt.ccc_sankey_plot`) plots in Cell-cell Communication analysis.
-5. Addition of volcano (`st.plt.TVG_volcano_plot`) and tree (`st.plt.time_series_tree_plot`) plots in Time Series analysis.
-6. Addition of PAGA tree plot, `st.plt.paga_plot`.
-7. Addition of visuallization of `st.tl.dendrogram`.
-8. Addition of version check using `st.__version__`.
-9. Supported obtain subset from a data object, using clustering output, by `st.tl.filter_by_clusters`.
-10. Supported filtering data using hvgs, by `st.tl.filter_by_hvgs`.
-11. Supported mapping the clustering result of SquareBin analysis to the same data but in CellBin.
-12. Supported writing annotation information into CGEF file, only clustering result available before.
-13. Supported saving images of PNG and PDF formats, in interactive interface.
-14. Optimized the function of `st.tl.find_marker_genes`.
-15. Optimized the modification of titles in horizontal axis, vertical axis and plot.
-
-BUG Fixes:
-
-1. Fixed the issue that SingleR calculating did not add filtration to the column field when traversing expression matrix, resulting in the subsequent absence of the column index.
-2. Fixed the issue that output Seurat h5ad could not be transformed into R format.
-3. Fixed the issue that clustering output of Leiden was in wrong data type under the scene of GPU acceleration, leading to errors in subsequent analysis which work on the clustering result.
-4. Fixed the issue that clustering result could not be written into GEF file, using `st.io.update_gef`, caused by data type error. From v0.12.1 on, `date.cells.cell_name` has changed from int to string. 
 
 
 .. toctree::

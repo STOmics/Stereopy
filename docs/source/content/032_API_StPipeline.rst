@@ -39,6 +39,8 @@ which is compromised of basic preprocessing, embedding, clustering, and so on.
     core.StPipeline.spatial_hotspot
     core.StPipeline.gaussian_smooth
     core.StPipeline.annotation
+    core.StPipeline.adjusted_rand_score
+    core.StPipeline.silhouette_score
     algorithm.single_r.SingleR.main
     algorithm.batch_qc.BatchQc.main
     algorithm.paste.Paste.main
