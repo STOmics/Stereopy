@@ -386,7 +386,7 @@ class PlotPaga(PlotBase):
         self.stereo_exp_data.cells_matrix['paga_pos'] = positions
         return positions
 
-    def paga_compare(
+    def draw_graph(
             self,
             adjacency: str = 'connectivities_tree',
             color: Optional[str] = None,
@@ -400,7 +400,7 @@ class PlotPaga(PlotBase):
             dot_size: int = 30
     ):
         """
-        abstract paga plot for the paga result and cell distribute around paga.
+        Force-directed graph drawing
 
         :param adjacency: keyword to use for paga or paga tree, available values include 'connectivities' and 'connectivities_tree'. # noqa
         :param color: the col in cells or a gene name to display in compare plot.
@@ -433,6 +433,118 @@ class PlotPaga(PlotBase):
             logger.info(
                 f"color is neither in cells nor in genes, use '{self.pipeline_res['paga']['groups']}' as default")
             color = self.pipeline_res['paga']['groups']
+
+        if color in self.stereo_exp_data.cells:
+            if self.stereo_exp_data.cells[color].dtype == 'category':
+                ax.scatter(cell_pos[:, 0], cell_pos[:, 1], s=size,
+                           c=self.stereo_exp_data.cells[color].cat.codes.to_numpy(), cmap=cmap)
+                cell_pos_df = pd.DataFrame(cell_pos)
+                cell_pos_df[color] = self.stereo_exp_data.cells[color].to_list()
+                cell_center_pos_df = cell_pos_df.groupby(color).mean()
+                for s, row in cell_center_pos_df.iterrows():
+                    ax.text(row[0], row[1], s)
+            else:
+                ax.scatter(cell_pos[:, 0], cell_pos[:, 1], s=size, c=self.stereo_exp_data.cells[color])
+        elif color in self.stereo_exp_data.gene_names:
+            gene_list = list(self.stereo_exp_data.genes.to_df().index)
+            gene_index = gene_list.index(color)
+            clist = self.stereo_exp_data.exp_matrix[:, gene_index]
+            ax.scatter(cell_pos[:, 0], cell_pos[:, 1], s=size, c=clist)
+
+        ax.set_xticks([])
+        ax.set_yticks([])
+        return fig
+
+    def paga_compare(
+            self,
+            basis: Optional[str] = None,
+            adjacency: str = 'connectivities_tree',
+            color: Optional[str] = None,
+            size: int = 1,
+            threshold: float = 0.01,
+            cmap: str = 'tab20',
+            width: int = 15,
+            height: int = 6,
+            dot_size: int = 30
+    ):
+        """
+        abstract paga plot for the paga result and cell distribute around paga.
+
+        :param basis: the embedding of cells, default
+        :param adjacency: keyword to use for paga or paga tree, available values include 'connectivities' and 'connectivities_tree'. # noqa
+        :param color: the col in cells or a gene name to display in compare plot.
+        :param size: cell spot size.
+        :param threshold: prune edges lower than threshold.
+        :param cmap: colormap to use, default with tab20.
+        :param width: the figure width.
+        :param height: the figure height.
+        :param dot_size: The marker size in points**2 (typographic points are 1/72 in.).
+            Default is 30.
+
+        """
+
+        if color is None:
+            color = self.pipeline_res['paga']['groups']
+        if (color not in self.stereo_exp_data.cells) and (color not in self.stereo_exp_data.gene_names):
+            logger.info(
+                f"color is neither in cells nor in genes, use '{self.pipeline_res['paga']['groups']}' as default")
+            color = self.pipeline_res['paga']['groups']
+
+        if basis is None:
+            basis = 'umap'
+        if basis not in self.pipeline_res and basis != 'umap':
+            logger.info(
+                f"{basis} is not in result, use 'umap' as default")
+            basis = 'umap'
+            if basis not in self.pipeline_res:
+                logger.info(
+                    f"umap is not in result, please run umap first, try to use 'pca' instead")
+                basis = 'pca'
+                if basis not in self.pipeline_res:
+                    logger.info(
+                        f"pca is not in result, please specify a dim reduction result, try to run pca or umap first.")
+                    raise KeyError("basis not found: " + str(basis))
+
+        df = self.pipeline_res[basis].copy()
+        df = df[[0, 1]]
+        df[color] = list(self.stereo_exp_data.cells[color])
+        pos = df.groupby(color).mean()
+
+        # calculate node positions
+        adjacency_mat = self.pipeline_res['paga'][adjacency].copy()
+        if threshold > 0:
+            adjacency_mat.data[adjacency_mat.data < threshold] = 0
+            adjacency_mat.eliminate_zeros()
+
+        # network
+        G = pd.DataFrame(adjacency_mat.todense())
+        ct_list = self.stereo_exp_data.cells[color].cat.categories
+
+        pos = pos.loc[ct_list]
+        pos = pos.to_numpy()
+
+        G.index = ct_list
+        G.columns = ct_list
+        Edges = nx.from_pandas_adjacency(G).edges()
+        Nodes2pos = dict(zip(ct_list, list(pos)))
+
+        # parameter setting
+        fig = plt.figure(figsize=(width, height))
+        ax = plt.subplot(1, 2, 1)
+        # network
+        color_list = plt.get_cmap(cmap, len(ct_list))
+        ax.scatter(pos[:, 0], pos[:, 1], c=color_list.colors, zorder=1, s=dot_size)
+        for i in range(len(ct_list)):
+            ax.text(pos[i, 0], pos[i, 1], s=ct_list[i], zorder=2)
+        for i, j in Edges:
+            xi, yi = Nodes2pos[i]
+            xj, yj = Nodes2pos[j]
+            ax.plot([xi, xj], [yi, yj], color='black', zorder=0)
+
+        # plotting
+        ax = plt.subplot(1, 2, 2)
+
+        cell_pos = df[[0, 1]].to_numpy()
 
         if color in self.stereo_exp_data.cells:
             if self.stereo_exp_data.cells[color].dtype == 'category':
