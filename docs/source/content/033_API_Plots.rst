@@ -39,6 +39,7 @@ The plot collection for StereoExpData object.
     plots.PlotCollection.spatial_scatter
     plots.PlotCollection.spatial_scatter_by_gene
     plots.PlotCollection.umap
+    plots.PlotCollection.batches_umap
     plots.PlotCollection.violin
     algorithm.cell_cell_communication.PlotCellCellCommunication.ccc_dot_plot
     algorithm.cell_cell_communication.PlotCellCellCommunication.ccc_heatmap

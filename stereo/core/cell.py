@@ -329,5 +329,5 @@ class AnnBasedCell(Cell):
             raise Exception(f'The cell border must have 3 dimensions, but now {len(cell_border.shape)}.')
         self.__based_ann_data.obsm['cell_border'] = cell_border
 
-    def to_df(self):
-        return self.__based_ann_data.obs
+    def to_df(self, copy=False):
+        return self.__based_ann_data.obs.copy(deep=True) if copy else self.__based_ann_data.obs
