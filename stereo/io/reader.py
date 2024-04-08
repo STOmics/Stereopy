@@ -105,6 +105,10 @@ def read_gem(
             df = parse_bin_coor(df, bin_size)
         else:
             df = parse_bin_coor_no_offset(df, bin_size)
+    
+    if gene_name_index and 'geneName' in df.columns:
+        df['geneID'] = df['geneName']
+
     cells = df['cell_id'].unique()
     genes = df['geneID'].unique()
     cells_dict = dict(zip(cells, range(0, len(cells))))
@@ -114,20 +118,12 @@ def read_gem(
     # logger.info(f'the martrix has {len(cells)} cells, and {len(genes)} genes.')
     exp_matrix = csr_matrix((df['UMICount'], (rows, cols)), shape=(cells.shape[0], genes.shape[0]), dtype=np.int32)
     data.cells = Cell(cell_name=cells)
+    data.genes = Gene(gene_name=genes)
 
-    if 'geneName' in df.columns:
-        gene_names = df['geneName'].unique().astype('U')
-        gene_names = remove_genes_number(gene_names)
-        if gene_name_index:
-            exp_matrix, gene_names = integrate_matrix_by_genes(gene_names, cells.shape[0],
-                                                       exp_matrix.data, exp_matrix.indices, exp_matrix.indptr)
-            data.genes = Gene(gene_name=gene_names)
-        else:
-            data.genes = Gene(gene_name=genes)
-            # data.genes['gene_name_underline'] = gene_names
-            data.genes['real_gene_name'] = gene_names
-    else:
-        data.genes = Gene(gene_name=genes)
+    if not gene_name_index and 'geneName' in df.columns:
+        gene_names = df.groupby(by='geneID').aggregate({'geneName': lambda n: np.unique(n)[0]})['geneName']
+        data.genes['real_gene_name'] = gene_names
+
     data.exp_matrix = exp_matrix if is_sparse else exp_matrix.toarray()
     if data.bin_type == 'bins':
         # data.position = df.loc[:, ['x_center', 'y_center']].drop_duplicates().values

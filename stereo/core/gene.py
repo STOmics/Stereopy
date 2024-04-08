@@ -111,7 +111,7 @@ class Gene(object):
 
     def sub_set(self, index):
         """
-        get the subset of Gene by the index info， the Gene object will be inplaced by the subset.
+        get the subset of Gene by the index info, the Gene object will be inplaced by the subset.
 
         :param index: a numpy array of index info.
         :return: the subset of Gene object.
@@ -211,5 +211,5 @@ class AnnBasedGene(Gene):
         else:
             return None
 
-    def to_df(self):
-        return self.__based_ann_data.var
+    def to_df(self, copy=False):
+        return self.__based_ann_data.var.copy(deep=True) if copy else self.__based_ann_data.var
