@@ -4,5 +4,4 @@ This section shows how to perform interactive plotting and export the region of 
 
 .. nbgallery::
 
-    Interactive_Cluster
     High_Resolution_Export
