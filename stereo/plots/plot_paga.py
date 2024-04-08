@@ -492,7 +492,7 @@ class PlotPaga(PlotBase):
 
         if basis is None:
             basis = 'umap'
-        if basis not in self.pipeline_res and basis != 'umap':
+        if basis not in self.pipeline_res:
             logger.info(
                 f"{basis} is not in result, use 'umap' as default")
             basis = 'umap'
