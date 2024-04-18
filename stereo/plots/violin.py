@@ -189,7 +189,7 @@ def get_data_attr(adata, keys, use_raw, gene_symbols: str = None, obsm_keys: Ite
 
 def violin_distribution(
         data,
-        keys: [str, Iterable] = None,
+        keys: Union[str, Iterable] = None,
         x_label: str = '',
         y_label: Optional[str] = None,
         show_stripplot: Optional[bool] = True,
@@ -220,9 +220,9 @@ def violin_distribution(
     :param rotation_angle: rotation of xtick labels.
     :param group_by: the key of the observation grouping to consider.
     :param multi_panel: Display keys in multiple panels also when groupby is not None.
-    :param scale: The method used to scale the width of each violin. If ‘width’ (the default), each violin will
-            have the same width. If ‘area’, each violin will have the same area.
-            If ‘count’, a violin’s width corresponds to the number of observations.
+    :param scale: The method used to scale the width of each violin. If 'width' (the default), each violin will
+            have the same width. If 'area', each violin will have the same area.
+            If 'count', a violin's width corresponds to the number of observations.
     :param ax: a matplotlib axes object. only works if plotting a single component.
     :param order: Order in which to show the categories.
     :param use_raw: Whether to use raw attribute of adata. Defaults to True if .raw is present.
@@ -281,6 +281,7 @@ def violin_distribution(
             inner=None,
             palette=palette
         )
+        fig = g.figure
 
         if show_stripplot:
             grouped_df = obs_df.groupby(x)
@@ -307,6 +308,7 @@ def violin_distribution(
             axs = setup_axes(ax=ax, panels=['x'] if group_by is None else keys, show_ticks=True, right_margin=0.3, )[0]
         else:
             axs = [ax]
+        fig = axs[0].figure
         for ax, y, ylab in zip(axs, ys, y_label):
             ax = sns.violinplot(x=x, y=y, data=obs_df, order=order, orient='vertical', scale=scale, ax=ax,
                                 palette=palette)
@@ -332,7 +334,8 @@ def violin_distribution(
                 ax.tick_params(axis='x', labelrotation=rotation_angle)
             if title:
                 ax.set_title(title.pop(0) if title else '')
-    pl.show()
+    return fig
+    # pl.show()
 
 
 def setup_axes(
@@ -349,7 +352,7 @@ def setup_axes(
         raise ValueError(f"Projection must be '2d' or '3d', was '{projection}'.")
 
     if left_margin is not None:
-        raise NotImplementedError('We currently don’t support `left_margin`.')
+        raise NotImplementedError("We currently don't support `left_margin`.")
 
     if np.any(colorbars) and right_margin is None:
         right_margin = 1 - rcParams['figure.subplot.right'] + 0.21

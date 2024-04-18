@@ -21,11 +21,19 @@ class Cell(object):
 
     def __init__(
             self,
-            cell_name: Optional[np.ndarray],
+            obs: Optional[pd.DataFrame] = None,
+            cell_name: Optional[np.ndarray] = None,
             cell_border: Optional[np.ndarray] = None,
             batch: Optional[Union[np.ndarray, list, int, str]] = None
     ):
-        self._obs = pd.DataFrame(index=cell_name if cell_name is None else cell_name.astype('U'))
+        if obs is not None:
+            if not isinstance(obs, pd.DataFrame):
+                raise TypeError("obs must be a DataFrame.")
+            self._obs = obs
+            if cell_name is not None:
+                self.cell_name = cell_name
+        else:
+            self._obs = pd.DataFrame(index=cell_name if cell_name is None else cell_name.astype('U'))
         # self.loc = self._obs.loc
         self._matrix = dict()
         self._pairwise = dict()
@@ -62,6 +70,10 @@ class Cell(object):
     @property
     def iloc(self):
         return self._obs.iloc
+    
+    @property
+    def obs(self):
+        return self._obs
 
     @property
     def total_counts(self):
@@ -208,7 +220,7 @@ class AnnBasedCell(Cell):
                  cell_border: Optional[np.ndarray] = None,
                  batch: Optional[Union[np.ndarray, list, int, str]] = None):
         self.__based_ann_data = based_ann_data
-        super(AnnBasedCell, self).__init__(cell_name)
+        super(AnnBasedCell, self).__init__(cell_name=cell_name)
         if cell_border is not None:
             self.cell_border = cell_border
         if batch is not None:

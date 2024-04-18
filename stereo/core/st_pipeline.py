@@ -199,8 +199,11 @@ class StPipeline(object):
         data = filter_cells(self.data, min_gene, max_gene, min_n_genes_by_counts, max_n_genes_by_counts, pct_counts_mt,
                             cell_list, inplace)
         if data.raw is not None and filter_raw:
-            filter_cells(data.raw, min_gene, max_gene, min_n_genes_by_counts, max_n_genes_by_counts, pct_counts_mt,
-                         cell_list, True)
+            # filter_cells(data.raw, min_gene, max_gene, min_n_genes_by_counts, max_n_genes_by_counts, pct_counts_mt,
+            #              cell_list, True)
+            filter_cells(data.raw, cell_list=data.cell_names, inplace=True)
+            if isinstance(data, AnnBasedStereoExpData):
+                data.adata.raw = data.raw.adata
         return data
 
     @logit
@@ -237,7 +240,9 @@ class StPipeline(object):
         from ..preprocess.filter import filter_genes
         data = filter_genes(self.data, min_cell, max_cell, gene_list, mean_umi_gt, inplace)
         if data.raw is not None and filter_raw:
-            filter_genes(data.raw, min_cell, max_cell, gene_list, mean_umi_gt, True)
+            filter_genes(data.raw, gene_list=data.genes.gene_name, inplace=True)
+            if isinstance(data, AnnBasedStereoExpData):
+                data.adata.raw = data.raw.adata
         return data
 
     @logit
@@ -268,10 +273,13 @@ class StPipeline(object):
         from ..preprocess import filter_genes
         hvgs_flag = self.result[hvg_res_key]['highly_variable'].to_numpy()
         hvgs = self.data.gene_names[hvgs_flag]
+        hvg_result_filtered = self.result[hvg_res_key][hvgs_flag]
         data = filter_genes(self.data, gene_list=hvgs, inplace=inplace)
         if data.raw is not None and filter_raw:
             filter_genes(data.raw, gene_list=hvgs, inplace=True)
-        data.tl.result[hvg_res_key] = data.tl.result[hvg_res_key][hvgs_flag]
+            if isinstance(data, AnnBasedStereoExpData):
+                data.adata.raw = data.raw.adata
+        data.tl.result[hvg_res_key] = hvg_result_filtered
         return data
 
     @logit
@@ -309,6 +317,8 @@ class StPipeline(object):
         data = filter_coordinates(self.data, min_x, max_x, min_y, max_y, inplace)
         if data.raw is not None and filter_raw:
             filter_coordinates(data.raw, min_x, max_x, min_y, max_y, True)
+            if isinstance(data, AnnBasedStereoExpData):
+                data.adata.raw = data.raw.adata
         return data
 
     @logit
@@ -355,6 +365,8 @@ class StPipeline(object):
             data.tl.result[gene_exp_cluster_key] = data.tl.result[gene_exp_cluster_key][groups]
         if data.raw is not None and filter_raw:
             filter_cells(data.raw, cell_list=data.cell_names, inplace=True)
+            if isinstance(data, AnnBasedStereoExpData):
+                data.adata.raw = data.raw.adata
         return data
 
     @logit
@@ -531,6 +543,8 @@ class StPipeline(object):
 
         if data.raw is not None and filter_raw and data.shape != data.raw.shape:
             filter_genes(data.raw, gene_list=data.gene_names, inplace=True)
+            if isinstance(data, AnnBasedStereoExpData):
+                data.adata.raw = data.raw.adata
 
     @logit
     def highly_variable_genes(

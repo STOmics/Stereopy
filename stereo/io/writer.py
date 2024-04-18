@@ -86,10 +86,13 @@ def write_h5ad(
         _write_one_h5ad(f, data, use_raw=use_raw, use_result=use_result, key_record=key_record)
 
 
-def _write_one_h5ad(f, data: StereoExpData, use_raw=False, use_result=True, key_record=None):
+def _write_one_h5ad(f: h5py.File, data: StereoExpData, use_raw=False, use_result=True, key_record=None):
     if data.attr is not None:
         for key, value in data.attr.items():
             f.attrs[key] = value
+    f.attrs['bin_type'] = data.bin_type
+    f.attrs['bin_size'] = data.bin_size
+    f.attrs['merged'] = data.merged
     if data.sn is not None:
         sn_list = []
         if isinstance(data.sn, str):
@@ -115,9 +118,9 @@ def _write_one_h5ad(f, data: StereoExpData, use_raw=False, use_result=True, key_
         h5ad.write(data.exp_matrix, f, 'exp_matrix', sp_format)
     else:
         h5ad.write(data.exp_matrix, f, 'exp_matrix')
-    h5ad.write(data.bin_type, f, 'bin_type')
-    h5ad.write(data.bin_size, f, 'bin_size')
-    h5ad.write(data.merged, f, 'merged')
+    # h5ad.write(data.bin_type, f, 'bin_type')
+    # h5ad.write(data.bin_size, f, 'bin_size')
+    # h5ad.write(data.merged, f, 'merged')
 
     if use_raw is True:
         same_genes = np.array_equal(data.tl.raw.gene_names, data.gene_names)

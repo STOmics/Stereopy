@@ -105,6 +105,7 @@ class StereoExpData(Data):
         self._attr = attr if attr is not None else {'resolution': 500}
         self._merged = merged
         self._sn = self.get_sn_from_path(file_path)
+        self.bin_coord_offset = False
 
     def get_sn_from_path(self, file_path):
         """
@@ -605,10 +606,12 @@ class StereoExpData(Data):
     def __add__(self, other):
         from stereo.core.ms_data import MSData
         if isinstance(other, StereoExpData):
-            ms_data = MSData([self, other])
+            return MSData([self, other])
+        elif isinstance(other, MSData):
+            return other.__add__(self)
         else:
-            raise TypeError
-        return ms_data
+            raise TypeError("only support StereoExpData and MSData!")
+        
 
 
 class AnnBasedStereoExpData(StereoExpData):
@@ -660,6 +663,7 @@ class AnnBasedStereoExpData(StereoExpData):
             self._tl._raw = AnnBasedStereoExpData(based_ann_data=self._ann_data.raw.to_adata())
 
         self.spatial_key = spatial_key
+        self.file_format = 'h5ad'
 
     def __str__(self):
         return str(self._ann_data)
@@ -811,8 +815,8 @@ class AnnBasedStereoExpData(StereoExpData):
             self._ann_data._inplace_subset_obs(cell_index)
         if gene_index is not None:
             self._ann_data._inplace_subset_var(gene_index)
-        if self._ann_data.raw:
-            self.tl.raw = AnnBasedStereoExpData(based_ann_data=self._ann_data.raw.to_adata())
+        # if self._ann_data.raw:
+        #     self.tl.raw = AnnBasedStereoExpData(based_ann_data=self._ann_data.raw.to_adata())
         return self
 
     def sub_by_name(
@@ -827,8 +831,8 @@ class AnnBasedStereoExpData(StereoExpData):
             data._ann_data._inplace_subset_obs(cell_name)
         if gene_name is not None:
             data._ann_data._inplace_subset_var(gene_name)
-        if data._ann_data.raw:
-            data.tl.raw = AnnBasedStereoExpData(based_ann_data=data._ann_data.raw.to_adata())
+        # if data._ann_data.raw:
+        #     data.tl.raw = AnnBasedStereoExpData(based_ann_data=data._ann_data.raw.to_adata())
         return data
 
     # @staticmethod

@@ -45,7 +45,7 @@ def read_gem(
         bin_type: str = "bins",
         bin_size: int = 100,
         is_sparse: bool = True,
-        bin_coor_offset: bool = False,
+        bin_coord_offset: bool = False,
         gene_name_index: bool = False
 ):
     """
@@ -63,7 +63,7 @@ def read_gem(
         the size of bin to merge, when `bin_type` is set to `'bins'`.
     is_sparse
         the expression matrix is sparse matrix, if `True`, otherwise `np.ndarray`.
-    bin_coor_offset
+    bin_coord_offset
         if set it to True, the coordinates of bins are calculated as
         ((gene_coordinates - min_coordinates) // bin_size) * bin_size + min_coordinates + bin_size/2
     gene_name_index
@@ -76,7 +76,7 @@ def read_gem(
     -------------
     An object of StereoExpData.
     """
-    data = StereoExpData(file_path=file_path, bin_type=bin_type, bin_size=bin_size)
+    data = StereoExpData(file_path=file_path, file_format='gem', bin_type=bin_type, bin_size=bin_size)
     df = pd.read_csv(str(data.file), sep=sep, comment='#', header=0)
     if 'MIDCounts' in df.columns:
         df.rename(columns={'MIDCounts': 'UMICount'}, inplace=True)
@@ -101,7 +101,7 @@ def read_gem(
     if data.bin_type == 'cell_bins':
         gdf = parse_cell_bin_coor(df)
     else:
-        if bin_coor_offset:
+        if bin_coord_offset:
             df = parse_bin_coor(df, bin_size)
         else:
             df = parse_bin_coor_no_offset(df, bin_size)
@@ -131,6 +131,7 @@ def read_gem(
     else:
         data.position = gdf.loc[cells][['x_center', 'y_center']].values
         data.cells.cell_point = gdf.loc[cells]['cell_point'].values
+    data.position = data.position.astype(np.uint32)
     data.offset_x = df['x'].min()
     data.offset_y = df['y'].min()
     resolution = 500
@@ -147,6 +148,7 @@ def read_gem(
         'maxExp': data.exp_matrix.max(),  # noqa
         'resolution': resolution,
     }
+    data.bin_coord_offset = bin_coord_offset
     logger.info(f'the martrix has {data.cell_names.size} cells, and {data.gene_names.size} genes.')
     return data
 
@@ -247,14 +249,18 @@ def read_stereo_h5ad(
     return data
 
 
-def _read_stereo_h5ad_from_group(f, data: StereoExpData, use_raw, use_result, bin_type=None, bin_size=None):
+def _read_stereo_h5ad_from_group(f: h5py.File, data: StereoExpData, use_raw, use_result, bin_type=None, bin_size=None):
     # read data
     data.bin_type = bin_type if bin_type is not None else 'bins'
     data.bin_size = bin_size if bin_size is not None else 1
+    not_data_attr_keys = {'bin_type', 'bin_size', 'merged'}
     if f.attrs is not None:
         data.attr = {}
         for key, value in f.attrs.items():
-            data.attr[key] = value
+            if key not in not_data_attr_keys:
+                data.attr[key] = value
+            else:
+                setattr(data, key, value)
     for k in f.keys():
         if k == 'cells':
             data.cells = h5ad.read_group(f[k])
@@ -446,6 +452,8 @@ def read_h5ms(file_path, use_raw=True, use_result=True):
                 merged_data = _read_stereo_h5ad_from_group(f[k], merged_data, use_raw, use_result)  # noqa
             elif k == 'names':
                 names = h5ad.read_dataset(f[k])
+                if isinstance(names, np.ndarray):
+                    names = names.tolist()
             elif k == 'var_type':
                 var_type = h5ad.read_dataset(f[k])
             elif k == 'relationship':
@@ -1090,7 +1098,7 @@ def read_gef(
         if not is_cell_bin:
             raise Exception('This file is not the type of CellBin.')
 
-        data = StereoExpData(file_path=file_path, bin_type=bin_type, bin_size=bin_size)
+        data = StereoExpData(file_path=file_path, file_format='gef', bin_type=bin_type, bin_size=bin_size)
         from gefpy.cgef_reader_cy import CgefR
         gef = CgefR(file_path, True)
         cellborders_coord_list, coord_count_per_cell = gef.get_cellborders([])

@@ -891,7 +891,7 @@ class PlotCollection:
         :return: Spatial scatter distribution of clusters.
         """  # noqa
         res = self.check_res_key(res_key)
-        group_list = res['group'].to_numpy()
+        group_list = res['group'].to_numpy(copy=True)
         n = np.unique(group_list).size
         palette = stereo_conf.get_colors(colors, n=n)
         x = self.data.position[:, 0]
