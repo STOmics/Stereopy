@@ -1363,14 +1363,14 @@ Convert(infile, dest = paste0('./',filename,'.h5seurat'),assay = assay, overwrit
 f <- H5File$new(paste0('./',filename,'.h5seurat'), "r+")
 groups <- f$ls(recursive = TRUE)
 
-for (name in groups$name[grepl("categories", groups$name)]) {
+for (name in groups$name[grepl("(?i)(?=.*meta.data.*)(?=.*categories.*).*",groups$name,perl=TRUE)]) {
   names <- strsplit(name, "/")[[1]]
   names <- c(names[1:length(names) - 1], "levels")
   new_name <- paste(names, collapse = "/")
   f[[new_name]] <- f[[name]]
 }
 
-for (name in groups$name[grepl("codes", groups$name)]) {
+for (name in groups$name[grepl("(?i)(?=.*meta.data.*)(?=.*code.*).*",groups$name,perl=TRUE)]) {
   names <- strsplit(name, "/")[[1]]
   names <- c(names[1:length(names) - 1], "values")
   new_name <- paste(names, collapse = "/")
