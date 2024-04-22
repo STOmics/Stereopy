@@ -66,7 +66,7 @@ def download(func):
                     if out_path is not None and len(out_path) > 0:
                         out_path = f"{out_path}_{func.__name__}.{file_format}"
                         figure.savefig(out_path, bbox_inches='tight', dpi=dpi)
-                        static_text.value = f'the plot has alrady been saved in the same directory as this notebook ' \
+                        static_text.value = f'the plot has already been saved in the same directory as this notebook ' \
                                             f'and named as <font color="red"><b>{out_path}</b></font>'
                 finally:
                     export_button.loading = False

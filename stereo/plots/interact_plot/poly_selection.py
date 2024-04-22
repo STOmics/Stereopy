@@ -17,6 +17,7 @@ from stereo.stereo_config import stereo_conf
 from stereo.tools.tools import make_dirs
 from stereo.preprocess import filter_genes
 from stereo.core.stereo_exp_data import StereoExpData
+from stereo.io.utils import get_gem_comments
 
 pn.extension()
 hv.extension('bokeh')
@@ -194,7 +195,8 @@ class PolySelection(object):
         import numba as nb
         import gzip
 
-        original_gem_df = pd.read_csv(origin_file_path, sep='\t', header=0, comment='#')
+        comments_lines, comments = get_gem_comments(origin_file_path)
+        original_gem_df = pd.read_csv(origin_file_path, sep='\t', header=comments_lines, engine='pyarrow')
         original_gem_columns = original_gem_df.columns.copy(deep=True)
         if 'MIDCounts' in original_gem_df.columns:
             original_gem_df.rename(columns={'MIDCounts': 'UMICount'}, inplace=True)
@@ -255,16 +257,6 @@ class PolySelection(object):
         else:
             pass
         selected_gem_df.columns = original_gem_columns
-        comments = []
-        if origin_file_path.endswith('.gz'):
-            open_func = gzip.open
-        else:
-            open_func = open
-        with open_func(origin_file_path, 'rb') as fp:
-            for line in fp:
-                if not line.startswith(b'#'):
-                    break
-                comments.append(line)
         
         if output_path.endswith('.gz'):
             open_func = gzip.open

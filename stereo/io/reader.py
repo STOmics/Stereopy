@@ -33,7 +33,12 @@ from stereo.core.stereo_exp_data import AnnBasedStereoExpData
 from stereo.core.stereo_exp_data import StereoExpData
 from stereo.core.result import _BaseResult
 from stereo.io import h5ad
-from stereo.io.utils import remove_genes_number, integrate_matrix_by_genes, transform_marker_genes_to_anndata
+from stereo.io.utils import(
+    remove_genes_number,
+    integrate_matrix_by_genes,
+    transform_marker_genes_to_anndata,
+    get_gem_comments
+)
 from stereo.log_manager import logger
 from stereo.utils.read_write_utils import ReadWriteUtils
 
@@ -77,7 +82,9 @@ def read_gem(
     An object of StereoExpData.
     """
     data = StereoExpData(file_path=file_path, file_format='gem', bin_type=bin_type, bin_size=bin_size)
-    df = pd.read_csv(str(data.file), sep=sep, comment='#', header=0)
+    comments_lines, _ = get_gem_comments(str(data.file))
+    # df = pd.read_csv(str(data.file), sep=sep, comment='#', header=0)
+    df = pd.read_csv(str(data.file), sep=sep, header=comments_lines, engine='pyarrow')
     if 'MIDCounts' in df.columns:
         df.rename(columns={'MIDCounts': 'UMICount'}, inplace=True)
     elif 'MIDCount' in df.columns:
