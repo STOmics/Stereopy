@@ -55,24 +55,20 @@ def filter_cells(
             and max_n_genes_by_counts is None and pct_counts_mt is None:
         raise ValueError('At least one filter must be set.')
     cal_cells_indicators(data)
+    cell_subset = np.ones(data.cells.size, dtype=np.bool8)
     if min_gene:
-        cell_subset = data.cells.total_counts >= min_gene
-        data.sub_by_index(cell_index=cell_subset)
+        cell_subset &= data.cells.total_counts >= min_gene
     if max_gene:
-        cell_subset = data.cells.total_counts <= max_gene
-        data.sub_by_index(cell_index=cell_subset)
+        cell_subset &= data.cells.total_counts <= max_gene
     if min_n_genes_by_counts:
-        cell_subset = data.cells.n_genes_by_counts >= min_n_genes_by_counts
-        data.sub_by_index(cell_index=cell_subset)
+        cell_subset &= data.cells.n_genes_by_counts >= min_n_genes_by_counts
     if max_n_genes_by_counts:
-        cell_subset = data.cells.n_genes_by_counts <= max_n_genes_by_counts
-        data.sub_by_index(cell_index=cell_subset)
+        cell_subset &= data.cells.n_genes_by_counts <= max_n_genes_by_counts
     if pct_counts_mt:
-        cell_subset = data.cells.pct_counts_mt <= pct_counts_mt
-        data.sub_by_index(cell_index=cell_subset)
+        cell_subset &= data.cells.pct_counts_mt <= pct_counts_mt
     if cell_list is not None:
-        cell_subset = np.isin(data.cells.cell_name, cell_list)
-        data.sub_by_index(cell_index=cell_subset)
+        cell_subset &= np.isin(data.cells.cell_name, cell_list)
+    data.sub_by_index(cell_index=cell_subset)
     return data
 
 
@@ -80,6 +76,8 @@ def filter_genes(
         data: StereoExpData,
         min_cell=None,
         max_cell=None,
+        min_count=None,
+        max_count=None,
         gene_list=None,
         mean_umi_gt=None,
         inplace=True
@@ -97,21 +95,25 @@ def filter_genes(
     :return: StereoExpData object.
     """
     data = data if inplace else copy.deepcopy(data)
-    if min_cell is None and max_cell is None and gene_list is None and mean_umi_gt is None:
-        raise ValueError('please set any of `min_cell` or `max_cell` or `gene_list` or `mean_umi_gt`')
+    if min_cell is None and max_cell is None \
+        and min_count is None and max_count is None \
+        and gene_list is None and mean_umi_gt is None:
+        raise ValueError('please set any of `min_cell`, `max_cell`, `min_count`, `max_count`, `gene_list` and `mean_umi_gt`')
     cal_genes_indicators(data)
+    gene_subset = np.ones(data.genes.size, dtype=np.bool8)
     if min_cell:
-        gene_subset = data.genes.n_cells >= min_cell
-        data.sub_by_index(gene_index=gene_subset)
+        gene_subset &= data.genes.n_cells >= min_cell
     if max_cell:
-        gene_subset = data.genes.n_cells <= max_cell
-        data.sub_by_index(gene_index=gene_subset)
+        gene_subset &= data.genes.n_cells <= max_cell
+    if min_count:
+        gene_subset &= data.genes.n_counts >= min_count
+    if max_count:
+        gene_subset &= data.genes.n_counts <= max_count
     if gene_list is not None:
-        gene_subset = np.isin(data.gene_names, gene_list)
-        data.sub_by_index(gene_index=gene_subset)
+        gene_subset &= np.isin(data.gene_names, gene_list)
     if mean_umi_gt is not None:
-        gene_subset = data.genes.mean_umi > mean_umi_gt
-        data.sub_by_index(gene_index=gene_subset)
+        gene_subset &= data.genes.mean_umi > mean_umi_gt
+    data.sub_by_index(gene_index=gene_subset)
     return data
 
 

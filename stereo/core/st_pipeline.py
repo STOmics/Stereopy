@@ -210,6 +210,8 @@ class StPipeline(object):
     def filter_genes(self,
                      min_cell: Optional[int] = None,
                      max_cell: Optional[int] = None,
+                     min_count: Optional[int] = None,
+                     max_count: Optional[int] = None,
                      gene_list: Optional[Union[list, np.ndarray]] = None,
                      mean_umi_gt: Optional[float] = None,
                      filter_raw: Optional[bool] = True,
@@ -223,6 +225,10 @@ class StPipeline(object):
             minimum number of cells expressed required for a gene to pass filering.
         max_cell
             maximum number of cells expressed required for a gene to pass filering.
+        min_count
+            minimum number of count expressed required for a gene to pass filtering.
+        max_count
+            maximum number of count expressed required for a gene to pass filtering.
         gene_list
             the list of genes to be retained.
         mean_umi_gt
@@ -238,7 +244,7 @@ class StPipeline(object):
         Depending on `inplace`, if `True`, the data will be replaced by those filtered.
         """
         from ..preprocess.filter import filter_genes
-        data = filter_genes(self.data, min_cell, max_cell, gene_list, mean_umi_gt, inplace)
+        data = filter_genes(self.data, min_cell, max_cell, min_count, max_count, gene_list, mean_umi_gt, inplace)
         if data.raw is not None and filter_raw:
             filter_genes(data.raw, gene_list=data.genes.gene_name, inplace=True)
             if isinstance(data, AnnBasedStereoExpData):
