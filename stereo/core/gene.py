@@ -51,6 +51,13 @@ class Gene(object):
         #     return None
         return self._var[key]
     
+    def __len__(self):
+        return self.size
+    
+    @property
+    def size(self):
+        return self.gene_name.size
+    
     @property
     def loc(self):
         return self._var.loc
@@ -58,6 +65,10 @@ class Gene(object):
     @property
     def iloc(self):
         return self._var.iloc
+    
+    @property
+    def to_csv(self):
+        return self._var.to_csv
     
     @property
     def var(self):

@@ -256,7 +256,7 @@ def read_stereo_h5ad(
     return data
 
 
-def _read_stereo_h5ad_from_group(f: h5py.File, data: StereoExpData, use_raw, use_result, bin_type=None, bin_size=None):
+def _read_stereo_h5ad_from_group(f: Union[h5py.File, h5py.Group], data: StereoExpData, use_raw, use_result, bin_type=None, bin_size=None):
     # read data
     data.bin_type = bin_type if bin_type is not None else 'bins'
     data.bin_size = bin_size if bin_size is not None else 1
@@ -329,9 +329,10 @@ def _read_stereo_h5ad_from_group(f: h5py.File, data: StereoExpData, use_raw, use
     return data
 
 
-def _read_stereo_h5_result(key_record: dict, data, f):
+def _read_stereo_h5_result(key_record: dict, data: StereoExpData, f: Union[h5py.File, h5py.Group]):
     import ast
     from ..utils.pipeline_utils import cell_cluster_to_gene_exp_cluster
+    key_record = deepcopy(key_record)
     for analysis_key in list(key_record.keys()):
         res_keys = key_record[analysis_key]
         for res_key in res_keys:
@@ -343,6 +344,10 @@ def _read_stereo_h5_result(key_record: dict, data, f):
                 data.tl.result[res_key] = hvg_df
             if analysis_key in ['pca', 'umap', 'totalVI', 'spatial_alignment_integration']:
                 data.tl.result[res_key] = pd.DataFrame(h5ad.read_dataset(f[f'{res_key}@{analysis_key}']))
+                if analysis_key == 'pca':
+                    variance_ratio_key = f'{res_key}_variance_ratio'
+                    if f'{variance_ratio_key}@{analysis_key}_variance_ratio' in f.keys():
+                        data.tl.result[variance_ratio_key] = h5ad.read_dataset(f[f'{variance_ratio_key}@{analysis_key}_variance_ratio'])  # noqa
             if analysis_key == 'neighbors':
                 data.tl.result[res_key] = {
                     # 'neighbor': h5ad.read_group(f[f'neighbor@{res_key}@neighbors']),
@@ -441,13 +446,15 @@ def read_h5ms(file_path, use_raw=True, use_result=True):
     """
     from stereo.core.ms_data import MSData
     with h5py.File(file_path, mode='r') as f:
-        ms_data = MSData()
+        # ms_data = MSData()
         data_list = []
         merged_data = None
         names = []
         var_type = None
         relationship = None
-        result = {}
+        scopes_data = {}
+        result_keys = {}
+        # result = {}
         for k in f.keys():
             if k == 'sample':
                 for one_slice_key in f[k].keys():
@@ -455,8 +462,16 @@ def read_h5ms(file_path, use_raw=True, use_result=True):
                     data_list.append(
                         _read_stereo_h5ad_from_group(f[k][one_slice_key], data, use_raw, use_result))  # noqa
             elif k == 'sample_merged':
-                merged_data = StereoExpData()
-                merged_data = _read_stereo_h5ad_from_group(f[k], merged_data, use_raw, use_result)  # noqa
+                for mk in f[k].keys():
+                    scope_data = StereoExpData()
+                    scope_data = _read_stereo_h5ad_from_group(f[k][mk], scope_data, use_raw, use_result)
+                    scopes_data[mk] = scope_data
+                    if f[k][mk].attrs is not None:
+                        merged_from_all = f[k][mk].attrs.get('merged_from_all', False)
+                        if merged_from_all:
+                            merged_data = scope_data
+                # merged_data = StereoExpData()
+                # merged_data = _read_stereo_h5ad_from_group(f[k], merged_data, use_raw, use_result)  # noqa
             elif k == 'names':
                 names = h5ad.read_dataset(f[k])
                 if isinstance(names, np.ndarray):
@@ -465,22 +480,30 @@ def read_h5ms(file_path, use_raw=True, use_result=True):
                 var_type = h5ad.read_dataset(f[k])
             elif k == 'relationship':
                 relationship = h5ad.read_dataset(f[k])
-            elif k == 'mss':
-                for key in f['mss'].keys():
-                    data = StereoExpData()
-                    data.tl.result = {}
-                    h5ad.read_key_record(f['mss'][key]['key_record'], data.tl.key_record)
-                    _read_stereo_h5_result(data.tl.key_record, data, f['mss'][key])
-                    result[key] = data.tl.result
+            elif k == 'result_keys':
+                for rk in f[k].keys():
+                    result_keys[rk] = list(h5ad.read_dataset(f[k][rk]))
+            # elif k == 'mss':
+            #     for key in f['mss'].keys():
+            #         data = StereoExpData()
+            #         data.tl.result = {}
+            #         h5ad.read_key_record(f['mss'][key]['key_record'], data.tl.key_record)
+            #         _read_stereo_h5_result(data.tl.key_record, data, f['mss'][key])
+            #         result[key] = data.tl.result
             else:
                 logger.warn(f"{k} not in rules, did not read from h5ms")
 
-        ms_data._names = names
-        ms_data._var_type = var_type
-        ms_data._data_list = data_list
-        ms_data._merged_data = merged_data
-        ms_data.tl.result = result
-        ms_data._relationship = relationship
+        ms_data = MSData(
+            _data_list=data_list,
+            _names=names,
+            _var_type=var_type,
+            _relationship=relationship
+        )
+        ms_data.merged_data = merged_data
+        # ms_data.tl.result = result
+        ms_data.scopes_data = scopes_data
+        ms_data.tl.result_keys = result_keys
+
         return ms_data
 
 

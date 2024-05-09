@@ -63,6 +63,13 @@ class Cell(object):
         #     return None
         return self._obs[key]
     
+    def __len__(self):
+        return self.size
+    
+    @property
+    def size(self):
+        return self._obs.index.size
+    
     @property
     def loc(self):
         return self._obs.loc
@@ -70,6 +77,10 @@ class Cell(object):
     @property
     def iloc(self):
         return self._obs.iloc
+    
+    @property
+    def to_csv(self):
+        return self._obs.to_csv
     
     @property
     def obs(self):

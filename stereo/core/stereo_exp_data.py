@@ -173,8 +173,13 @@ class StereoExpData(Data):
         :return:
         """
         data = copy.deepcopy(self)
-        cell_index = self.get_index(data.cells.cell_name, cell_name) if cell_name is not None else None
-        gene_index = self.get_index(data.genes.gene_name, gene_name) if gene_name is not None else None
+        cell_index, gene_index = None, None
+        if cell_name is not None:
+            cell_index = self.cells.obs.index.get_indexer(cell_name)
+            cell_index = cell_index[cell_index != -1]
+        if gene_name is not None:
+            gene_index = self.genes.var.index.get_indexer(gene_name)
+            gene_index = gene_index[gene_index != -1]
         return data.sub_by_index(cell_index, gene_index)
 
     def sub_exp_matrix_by_name(
@@ -622,7 +627,7 @@ class AnnBasedStereoExpData(StereoExpData):
             based_ann_data: anndata.AnnData = None,
             bin_type: str = None,
             bin_size: int = None,
-            spatial_key: Union[str, list, np.ndarray] = 'spatial',
+            spatial_key: str = 'spatial',
             *args,
             **kwargs
     ):
@@ -763,7 +768,7 @@ class AnnBasedStereoExpData(StereoExpData):
         if (position_z.shape) == 1:
             position_z = position_z.reshape(-1, 1)
         if self.spatial_key in self._ann_data.obsm:
-            self._ann_data.obsm[self.spatial_key][:, 2] = np.concatenate(
+            self._ann_data.obsm[self.spatial_key] = np.concatenate(
                 [self._ann_data.obsm[self.spatial_key][:, [0, 1]], position_z], axis=1)
         else:
             self._ann_data.obs['z'] = position_z

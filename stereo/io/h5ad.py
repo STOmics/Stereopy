@@ -68,7 +68,7 @@ def _(v, f, k):
     write_neighbors(f, k, v)
 
 
-def write_array(f, key, value, dataset_kwargs=MappingProxyType({})):
+def write_array(f: Union[h5py.File, h5py.Group], key, value, dataset_kwargs=MappingProxyType({})):
     # Convert unicode to fixed length strings
     if value.dtype.kind in {'U', 'O'}:
         value = value.astype(h5py.special_dtype(vlen=str))

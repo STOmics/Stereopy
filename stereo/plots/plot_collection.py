@@ -337,8 +337,8 @@ class PlotCollection:
             palette: Optional[str] = 'stereo',
             width: Optional[int] = None,
             height: Optional[int] = None,
-            x_label: Optional[list] = ['spatial1', 'spatial1'],
-            y_label: Optional[list] = ['spatial2', 'spatial2'],
+            x_label: Optional[Union[list, str]] = 'spatial1',
+            y_label: Optional[Union[list, str]] = 'spatial2',
             title: Optional[str] = None,
             vmin: float = None,
             vmax: float = None,
@@ -376,6 +376,10 @@ class PlotCollection:
         from .scatter import multi_scatter
         if title is None:
             title = [' '.join(i.split('_')) for i in cells_key]
+        if isinstance(x_label, str):
+            x_label = [x_label] * len(cells_key)
+        if isinstance(y_label, str):
+            y_label = [y_label] * len(cells_key)
         fig = multi_scatter(
             x=self.data.position[:, 0],
             y=self.data.position[:, 1],
