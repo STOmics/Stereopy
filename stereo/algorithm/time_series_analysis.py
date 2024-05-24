@@ -36,6 +36,9 @@ class TimeSeriesAnalysis(AlgorithmBase):
         :param use_col: the col in obs representing celltype or clustering
         :param branch: celltypes order in use_col
         :param p_val_combination: p_value combination method to use, choosing from ['fisher', 'mean', 'FDR']
+        :param statistical_test_method: one tail statistical test method to be used for up or down regulated examination between time point. choosing from ['t-test', 'permutation', 'wilcoxon'], default to 't-test'
+        :param permutation_batch: permutation_batch to control memory consumption if statistical_test_method == 'permutation', the higher permutation_batch require higher memory consumption. default to 100. 
+        :param permutation_n_resamples: the times of resamples if statistical_test_method == 'permutation', default to 999.
         :param cluster_number: number of cluster
 
         .. note::
@@ -46,10 +49,12 @@ class TimeSeriesAnalysis(AlgorithmBase):
         :param n_spatial_feature: n top features to combine of spatial feature, defaults to 2.
         :param temporal_mean_threshold: filter out genes of which mean absolute temporal feature <= temporal_mean_threshold, defaults to 0.85.
         :param temporal_top_threshold: filter out genes of which top absolute temporal feature < temporal_top_threshold, defaults to 1.
-        :param Epsilon: max value to finish iteration, defaults to 1e-7.
+        :param cluster_method: method to cluster gene based on spatial and temporal feature. choose from ['fuzzy_C_means', 'gaussian_mixture'], default to fuzzy_C_means.
+        :param Epsilon: max value to finish iteration if cluster_method=='fuzzy_C_means', defaults to 1e-7.
         :param w_size: window size to rasterizing spatial expression, default to 20.
         :param use_col: the col in obs representing celltype or clustering, default to None.
         :param branch: celltypes order in use_col, default to None.
+        :param seed: fix seed in numpy to keep output constant in every run.
 
         """  # noqa
         if run_method == RunMethodType.tvg_marker.value:
