@@ -48,7 +48,7 @@ class TotalVi(MSDataAlgorithmBase):
             rna_use_raw: bool = False,
             protein_use_raw: bool = False,
             use_gpu: Union[int, str, bool] = None,
-            core: int = None,
+            num_threads: int = None,
             train_kwargs: Optional[dict] = {},
             **kwags
     ):
@@ -135,7 +135,7 @@ class TotalVi(MSDataAlgorithmBase):
             })
 
         total_vi = scvi.model.TOTALVI(mdata, **kwags)
-        scvi.settings.num_threads = core
+        scvi.settings.num_threads = num_threads
         total_vi.train(use_gpu=use_gpu, **train_kwargs)
 
         if not self._use_hvg:
