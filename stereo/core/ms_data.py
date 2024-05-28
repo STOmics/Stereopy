@@ -108,6 +108,10 @@ class _MSDataView(object):
     @property
     def names(self):
         return self._names
+    
+    @property
+    def num_slice(self):
+        return len(self._data_list)
 
     def __str__(self):
         return f'''data_list: {len(self._data_list)}'''
@@ -666,9 +670,16 @@ class MSData(_MSDataStruct):
             scope_key = scope
         finally:
             return scope_key
+    
+    def remove_scopes_data(self, scope):
+        scope_key = self.generate_scope_key(scope)
+        if scope_key in self._scopes_data:
+            del self._scopes_data[scope_key]
+        if scope_key in self.tl.result_keys:
+            del self.tl.result_keys[scope_key]
 
 
-    def integrate(self, scope=None, **kwargs):
+    def integrate(self, scope=None, remove_existed=False, **kwargs):
         from stereo.utils.data_helper import merge
         if self._var_type not in {"union", "intersect"}:
             raise Exception("Please specify the operation on samples with the parameter '_var_type'")
@@ -678,6 +689,8 @@ class MSData(_MSDataStruct):
         if 'batch_tags' in kwargs:
             del kwargs['batch_tags']
         
+        if remove_existed:
+            self.remove_scopes_data(scope)
         scope_key = self.generate_scope_key(scope)
         if scope_key in self._scopes_data:
             return self._scopes_data[scope_key]

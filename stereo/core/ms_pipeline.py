@@ -32,6 +32,8 @@ class MSDataPipeLine(object):
         self._result = MSDataPipeLineResult(self.ms_data)
         self._result_keys = dict()
         self._key_record = dict()
+        self.__mode = "integrate"
+        self.__scope = slice(None)
 
     @property
     def result(self):
@@ -233,36 +235,55 @@ class MSDataPipeLine(object):
                 return run_method
         elif self.__class__.ATTR_NAME == 'plt':
             from stereo.plots.ms_plot_base import MSDataPlotBase
-            run_method = MSDataPlotBase.get_attribute_helper(item, self.ms_data, self.result)
+            run_method = MSDataPlotBase.get_attribute_helper(item, self.ms_data, self.ms_data.tl.result)
             if run_method:
                 return download(run_method)
 
         def temp(*args, **kwargs):
             if "scope" not in kwargs:
-                kwargs["scope"] = slice_generator[:]
-            if "mode" in kwargs:
-                if kwargs["mode"] == "integrate":
-                    # if self.ms_data.merged_data:
-                    #     return self._use_integrate_method(item, *args, **kwargs)
-                    # else:
-                    #     raise Exception(
-                    #         "`mode` integrate should merge first, using `ms_data.integrate`"
-                    #     )
-                    return self._use_integrate_method(item, *args, **kwargs)
-                elif kwargs["mode"] == "isolated":
-                    self._run_isolated_method(item, *args, **kwargs)
-                else:
-                    raise Exception("`mode` should be one of [`integrate`, `isolated`]")
-            else:
-                # if self.ms_data.merged_data:
-                #     return self._use_integrate_method(item, *args, **kwargs)
-                # else:
-                #     raise Exception(
-                #         "`mode` integrate should merge first, using `ms_data.integrate`"
-                #     )
+                # kwargs["scope"] = slice_generator[:]
+                kwargs["scope"] = self.__scope
+            if "mode" not in kwargs:
+                kwargs["mode"] = self.__mode
+
+            if kwargs["mode"] == "integrate":
                 return self._use_integrate_method(item, *args, **kwargs)
+            elif kwargs["mode"] == "isolated":
+                self._run_isolated_method(item, *args, **kwargs)
+            else:
+                raise Exception("`mode` should be one of [`integrate`, `isolated`]")
+            # if "mode" in kwargs:
+            #     if kwargs["mode"] == "integrate":
+            #         # if self.ms_data.merged_data:
+            #         #     return self._use_integrate_method(item, *args, **kwargs)
+            #         # else:
+            #         #     raise Exception(
+            #         #         "`mode` integrate should merge first, using `ms_data.integrate`"
+            #         #     )
+            #         return self._use_integrate_method(item, *args, **kwargs)
+            #     elif kwargs["mode"] == "isolated":
+            #         self._run_isolated_method(item, *args, **kwargs)
+            #     else:
+            #         raise Exception("`mode` should be one of [`integrate`, `isolated`]")
+            # else:
+            #     # if self.ms_data.merged_data:
+            #     #     return self._use_integrate_method(item, *args, **kwargs)
+            #     # else:
+            #     #     raise Exception(
+            #     #         "`mode` integrate should merge first, using `ms_data.integrate`"
+            #     #     )
+            #     return self._use_integrate_method(item, *args, **kwargs)
 
         return temp
+    
+    def set_scope_and_mode(
+        self,
+        scope: slice = slice(None),
+        mode: str = "integrate"
+    ):
+        assert mode in ("integrate", "isolated"), 'mode should be one of [`integrate`, `isolated`]'
+        self.__mode = mode
+        self.__scope = scope
 
 
 slice_generator = _scope_slice()

@@ -6,6 +6,7 @@ import time
 from http.server import BaseHTTPRequestHandler
 from http.server import HTTPServer
 from io import StringIO
+from copy import deepcopy
 
 import numpy as np
 import pandas as pd
@@ -14,6 +15,7 @@ from natsort import natsorted
 from scipy import stats
 
 from stereo.core.stereo_exp_data import StereoExpData
+from stereo.preprocess import filter_genes
 from .PAGA_traj import cal_plt_param_traj_clus_from_adata
 
 
@@ -654,6 +656,7 @@ def launch(data: StereoExpData,
 
     :return:
     """  # noqa
+    data = deepcopy(data)
     if paga_key is None and grn_key is None and ccc_key is None:
         raise Exception
 
@@ -681,7 +684,8 @@ def launch(data: StereoExpData,
             print(f'invalid mesh data :{meshfile}, return without any data browsing server...')
     # filter by geneset now
     if geneset is not None:
-        data = data.sub_by_name(gene_name=geneset)  # notice, invalid gene will case program raising exceptions
+        # data = data.sub_by_name(gene_name=geneset)  # notice, invalid gene will case program raising exceptions
+        filter_genes(data, gene_list=geneset, inplace=True)
     data.genes.gene_name = UpdateList(data.genes.gene_name, return_ndarray=True).astype('U')
     # create core datacache
     datacache = Stereo3DWebCache(data, meshes, cluster_label, spatial_label, exp_cutoff, paga_key, grn_key, ccc_key)

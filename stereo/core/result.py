@@ -517,14 +517,31 @@ class AnnBasedResult(_BaseResult, object):
             self.__based_ann_data.uns[key] = value
 
 
-class MSDataPipeLineResult:
+class MSDataPipeLineResult(dict):
     def __init__(self, _ms_data):
         self._ms_data = _ms_data
     
     def __getitem__(self, key):
         scope_key = self._ms_data.generate_scope_key(key)
-        return self._ms_data.scopes_data[scope_key].tl.result
+        if scope_key in self._ms_data.scopes_data:
+            return self._ms_data.scopes_data[scope_key].tl.result
+        else:
+            return dict.__getitem__(self, key)
 
     def keys(self):
-        return self._ms_data.tl.result_keys.keys()
+        super_keys = dict.keys(self)
+        tmp = {}
+        for key in super_keys:
+            tmp[key] = None
+        
+        for key in self._ms_data.tl.result_keys.keys():
+            tmp[key] = None
+        
+        return tmp.keys()
     
+    def __contains__(self, key: object) -> bool:
+        scope_key = self._ms_data.generate_scope_key(key)
+        if scope_key in self._ms_data.tl.result_keys:
+            return True
+        else:
+            return dict.__contains__(self, key)
