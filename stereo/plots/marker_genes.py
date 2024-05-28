@@ -170,7 +170,10 @@ def make_draw_df(
         gene_group_labels.append(label)
         gene_group_positions.append((start, start + len(gene_list) - 1))
         start += len(gene_list)
-    draw_df = data_helper.exp_matrix2df(data, gene_name=np.array(gene_names))
+    if marker_res['parameters']['use_raw']:
+        draw_df = data_helper.exp_matrix2df(data.raw, gene_name=np.array(gene_names))
+    else:
+        draw_df = data_helper.exp_matrix2df(data, gene_name=np.array(gene_names))
     draw_df = pd.concat([draw_df, group], axis=1)
     draw_df['group'] = draw_df['group'].astype('category')
     draw_df = draw_df.set_index(['group'])
@@ -386,7 +389,7 @@ class MarkerGenesScatterPlot:
         #     self.data, self.marker_genes_parameters['cluster_res_key'], kind='mean')
         
         for g in groups:
-            if 'mean_count' not in marker_genes_res_dict[g].columns:
+            if g in marker_genes_res_dict and 'mean_count' not in marker_genes_res_dict[g].columns:
                 genes = marker_genes_res_dict[g].index
                 marker_genes_res_dict[g]['mean_count'] = mean_expressin_in_group[g].loc[genes].to_numpy()
             dot_size = pct[g].loc[gene_names].to_numpy() * 100
@@ -445,7 +448,7 @@ class MarkerGenesScatterPlot:
             sort_by = 'log2fc'
         marker_genes_res_dict = self._store_marker_genes_result_by_group()
         mean_expressin_in_group = pipeline_utils.cell_cluster_to_gene_exp_cluster(
-            self.data, self.marker_genes_parameters['cluster_res_key'], kind='mean')
+            self.data, self.marker_genes_parameters['cluster_res_key'], kind='mean', filter_raw=False)
         for mg_key in marker_genes_group_keys:
             if genes is None:
                 topn_res = self.marker_genes_res[mg_key].sort_values(by=sort_by, ascending=False).head(markers_num)
