@@ -3,10 +3,11 @@ from scipy.sparse import csr_matrix
 from scipy.sparse import issparse
 
 from stereo.algorithm.sctransform import SCTransform
+from stereo.core.stereo_exp_data import StereoExpData
 
 
 def sc_transform(
-        data,
+        data: StereoExpData,
         n_cells=5000,
         n_genes=2000,
         filter_hvgs=True,
@@ -34,11 +35,13 @@ def sc_transform(
     )
     new_exp_matrix = res[0][exp_matrix_key]
     if issparse(new_exp_matrix):
+        data.sub_by_index(gene_index=res[1]['umi_genes'])
         data.exp_matrix = new_exp_matrix.T.tocsr()
-        gene_index = np.isin(data.gene_names, res[1]['umi_genes'])
-        data.genes = data.genes.sub_set(gene_index)
+        # gene_index = np.isin(data.gene_names, res[1]['umi_genes'])
+        # data.genes = data.genes.sub_set(gene_index)
     else:
+        data.sub_by_index(gene_index=new_exp_matrix.index.to_numpy())
         data.exp_matrix = new_exp_matrix.T.to_numpy()
-        gene_index = np.isin(data.gene_names, new_exp_matrix.index.values)
-        data.genes = data.genes.sub_set(gene_index)
+        # gene_index = np.isin(data.gene_names, new_exp_matrix.index.values)
+        # data.genes = data.genes.sub_set(gene_index)
     return res[0], res[1]
