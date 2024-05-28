@@ -601,10 +601,12 @@ class StereoExpData(Data):
     def reset_position(self):
         if self.position_offset is not None:
             batches = np.unique(self.cells.batch)
+            position = self.position
             for bno in batches:
                 idx = np.where(self.cells.batch == bno)[0]
-                self.position[idx] -= self.position_offset[bno]
-                self.position[idx] += self.position_min[bno]
+                position[idx] -= self.position_offset[bno]
+                position[idx] += self.position_min[bno]
+            self.position = position
         self.position_offset = None
         self.position_min = None
 

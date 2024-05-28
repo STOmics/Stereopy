@@ -43,15 +43,16 @@ def get_position_array(data, obs_key='spatial'):
 
 
 def exp_matrix2df(data: StereoExpData, cell_name: Optional[np.ndarray] = None, gene_name: Optional[np.ndarray] = None):
-    if data.tl.raw:
-        cell_isin = np.isin(data.tl.raw.cell_names, data.cell_names)
-        gene_isin = np.isin(data.tl.raw.gene_names, data.gene_names)
-        exp_matrix = data.tl.raw.exp_matrix[cell_isin, :][:, gene_isin]
-    else:
-        exp_matrix = data.exp_matrix
+    # if data.tl.raw:
+    #     cell_isin = np.isin(data.tl.raw.cell_names, data.cell_names)
+    #     gene_isin = np.isin(data.tl.raw.gene_names, data.gene_names)
+    #     exp_matrix = data.tl.raw.exp_matrix[cell_isin, :][:, gene_isin]
+    # else:
+    #     exp_matrix = data.exp_matrix
     cell_index = [np.argwhere(data.cells.cell_name == i)[0][0] for i in cell_name] if cell_name is not None else None
     gene_index = [np.argwhere(data.genes.gene_name == i)[0][0] for i in gene_name] if gene_name is not None else None
-    x = exp_matrix[cell_index, :] if cell_index is not None else exp_matrix
+    # x = exp_matrix[cell_index, :] if cell_index is not None else exp_matrix
+    x = data.exp_matrix[cell_index, :] if cell_index is not None else data.exp_matrix
     x = x[:, gene_index] if gene_index is not None else x
     x = x if isinstance(x, np.ndarray) else x.toarray()
     index = cell_name if cell_name is not None else data.cell_names

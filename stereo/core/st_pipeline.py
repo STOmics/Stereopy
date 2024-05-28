@@ -1061,8 +1061,8 @@ class StPipeline(object):
             n_jobs = cpu_count()
 
         from stereo.utils.pipeline_utils import calc_pct_and_pct_rest, cell_cluster_to_gene_exp_cluster
-        pct, pct_rest = calc_pct_and_pct_rest(self.data, cluster_res_key)
-        mean_count_in_cluster = cell_cluster_to_gene_exp_cluster(self.data, cluster_res_key, kind='mean')
+        pct, pct_rest = calc_pct_and_pct_rest(self.data, cluster_res_key, filter_raw=False)
+        mean_count_in_cluster = cell_cluster_to_gene_exp_cluster(self.data, cluster_res_key, kind='mean', filter_raw=False)
 
         tool = FindMarker(data=data, groups=self.result[cluster_res_key], method=method, case_groups=case_groups,
                           control_groups=control_groups, corr_method=corr_method, sort_by=sort_by,
