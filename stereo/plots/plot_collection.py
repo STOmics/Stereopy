@@ -371,7 +371,7 @@ class PlotCollection:
         :param horizontal_offset_additional: the additional offset between each slice on horizontal direction while reorganizing coordinates.
         :param vertical_offset_additional: the additional offset between each slice on vertical direction while reorganizing coordinates.
         :param vmin: The value representing the lower limit of the color scale. Values smaller than vmin are plotted with the same color as vmin.
-        :param vmax: The value representing the lower limit of the color scale. Values smaller than vmin are plotted with the same color as vmin.
+        :param vmax: The value representing the higher limit of the color scale. Values greater than vmax are plotted with the same color as vmax.
         """  # noqa
         from .scatter import multi_scatter
         if title is None:
@@ -443,7 +443,7 @@ class PlotCollection:
         :param y_label: the y label.
         :param title: the title label.
         :param vmin: The value representing the lower limit of the color scale. Values smaller than vmin are plotted with the same color as vmin.
-        :param vmax: The value representing the lower limit of the color scale. Values smaller than vmin are plotted with the same color as vmin.
+        :param vmax: The value representing the higher limit of the color scale. Values greater than vmax are plotted with the same color as vmax.
 
         """  # noqa
         self.data.array2sparse()
@@ -518,7 +518,7 @@ class PlotCollection:
         :param horizontal_offset_additional: the additional offset between each slice on horizontal direction while reorganizing coordinates.
         :param vertical_offset_additional: the additional offset between each slice on vertical direction while reorganizing coordinates.
         :param vmin: The value representing the lower limit of the color scale. Values smaller than vmin are plotted with the same color as vmin.
-        :param vmax: The value representing the lower limit of the color scale. Values smaller than vmin are plotted with the same color as vmin.
+        :param vmax: The value representing the higher limit of the color scale. Values greater than vmax are plotted with the same color as vmax.
         """  # noqa
         if gene_name is None:
             idx = randint(0, len(self.data.tl.raw.gene_names) - 1)
@@ -794,7 +794,7 @@ class PlotCollection:
         :param out_path: the path to save the figure.
         :param out_dpi: the dpi when the figure is saved.
         :param vmin: The value representing the lower limit of the color scale. Values smaller than vmin are plotted with the same color as vmin.
-        :param vmax: The value representing the lower limit of the color scale. Values smaller than vmin are plotted with the same color as vmin.
+        :param vmax: The value representing the higher limit of the color scale. Values greater than vmax are plotted with the same color as vmax.
 
         """  # noqa
         res = self.check_res_key(res_key)
@@ -849,6 +849,7 @@ class PlotCollection:
             res_key: str,
             groups: Optional[Union[str, list, np.ndarray]] = None,
             show_others: Optional[bool] = None,
+            others_color: Optional[str] = '#828282',
             title: Optional[str] = None,
             x_label: Optional[str] = None,
             y_label: Optional[str] = None,
@@ -864,10 +865,13 @@ class PlotCollection:
             **kwargs
     ):
         """
-        Spatial distribution ofter scatter.
+        Spatial scatter distribution of clusters.
 
         :param res_key: cluster result key.
         :param groups: the group names.
+        :param show_others: whether to show others when groups is not None.
+                            by default, if `base_image` is None, `show_others` is True, otherwise `show_others` is False.
+        :param others_color: the color of others, only available when `groups` is not None and `show_others` is True.
         :param title: the plot title.
         :param x_label: the x label.
         :param y_label: the y label.
@@ -877,6 +881,9 @@ class PlotCollection:
         :param hue_order: the classification method.
         :param width: the figure width in pixels.
         :param height: the figure height in pixels.
+        :param base_image: the path of mask image to be displayed as background, it must already be registered to the same coordinate system as the data.
+        :param base_im_cmap: the color map of the base image, only availabel when base image is gray scale image.
+        :param base_im_to_gray: whether to convert the base image to gray scale if base image is RGB/RGBA image.
         :param show_plotting_scale: wheter to display the plotting scale.
         :param out_path: the path to save the figure.
         :param out_dpi: the dpi when the figure is saved.
@@ -919,7 +926,7 @@ class PlotCollection:
                 if show_others:
                     group_list[~isin] = 'others'
                     n = np.unique(group_list).size
-                    palette = palette[0:n - 1] + ['#828282']
+                    palette = palette[0:n - 1] + [others_color]
                     hue_order = natsorted(np.unique(group_list[isin])) + ['others']
                 else:
                     group_list = group_list[isin]
@@ -1213,7 +1220,7 @@ class PlotCollection:
         :param out_dpi: the dpi when the figure is saved.
         :param title: the plot title.
         :param vmin: The value representing the lower limit of the color scale. Values smaller than vmin are plotted with the same color as vmin.
-        :param vmax: The value representing the lower limit of the color scale. Values smaller than vmin are plotted with the same color as vmin.
+        :param vmax: The value representing the higher limit of the color scale. Values greater than vmax are plotted with the same color as vmax.
         """  # noqa
         res = self.check_res_key(res_key)
         scores = [res.module_scores[module] for module in range(1, res.modules.max() + 1)]

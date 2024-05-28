@@ -517,7 +517,7 @@ class PlotCellCellCommunication(PlotBase):
         return list(count_df.index)
 
     def _get_expressed_network(self, network, expressed_genes):
-        sub_network = network[network['from'].isin(expressed_genes) & network['to'].isin(expressed_genes)]
+        sub_network = network[network['from'].isin(expressed_genes) & network['to'].isin(expressed_genes)].copy()
         return sub_network
 
     def _get_shortest_path(self, graph, source, target, distance, weight):
