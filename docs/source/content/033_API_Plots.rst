@@ -41,15 +41,15 @@ The plot collection for StereoExpData object.
     plots.PlotCollection.umap
     plots.PlotCollection.batches_umap
     plots.PlotCollection.violin
-    algorithm.cell_cell_communication.PlotCellCellCommunication.ccc_dot_plot
-    algorithm.cell_cell_communication.PlotCellCellCommunication.ccc_heatmap
-    algorithm.cell_cell_communication.PlotCellCellCommunication.ccc_circos_plot
-    algorithm.cell_cell_communication.PlotCellCellCommunication.ccc_sankey_plot
-    algorithm.regulatory_network_inference.PlotRegulatoryNetwork.auc_heatmap_by_group
-    algorithm.regulatory_network_inference.PlotRegulatoryNetwork.auc_heatmap
-    algorithm.regulatory_network_inference.PlotRegulatoryNetwork.grn_dotplot
-    algorithm.regulatory_network_inference.PlotRegulatoryNetwork.spatial_scatter_by_regulon_3D
-    algorithm.regulatory_network_inference.PlotRegulatoryNetwork.spatial_scatter_by_regulon
+    plots.PlotCellCellCommunication.ccc_dot_plot
+    plots.PlotCellCellCommunication.ccc_heatmap
+    plots.PlotCellCellCommunication.ccc_circos_plot
+    plots.PlotCellCellCommunication.ccc_sankey_plot
+    plots.PlotRegulatoryNetwork.auc_heatmap_by_group
+    plots.PlotRegulatoryNetwork.auc_heatmap
+    plots.PlotRegulatoryNetwork.grn_dotplot
+    plots.PlotRegulatoryNetwork.spatial_scatter_by_regulon_3D
+    plots.PlotRegulatoryNetwork.spatial_scatter_by_regulon
     plots.PlotCoOccurrence.co_occurrence_plot
     plots.PlotCoOccurrence.co_occurrence_heatmap
     plots.PlotPaga.paga_plot
@@ -68,3 +68,4 @@ The plot collection for StereoExpData object.
     plots.PlotVec.plot_vec
     plots.PlotVec.plot_time_scatter
     plots.PlotVec3D.plot_vec_3d
+    plots.PlotMsSpatialScatter.ms_spatial_scatter
