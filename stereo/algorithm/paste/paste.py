@@ -33,6 +33,12 @@ class Paste(MSDataAlgorithmBase):
         """
         if method not in ('pairwise', 'center'):
             raise ValueError(f'Error method({method}), it must be one of pairwise and center')
+        
+        try:
+            from tensorflow.python.ops.numpy_ops import np_config
+            np_config.enable_numpy_behavior()
+        except:
+            pass
 
         logger.info(f'Using method {method}')
         if method == 'pairwise':

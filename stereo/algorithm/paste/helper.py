@@ -9,7 +9,7 @@ import numpy as np
 import ot
 import scipy
 
-from stereo.core.stereo_exp_data import StereoExpData
+from stereo.core.stereo_exp_data import StereoExpData, AnnBasedStereoExpData
 
 
 def filter_for_common_genes(slices: List[StereoExpData]) -> None:
@@ -252,8 +252,15 @@ def stack_slices_pairwise(
 
     # new_slices = []
     for i in range(len(slices)):
-        slices[i].raw_position = slices[i].position
-        slices[i].position = new_coor[i]
+        if isinstance(slices[i], AnnBasedStereoExpData):
+            if slices[i].position_z is not None:
+                slices[i].adata.obsm['spatial_paste_pairwise'] = np.concatenate((new_coor[i], slices[i].position_z), axis=1)
+            else:
+                slices[i].adata.obsm['spatial_paste_pairwise'] = new_coor[i]
+            slices[i].spatial_key = 'spatial_paste_pairwise'
+        else:
+            slices[i].raw_position = slices[i].position
+            slices[i].position = new_coor[i]
 
     if not output_params:
         return slices
@@ -314,15 +321,29 @@ def stack_slices_center(
         new_coor.append(y)
 
     for i in range(len(slices)):
-        slices[i].raw_position = slices[i].position
-        slices[i].position = new_coor[i]
+        if isinstance(slices[i], AnnBasedStereoExpData):
+            if slices[i].position_z is not None:
+                slices[i].adata.obsm['spatial_paste_center'] = np.concatenate((new_coor[i], slices[i].position_z), axis=1)
+            else:
+                slices[i].adata.obsm['spatial_paste_center'] = new_coor[i]
+            slices[i].spatial_key = 'spatial_paste_center'
+        else:
+            slices[i].raw_position = slices[i].position
+            slices[i].position = new_coor[i]
 
-    center_slice.raw_position = center_slice.position
-    center_slice.position = c
-    if not output_params:
-        return center_slice, slices[i]
+    if isinstance(center_slice, AnnBasedStereoExpData):
+        if center_slice.position_z is not None:
+            center_slice.adata.obsm['spatial_paste_center'] = np.concatenate((center_slice.position, center_slice.position_z), axis=1)
+        else:
+            center_slice.adata.obsm['spatial_paste_center'] = c
+        center_slice.spatial_key = 'spatial_paste_center'
     else:
-        return center_slice, slices[i], thetas, translations
+        center_slice.raw_position = center_slice.position
+        center_slice.position = c
+    if not output_params:
+        return center_slice, slices
+    else:
+        return center_slice, slices, thetas, translations
 
 
 def generalized_procrustes_analysis(X, Y, pi, output_params=False, matrix=False):
