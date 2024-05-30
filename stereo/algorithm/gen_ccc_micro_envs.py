@@ -122,10 +122,12 @@ class GenCccMicroEnvs(AlgorithmBase):
             print("Now, you can choose a appropriate threshold based on this function's result.")
             if show_dividing_by_thresholds:
                 pn.extension()
-                split_by_different_threshold_copy = split_by_different_threshold.copy()
-                split_by_different_threshold_copy['subgroup_result'] = split_by_different_threshold_copy[
-                    'subgroup_result'].astype('U')
-                return pn.widgets.DataFrame(split_by_different_threshold_copy, disabled=True, show_index=False,
+                # split_by_different_threshold_copy = split_by_different_threshold.copy()
+                # split_by_different_threshold_copy['subgroup_result'] = split_by_different_threshold_copy[
+                #     'subgroup_result'].astype('U')
+                # return pn.widgets.DataFrame(split_by_different_threshold_copy, disabled=True, show_index=False,
+                #                             autosize_mode="fit_viewport", frozen_columns=1)
+                return pn.widgets.DataFrame(split_by_different_threshold, disabled=True, show_index=False,
                                             autosize_mode="fit_viewport", frozen_columns=1)
         else:
             if res_key not in self.pipeline_res:

@@ -105,6 +105,7 @@ class StereoExpData(Data):
         self._attr = attr if attr is not None else {'resolution': 500}
         self._merged = merged
         self._sn = self.get_sn_from_path(file_path)
+        self.bin_coord_offset = False
 
     def get_sn_from_path(self, file_path):
         """
@@ -172,8 +173,13 @@ class StereoExpData(Data):
         :return:
         """
         data = copy.deepcopy(self)
-        cell_index = self.get_index(data.cells.cell_name, cell_name) if cell_name is not None else None
-        gene_index = self.get_index(data.genes.gene_name, gene_name) if gene_name is not None else None
+        cell_index, gene_index = None, None
+        if cell_name is not None:
+            cell_index = self.cells.obs.index.get_indexer(cell_name)
+            cell_index = cell_index[cell_index != -1]
+        if gene_name is not None:
+            gene_index = self.genes.var.index.get_indexer(gene_name)
+            gene_index = gene_index[gene_index != -1]
         return data.sub_by_index(cell_index, gene_index)
 
     def sub_exp_matrix_by_name(
@@ -595,20 +601,24 @@ class StereoExpData(Data):
     def reset_position(self):
         if self.position_offset is not None:
             batches = np.unique(self.cells.batch)
+            position = self.position
             for bno in batches:
                 idx = np.where(self.cells.batch == bno)[0]
-                self.position[idx] -= self.position_offset[bno]
-                self.position[idx] += self.position_min[bno]
+                position[idx] -= self.position_offset[bno]
+                position[idx] += self.position_min[bno]
+            self.position = position
         self.position_offset = None
         self.position_min = None
 
     def __add__(self, other):
         from stereo.core.ms_data import MSData
         if isinstance(other, StereoExpData):
-            ms_data = MSData([self, other])
+            return MSData([self, other])
+        elif isinstance(other, MSData):
+            return other.__add__(self)
         else:
-            raise TypeError
-        return ms_data
+            raise TypeError("only support StereoExpData and MSData!")
+        
 
 
 class AnnBasedStereoExpData(StereoExpData):
@@ -619,7 +629,7 @@ class AnnBasedStereoExpData(StereoExpData):
             based_ann_data: anndata.AnnData = None,
             bin_type: str = None,
             bin_size: int = None,
-            spatial_key: Union[str, list, np.ndarray] = 'spatial',
+            spatial_key: str = 'spatial',
             *args,
             **kwargs
     ):
@@ -659,7 +669,8 @@ class AnnBasedStereoExpData(StereoExpData):
         if self._ann_data.raw:
             self._tl._raw = AnnBasedStereoExpData(based_ann_data=self._ann_data.raw.to_adata())
 
-        self._spatial_key = spatial_key
+        self.spatial_key = spatial_key
+        self.file_format = 'h5ad'
 
     def __str__(self):
         return str(self._ann_data)
@@ -718,22 +729,22 @@ class AnnBasedStereoExpData(StereoExpData):
 
     @property
     def position(self):
-        if 'spatial' in self._ann_data.obsm:
-            return self._ann_data.obsm['spatial'][:, [0, 1]]
+        if self.spatial_key in self._ann_data.obsm:
+            return self._ann_data.obsm[self.spatial_key][:, [0, 1]]
         elif 'x' in self._ann_data.obs.columns and 'y' in self._ann_data.obs.columns:
             return self._ann_data.obs[['x', 'y']].to_numpy()
         return None
 
-    @position.setter
-    def position(self, pos):
-        if 'spatial' in self._ann_data.obsm:
-            self._ann_data.obsm['spatial'][:, [0, 1]] = pos
+    # @position.setter
+    # def position(self, pos):
+    #     if 'spatial' in self._ann_data.obsm:
+    #         self._ann_data.obsm['spatial'][:, [0, 1]] = pos
 
     @property
     def position_z(self):
-        if 'spatial' in self._ann_data.obsm:
-            if self._ann_data.obsm['spatial'].shape[1] >= 3:
-                return self._ann_data.obsm['spatial'][:, [2]]
+        if self.spatial_key in self._ann_data.obsm:
+            if self._ann_data.obsm[self.spatial_key].shape[1] >= 3:
+                return self._ann_data.obsm[self.spatial_key][:, [2]]
             else:
                 return None
         elif 'z' in self._ann_data.obs.columns:
@@ -746,21 +757,21 @@ class AnnBasedStereoExpData(StereoExpData):
             raise ValueError("the shape of position must be 2 dimensions.")
         if position.shape[1] != 2:
             raise ValueError("the length of position's second dimension must be 2.")
-        if 'spatial' in self._ann_data.obsm:
-            self._ann_data.obsm['spatial'][:, [0, 1]] = position
+        if self.spatial_key in self._ann_data.obsm:
+            self._ann_data.obsm[self.spatial_key][:, [0, 1]] = position
         elif 'x' in self._ann_data.obs.columns and 'y' in self._ann_data.obs.columns:
             self._ann_data.obs['x'] = position[:, 0]
             self._ann_data.obs['y'] = position[:, 1]
         else:
-            self._ann_data.obsm['spatial'] = position
+            self._ann_data.obsm[self.spatial_key] = position
 
     @position_z.setter
     def position_z(self, position_z: np.ndarray):
         if (position_z.shape) == 1:
             position_z = position_z.reshape(-1, 1)
-        if 'spatial' in self._ann_data.obsm:
-            self._ann_data.obsm['spatial'][:, 2] = np.concatenate(
-                [self._ann_data.obsm['spatial'][:, [0, 1]], position_z], axis=1)
+        if self.spatial_key in self._ann_data.obsm:
+            self._ann_data.obsm[self.spatial_key] = np.concatenate(
+                [self._ann_data.obsm[self.spatial_key][:, [0, 1]], position_z], axis=1)
         else:
             self._ann_data.obs['z'] = position_z
 
@@ -811,8 +822,8 @@ class AnnBasedStereoExpData(StereoExpData):
             self._ann_data._inplace_subset_obs(cell_index)
         if gene_index is not None:
             self._ann_data._inplace_subset_var(gene_index)
-        if self._ann_data.raw:
-            self.tl.raw = AnnBasedStereoExpData(based_ann_data=self._ann_data.raw.to_adata())
+        # if self._ann_data.raw:
+        #     self.tl.raw = AnnBasedStereoExpData(based_ann_data=self._ann_data.raw.to_adata())
         return self
 
     def sub_by_name(
@@ -827,8 +838,8 @@ class AnnBasedStereoExpData(StereoExpData):
             data._ann_data._inplace_subset_obs(cell_name)
         if gene_name is not None:
             data._ann_data._inplace_subset_var(gene_name)
-        if data._ann_data.raw:
-            data.tl.raw = AnnBasedStereoExpData(based_ann_data=data._ann_data.raw.to_adata())
+        # if data._ann_data.raw:
+        #     data.tl.raw = AnnBasedStereoExpData(based_ann_data=data._ann_data.raw.to_adata())
         return data
 
     # @staticmethod
@@ -836,3 +847,8 @@ class AnnBasedStereoExpData(StereoExpData):
     #     from anndata import concat
     #     ann_data = concat([d._ann_data for d in data], axis=0, merge='same', label=batch_key, index_unique='-')
     #     return AnnBasedStereoExpData(based_ann_data=ann_data)
+    
+    
+    @property
+    def adata(self):
+        return self._ann_data

@@ -13,11 +13,11 @@ import cv2
 import numpy as np
 import tifffile
 
-from stereo.image.tissue_cut import (
-    DEEP,
-    INTENSITY,
-    SingleStrandDNATissueCut
-)
+# from stereo.image.tissue_cut import (
+#     DEEP,
+#     INTENSITY,
+#     SingleStrandDNATissueCut
+# )
 from stereo.log_manager import logger
 
 
@@ -31,9 +31,11 @@ class CellSegPipe(object):
             is_water,
             DEEP_CROP_SIZE=20000,
             OVERLAP=100,
-            tissue_seg_model_path='',
-            tissue_seg_method=DEEP,
+            # tissue_seg_model_path='',
+            # tissue_seg_method=DEEP,
             post_processing_workers=10,
+            tissue_mask=None,
+            gpu='-1',
             *args,
             **kwargs
     ):
@@ -60,20 +62,21 @@ class CellSegPipe(object):
         self.trans16to8()
         t1 = time.time()
         logger.info('Transform 16bit to 8bit : %.2f' % (t1 - t0))
-        self.tissue_mask = []
+        self.tissue_mask = tissue_mask
         self.tissue_mask_thumb = []
-        self.tissue_seg_model_path = tissue_seg_model_path
-        self.tissue_seg_method = tissue_seg_method
+        # self.tissue_seg_model_path = tissue_seg_model_path
+        # self.tissue_seg_method = tissue_seg_method
         self.tissue_num = []  # tissue num in each image
         self.tissue_bbox = []  # tissue roi bbox in each image
         self.img_filter = []  # image filtered by tissue mask
-        self.get_tissue_mask()
+        # self.get_tissue_mask()
         self.get_roi()
         self.cell_mask = []
         self.post_mask_list = []
         self.score_mask_list = []
         self.post_processing_workers = post_processing_workers
         self.tissue_cell_label = None
+        self.gpu = gpu
         self.args = args
         self.kwargs = kwargs
 
@@ -131,21 +134,21 @@ class CellSegPipe(object):
     def save_each_file_result(self, file_name, idx):
         pass
 
-    def get_tissue_mask(self):
-        tissue_seg_model_path = self.tissue_seg_model_path
-        tissue_seg_method = self.tissue_seg_method
-        if tissue_seg_method is None:
-            tissue_seg_method = DEEP
-        if not tissue_seg_model_path or len(tissue_seg_model_path) == 0:
-            tissue_seg_method = INTENSITY
-        ss_dna_tissue_cut = SingleStrandDNATissueCut(
-            src_img_path=self.img_path,
-            model_path=tissue_seg_model_path,
-            dst_img_path=self.out_path,
-            seg_method=tissue_seg_method
-        )
-        ss_dna_tissue_cut.tissue_seg()
-        self.tissue_mask = ss_dna_tissue_cut.mask
+    # def get_tissue_mask(self):
+    #     tissue_seg_model_path = self.tissue_seg_model_path
+    #     tissue_seg_method = self.tissue_seg_method
+    #     if tissue_seg_method is None:
+    #         tissue_seg_method = DEEP
+    #     if not tissue_seg_model_path or len(tissue_seg_model_path) == 0:
+    #         tissue_seg_method = INTENSITY
+    #     ss_dna_tissue_cut = SingleStrandDNATissueCut(
+    #         src_img_path=self.img_path,
+    #         model_path=tissue_seg_model_path,
+    #         dst_img_path=self.out_path,
+    #         seg_method=tissue_seg_method
+    #     )
+    #     ss_dna_tissue_cut.tissue_seg()
+    #     self.tissue_mask = ss_dna_tissue_cut.mask
 
     @staticmethod
     def filter_roi(props):

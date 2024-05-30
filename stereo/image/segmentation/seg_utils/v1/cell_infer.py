@@ -347,7 +347,7 @@ class CellInfer(object):
         return label_image
 
 
-def cellInfer(model_path, file, size, overlap=100):
+def cellInfer(model_path, file, size, overlap=100, gpu='-1'):
     # split -> predict -> merge
     if isinstance(file, list):
         file_list = file
@@ -358,9 +358,11 @@ def cellInfer(model_path, file, size, overlap=100):
 
     model_dir = model_path
     model = EpsaResUnet(out_channels=6)
+    gpu = int(gpu)
     model.load_state_dict(torch.load(model_dir, map_location=lambda storage, loc: storage), strict=True)
     model.eval()
-    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+    device = torch.device(f"cuda:{gpu}" if torch.cuda.is_available() and gpu >= 0 else "cpu")
+    print(f'using device: {device}')
     model.to(device)
     for idx, image in enumerate(file_list):
         image = cv2.cvtColor(image, cv2.COLOR_GRAY2RGB)

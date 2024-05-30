@@ -15,6 +15,7 @@ change log:
 from copy import deepcopy
 from typing import Optional
 from typing import Union
+from natsort import natsorted
 
 import h5py
 import numpy as np
@@ -30,7 +31,14 @@ from stereo.core.constants import CHIP_RESOLUTION
 from stereo.core.gene import Gene
 from stereo.core.stereo_exp_data import AnnBasedStereoExpData
 from stereo.core.stereo_exp_data import StereoExpData
+from stereo.core.result import _BaseResult
 from stereo.io import h5ad
+from stereo.io.utils import(
+    remove_genes_number,
+    integrate_matrix_by_genes,
+    transform_marker_genes_to_anndata,
+    get_gem_comments
+)
 from stereo.log_manager import logger
 from stereo.utils.read_write_utils import ReadWriteUtils
 
@@ -42,7 +50,7 @@ def read_gem(
         bin_type: str = "bins",
         bin_size: int = 100,
         is_sparse: bool = True,
-        bin_coor_offset: bool = False,
+        bin_coord_offset: bool = False,
         gene_name_index: bool = False
 ):
     """
@@ -60,7 +68,7 @@ def read_gem(
         the size of bin to merge, when `bin_type` is set to `'bins'`.
     is_sparse
         the expression matrix is sparse matrix, if `True`, otherwise `np.ndarray`.
-    bin_coor_offset
+    bin_coord_offset
         if set it to True, the coordinates of bins are calculated as
         ((gene_coordinates - min_coordinates) // bin_size) * bin_size + min_coordinates + bin_size/2
     gene_name_index
@@ -73,8 +81,10 @@ def read_gem(
     -------------
     An object of StereoExpData.
     """
-    data = StereoExpData(file_path=file_path, bin_type=bin_type, bin_size=bin_size)
-    df = pd.read_csv(str(data.file), sep=sep, comment='#', header=0)
+    data = StereoExpData(file_path=file_path, file_format='gem', bin_type=bin_type, bin_size=bin_size)
+    comments_lines, _ = get_gem_comments(str(data.file))
+    # df = pd.read_csv(str(data.file), sep=sep, comment='#', header=0)
+    df = pd.read_csv(str(data.file), sep=sep, header=comments_lines, engine='pyarrow')
     if 'MIDCounts' in df.columns:
         df.rename(columns={'MIDCounts': 'UMICount'}, inplace=True)
     elif 'MIDCount' in df.columns:
@@ -98,10 +108,14 @@ def read_gem(
     if data.bin_type == 'cell_bins':
         gdf = parse_cell_bin_coor(df)
     else:
-        if bin_coor_offset:
+        if bin_coord_offset:
             df = parse_bin_coor(df, bin_size)
         else:
             df = parse_bin_coor_no_offset(df, bin_size)
+    
+    if gene_name_index and 'geneName' in df.columns:
+        df['geneID'] = df['geneName']
+
     cells = df['cell_id'].unique()
     genes = df['geneID'].unique()
     cells_dict = dict(zip(cells, range(0, len(cells))))
@@ -111,18 +125,12 @@ def read_gem(
     # logger.info(f'the martrix has {len(cells)} cells, and {len(genes)} genes.')
     exp_matrix = csr_matrix((df['UMICount'], (rows, cols)), shape=(cells.shape[0], genes.shape[0]), dtype=np.int32)
     data.cells = Cell(cell_name=cells)
+    data.genes = Gene(gene_name=genes)
 
-    if 'geneName' in df.columns:
-        gene_names = df['geneName'].unique().astype('U')
-        if gene_name_index:
-            exp_matrix, gene_names = __integrate_genes(gene_names, exp_matrix)
-            data.genes = Gene(gene_name=gene_names)
-        else:
-            data.genes = Gene(gene_name=genes)
-            data.genes['gene_name_underline'] = gene_names
-            data.genes['real_gene_name'] = __remove_gene_number(gene_names)
-    else:
-        data.genes = Gene(gene_name=genes)
+    if not gene_name_index and 'geneName' in df.columns:
+        gene_names = df.groupby(by='geneID').aggregate({'geneName': lambda n: np.unique(n)[0]})['geneName']
+        data.genes['real_gene_name'] = gene_names
+
     data.exp_matrix = exp_matrix if is_sparse else exp_matrix.toarray()
     if data.bin_type == 'bins':
         # data.position = df.loc[:, ['x_center', 'y_center']].drop_duplicates().values
@@ -130,6 +138,7 @@ def read_gem(
     else:
         data.position = gdf.loc[cells][['x_center', 'y_center']].values
         data.cells.cell_point = gdf.loc[cells]['cell_point'].values
+    data.position = data.position.astype(np.uint32)
     data.offset_x = df['x'].min()
     data.offset_y = df['y'].min()
     resolution = 500
@@ -146,6 +155,7 @@ def read_gem(
         'maxExp': data.exp_matrix.max(),  # noqa
         'resolution': resolution,
     }
+    data.bin_coord_offset = bin_coord_offset
     logger.info(f'the martrix has {data.cell_names.size} cells, and {data.gene_names.size} genes.')
     return data
 
@@ -246,14 +256,18 @@ def read_stereo_h5ad(
     return data
 
 
-def _read_stereo_h5ad_from_group(f, data: StereoExpData, use_raw, use_result, bin_type=None, bin_size=None):
+def _read_stereo_h5ad_from_group(f: Union[h5py.File, h5py.Group], data: StereoExpData, use_raw, use_result, bin_type=None, bin_size=None):
     # read data
     data.bin_type = bin_type if bin_type is not None else 'bins'
     data.bin_size = bin_size if bin_size is not None else 1
+    not_data_attr_keys = {'bin_type', 'bin_size', 'merged'}
     if f.attrs is not None:
         data.attr = {}
         for key, value in f.attrs.items():
-            data.attr[key] = value
+            if key not in not_data_attr_keys:
+                data.attr[key] = value
+            else:
+                setattr(data, key, value)
     for k in f.keys():
         if k == 'cells':
             data.cells = h5ad.read_group(f[k])
@@ -315,19 +329,25 @@ def _read_stereo_h5ad_from_group(f, data: StereoExpData, use_raw, use_result, bi
     return data
 
 
-def _read_stereo_h5_result(key_record: dict, data, f):
+def _read_stereo_h5_result(key_record: dict, data: StereoExpData, f: Union[h5py.File, h5py.Group]):
     import ast
     from ..utils.pipeline_utils import cell_cluster_to_gene_exp_cluster
+    key_record = deepcopy(key_record)
     for analysis_key in list(key_record.keys()):
         res_keys = key_record[analysis_key]
         for res_key in res_keys:
             if analysis_key == 'hvg':
                 hvg_df = h5ad.read_group(f[f'{res_key}@hvg'])
                 # str to interval
-                hvg_df['mean_bin'] = [to_interval(interval_string) for interval_string in hvg_df['mean_bin']]
+                if 'mean_bin' in hvg_df.columns:
+                    hvg_df['mean_bin'] = [to_interval(interval_string) for interval_string in hvg_df['mean_bin']]
                 data.tl.result[res_key] = hvg_df
             if analysis_key in ['pca', 'umap', 'totalVI', 'spatial_alignment_integration']:
                 data.tl.result[res_key] = pd.DataFrame(h5ad.read_dataset(f[f'{res_key}@{analysis_key}']))
+                if analysis_key == 'pca':
+                    variance_ratio_key = f'{res_key}_variance_ratio'
+                    if f'{variance_ratio_key}@{analysis_key}_variance_ratio' in f.keys():
+                        data.tl.result[variance_ratio_key] = h5ad.read_dataset(f[f'{variance_ratio_key}@{analysis_key}_variance_ratio'])  # noqa
             if analysis_key == 'neighbors':
                 data.tl.result[res_key] = {
                     # 'neighbor': h5ad.read_group(f[f'neighbor@{res_key}@neighbors']),
@@ -375,9 +395,13 @@ def _read_stereo_h5_result(key_record: dict, data, f):
                     else:
                         parameters_df: pd.DataFrame = h5ad.read_group(f[cluster_key])
                         data.tl.result[res_key]['parameters'] = {}
-                        for i, row in parameters_df.iterrows():
+                        for _, row in parameters_df.iterrows():
                             name = row['name']
                             value = row['value']
+                            if value.lower() == 'true':
+                                value = True
+                            elif value.lower() == 'false':
+                                value = False
                             data.tl.result[res_key]['parameters'][name] = value
             if analysis_key == 'cell_cell_communication':
                 data.tl.result[res_key] = {}
@@ -422,13 +446,15 @@ def read_h5ms(file_path, use_raw=True, use_result=True):
     """
     from stereo.core.ms_data import MSData
     with h5py.File(file_path, mode='r') as f:
-        ms_data = MSData()
+        # ms_data = MSData()
         data_list = []
         merged_data = None
         names = []
         var_type = None
         relationship = None
-        result = {}
+        scopes_data = {}
+        result_keys = {}
+        # result = {}
         for k in f.keys():
             if k == 'sample':
                 for one_slice_key in f[k].keys():
@@ -436,30 +462,48 @@ def read_h5ms(file_path, use_raw=True, use_result=True):
                     data_list.append(
                         _read_stereo_h5ad_from_group(f[k][one_slice_key], data, use_raw, use_result))  # noqa
             elif k == 'sample_merged':
-                merged_data = StereoExpData()
-                merged_data = _read_stereo_h5ad_from_group(f[k], merged_data, use_raw, use_result)  # noqa
+                for mk in f[k].keys():
+                    scope_data = StereoExpData()
+                    scope_data = _read_stereo_h5ad_from_group(f[k][mk], scope_data, use_raw, use_result)
+                    scopes_data[mk] = scope_data
+                    if f[k][mk].attrs is not None:
+                        merged_from_all = f[k][mk].attrs.get('merged_from_all', False)
+                        if merged_from_all:
+                            merged_data = scope_data
+                # merged_data = StereoExpData()
+                # merged_data = _read_stereo_h5ad_from_group(f[k], merged_data, use_raw, use_result)  # noqa
             elif k == 'names':
                 names = h5ad.read_dataset(f[k])
+                if isinstance(names, np.ndarray):
+                    names = names.tolist()
             elif k == 'var_type':
                 var_type = h5ad.read_dataset(f[k])
             elif k == 'relationship':
                 relationship = h5ad.read_dataset(f[k])
-            elif k == 'mss':
-                for key in f['mss'].keys():
-                    data = StereoExpData()
-                    data.tl.result = {}
-                    h5ad.read_key_record(f['mss'][key]['key_record'], data.tl.key_record)
-                    _read_stereo_h5_result(data.tl.key_record, data, f['mss'][key])
-                    result[key] = data.tl.result
+            elif k == 'result_keys':
+                for rk in f[k].keys():
+                    result_keys[rk] = list(h5ad.read_dataset(f[k][rk]))
+            # elif k == 'mss':
+            #     for key in f['mss'].keys():
+            #         data = StereoExpData()
+            #         data.tl.result = {}
+            #         h5ad.read_key_record(f['mss'][key]['key_record'], data.tl.key_record)
+            #         _read_stereo_h5_result(data.tl.key_record, data, f['mss'][key])
+            #         result[key] = data.tl.result
             else:
                 logger.warn(f"{k} not in rules, did not read from h5ms")
 
-        ms_data._names = names
-        ms_data._var_type = var_type
-        ms_data._data_list = data_list
-        ms_data._merged_data = merged_data
-        ms_data.tl.result = result
-        ms_data._relationship = relationship
+        ms_data = MSData(
+            _data_list=data_list,
+            _names=names,
+            _var_type=var_type,
+            _relationship=relationship
+        )
+        ms_data.merged_data = merged_data
+        # ms_data.tl.result = result
+        ms_data.scopes_data = scopes_data
+        ms_data.tl.result_keys = result_keys
+
         return ms_data
 
 
@@ -766,7 +810,8 @@ def stereo_to_anndata(
         reindex: bool = False,
         output: str = None,
         base_adata: AnnData = None,
-        split_batches: bool = True
+        split_batches: bool = True,
+        compression: Optional[Literal["gzip", "lzf"]] = 'gzip'
 ):
     """
     Transform the StereoExpData object into Anndata format.
@@ -787,6 +832,8 @@ def stereo_to_anndata(
         the input Anndata object.
     split_batches
         Whether to save each batch to a single file if it is a merged data, default to True.
+    compression:
+        The compression method to be used when saving data as a h5ad file, None means uncompressed, default to gzip.
     Returns
     -----------------
     An object of Anndata.
@@ -810,6 +857,9 @@ def stereo_to_anndata(
         return adata_list
 
     from scipy.sparse import issparse
+
+    if isinstance(data, AnnBasedStereoExpData) and base_adata is None:
+        base_adata = data._ann_data.copy()
 
     if base_adata is None:
         adata = AnnData(shape=data.exp_matrix.shape, dtype=np.float64, obs=data.cells.to_df(), var=data.genes.to_df())
@@ -919,6 +969,10 @@ def stereo_to_anndata(
                 for res_key in data.tl.key_record[key]:
                     logger.info(f"Adding data.tl.result['{res_key}'] into adata.uns['{res_key}'] .")
                     adata.uns[res_key] = data.tl.result[res_key]
+            elif key == 'marker_genes':
+                for res_key in data.tl.key_record[key]:
+                    uns_key = _BaseResult.RENAME_DICT.get(res_key, res_key)
+                    adata.uns[uns_key] = transform_marker_genes_to_anndata(data.tl.result[res_key])
             else:
                 continue
 
@@ -943,7 +997,7 @@ def stereo_to_anndata(
             raw_exp = data.tl.raw.exp_matrix
             raw_genes = data.tl.raw.genes.to_df()
             raw_genes.dropna(axis=1, how='all', inplace=True)
-            raw_adata = AnnData(shape=raw_exp.toarray().shape, var=raw_genes, dtype=np.float64)
+            raw_adata = AnnData(shape=raw_exp.shape, var=raw_genes, dtype=np.float64)
             raw_adata.X = raw_exp
             adata.raw = raw_adata
 
@@ -964,7 +1018,7 @@ def stereo_to_anndata(
     logger.info("Finished conversion to anndata.")
 
     if output is not None:
-        adata.write_h5ad(output)
+        adata.write_h5ad(output, compression=compression)
         logger.info(f"Finished output to {output}")
 
     return adata
@@ -1074,7 +1128,7 @@ def read_gef(
         if not is_cell_bin:
             raise Exception('This file is not the type of CellBin.')
 
-        data = StereoExpData(file_path=file_path, bin_type=bin_type, bin_size=bin_size)
+        data = StereoExpData(file_path=file_path, file_format='gef', bin_type=bin_type, bin_size=bin_size)
         from gefpy.cgef_reader_cy import CgefR
         gef = CgefR(file_path, True)
         cellborders_coord_list, coord_count_per_cell = gef.get_cellborders([])
@@ -1102,14 +1156,16 @@ def read_gef(
 
             if len(gene_id[0]) == 0:
                 gene_name_index = True
+            gene_names = remove_genes_number(gene_names)
             if gene_name_index:
                 if len(gene_id[0]) > 0:
-                    exp_matrix, gene_names = __integrate_genes(gene_names, exp_matrix)
+                    exp_matrix, gene_names = integrate_matrix_by_genes(gene_names, cell_num,
+                                                               exp_matrix.data, exp_matrix.indices, exp_matrix.indptr)
                 data.genes = Gene(gene_name=gene_names)
             else:
                 data.genes = Gene(gene_name=gene_id)
                 # data.genes['gene_name_underline'] = gene_names
-                data.genes['real_gene_name'] = __remove_gene_number(gene_names)
+                data.genes['real_gene_name'] = gene_names
 
             data.exp_matrix = exp_matrix if is_sparse else exp_matrix.toarray()
         else:
@@ -1142,14 +1198,15 @@ def read_gef(
             data.position[:, 1] = cells['y']
             if len(gene_id[0]) == 0:
                 gene_name_index = True
+            gene_names = remove_genes_number(gene_names)
             if gene_name_index:
                 if len(gene_id[0]) > 0:
-                    exp_matrix, gene_names = __integrate_genes(gene_names, exp_matrix)
+                    exp_matrix, gene_names = integrate_matrix_by_genes(gene_names, cell_num, count, indices, indptr)
                 data.genes = Gene(gene_name=gene_names)
             else:
                 data.genes = Gene(gene_name=gene_id)
                 # data.genes['gene_name_underline'] = gene_names
-                data.genes['real_gene_name'] = __remove_gene_number(gene_names)
+                data.genes['real_gene_name'] = gene_names
 
             data.exp_matrix = exp_matrix if is_sparse else exp_matrix.toarray()
         data.attr = {
@@ -1194,14 +1251,16 @@ def read_gef(
             exp_matrix = csr_matrix((count, (cell_ind, gene_ind)), shape=(cell_num, gene_num), dtype=np.uint32)
             if len(gene_id[0]) == 0:
                 gene_name_index = True
+            gene_names = remove_genes_number(gene_names)
             if gene_name_index:
                 if len(gene_id[0]) > 0:
-                    exp_matrix, gene_names = __integrate_genes(gene_names, exp_matrix)
+                    exp_matrix, gene_names = integrate_matrix_by_genes(gene_names, cell_num,
+                                                               exp_matrix.data, exp_matrix.indices, exp_matrix.indptr)
                 data.genes = Gene(gene_name=gene_names)
             else:
                 data.genes = Gene(gene_name=gene_id)
                 # data.genes['gene_name_underline'] = gene_names
-                data.genes['real_gene_name'] = __remove_gene_number(gene_names)
+                data.genes['real_gene_name'] = gene_names
 
             data.exp_matrix = exp_matrix if is_sparse else exp_matrix.toarray()
         else:
@@ -1228,67 +1287,22 @@ def read_gef(
             
             cell_ind, gene_ind, count = gef.get_sparse_matrix_indices2()
             exp_matrix = csr_matrix((count, (cell_ind, gene_ind)), shape=(cell_num, gene_num), dtype=np.uint32)
+            gene_names = remove_genes_number(gene_names)
             if gene_name_index:
                 if len(gene_id[0]) > 0:
-                    exp_matrix, gene_names = __integrate_genes(gene_names, exp_matrix)
+                    exp_matrix, gene_names = integrate_matrix_by_genes(gene_names, cell_num,
+                                                               exp_matrix.data, exp_matrix.indices, exp_matrix.indptr)
                 data.genes = Gene(gene_name=gene_names)
             else:
                 data.genes = Gene(gene_name=gene_id)
                 # data.genes['gene_name_underline'] = gene_names
-                data.genes['real_gene_name'] = __remove_gene_number(gene_names)
+                data.genes['real_gene_name'] = gene_names
             data.exp_matrix = exp_matrix if is_sparse else exp_matrix.toarray()
             
         logger.info(f'the matrix has {data.cell_names.size} cells, and {data.gene_names.size} genes.')
     logger.info('read_gef end.')
 
     return data
-
-def __remove_gene_number(gene_names):
-    underline = np.char.find(gene_names, '_', start=1, end=-1)
-    underline = (underline > 0)
-    gene_idx = np.arange(gene_names.size, dtype=np.uint64)
-    gene_names_with_underline = gene_names[underline]
-    gene_idx_with_underline = gene_idx[underline]
-    for gul_idx, gul in zip(gene_idx_with_underline, gene_names_with_underline):
-        tmp = gul.split('_')
-        if not tmp[-1].isnumeric():
-            continue
-        gnul = '_'.join(tmp[0:-1])
-        gene_names[gul_idx] = gnul
-    return gene_names
-
-def __integrate_genes(gene_names, exp_matrix):
-    if isinstance(exp_matrix, csr_matrix):
-        exp_matrix = exp_matrix.toarray()
-    underline = np.char.find(gene_names, '_', start=1, end=-1)
-    underline = (underline > 0)
-    gene_idx = np.arange(gene_names.size, dtype=np.uint64)
-    gene_names_with_underline = gene_names[underline]
-    gene_idx_with_underline = gene_idx[underline]
-    sort_flag = np.argsort(gene_idx_with_underline)
-    gene_names_with_underline = gene_names_with_underline[sort_flag]
-    gene_idx_with_underline = gene_idx_with_underline[sort_flag]
-    gnul_idx_dict = {}
-    for gul_idx, gul in zip(gene_idx_with_underline, gene_names_with_underline):
-        tmp = gul.split('_')
-        if not tmp[-1].isnumeric():
-            continue
-        gnul = '_'.join(tmp[0:-1])
-        if gnul not in gnul_idx_dict:
-            gnul_idx_dict[gnul] = gul_idx
-            gene_names[gul_idx] = gnul
-        else:
-            gnul_idx = gnul_idx_dict[gnul]
-            exp_matrix[:, gnul_idx] += exp_matrix[:, gul_idx]
-            exp_matrix[:, gul_idx] = 0
-
-    # exp_matrix = exp_matrix.tocsr()
-    filter_flag = (exp_matrix.sum(axis=0) > 0)
-    exp_matrix = exp_matrix[:, filter_flag]
-    gene_names = gene_names[filter_flag]
-    
-
-    return csr_matrix(exp_matrix), gene_names
 
 
 @ReadWriteUtils.check_file_exists

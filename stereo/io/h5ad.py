@@ -68,7 +68,7 @@ def _(v, f, k):
     write_neighbors(f, k, v)
 
 
-def write_array(f, key, value, dataset_kwargs=MappingProxyType({})):
+def write_array(f: Union[h5py.File, h5py.Group], key, value, dataset_kwargs=MappingProxyType({})):
     # Convert unicode to fixed length strings
     if value.dtype.kind in {'U', 'O'}:
         value = value.astype(h5py.special_dtype(vlen=str))
@@ -97,26 +97,48 @@ def write_spmatrix(f, k, v, fmt: str, dataset_kwargs=MappingProxyType({})):
     g.create_dataset('indptr', data=v.indptr, **dataset_kwargs)
 
 
-def write_genes(f, k, v, dataset_kwargs=MappingProxyType({})):
+# def write_genes(f, k, v: Gene, dataset_kwargs=MappingProxyType({})):
+#     g = f.create_group(k)
+#     g.attrs['encoding-type'] = 'gene'
+#     write_array(g, 'gene_name', v.gene_name, dataset_kwargs)
+#     if v.n_cells is not None:
+#         write_array(g, 'n_cells', v.n_cells, dataset_kwargs)
+#     if v.n_counts is not None:
+#         write_array(g, 'n_counts', v.n_counts, dataset_kwargs)
+#     if v.mean_umi is not None:
+#         write_array(g, 'mean_umi', v.n_counts, dataset_kwargs)
+#     if v.real_gene_name is not None:
+#         write_array(g, 'real_gene_name', v.real_gene_name, dataset_kwargs)
+
+def write_genes(f: h5py.File, k: str, v: Gene, dataset_kwargs=MappingProxyType({})):
     g = f.create_group(k)
     g.attrs['encoding-type'] = 'gene'
-    write_array(g, 'gene_name', v.gene_name, dataset_kwargs)
-    if v.n_cells is not None:
-        write_array(g, 'n_cells', v.n_cells, dataset_kwargs)
-    if v.n_counts is not None:
-        write_array(g, 'n_counts', v.n_counts, dataset_kwargs)
+    g.attrs['version'] = 'v2'
+    write_dataframe(g, 'var', v.to_df(), dataset_kwargs)
 
 
-def write_cells(f, k, v, dataset_kwargs=MappingProxyType({})):
+# def write_cells(f, k, v: Cell, dataset_kwargs=MappingProxyType({})):
+#     g = f.create_group(k)
+#     g.attrs['encoding-type'] = 'cell'
+#     write_array(g, 'cell_name', v.cell_name, dataset_kwargs)
+#     if v.total_counts is not None:
+#         write_array(g, 'total_counts', v.total_counts, dataset_kwargs)
+#     if v.pct_counts_mt is not None:
+#         write_array(g, 'pct_counts_mt', v.pct_counts_mt, dataset_kwargs)
+#     if v.n_genes_by_counts is not None:
+#         write_array(g, 'n_genes_by_counts', v.n_genes_by_counts, dataset_kwargs)
+#     if v.batch is not None:
+#         write_array(g, 'batch', v.batch, dataset_kwargs)
+#     if v.cell_border is not None:
+#         write_array(g, 'cell_border', v.cell_border, dataset_kwargs)
+
+def write_cells(f: h5py.File, k: str, v: Cell, dataset_kwargs=MappingProxyType({})):
     g = f.create_group(k)
     g.attrs['encoding-type'] = 'cell'
-    write_array(g, 'cell_name', v.cell_name, dataset_kwargs)
-    if v.total_counts is not None:
-        write_array(g, 'total_counts', v.total_counts, dataset_kwargs)
-    if v.pct_counts_mt is not None:
-        write_array(g, 'pct_counts_mt', v.pct_counts_mt, dataset_kwargs)
-    if v.n_genes_by_counts is not None:
-        write_array(g, 'n_genes_by_counts', v.n_genes_by_counts, dataset_kwargs)
+    g.attrs['version'] = 'v2'
+    write_dataframe(g, 'obs', v.to_df(), dataset_kwargs)
+    if v.cell_border is not None:
+        write_array(g, 'cell_border', v.cell_border, dataset_kwargs)
 
 
 def write_spmatrix_as_dense(f, key, value, dataset_kwargs=MappingProxyType({})):
@@ -254,28 +276,40 @@ def read_spmatrix(group) -> sparse.spmatrix:
     return mtx
 
 
-def read_genes(group) -> Gene:
-    gene_name = group['gene_name'][...]
-    gene = Gene(gene_name=gene_name)
-    n_cells = group['n_cells'][...] if 'n_cells' in group.keys() else None
-    n_counts = group['n_counts'][...] if 'n_counts' in group.keys() else None
-    gene.n_cells = n_cells
-    gene.n_counts = n_counts
+def read_genes(group: h5py.Group) -> Gene:
+    version = group.attrs.get('version', 'v1')
+    if version == 'v1':
+        gene_name = group['gene_name'][...]
+        gene = Gene(gene_name=gene_name)
+        n_cells = group['n_cells'][...] if 'n_cells' in group.keys() else None
+        n_counts = group['n_counts'][...] if 'n_counts' in group.keys() else None
+        gene.n_cells = n_cells
+        gene.n_counts = n_counts
+    else:
+        var = read_dataframe(group['var'])
+        gene = Gene(var=var)
     return gene
 
 
-def read_cells(group) -> Cell:
-    cell_name = group['cell_name'][...]
-    for i in range(cell_name.shape[0]):
-        if type(cell_name[i]) is bytes:
-            cell_name[i] = cell_name[i].decode()
-    cell = Cell(cell_name=cell_name)
-    total_counts = group['total_counts'][...] if 'total_counts' in group.keys() else None
-    pct_counts_mt = group['pct_counts_mt'][...] if 'pct_counts_mt' in group.keys() else None
-    n_genes_by_counts = group['n_genes_by_counts'][...] if 'n_genes_by_counts' in group.keys() else None
-    cell.total_counts = total_counts
-    cell.pct_counts_mt = pct_counts_mt
-    cell.n_genes_by_counts = n_genes_by_counts
+def read_cells(group: h5py.Group) -> Cell:
+    version = group.attrs.get('version', 'v1')
+    if version == 'v1':
+        cell_name = group['cell_name'][...]
+        for i in range(cell_name.shape[0]):
+            if type(cell_name[i]) is bytes:
+                cell_name[i] = cell_name[i].decode()
+        cell = Cell(cell_name=cell_name)
+        total_counts = group['total_counts'][...] if 'total_counts' in group.keys() else None
+        pct_counts_mt = group['pct_counts_mt'][...] if 'pct_counts_mt' in group.keys() else None
+        n_genes_by_counts = group['n_genes_by_counts'][...] if 'n_genes_by_counts' in group.keys() else None
+        cell.total_counts = total_counts
+        cell.pct_counts_mt = pct_counts_mt
+        cell.n_genes_by_counts = n_genes_by_counts
+    else:
+        obs = read_dataframe(group['obs'])
+        cell = Cell(obs=obs)
+        if 'cell_border' in group.keys():
+            cell.cell_border = group['cell_border'][...]
     return cell
 
 

@@ -199,14 +199,19 @@ class StPipeline(object):
         data = filter_cells(self.data, min_gene, max_gene, min_n_genes_by_counts, max_n_genes_by_counts, pct_counts_mt,
                             cell_list, inplace)
         if data.raw is not None and filter_raw:
-            filter_cells(data.raw, min_gene, max_gene, min_n_genes_by_counts, max_n_genes_by_counts, pct_counts_mt,
-                         cell_list, True)
+            # filter_cells(data.raw, min_gene, max_gene, min_n_genes_by_counts, max_n_genes_by_counts, pct_counts_mt,
+            #              cell_list, True)
+            filter_cells(data.raw, cell_list=data.cell_names, inplace=True)
+            if isinstance(data, AnnBasedStereoExpData):
+                data.adata.raw = data.raw.adata
         return data
 
     @logit
     def filter_genes(self,
                      min_cell: Optional[int] = None,
                      max_cell: Optional[int] = None,
+                     min_count: Optional[int] = None,
+                     max_count: Optional[int] = None,
                      gene_list: Optional[Union[list, np.ndarray]] = None,
                      mean_umi_gt: Optional[float] = None,
                      filter_raw: Optional[bool] = True,
@@ -220,6 +225,10 @@ class StPipeline(object):
             minimum number of cells expressed required for a gene to pass filering.
         max_cell
             maximum number of cells expressed required for a gene to pass filering.
+        min_count
+            minimum number of count expressed required for a gene to pass filtering.
+        max_count
+            maximum number of count expressed required for a gene to pass filtering.
         gene_list
             the list of genes to be retained.
         mean_umi_gt
@@ -235,9 +244,11 @@ class StPipeline(object):
         Depending on `inplace`, if `True`, the data will be replaced by those filtered.
         """
         from ..preprocess.filter import filter_genes
-        data = filter_genes(self.data, min_cell, max_cell, gene_list, mean_umi_gt, inplace)
+        data = filter_genes(self.data, min_cell, max_cell, min_count, max_count, gene_list, mean_umi_gt, inplace)
         if data.raw is not None and filter_raw:
-            filter_genes(data.raw, min_cell, max_cell, gene_list, mean_umi_gt, True)
+            filter_genes(data.raw, gene_list=data.genes.gene_name, inplace=True)
+            if isinstance(data, AnnBasedStereoExpData):
+                data.adata.raw = data.raw.adata
         return data
 
     @logit
@@ -268,10 +279,13 @@ class StPipeline(object):
         from ..preprocess import filter_genes
         hvgs_flag = self.result[hvg_res_key]['highly_variable'].to_numpy()
         hvgs = self.data.gene_names[hvgs_flag]
+        hvg_result_filtered = self.result[hvg_res_key][hvgs_flag]
         data = filter_genes(self.data, gene_list=hvgs, inplace=inplace)
         if data.raw is not None and filter_raw:
             filter_genes(data.raw, gene_list=hvgs, inplace=True)
-        data.tl.result[hvg_res_key] = data.tl.result[hvg_res_key][hvgs_flag]
+            if isinstance(data, AnnBasedStereoExpData):
+                data.adata.raw = data.raw.adata
+        data.tl.result[hvg_res_key] = hvg_result_filtered
         return data
 
     @logit
@@ -309,6 +323,8 @@ class StPipeline(object):
         data = filter_coordinates(self.data, min_x, max_x, min_y, max_y, inplace)
         if data.raw is not None and filter_raw:
             filter_coordinates(data.raw, min_x, max_x, min_y, max_y, True)
+            if isinstance(data, AnnBasedStereoExpData):
+                data.adata.raw = data.raw.adata
         return data
 
     @logit
@@ -355,6 +371,8 @@ class StPipeline(object):
             data.tl.result[gene_exp_cluster_key] = data.tl.result[gene_exp_cluster_key][groups]
         if data.raw is not None and filter_raw:
             filter_cells(data.raw, cell_list=data.cell_names, inplace=True)
+            if isinstance(data, AnnBasedStereoExpData):
+                data.adata.raw = data.raw.adata
         return data
 
     @logit
@@ -531,6 +549,8 @@ class StPipeline(object):
 
         if data.raw is not None and filter_raw and data.shape != data.raw.shape:
             filter_genes(data.raw, gene_list=data.gene_names, inplace=True)
+            if isinstance(data, AnnBasedStereoExpData):
+                data.adata.raw = data.raw.adata
 
     @logit
     def highly_variable_genes(
@@ -657,9 +677,16 @@ class StPipeline(object):
         """  # noqa
         if use_highly_genes and hvg_res_key not in self.result:
             raise Exception(f'{hvg_res_key} is not in the result, please check and run the highly_var_genes func.')
-        data = self.subset_by_hvg(hvg_res_key, inplace=False) if use_highly_genes else self.data
+        # data = self.subset_by_hvg(hvg_res_key, inplace=False) if use_highly_genes else self.data
         from ..algorithm.dim_reduce import pca
-        res = pca(data.exp_matrix, n_pcs, svd_solver=svd_solver)
+
+        if use_highly_genes:
+            hvgs = self.result[hvg_res_key]['highly_variable']
+            exp_matrix = self.data.exp_matrix[:, hvgs]
+        else:
+            exp_matrix = self.data.exp_matrix
+        res = pca(exp_matrix, n_pcs, svd_solver=svd_solver)
+
         self.result[res_key] = pd.DataFrame(res['x_pca'])
         self.result[f'{res_key}_variance_ratio'] = res['variance_ratio']
         key = 'pca'
@@ -982,10 +1009,10 @@ class StPipeline(object):
     @logit
     def find_marker_genes(self,
                           cluster_res_key,
-                          method: Literal['t_test', 'wilcoxon_test'] = 't_test',
+                          method: Literal['t_test', 'wilcoxon_test', 'logreg'] = 't_test',
                           case_groups: Union[str, np.ndarray, list] = 'all',
                           control_groups: Union[str, np.ndarray, list] = 'rest',
-                          corr_method: str = 'benjamini-hochberg',
+                          corr_method: Literal['bonferroni', 'benjamini-hochberg'] = 'benjamini-hochberg',
                           use_raw: bool = True,
                           use_highly_genes: bool = True,
                           hvg_res_key: Optional[str] = 'highly_variable_genes',
@@ -1004,7 +1031,7 @@ class StPipeline(object):
         :param method: choose method for statistics.
         :param case_groups: case group, default all clusters.
         :param control_groups: control group, default the rest of groups.
-        :param corr_method: correlation method.
+        :param corr_method: p-value correction method, only available for `t_test` and `wilcoxon_test`.
         :param use_raw: whether to use raw express matrix for analysis, default True.
         :param use_highly_genes: whether to use only the expression of hypervariable genes as input, default True.
         :param hvg_res_key: the key of highly variable genes to get corresponding result.
@@ -1033,17 +1060,28 @@ class StPipeline(object):
         if n_jobs <= 0:
             n_jobs = cpu_count()
 
+        from stereo.utils.pipeline_utils import calc_pct_and_pct_rest, cell_cluster_to_gene_exp_cluster
+        pct, pct_rest = calc_pct_and_pct_rest(self.data, cluster_res_key, filter_raw=False)
+        mean_count_in_cluster = cell_cluster_to_gene_exp_cluster(self.data, cluster_res_key, kind='mean', filter_raw=False)
+
         tool = FindMarker(data=data, groups=self.result[cluster_res_key], method=method, case_groups=case_groups,
-                          control_groups=control_groups, corr_method=corr_method, raw_data=self.raw, sort_by=sort_by,
-                          n_genes=n_genes, ascending=ascending, n_jobs=n_jobs)
-        self.result[res_key] = tool.result
-        self.result[res_key]['parameters'] = {}
-        self.result[res_key]['parameters']['cluster_res_key'] = cluster_res_key
-        self.result[res_key]['parameters']['method'] = method
+                          control_groups=control_groups, corr_method=corr_method, sort_by=sort_by,
+                          n_genes=n_genes, ascending=ascending, n_jobs=n_jobs, pct=pct, pct_rest=pct_rest, mean_count=mean_count_in_cluster)
+        result = tool.result
+        result['parameters'] = {
+            'cluster_res_key': cluster_res_key,
+            'method': method,
+            'control_groups': control_groups,
+            'corr_method': corr_method,
+            'use_raw': use_raw
+        }
+        self.result[res_key] = result
         if output is not None:
             import natsort
             result = self.result[res_key]
-            show_cols = ['scores', 'pvalues', 'pvalues_adj', 'log2fc', 'genes', 'pct', 'pct_rest']
+            show_cols = ['genes', 'scores', 'pvalues', 'pvalues_adj', 'log2fc', 'pct', 'pct_rest']
+            if self.data.genes.real_gene_name is not None:
+                show_cols.insert(1, 'gene_name')
             groups = natsort.natsorted([key for key in result.keys() if '.vs.' in key])
             dat = pd.concat(
                 [
@@ -1296,6 +1334,7 @@ class StPipeline(object):
             self,
             annotation_information: Union[list, dict],
             cluster_res_key: str = 'cluster',
+            default: str = None,
             res_key: str = 'annotation'
     ):
         """
@@ -1303,9 +1342,9 @@ class StPipeline(object):
 
         :param annotation_information: describe the annotation information to the clusters in a list or dictionary format. # noqa
         :param cluster_res_key: get the targeted cluster result to add annotation.
+        :param default: the default value for the groups without being annotated, if None, remain the original value.
         :param res_key: the key for storing annotation result in `self.result`.
 
-        :return: Annotation result is stored in `self.result` where the key is `'annotation'`.
         """
 
         assert cluster_res_key in self.result, f'{cluster_res_key} is not in the result, please check and run the ' \
@@ -1324,24 +1363,34 @@ class StPipeline(object):
         if cluster_res['group'].dtype.name != 'category':
             cluster_res['group'] = cluster_res['group'].astype('category')
 
-        if isinstance(annotation_information, (list, np.ndarray)) and \
-                len(annotation_information) != cluster_res['group'].cat.categories.size:
-            raise Exception(f"The length of annotation information is {len(annotation_information)}, \
-                            not equal to the categories of cluster result whoes"
-                            f" lenght is {cluster_res['group'].cat.categories.size}.")
+        # if isinstance(annotation_information, (list, np.ndarray)) and \
+        #         len(annotation_information) != cluster_res['group'].cat.categories.size:
+        #     raise Exception(f"The length of annotation information is {len(annotation_information)}, \
+        #                     not equal to the categories of cluster result whose"
+        #                     f" length is {cluster_res['group'].cat.categories.size}.")
 
         if isinstance(annotation_information, (list, np.ndarray)):
-            new_categories = np.array(annotation_information, dtype='U')
+            if len(annotation_information) < cluster_res['group'].cat.categories.size:
+                new_categories_list = []
+                for i in range(cluster_res['group'].cat.categories.size):
+                    if i < len(annotation_information):
+                        new_categories_list.append(annotation_information[i])
+                    else:
+                        new_categories_list.append(cluster_res['group'].cat.categories[i] if default is None else default)
+            else:
+                new_categories_list = np.array(annotation_information, dtype='U')
         elif isinstance(annotation_information, dict):
             new_categories_list = []
             for i in cluster_res['group'].cat.categories:
                 if i in annotation_information:
                     new_categories_list.append(annotation_information[i])
                 else:
-                    new_categories_list.append(i)
-            new_categories = np.array(new_categories_list, dtype='U')
+                    new_categories_list.append(i if default is None else default)
+            # new_categories = np.array(new_categories_list, dtype='U')
         else:
             raise TypeError("The type of 'annotation_information' only supports list, ndarray or dict.")
+        
+        new_categories = np.array(new_categories_list, dtype='U')
 
         new_categories_values = new_categories[cluster_res['group'].cat.codes]
 
@@ -1368,7 +1417,6 @@ class StPipeline(object):
             min_in_group_fraction=0.25,
             max_out_group_fraction=0.5,
             compare_abs=False,
-            remove_mismatch=True,
             res_key='marker_genes_filtered',
             output=None
     ):
@@ -1379,9 +1427,6 @@ class StPipeline(object):
         :param min_in_group_fraction:  Minimum fraction of cells expressing the genes for each group, defaults to None
         :param max_out_group_fraction: Maximum fraction of cells from the union of the rest of each group expressing the genes, defaults to None
         :param compare_abs: If `True`, compare absolute values of log fold change with `min_fold_change`, defaults to False
-        :param remove_mismatch: If `True`, remove the records which are mismatch conditions from the find_marker_genes result,
-                                if `False`, these records will be set to np.nan,
-                                defaults to True
         :param res_key: the key of the result of this function to be set to self.result, defaults to 'marker_genes_filtered'
         :param output: path of output_file(.csv). If None, do not generate the output file.
         """  # noqa
@@ -1389,38 +1434,35 @@ class StPipeline(object):
             raise Exception(
                 f'{marker_genes_res_key} is not in the result, please check and run the find_marker_genes func.')
 
-        self.result[res_key] = {}
-        self.result[res_key]['parameters'] = {}
-        self.result[res_key]['parameters']['marker_genes_res_key'] = marker_genes_res_key
-        self.result[res_key]['parameters']['cluster_res_key'] = self.result[marker_genes_res_key]['parameters'][
-            'cluster_res_key']
-        self.result[res_key]['parameters']['method'] = self.result[marker_genes_res_key]['parameters']['method']
-        pct = self.result[marker_genes_res_key]['pct']
-        pct_rest = self.result[marker_genes_res_key]['pct_rest']
-        for key, res in self.result[marker_genes_res_key].items():
+        old_result = self.result[marker_genes_res_key]
+        new_result = {}
+        new_result['parameters'] = copy.deepcopy(old_result['parameters'])
+        new_result['parameters']['marker_genes_res_key'] = marker_genes_res_key
+        new_result['pct'] = pct = old_result['pct']
+        new_result['pct_rest'] = pct_rest = old_result['pct_rest']
+        new_result['mean_count'] = old_result['mean_count']
+        for key, res in old_result.items():
             if '.vs.' not in key:
                 continue
             new_res = res.copy()
             group_name = key.split('.vs.')[0]
             if not compare_abs:
-                gene_set_1 = res[res['log2fc'] < min_fold_change]['genes'].values if min_fold_change is not None else []
+                gene_set_1 = res[res['log2fc'] < min_fold_change]['genes'].to_numpy() if min_fold_change is not None else []  # noqa
             else:
-                gene_set_1 = res[res['log2fc'].abs() < min_fold_change][
-                    'genes'].values if min_fold_change is not None else []
-            gene_set_2 = pct[pct[group_name] < min_in_group_fraction][
-                'genes'].values if min_in_group_fraction is not None else []
-            gene_set_3 = pct_rest[pct_rest[group_name] > max_out_group_fraction][
-                'genes'].values if max_out_group_fraction is not None else []
-            flag = res['genes'].isin(np.union1d(gene_set_1, np.union1d(gene_set_2, gene_set_3)))
-            if remove_mismatch:
-                new_res = new_res[flag == False]  # noqa
-            else:
-                new_res[flag == True] = np.nan  # noqa
-            self.result[res_key][key] = new_res
+                gene_set_1 = res[res['log2fc'].abs() < min_fold_change]['genes'].to_numpy() if min_fold_change is not None else []  # noqa
+            gene_set_2 = pct[pct[group_name] < min_in_group_fraction]['genes'].to_numpy() if min_in_group_fraction is not None else []  # noqa
+            gene_set_3 = pct_rest[pct_rest[group_name] > max_out_group_fraction]['genes'].to_numpy() if max_out_group_fraction is not None else []  # noqa
+            flag = res['genes'].isin(np.union1d(gene_set_1, np.union1d(gene_set_2, gene_set_3))).to_numpy()
+            columns = new_res.columns[~new_res.columns.isin(['genes'])].to_numpy()
+            new_res.loc[flag, columns] = np.nan  # noqa
+            new_result[key] = new_res
+        self.result[res_key] = new_result
         if output is not None:
             import natsort
             result = self.result[res_key]
-            show_cols = ['scores', 'pvalues', 'pvalues_adj', 'log2fc', 'genes', 'pct', 'pct_rest']
+            show_cols = ['genes', 'scores', 'pvalues', 'pvalues_adj', 'log2fc', 'pct', 'pct_rest']
+            if self.data.genes.real_gene_name is not None:
+                show_cols.insert(1, 'gene_name')
             groups = natsort.natsorted([key for key in result.keys() if '.vs.' in key])
             dat = pd.concat(
                 [
@@ -1434,6 +1476,75 @@ class StPipeline(object):
 
         key = 'marker_genes'
         self.reset_key_record(key, res_key)
+
+
+    @logit
+    def adjusted_rand_score(
+        self,
+        cluster_res_key_a: str,
+        cluster_res_key_b: str
+    ):
+        """
+        Calculate Adjusted Rand index between two cluster results.
+
+        The first cluster result can be seen as true labels while the second as predicted labels.
+
+        :param cluster_res_key_a: the key to get the first cluster result, defaults to None
+        :param cluster_res_key_b: the key to get the second cluster result, defaults to None
+
+        """
+        from sklearn.metrics import adjusted_rand_score
+
+        if cluster_res_key_a is None or cluster_res_key_a not in self.data.cells:
+            raise ValueError(f"Cann't found cluster result by key {cluster_res_key_a}")
+        
+        if cluster_res_key_b is None or cluster_res_key_b not in self.data.cells:
+            raise ValueError(f"Cann't found cluster result by key {cluster_res_key_b}")
+        
+        res_key = f'adjusted_rand_score_{cluster_res_key_a}_{cluster_res_key_b}'
+        self.result[res_key] = adjusted_rand_score(
+            self.data.cells[cluster_res_key_a],
+            self.data.cells[cluster_res_key_b]
+        )
+
+
+    @logit
+    def silhouette_score(
+        self,
+        cluster_res_key: str,
+        metric: str = 'euclidean',
+        sample_size: Optional[int] = None,
+        random_number: int = 10086,
+    ):
+        """
+        Calculate the mean Silhouette Coefficient for a cluster result.
+
+        :param cluster_res_key: the key to get cluster result from cells, defaults to None
+        :param metric: The metric to use when calculating distance between cells/bins based on exp_matrix, defaults to 'euclidean'.
+                       It must be one of the options allowed by <sklearn.metrics.pairwise.pairwise_distances>.
+        :param sample_size: The size of the sample to use when computing the Silhouette Coefficient
+                            on a random subset of the data, if it is None, no sampling is used.
+        :param random_number: random number for selecting a subset of samples,
+                              used when sample_size is not None, defaults to 10086,
+                              give fixed value in multiple calls for reproducible results.
+
+        """
+        from sklearn.metrics import silhouette_score
+        if not self.data.issparse():
+            self.data.array2sparse()
+        
+        if cluster_res_key is None or cluster_res_key not in self.data.cells:
+            raise ValueError(f"Cann't found cluster result by key {cluster_res_key}")
+        
+        res_key = f'silhouette_score_{cluster_res_key}'
+        self.result[res_key] = silhouette_score(
+            self.data.exp_matrix,
+            self.data.cells[cluster_res_key],
+            metric=metric,
+            sample_size=sample_size,
+            random_state=random_number
+        )
+
 
     # def scenic(self, tfs, motif, database_dir, res_key='scenic', use_raw=True, outdir=None,):
     #     """
@@ -1465,13 +1576,13 @@ class AnnBasedStPipeline(StPipeline):
         self.__based_ann_data = based_ann_data
         self.result = AnnBasedResult(based_ann_data)
 
-    def subset_by_hvg(self, hvg_res_key, use_raw=False, inplace=True):
-        data: AnnBasedStereoExpData = self.data if inplace else copy.deepcopy(self.data)
-        if hvg_res_key not in self.result:
-            raise Exception(f'{hvg_res_key} is not in the result, please check and run the normalization func.')
-        df = self.result[hvg_res_key]
-        data._ann_data._inplace_subset_var(df['highly_variable'].values)
-        return data
+    # def subset_by_hvg(self, hvg_res_key, use_raw=False, inplace=True):
+    #     data: AnnBasedStereoExpData = self.data if inplace else copy.deepcopy(self.data)
+    #     if hvg_res_key not in self.result:
+    #         raise Exception(f'{hvg_res_key} is not in the result, please check and run the normalization func.')
+    #     df = self.result[hvg_res_key]
+    #     data._ann_data._inplace_subset_var(df['highly_variable'].values)
+    #     return data
 
     # def raw_checkpoint(self):
     #     from .stereo_exp_data import AnnBasedStereoExpData

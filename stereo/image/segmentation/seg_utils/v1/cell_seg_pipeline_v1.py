@@ -72,7 +72,7 @@ class CellSegPipeV1(CellSegPipe):
         tissue_cell_label = []
         for img, tissue_bbox in zip(self.img_filter, self.tissue_bbox):
             tissue_img = [img[p[0]: p[2], p[1]: p[3]] for p in tissue_bbox]
-            label_list = cell_infer.cellInfer(self.model_path, tissue_img, self.deep_crop_size, self.overlap)
+            label_list = cell_infer.cellInfer(self.model_path, tissue_img, self.deep_crop_size, self.overlap, self.gpu)
             tissue_cell_label.append(label_list)
         if q is not None:
             q.put(tissue_cell_label)

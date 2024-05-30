@@ -170,7 +170,10 @@ def make_draw_df(
         gene_group_labels.append(label)
         gene_group_positions.append((start, start + len(gene_list) - 1))
         start += len(gene_list)
-    draw_df = data_helper.exp_matrix2df(data, gene_name=np.array(gene_names))
+    if marker_res['parameters']['use_raw']:
+        draw_df = data_helper.exp_matrix2df(data.raw, gene_name=np.array(gene_names))
+    else:
+        draw_df = data_helper.exp_matrix2df(data, gene_name=np.array(gene_names))
     draw_df = pd.concat([draw_df, group], axis=1)
     draw_df['group'] = draw_df['group'].astype('category')
     draw_df = draw_df.set_index(['group'])
@@ -364,35 +367,56 @@ class MarkerGenesScatterPlot:
         res_dict = {}
         for mg_key in marker_genes_group_keys:
             group_name = mg_key.split('.vs.')[0]
-            res_dict[group_name] = self.marker_genes_res[mg_key]
+            res_dict[group_name] = self.marker_genes_res[mg_key].set_index('genes')
         return res_dict
 
     def _get_dot_size_and_color(
             self,
             groups,
-            gene_index,
+            gene_names,
+            marker_genes_res_dict,
+            mean_expressin_in_group,
             values_to_plot=None,
     ):
         original_marker_genes_key = self.marker_genes_parameters.get('marker_genes_res_key')
-        pct: pd.DataFrame = self.data.tl.result[original_marker_genes_key][
-            'pct'] if original_marker_genes_key is not None else self.marker_genes_res['pct']
-        marker_genes_res_dict = self._store_marker_genes_result_by_group()
-        mean_expressin_in_group = pipeline_utils.cell_cluster_to_gene_exp_cluster(
-            self.data, self.marker_genes_parameters['cluster_res_key'], kind='mean')
+        if original_marker_genes_key is not None:
+            pct: pd.DataFrame = self.data.tl.result[original_marker_genes_key]['pct']
+        else:
+            pct: pd.DataFrame = self.marker_genes_res['pct']
+        pct = pct.set_index('genes')
+        # marker_genes_res_dict = self._store_marker_genes_result_by_group()
+        # mean_expressin_in_group = pipeline_utils.cell_cluster_to_gene_exp_cluster(
+        #     self.data, self.marker_genes_parameters['cluster_res_key'], kind='mean')
+        
         for g in groups:
+            if g in marker_genes_res_dict and 'mean_count' not in marker_genes_res_dict[g].columns:
+                genes = marker_genes_res_dict[g].index
+                marker_genes_res_dict[g]['mean_count'] = mean_expressin_in_group[g].loc[genes].to_numpy()
+            dot_size = pct[g].loc[gene_names].to_numpy() * 100
             if values_to_plot is None:
-                yield pct[g][gene_index].values * 100, mean_expressin_in_group[g][gene_index].values
+                # yield pct[g][gene_index].values * 100, mean_expressin_in_group[g][gene_index].values
+                dot_color = mean_expressin_in_group[g].loc[gene_names].to_numpy()
             else:
                 if values_to_plot == 'logfoldchanges':
                     column = 'log2fc'
                 else:
                     column = values_to_plot
                 column = column.replace('log10_', '')
-                if values_to_plot.startswith('log10'):
-                    yield pct[g][gene_index].values * 100, -1 * np.log10(
-                        marker_genes_res_dict[g][column][gene_index].values)
+                flag = gene_names.isin(marker_genes_res_dict[g].index).to_numpy()
+                # dot_size = pct[g].loc[gene_names].to_numpy() * 100
+                if not np.any(flag):
+                    dot_color = 0
                 else:
-                    yield pct[g][gene_index].values * 100, marker_genes_res_dict[g][column][gene_index].values
+                    dot_color = np.zeros(gene_names.size, dtype=float)
+                    gn = gene_names[flag]
+                    if values_to_plot.startswith('log10'):
+                        # yield pct[g][gene_index].values * 100, -1 * np.log10(marker_genes_res_dict[g][column][gene_index].values)
+                        dot_color[flag] = -1 * np.log10(marker_genes_res_dict[g][column].loc[gn].to_numpy())
+                        # yield pct[g].loc[gene_names].to_numpy() * 100, dot_color
+                    else:
+                        # yield pct[g][gene_index].values * 100, marker_genes_res_dict[g][column][gene_index].values
+                        dot_color[flag] = marker_genes_res_dict[g][column].loc[gn].to_numpy()
+            yield dot_size, dot_color
 
     def _create_plot_scatter_data(
             self,
@@ -422,6 +446,9 @@ class MarkerGenesScatterPlot:
         df_list = []
         if sort_by == 'logfoldchanges':
             sort_by = 'log2fc'
+        marker_genes_res_dict = self._store_marker_genes_result_by_group()
+        mean_expressin_in_group = pipeline_utils.cell_cluster_to_gene_exp_cluster(
+            self.data, self.marker_genes_parameters['cluster_res_key'], kind='mean', filter_raw=False)
         for mg_key in marker_genes_group_keys:
             if genes is None:
                 topn_res = self.marker_genes_res[mg_key].sort_values(by=sort_by, ascending=False).head(markers_num)
@@ -431,7 +458,8 @@ class MarkerGenesScatterPlot:
                 isin = self.marker_genes_res[mg_key]['genes'].isin(genes)
                 topn_res = self.marker_genes_res[mg_key][isin].sort_values(by=sort_by, ascending=False)
             current_gene_names = topn_res['genes']
-            current_gene_index = topn_res.index
+            # current_gene_index = topn_res.index
+            # return current_gene_names, current_gene_index
             if current_gene_names.size == 0:
                 continue
             current_gene_count = len(gene_names)
@@ -441,7 +469,10 @@ class MarkerGenesScatterPlot:
             marker_genes_group_keys_to_show.append(mg_key)
             tmp = []
             for i, dot_style in enumerate(
-                    self._get_dot_size_and_color(group_names, current_gene_index, values_to_plot)):
+                    self._get_dot_size_and_color(
+                        group_names, current_gene_names, 
+                        marker_genes_res_dict, mean_expressin_in_group, values_to_plot)
+                    ):
                 dot_size, dot_color = dot_style
                 df = pd.DataFrame({
                     'x': current_gene_idx,

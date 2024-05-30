@@ -233,7 +233,7 @@ def base_scatter(
             from cv2 import cvtColor, COLOR_BGR2GRAY
             base_image = cvtColor(base_image[:, :, [2, 1, 0]], COLOR_BGR2GRAY)
         if len(base_image.shape) == 3 and base_image.dtype == np.uint16:
-            if base_im_value_range is not None:
+            if base_im_value_range is None:
                 bmin, bmax = base_image.min(), base_image.max()
             else:
                 bmin, bmax = base_im_value_range

@@ -1,0 +1,8 @@
+tensorflow==2.7.0
+albumentations==0.4.6
+--extra-index-url https://download.pytorch.org/whl/
+torch==1.10.0+cu113
+--extra-index-url https://download.pytorch.org/whl/
+torchvision==0.11.1+cu113
+onnxruntime-gpu
+protobuf~=3.20.0
