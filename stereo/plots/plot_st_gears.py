@@ -11,11 +11,11 @@ class PlotStGears(MSDataPlotBase):
     def __init__(self, ms_data, pipeline_res=None):
         super().__init__(ms_data, pipeline_res)
         from stereo.algorithm.st_gears.visual import RegisPlotter
-        self.__plotter = RegisPlotter(num_cols=3, dpi_val=1000)
+        self.__plotter = RegisPlotter(num_cols=3, dpi_val=100)
         self.__scatter_size_factor = 11000
     
 
-    def plot_scatter_by_grid(
+    def scatter_for_st_gears(
         self,
         ctype: Literal['cell_label', 'num_anchors', 'pi_max', 'strong_anch', 'weight', 'sum_gene'] = 'cell_label',
         lay_type: Literal['to_pre', 'to_next'] = 'to_pre',

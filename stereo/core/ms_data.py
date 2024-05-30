@@ -680,6 +680,15 @@ class MSData(_MSDataStruct):
 
 
     def integrate(self, scope=None, remove_existed=False, **kwargs):
+        """
+        Integrate some single-samples specified by `scope` to a merged one.
+        
+        :param scope: Which scope of samples to be integrated, defaults to None.
+                        Each integrate sample is saved in memory, performing this function
+                        by passing duplicate `scope` will return the saved one.
+        :param remove_existed: Whether to remove the saved integrate sample when passing a duplicate `scope`, defaults to False.
+
+        """
         from stereo.utils.data_helper import merge
         if self._var_type not in {"union", "intersect"}:
             raise Exception("Please specify the operation on samples with the parameter '_var_type'")
@@ -816,7 +825,7 @@ class MSData(_MSDataStruct):
         assert isinstance(item, str) or len(item) == len(self[_from]._names), "`item`'s length not equal to _from"
         scope_names = self[scope]._names
         scope_key = self.generate_scope_key(scope_names)
-        assert scope_key in self._scopes_data or self._merged_data, f"`to_integrate` need running function `integrate`"
+        assert scope_key in self._scopes_data or self._merged_data, f"`to_integrate` need running function `integrate` first"
         if type == 'obs':
             if scope_key in self._scopes_data:
                 self._scopes_data[scope_key].cells[res_key] = fill

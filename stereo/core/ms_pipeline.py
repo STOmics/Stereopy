@@ -60,6 +60,22 @@ class MSDataPipeLine(object):
         self._result_keys = result_keys
         self._reset_result_keys()
     
+    @property
+    def mode(self):
+        return self.__mode
+    
+    @mode.setter
+    def mode(self, mode):
+        self.__mode = mode
+    
+    @property
+    def scope(self):    
+        return self.__scope
+    
+    @scope.setter
+    def scope(self, scope):
+        self.__scope = scope
+    
     def _reset_result_keys(self):
         for scope_key, result_keys in self._result_keys.items():
             self._result_keys[scope_key] = []
@@ -281,9 +297,23 @@ class MSDataPipeLine(object):
         scope: slice = slice(None),
         mode: str = "integrate"
     ):
+        """
+        Set the `scope` and `mode` globally for Multi-slice analysis.
+
+        :param scope: the scope, defaults to slice(None)
+        :param mode: the mode, defaults to "integrate"
+        """
         assert mode in ("integrate", "isolated"), 'mode should be one of [`integrate`, `isolated`]'
         self.__mode = mode
         self.__scope = scope
+        if self.__class__.ATTR_NAME == 'tl':
+            self.ms_data.plt.scope = scope
+            self.ms_data.plt.mode = mode
+        elif self.__class__.ATTR_NAME == 'plt':
+            self.ms_data.tl.scope = scope
+            self.ms_data.tl.mode = mode
+        else:
+            pass
 
 
 slice_generator = _scope_slice()

@@ -1009,10 +1009,10 @@ class StPipeline(object):
     @logit
     def find_marker_genes(self,
                           cluster_res_key,
-                          method: Literal['t_test', 'wilcoxon_test'] = 't_test',
+                          method: Literal['t_test', 'wilcoxon_test', 'logreg'] = 't_test',
                           case_groups: Union[str, np.ndarray, list] = 'all',
                           control_groups: Union[str, np.ndarray, list] = 'rest',
-                          corr_method: str = 'benjamini-hochberg',
+                          corr_method: Literal['bonferroni', 'benjamini-hochberg'] = 'benjamini-hochberg',
                           use_raw: bool = True,
                           use_highly_genes: bool = True,
                           hvg_res_key: Optional[str] = 'highly_variable_genes',
@@ -1031,7 +1031,7 @@ class StPipeline(object):
         :param method: choose method for statistics.
         :param case_groups: case group, default all clusters.
         :param control_groups: control group, default the rest of groups.
-        :param corr_method: correlation method.
+        :param corr_method: p-value correction method, only available for `t_test` and `wilcoxon_test`.
         :param use_raw: whether to use raw express matrix for analysis, default True.
         :param use_highly_genes: whether to use only the expression of hypervariable genes as input, default True.
         :param hvg_res_key: the key of highly variable genes to get corresponding result.

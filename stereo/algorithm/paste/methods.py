@@ -68,8 +68,10 @@ def pairwise_align(
     if use_gpu:
         try:
             import torch
+            backend = ot.backend.TorchBackend()
         except Exception:
             logger.warning("We currently only have gpu support for Pytorch. Please install torch.")
+            backend = ot.backend.NumpyBackend()
 
         if isinstance(backend, ot.backend.TorchBackend):
             if torch.cuda.is_available():
@@ -225,8 +227,10 @@ def center_align(
     if use_gpu:
         try:
             import torch
+            backend = ot.backend.TorchBackend()
         except Exception:
             logger.warning("We currently only have gpu support for Pytorch. Please install torch.")
+            backend = ot.backend.NumpyBackend()
 
         if isinstance(backend, ot.backend.TorchBackend):
             if torch.cuda.is_available():
