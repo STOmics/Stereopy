@@ -54,6 +54,7 @@ The plot collection for StereoExpData object.
     plots.PlotCoOccurrence.co_occurrence_heatmap
     plots.PlotPaga.paga_plot
     plots.PlotPaga.paga_compare
+    plots.PlotPaga.draw_graph
     plots.PlotDendrogram.dendrogram
     plots.ClustersGenesScatter.clusters_genes_scatter
     plots.ClustersGenesHeatmap.clusters_genes_heatmap

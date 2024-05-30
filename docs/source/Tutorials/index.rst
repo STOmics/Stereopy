@@ -80,7 +80,6 @@ main analysis. If you want to dig deeper, **API** could give more information.
     :maxdepth: 1
     :hidden:
 
-    Multi_Samples
     Basic_Workflow
     Data_Preprocessing
     Annotation
