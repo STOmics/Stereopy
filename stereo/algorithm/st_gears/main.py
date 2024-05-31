@@ -43,9 +43,9 @@ class StGears(MSDataAlgorithmBase):
         and input into st.io.read_h5ad to reload the data.
 
         :param cluster_res_key: The key to get a cluster result or the column name in obs where annotated cell types are stored, defaults to None
-        :param start_i: The index of first slice to calulate, defaults to 0
-        :param end_i: The index of last slice to calulate, defaults to None.
-                        By default, it is the last of all slices.
+        :param start_i: The index of first sample to calulate, defaults to 0
+        :param end_i: The index of last sample to calulate, defaults to None.
+                        By default, it is the last of all samples.
         :param tune_alpha_li: List of regularization factor in Fused Gromov Wasserstin (FGW) OT problem formulation, to be
                         automatically tunned. Refer to this paper for the FGW formulation:
                         Optimal transport for structured data with application on graphs. T Vayer, L Chapel, R Flamary,
@@ -58,7 +58,7 @@ class StGears(MSDataAlgorithmBase):
                         for margin constrains. Refer to our paper for more details. Only assign when uniform_weight is False, defaults to 'kl'
         :param map_method_dis2wei: Methood to map cell types feature similarity to margin weighhts. Choose between linear' and 'logistic'.
                         Only assign when uniform_weight is False, defaults to 'logistic'
-        :param filter_by_label: Where to filter out spots not appearing in its registered slice, so it won't interfere with the ot
+        :param filter_by_label: Where to filter out spots not appearing in its registered sample, so it won't interfere with the ot
                         solving process, defaults to True
         :param use_gpu: Whether to use GPU, in the parameter calculation process. OT solving process is only built on CPU, defaults to False
         :param verbose: Whether to print the OT solving process of each iteration, defaults to False
