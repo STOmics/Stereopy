@@ -33,7 +33,12 @@ from stereo.core.stereo_exp_data import AnnBasedStereoExpData
 from stereo.core.stereo_exp_data import StereoExpData
 from stereo.core.result import _BaseResult
 from stereo.io import h5ad
-from stereo.io.utils import remove_genes_number, integrate_matrix_by_genes, transform_marker_genes_to_anndata
+from stereo.io.utils import(
+    remove_genes_number,
+    integrate_matrix_by_genes,
+    transform_marker_genes_to_anndata,
+    get_gem_comments
+)
 from stereo.log_manager import logger
 from stereo.utils.read_write_utils import ReadWriteUtils
 
@@ -45,7 +50,7 @@ def read_gem(
         bin_type: str = "bins",
         bin_size: int = 100,
         is_sparse: bool = True,
-        bin_coor_offset: bool = False,
+        bin_coord_offset: bool = False,
         gene_name_index: bool = False
 ):
     """
@@ -63,7 +68,7 @@ def read_gem(
         the size of bin to merge, when `bin_type` is set to `'bins'`.
     is_sparse
         the expression matrix is sparse matrix, if `True`, otherwise `np.ndarray`.
-    bin_coor_offset
+    bin_coord_offset
         if set it to True, the coordinates of bins are calculated as
         ((gene_coordinates - min_coordinates) // bin_size) * bin_size + min_coordinates + bin_size/2
     gene_name_index
@@ -76,8 +81,10 @@ def read_gem(
     -------------
     An object of StereoExpData.
     """
-    data = StereoExpData(file_path=file_path, bin_type=bin_type, bin_size=bin_size)
-    df = pd.read_csv(str(data.file), sep=sep, comment='#', header=0)
+    data = StereoExpData(file_path=file_path, file_format='gem', bin_type=bin_type, bin_size=bin_size)
+    comments_lines, _ = get_gem_comments(str(data.file))
+    # df = pd.read_csv(str(data.file), sep=sep, comment='#', header=0)
+    df = pd.read_csv(str(data.file), sep=sep, header=comments_lines, engine='pyarrow')
     if 'MIDCounts' in df.columns:
         df.rename(columns={'MIDCounts': 'UMICount'}, inplace=True)
     elif 'MIDCount' in df.columns:
@@ -101,7 +108,7 @@ def read_gem(
     if data.bin_type == 'cell_bins':
         gdf = parse_cell_bin_coor(df)
     else:
-        if bin_coor_offset:
+        if bin_coord_offset:
             df = parse_bin_coor(df, bin_size)
         else:
             df = parse_bin_coor_no_offset(df, bin_size)
@@ -131,6 +138,7 @@ def read_gem(
     else:
         data.position = gdf.loc[cells][['x_center', 'y_center']].values
         data.cells.cell_point = gdf.loc[cells]['cell_point'].values
+    data.position = data.position.astype(np.uint32)
     data.offset_x = df['x'].min()
     data.offset_y = df['y'].min()
     resolution = 500
@@ -147,6 +155,7 @@ def read_gem(
         'maxExp': data.exp_matrix.max(),  # noqa
         'resolution': resolution,
     }
+    data.bin_coord_offset = bin_coord_offset
     logger.info(f'the martrix has {data.cell_names.size} cells, and {data.gene_names.size} genes.')
     return data
 
@@ -247,14 +256,18 @@ def read_stereo_h5ad(
     return data
 
 
-def _read_stereo_h5ad_from_group(f, data: StereoExpData, use_raw, use_result, bin_type=None, bin_size=None):
+def _read_stereo_h5ad_from_group(f: Union[h5py.File, h5py.Group], data: StereoExpData, use_raw, use_result, bin_type=None, bin_size=None):
     # read data
     data.bin_type = bin_type if bin_type is not None else 'bins'
     data.bin_size = bin_size if bin_size is not None else 1
+    not_data_attr_keys = {'bin_type', 'bin_size', 'merged'}
     if f.attrs is not None:
         data.attr = {}
         for key, value in f.attrs.items():
-            data.attr[key] = value
+            if key not in not_data_attr_keys:
+                data.attr[key] = value
+            else:
+                setattr(data, key, value)
     for k in f.keys():
         if k == 'cells':
             data.cells = h5ad.read_group(f[k])
@@ -316,9 +329,10 @@ def _read_stereo_h5ad_from_group(f, data: StereoExpData, use_raw, use_result, bi
     return data
 
 
-def _read_stereo_h5_result(key_record: dict, data, f):
+def _read_stereo_h5_result(key_record: dict, data: StereoExpData, f: Union[h5py.File, h5py.Group]):
     import ast
     from ..utils.pipeline_utils import cell_cluster_to_gene_exp_cluster
+    key_record = deepcopy(key_record)
     for analysis_key in list(key_record.keys()):
         res_keys = key_record[analysis_key]
         for res_key in res_keys:
@@ -330,6 +344,10 @@ def _read_stereo_h5_result(key_record: dict, data, f):
                 data.tl.result[res_key] = hvg_df
             if analysis_key in ['pca', 'umap', 'totalVI', 'spatial_alignment_integration']:
                 data.tl.result[res_key] = pd.DataFrame(h5ad.read_dataset(f[f'{res_key}@{analysis_key}']))
+                if analysis_key == 'pca':
+                    variance_ratio_key = f'{res_key}_variance_ratio'
+                    if f'{variance_ratio_key}@{analysis_key}_variance_ratio' in f.keys():
+                        data.tl.result[variance_ratio_key] = h5ad.read_dataset(f[f'{variance_ratio_key}@{analysis_key}_variance_ratio'])  # noqa
             if analysis_key == 'neighbors':
                 data.tl.result[res_key] = {
                     # 'neighbor': h5ad.read_group(f[f'neighbor@{res_key}@neighbors']),
@@ -428,13 +446,15 @@ def read_h5ms(file_path, use_raw=True, use_result=True):
     """
     from stereo.core.ms_data import MSData
     with h5py.File(file_path, mode='r') as f:
-        ms_data = MSData()
+        # ms_data = MSData()
         data_list = []
         merged_data = None
         names = []
         var_type = None
         relationship = None
-        result = {}
+        scopes_data = {}
+        result_keys = {}
+        # result = {}
         for k in f.keys():
             if k == 'sample':
                 for one_slice_key in f[k].keys():
@@ -442,30 +462,48 @@ def read_h5ms(file_path, use_raw=True, use_result=True):
                     data_list.append(
                         _read_stereo_h5ad_from_group(f[k][one_slice_key], data, use_raw, use_result))  # noqa
             elif k == 'sample_merged':
-                merged_data = StereoExpData()
-                merged_data = _read_stereo_h5ad_from_group(f[k], merged_data, use_raw, use_result)  # noqa
+                for mk in f[k].keys():
+                    scope_data = StereoExpData()
+                    scope_data = _read_stereo_h5ad_from_group(f[k][mk], scope_data, use_raw, use_result)
+                    scopes_data[mk] = scope_data
+                    if f[k][mk].attrs is not None:
+                        merged_from_all = f[k][mk].attrs.get('merged_from_all', False)
+                        if merged_from_all:
+                            merged_data = scope_data
+                # merged_data = StereoExpData()
+                # merged_data = _read_stereo_h5ad_from_group(f[k], merged_data, use_raw, use_result)  # noqa
             elif k == 'names':
                 names = h5ad.read_dataset(f[k])
+                if isinstance(names, np.ndarray):
+                    names = names.tolist()
             elif k == 'var_type':
                 var_type = h5ad.read_dataset(f[k])
             elif k == 'relationship':
                 relationship = h5ad.read_dataset(f[k])
-            elif k == 'mss':
-                for key in f['mss'].keys():
-                    data = StereoExpData()
-                    data.tl.result = {}
-                    h5ad.read_key_record(f['mss'][key]['key_record'], data.tl.key_record)
-                    _read_stereo_h5_result(data.tl.key_record, data, f['mss'][key])
-                    result[key] = data.tl.result
+            elif k == 'result_keys':
+                for rk in f[k].keys():
+                    result_keys[rk] = list(h5ad.read_dataset(f[k][rk]))
+            # elif k == 'mss':
+            #     for key in f['mss'].keys():
+            #         data = StereoExpData()
+            #         data.tl.result = {}
+            #         h5ad.read_key_record(f['mss'][key]['key_record'], data.tl.key_record)
+            #         _read_stereo_h5_result(data.tl.key_record, data, f['mss'][key])
+            #         result[key] = data.tl.result
             else:
                 logger.warn(f"{k} not in rules, did not read from h5ms")
 
-        ms_data._names = names
-        ms_data._var_type = var_type
-        ms_data._data_list = data_list
-        ms_data._merged_data = merged_data
-        ms_data.tl.result = result
-        ms_data._relationship = relationship
+        ms_data = MSData(
+            _data_list=data_list,
+            _names=names,
+            _var_type=var_type,
+            _relationship=relationship
+        )
+        ms_data.merged_data = merged_data
+        # ms_data.tl.result = result
+        ms_data.scopes_data = scopes_data
+        ms_data.tl.result_keys = result_keys
+
         return ms_data
 
 
@@ -1090,7 +1128,7 @@ def read_gef(
         if not is_cell_bin:
             raise Exception('This file is not the type of CellBin.')
 
-        data = StereoExpData(file_path=file_path, bin_type=bin_type, bin_size=bin_size)
+        data = StereoExpData(file_path=file_path, file_format='gef', bin_type=bin_type, bin_size=bin_size)
         from gefpy.cgef_reader_cy import CgefR
         gef = CgefR(file_path, True)
         cellborders_coord_list, coord_count_per_cell = gef.get_cellborders([])

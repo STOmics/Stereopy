@@ -10,6 +10,7 @@ import numpy as np
 import ot
 from sklearn.decomposition import NMF
 
+
 from stereo.core.cell import Cell
 from stereo.core.gene import Gene
 from stereo.core.stereo_exp_data import StereoExpData
@@ -67,8 +68,10 @@ def pairwise_align(
     if use_gpu:
         try:
             import torch
+            backend = ot.backend.TorchBackend()
         except Exception:
             logger.warning("We currently only have gpu support for Pytorch. Please install torch.")
+            backend = ot.backend.NumpyBackend()
 
         if isinstance(backend, ot.backend.TorchBackend):
             if torch.cuda.is_available():
@@ -224,8 +227,10 @@ def center_align(
     if use_gpu:
         try:
             import torch
+            backend = ot.backend.TorchBackend()
         except Exception:
             logger.warning("We currently only have gpu support for Pytorch. Please install torch.")
+            backend = ot.backend.NumpyBackend()
 
         if isinstance(backend, ot.backend.TorchBackend):
             if torch.cuda.is_available():
@@ -358,12 +363,11 @@ def center_NMF(W, H, slices, pis, lmbda, n_components, random_seed, dissimilarit
     return W_new, H_new
 
 
-def my_fused_gromov_wasserstein(M, C1, C2, p, q, G_init=None, loss_fun='square_loss', alpha=0.5, armijo=False,
-                                log=False, numItermax=200, use_gpu=False, **kwargs):
+def my_fused_gromov_wasserstein(M, C1, C2, p, q, G_init = None, loss_fun='square_loss', alpha=0.5, armijo=False, log=False,numItermax=200, tol_rel=1e-9, tol_abs=1e-9, use_gpu = False, **kwargs):
     """
     Adapted fused_gromov_wasserstein with the added capability of defining a G_init (inital mapping).
     Also added capability of utilizing different POT backends to speed up computation.
-
+    
     For more info, see: https://pythonot.github.io/gen_modules/ot.gromov.html
     """
 
@@ -377,7 +381,7 @@ def my_fused_gromov_wasserstein(M, C1, C2, p, q, G_init=None, loss_fun='square_l
     if G_init is None:
         G0 = p[:, None] * q[None, :]
     else:
-        G0 = (1 / nx.sum(G_init)) * G_init
+        G0 = (1/nx.sum(G_init)) * G_init
         if use_gpu:
             G0 = G0.cuda()
 
@@ -386,10 +390,19 @@ def my_fused_gromov_wasserstein(M, C1, C2, p, q, G_init=None, loss_fun='square_l
 
     def df(G):
         return ot.gromov.gwggrad(constC, hC1, hC2, G)
+    
+    if loss_fun == 'kl_loss':
+        armijo = True  # there is no closed form line-search with KL
+
+    if armijo:
+        def line_search(cost, G, deltaG, Mi, cost_G, **kwargs):
+            return ot.optim.line_search_armijo(cost, G, deltaG, Mi, cost_G, nx=nx, **kwargs)
+    else:
+        def line_search(cost, G, deltaG, Mi, cost_G, **kwargs):
+            return solve_gromov_linesearch(G, deltaG, cost_G, C1, C2, M=0., reg=1., nx=nx, **kwargs)
 
     if log:
-        res, log = ot.gromov.cg(p, q, (1 - alpha) * M, alpha, f, df, G0, armijo=armijo, C1=C1, C2=C2, constC=constC,
-                                log=True, numItermax=numItermax, **kwargs)
+        res, log = ot.optim.cg(p, q, (1 - alpha) * M, alpha, f, df, G0, line_search, log=True, numItermax=numItermax, stopThr=tol_rel, stopThr2=tol_abs, **kwargs)
 
         fgw_dist = log['loss'][-1]
 
@@ -399,5 +412,70 @@ def my_fused_gromov_wasserstein(M, C1, C2, p, q, G_init=None, loss_fun='square_l
         return res, log
 
     else:
-        return ot.gromov.cg(p, q, (1 - alpha) * M, alpha, f, df, G0, armijo=armijo, C1=C1, C2=C2, constC=constC,
-                            **kwargs)
+        return ot.optim.cg(p, q, (1 - alpha) * M, alpha, f, df, G0, line_search, numItermax=numItermax, stopThr=tol_rel, stopThr2=tol_abs, **kwargs)
+
+def solve_gromov_linesearch(G, deltaG, cost_G, C1, C2, M, reg,
+                            alpha_min=None, alpha_max=None, nx=None, **kwargs):
+    """
+    Solve the linesearch in the FW iterations
+
+    Parameters
+    ----------
+
+    G : array-like, shape(ns,nt)
+        The transport map at a given iteration of the FW
+    deltaG : array-like (ns,nt)
+        Difference between the optimal map found by linearization in the FW algorithm and the value at a given iteration
+    cost_G : float
+        Value of the cost at `G`
+    C1 : array-like (ns,ns), optional
+        Structure matrix in the source domain.
+    C2 : array-like (nt,nt), optional
+        Structure matrix in the target domain.
+    M : array-like (ns,nt)
+        Cost matrix between the features.
+    reg : float
+        Regularization parameter.
+    alpha_min : float, optional
+        Minimum value for alpha
+    alpha_max : float, optional
+        Maximum value for alpha
+    nx : backend, optional
+        If let to its default value None, a backend test will be conducted.
+    Returns
+    -------
+    alpha : float
+        The optimal step size of the FW
+    fc : int
+        nb of function call. Useless here
+    cost_G : float
+        The value of the cost for the next iteration
+
+
+    .. _references-solve-linesearch:
+    References
+    ----------
+    .. [24] Vayer Titouan, Chapel Laetitia, Flamary Rémi, Tavenard Romain and Courty Nicolas
+        "Optimal Transport for structured data with application on graphs"
+        International Conference on Machine Learning (ICML). 2019.
+    """
+    if nx is None:
+        G, deltaG, C1, C2, M = ot.utils.list_to_array(G, deltaG, C1, C2, M)
+
+        if isinstance(M, int) or isinstance(M, float):
+            nx = ot.backend.get_backend(G, deltaG, C1, C2)
+        else:
+            nx = ot.backend.get_backend(G, deltaG, C1, C2, M)
+
+    dot = nx.dot(nx.dot(C1, deltaG), C2.T)
+    a = -2 * reg * nx.sum(dot * deltaG)
+    b = nx.sum(M * deltaG) - 2 * reg * (nx.sum(dot * G) + nx.sum(nx.dot(nx.dot(C1, G), C2.T) * deltaG))
+
+    alpha = ot.optim.solve_1d_linesearch_quad(a, b)
+    if alpha_min is not None or alpha_max is not None:
+        alpha = np.clip(alpha, alpha_min, alpha_max)
+
+    # the new cost is deduced from the line search quadratic function
+    cost_G = cost_G + a * (alpha ** 2) + b * alpha
+
+    return alpha, 1, cost_G

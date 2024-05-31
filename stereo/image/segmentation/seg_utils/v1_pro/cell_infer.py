@@ -11,7 +11,7 @@ from albumentations.pytorch import ToTensorV2
 from skimage import filters
 from tqdm import tqdm
 
-from stereo import logger
+from stereo.log_manager import logger
 from .dataset import data_batch2
 from .resnet_unet import EpsaResUnet
 from .utils import (

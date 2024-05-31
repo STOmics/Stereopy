@@ -16,6 +16,8 @@ from shapely.geometry import MultiPoint
 from stereo.stereo_config import stereo_conf
 from stereo.tools.tools import make_dirs
 from stereo.preprocess import filter_genes
+from stereo.core.stereo_exp_data import StereoExpData
+from stereo.io.utils import get_gem_comments
 
 pn.extension()
 hv.extension('bokeh')
@@ -35,7 +37,7 @@ class PolySelection(object):
             width: Optional[int] = 500, height: Optional[int] = 500,
             bgcolor='#2F2F4F'
     ):
-        self.data = data
+        self.data: StereoExpData = data
         self.width = width
         self.height = height
         self.bgcolor = bgcolor
@@ -182,6 +184,88 @@ class PolySelection(object):
         #         raise Exception('Please select the data area in the picture first!')
         # return list_poly_selection_exp_coors
         return None
+    
+    def generate_gem_file(
+        self,
+        selected_areas: StereoExpData,
+        origin_file_path: str,
+        output_path: str,
+        drop: bool
+    ):
+        import numba as nb
+        import gzip
+
+        comments_lines, comments = get_gem_comments(origin_file_path)
+        original_gem_df = pd.read_csv(origin_file_path, sep='\t', header=comments_lines, engine='pyarrow')
+        original_gem_columns = original_gem_df.columns.copy(deep=True)
+        if 'MIDCounts' in original_gem_df.columns:
+            original_gem_df.rename(columns={'MIDCounts': 'UMICount'}, inplace=True)
+        elif 'MIDCount' in original_gem_df.columns:
+            original_gem_df.rename(columns={'MIDCount': 'UMICount'}, inplace=True)
+        if 'CellID' in original_gem_df.columns:
+            original_gem_df.rename(columns={'CellID': 'cell_id'}, inplace=True)
+        if 'label' in original_gem_df.columns:
+            original_gem_df.rename(columns={'label': 'cell_id'}, inplace=True)
+
+        if selected_areas.bin_type == 'bins':
+            @nb.njit(cache=True, nogil=True, parallel=True)
+            def __get_filtering_flag(data, bin_size, position, bin_coord_offset, num_threads, drop):
+                num_threads = min(position.shape[0], num_threads)
+                num_per_thread = position.shape[0] // num_threads
+                num_left = position.shape[0] % num_threads
+                num_per_thread_list = np.repeat(num_per_thread, num_threads)
+                if num_left > 0:
+                    num_per_thread_list[0:num_left] += 1
+                interval = np.zeros(num_threads + 1, dtype=np.uint32)
+                interval[1:] = np.cumsum(num_per_thread_list)
+                flags = np.zeros((num_threads, data.shape[0]), dtype=np.bool8)
+                x = data[:, 0]
+                y = data[:, 1]
+                count = data[:, 2]
+                for i in nb.prange(num_threads):
+                    start = interval[i]
+                    end = interval[i + 1]
+                    for j in range(start, end):
+                        x_start, y_start = position[j]
+                        if bin_coord_offset:
+                            x_start -= bin_size // 2
+                            y_start -= bin_size // 2
+                        x_end = x_start + bin_size
+                        y_end = y_start + bin_size
+                        flags[i] |= ((x >= x_start) & (x < x_end) & (y >= y_start) & (y < y_end) & (count > 0))
+                flag = flags[0]
+                for f in flags[1:]:
+                    flag |= f
+                return flag if not drop else ~flag
+
+            flag = __get_filtering_flag(
+                original_gem_df[['x', 'y', 'UMICount']].to_numpy(),
+                selected_areas.bin_size,
+                selected_areas.position,
+                selected_areas.bin_coord_offset,
+                nb.get_num_threads(),
+                drop
+            )
+            selected_gem_df = original_gem_df[flag]
+        elif selected_areas.bin_type == 'cell_bins':
+            original_gem_df['cell_id'] = original_gem_df['cell_id'].astype('U')
+            flag = original_gem_df['cell_id'].isin(selected_areas.cells.cell_name)
+            if drop:
+                flag = ~flag
+            flag = flag & (original_gem_df['UMICount'] > 0)
+            selected_gem_df = original_gem_df[flag]
+        else:
+            pass
+        selected_gem_df.columns = original_gem_columns
+        
+        if output_path.endswith('.gz'):
+            open_func = gzip.open
+        else:
+            open_func = open
+        with open_func(output_path, 'wb') as fp:
+            fp.writelines(comments)
+            selected_gem_df.to_csv(fp, sep='\t', index=False, mode='wb')
+
 
     def export_high_res_area(self, origin_file_path: str, output_path: str, drop: bool = False) -> str:
         """
@@ -192,18 +276,24 @@ class PolySelection(object):
         Returns:
             output_path
         """
-        coors = self.get_selected_area_coors(drop)
-        # print('coors length: %s' % len(coors))
-        if not coors or len(coors) == 0:
-            raise Exception('Please select the data area in the picture first!')
-
         make_dirs(output_path)
-        from gefpy.cgef_adjust_cy import CgefAdjust
-        cg = CgefAdjust()
-        if self.data.bin_type == 'cell_bins':
-            cg.generate_cgef_by_coordinate(origin_file_path, output_path, coors)
+        if self.data.file_format == 'gef':
+            coors = self.get_selected_area_coors(drop)
+            # print('coors length: %s' % len(coors))
+            if not coors or len(coors) == 0:
+                raise Exception('Please select the data area in the picture first!')
+
+            from gefpy.cgef_adjust_cy import CgefAdjust
+            cg = CgefAdjust()
+            if self.data.bin_type == 'cell_bins':
+                cg.generate_cgef_by_coordinate(origin_file_path, output_path, coors)
+            else:
+                cg.generate_bgef_by_coordinate(origin_file_path, output_path, coors, self.data.bin_size)
+        elif self.data.file_format == 'gem':
+            selected_areas = self.get_selected_areas(drop=False)
+            self.generate_gem_file(selected_areas, origin_file_path, output_path, drop)
         else:
-            cg.generate_bgef_by_coordinate(origin_file_path, output_path, coors, self.data.bin_size)
+            raise Exception('Only supports gef and gem file.')
 
         return output_path
 

@@ -32,3 +32,8 @@ from .plot_time_series import PlotTimeSeries
 from .plot_time_series import PlotTimeSeriesAnalysis
 from .plot_elbow import PlotElbow
 from .plot_genes_in_pseudotime import PlotGenesInPseudotime
+from .plot_st_gears import PlotStGears
+from .plot_ccc import PlotCellCellCommunication
+from .plot_grn import PlotRegulatoryNetwork
+from .plot_batch_qc import ShowBatchQcReport
+from .plot_ms_spatial_scatter import PlotMsSpatialScatter

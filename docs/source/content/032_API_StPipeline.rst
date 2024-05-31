@@ -58,3 +58,7 @@ which is compromised of basic preprocessing, embedding, clustering, and so on.
     algorithm.community_detection.CommunityDetection.main
     algorithm.time_series_analysis.TimeSeriesAnalysis.main
     algorithm.dendrogram.Dendrogram.main
+    algorithm.st_gears.StGears.main
+    algorithm.st_gears.StGears.stack_slices_pairwise_rigid
+    algorithm.st_gears.StGears.stack_slices_pairwise_elas_field
+    core.ms_pipeline.MSDataPipeLine.set_scope_and_mode

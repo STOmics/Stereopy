@@ -16,7 +16,6 @@ import igraph as ig
 import networkx as nx
 import numpy as np
 import pandas as pd
-import scanpy as sc
 from scipy import stats
 
 from stereo.algorithm.cell_cell_communication.analysis_helper import write_to_file
@@ -338,6 +337,7 @@ class GetMicroEnvs:
             subgroup.append(sub)
             if len(sub) == 1:
                 break
+        subgroup = str(subgroup)
         subgroup_df = pd.DataFrame({"threshold": threshold, "subgroup_result": subgroup})
         return subgroup_df
 
@@ -362,46 +362,3 @@ class GetMicroEnvs:
         round_pd['to'] = type_name[yidx.tolist()]
         return round_pd
 
-
-if __name__ == "__main__":
-    fly = sc.read_h5ad(r'C:\Users\liuxiaobin\Desktop\E14-16h_a_count_normal_stereoseq.h5ad')
-    gene_name = [str(x) for x in fly.var_names]  # 13668 genes
-    spot_name = [str(x) for x in fly.obs_names]  # 15295 cells
-
-    coord_x = [x[0] for x in fly.obsm['spatial']]
-    coord_y = [x[1] for x in fly.obsm['spatial']]
-    coord_z = [x[2] for x in fly.obsm['spatial']]
-    coord = pd.DataFrame({'cell': spot_name, 'coord_x': coord_x, 'coord_y': coord_y, 'coord_z': coord_z})
-
-    cell_type = fly.obs['annotation']
-    meta = pd.DataFrame({'cell': spot_name, 'cell_type': cell_type}).reset_index(drop=True)
-
-    boot_prop = 0.8
-    n_boot = 100
-    dimension = 3
-    fill_rare = True
-    min_num = 30
-    binsize = 2
-    eps = 1e-20
-    output_path: str = r'E:\Stereopy\小试答辩\小试答辩3\测试数据'
-
-    tt = GetMicroEnvs()
-    final_mst, pairwise_kl_df, path = tt.main(meta, coord, n_boot=20)
-    tt.generate_micro_envs('mst', threshold=0.3, result_df=final_mst, output_path=path)
-    tt.generate_micro_envs('split', threshold=2, result_df=pairwise_kl_df, output_path=path)
-
-    mouse = sc.read_h5ad(r'C:\Users\liuxiaobin\Desktop\MouseBrainCellbin.h5ad')
-    gene_name = [str(x) for x in mouse.var_names]  # 22404 genes
-    spot_name = [str(x) for x in mouse.obs_names]  # 49921 cells
-
-    coord_x = [x[0] for x in mouse.obsm['spatial']]
-    coord_y = [x[1] for x in mouse.obsm['spatial']]
-    coord = pd.DataFrame({'cell': spot_name, 'coord_x': coord_x, 'coord_y': coord_y})
-
-    cell_type = mouse.obs['celltype_pred']
-    meta = pd.DataFrame({'cell': spot_name, 'cell_type': cell_type}).reset_index(drop=True)
-
-    mm = GetMicroEnvs()
-    final_mst, pairwise_kl_df, path = mm.main(meta, coord, n_boot=20, dimension=2)
-    mm.generate_micro_envs('mst', threshold=0.1, result_df=final_mst, output_path=path)
-    mm.generate_micro_envs('split', threshold=1, result_df=pairwise_kl_df, output_path=path)

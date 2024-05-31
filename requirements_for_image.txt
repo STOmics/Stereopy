@@ -3,6 +3,3 @@ torch==1.10.0
 torchvision==0.11.1  
 albumentations==0.4.6
 protobuf~=3.20.0
-
-pip install torch==1.10.0+cu113 torchvision==0.11.1+cu113 --extra-index-url https://download.pytorch.org/whl/
-pip install onnxruntime-gpu --extra-index-url https://aiinfra.pkgs.visualstudio.com/PublicPackages/_packaging/onnxruntime-cuda-12/pypi/simple/

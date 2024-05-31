@@ -86,10 +86,13 @@ def write_h5ad(
         _write_one_h5ad(f, data, use_raw=use_raw, use_result=use_result, key_record=key_record)
 
 
-def _write_one_h5ad(f, data: StereoExpData, use_raw=False, use_result=True, key_record=None):
+def _write_one_h5ad(f: h5py.File, data: StereoExpData, use_raw=False, use_result=True, key_record=None):
     if data.attr is not None:
         for key, value in data.attr.items():
             f.attrs[key] = value
+    f.attrs['bin_type'] = data.bin_type
+    f.attrs['bin_size'] = data.bin_size
+    f.attrs['merged'] = data.merged
     if data.sn is not None:
         sn_list = []
         if isinstance(data.sn, str):
@@ -115,9 +118,9 @@ def _write_one_h5ad(f, data: StereoExpData, use_raw=False, use_result=True, key_
         h5ad.write(data.exp_matrix, f, 'exp_matrix', sp_format)
     else:
         h5ad.write(data.exp_matrix, f, 'exp_matrix')
-    h5ad.write(data.bin_type, f, 'bin_type')
-    h5ad.write(data.bin_size, f, 'bin_size')
-    h5ad.write(data.merged, f, 'merged')
+    # h5ad.write(data.bin_type, f, 'bin_type')
+    # h5ad.write(data.bin_size, f, 'bin_size')
+    # h5ad.write(data.merged, f, 'merged')
 
     if use_raw is True:
         same_genes = np.array_equal(data.tl.raw.gene_names, data.gene_names)
@@ -173,6 +176,10 @@ def _write_one_h5ad_result(data, f, key_record):
                 h5ad.write(hvg_df, f, f'{res_key}@hvg')  # -> dataframe
             if analysis_key in ['pca', 'umap', 'totalVI', 'spatial_alignment_integration']:
                 h5ad.write(data.tl.result[res_key].values, f, f'{res_key}@{analysis_key}')  # -> array
+                if analysis_key == 'pca':
+                    variance_ratio_key = f"{res_key}_variance_ratio"
+                    if variance_ratio_key in data.tl.result:
+                        h5ad.write(data.tl.result[variance_ratio_key], f, f'{variance_ratio_key}@{analysis_key}_variance_ratio')
             if analysis_key == 'neighbors':
                 for neighbor_key, value in data.tl.result[res_key].items():
                     if value is None:
@@ -262,22 +269,34 @@ def write_h5ms(ms_data, output: str):
         for idx, data in enumerate(ms_data._data_list):
             f['sample'].create_group(f'sample_{idx}')
             _write_one_h5ad(f['sample'][f'sample_{idx}'], data)
-        if ms_data._merged_data:
+        # if ms_data._merged_data:
+        #     f.create_group('sample_merged')
+        #     _write_one_h5ad(f['sample_merged'], ms_data._merged_data)
+        if len(ms_data.scopes_data) > 0:
             f.create_group('sample_merged')
-            _write_one_h5ad(f['sample_merged'], ms_data._merged_data)
+            for scope_key, merged_data in ms_data.scopes_data.items():
+                g = f['sample_merged'].create_group(scope_key)
+                if ms_data.merged_data and id(ms_data.merged_data) == id(merged_data):
+                    g.attrs['merged_from_all'] = True
+                _write_one_h5ad(g, merged_data)
         h5ad.write_list(f, 'names', ms_data.names)
         h5ad.write_dataframe(f, 'obs', ms_data.obs)
         h5ad.write_dataframe(f, 'var', ms_data.var)
-        h5ad.write(ms_data._var_type, f, 'var_type')
+        h5ad.write(ms_data.var_type, f, 'var_type')
         h5ad.write(ms_data.relationship, f, 'relationship')
-        if ms_data.tl.result:
-            mss_f = f.create_group('mss')
-            for key in ms_data.tl.result.keys():
-                data = StereoExpData()
-                data.tl.result = ms_data.tl.result[key]
-                data.tl.key_record = ms_data.tl.key_record[key]
-                mss_f.create_group(key)
-                _write_one_h5ad_result(data, mss_f[key], data.tl.key_record)
+        if len(ms_data.tl.result_keys) > 0:
+            g = f.create_group('result_keys')
+            for scope_key, key_list in ms_data.tl.result_keys.items():
+                # g = f['result_keys'].create_group(f'result_keys_{i}')
+                h5ad.write(key_list, g, scope_key)
+        # if ms_data.tl.result:
+        #     mss_f = f.create_group('mss')
+        #     for key in ms_data.tl.result.keys():
+        #         data = StereoExpData()
+        #         data.tl.result = ms_data.tl.result[key]
+        #         data.tl.key_record = ms_data.tl.key_record[key]
+        #         mss_f.create_group(key)
+        #         _write_one_h5ad_result(data, mss_f[key], data.tl.key_record)
 
 
 def write_mid_gef(data: StereoExpData, output: str):

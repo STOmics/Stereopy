@@ -199,14 +199,19 @@ class StPipeline(object):
         data = filter_cells(self.data, min_gene, max_gene, min_n_genes_by_counts, max_n_genes_by_counts, pct_counts_mt,
                             cell_list, inplace)
         if data.raw is not None and filter_raw:
-            filter_cells(data.raw, min_gene, max_gene, min_n_genes_by_counts, max_n_genes_by_counts, pct_counts_mt,
-                         cell_list, True)
+            # filter_cells(data.raw, min_gene, max_gene, min_n_genes_by_counts, max_n_genes_by_counts, pct_counts_mt,
+            #              cell_list, True)
+            filter_cells(data.raw, cell_list=data.cell_names, inplace=True)
+            if isinstance(data, AnnBasedStereoExpData):
+                data.adata.raw = data.raw.adata
         return data
 
     @logit
     def filter_genes(self,
                      min_cell: Optional[int] = None,
                      max_cell: Optional[int] = None,
+                     min_count: Optional[int] = None,
+                     max_count: Optional[int] = None,
                      gene_list: Optional[Union[list, np.ndarray]] = None,
                      mean_umi_gt: Optional[float] = None,
                      filter_raw: Optional[bool] = True,
@@ -220,6 +225,10 @@ class StPipeline(object):
             minimum number of cells expressed required for a gene to pass filering.
         max_cell
             maximum number of cells expressed required for a gene to pass filering.
+        min_count
+            minimum number of count expressed required for a gene to pass filtering.
+        max_count
+            maximum number of count expressed required for a gene to pass filtering.
         gene_list
             the list of genes to be retained.
         mean_umi_gt
@@ -235,9 +244,11 @@ class StPipeline(object):
         Depending on `inplace`, if `True`, the data will be replaced by those filtered.
         """
         from ..preprocess.filter import filter_genes
-        data = filter_genes(self.data, min_cell, max_cell, gene_list, mean_umi_gt, inplace)
+        data = filter_genes(self.data, min_cell, max_cell, min_count, max_count, gene_list, mean_umi_gt, inplace)
         if data.raw is not None and filter_raw:
-            filter_genes(data.raw, min_cell, max_cell, gene_list, mean_umi_gt, True)
+            filter_genes(data.raw, gene_list=data.genes.gene_name, inplace=True)
+            if isinstance(data, AnnBasedStereoExpData):
+                data.adata.raw = data.raw.adata
         return data
 
     @logit
@@ -268,10 +279,13 @@ class StPipeline(object):
         from ..preprocess import filter_genes
         hvgs_flag = self.result[hvg_res_key]['highly_variable'].to_numpy()
         hvgs = self.data.gene_names[hvgs_flag]
+        hvg_result_filtered = self.result[hvg_res_key][hvgs_flag]
         data = filter_genes(self.data, gene_list=hvgs, inplace=inplace)
         if data.raw is not None and filter_raw:
             filter_genes(data.raw, gene_list=hvgs, inplace=True)
-        data.tl.result[hvg_res_key] = data.tl.result[hvg_res_key][hvgs_flag]
+            if isinstance(data, AnnBasedStereoExpData):
+                data.adata.raw = data.raw.adata
+        data.tl.result[hvg_res_key] = hvg_result_filtered
         return data
 
     @logit
@@ -309,6 +323,8 @@ class StPipeline(object):
         data = filter_coordinates(self.data, min_x, max_x, min_y, max_y, inplace)
         if data.raw is not None and filter_raw:
             filter_coordinates(data.raw, min_x, max_x, min_y, max_y, True)
+            if isinstance(data, AnnBasedStereoExpData):
+                data.adata.raw = data.raw.adata
         return data
 
     @logit
@@ -355,6 +371,8 @@ class StPipeline(object):
             data.tl.result[gene_exp_cluster_key] = data.tl.result[gene_exp_cluster_key][groups]
         if data.raw is not None and filter_raw:
             filter_cells(data.raw, cell_list=data.cell_names, inplace=True)
+            if isinstance(data, AnnBasedStereoExpData):
+                data.adata.raw = data.raw.adata
         return data
 
     @logit
@@ -531,6 +549,8 @@ class StPipeline(object):
 
         if data.raw is not None and filter_raw and data.shape != data.raw.shape:
             filter_genes(data.raw, gene_list=data.gene_names, inplace=True)
+            if isinstance(data, AnnBasedStereoExpData):
+                data.adata.raw = data.raw.adata
 
     @logit
     def highly_variable_genes(
@@ -989,10 +1009,10 @@ class StPipeline(object):
     @logit
     def find_marker_genes(self,
                           cluster_res_key,
-                          method: Literal['t_test', 'wilcoxon_test'] = 't_test',
+                          method: Literal['t_test', 'wilcoxon_test', 'logreg'] = 't_test',
                           case_groups: Union[str, np.ndarray, list] = 'all',
                           control_groups: Union[str, np.ndarray, list] = 'rest',
-                          corr_method: str = 'benjamini-hochberg',
+                          corr_method: Literal['bonferroni', 'benjamini-hochberg'] = 'benjamini-hochberg',
                           use_raw: bool = True,
                           use_highly_genes: bool = True,
                           hvg_res_key: Optional[str] = 'highly_variable_genes',
@@ -1011,7 +1031,7 @@ class StPipeline(object):
         :param method: choose method for statistics.
         :param case_groups: case group, default all clusters.
         :param control_groups: control group, default the rest of groups.
-        :param corr_method: correlation method.
+        :param corr_method: p-value correction method, only available for `t_test` and `wilcoxon_test`.
         :param use_raw: whether to use raw express matrix for analysis, default True.
         :param use_highly_genes: whether to use only the expression of hypervariable genes as input, default True.
         :param hvg_res_key: the key of highly variable genes to get corresponding result.
@@ -1041,8 +1061,8 @@ class StPipeline(object):
             n_jobs = cpu_count()
 
         from stereo.utils.pipeline_utils import calc_pct_and_pct_rest, cell_cluster_to_gene_exp_cluster
-        pct, pct_rest = calc_pct_and_pct_rest(self.data, cluster_res_key)
-        mean_count_in_cluster = cell_cluster_to_gene_exp_cluster(self.data, cluster_res_key, kind='mean')
+        pct, pct_rest = calc_pct_and_pct_rest(self.data, cluster_res_key, filter_raw=False)
+        mean_count_in_cluster = cell_cluster_to_gene_exp_cluster(self.data, cluster_res_key, kind='mean', filter_raw=False)
 
         tool = FindMarker(data=data, groups=self.result[cluster_res_key], method=method, case_groups=case_groups,
                           control_groups=control_groups, corr_method=corr_method, sort_by=sort_by,

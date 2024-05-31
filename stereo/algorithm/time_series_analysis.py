@@ -1,5 +1,6 @@
 import numpy as np
 import pandas as pd
+from sklearn.mixture import GaussianMixture
 
 from stereo.algorithm.algorithm_base import AlgorithmBase
 from stereo.constant import AlternativeType
@@ -30,12 +31,25 @@ class TimeSeriesAnalysis(AlgorithmBase):
     ):
         """
         :param run_method: the model type when the algorithm is run, default = `tvg_marker`.
-            `tvg_marker`: Calculate time variable gene based on expression of celltypes in branch
-            `other`: Use fuzzy C means cluster method to cluster genes based on 1-p_value of celltypes in branch
+                        `tvg_marker`: Calculate time variable gene based on expression of celltypes in branch
+                        `other`: Use fuzzy C means cluster method to cluster genes based on 1-p_value of celltypes in branch
         :param use_col: the col in obs representing celltype or clustering
         :param branch: celltypes order in use_col
-        :param p_val_combination: p_value combination method to use, choosing from ['fisher', 'mean', 'FDR']
-        :param cluster_number: number of cluster
+        :param p_val_combination: p_value combination method to use, choosing from ['fisher', 'mean', 'FDR'], default to 'FDR',
+                        only for `tvg_marker` run_method
+        :param cluster_number: number of cluster, defaults to 6, only for `other` run_method
+
+        other parameters:
+
+        .. note::
+
+            All the parameters below are key word arguments and only for `tvg_marker` run_method.
+        
+        :param statistical_test_method: one tail statistical test method to be used for up or down regulated examination between time point,
+                        choosing from ['t-test', 'permutation', 'wilcoxon'], default to 't-test']
+        :param permutation_batch: permutation_batch to control memory consumption if statistical_test_method == 'permutation',
+                        the higher permutation_batch require higher memory consumption. default to 100. 
+        :param permutation_n_resamples: the times of resamples if statistical_test_method == 'permutation', default to 999.
 
         .. note::
             
@@ -45,30 +59,47 @@ class TimeSeriesAnalysis(AlgorithmBase):
         :param n_spatial_feature: n top features to combine of spatial feature, defaults to 2.
         :param temporal_mean_threshold: filter out genes of which mean absolute temporal feature <= temporal_mean_threshold, defaults to 0.85.
         :param temporal_top_threshold: filter out genes of which top absolute temporal feature < temporal_top_threshold, defaults to 1.
-        :param Epsilon: max value to finish iteration, defaults to 1e-7.
+        :param cluster_method: method to cluster gene based on spatial and temporal feature,
+                        choose from ['fuzzy_C_means', 'gaussian_mixture'], default to fuzzy_C_means.
+        :param Epsilon: max value to finish iteration if cluster_method=='fuzzy_C_means', defaults to 1e-7.
         :param w_size: window size to rasterizing spatial expression, default to 20.
         :param use_col: the col in obs representing celltype or clustering, default to None.
         :param branch: celltypes order in use_col, default to None.
+        :param seed: fix seed in numpy to keep output constant in every run.
 
         """  # noqa
         if run_method == RunMethodType.tvg_marker.value:
             self.TVG_marker(
                 use_col=use_col,
                 branch=branch,
-                p_val_combination=p_val_combination
+                p_val_combination=p_val_combination,
+                **kwargs
             )
         else:
-            self.fuzzy_C_gene_pattern_cluster(cluster_number, **kwargs)
+            self.fuzzy_C_gene_pattern_cluster(
+                cluster_number=cluster_number,
+                branch=branch,
+                use_col=use_col,
+                **kwargs
+            )
+            
+    def _statistic_mean_diff(self, y, x, axis=0):
+        return np.mean(y, axis=axis) - np.mean(x, axis=axis)
 
-    def TVG_marker(self, use_col, branch, p_val_combination=PValCombinationType.fisher.value):
+    def TVG_marker(self, use_col, branch, p_val_combination=PValCombinationType.fisher.value, statistical_test_method = 't-test', permutation_batch=100, permutation_n_resamples=999):
         """
         Calculate time variable gene based on expression of celltypes in branch
         :param use_col: the col in obs representing celltype or clustering
         :param branch: celltypes order in use_col
         :param p_val_combination: p_value combination method to use, choosing from ['fisher', 'mean', 'FDR']
+        :param statistical_test_method: one tail statistical test method to be used for up or down regulated examination between time point. choosing from ['t-test', 'permutation', 'wilcoxon'], default as 't-test'
+        :param permutation_batch: permutation_batch to control memory consumption if statistical_test_method = 'permutation', the higher permutation_batch require higher memory consumption. default as 100. 
+        :param permutation_n_resamples: the times of resamples if statistical_test_method = 'permutation', default as 999.
         :return: stereo_exp_data contains Time Variabel Gene marker result
         """
         from scipy.stats import ttest_ind
+        from scipy.stats import permutation_test
+        from scipy.stats import ranksums
         from scipy import sparse
         from scipy import stats
         label2exp = {}
@@ -84,17 +115,42 @@ class TimeSeriesAnalysis(AlgorithmBase):
         less_pvalue = []
         greater_pvalue = []
         scores = []
-        for i in range(len(branch) - 1):
-            score, pvalue = ttest_ind(label2exp[branch[i + 1]], label2exp[branch[i]], axis=0,
-                                      alternative=AlternativeType.less.value)
-            less_pvalue.append(np.nan_to_num(pvalue, nan=1, copy=False))
-            score, pvalue = ttest_ind(label2exp[branch[i + 1]], label2exp[branch[i]], axis=0,
-                                      alternative=AlternativeType.greater.value)
-            greater_pvalue.append(np.nan_to_num(pvalue, nan=1, copy=False))
-            logFC.append(np.array(np.log2(
-                (np.mean(label2exp[branch[i + 1]], axis=0) + 1e-9) / (np.mean(label2exp[branch[i]], axis=0) + 1e-9)))[
-                             0])
-            scores.append(score)
+        if statistical_test_method == 't-test':
+            for i in range(len(branch)-1):
+                score, pvalue = ttest_ind(label2exp[branch[i+1]], label2exp[branch[i]], axis=0, alternative='less')
+                #np.nan_to_num(score, nan=0, copy = False)
+                less_pvalue.append(np.nan_to_num(pvalue, nan=1, copy = False))
+                score, pvalue = ttest_ind(label2exp[branch[i+1]], label2exp[branch[i]], axis=0, alternative='greater')
+                greater_pvalue.append(np.nan_to_num(pvalue, nan=1, copy = False))
+                logFC.append(np.array(np.log2((np.mean(label2exp[branch[i+1]], axis=0)+1e-9)/(np.mean(label2exp[branch[i]], axis=0)+1e-9)))[0]) 
+                scores.append(score)
+        elif statistical_test_method == 'permutation':
+            #print(statistical_test_method)
+            for i in range(len(branch)-1):
+                tmp_permutation = permutation_test((label2exp[branch[i+1]], label2exp[branch[i]]), self._statistic_mean_diff, 
+                                                    n_resamples=permutation_n_resamples, batch=permutation_batch, 
+                                                    vectorized=True, alternative='less',random_state=42, axis=0)
+                score = tmp_permutation.statistic
+                #pvalue = tmp_permutation.pvalue
+                null_distribution = tmp_permutation.null_distribution
+                pvalue = np.sum(score >= null_distribution, axis=0)/permutation_n_resamples
+                #np.nan_to_num(score, nan=0, copy = False)
+                less_pvalue.append(np.nan_to_num(pvalue, nan=1, copy = False))
+                pvalue = np.sum(score <= null_distribution, axis=0)/permutation_n_resamples
+                greater_pvalue.append(np.nan_to_num(pvalue, nan=1, copy = False))
+                logFC.append(np.array(np.log2((np.mean(label2exp[branch[i+1]], axis=0)+1e-9)/(np.mean(label2exp[branch[i]], axis=0)+1e-9)))[0]) 
+                scores.append(score)
+        elif statistical_test_method == 'wilcoxon':
+            for i in range(len(branch)-1):
+                score, pvalue = ranksums(label2exp[branch[i+1]], label2exp[branch[i]], axis=0, alternative='less')
+                #np.nan_to_num(score, nan=0, copy = False)
+                less_pvalue.append(np.nan_to_num(pvalue, nan=1, copy = False))
+                score, pvalue = ranksums(label2exp[branch[i+1]], label2exp[branch[i]], axis=0, alternative='greater')
+                greater_pvalue.append(np.nan_to_num(pvalue, nan=1, copy = False))
+                logFC.append(np.array(np.log2((np.mean(label2exp[branch[i+1]], axis=0)+1e-9)/(np.mean(label2exp[branch[i]], axis=0)+1e-9)))[0]) 
+                scores.append(score)
+        else:
+            raise ValueError("statistical_test_method should be selected from ['t-test', 'permutation', 'wilcoxon']")
         self.stereo_exp_data.genes_matrix[SCORES] = np.array(scores).T
         self.stereo_exp_data.genes_matrix[SCORES] = np.nan_to_num(self.stereo_exp_data.genes_matrix[SCORES])
         self.stereo_exp_data.genes_matrix[GREATER_P] = np.array(greater_pvalue).T
@@ -123,16 +179,18 @@ class TimeSeriesAnalysis(AlgorithmBase):
         self.stereo_exp_data.genes[GREATER_PVALUE] = greater_pvalue
         self.stereo_exp_data.genes[LOG_FC] = logFC
 
-    def fuzzy_C(self, data, cluster_number, MAX=10000, m=2, Epsilon=1e-7):
+    def fuzzy_C(self, data, cluster_number, MAX=10000, m=2, Epsilon=1e-7, seed=20240523):
         """
         fuzzy C means algorithm to cluster, helper function used in fuzzy_C_gene_pattern_cluster
         :param data: pd.DataFrame object for fuzzy C means cluster, each col represent a feature, each row represent a obsversion # noqa
+        :param seed: fix seed in numpy to keep output constant in every run.
         :param cluster_number: number of cluster
         :param MAX: max value to random initialize
         :param m: degree of membership, default = 2
         :param Epsilon: max value to finish iteration
         :return: fuzzy C means cluster result
         """
+        np.random.seed(seed)
         assert m > 1
         import time
         import copy
@@ -187,6 +245,8 @@ class TimeSeriesAnalysis(AlgorithmBase):
         loc = (loc / w_size).astype('int').astype('str')
         loc = np.array(['_'.join(x) for x in loc])
         Exp_matrix = self.stereo_exp_data.exp_matrix
+        if not sparse.issparse(Exp_matrix):
+            Exp_matrix = sparse.csr_array(Exp_matrix)
         ci, gi = Exp_matrix.nonzero()
         values = Exp_matrix.data
         cl = loc[ci]
@@ -200,25 +260,27 @@ class TimeSeriesAnalysis(AlgorithmBase):
         self.stereo_exp_data.tl.result['spatial_feature'] = X_pca
         self.stereo_exp_data.genes_matrix['spatial_feature'] = X_pca
 
-    def fuzzy_C_gene_pattern_cluster(self, cluster_number, spatial_weight=1, n_spatial_feature=2,
+    def fuzzy_C_gene_pattern_cluster(self, cluster_number, spatial_weight=1, n_spatial_feature=2, cluster_method = 'fuzzy_C_means',
                                      temporal_mean_threshold=0.85, temporal_top_threshold=1, Epsilon=1e-7, w_size=None,
-                                     use_col=None, branch=None):
+                                     use_col=None, branch=None, seed=20240523):
         """
         Use fuzzy C means cluster method to cluster genes based on 1-p_value of celltypes in branch
         :param cluster_number: number of cluster
         :param spatial_weight: the weight to combine spatial feature
         :param n_spatial_feature: n top features to combine of spatial feature
+        :param cluster_method: method to cluster gene based on spatial and temporal feature. choose from ['fuzzy_C_means', 'gaussian_mixture'], default as fuzzy_C_means.
         :param temporal_mean_threshold: filter out genes of which mean absolute temporal feature <= temporal_mean_threshold # noqa
         :param temporal_top_threshold: filter out genes of which top absolute temporal feature < temporal_top_threshold
         :param Epsilon: max value to finish iteration
         :param w_size: window size to rasterizing spatial expression, see also data.tl.gene_spatial_feature
         :param use_col: the col in obs representing celltype or clustering
         :param branch: celltypes order in use_col
+        :param seed: fix seed in numpy to keep output constant in every run.
         :return: stereo_exp_data contains fuzzy_C_result
         """
         if (GREATER_P not in self.stereo_exp_data.genes_matrix) or (LESS_P not in self.stereo_exp_data.genes_matrix):
             if use_col == None:  # noqa
-                print('greater_p and less_p not in stereo_exp_data.genes_matrix, you should run get_gene_pattern first')
+                print("greater_p and less_p not in stereo_exp_data.genes_matrix, you should run with run_method='tvg_marker' first")
             else:
                 self.TVG_marker(use_col=use_col, branch=branch)
         sig = ((1 - self.stereo_exp_data.genes_matrix[GREATER_P]) >= (
@@ -246,9 +308,16 @@ class TimeSeriesAnalysis(AlgorithmBase):
         temporal_feature = self.stereo_exp_data.genes_matrix[FEATURE_P]
         spatial_feature = spatial_weight * self.stereo_exp_data.genes_matrix['spatial_feature'][:, :n_spatial_feature]
         merge_feature = np.concatenate([temporal_feature, spatial_feature], axis=1)
-
-        fuzzy_C_weight = self.fuzzy_C(merge_feature[useful_index], cluster_number, Epsilon=Epsilon)
-
+        
+        if cluster_method == 'fuzzy_C_means':
+            fuzzy_C_weight = self.fuzzy_C(merge_feature[useful_index], cluster_number, Epsilon=Epsilon, seed=seed)
+        elif cluster_method == 'gaussian_mixture':
+            gm = GaussianMixture(n_components=cluster_number, random_state=seed).fit(merge_feature[useful_index])
+            gm_weight = gm.predict_proba(merge_feature[useful_index])
+            fuzzy_C_weight = gm_weight
+        else:
+            raise ValueError("cluster_method should be selected from ['fuzzy_C_means', 'gaussian_mixture']")
+            
         df = {x: fuzzy_C_weight[i] for i, x in enumerate(self.stereo_exp_data.genes.to_df().index[useful_index])}
         for x in self.stereo_exp_data.genes.to_df().index[useless_index]:
             df[x] = np.zeros(cluster_number)

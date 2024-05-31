@@ -16,8 +16,19 @@ from anndata import AnnData
 
 
 class Gene(object):
-    def __init__(self, gene_name: Optional[np.ndarray]):
-        self._var = pd.DataFrame(index=gene_name if gene_name is None else gene_name.astype('U'))
+    def __init__(
+            self,
+            var: Optional[pd.DataFrame] = None,
+            gene_name: Optional[np.ndarray] = None
+        ):
+        if var is not None:
+            if not isinstance(var, pd.DataFrame):
+                raise TypeError("var must be a DataFrame.")
+            self._var = var
+            if gene_name is not None:
+                self.gene_name = gene_name
+        else:
+            self._var = pd.DataFrame(index=gene_name if gene_name is None else gene_name.astype('U'))
         self._matrix = dict()
         self._pairwise = dict()
         # self.loc = self._var.loc
@@ -40,6 +51,13 @@ class Gene(object):
         #     return None
         return self._var[key]
     
+    def __len__(self):
+        return self.size
+    
+    @property
+    def size(self):
+        return self.gene_name.size
+    
     @property
     def loc(self):
         return self._var.loc
@@ -47,6 +65,14 @@ class Gene(object):
     @property
     def iloc(self):
         return self._var.iloc
+    
+    @property
+    def to_csv(self):
+        return self._var.to_csv
+    
+    @property
+    def var(self):
+        return self._var
 
     @property
     def n_cells(self):
@@ -99,7 +125,7 @@ class Gene(object):
         :return:
         """
         if not isinstance(name, np.ndarray):
-            raise TypeError('gene name must be a np.ndarray object.')
+            raise TypeError('gene name must be a np.ndarray.')
         self._var = self._var.reindex(name)
     
     @property
@@ -108,6 +134,12 @@ class Gene(object):
             return self._var['real_gene_name'].to_numpy().astype('U')
         else:
             return None
+    
+    @real_gene_name.setter
+    def real_gene_name(self, real_gene_name):
+        if not isinstance(real_gene_name, np.ndarray):
+            raise TypeError('gene name must be a np.ndarray.')
+        self._var['real_gene_name'] = real_gene_name
 
     def sub_set(self, index):
         """
@@ -149,7 +181,7 @@ class AnnBasedGene(Gene):
 
     def __init__(self, based_ann_data: AnnData, gene_name: Optional[np.ndarray] = None):
         self.__based_ann_data = based_ann_data
-        super(AnnBasedGene, self).__init__(gene_name)
+        super(AnnBasedGene, self).__init__(gene_name=gene_name)
 
     def __setattr__(self, key, value):
         if key == '_var':

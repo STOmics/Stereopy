@@ -1,9 +1,11 @@
 from warnings import warn
+from typing import Union
 
 import pandas as pd
 import numpy as np
 from anndata import AnnData
 
+from stereo.core.stereo_exp_data import StereoExpData, AnnBasedStereoExpData
 
 class _BaseResult(object):
     CLUSTER_NAMES = {
@@ -36,33 +38,32 @@ class _BaseResult(object):
         MARKER_GENES: MARKER_GENES_NAMES
     }
 
+    def __init__(self):
+        self.set_result_key_method = None
+
+    def __setitem__(self, key, _):
+        if self.set_result_key_method:
+            self.set_result_key_method(key)
+    
 
 class Result(_BaseResult, dict):
 
-    def __init__(self, stereo_exp_data):
-        super().__init__()
+    def __init__(
+        self,
+        stereo_exp_data: Union[StereoExpData, AnnBasedStereoExpData],
+        *args,
+        **kwargs
+    ):
+        # super().__init__()
+        if not isinstance(stereo_exp_data, (StereoExpData, AnnBasedStereoExpData)):
+            raise TypeError("stereo_exp_data must be an object of StereoExpData.")
+        
+        _BaseResult.__init__(self)
+        dict.__init__(self, *args, **kwargs)
         self.__stereo_exp_data = stereo_exp_data
         self.set_item_callback = None
         self.get_item_method = None
         self.contain_method = None
-
-    # def __deepcopy__(self, memo=None, _nil=[]):
-    #     if memo is None:
-    #         memo = {}
-    #     d = id(self)
-    #     y = memo.get(d, _nil)
-    #     if y is not _nil:
-    #         return y
-
-    #     cls = Result(None)
-    #     memo[d] = id(cls)
-    #     cls.__stereo_exp_data = deepcopy(self.__stereo_exp_data, memo)
-    #     cls.set_item_callback = deepcopy(self.set_item_callback, memo)
-    #     cls.get_item_method = deepcopy(self.get_item_method, memo)
-    #     cls.contain_method = deepcopy(self.contain_method, memo)
-    #     for key, value in self.items():
-    #         dict.__setitem__(cls, deepcopy(key, memo), deepcopy(value, memo))
-    #     return cls
 
     def __contains__(self, item):
         if self.contain_method:
@@ -168,6 +169,8 @@ class Result(_BaseResult, dict):
         return True
 
     def __setitem__(self, key, value):
+        _BaseResult.__setitem__(self, key, value)
+        
         if self.set_item_callback:
             self.set_item_callback(key, value)
             return
@@ -363,6 +366,8 @@ class AnnBasedResult(_BaseResult, object):
         return True
 
     def __setitem__(self, key, value):
+        super().__setitem__(key, value)
+
         for name_type, name_dict in AnnBasedResult.TYPE_NAMES_DICT.items():
             if key in name_dict and self._real_set_item(name_type, key, value):
                 return
@@ -510,3 +515,33 @@ class AnnBasedResult(_BaseResult, object):
                 self.__based_ann_data.uns[key] = value
         else:
             self.__based_ann_data.uns[key] = value
+
+
+class MSDataPipeLineResult(dict):
+    def __init__(self, _ms_data):
+        self._ms_data = _ms_data
+    
+    def __getitem__(self, key):
+        scope_key = self._ms_data.generate_scope_key(key)
+        if scope_key in self._ms_data.scopes_data:
+            return self._ms_data.scopes_data[scope_key].tl.result
+        else:
+            return dict.__getitem__(self, key)
+
+    def keys(self):
+        super_keys = dict.keys(self)
+        tmp = {}
+        for key in super_keys:
+            tmp[key] = None
+        
+        for key in self._ms_data.tl.result_keys.keys():
+            tmp[key] = None
+        
+        return tmp.keys()
+    
+    def __contains__(self, key: object) -> bool:
+        scope_key = self._ms_data.generate_scope_key(key)
+        if scope_key in self._ms_data.tl.result_keys:
+            return True
+        else:
+            return dict.__contains__(self, key)
