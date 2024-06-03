@@ -351,6 +351,7 @@ def _read_stereo_h5_result(key_record: dict, data: StereoExpData, f: Union[h5py.
             if analysis_key == 'neighbors':
                 data.tl.result[res_key] = {
                     # 'neighbor': h5ad.read_group(f[f'neighbor@{res_key}@neighbors']),
+                    'neighbor': None,
                     'connectivities': h5ad.read_group(f[f'connectivities@{res_key}@neighbors']),
                     'nn_dist': h5ad.read_group(f[f'nn_dist@{res_key}@neighbors'])
                 }

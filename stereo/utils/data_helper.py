@@ -415,6 +415,7 @@ def __merge_for_ann_based_stereo_exp_data(
             batch = str(i)
         else:
             batch = str(batch_tags[i])
+        data.cells.batch = batch
         batches.append(batch)
         sn[batch] = data.sn
         adata_list.append(data.adata)

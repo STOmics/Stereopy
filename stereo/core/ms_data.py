@@ -953,7 +953,8 @@ class MSData(_MSDataStruct):
             # TODO: only support cluster data
             if "bins" not in merged_res.columns or "group" not in merged_res.columns:
                 raise Exception("Only soupport cluster result currently.")
-            merged_res.index = merged_res.apply(lambda row: row['bins'].rsplit('-', 1)[0], axis=1)
+            # merged_res.index = merged_res.apply(lambda row: row['bins'].rsplit('-', 1)[0], axis=1)
+            merged_res.set_index('bins', inplace=True)
         elif type == "var":
             # TODO: only support hvg data
             merged_res.index = self._scopes_data[scope_key].genes.gene_name
@@ -967,21 +968,29 @@ class MSData(_MSDataStruct):
         for idx, stereo_exp_data in enumerate(data_list):
             if type == 'obs':
                 column_name = item[idx]
+                original_index = stereo_exp_data.cells._obs.index
+                stereo_exp_data.cells._obs.index = np.char.add(
+                    np.char.add(stereo_exp_data.cells._obs.index.to_numpy().astype('U'), '-'),
+                    stereo_exp_data.cells['batch']
+                )
                 stereo_exp_data.cells._obs[column_name] = merged_res['group']
                 if fill is not np.NaN:
                     if stereo_exp_data.cells._obs[column_name].dtype.name == 'category':
                         stereo_exp_data.cells._obs[column_name].cat.remove_unused_categories(inplace=True)
                         stereo_exp_data.cells._obs[column_name].cat.add_categories(fill, inplace=True)
                     stereo_exp_data.cells._obs[column_name].fillna(fill, inplace=True)
+                stereo_exp_data.cells._obs.index = original_index
             elif type == 'var':
-            
-                for column_name in merged_res.columns:
-                    stereo_exp_data.genes._var[column_name] = merged_res[column_name]
-                    if fill is not np.NaN:
-                        if stereo_exp_data.genes._var[column_name].dtype.name == 'category':
-                            stereo_exp_data.genes._var[column_name].cat.remove_unused_categories(inplace=True)
-                            stereo_exp_data.genes._var[column_name].cat.add_categories(fill, inplace=True)
-                        stereo_exp_data.genes._var[column_name].fillna(fill, inplace=True)
+                intersect = np.intersect1d(stereo_exp_data.genes.gene_name, merged_res.index)
+                result_df = pd.DataFrame(
+                    fill, index=stereo_exp_data.genes.gene_name, columns=merged_res.columns
+                )
+                for column in merged_res.columns:
+                    if merged_res[column].dtype is np.dtype(bool):
+                        result_df[column] = False
+                    result_df.loc[intersect, column] = merged_res.loc[intersect, column]
+                stereo_exp_data.tl.result[item[idx]] = result_df
+                stereo_exp_data.tl.reset_key_record('hvg', item[idx])
             else:
                 raise Exception(f"`type`: {type} not in ['obs', 'var'], this should not happens!")
             
