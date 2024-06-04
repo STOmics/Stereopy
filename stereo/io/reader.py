@@ -212,7 +212,9 @@ def get_bin_center(bin_coor: np.ndarray, coor_min: int, bin_size: int):
     return bin_coor * bin_size + coor_min + int(bin_size / 2)
 
 
-def to_interval(interval_string):
+def to_interval(interval_string: str):
+    if interval_string.lower() == 'nan':
+        return np.NaN
     [left, right] = interval_string[1:-1].split(', ')
     interval = pd.Interval(float(left), float(right))
     return interval
