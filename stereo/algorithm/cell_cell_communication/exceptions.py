@@ -68,3 +68,12 @@ class InvalidMicroEnvInput(Exception):
     def __init__(self, description: str = None):
         super(InvalidMicroEnvInput, self).__init__(description)
         self.description = description
+
+
+class InvalidNicheMethod(Exception):
+    def __init__(self, method: str = None):
+        if method is None:
+            description = "Invalid niche method, please choose from fixed and adaptive."
+        else:
+            description = f"Niche method {method} is invalid, please choose from fixed and adaptive."
+        super(InvalidNicheMethod, self).__init__(description)
