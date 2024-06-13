@@ -174,7 +174,7 @@ class Cell(object):
 
     def sub_set(self, index):
         """
-        get the subset of Cell by the index info， the Cell object will be inplaced by the subset.
+        get the subset of Cell by the index info, the Cell object will be inplaced by the subset.
 
         :param index: a numpy array of index info.
         :return: the subset of Cell object.
@@ -182,15 +182,27 @@ class Cell(object):
 
         if self.cell_border is not None:
             self.cell_border = self.cell_border[index]
-        if isinstance(index, list) or isinstance(index, slice):
-            self._obs = self._obs.iloc[index].copy()
-        elif isinstance(index, np.ndarray):
-            if index.dtype == bool:
-                self._obs = self._obs[index].copy()
+        # if isinstance(index, list) or isinstance(index, slice):
+        #     self._obs = self._obs.iloc[index].copy()
+        # elif isinstance(index, np.ndarray):
+        #     if index.dtype == bool:
+        #         self._obs = self._obs[index].copy()
+        #     else:
+        #         self._obs = self._obs.iloc[index].copy()
+        # else:
+        #     self._obs = self._obs.iloc[index].copy()
+        if isinstance(index, pd.Series):
+            index = index.to_numpy()
+        self._obs = self._obs.iloc[index].copy()
+        for col in self._obs.columns:
+            if self._obs[col].dtype.name == 'category':
+                self._obs[col] = self._obs[col].cat.remove_unused_categories()
+        for key, value in self._matrix.items():
+            if isinstance(value, pd.DataFrame):
+                self._matrix[key] = value.iloc[index].copy()
+                self._matrix[key].reset_index(drop=True, inplace=True)
             else:
-                self._obs = self._obs.iloc[index].copy()
-        else:
-            self._obs = self._obs.iloc[index].copy()
+                self._matrix[key] = value[index]
         return self
 
     def get_property(self, name):
