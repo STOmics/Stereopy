@@ -7,6 +7,7 @@ from stereo.algorithm.algorithm_base import AlgorithmBase
 from stereo.preprocess.filter import filter_by_clusters
 from stereo.preprocess.filter import filter_cells
 from stereo.algorithm.cell_cell_communication.exceptions import InvalidNicheMethod
+from stereo.core.stereo_exp_data import AnnBasedStereoExpData
 
 
 class GetNiche(AlgorithmBase):
@@ -16,9 +17,10 @@ class GetNiche(AlgorithmBase):
             cluster_1: str,
             cluster_2: str,
             cluster_res_key: str = None,
-            inplace: bool = False,
             method: str = 'fixed',
-            theta: float = 0.5
+            theta: float = 0.1,
+            filter_raw: bool = True,
+            inplace: bool = False
     ):
         """
         To ensure the accuracy and specificity of this juxtacrine signaling model,
@@ -29,9 +31,9 @@ class GetNiche(AlgorithmBase):
         :param cluster_1: one cell cluster in the interaction.
         :param cluster_2: the other cell cluster in the interaction.
         :param cluster_res_key: the key which specifies the clustering result in data.tl.result.
-        :param inplace: whether to replace the previous express matrix or get a new StereoExpData object with the new express matrix, default by False. # noqa
         :param method: method for calculating niche, choose from 'fixed' or 'adaptive'.
-        :param theta: the parameter used to control border region selection.
+        :param theta: the parameter used to control border region selection, only available for 'adaptive' method.
+        :param inplace: whether to replace the previous express matrix or get a new StereoExpData object with the new express matrix, default by False. # noqa
         """
         assert cluster_1 != cluster_2, "cluster_1 can not equal to cluster_2."
 
@@ -40,12 +42,12 @@ class GetNiche(AlgorithmBase):
         data_1, _ = filter_by_clusters(data_full, cluster_res=cluster, groups=cluster_1, inplace=False)
         data_2, _ = filter_by_clusters(data_full, cluster_res=cluster, groups=cluster_2, inplace=False)
 
-        coord_1 = data_1.position
-        coord_2 = data_2.position
+        coord_1 = data_1.position.astype(np.int64)
+        coord_2 = data_2.position.astype(np.int64)
         if data_1.position_z is not None:
-            coord_1 = np.concatenate([coord_1, data_1.position_z], axis=1)
+            coord_1 = np.concatenate([coord_1, data_1.position_z.astype(np.int64)], axis=1)
         if data_2.position_z is not None:
-            coord_2 = np.concatenate([coord_2, data_2.position_z], axis=1)
+            coord_2 = np.concatenate([coord_2, data_2.position_z.astype(np.int64)], axis=1)
 
         if method == 'fixed':
             dist_matrix = cdist(coord_1, coord_2)
@@ -55,13 +57,13 @@ class GetNiche(AlgorithmBase):
             result_target_sender = result_target_sender.dropna(how='all', axis=1).dropna(how='all', axis=0)
 
             cell_list = list(result_target_sender.index) + list(result_target_sender.columns)
-            data_result = filter_cells(data_full, cell_list=cell_list, inplace=inplace)
+            # data_result = filter_cells(data_full, cell_list=cell_list, inplace=inplace)
 
         elif method == 'adaptive':
-            coord_12 = np.concatenate((coord_1, coord_2), axis=0)
-            coord_all = data_full.position
+            coord_12: np.ndarray = np.concatenate([coord_1, coord_2], axis=0)
+            coord_all = data_full.position.astype(np.int64)
             if data_full.position_z is not None:
-                coord_all = np.concatenate(coord_all, coord_all.position_z, axis=1)
+                coord_all = np.concatenate([coord_all, data_full.position_z.astype(np.int64)], axis=1)
 
             n1 = coord_1.shape[0]  # number of cells in cluster_1
             n12 = coord_12.shape[0]  # number of cells in cluster_1 + cluster_2
@@ -73,16 +75,20 @@ class GetNiche(AlgorithmBase):
             # a matrix indicating the points falling inside the neighboring cubic for each cell of cluster_1
             neighbors = np.zeros((n1, n12), dtype=int)
             for i in range(n1):
-                for j in range(n12):
-                    dist_x = abs(coord_1[i, 0] - coord_12[i, 0])
-                    dist_y = abs(coord_1[i, 1] - coord_12[i, 1])
-                    if data_full.position_z is not None:
-                        dist_z = abs(coord_1[i, 2] - coord_12[i, 2])
-                    else:
-                        dist_z = 0
-                    # if the distance in all three dimensions are less than given distance (in a cubic), append 1
-                    if dist_x <= niche_distance and dist_y <= niche_distance and dist_z <= niche_distance and i != j:
-                        neighbors[i, j] = 1
+                # for j in range(n12):
+                #     dist_x = abs(coord_1[i, 0] - coord_12[j, 0])
+                #     dist_y = abs(coord_1[i, 1] - coord_12[j, 1])
+                #     if data_full.position_z is not None:
+                #         dist_z = abs(coord_1[i, 2] - coord_12[j, 2])
+                #     else:
+                #         dist_z = 0
+                #     # if the distance in all three dimensions are less than given distance (in a cubic), append 1
+                #     if dist_x <= niche_distance and dist_y <= niche_distance and dist_z <= niche_distance and i != j:
+                #         neighbors[i, j] = 1
+                dist = np.abs(coord_1[i] - coord_12)
+                flag = np.all(dist <= niche_distance, axis=1)
+                neighbors[i, flag] = 1
+                neighbors[i, i] = 0  # exclude the cell itself
             # calculate centroid shift for each cell in cluster_1, equalling proportion of cluster_2 in the cubic
             n_neighbor = np.sum(neighbors, axis=1)
             n_neighbor_1 = np.sum(neighbors[:, range(n1)], axis=1)
@@ -95,49 +101,51 @@ class GetNiche(AlgorithmBase):
             # calculate information entropy for each cell in cluster_1
             cluster_label = data_full.cells[cluster_res_key]
 
-            info_entropy = np.array([])
+            # info_entropy = np.array([], dtype=np.float64)
+            info_entropy = np.zeros(n1, dtype=np.float64)
             for i in range(n1):
-                neighbor_index = np.array([])
-                for j in range(n):
-                    dist_x = abs(coord_1[i, 0] - coord_12[i, 0])
-                    dist_y = abs(coord_1[i, 1] - coord_12[i, 1])
-                    if data_full.position_z is not None:
-                        dist_z = abs(coord_1[i, 2] - coord_12[i, 2])
-                    else:
-                        dist_z = 0
-                    # if the distance in all three dimensions are less than given distance (in a cubic), append 1
-                    if dist_x <= niche_distance and dist_y <= niche_distance and dist_z <= niche_distance:
-                        neighbor_index = np.append(neighbor_index, j)
-                neighbor_cluster = cluster_label[neighbor_index]
+                # neighbor_index = np.array([], dtype=np.int64)
+                # for j in range(n):
+                #     dist_x = abs(coord_1[i, 0] - coord_all[j, 0])
+                #     dist_y = abs(coord_1[i, 1] - coord_all[j, 1])
+                #     if data_full.position_z is not None:
+                #         dist_z = abs(coord_1[i, 2] - coord_all[j, 2])
+                #     else:
+                #         dist_z = 0
+                #     # if the distance in all three dimensions are less than given distance (in a cubic), append 1
+                #     if dist_x <= niche_distance and dist_y <= niche_distance and dist_z <= niche_distance:
+                #         neighbor_index = np.append(neighbor_index, j)
+                # neighbor_cluster = cluster_label[neighbor_index]
+                dist = np.abs(coord_1[i] - coord_all)
+                flag = np.all(dist <= niche_distance, axis=1)
+                neighbor_cluster = cluster_label[flag]
                 _, encoded_neighbor_cluster = np.unique(neighbor_cluster, return_inverse=True)
                 entropy_value = entropy(encoded_neighbor_cluster, base=2)
-                info_entropy = np.append(info_entropy, entropy_value)
+                # info_entropy = np.append(info_entropy, entropy_value)
+                info_entropy[i] = entropy_value
             """
             adaptive step 3: select cells belonging to the border region, out of cluster_1
             """
-            border_index = np.where(shift > theta * info_entropy)[0]
+            # border_index = np.where(shift > theta * info_entropy)[0]
+            border_index = shift > theta * info_entropy
             cell_name_border = data_1.cell_names[border_index]
             """
             adaptive step 4: construct the niche for cluster_1 and cluster_2
             """
             neighbor_border = neighbors[border_index, n1:]  # filter border rows and columns of cluster_2
-            neighbor_index = np.where(np.any(neighbor_border, axis=0))[0]  # determine cluster_2 neighbors
+            # neighbor_index = np.where(np.any(neighbor_border, axis=0))[0]  # determine cluster_2 neighbors
+            neighbor_index = np.any(neighbor_border, axis=0)
             cell_name_neighbor = data_2.cell_names[neighbor_index]
             cell_list = list(cell_name_border) + list(cell_name_neighbor)
-            data_result = filter_cells(data_full, cell_list=cell_list, inplace=False)
+            # data_result = filter_cells(data_full, cell_list=cell_list, inplace=inplace)
         else:
             raise InvalidNicheMethod(method)
-
-        for res_key in (data_result.tl.key_record['pca'] + data_result.tl.key_record['umap']):
-            if data_result.tl.result[res_key].shape[0] == data_result.shape[0]:
-                continue
-            flag = np.isin(data_full.cell_names, cell_list)
-            res_filtered = data_result.tl.result[res_key][flag]
-            res_filtered.reset_index(drop=True, inplace=True)
-            data_result.tl.result[res_key] = res_filtered
         
-        for column in data_result.cells.obs.columns:
-            if data_result.cells.obs[column].dtype.name == 'category':
-                data_result.cells.obs[column] = data_result.cells.obs[column].cat.remove_unused_categories()
+        data_result = filter_cells(data_full, cell_list=cell_list, inplace=inplace)
+        if filter_raw and data_result.raw is not None:
+            filter_cells(data_result.raw, cell_list=cell_list, inplace=True)
+            if isinstance(data_result, AnnBasedStereoExpData):
+                data_result.adata.raw = data_result.raw.adata
+
 
         return data_result
