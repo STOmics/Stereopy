@@ -94,40 +94,32 @@ class Result(_BaseResult, dict):
         genes = self.__stereo_exp_data.genes
         cells = self.__stereo_exp_data.cells
         if name in genes._var:
-            warn(
-                f'{name} will be moved from `StereoExpData.tl.result` to `StereoExpData.genes` in the '
-                f'future, make sure your code access the property correctly.',
-                category=FutureWarning
-            )
+            # warn(
+            #     f'{name} will be moved from `StereoExpData.tl.result` to `StereoExpData.genes` in the '
+            #     f'future, make sure your code access the property correctly.',
+            #     category=FutureWarning
+            # )
             return genes._var[name]
         elif name in genes._matrix:
-            warn(
-                f'{name} will be moved from `StereoExpData.tl.result` to `StereoExpData.genes_matrix` in the '
-                f'future, make sure your code access the property correctly.',
-                category=FutureWarning
-            )
+            # warn(
+            #     f'{name} will be moved from `StereoExpData.tl.result` to `StereoExpData.genes_matrix` in the '
+            #     f'future, make sure your code access the property correctly.',
+            #     category=FutureWarning
+            # )
             return genes._matrix[name]
         elif name in genes._pairwise:
-            warn(
-                f'{name} will be moved from `StereoExpData.tl.result` to `StereoExpData.genes_pairwise` in the '
-                f'future, make sure your code access the property correctly.',
-                category=FutureWarning
-            )
+            # warn(
+            #     f'{name} will be moved from `StereoExpData.tl.result` to `StereoExpData.genes_pairwise` in the '
+            #     f'future, make sure your code access the property correctly.',
+            #     category=FutureWarning
+            # )
             return genes._pairwise[name]
         elif name in cells._obs.columns:
-            warn(
-                f'{name} will be moved from `StereoExpData.tl.result` to `StereoExpData.cells` in the '
-                f'future, make sure your code access the property correctly. ',
-                category=FutureWarning
-            )
-            # if name in Result.CLUSTER_NAMES:
-            #     return pd.DataFrame(
-            #         {
-            #             'bins': cells.cell_name,
-            #             'group': cells._obs[name].values
-            #         }
-            #     )
-            # return cells._obs[name]
+            # warn(
+            #     f'{name} will be moved from `StereoExpData.tl.result` to `StereoExpData.cells` in the '
+            #     f'future, make sure your code access the property correctly. ',
+            #     category=FutureWarning
+            # )
             return pd.DataFrame(
                 {
                     'bins': cells.cell_name,
@@ -135,18 +127,18 @@ class Result(_BaseResult, dict):
                 }
             )
         elif name in cells._matrix:
-            warn(
-                f'{name} will be moved from `StereoExpData.tl.result` to `StereoExpData.cells_matrix` in the '
-                f'future, make sure your code access the property correctly. ',
-                category=FutureWarning
-            )
+            # warn(
+            #     f'{name} will be moved from `StereoExpData.tl.result` to `StereoExpData.cells_matrix` in the '
+            #     f'future, make sure your code access the property correctly. ',
+            #     category=FutureWarning
+            # )
             return cells._matrix[name]
         elif name in cells._pairwise:
-            warn(
-                f'{name} will be moved from `StereoExpData.tl.result` to `StereoExpData.cells_pairwise` in the '
-                f'future, make sure your code access the property correctly. ',
-                category=FutureWarning
-            )
+            # warn(
+            #     f'{name} will be moved from `StereoExpData.tl.result` to `StereoExpData.cells_pairwise` in the '
+            #     f'future, make sure your code access the property correctly. ',
+            #     category=FutureWarning
+            # )
             return cells._pairwise[name]
         return dict.__getitem__(self, name)
 
@@ -204,32 +196,32 @@ class Result(_BaseResult, dict):
 
     def _set_cluster_res(self, key, value):
         assert type(value) is pd.DataFrame and 'group' in value.columns.values, "this is not cluster res"
-        warn(
-            f'FutureWarning: {key} will be moved from `StereoExpData.tl.result` to `StereoExpData.cells` in the '
-            'future, make sure your code set the property correctly. ',
-            category=FutureWarning
-        )
+        # warn(
+        #     f'FutureWarning: {key} will be moved from `StereoExpData.tl.result` to `StereoExpData.cells` in the '
+        #     'future, make sure your code set the property correctly. ',
+        #     category=FutureWarning
+        # )
         self.__stereo_exp_data.cells._obs[key] = value['group'].values
         self.CLUSTER_NAMES.add(key)
 
     def _set_connectivities_res(self, key, value):
         assert type(value) is dict and not {'connectivities', 'nn_dist'} - set(value.keys()), \
             'not enough key to set connectivities'
-        warn(
-            f'FutureWarning: {key} will be moved from `StereoExpData.tl.result` to `StereoExpData.cells_pairwise` in '
-            f'the future, make sure your code set the property correctly. ',
-            category=FutureWarning
-        )
+        # warn(
+        #     f'FutureWarning: {key} will be moved from `StereoExpData.tl.result` to `StereoExpData.cells_pairwise` in '
+        #     f'the future, make sure your code set the property correctly. ',
+        #     category=FutureWarning
+        # )
         self.__stereo_exp_data.cells._pairwise[key] = value
         self.CONNECTIVITY_NAMES.add(key)
 
     def _set_reduce_res(self, key, value):
         assert type(value) is pd.DataFrame, 'reduce result must be pandas.DataFrame'
-        warn(
-            f'{key} will be moved from `StereoExpData.tl.result` to `StereoExpData.cells_matrix` in the '
-            f'future, make sure your code set the property correctly. ',
-            category=FutureWarning
-        )
+        # warn(
+        #     f'{key} will be moved from `StereoExpData.tl.result` to `StereoExpData.cells_matrix` in the '
+        #     f'future, make sure your code set the property correctly. ',
+        #     category=FutureWarning
+        # )
         self.__stereo_exp_data.cells._matrix[key] = value
         self.REDUCE_NAMES.add(key)
 

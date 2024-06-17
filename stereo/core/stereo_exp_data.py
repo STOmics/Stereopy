@@ -369,6 +369,11 @@ class StereoExpData(Data):
 
     @property
     def bin_size(self):
+        """
+        Get the bin size.
+
+        :return:
+        """
         return self._bin_size
 
     @bin_size.setter
@@ -571,12 +576,12 @@ class StereoExpData(Data):
             key: value
             for key, value in self.tl.key_record.items() if value
         }
-        warn(
-            'FutureWarning: `pca`, `neighbors`, `cluster`, `umap` will be inaccessible in result in future version.'
-            '\nMake sure your code access result from the right property, such as `pca` and `umap` will be in the '
-            '`StereoExpData.cells_matrix`.',
-            category=FutureWarning
-        )
+        # warn(
+        #     'FutureWarning: `pca`, `neighbors`, `cluster`, `umap` will be inaccessible in result in future version.'
+        #     '\nMake sure your code access result from the right property, such as `pca` and `umap` will be in the '
+        #     '`StereoExpData.cells_matrix`.',
+        #     category=FutureWarning
+        # )
         if format_key_record:
             format_str += f"\nkey_record: {format_key_record}"
         result_key = []
@@ -618,6 +623,23 @@ class StereoExpData(Data):
             return other.__add__(self)
         else:
             raise TypeError("only support StereoExpData and MSData!")
+    
+    def write(self, filename, to_anndata=False, **kwargs):
+        if 'output' in kwargs:
+            del kwargs['output']
+        kwargs.setdefault('output', filename)
+        kwargs.setdefault('split_batches', False)
+        if to_anndata:
+            from stereo.io.reader import stereo_to_anndata
+            stereo_to_anndata(self, **kwargs)
+        else:
+            from stereo.io.writer import write_h5ad
+            write_h5ad(self, **kwargs)
+    
+    def to_ann_based(self):
+        from stereo.io.reader import stereo_to_anndata
+        adata = stereo_to_anndata(self, flavor='scanpy', split_batches=False)
+        return AnnBasedStereoExpData(based_ann_data=adata)
         
 
 
@@ -852,3 +874,11 @@ class AnnBasedStereoExpData(StereoExpData):
     @property
     def adata(self):
         return self._ann_data
+    
+    def write(self, filename, **kwargs):
+        from stereo.io.reader import stereo_to_anndata
+        if 'output' in kwargs:
+            del kwargs['output']
+        kwargs.setdefault('output', filename)
+        kwargs.setdefault('split_batches', False)
+        stereo_to_anndata(self, **kwargs)

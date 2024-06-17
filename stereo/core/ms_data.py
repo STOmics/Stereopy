@@ -1032,6 +1032,10 @@ mss: {[key + ":" + str(value) for key, value in self.tl.result_keys.items()]}
 
     def __repr__(self):
         return self.__str__()
+    
+    def write(self, filename):
+        from stereo.io.writer import write_h5ms
+        write_h5ms(self, filename)
 
 
 TL = type('TL', (MSDataPipeLine,), {'ATTR_NAME': 'tl', "BASE_CLASS": StPipeline})
