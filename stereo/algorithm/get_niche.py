@@ -67,77 +67,50 @@ class GetNiche(AlgorithmBase):
 
             n1 = coord_1.shape[0]  # number of cells in cluster_1
             n12 = coord_12.shape[0]  # number of cells in cluster_1 + cluster_2
-            n = coord_all.shape[0]  # number of all cells
-            """
-            adaptive step 1: get the shift of the centroid for each cell in cluster_1, 
-            considering only cluster_1 and cluster_2
-            """
+            
             # a matrix indicating the points falling inside the neighboring cubic for each cell of cluster_1
             neighbors = np.zeros((n1, n12), dtype=int)
+            shift = np.zeros(n1, dtype=np.float64)
+
+            cluster_label = cluster['group']
+            info_entropy = np.zeros(n1, dtype=np.float64)
+            
             for i in range(n1):
-                # for j in range(n12):
-                #     dist_x = abs(coord_1[i, 0] - coord_12[j, 0])
-                #     dist_y = abs(coord_1[i, 1] - coord_12[j, 1])
-                #     if data_full.position_z is not None:
-                #         dist_z = abs(coord_1[i, 2] - coord_12[j, 2])
-                #     else:
-                #         dist_z = 0
-                #     # if the distance in all three dimensions are less than given distance (in a cubic), append 1
-                #     if dist_x <= niche_distance and dist_y <= niche_distance and dist_z <= niche_distance and i != j:
-                #         neighbors[i, j] = 1
+                """
+                adaptive step 1: get the shift of the centroid for each cell in cluster_1, 
+                considering only cluster_1 and cluster_2
+                """
                 dist = np.abs(coord_1[i] - coord_12)
                 flag = np.all(dist <= niche_distance, axis=1)
                 neighbors[i, flag] = 1
                 neighbors[i, i] = 0  # exclude the cell itself
-            # calculate centroid shift for each cell in cluster_1, equalling proportion of cluster_2 in the cubic
-            n_neighbor = np.sum(neighbors, axis=1)
-            n_neighbor_1 = np.sum(neighbors[:, range(n1)], axis=1)
-            shift = 1 - np.divide(n_neighbor_1, n_neighbor, out=np.zeros_like(n_neighbor, dtype=float),
-                                  where=(n_neighbor != 0))  # force to 0 if no neighbors
-            """
-            adaptive step 2: calculate local information entropy for each cell in cluster_1, 
-            considering all cell types
-            """
-            # calculate information entropy for each cell in cluster_1
-            cluster_label = data_full.cells[cluster_res_key]
+                n_neighbors = np.sum(neighbors[i])
+                n_neighbors_2 = np.sum(neighbors[i, n1:])
+                shift[i] = n_neighbors_2 / n_neighbors if n_neighbors != 0 else 0
 
-            # info_entropy = np.array([], dtype=np.float64)
-            info_entropy = np.zeros(n1, dtype=np.float64)
-            for i in range(n1):
-                # neighbor_index = np.array([], dtype=np.int64)
-                # for j in range(n):
-                #     dist_x = abs(coord_1[i, 0] - coord_all[j, 0])
-                #     dist_y = abs(coord_1[i, 1] - coord_all[j, 1])
-                #     if data_full.position_z is not None:
-                #         dist_z = abs(coord_1[i, 2] - coord_all[j, 2])
-                #     else:
-                #         dist_z = 0
-                #     # if the distance in all three dimensions are less than given distance (in a cubic), append 1
-                #     if dist_x <= niche_distance and dist_y <= niche_distance and dist_z <= niche_distance:
-                #         neighbor_index = np.append(neighbor_index, j)
-                # neighbor_cluster = cluster_label[neighbor_index]
+                """
+                adaptive step 2: calculate local information entropy for each cell in cluster_1, 
+                considering all cell types
+                """
                 dist = np.abs(coord_1[i] - coord_all)
                 flag = np.all(dist <= niche_distance, axis=1)
                 neighbor_cluster = cluster_label[flag]
                 _, encoded_neighbor_cluster = np.unique(neighbor_cluster, return_inverse=True)
                 entropy_value = entropy(encoded_neighbor_cluster, base=2)
-                # info_entropy = np.append(info_entropy, entropy_value)
                 info_entropy[i] = entropy_value
+
             """
             adaptive step 3: select cells belonging to the border region, out of cluster_1
             """
-            # border_index = np.where(shift > theta * info_entropy)[0]
-            border_index = shift > theta * info_entropy
+            border_index = shift > (theta * info_entropy)
             cell_name_border = data_1.cell_names[border_index]
             """
             adaptive step 4: construct the niche for cluster_1 and cluster_2
             """
             neighbor_border = neighbors[border_index, n1:]  # filter border rows and columns of cluster_2
-            # neighbor_index = np.where(np.any(neighbor_border, axis=0))[0]  # determine cluster_2 neighbors
             neighbor_index = np.any(neighbor_border, axis=0)
             cell_name_neighbor = data_2.cell_names[neighbor_index]
             cell_list = list(cell_name_border) + list(cell_name_neighbor)
-            # data_result = filter_cells(data_full, cell_list=cell_list, inplace=inplace)
         else:
             raise InvalidNicheMethod(method)
         
