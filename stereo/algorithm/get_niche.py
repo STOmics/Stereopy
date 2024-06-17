@@ -33,7 +33,11 @@ class GetNiche(AlgorithmBase):
         :param cluster_res_key: the key which specifies the clustering result in data.tl.result.
         :param method: method for calculating niche, choose from 'fixed' or 'adaptive'.
         :param theta: the parameter used to control border region selection, only available for 'adaptive' method.
+        :param filter_raw: this function will create a new data object by filtering cells,
+                            this parameter determine whether to filter raw data meanwhile, default to True.
         :param inplace: whether to replace the previous express matrix or get a new StereoExpData object with the new express matrix, default by False. # noqa
+
+        return: a new StereoExpData or AnnBasedStereoExpData object representing a niche.
         """
         assert cluster_1 != cluster_2, "cluster_1 can not equal to cluster_2."
 
