@@ -286,7 +286,7 @@ def merge(
     :param horizontal_offset_additional: the additional offset between each slice on horizontal direction while reorganizing coordinates.
     :param vertical_offset_additional: the additional offset between each slice on vertical direction while reorganizing coordinates.
     :param space_between: the distance between each slice, like '10nm', '1um', ..., it will be used for calculating the z-coordinate of each slice.
-    :param var_type: Which claims that `_var` is intersected by lots of `genes` from different samples.
+    :param var_type: how to merge the var(genes), 'intersect' or 'union', default 'intersect'.
 
     :return: A merged StereoExpData object.
     """  # noqa

@@ -195,20 +195,6 @@ class StPipeline(object):
             set it to True to exclude the cells which are specified by parameter `cell_list` while False to include.
         inplace
             whether to replace the previous data or return a new data.
-        
-        Other Parameters
-        ------------------------
-        The following parameters are used for compatibility with the previous version, and will be deprecated in the future,
-        please use the corresponding parameters above.
-        
-        min_gene
-            alias of min_counts.
-        max_gene
-            alias of max_counts.
-        min_n_genes_by_counts
-            alias of min_genes.
-        max_n_genes_by_counts
-            alias of max_genes.
 
         Returns
         ------------------------
@@ -270,20 +256,6 @@ class StPipeline(object):
             whether to filter mitochondrial genes.
         inplace
             whether to replace the previous data or return a new data.
-        
-        Other Parameters
-        ------------------------
-        The following parameters are used for compatibility with the previous version, and will be deprecated in the future,
-        please use the corresponding parameters above.
-
-        min_cell
-            alias of min_cells.
-        max_cell
-            alias of max_cells.
-        min_count
-            alias of min_counts.
-        max_count
-            alias of max_counts.
 
         Returns
         --------------------
