@@ -116,7 +116,8 @@ class PlotMsSpatialScatter(MSDataPlotBase):
                 )
                 mappable = cm.ScalarMappable(norm=norm, cmap=palette)
                 mappable.set_array([])
-                fig.colorbar(mappable, ax=axes, shrink=0.5, orientation='vertical')
+                cbar = fig.colorbar(mappable, ax=axes, shrink=0.5, orientation='vertical')
+                cbar.ax.set_title(color_key if color_by == 'gene' else color_by, loc='left', y=1.02)
             else:
                 norm = None
         else:
@@ -161,13 +162,14 @@ class PlotMsSpatialScatter(MSDataPlotBase):
                 x = data.position[:, 0]
                 y = data.position[:, 1]
                 hue = hue_list[idx]
-                if color_by == 'cluster':
-                    title = color_key
-                elif color_by == 'gene':
-                    title = color_key
-                else:
-                    title = color_by
-                ax.set_title(title)
+                # if color_by == 'cluster':
+                #     title = color_key
+                # elif color_by == 'gene':
+                #     title = color_key
+                # else:
+                #     title = color_by
+                # ax.set_title(title)
+                ax.set_title(f'sample {self.ms_data.names[idx]}')
                 if len(hue) == 0:
                     continue
                 plot_data = pd.DataFrame({'x': x, 'y': y, 'hue': hue, 'size': dot_size})
