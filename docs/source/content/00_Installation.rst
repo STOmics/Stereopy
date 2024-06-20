@@ -28,7 +28,7 @@ Use the installation command with conda:
 
 .. code-block:: 
 
-    conda install stereopy -c stereopy -c grst -c numba -c conda-forge -c bioconda -c fastai
+    conda install stereopy -c stereopy -c grst -c numba -c conda-forge -c bioconda -c fastai -c defaults
 
 PyPI
 ----
