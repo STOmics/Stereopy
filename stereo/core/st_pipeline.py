@@ -1535,14 +1535,18 @@ class StPipeline(object):
     def silhouette_score(
         self,
         cluster_res_key: str,
+        used_pca_cluster_res_key: str = 'pca',
         metric: str = 'euclidean',
         sample_size: Optional[int] = None,
         random_number: int = 10086,
+        use_raw: bool = True
     ):
         """
         Calculate the mean Silhouette Coefficient for a cluster result.
 
-        :param cluster_res_key: the key to get cluster result from cells, defaults to None
+        :param cluster_res_key: the key to get cluster result from cells, defaults to None.
+        :param used_pca_cluster_res_key: the key to get pca result used for clustering, defaults to 'pca',
+                                            if it is None, use the express matrix.
         :param metric: The metric to use when calculating distance between cells/bins based on exp_matrix, defaults to 'euclidean'.
                        It must be one of the options allowed by <sklearn.metrics.pairwise.pairwise_distances>.
         :param sample_size: The size of the sample to use when computing the Silhouette Coefficient
@@ -1550,6 +1554,7 @@ class StPipeline(object):
         :param random_number: random number for selecting a subset of samples,
                               used when sample_size is not None, defaults to 10086,
                               give fixed value in multiple calls for reproducible results.
+        :param use_raw: whether to use the raw express matrix when `used_pca_cluster_res_key` is None, default to True.
 
         """
         from sklearn.metrics import silhouette_score
@@ -1560,8 +1565,15 @@ class StPipeline(object):
             raise ValueError(f"Cann't found cluster result by key {cluster_res_key}")
         
         res_key = f'silhouette_score_{cluster_res_key}'
+        if used_pca_cluster_res_key is not None and used_pca_cluster_res_key in self.result:
+            X = self.result[used_pca_cluster_res_key].to_numpy()
+        else:
+            if use_raw and self.raw is not None:
+                X = self.raw.exp_matrix
+            else:
+                X = self.data.exp_matrix
         self.result[res_key] = silhouette_score(
-            self.data.exp_matrix,
+            X,
             self.data.cells[cluster_res_key],
             metric=metric,
             sample_size=sample_size,
