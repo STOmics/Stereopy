@@ -226,9 +226,9 @@ class StPipeline(object):
         gene_list: Optional[Union[list, np.ndarray]] = None,
         mean_umi_gt: Optional[float] = None,
         filter_raw: Optional[bool] = True,
-        inplace: bool = True,
         excluded: Optional[bool] = False,
         filter_mt_genes: Optional[bool] = False,
+        inplace: bool = True,
         **kwargs
     ):
         """
@@ -253,7 +253,7 @@ class StPipeline(object):
         excluded
             set it to True to exclude the genes which are specified by parameter `gene_list` while False to include.
         filter_mt_genes
-            whether to filter mitochondrial genes.
+            whether to filter out mitochondrial genes.
         inplace
             whether to replace the previous data or return a new data.
 

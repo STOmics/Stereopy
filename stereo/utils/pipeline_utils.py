@@ -159,7 +159,7 @@ def cluster_bins_to_cellbins(
         bins_cluster_res_key: str,
 ):
     """
-    Mapping clustering result of bins to conresponding cellbins.
+    Mapping clustering result of bins to corresponding cellbins.
 
     The clustering of a cell will be mapped to the clustering of a bin if this cell's coordinate is within this bin.
 

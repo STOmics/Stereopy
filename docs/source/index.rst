@@ -46,7 +46,6 @@ The paper of Stereopy has been pre-printed on bioRxiv!
 Upcoming functions
 --------------------
 * Batch Effect removal funciton
-* Lasso expression matrix and image simultaneously
 * ...
 
 

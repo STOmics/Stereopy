@@ -21,7 +21,6 @@ import h5py
 import numpy as np
 import pandas as pd
 from anndata import AnnData
-from anndata._io.specs.registry import read_elem
 from scipy.sparse import csr_matrix
 from shapely.geometry import MultiPoint
 from shapely.geometry import Point
@@ -437,6 +436,7 @@ def _read_stereo_h5_result(key_record: dict, data: StereoExpData, f: Union[h5py.
                     data.tl.result[res_key][data_key] = h5ad.read_group(f[full_key])
 
 def _read_anndata_from_group(f: h5py.Group) -> AnnBasedStereoExpData:
+    from anndata._io.specs.registry import read_elem
     adata = AnnData(
         **{k: read_elem(f[k]) for k in f.keys()}
     )
@@ -473,21 +473,21 @@ def read_h5ms(file_path, use_raw=True, use_result=True):
         for k in f.keys():
             if k == 'sample':
                 for one_slice_key in f[k].keys():
-                    encoding_type = f[k][one_slice_key].attrs.get('encoding-type', 'stereo_exp_data')
-                    if encoding_type == 'stereo_exp_data':
-                        # data = StereoExpData()
-                        data = _read_stereo_h5ad_from_group(f[k][one_slice_key], StereoExpData(), use_raw, use_result)
-                    else:
-                        data = _read_anndata_from_group(f[k][one_slice_key])
+                    data = _read_stereo_h5ad_from_group(f[k][one_slice_key], StereoExpData(), use_raw, use_result)
+                    # encoding_type = f[k][one_slice_key].attrs.get('encoding-type', 'stereo_exp_data')
+                    # if encoding_type == 'stereo_exp_data':
+                    #     data = _read_stereo_h5ad_from_group(f[k][one_slice_key], StereoExpData(), use_raw, use_result)
+                    # else:
+                    #     data = _read_anndata_from_group(f[k][one_slice_key])
                     data_list.append(data)
             elif k == 'sample_merged':
                 for mk in f[k].keys():
-                    encoding_type = f[k][mk].attrs.get('encoding-type', 'stereo_exp_data')
-                    if encoding_type == 'stereo_exp_data':
-                        # scope_data = StereoExpData()
-                        scope_data = _read_stereo_h5ad_from_group(f[k][mk], StereoExpData(), use_raw, use_result)
-                    else:
-                        scope_data = _read_anndata_from_group(f[k][mk])
+                    scope_data = _read_stereo_h5ad_from_group(f[k][mk], StereoExpData(), use_raw, use_result)
+                    # encoding_type = f[k][mk].attrs.get('encoding-type', 'stereo_exp_data')
+                    # if encoding_type == 'stereo_exp_data':
+                    #     scope_data = _read_stereo_h5ad_from_group(f[k][mk], StereoExpData(), use_raw, use_result)
+                    # else:
+                    #     scope_data = _read_anndata_from_group(f[k][mk])
                     scopes_data[mk] = scope_data
                     if f[k][mk].attrs is not None:
                         merged_from_all = f[k][mk].attrs.get('merged_from_all', False)
@@ -953,6 +953,11 @@ def stereo_to_anndata(
                 sc_key = f'X_{key}'
                 logger.info(f"Adding data.tl.result['{res_key}'] into adata.obsm['{sc_key}'] .")
                 adata.obsm[sc_key] = data.tl.result[res_key].values
+                if key == 'pca':
+                    variance_ratio_key = f'{res_key}_variance_ratio'
+                    if variance_ratio_key in data.tl.result:
+                        logger.info(f"Adding data.tl.result['{variance_ratio_key}'] into adata.uns['{key}_variance_ratio'] .")
+                        adata.uns[variance_ratio_key] = data.tl.result[variance_ratio_key]
             elif key == 'neighbors':
                 # neighbor :seurat use uns for conversion to @graph slot, but scanpy canceled neighbors of uns at present. # noqa
                 # so this part could not be converted into seurat straightly.

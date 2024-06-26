@@ -22,7 +22,6 @@ from scipy.sparse import (
     csr_matrix,
     issparse
 )
-from anndata._io.specs.registry import write_elem
 
 from stereo.core.stereo_exp_data import StereoExpData, AnnBasedStereoExpData
 from stereo.io import h5ad, stereo_to_anndata
@@ -258,6 +257,7 @@ def _write_one_h5ad_result(data, f, key_record):
                     h5ad.write(item, f, f'{res_key}@{key}@co_occurrence', save_as_matrix=True)
 
 def _write_one_anndata(f: h5py.Group, data: AnnBasedStereoExpData):
+    from anndata._io.specs.registry import write_elem
     try:
         LogManager.stop_logging()
         adata = stereo_to_anndata(data, flavor='scanpy', split_batches=False)
@@ -300,10 +300,11 @@ def write_h5ms(ms_data, output: str):
         f.create_group('sample')
         for idx, data in enumerate(ms_data._data_list):
             f['sample'].create_group(f'sample_{idx}')
-            if isinstance(data, AnnBasedStereoExpData):
-                _write_one_anndata(f['sample'][f'sample_{idx}'], data)
-            else:
-                _write_one_h5ad(f['sample'][f'sample_{idx}'], data)
+            _write_one_h5ad(f['sample'][f'sample_{idx}'], data)
+            # if isinstance(data, AnnBasedStereoExpData):
+            #     _write_one_anndata(f['sample'][f'sample_{idx}'], data)
+            # else:
+            #     _write_one_h5ad(f['sample'][f'sample_{idx}'], data)
         # if ms_data._merged_data:
         #     f.create_group('sample_merged')
         #     _write_one_h5ad(f['sample_merged'], ms_data._merged_data)
@@ -313,10 +314,11 @@ def write_h5ms(ms_data, output: str):
                 g = f['sample_merged'].create_group(scope_key)
                 if ms_data.merged_data and id(ms_data.merged_data) == id(merged_data):
                     g.attrs['merged_from_all'] = True
-                if isinstance(merged_data, AnnBasedStereoExpData):
-                    _write_one_anndata(g, merged_data)
-                else:
-                    _write_one_h5ad(g, merged_data)
+                _write_one_h5ad(g, merged_data)
+                # if isinstance(merged_data, AnnBasedStereoExpData):
+                #     _write_one_anndata(g, merged_data)
+                # else:
+                #     _write_one_h5ad(g, merged_data)
         h5ad.write_list(f, 'names', ms_data.names)
         h5ad.write_dataframe(f, 'obs', ms_data.obs)
         h5ad.write_dataframe(f, 'var', ms_data.var)
