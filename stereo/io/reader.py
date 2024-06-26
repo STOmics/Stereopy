@@ -1260,7 +1260,7 @@ def read_gef(
             num_threads = cpu_count()
         gef = BgefR(file_path, bin_size, num_threads, True)
 
-        data = StereoExpData(file_path=file_path, bin_type=bin_type, bin_size=bin_size)
+        data = StereoExpData(file_path=file_path, file_format='gef', bin_type=bin_type, bin_size=bin_size)
         data.offset_x, data.offset_y = gef.get_offset()
         gef_attr = gef.get_exp_attr()
         data.attr = {
