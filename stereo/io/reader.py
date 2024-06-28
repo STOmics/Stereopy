@@ -472,7 +472,9 @@ def read_h5ms(file_path, use_raw=True, use_result=True):
         # result = {}
         for k in f.keys():
             if k == 'sample':
-                for one_slice_key in f[k].keys():
+                slice_keys = list(f[k].keys())
+                slice_keys.sort(key=lambda k: int(k.split('_')[1]))
+                for one_slice_key in slice_keys:
                     data = _read_stereo_h5ad_from_group(f[k][one_slice_key], StereoExpData(), use_raw, use_result)
                     # encoding_type = f[k][one_slice_key].attrs.get('encoding-type', 'stereo_exp_data')
                     # if encoding_type == 'stereo_exp_data':

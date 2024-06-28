@@ -122,6 +122,7 @@ def _write_one_h5ad(f: h5py.File, data: StereoExpData, use_raw=False, use_result
     # h5ad.write(data.bin_size, f, 'bin_size')
     # h5ad.write(data.merged, f, 'merged')
 
+    use_raw = use_raw and data.tl.raw is not None
     if use_raw is True:
         same_genes = np.array_equal(data.tl.raw.gene_names, data.gene_names)
         same_cells = np.array_equal(data.tl.raw.cell_names, data.cell_names)
@@ -300,7 +301,7 @@ def write_h5ms(ms_data, output: str):
         f.create_group('sample')
         for idx, data in enumerate(ms_data._data_list):
             f['sample'].create_group(f'sample_{idx}')
-            _write_one_h5ad(f['sample'][f'sample_{idx}'], data)
+            _write_one_h5ad(f['sample'][f'sample_{idx}'], data, use_raw=True, use_result=True)
             # if isinstance(data, AnnBasedStereoExpData):
             #     _write_one_anndata(f['sample'][f'sample_{idx}'], data)
             # else:
@@ -314,7 +315,7 @@ def write_h5ms(ms_data, output: str):
                 g = f['sample_merged'].create_group(scope_key)
                 if ms_data.merged_data and id(ms_data.merged_data) == id(merged_data):
                     g.attrs['merged_from_all'] = True
-                _write_one_h5ad(g, merged_data)
+                _write_one_h5ad(g, merged_data, use_raw=True, use_result=True)
                 # if isinstance(merged_data, AnnBasedStereoExpData):
                 #     _write_one_anndata(g, merged_data)
                 # else:
