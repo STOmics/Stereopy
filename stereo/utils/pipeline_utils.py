@@ -165,7 +165,8 @@ def cluster_bins_to_cellbins(
 
     :param bins_data: StereoExpData object of bins.
     :param cellbins_data: StereoExpData object of cellbins.
-    :param bins_cluster_res_key: cluster result key in bins' result.
+    :param bins_cluster_res_key: cluster result key in `bins_data.tl.result`, the mapped result will be named as
+                                `{bins_cluster_res_key}_from_bin` and added into `cellbins_data.tl.result`.
 
     :return: The object of StereoExpData assigned to parameter `cellbins_data`.
     """
