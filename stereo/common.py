@@ -8,4 +8,4 @@
 """
 
 # version
-version = '1.3.1b1'
+version = '1.3.1b2'
