@@ -10,9 +10,10 @@ import os
 from pathlib import Path
 from typing import Optional
 from typing import Union
+from copy import deepcopy
 
 import matplotlib.colors as mpl_colors
-from colorcet import palette
+from colorcet import palette, aliases, cetnames_flipped
 from matplotlib import rcParams
 from matplotlib import rcParamsDefault
 
@@ -48,7 +49,8 @@ class StereoConfig(object):
 
     @property
     def colormaps(self):
-        colormaps = palette
+        # colormaps = deepcopy(palette)
+        colormaps = {k: v for k, v in palette.items() if 'glasbey' in k and '_bw_' not in k}
         colormaps['stereo_30'] = ["#E41A1C", "#377EB8", "#4DAF4A", "#984EA3", "#FF7F00", "#A65628", "#FFFF33",
                                   "#F781BF", "#999999", "#E5D8BD", "#B3CDE3", "#CCEBC5", "#FED9A6", "#FBB4AE",
                                   "#8DD3C7", "#BEBADA", "#80B1D3", "#B3DE69", "#FCCDE5", "#BC80BD", "#FFED6F",
@@ -58,7 +60,12 @@ class StereoConfig(object):
 
     @property
     def linear_colormaps(self):
-        colormaps = palette
+        # colormaps = deepcopy(palette)
+        colormaps = {}
+        for k, v in palette.items():
+            if 'glasbey' in k or k in aliases or k in cetnames_flipped:
+                continue
+            colormaps[k] = v
         stmap_colors = ['#0c3383', '#0a88ba', '#f2d338', '#f28f38', '#d91e1e']
         nodes = [0.0, 0.25, 0.50, 0.75, 1.0]
         mycmap = mpl_colors.LinearSegmentedColormap.from_list("mycmap", list(zip(nodes, stmap_colors)))

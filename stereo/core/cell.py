@@ -15,6 +15,9 @@ from typing import Union
 import numpy as np
 import pandas as pd
 from anndata import AnnData
+from scipy.sparse import spmatrix
+
+from stereo.log_manager import logger
 
 
 class Cell(object):
@@ -174,7 +177,7 @@ class Cell(object):
 
     def sub_set(self, index):
         """
-        get the subset of Cell by the index info， the Cell object will be inplaced by the subset.
+        get the subset of Cell by the index info, the Cell object will be inplaced by the subset.
 
         :param index: a numpy array of index info.
         :return: the subset of Cell object.
@@ -182,15 +185,52 @@ class Cell(object):
 
         if self.cell_border is not None:
             self.cell_border = self.cell_border[index]
-        if isinstance(index, list) or isinstance(index, slice):
-            self._obs = self._obs.iloc[index].copy()
-        elif isinstance(index, np.ndarray):
-            if index.dtype == bool:
-                self._obs = self._obs[index].copy()
+        # if isinstance(index, list) or isinstance(index, slice):
+        #     self._obs = self._obs.iloc[index].copy()
+        # elif isinstance(index, np.ndarray):
+        #     if index.dtype == bool:
+        #         self._obs = self._obs[index].copy()
+        #     else:
+        #         self._obs = self._obs.iloc[index].copy()
+        # else:
+        #     self._obs = self._obs.iloc[index].copy()
+        if isinstance(index, pd.Series):
+            index = index.to_numpy()
+        self._obs = self._obs.iloc[index].copy()
+        for col in self._obs.columns:
+            if self._obs[col].dtype.name == 'category':
+                self._obs[col] = self._obs[col].cat.remove_unused_categories()
+        for key, value in self._matrix.items():
+            if isinstance(value, pd.DataFrame):
+                self._matrix[key] = value.iloc[index].copy()
+                self._matrix[key].reset_index(drop=True, inplace=True)
+            elif isinstance(value, (np.ndarray, spmatrix)):
+                self._matrix[key] = value[index]
             else:
-                self._obs = self._obs.iloc[index].copy()
-        else:
-            self._obs = self._obs.iloc[index].copy()
+                logger.warning(f'Subsetting from {key} of type {type(value)} in cell.matrix is not supported.')
+
+        for key, value in self._pairwise.items():
+            if isinstance(value, pd.DataFrame):
+                columns = value.columns[index]
+                self._pairwise[key] = value.iloc[index][columns].copy()
+                self._pairwise[key].reset_index(drop=True, inplace=True)
+            elif isinstance(value, (np.ndarray, spmatrix)):
+                if len(value.shape) != 2:
+                    logger.warning(f'Subsetting from {key} of shape {value.shape} in cell.pairwise is not supported.')
+                    continue
+                self._pairwise[key] = value[index][:, index]
+            elif isinstance(value, dict):
+                for k, v in value.items():
+                    if isinstance(v, pd.DataFrame):
+                        columns = v.columns[index]
+                        self._pairwise[key][k] = v.iloc[index][columns].copy()
+                        self._pairwise[key][k].reset_index(drop=True, inplace=True)
+                    elif isinstance(v, (np.ndarray, spmatrix)):
+                        self._pairwise[key][k] = v[index][:, index]
+                    else:
+                        logger.warning(f'Subsetting from {key}.{k} of type {type(v)} in cell.pairwise is not supported.')
+            else:
+                logger.warning(f'Subsetting from {key} of type {type(value)} in cell.pairwise is not supported.')
         return self
 
     def get_property(self, name):

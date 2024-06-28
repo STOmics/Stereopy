@@ -148,15 +148,21 @@ class Gene(object):
         :param index: a numpy array of index info.
         :return: the subset of Gene object.
         """
-        if isinstance(index, list) or isinstance(index, slice):
-            self._var = self._var.iloc[index].copy()
-        elif isinstance(index, np.ndarray):
-            if index.dtype == bool:
-                self._var = self._var[index].copy()
-            else:
-                self._var = self._var.iloc[index].copy()
-        else:
-            self._var = self._var.iloc[index].copy()
+        # if isinstance(index, list) or isinstance(index, slice):
+        #     self._var = self._var.iloc[index].copy()
+        # elif isinstance(index, np.ndarray):
+        #     if index.dtype == bool:
+        #         self._var = self._var[index].copy()
+        #     else:
+        #         self._var = self._var.iloc[index].copy()
+        # else:
+        #     self._var = self._var.iloc[index].copy()
+        if isinstance(index, pd.Series):
+            index = index.to_numpy()
+        self._var = self._var.iloc[index].copy()
+        for col in self._var.columns:
+            if self._var[col].dtype.name == 'category':
+                self._var[col] = self._var[col].cat.remove_unused_categories()
         return self
 
     def to_df(self, copy=False):

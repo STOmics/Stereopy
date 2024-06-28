@@ -355,7 +355,7 @@ class MarkerGenesScatterPlot:
 
     def __init__(
             self,
-            data: Union[spmatrix, np.ndarray],
+            data: StereoExpData,
             marker_genes_res: dict,
     ):
         self.data = data
@@ -451,7 +451,8 @@ class MarkerGenesScatterPlot:
             self.data, self.marker_genes_parameters['cluster_res_key'], kind='mean', filter_raw=False)
         for mg_key in marker_genes_group_keys:
             if genes is None:
-                topn_res = self.marker_genes_res[mg_key].sort_values(by=sort_by, ascending=False).head(markers_num)
+                isin = self.marker_genes_res[mg_key]['genes'].isin(self.data.gene_names)
+                topn_res = self.marker_genes_res[mg_key][isin].sort_values(by=sort_by, ascending=False).head(markers_num)
             else:
                 if isinstance(genes, str):
                     genes = [genes]
@@ -607,8 +608,11 @@ class MarkerGenesScatterPlot:
             self._create_plot_scatter_data(markers_num, genes, groups, values_to_plot, sort_by)
 
         if width is None or height is None:
-            main_area_width, main_area_height = self.__category_width * len(gene_names), self.__category_height * len(
-                group_names)
+            main_area_width = self.__category_width * len(gene_names)
+            if len(group_names) < 5:
+                main_area_height = self.__category_height * 6
+            else:
+                main_area_height = self.__category_height * len(group_names)
         else:
             width /= 100
             height /= 100

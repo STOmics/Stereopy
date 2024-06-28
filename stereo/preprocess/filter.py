@@ -35,7 +35,9 @@ def filter_cells(
         max_n_genes_by_counts=None,
         pct_counts_mt=None,
         cell_list=None,
-        inplace=True):
+        excluded=False,
+        inplace=True,
+    ):
     """
     filter cells based on numbers of genes expressed.
 
@@ -46,6 +48,7 @@ def filter_cells(
     :param max_n_genes_by_counts: Maximum number of  n_genes_by_counts for a cell pass filtering.
     :param pct_counts_mt: Maximum number of  pct_counts_mt for a cell pass filtering.
     :param cell_list: the list of cells which will be filtered.
+    :param excluded: set it to True to exclude the cells which are specified by parameter `cell_list` while False to include.
     :param inplace: whether inplace the original data or return a new data.
 
     :return: StereoExpData object.
@@ -67,7 +70,10 @@ def filter_cells(
     if pct_counts_mt:
         cell_subset &= data.cells.pct_counts_mt <= pct_counts_mt
     if cell_list is not None:
-        cell_subset &= np.isin(data.cells.cell_name, cell_list)
+        if excluded:
+            cell_subset &= ~np.isin(data.cells.cell_name, cell_list)
+        else:
+            cell_subset &= np.isin(data.cells.cell_name, cell_list)
     data.sub_by_index(cell_index=cell_subset)
     return data
 
@@ -80,6 +86,8 @@ def filter_genes(
         max_count=None,
         gene_list=None,
         mean_umi_gt=None,
+        excluded=False,
+        filter_mt_genes=False,
         inplace=True
 ):
     """
@@ -90,14 +98,16 @@ def filter_genes(
     :param max_cell: Maximun number of cells for a gene pass filtering.
     :param mean_umi_gt: Filter genes whose mean umi greater than this value.
     :param gene_list: the list of genes which will be filtered.
+    :param excluded: set it to True to exclude the genes which are specified by parameter `gene_list` while False to include.
     :param inplace: whether inplace the original data or return a new data.
 
     :return: StereoExpData object.
     """
     data = data if inplace else copy.deepcopy(data)
-    if min_cell is None and max_cell is None \
+    if not filter_mt_genes and \
+        (min_cell is None and max_cell is None \
         and min_count is None and max_count is None \
-        and gene_list is None and mean_umi_gt is None:
+        and gene_list is None and mean_umi_gt is None):
         raise ValueError('please set any of `min_cell`, `max_cell`, `min_count`, `max_count`, `gene_list` and `mean_umi_gt`')
     cal_genes_indicators(data)
     gene_subset = np.ones(data.genes.size, dtype=np.bool8)
@@ -110,9 +120,14 @@ def filter_genes(
     if max_count:
         gene_subset &= data.genes.n_counts <= max_count
     if gene_list is not None:
-        gene_subset &= np.isin(data.gene_names, gene_list)
+        if excluded:
+            gene_subset &= ~np.isin(data.gene_names, gene_list)
+        else:
+            gene_subset &= np.isin(data.gene_names, gene_list)
     if mean_umi_gt is not None:
         gene_subset &= data.genes.mean_umi > mean_umi_gt
+    if filter_mt_genes:
+        gene_subset &= ~np.char.startswith(np.char.lower(data.gene_names), 'mt-')
     data.sub_by_index(gene_index=gene_subset)
     return data
 

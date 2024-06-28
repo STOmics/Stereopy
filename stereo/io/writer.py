@@ -23,9 +23,9 @@ from scipy.sparse import (
     issparse
 )
 
-from stereo.core.stereo_exp_data import StereoExpData
-from stereo.io import h5ad
-from stereo.log_manager import logger
+from stereo.core.stereo_exp_data import StereoExpData, AnnBasedStereoExpData
+from stereo.io import h5ad, stereo_to_anndata
+from stereo.log_manager import logger, LogManager
 
 environ['HDF5_USE_FILE_LOCKING'] = "FALSE"
 
@@ -122,6 +122,7 @@ def _write_one_h5ad(f: h5py.File, data: StereoExpData, use_raw=False, use_result
     # h5ad.write(data.bin_size, f, 'bin_size')
     # h5ad.write(data.merged, f, 'merged')
 
+    use_raw = use_raw and data.tl.raw is not None
     if use_raw is True:
         same_genes = np.array_equal(data.tl.raw.gene_names, data.gene_names)
         same_cells = np.array_equal(data.tl.raw.cell_names, data.cell_names)
@@ -203,10 +204,10 @@ def _write_one_h5ad_result(data, f, key_record):
                         name, value = [], []
                         for pname, pvalue in df.items():
                             name.append(pname)
-                            value.append(pvalue)
+                            value.append(str(pvalue))
                         parameters_df = pd.DataFrame({
                             'name': name,
-                            'value': str(value)
+                            'value': value
                         })
                         h5ad.write(parameters_df, f, f'{cluster}@{res_key}@marker_genes')  # -> dataframe
             if analysis_key == 'sct':
@@ -256,6 +257,38 @@ def _write_one_h5ad_result(data, f, key_record):
                 for key, item in data.tl.result[res_key].items():
                     h5ad.write(item, f, f'{res_key}@{key}@co_occurrence', save_as_matrix=True)
 
+def _write_one_anndata(f: h5py.Group, data: AnnBasedStereoExpData):
+    from anndata._io.specs.registry import write_elem
+    try:
+        LogManager.stop_logging()
+        adata = stereo_to_anndata(data, flavor='scanpy', split_batches=False)
+    except Exception as e:
+        raise e
+    finally:
+        LogManager.start_logging()
+    
+    adata.strings_to_categoricals()
+    if adata.raw is not None:
+        adata.strings_to_categoricals(adata.raw.var)
+    adata.uns['key_record'] = data.tl.key_record
+    
+    f.attrs.setdefault("encoding-type", "anndata")
+    f.attrs.setdefault("encoding-version", "0.1.0")
+    f.attrs.setdefault("spatial_key", data.spatial_key)
+    f.attrs.setdefault("merged", data.merged)
+
+    dataset_kwargs = {"compression": "gzip"}
+    write_elem(f, "X", adata.X, dataset_kwargs=dataset_kwargs)
+    if adata.raw is not None:
+        write_elem(f, "raw", adata.raw, dataset_kwargs=dataset_kwargs)
+    write_elem(f, "obs", adata.obs, dataset_kwargs=dataset_kwargs)
+    write_elem(f, "var", adata.var, dataset_kwargs=dataset_kwargs)
+    write_elem(f, "obsm", dict(adata.obsm), dataset_kwargs=dataset_kwargs)
+    write_elem(f, "varm", dict(adata.varm), dataset_kwargs=dataset_kwargs)
+    write_elem(f, "obsp", dict(adata.obsp), dataset_kwargs=dataset_kwargs)
+    write_elem(f, "varp", dict(adata.varp), dataset_kwargs=dataset_kwargs)
+    write_elem(f, "layers", dict(adata.layers), dataset_kwargs=dataset_kwargs)
+    write_elem(f, "uns", dict(adata.uns), dataset_kwargs=dataset_kwargs)
 
 def write_h5ms(ms_data, output: str):
     """
@@ -268,7 +301,11 @@ def write_h5ms(ms_data, output: str):
         f.create_group('sample')
         for idx, data in enumerate(ms_data._data_list):
             f['sample'].create_group(f'sample_{idx}')
-            _write_one_h5ad(f['sample'][f'sample_{idx}'], data)
+            _write_one_h5ad(f['sample'][f'sample_{idx}'], data, use_raw=True, use_result=True)
+            # if isinstance(data, AnnBasedStereoExpData):
+            #     _write_one_anndata(f['sample'][f'sample_{idx}'], data)
+            # else:
+            #     _write_one_h5ad(f['sample'][f'sample_{idx}'], data)
         # if ms_data._merged_data:
         #     f.create_group('sample_merged')
         #     _write_one_h5ad(f['sample_merged'], ms_data._merged_data)
@@ -278,7 +315,11 @@ def write_h5ms(ms_data, output: str):
                 g = f['sample_merged'].create_group(scope_key)
                 if ms_data.merged_data and id(ms_data.merged_data) == id(merged_data):
                     g.attrs['merged_from_all'] = True
-                _write_one_h5ad(g, merged_data)
+                _write_one_h5ad(g, merged_data, use_raw=True, use_result=True)
+                # if isinstance(merged_data, AnnBasedStereoExpData):
+                #     _write_one_anndata(g, merged_data)
+                # else:
+                #     _write_one_h5ad(g, merged_data)
         h5ad.write_list(f, 'names', ms_data.names)
         h5ad.write_dataframe(f, 'obs', ms_data.obs)
         h5ad.write_dataframe(f, 'var', ms_data.var)

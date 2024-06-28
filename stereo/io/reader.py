@@ -212,7 +212,9 @@ def get_bin_center(bin_coor: np.ndarray, coor_min: int, bin_size: int):
     return bin_coor * bin_size + coor_min + int(bin_size / 2)
 
 
-def to_interval(interval_string):
+def to_interval(interval_string: str):
+    if interval_string.lower() == 'nan':
+        return np.NaN
     [left, right] = interval_string[1:-1].split(', ')
     interval = pd.Interval(float(left), float(right))
     return interval
@@ -351,6 +353,7 @@ def _read_stereo_h5_result(key_record: dict, data: StereoExpData, f: Union[h5py.
             if analysis_key == 'neighbors':
                 data.tl.result[res_key] = {
                     # 'neighbor': h5ad.read_group(f[f'neighbor@{res_key}@neighbors']),
+                    'neighbor': None,
                     'connectivities': h5ad.read_group(f[f'connectivities@{res_key}@neighbors']),
                     'nn_dist': h5ad.read_group(f[f'nn_dist@{res_key}@neighbors'])
                 }
@@ -432,6 +435,18 @@ def _read_stereo_h5_result(key_record: dict, data: StereoExpData, f: Union[h5py.
                     data_key = full_key.split('@')[1]
                     data.tl.result[res_key][data_key] = h5ad.read_group(f[full_key])
 
+def _read_anndata_from_group(f: h5py.Group) -> AnnBasedStereoExpData:
+    from anndata._io.specs.registry import read_elem
+    adata = AnnData(
+        **{k: read_elem(f[k]) for k in f.keys()}
+    )
+    data = AnnBasedStereoExpData(based_ann_data=adata)
+    if 'key_record' in adata.uns:
+        data.tl.key_record = {k: list(v) for k, v in adata.uns['key_record'].items()}
+        del adata.uns['key_record']
+    data.merged = f.attrs.get('merged', False)
+    data.spatial_key = f.attrs.get('spatial_key', 'spatial')
+    return data
 
 @ReadWriteUtils.check_file_exists
 def read_h5ms(file_path, use_raw=True, use_result=True):
@@ -457,14 +472,24 @@ def read_h5ms(file_path, use_raw=True, use_result=True):
         # result = {}
         for k in f.keys():
             if k == 'sample':
-                for one_slice_key in f[k].keys():
-                    data = StereoExpData()
-                    data_list.append(
-                        _read_stereo_h5ad_from_group(f[k][one_slice_key], data, use_raw, use_result))  # noqa
+                slice_keys = list(f[k].keys())
+                slice_keys.sort(key=lambda k: int(k.split('_')[1]))
+                for one_slice_key in slice_keys:
+                    data = _read_stereo_h5ad_from_group(f[k][one_slice_key], StereoExpData(), use_raw, use_result)
+                    # encoding_type = f[k][one_slice_key].attrs.get('encoding-type', 'stereo_exp_data')
+                    # if encoding_type == 'stereo_exp_data':
+                    #     data = _read_stereo_h5ad_from_group(f[k][one_slice_key], StereoExpData(), use_raw, use_result)
+                    # else:
+                    #     data = _read_anndata_from_group(f[k][one_slice_key])
+                    data_list.append(data)
             elif k == 'sample_merged':
                 for mk in f[k].keys():
-                    scope_data = StereoExpData()
-                    scope_data = _read_stereo_h5ad_from_group(f[k][mk], scope_data, use_raw, use_result)
+                    scope_data = _read_stereo_h5ad_from_group(f[k][mk], StereoExpData(), use_raw, use_result)
+                    # encoding_type = f[k][mk].attrs.get('encoding-type', 'stereo_exp_data')
+                    # if encoding_type == 'stereo_exp_data':
+                    #     scope_data = _read_stereo_h5ad_from_group(f[k][mk], StereoExpData(), use_raw, use_result)
+                    # else:
+                    #     scope_data = _read_anndata_from_group(f[k][mk])
                     scopes_data[mk] = scope_data
                     if f[k][mk].attrs is not None:
                         merged_from_all = f[k][mk].attrs.get('merged_from_all', False)
@@ -812,7 +837,7 @@ def stereo_to_anndata(
         base_adata: AnnData = None,
         split_batches: bool = True,
         compression: Optional[Literal["gzip", "lzf"]] = 'gzip'
-):
+) -> AnnData:
     """
     Transform the StereoExpData object into Anndata format.
 
@@ -930,6 +955,11 @@ def stereo_to_anndata(
                 sc_key = f'X_{key}'
                 logger.info(f"Adding data.tl.result['{res_key}'] into adata.obsm['{sc_key}'] .")
                 adata.obsm[sc_key] = data.tl.result[res_key].values
+                if key == 'pca':
+                    variance_ratio_key = f'{res_key}_variance_ratio'
+                    if variance_ratio_key in data.tl.result:
+                        logger.info(f"Adding data.tl.result['{variance_ratio_key}'] into adata.uns['{key}_variance_ratio'] .")
+                        adata.uns[variance_ratio_key] = data.tl.result[variance_ratio_key]
             elif key == 'neighbors':
                 # neighbor :seurat use uns for conversion to @graph slot, but scanpy canceled neighbors of uns at present. # noqa
                 # so this part could not be converted into seurat straightly.
@@ -1093,7 +1123,8 @@ def read_gef(
         is_sparse: bool = True,
         gene_list: Optional[list] = None,
         region: Optional[list] = None,
-        gene_name_index: Optional[bool] = False
+        gene_name_index: Optional[bool] = False,
+        num_threads: int = -1 
 ):
     """
     Read the GEF (.h5) file, and generate the StereoExpData object.
@@ -1116,6 +1147,9 @@ def read_gef(
         `True` to set gene name as index if the version of gef file is 4 or greater,
         otherwise to set gene id, if the version is 3 or less, `gene_name_index` would
         be forced to `True` because there is no gene id in this case.
+    num_threads
+        the number of threads to read the data, only available when `bin_type` is `'bins'`.
+        -1 means to use all the cores of the machine.
 
     Returns
     ------------------------
@@ -1142,6 +1176,8 @@ def read_gef(
             uniq_cell, gene_names, count, cell_ind, gene_ind, dnb_cnt, cell_area, gene_id = gef.get_filtered_data(region, gene_list)
             gene_num = gene_names.size
             cell_num = uniq_cell.size
+            if cell_num == 0 or gene_num == 0:
+                raise Exception('Can not find the data based on the gene list or region.')
             exp_matrix = csr_matrix((count, (cell_ind, gene_ind)), shape=(cell_num, gene_num), dtype=np.uint32)
             position = np.array(
                 list((zip(np.right_shift(uniq_cell, 32), np.bitwise_and(uniq_cell, 0xffffffff))))).astype('uint32')
@@ -1156,7 +1192,7 @@ def read_gef(
 
             if len(gene_id[0]) == 0:
                 gene_name_index = True
-            gene_names = remove_genes_number(gene_names)
+            # gene_names = remove_genes_number(gene_names)
             if gene_name_index:
                 if len(gene_id[0]) > 0:
                     exp_matrix, gene_names = integrate_matrix_by_genes(gene_names, cell_num,
@@ -1198,7 +1234,7 @@ def read_gef(
             data.position[:, 1] = cells['y']
             if len(gene_id[0]) == 0:
                 gene_name_index = True
-            gene_names = remove_genes_number(gene_names)
+            # gene_names = remove_genes_number(gene_names)
             if gene_name_index:
                 if len(gene_id[0]) > 0:
                     exp_matrix, gene_names = integrate_matrix_by_genes(gene_names, cell_num, count, indices, indptr)
@@ -1221,9 +1257,12 @@ def read_gef(
             raise Exception('This file is not the type of SquareBin.')
 
         from gefpy.bgef_reader_cy import BgefR
-        gef = BgefR(file_path, bin_size, 4, True)
+        if num_threads <= 0:
+            from multiprocessing import cpu_count
+            num_threads = cpu_count()
+        gef = BgefR(file_path, bin_size, num_threads, True)
 
-        data = StereoExpData(file_path=file_path, bin_type=bin_type, bin_size=bin_size)
+        data = StereoExpData(file_path=file_path, file_format='gef', bin_type=bin_type, bin_size=bin_size)
         data.offset_x, data.offset_y = gef.get_offset()
         gef_attr = gef.get_exp_attr()
         data.attr = {
@@ -1243,7 +1282,8 @@ def read_gef(
             uniq_cell, gene_names, count, cell_ind, gene_ind, gene_id = gef.get_filtered_data(region, gene_list)
             cell_num = uniq_cell.size
             gene_num = gene_names.size
-            
+            if cell_num == 0 or gene_num == 0:
+                raise Exception('Can not find the data based on the gene list or region.')
             data.position = np.array(
                 list((zip(np.right_shift(uniq_cell, 32), np.bitwise_and(uniq_cell, 0xffffffff))))).astype('uint32')
             data.cells = Cell(cell_name=uniq_cell)
@@ -1251,7 +1291,7 @@ def read_gef(
             exp_matrix = csr_matrix((count, (cell_ind, gene_ind)), shape=(cell_num, gene_num), dtype=np.uint32)
             if len(gene_id[0]) == 0:
                 gene_name_index = True
-            gene_names = remove_genes_number(gene_names)
+            # gene_names = remove_genes_number(gene_names)
             if gene_name_index:
                 if len(gene_id[0]) > 0:
                     exp_matrix, gene_names = integrate_matrix_by_genes(gene_names, cell_num,
@@ -1287,7 +1327,7 @@ def read_gef(
             
             cell_ind, gene_ind, count = gef.get_sparse_matrix_indices2()
             exp_matrix = csr_matrix((count, (cell_ind, gene_ind)), shape=(cell_num, gene_num), dtype=np.uint32)
-            gene_names = remove_genes_number(gene_names)
+            # gene_names = remove_genes_number(gene_names)
             if gene_name_index:
                 if len(gene_id[0]) > 0:
                     exp_matrix, gene_names = integrate_matrix_by_genes(gene_names, cell_num,

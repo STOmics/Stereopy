@@ -501,6 +501,7 @@ def marker_gene_volcano(
     df = data
     if 'log2fc' not in df.columns or 'pvalues' not in df.columns:
         raise ValueError('data frame should content log2fc and pvalues columns')
+    drop_columns = ['x', 'y', 'group']
     df['x'] = df['log2fc']
     df['y'] = -df['pvalues'].apply(np.log10)
     df.loc[(df.x > cut_off_logFC) & (df.pvalues < cut_off_pvalue), 'group'] = 'up'
@@ -510,9 +511,11 @@ def marker_gene_volcano(
         df['label'] = df['genes'].isin(text_genes)
         fig = volcano(df, x='x', y='y', hue='group', label='genes', text_visible='label',
                       cut_off_pvalue=cut_off_pvalue, cut_off_logFC=cut_off_logFC, **kwargs)
+        drop_columns.append('label')
     else:
         fig = volcano(df, x='x', y='y', hue='group', cut_off_pvalue=cut_off_pvalue, cut_off_logFC=cut_off_logFC,
                       **kwargs)
+    df.drop(columns=drop_columns, inplace=True)
     return fig
 
 

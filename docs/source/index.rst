@@ -46,7 +46,6 @@ The paper of Stereopy has been pre-printed on bioRxiv!
 Upcoming functions
 --------------------
 * Batch Effect removal funciton
-* Lasso expression matrix and image simultaneously
 * ...
 
 
@@ -70,6 +69,22 @@ Workflow
 
 Latest Additions
 ------------------
+
+Version 1.3.1
+~~~~~~~~~~~~~~~~~~~
+1.3.1 : 2024-06-28
+
+Features:
+
+1. Addition of new method **'adaptive'** for `st.tl.get_niche <content/stereo.algorithm.get_niche.GetNiche.main.html>`_ (the original method is named **'fixed'**).
+2. Changed some parameter names of `st.tl.filter_cells <content/stereo.core.StPipeline.filter_cells.html>`_ and `st.tl.filter_genes <content/stereo.core.StPipeline.filter_genes.html>`_ for eliminating ambiguity(old parameter names are still compatible).
+3. Filter the results of **PCA** and **UMAP** simultaneously when running `st.tl.filter_cells`.
+
+BUG Fixes:
+
+1. Fixed the problem that `ms_data.to_isolated` is incompatible with that there are duplicate **cell names** in different samples.
+2. Fixed the problem that `st.io.read_gef` is incompatible with those **GEF** files that contain **gene names** ending with **'_{number}'** (like **'ABC_123'**).
+3. Upgraded **gefpy** to latest for fixing the error that **gene names** are lost after running **CellCorrection**.
 
 Version 1.3.0
 ~~~~~~~~~~~~~~~~~~~

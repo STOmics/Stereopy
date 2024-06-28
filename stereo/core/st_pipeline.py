@@ -59,7 +59,7 @@ class StPipeline(object):
         self.result = Result(data)
         self._raw: Union[StereoExpData, AnnBasedStereoExpData] = None
         self.key_record = {'hvg': [], 'pca': [], 'neighbors': [], 'umap': [], 'cluster': [], 'marker_genes': []}
-        self.reset_key_record = self._reset_key_record
+        # self.reset_key_record = self._reset_key_record
 
     def __getattr__(self, item):
         dict_attr = self.__dict__.get(item, None)
@@ -123,7 +123,7 @@ class StPipeline(object):
         """
         self.raw = self.data
 
-    def _reset_key_record(self, key, res_key):
+    def reset_key_record(self, key, res_key):
         """
         reset key and coordinated res_key in key_record.
         :param key:
@@ -159,27 +159,31 @@ class StPipeline(object):
         cal_qc(self.data)
 
     @logit
-    def filter_cells(self,
-                     min_gene: Optional[int] = None,
-                     max_gene: Optional[int] = None,
-                     min_n_genes_by_counts: Optional[int] = None,
-                     max_n_genes_by_counts: Optional[int] = None,
-                     pct_counts_mt: Optional[float] = None,
-                     cell_list: Optional[list] = None,
-                     filter_raw: Optional[bool] = True,
-                     inplace: bool = True):
+    def filter_cells(
+        self,
+        min_counts: Optional[int] = None,
+        max_counts: Optional[int] = None,
+        min_genes: Optional[int] = None,
+        max_genes: Optional[int] = None,
+        pct_counts_mt: Optional[float] = None,
+        cell_list: Optional[list] = None,
+        filter_raw: Optional[bool] = True,
+        excluded: Optional[bool] = False,
+        inplace: bool = True,
+        **kwargs
+    ):
         """
         Filter cells based on counts or the numbers of genes expressed.
 
         Parameters
         ----------------------
-        min_gene
+        min_counts
             minimum number of counts required for a cell to pass fitlering.
-        max_gene
+        max_counts
             maximum number of counts required for a cell to pass fitlering.
-        min_n_genes_by_counts
+        min_genes
             minimum number of genes expressed required for a cell to pass filtering.
-        max_n_genes_by_counts
+        max_genes
             maximum number of genes expressed required for a cell to pass filtering.
         pct_counts_mt
             maximum number of `pct_counts_mt` required for a cell to pass filtering.
@@ -187,8 +191,10 @@ class StPipeline(object):
             the list of cells to be retained.
         filter_raw
             whether to filter raw data meanwhile.
+        excluded
+            set it to True to exclude the cells which are specified by parameter `cell_list` while False to include.
         inplace
-            whether to inplace the previous data or return a new data.
+            whether to replace the previous data or return a new data.
 
         Returns
         ------------------------
@@ -196,8 +202,12 @@ class StPipeline(object):
         Depending on `inplace`, if `True`, the data will be replaced by those filtered.
         """
         from ..preprocess.filter import filter_cells
-        data = filter_cells(self.data, min_gene, max_gene, min_n_genes_by_counts, max_n_genes_by_counts, pct_counts_mt,
-                            cell_list, inplace)
+        min_counts = kwargs.get('min_gene', None) if min_counts is None else min_counts
+        max_counts = kwargs.get('max_gene', None) if max_counts is None else max_counts
+        min_genes = kwargs.get('min_n_genes_by_counts', None) if min_genes is None else min_genes
+        max_genes = kwargs.get('max_n_genes_by_counts', None) if max_genes is None else max_genes
+        data = filter_cells(self.data, min_counts, max_counts, min_genes, max_genes, pct_counts_mt,
+                            cell_list, excluded, inplace)
         if data.raw is not None and filter_raw:
             # filter_cells(data.raw, min_gene, max_gene, min_n_genes_by_counts, max_n_genes_by_counts, pct_counts_mt,
             #              cell_list, True)
@@ -207,36 +217,45 @@ class StPipeline(object):
         return data
 
     @logit
-    def filter_genes(self,
-                     min_cell: Optional[int] = None,
-                     max_cell: Optional[int] = None,
-                     min_count: Optional[int] = None,
-                     max_count: Optional[int] = None,
-                     gene_list: Optional[Union[list, np.ndarray]] = None,
-                     mean_umi_gt: Optional[float] = None,
-                     filter_raw: Optional[bool] = True,
-                     inplace: bool = True):
+    def filter_genes(
+        self,
+        min_cells: Optional[int] = None,
+        max_cells: Optional[int] = None,
+        min_counts: Optional[int] = None,
+        max_counts: Optional[int] = None,
+        gene_list: Optional[Union[list, np.ndarray]] = None,
+        mean_umi_gt: Optional[float] = None,
+        filter_raw: Optional[bool] = True,
+        excluded: Optional[bool] = False,
+        filter_mt_genes: Optional[bool] = False,
+        inplace: bool = True,
+        **kwargs
+    ):
         """
         Filter genes based on the numbers of cells or counts.
 
         Parameters
         ---------------------
-        min_cell
+        min_cells
             minimum number of cells expressed required for a gene to pass filering.
-        max_cell
+        max_cells
             maximum number of cells expressed required for a gene to pass filering.
-        min_count
-            minimum number of count expressed required for a gene to pass filtering.
-        max_count
-            maximum number of count expressed required for a gene to pass filtering.
+        min_counts
+            minimum number of counts expressed required for a gene to pass filtering.
+        max_counts
+            maximum number of counts expressed required for a gene to pass filtering.
         gene_list
             the list of genes to be retained.
         mean_umi_gt
-            genes mean umi should greater than this.
+            mean counts greater than this value for a gene to pass filtering.
         filter_raw
             whether to filter raw data meanwhile.
+        excluded
+            set it to True to exclude the genes which are specified by parameter `gene_list` while False to include.
+        filter_mt_genes
+            whether to filter out mitochondrial genes.
         inplace
-            whether to inplace the previous data or return a new data.
+            whether to replace the previous data or return a new data.
 
         Returns
         --------------------
@@ -244,7 +263,11 @@ class StPipeline(object):
         Depending on `inplace`, if `True`, the data will be replaced by those filtered.
         """
         from ..preprocess.filter import filter_genes
-        data = filter_genes(self.data, min_cell, max_cell, min_count, max_count, gene_list, mean_umi_gt, inplace)
+        min_cells = kwargs.get('min_cell', None) if min_cells is None else min_cells
+        max_cells = kwargs.get('max_cell', None) if max_cells is None else max_cells
+        min_counts = kwargs.get('min_count', None) if min_counts is None else min_counts
+        max_counts = kwargs.get('max_count', None) if max_counts is None else max_counts
+        data = filter_genes(self.data, min_cells, max_cells, min_counts, max_counts, gene_list, mean_umi_gt, excluded, filter_mt_genes, inplace)
         if data.raw is not None and filter_raw:
             filter_genes(data.raw, gene_list=data.genes.gene_name, inplace=True)
             if isinstance(data, AnnBasedStereoExpData):
@@ -266,7 +289,7 @@ class StPipeline(object):
         filter_raw
             whether to filter raw data meanwhile.
         inplace
-            whether to inplace the previous data or return a new data.
+            whether to replace the previous data or return a new data.
 
         Returns
         --------------------
@@ -346,7 +369,7 @@ class StPipeline(object):
         groups
             the groups in clustering result which will be retained or filtered based on the value of `excluded`.
         excluded:
-            set it to True to exclude the groups which specify by parameter `groups` while False to include.
+            set it to True to exclude the groups which are specified by parameter `groups` while False to include.
         filter_raw
             whether to filter raw data meanwhile.
         inplace
@@ -1512,14 +1535,18 @@ class StPipeline(object):
     def silhouette_score(
         self,
         cluster_res_key: str,
+        used_pca_cluster_res_key: str = 'pca',
         metric: str = 'euclidean',
         sample_size: Optional[int] = None,
         random_number: int = 10086,
+        use_raw: bool = True
     ):
         """
         Calculate the mean Silhouette Coefficient for a cluster result.
 
-        :param cluster_res_key: the key to get cluster result from cells, defaults to None
+        :param cluster_res_key: the key to get cluster result from cells, defaults to None.
+        :param used_pca_cluster_res_key: the key to get pca result used for clustering, defaults to 'pca',
+                                            if it is None, use the express matrix.
         :param metric: The metric to use when calculating distance between cells/bins based on exp_matrix, defaults to 'euclidean'.
                        It must be one of the options allowed by <sklearn.metrics.pairwise.pairwise_distances>.
         :param sample_size: The size of the sample to use when computing the Silhouette Coefficient
@@ -1527,6 +1554,7 @@ class StPipeline(object):
         :param random_number: random number for selecting a subset of samples,
                               used when sample_size is not None, defaults to 10086,
                               give fixed value in multiple calls for reproducible results.
+        :param use_raw: whether to use the raw express matrix when `used_pca_cluster_res_key` is None, default to True.
 
         """
         from sklearn.metrics import silhouette_score
@@ -1537,8 +1565,15 @@ class StPipeline(object):
             raise ValueError(f"Cann't found cluster result by key {cluster_res_key}")
         
         res_key = f'silhouette_score_{cluster_res_key}'
+        if used_pca_cluster_res_key is not None and used_pca_cluster_res_key in self.result:
+            X = self.result[used_pca_cluster_res_key].to_numpy()
+        else:
+            if use_raw and self.raw is not None:
+                X = self.raw.exp_matrix
+            else:
+                X = self.data.exp_matrix
         self.result[res_key] = silhouette_score(
-            self.data.exp_matrix,
+            X,
             self.data.cells[cluster_res_key],
             metric=metric,
             sample_size=sample_size,
