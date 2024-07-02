@@ -135,7 +135,7 @@ class TotalVi(MSDataAlgorithmBase):
             })
 
         total_vi = scvi.model.TOTALVI(mdata, **kwags)
-        scvi.settings.num_threads = num_threads
+        scvi.settings.dl_num_workers = num_threads
         total_vi.train(use_gpu=use_gpu, **train_kwargs)
 
         if not self._use_hvg:
@@ -188,7 +188,7 @@ class TotalVi(MSDataAlgorithmBase):
                                                            split_batches=False)
             protein_adata: anndata.AnnData = stereo_to_anndata(self._protein_data, base_adata=mdata.mod['protein'],
                                                                split_batches=False)
-            protein_adata.var['protein_names'] = protein_adata.var_names
+            # protein_adata.var['protein_names'] = protein_adata.var_names
             if self._use_hvg:
                 mdata.mod['multiomics'].uns['omics'] = [['Transcriptomics'], ['Proteomics']]
                 mdata.mod['multiomics'].uns['leiden_resolution'] = 1
