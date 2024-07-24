@@ -206,7 +206,7 @@ class PlotCollection:
             group_name: str,
             res_key: Optional[str] = 'marker_genes',
             hue_order: Optional[set] = ('down', 'normal', 'up'),
-            colors: Optional[str] = ("#377EB8", "grey", "#E41A1C"),
+            palette: Optional[str] = ("#377EB8", "grey", "#E41A1C"),
             alpha: Optional[int] = 1,
             dot_size: Optional[int] = 15,
             text_genes: Optional[list] = None,
@@ -225,7 +225,7 @@ class PlotCollection:
         :param group_name: the group name.
         :param res_key: the result key of marker gene.
         :param hue_order: the classification method.
-        :param colors: the color set.
+        :param palette: the color theme.
         :param alpha: the opacity.
         :param dot_size: the dot size.
         :param text_genes: show gene names.
@@ -248,7 +248,7 @@ class PlotCollection:
             cut_off_pvalue=cut_off_pvalue,
             cut_off_logFC=cut_off_logFC,
             hue_order=hue_order,
-            palette=colors,
+            palette=palette,
             alpha=alpha, s=dot_size,
             x_label=x_label, y_label=y_label,
             vlines=vlines,
@@ -284,7 +284,7 @@ class PlotCollection:
         :param out_dpi: the dpi when the figure is saved.
         """  # noqa
         import math
-        import matplotlib.pyplot as plt
+        # import matplotlib.pyplot as plt
         from matplotlib import gridspec
         set_xy_empty = False
         if x_label == y_label == '' or x_label == y_label == []:
@@ -587,9 +587,9 @@ class PlotCollection:
         :param rotation_angle: rotation of xtick labels.
         :param group_by: the key of the observation grouping to consider.
         :param multi_panel: Display keys in multiple panels also when groupby is not None.
-        :param scale: The method used to scale the width of each violin. If ‘width’ (the default), each violin will
-                have the same width. If ‘area’, each violin will have the same area.
-                If ‘count’, a violin’s width corresponds to the number of observations.
+        :param scale: The method used to scale the width of each violin. If 'width' (the default), each violin will
+                have the same width. If 'area', each violin will have the same area.
+                If 'count', a violin's width corresponds to the number of observations.
         :param ax: a matplotlib axes object. only works if plotting a single component.
         :param order: Order in which to show the categories.
         :param use_raw: Whether to use raw attribute of data. Defaults to True if .raw is present.
@@ -668,7 +668,7 @@ class PlotCollection:
             y_label: Optional[str] = 'umap2',
             bfig_title: Optional[str] = 'all batches',
             dot_size: Optional[int] = 1,
-            colors: Optional[Union[str, list]] = 'stereo_30',
+            palette: Optional[Union[str, list]] = 'stereo_30',
             width: Optional[int] = None,
             height: Optional[int] = None
     ):
@@ -681,7 +681,7 @@ class PlotCollection:
         :param y_label: the y label.
         :param bfig_title: the big figure title.
         :param dot_size: the dot size.
-        :param colors: the color list.
+        :param palette: the color list.
         :param width: the figure width in pixels.
         :param height: the figure height in pixels.
 
@@ -707,7 +707,7 @@ class PlotCollection:
         umap_res['batch'] = self.data.cells.batch.astype(np.uint16)
         batch_number_unique = np.unique(umap_res['batch'])
         batch_count = len(batch_number_unique)
-        cmap = stereo_conf.get_colors(colors, batch_count)
+        cmap = stereo_conf.get_colors(palette, batch_count)
         fig_all = umap_res.hvplot.scatter(
             x='x', y='y', c='batch', cmap=cmap, cnorm='eq_hist',
         ).opts(
@@ -769,7 +769,6 @@ class PlotCollection:
             x_label: Optional[Union[str, list]] = 'umap1',
             y_label: Optional[Union[str, list]] = 'umap2',
             dot_size: Optional[int] = None,
-            colors: Optional[Union[str, list]] = 'stereo',
             width: Optional[int] = None,
             height: Optional[int] = None,
             palette: Optional[int] = None,
@@ -787,7 +786,6 @@ class PlotCollection:
         :param x_label: the x label.
         :param y_label: the y label.
         :param dot_size: the dot size.
-        :param colors: the color list.
         :param width: the figure width in pixels.
         :param height: the figure height in pixels.
         :param palette: color theme.
@@ -798,13 +796,15 @@ class PlotCollection:
 
         """  # noqa
         res = self.check_res_key(res_key)
+        if palette is None:
+            palette = 'stereo_30' if cluster_key else 'stereo'
         if cluster_key:
             cluster_res = self.check_res_key(cluster_key)
             n = len(set(cluster_res['group']))
             if title is None:
                 title = cluster_key
-            if not palette:
-                palette = stereo_conf.get_colors('stereo_30' if colors == 'stereo' else colors, n)
+            # if not palette:
+            #     palette = stereo_conf.get_colors('stereo_30' if colors == 'stereo' else colors, n)
             return base_scatter(
                 res.values[:, 0],
                 res.values[:, 1],
@@ -828,7 +828,7 @@ class PlotCollection:
                 res.values[:, 0],
                 res.values[:, 1],
                 hue=self.data.sub_exp_matrix_by_name(gene_name=gene_names).T,
-                palette=colors,
+                palette=palette,
                 title=gene_names if title is None else title,
                 x_label=[x_label for i in range(len(gene_names))],
                 y_label=[y_label for i in range(len(gene_names))],
@@ -1298,28 +1298,38 @@ class PlotCollection:
     @reorganize_coordinate
     def cells_plotting(
             self,
-            color_by: Literal['total_count', 'n_genes_by_counts', 'gene', 'cluster'] = 'total_count',
+            color_by: Literal['total_counts', 'n_genes_by_counts', 'gene', 'cluster'] = 'total_counts',
             color_key: Optional[str] = None,
             bgcolor: Optional[str] = '#2F2F4F',
+            palette: Optional[Union[str, list, dict]] = None,
             width: Optional[int] = None,
             height: Optional[int] = None,
             fg_alpha: Optional[float] = 0.5,
             base_image: Optional[str] = None,
-            base_im_to_gray: bool = False
+            base_im_to_gray: bool = False,
+            use_raw: bool = True,
+            show: bool = True
     ):
         """Plot the cells.
 
-        :param color_by: spcify the way of coloring, default to 'total_count'.
+        :param color_by: spcify the way of coloring, default to 'total_counts'.
                             if set to 'gene', you need to specify a gene name by `color_key`.
                             if set to 'cluster', you need to specify the key to get cluster result by `color_key`.
-        :param color_key: the key to get the data to color the plot, it is ignored when the `color_by` is set to 'total_count' or 'n_genes_by_counts'.
+        :param color_key: the key to get the data to color the plot, it is ignored when the `color_by` is set to 'total_counts' or 'n_genes_by_counts'.
         :param bgcolor: set background color.
+        :param palette: color theme, 
+                        when `color_by` is 'cluster', it can be a palette name, a list of colors or a dictionary of colors whose keys is the cluster name,
+                        when other `color_by` is set, it only can be a string of palette name.
         :param width: the figure width in pixels.
         :param height: the figure height in pixels.
-        :param fg_alpha: the alpha of foreground image, between 0 and 1, defaults to 0.5
+        :param fg_alpha: the transparency of foreground image, between 0 and 1, defaults to 0.5
                             this is the colored image of the cells.
         :param base_image: the path of the ssdna image after calibration, defaults to None
                             it will be located behide the image of the cells.
+        :param base_im_to_gray: whether to convert the base image to gray scale if base image is RGB/RGBA image.
+        :param use_raw: whether to use raw data, defaults to True if .raw is present.
+        :param show: show the figure directly or get the figure object, defaults to True.
+                        If set to False, you need to call the `show` method of the figure object to show the figure.
         :param reorganize_coordinate: if the data is merged from several slices, whether to reorganize the coordinates of the obs(cells), 
                 if set it to a number, like 2, the coordinates will be reorganized to 2 columns on coordinate system as below:
                                 ---------------
@@ -1331,7 +1341,28 @@ class PlotCollection:
                 if set it to `False`, the coordinates will not be changed.
         :param horizontal_offset_additional: the additional offset between each slice on horizontal direction while reorganizing coordinates.
         :param vertical_offset_additional: the additional offset between each slice on vertical direction while reorganizing coordinates.
-        :return: Cells distribution figure.
+
+        .. note::
+        
+            Exporting
+            ------------------
+
+            This plot can be exported as PNG and SVG, then converted to PDF.
+
+            You need the following necessary dependencies to support exporting:
+
+                conda install -c conda-forge selenium firefox geckodriver cairosvg
+            
+            On Linux systems, you may need to install some additional libraries to support the above dependencies,
+            for example, on Ubuntu, you need to install the following libraries:
+                
+                sudo apt-get install libgtk-3-dev libasound2-dev
+            
+            On other linux systems, you may need to install the corresponding libraries according to the error message.
+
+            There are two ways to export the plot, one is to manupulate on browser,
+            another is to call the method `save_plot <stereo.plots.plot_cells.PlotCells.save_plot.html>`_ of this figure object.
+
         """  # noqa
         from .plot_cells import PlotCells
         if color_by in ('cluster', 'gene'):
@@ -1343,13 +1374,17 @@ class PlotCollection:
             color_key=color_key,
             # cluster_res_key=cluster_res_key,
             bgcolor=bgcolor,
+            palette=palette,
             width=width,
             height=height,
             fg_alpha=fg_alpha,
             base_image=base_image,
-            base_im_to_gray=base_im_to_gray
+            base_im_to_gray=base_im_to_gray,
+            use_raw=use_raw
         )
-        return pc.show()
+        if show:
+            return pc.show()
+        return pc
 
     @download
     def correlation_heatmap(
