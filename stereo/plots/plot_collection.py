@@ -206,7 +206,7 @@ class PlotCollection:
             group_name: str,
             res_key: Optional[str] = 'marker_genes',
             hue_order: Optional[set] = ('down', 'normal', 'up'),
-            palette: Optional[str] = ("#377EB8", "grey", "#E41A1C"),
+            palette: Optional[Union[list, tuple]] = ("#377EB8", "grey", "#E41A1C"),
             alpha: Optional[int] = 1,
             dot_size: Optional[int] = 15,
             text_genes: Optional[list] = None,
@@ -225,7 +225,8 @@ class PlotCollection:
         :param group_name: the group name.
         :param res_key: the result key of marker gene.
         :param hue_order: the classification method.
-        :param palette: the color theme.
+        :param palette: the color theme, a list of colors whose length is 3, 
+                        in which, each one respectively specifies the color of 'down', 'normal' and 'up' marker genes.
         :param alpha: the opacity.
         :param dot_size: the dot size.
         :param text_genes: show gene names.
@@ -277,7 +278,7 @@ class PlotCollection:
         :param y_label: list of y label.
         :param ncols: the number of columns.
         :param dot_size: the dot size.
-        :param palette: color theme.
+        :param palette: a single color specifying the color of markers.
         :param width: the figure width in pixels.
         :param height: the figure height in pixels.
         :param out_path: the path to save the figure.
@@ -334,7 +335,7 @@ class PlotCollection:
             cells_key: Optional[list] = ["total_counts", "n_genes_by_counts"],
             ncols: Optional[int] = 2,
             dot_size: Optional[int] = None,
-            palette: Optional[str] = 'stereo',
+            palette: Optional[Union[str, list]] = 'stereo',
             width: Optional[int] = None,
             height: Optional[int] = None,
             x_label: Optional[Union[list, str]] = 'spatial1',
@@ -350,7 +351,7 @@ class PlotCollection:
         :param cells_key: specified cells key list.
         :param ncols: the number of plot columns.
         :param dot_size: the dot size.
-        :param palette: the color theme.
+        :param palette: a palette name or a list of colors.
         :param width: the figure width in pixels.
         :param height: the figure height in pixels.
         :param x_label: list of x label.
@@ -406,7 +407,7 @@ class PlotCollection:
             self,
             gene_name: Union[str, list, np.ndarray],
             dot_size: Optional[int] = None,
-            palette: Optional[str] = 'CET_L4',
+            palette: Optional[Union[str, list]] = 'CET_L4',
             color_bar_reverse: Optional[bool] = True,
             width: Optional[int] = None,
             height: Optional[int] = None,
@@ -421,7 +422,7 @@ class PlotCollection:
 
         :param gene_name: a gene or a list of genes you want to show.
         :param dot_size: the dot size, defaults to `None`.
-        :param palette: the color theme, defaults to `'CET_L4'`.
+        :param palette: a palette name or a list of colors, defaults to `'CET_L4'`.
         :param color_bar_reverse: if True, reverse the color bar, defaults to False
         :param width: the figure width in pixels.
         :param height: the figure height in pixels.
@@ -480,7 +481,7 @@ class PlotCollection:
             self,
             gene_name: str = None,
             dot_size: Optional[int] = None,
-            palette: Optional[str] = 'CET_L4',
+            palette: Optional[Union[str, list]] = 'CET_L4',
             color_bar_reverse: Optional[bool] = True,
             width: Optional[int] = None,
             height: Optional[int] = None,
@@ -496,7 +497,7 @@ class PlotCollection:
 
         :param gene_name: specify the gene you want to draw, if `None` by default, will select randomly.
         :param dot_size: marker sizemarker size, defaults to `None`.
-        :param palette: Color theme, defaults to `'CET_L4'`.
+        :param palette: a palette name or a list of colors, defaults to `'CET_L4'`.
         :param color_bar_reverse: if True, reverse the color bar, defaults to False
         :param width: the figure width in pixels.
         :param height: the figure height in pixels.
@@ -668,7 +669,7 @@ class PlotCollection:
             y_label: Optional[str] = 'umap2',
             bfig_title: Optional[str] = 'all batches',
             dot_size: Optional[int] = 1,
-            palette: Optional[Union[str, list]] = 'stereo_30',
+            palette: Optional[Union[str, list, dict]] = 'stereo_30',
             width: Optional[int] = None,
             height: Optional[int] = None
     ):
@@ -681,7 +682,8 @@ class PlotCollection:
         :param y_label: the y label.
         :param bfig_title: the big figure title.
         :param dot_size: the dot size.
-        :param palette: the color list.
+        :param palette: a palette name, a list of colors whose length is equal to the batches,
+                        or a dict whose keys are batch numbers and values are colors.
         :param width: the figure width in pixels.
         :param height: the figure height in pixels.
 
@@ -707,7 +709,7 @@ class PlotCollection:
         umap_res['batch'] = self.data.cells.batch.astype(np.uint16)
         batch_number_unique = np.unique(umap_res['batch'])
         batch_count = len(batch_number_unique)
-        cmap = stereo_conf.get_colors(palette, batch_count)
+        cmap = stereo_conf.get_colors(palette, batch_count, order=batch_number_unique)
         fig_all = umap_res.hvplot.scatter(
             x='x', y='y', c='batch', cmap=cmap, cnorm='eq_hist',
         ).opts(
@@ -771,7 +773,7 @@ class PlotCollection:
             dot_size: Optional[int] = None,
             width: Optional[int] = None,
             height: Optional[int] = None,
-            palette: Optional[int] = None,
+            palette: Optional[Union[int, list]] = None,
             vmin: float = None,
             vmax: float = None,
             **kwargs
@@ -788,7 +790,7 @@ class PlotCollection:
         :param dot_size: the dot size.
         :param width: the figure width in pixels.
         :param height: the figure height in pixels.
-        :param palette: color theme.
+        :param palette: a palette name of a list of colors.
         :param out_path: the path to save the figure.
         :param out_dpi: the dpi when the figure is saved.
         :param vmin: The value representing the lower limit of the color scale. Values smaller than vmin are plotted with the same color as vmin.
@@ -854,7 +856,8 @@ class PlotCollection:
             x_label: Optional[str] = None,
             y_label: Optional[str] = None,
             dot_size: Optional[int] = None,
-            colors: Optional[str] = 'stereo_30',
+            # colors: Optional[str] = 'stereo_30',
+            palette: Optional[Union[str, dict, list]] = 'stereo_30',
             invert_y: Optional[bool] = True,
             hue_order: Optional[set] = None,
             width: Optional[int] = None,
@@ -876,7 +879,8 @@ class PlotCollection:
         :param x_label: the x label.
         :param y_label: the y label.
         :param dot_size: the dot size.
-        :param colors: the color list.
+        :param palette: a palette name, a list of colors whose length at least equal to the groups to be shown or
+                        a dict whose keys are the groups and values are the colors.
         :param invert_y: whether to invert y-axis.
         :param hue_order: the classification method.
         :param width: the figure width in pixels.
@@ -903,8 +907,10 @@ class PlotCollection:
         """  # noqa
         res = self.check_res_key(res_key)
         group_list = res['group'].to_numpy(copy=True)
-        n = np.unique(group_list).size
-        palette = stereo_conf.get_colors(colors, n=n)
+        if hue_order is None:
+            hue_order = natsorted(np.unique(group_list))
+        n = len(hue_order)
+        # palette = stereo_conf.get_colors(colors, n=n, order=hue_order)
         x = self.data.position[:, 0]
         y = self.data.position[:, 1]
         x_min, x_max = int(x.min()), int(x.max())
@@ -926,13 +932,16 @@ class PlotCollection:
                 if show_others:
                     group_list[~isin] = 'others'
                     n = np.unique(group_list).size
-                    palette = palette[0:n - 1] + [others_color]
+                    # palette = palette[0:n - 1] + [others_color]
                     hue_order = natsorted(np.unique(group_list[isin])) + ['others']
+                    palette = stereo_conf.get_colors(palette, n=n-1, order=hue_order)
+                    palette.append(others_color)
                 else:
                     group_list = group_list[isin]
                     n = np.unique(group_list).size
-                    palette = palette[0:n]
+                    # palette = palette[0:n]
                     hue_order = natsorted(np.unique(group_list))
+                    palette = stereo_conf.get_colors(palette, n=n, order=hue_order)
                     x = x[isin]
                     y = y[isin]
 
@@ -1199,7 +1208,7 @@ class PlotCollection:
             res_key: str = 'spatial_hotspot',
             ncols: Optional[int] = 2,
             dot_size: Optional[int] = None,
-            palette: Optional[str] = 'stereo',
+            palette: Optional[Union[str, list]] = 'stereo',
             width: Optional[str] = None,
             height: Optional[str] = None,
             title: Optional[str] = None,
@@ -1213,7 +1222,7 @@ class PlotCollection:
         :param res_key: the result key of spatial hotspot.
         :param ncols: the number of columns.
         :param dot_size: the dot size.
-        :param palette: Color theme, defaults to `'CET_L4'`.
+        :param palette: a palette name or a list of colors, defaults to `'stereo'`.
         :param width: the figure width in pixels.
         :param height: the figure height in pixels.
         :param out_path: the path to save the figure.
@@ -1318,8 +1327,9 @@ class PlotCollection:
         :param color_key: the key to get the data to color the plot, it is ignored when the `color_by` is set to 'total_counts' or 'n_genes_by_counts'.
         :param bgcolor: set background color.
         :param palette: color theme, 
-                        when `color_by` is 'cluster', it can be a palette name, a list of colors or a dictionary of colors whose keys is the cluster name,
-                        when other `color_by` is set, it only can be a string of palette name.
+                        when `color_by` is 'cluster', it can be a palette name, a list of colors whose length equal to the groups,
+                        or a dict whose keys are the groups and values are colors,
+                        when other `color_by` is set, it only can be a palette name.
         :param width: the figure width in pixels.
         :param height: the figure height in pixels.
         :param fg_alpha: the transparency of foreground image, between 0 and 1, defaults to 0.5
@@ -1342,26 +1352,36 @@ class PlotCollection:
         :param horizontal_offset_additional: the additional offset between each slice on horizontal direction while reorganizing coordinates.
         :param vertical_offset_additional: the additional offset between each slice on vertical direction while reorganizing coordinates.
 
+        :return the figure object if `show` is set to False, otherwise, show the figure directly.
+
         .. note::
         
             Exporting
             ------------------
 
-            This plot can be exported as PNG and SVG, then converted to PDF.
+            This plot can be exported as PNG, SVG or PDF.
 
             You need the following necessary dependencies to support exporting:
 
                 conda install -c conda-forge selenium firefox geckodriver cairosvg
             
-            On Linux systems, you may need to install some additional libraries to support the above dependencies,
-            for example, on Ubuntu, you need to install the following libraries:
+            On Linux, you may need to install some additional libraries to support the above dependencies,
+            for example, on Ubuntu, the following libraries need to be installed:
                 
                 sudo apt-get install libgtk-3-dev libasound2-dev
             
-            On other linux systems, you may need to install the corresponding libraries according to the error message.
+            On others Linux, you may need to install the corresponding libraries according to the error message.
 
-            There are two ways to export the plot, one is to manupulate on browser,
+            There are two ways to export the plot, one is to manupulate on browser when you run it on jupyter notebook,
             another is to call the method `save_plot <stereo.plots.plot_cells.PlotCells.save_plot.html>`_ of this figure object.
+
+            Example code for the second way:
+
+            .. code-block:: python
+                
+                    fig = data.plt.cells_plotting(show=False)
+                    fig.show()
+                    fig.save_plot('path/to/save/plot.pdf')
 
         """  # noqa
         from .plot_cells import PlotCells

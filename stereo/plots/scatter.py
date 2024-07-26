@@ -271,11 +271,18 @@ def base_scatter(
         from natsort import natsorted
         import collections
         g = natsorted(set(hue))
-        if hue_order is not None:
-            g = hue_order
-        colors = stereo_conf.get_colors(palette, n=len(g))
-        color_dict = collections.OrderedDict(dict([(g[i], colors[i]) for i in range(len(g))]))
-        sns.scatterplot(x=x, y=y, hue=hue, hue_order=g, linewidth=0, marker=marker,
+        if hue_order is None:
+            hue_order = g
+        # if isinstance(palette, (dict, collections.OrderedDict)):
+        #     palette = [palette[i] for i in g if i in palette]
+        # if len(palette) < len(g):
+        #     colors = stereo_conf.get_colors(palette, n=len(g))
+        # else:
+        #     colors = palette
+        # color_dict = collections.OrderedDict(dict([(g[i], colors[i]) for i in range(len(g))]))
+        colors = stereo_conf.get_colors(palette, n=len(g), order=hue_order)
+        color_dict = dict(zip(hue_order, colors))
+        sns.scatterplot(x=x, y=y, hue=hue, hue_order=hue_order, linewidth=0, marker=marker,
                         palette=color_dict, size=hue, sizes=(dot_size, dot_size), ax=ax, alpha=foreground_alpha)
         handles, labels = ax.get_legend_handles_labels()
         # ax.legend_.remove()

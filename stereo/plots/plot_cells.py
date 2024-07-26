@@ -358,7 +358,7 @@ class PlotCells:
         :param save_height: the height of the saved plot, defaults to be the same as the plot.
         :param save_only_in_view: only save the plot in the view, defaults to False.
         :param with_base_image: whether to save the plot with the base image, defaults to False.
-                                Currently, the resolution of the saved base image may not be high.
+                                Currently, the dpi of the saved base image may not be high.
 
         """
         self._set_firefox_and_driver_path()
