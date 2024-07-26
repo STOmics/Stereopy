@@ -348,6 +348,10 @@ class _MSDataStruct(object):
     @property
     def relationship_info(self):
         return self._relationship_info
+    
+    @relationship_info.setter
+    def relationship_info(self, value: dict):
+        self._relationship_info = value
 
     def reset_position(self, mode='integrate'):
         if mode == 'integrate' and self.merged_data:
@@ -863,10 +867,12 @@ class MSData(_MSDataStruct):
                 if scope_key in self._scopes_data:
                     self._scopes_data[scope_key].tl.reset_key_record('cluster', res_key)
                     self._scopes_data[scope_key].tl.result.set_result_key_method(res_key)
+                    self._scopes_data[scope_key].cells[res_key] = self._scopes_data[scope_key].cells[res_key].astype('category')
 
                 if self._merged_data is not None:
                     self._merged_data.tl.reset_key_record('cluster', res_key)
                     self._merged_data.tl.result.set_result_key_method(res_key)
+                    self._merged_data.cells[res_key] = self._merged_data.cells[res_key].astype('category')
         elif type == 'var':
             raise NotImplementedError
         else:
@@ -1033,9 +1039,13 @@ mss: {[key + ":" + str(value) for key, value in self.tl.result_keys.items()]}
     def __repr__(self):
         return self.__str__()
     
-    def write(self, filename):
-        from stereo.io.writer import write_h5ms
-        write_h5ms(self, filename)
+    def write(self, filename, to_mudata=False):
+        if not to_mudata:
+            from stereo.io.writer import write_h5ms
+            write_h5ms(self, filename)
+        else:
+            from stereo.io.writer import write_h5mu
+            return write_h5mu(self, filename)
 
 
 TL = type('TL', (MSDataPipeLine,), {'ATTR_NAME': 'tl', "BASE_CLASS": StPipeline})

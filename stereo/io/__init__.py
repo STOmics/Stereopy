@@ -17,12 +17,14 @@ from .reader import (
     read_gef_info,
     read_seurat_h5ad,
     read_h5ad,
-    read_h5ms
+    read_h5ms,
+    mudata_to_msdata
 )
 from .writer import (
     write,
     write_h5ad,
     write_h5ms,
+    write_h5mu,
     write_mid_gef,
     update_gef
 )

@@ -106,6 +106,14 @@ class MSDataPipeLine(object):
         scope_key = self.ms_data.generate_scope_key(ms_data_view._names)
         self.ms_data.scopes_data[scope_key] = ms_data_view.merged_data
 
+        def set_result_key_method(key):
+            self.result_keys.setdefault(scope_key, [])
+            if key in self.result_keys[scope_key]:
+                self.result_keys[scope_key].remove(key)
+            self.result_keys[scope_key].append(key)
+        
+        ms_data_view.merged_data.tl.result.set_result_key_method = set_result_key_method
+
         # def callback_func(key, value):
         #     # key_name = "scope_[" + ",".join(
         #     #     [str(self.ms_data._names.index(name)) for name in ms_data_view._names]) + "]"

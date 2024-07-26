@@ -58,7 +58,7 @@ class StPipeline(object):
         self.data: Union[StereoExpData, AnnBasedStereoExpData] = data
         self.result = Result(data)
         self._raw: Union[StereoExpData, AnnBasedStereoExpData] = None
-        self.key_record = {'hvg': [], 'pca': [], 'neighbors': [], 'umap': [], 'cluster': [], 'marker_genes': []}
+        self._key_record = {'hvg': [], 'pca': [], 'neighbors': [], 'umap': [], 'cluster': [], 'marker_genes': []}
         # self.reset_key_record = self._reset_key_record
 
     def __getattr__(self, item):
@@ -80,6 +80,10 @@ class StPipeline(object):
         raise AttributeError(
             f'{item} not existed, please check the function name you called!'
         )
+
+    @property
+    def key_record(self):
+        return self._key_record
 
     @property
     def raw(self) -> Union[StereoExpData, AnnBasedStereoExpData]:
@@ -107,7 +111,14 @@ class StPipeline(object):
 
         :return:
         """
-        self.data = self.raw
+        # self.data = self.raw
+        self.data.exp_matrix = copy.deepcopy(self.raw.exp_matrix)
+        self.data.cells = copy.deepcopy(self.raw.cells)
+        self.data.genes = copy.deepcopy(self.raw.genes)
+        self.data.position = copy.deepcopy(self.raw.position)
+        self.data.position_z = copy.deepcopy(self.raw.position_z)
+        from stereo.preprocess.qc import cal_qc
+        cal_qc(self.data)
 
     def raw_checkpoint(self):
         """
@@ -335,7 +346,7 @@ class StPipeline(object):
         filter_raw
             whether to filter raw data meanwhile.
         inplace
-            whether to inplace the previous data or return a new data.
+            whether to replace the previous data or return a new data.
 
         Returns
         --------------------
@@ -373,7 +384,7 @@ class StPipeline(object):
         filter_raw
             whether to filter raw data meanwhile.
         inplace
-            whether to inplace the previous data or return a new data.
+            whether to replace the previous data or return a new data.
 
         Returns
         --------------------
@@ -408,7 +419,7 @@ class StPipeline(object):
         Parameters
         -----------------
         inplace
-            whether to inplcae previous data or get a new express matrix after normalization of log1p.
+            whether to replace previous data or get a new express matrix after normalization of log1p.
         res_key
             the key to get targeted result from `self.result`.
 
@@ -437,7 +448,7 @@ class StPipeline(object):
             the number of total counts per cell after normalization, if `None`, each cell has a
             total count equal to the median of total counts for all cells before normalization.
         inplace
-            whether to inplcae previous data or get a new express matrix after normalize_total.
+            whether to replace previous data or get a new express matrix after normalize_total.
         res_key
             the key to get targeted result from `self.result`.
 
@@ -468,7 +479,7 @@ class StPipeline(object):
         max_value
             truncate to this value after scaling, if `None`, do not truncate.
         inplace
-            whether to inplace the previous data or get a new express matrix after scaling.
+            whether to replace the previous data or get a new express matrix after scaling.
         res_key
             the key to get targeted result from `self.result`.
 
@@ -489,7 +500,7 @@ class StPipeline(object):
         Normalize the columns of X to each have the same distribution. Given an expression matrix  of M genes by N
         samples, quantile normalization ensures all samples have the same spread of data (by construction).
 
-        :param inplace: whether inplace the original data or get a new express matrix after quantile.
+        :param inplace: whether replace the original data or get a new express matrix after quantile.
         :param res_key: the key for getting the result from the self.result.
         :return:
         """
@@ -507,7 +518,7 @@ class StPipeline(object):
         for each position, given a radius, calculate the z-score within this circle as final normalized value.
 
         :param r: radius for normalization.
-        :param inplace: whether inplace the original data or get a new express matrix after disksmooth_zscore.
+        :param inplace: whether replace the original data or get a new express matrix after disksmooth_zscore.
         :param res_key: the key for getting the result from the self.result.
         :return:
         """
@@ -647,7 +658,7 @@ class StPipeline(object):
         get the subset by the result of highly variable genes.
 
         :param hvg_res_key: the key of highly varialbe genes to getting the result.
-        :param inplace: whether inplace the data or get a new data after highly variable genes, which only save the
+        :param inplace: whether replace the data or get a new data after highly variable genes, which only save the
                         data info of highly variable genes.
         :return: a StereoExpData object.
         """
@@ -1212,6 +1223,7 @@ class StPipeline(object):
         hs = spatial_hotspot(data, model=model, n_neighbors=n_neighbors, n_jobs=n_jobs, fdr_threshold=fdr_threshold,
                              min_gene_threshold=min_gene_threshold, outdir=outdir)
         self.result[res_key] = hs
+        self.reset_key_record('spatial_hotspot', res_key)
 
     @logit
     def gaussian_smooth(self,
@@ -1230,7 +1242,7 @@ class StPipeline(object):
             Also too high value may cause overfitting, and low value may cause poor smoothing effect.
         :param pca_res_key: the key of PCA to get targeted result from `self.result`.
         :param n_jobs: the number of parallel jobs to run, if `-1`, all CPUs will be used.
-        :param inplace: whether to inplace the previous express matrix or get a new StereoExpData object with the new express matrix. # noqa
+        :param inplace: whether to replace the previous express matrix or get a new StereoExpData object with the new express matrix. # noqa
 
         :return: An object of StereoExpData with the express matrix processed by Gaussian smooting.
         """
@@ -1630,3 +1642,9 @@ class AnnBasedStPipeline(StPipeline):
     def raw_checkpoint(self):
         super().raw_checkpoint()
         self.data._ann_data.raw = self.data._ann_data
+    
+    @property
+    def key_record(self):
+        if 'key_record' not in self.data.adata.uns:
+            self.data.adata.uns['key_record'] = self._key_record
+        return self.data.adata.uns['key_record']

@@ -13,9 +13,8 @@ change log:
     2022/02/09  read raw data and result
 """
 from copy import deepcopy
-from typing import Optional
-from typing import Union
-from natsort import natsorted
+from typing import Optional, Union, List
+import re
 
 import h5py
 import numpy as np
@@ -34,7 +33,6 @@ from stereo.core.stereo_exp_data import StereoExpData
 from stereo.core.result import _BaseResult
 from stereo.io import h5ad
 from stereo.io.utils import(
-    remove_genes_number,
     integrate_matrix_by_genes,
     transform_marker_genes_to_anndata,
     get_gem_comments
@@ -436,14 +434,20 @@ def _read_stereo_h5_result(key_record: dict, data: StereoExpData, f: Union[h5py.
                     data.tl.result[res_key][data_key] = h5ad.read_group(f[full_key])
 
 def _read_anndata_from_group(f: h5py.Group) -> AnnBasedStereoExpData:
-    from anndata._io.specs.registry import read_elem
+    from distutils.version import StrictVersion
+    from anndata import __version__ as anndata_version
+
+    if StrictVersion(anndata_version) < StrictVersion('0.8.0'):
+        from anndata._io.utils import read_attribute as read_elem
+    else:
+        from anndata._io.specs.registry import read_elem
     adata = AnnData(
         **{k: read_elem(f[k]) for k in f.keys()}
     )
     data = AnnBasedStereoExpData(based_ann_data=adata)
-    if 'key_record' in adata.uns:
-        data.tl.key_record = {k: list(v) for k, v in adata.uns['key_record'].items()}
-        del adata.uns['key_record']
+    # if 'key_record' in adata.uns:
+    #     data.tl.key_record = {k: list(v) for k, v in adata.uns['key_record'].items()}
+    #     del adata.uns['key_record']
     data.merged = f.attrs.get('merged', False)
     data.spatial_key = f.attrs.get('spatial_key', 'spatial')
     return data
@@ -475,21 +479,21 @@ def read_h5ms(file_path, use_raw=True, use_result=True):
                 slice_keys = list(f[k].keys())
                 slice_keys.sort(key=lambda k: int(k.split('_')[1]))
                 for one_slice_key in slice_keys:
-                    data = _read_stereo_h5ad_from_group(f[k][one_slice_key], StereoExpData(), use_raw, use_result)
-                    # encoding_type = f[k][one_slice_key].attrs.get('encoding-type', 'stereo_exp_data')
-                    # if encoding_type == 'stereo_exp_data':
-                    #     data = _read_stereo_h5ad_from_group(f[k][one_slice_key], StereoExpData(), use_raw, use_result)
-                    # else:
-                    #     data = _read_anndata_from_group(f[k][one_slice_key])
+                    # data = _read_stereo_h5ad_from_group(f[k][one_slice_key], StereoExpData(), use_raw, use_result)
+                    encoding_type = f[k][one_slice_key].attrs.get('encoding-type', 'stereo_exp_data')
+                    if encoding_type == 'anndata':
+                        data = _read_anndata_from_group(f[k][one_slice_key])
+                    else:
+                        data = _read_stereo_h5ad_from_group(f[k][one_slice_key], StereoExpData(), use_raw, use_result)
                     data_list.append(data)
             elif k == 'sample_merged':
                 for mk in f[k].keys():
-                    scope_data = _read_stereo_h5ad_from_group(f[k][mk], StereoExpData(), use_raw, use_result)
-                    # encoding_type = f[k][mk].attrs.get('encoding-type', 'stereo_exp_data')
-                    # if encoding_type == 'stereo_exp_data':
-                    #     scope_data = _read_stereo_h5ad_from_group(f[k][mk], StereoExpData(), use_raw, use_result)
-                    # else:
-                    #     scope_data = _read_anndata_from_group(f[k][mk])
+                    # scope_data = _read_stereo_h5ad_from_group(f[k][mk], StereoExpData(), use_raw, use_result)
+                    encoding_type = f[k][mk].attrs.get('encoding-type', 'stereo_exp_data')
+                    if encoding_type == 'anndata':
+                        scope_data = _read_anndata_from_group(f[k][mk])
+                    else:
+                        scope_data = _read_stereo_h5ad_from_group(f[k][mk], StereoExpData(), use_raw, use_result)
                     scopes_data[mk] = scope_data
                     if f[k][mk].attrs is not None:
                         merged_from_all = f[k][mk].attrs.get('merged_from_all', False)
@@ -917,6 +921,8 @@ def stereo_to_anndata(
             adata.uns['resolution'] = data.attr['resolution']
         if data.bin_type == 'cell_bins' and data.cells.cell_border is not None:
             adata.obsm['cell_border'] = data.cells.cell_border
+        if 'key_record' not in adata.uns:
+            adata.uns['key_record'] = deepcopy(data.tl.key_record)
 
     if data.sn is not None:
         if isinstance(data.sn, str):
@@ -1003,6 +1009,12 @@ def stereo_to_anndata(
                 for res_key in data.tl.key_record[key]:
                     uns_key = _BaseResult.RENAME_DICT.get(res_key, res_key)
                     adata.uns[uns_key] = transform_marker_genes_to_anndata(data.tl.result[res_key])
+            elif key == 'spatial_hotspot':
+                for res_key in data.tl.key_record[key]:
+                    if res_key in adata.uns:
+                        del adata.uns[res_key]
+                if 'key_record' in adata.uns:
+                    adata.uns['key_record']['spatial_hotspot'] = []
             else:
                 continue
 
@@ -1192,15 +1204,13 @@ def read_gef(
 
             if len(gene_id[0]) == 0:
                 gene_name_index = True
-            # gene_names = remove_genes_number(gene_names)
             if gene_name_index:
                 if len(gene_id[0]) > 0:
                     exp_matrix, gene_names = integrate_matrix_by_genes(gene_names, cell_num,
-                                                               exp_matrix.data, exp_matrix.indices, exp_matrix.indptr)
+                                                            exp_matrix.data, exp_matrix.indices, exp_matrix.indptr)
                 data.genes = Gene(gene_name=gene_names)
             else:
                 data.genes = Gene(gene_name=gene_id)
-                # data.genes['gene_name_underline'] = gene_names
                 data.genes['real_gene_name'] = gene_names
 
             data.exp_matrix = exp_matrix if is_sparse else exp_matrix.toarray()
@@ -1234,14 +1244,12 @@ def read_gef(
             data.position[:, 1] = cells['y']
             if len(gene_id[0]) == 0:
                 gene_name_index = True
-            # gene_names = remove_genes_number(gene_names)
             if gene_name_index:
                 if len(gene_id[0]) > 0:
                     exp_matrix, gene_names = integrate_matrix_by_genes(gene_names, cell_num, count, indices, indptr)
                 data.genes = Gene(gene_name=gene_names)
             else:
                 data.genes = Gene(gene_name=gene_id)
-                # data.genes['gene_name_underline'] = gene_names
                 data.genes['real_gene_name'] = gene_names
 
             data.exp_matrix = exp_matrix if is_sparse else exp_matrix.toarray()
@@ -1291,15 +1299,13 @@ def read_gef(
             exp_matrix = csr_matrix((count, (cell_ind, gene_ind)), shape=(cell_num, gene_num), dtype=np.uint32)
             if len(gene_id[0]) == 0:
                 gene_name_index = True
-            # gene_names = remove_genes_number(gene_names)
             if gene_name_index:
                 if len(gene_id[0]) > 0:
                     exp_matrix, gene_names = integrate_matrix_by_genes(gene_names, cell_num,
-                                                               exp_matrix.data, exp_matrix.indices, exp_matrix.indptr)
+                                                            exp_matrix.data, exp_matrix.indices, exp_matrix.indptr)
                 data.genes = Gene(gene_name=gene_names)
             else:
                 data.genes = Gene(gene_name=gene_id)
-                # data.genes['gene_name_underline'] = gene_names
                 data.genes['real_gene_name'] = gene_names
 
             data.exp_matrix = exp_matrix if is_sparse else exp_matrix.toarray()
@@ -1327,15 +1333,13 @@ def read_gef(
             
             cell_ind, gene_ind, count = gef.get_sparse_matrix_indices2()
             exp_matrix = csr_matrix((count, (cell_ind, gene_ind)), shape=(cell_num, gene_num), dtype=np.uint32)
-            # gene_names = remove_genes_number(gene_names)
             if gene_name_index:
                 if len(gene_id[0]) > 0:
                     exp_matrix, gene_names = integrate_matrix_by_genes(gene_names, cell_num,
-                                                               exp_matrix.data, exp_matrix.indices, exp_matrix.indptr)
+                                                            exp_matrix.data, exp_matrix.indices, exp_matrix.indptr)
                 data.genes = Gene(gene_name=gene_names)
             else:
                 data.genes = Gene(gene_name=gene_id)
-                # data.genes['gene_name_underline'] = gene_names
                 data.genes['real_gene_name'] = gene_names
             data.exp_matrix = exp_matrix if is_sparse else exp_matrix.toarray()
             
@@ -1440,16 +1444,101 @@ def read_gef_info(file_path: str):
 
     return info_dict
 
-# @ReadWriteUtils.check_file_exists
-# def read_h5ad(file_path: str, flavor: str = 'scanpy'):
-#     '''
-#     :param file_path: h5ad file path.
-#     :return: `StereoExpData`-like `AnnBasedStereoExpData` obj
-#     '''
-#     if flavor == 'scanpy':
-#         from stereo.core.stereo_exp_data import AnnBasedStereoExpData
-#         return AnnBasedStereoExpData(file_path)
-#     elif flavor == 'seurat':
-#         raise NotImplementedError
-#     else:
-#         raise Exception
+@ReadWriteUtils.check_file_exists
+def mudata_to_msdata(
+    file_path: str = None,
+    sample_names: Optional[Union[np.ndarray, List[str], None]] = None,
+    scope_names: Optional[Union[np.ndarray, List[str], None]] = None,
+    entire_merged_data_name: Optional[str] = None
+):
+    """
+    Read a h5mu file and convert it to a MSData object.
+
+    :param file_path: The path of the MuData file, defaults to None
+    :param sample_names: The names of single samples that are saved in the MuData object, defaults to None,
+                            if None, the names starting with 'sample_' will be used.
+    :param scope_names: The names of merged samples that are saved in the MuData object, defaults to None,
+                            if None, the names like 'scope_[0,1,2]' will be used.
+    :param entire_merged_data_name: The name of the merged sample which is merged from all samples, default to None,
+                            if None, use the one like 'scope_[0,1,2]' whose square brackets contain index sequence of all samples.
+
+    :return: The MSData object.
+    """
+    try:
+        from mudata import read_h5mu
+    except ImportError:
+        raise ImportError("Please install mudata first: `pip install mudata`.")
+    from stereo.core.ms_data import MSData
+    
+    mudata = read_h5mu(file_path)
+
+    mod_keys = list(mudata.mod.keys())
+    if sample_names is None:
+        sample_names = []
+        left_mod_keys = []
+        for k in mod_keys:
+            match = re.match(r'^sample_\d+$', k)
+            if match:
+                sample_names.append(k)
+            else:
+                left_mod_keys.append(k)
+        sample_names.sort(key=lambda x: int(x.split('_')[1]))
+        mod_keys = left_mod_keys
+    
+    data_list = [AnnBasedStereoExpData(based_ann_data=mudata[n]) for n in sample_names if n in mudata.mod]
+    if len(data_list) == 0:
+        raise ValueError("No sample data found in the MuData object.")
+    if 'names' in mudata.uns:
+        names = list(mudata.uns['names'])
+    else:
+        names = sample_names
+    
+    var_type = mudata.uns.get('var_type', 'intersect')
+    relationship = mudata.uns.get('relationship', 'other')
+    relationship_info = mudata.uns.get('relationship_info', {})
+
+    ms_data = MSData(
+        _data_list=data_list,
+        _names=names,
+        _var_type=var_type,
+        _relationship=relationship,
+        _relationship_info=relationship_info
+    )
+
+    if entire_merged_data_name is None:
+        entire_merged_data_name = ms_data.generate_scope_key(ms_data.names)
+    entire_merged_data = None
+    
+    if scope_names is None:
+        scope_names = []
+        left_mod_keys = []
+        for k in mod_keys:
+            match = re.match(r'^scope_\[\d+(,\d+)*\]$', k)
+            if match:
+                scope_names.append(k)
+            else:
+                left_mod_keys.append(k)
+        mod_keys = left_mod_keys
+    
+    scopes_data = {
+        n: AnnBasedStereoExpData(based_ann_data=mudata[n]) for n in scope_names if n in mudata.mod
+    }
+    for k in scopes_data.keys():
+        if k == entire_merged_data_name:
+            entire_merged_data = scopes_data[k]
+            if not re.match(r'^scope_\[\d+(,\d+)*\]$', k):
+                del scopes_data[k]
+                entire_merged_data_name = ms_data.generate_scope_key(ms_data.names)
+                scopes_data[entire_merged_data_name] = entire_merged_data
+            break
+    if len(scopes_data) > 0:
+        ms_data.scopes_data = scopes_data
+    ms_data.merged_data = entire_merged_data
+
+    if 'result_keys' in mudata.uns:
+        for n, k in mudata.uns['result_keys'].items():
+            if n not in ms_data.scopes_data:
+                continue
+            ms_data.tl.result_keys[n] = list(k)
+
+    return ms_data
