@@ -9,7 +9,7 @@ seaborn==0.12.2
 h5py>=3.7.0
 gefpy>=1.1.9
 # setuptools>=41.0.0,<60.0.0
-setuptools==68.2.2
+setuptools==69.5.1
 #todo python3.8/site-packages/umap/distances.py:1053: NumbaDeprecationWarning: The 'nopython' keyword argument was not supplied to the 'numba.jit' decorator.
 #The implicit default value for this argument is currently False, but it will be changed to True in Numba 0.59.0.
 #See https://numba.readthedocs.io/en/stable/reference/deprecation.html#deprecation-of-object-mode-fall-back-behaviour-when-using-jit for details.
