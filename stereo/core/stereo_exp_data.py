@@ -687,6 +687,9 @@ class AnnBasedStereoExpData(StereoExpData):
 
         from .st_pipeline import AnnBasedStPipeline
         self._tl = AnnBasedStPipeline(self._ann_data, self)
+        if 'key_record' in self._ann_data.uns:
+            key_record = self._ann_data.uns['key_record']
+            self._tl._key_record = self._ann_data.uns['key_record'] = {key: list(value) for key, value in key_record.items()}
 
         if self._ann_data.raw:
             self._tl._raw = AnnBasedStereoExpData(based_ann_data=self._ann_data.raw.to_adata())
