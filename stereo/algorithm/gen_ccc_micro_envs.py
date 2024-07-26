@@ -31,26 +31,41 @@ class GenCccMicroEnvs(AlgorithmBase):
         Generate the micro-environment used for the CCC analysis.
 
         This function should be ran twice because it includes two parts:
+
         1) Calculating how the diffrent clusters are divided into diffrent micro environments under diffrent thresholds.
-           You can choose a appropriate threshold based on the divided result.
+           You can choose an appropriate threshold based on the divided result.
            In order to run this part, you need to set the parameter `threshold` to None.
-           The output is a dataframe which format like below:
+           The output is a dataframe like below:
 
-           threshold            subgroup_result
-           0.44298617727504136  [{'1'}, {'2'}, {'3'}]
-           0.625776310617184    [{'1', '2'}, {'3'}]
+            .. list-table::
+                :header-rows: 1
 
-           The column `subgroup_result` is a list of set in which each set which contains some clusters represents a micro-environment.
+                * - threshold
+                  - subgroup_result
+                * - 0.44298617727504136
+                  - [{'1'}, {'2'}, {'3'}]
+                * - 0.625776310617184
+                  - [{'1', '2'}, {'3'}]
 
-        2) Generating the micro environments by setting a appropriate `method` and `threshold` based on the result of first part.
+           The column `subgroup_result` is a list of sets, each set contains some groups and represents a micro-environment.
+
+        2) Generating the micro environments by setting an appropriate `method` and `threshold` based on the result of first part.
            On this part, the parameters befor `method` are all ignored.
-           The output is a dataframe which format like below:
+           The output is a dataframe like below:
 
-           cell_type	microenviroment
-           NKcells_1	microenv_0
-           NKcells_0	microenv_0
-           Tcells	    microenv_1
-           Myeloid	    microenv_2
+            .. list-table::
+                :header-rows: 1
+
+                * - cell_type
+                  - microenviroment
+                * - NKcells_1	
+                  - microenv_0
+                * - NKcells_0
+                  - microenv_0
+                * - Tcells
+                  - microenv_1
+                * - Myeloid
+                  - microenv_2
 
         :param cluster_res_key: the key which specifies the clustering result in data.tl.result.
         :param n_boot: number of bootstrap samples, default = 100.
@@ -66,7 +81,7 @@ class GenCccMicroEnvs(AlgorithmBase):
                         2) pruning the fully connected tree based on a given threshold of KL, then split the graph into multiple strongly connected component.
         :param threshold: the threshold to divide micro environment.
                         1) set it to None to run the first part of this function.
-                        1) set it to a appropriate value to run the second part.
+                        1) set it to an appropriate value to run the second part.
         :param output_path: the directory to save the result, if set it to None, the result is only stored in memory.
         :param res_key: set a key to store the result to data.tl.result, in second part, it must be set the same as first part.
         """  # noqa
@@ -119,7 +134,7 @@ class GenCccMicroEnvs(AlgorithmBase):
                 'pairwise_kl_divergence': pairwise_kl_divergence,
                 'split_by_different_threshold': split_by_different_threshold
             }
-            print("Now, you can choose a appropriate threshold based on this function's result.")
+            print("Now, you can choose an appropriate threshold based on this function's result.")
             if show_dividing_by_thresholds:
                 pn.extension()
                 # split_by_different_threshold_copy = split_by_different_threshold.copy()

@@ -153,9 +153,8 @@ def process_queue(queued, queue, queue_tail, labels, width, height):
 @nb.njit(cache=True)
 def crop_mask(mask):
     x, y = np.where(mask > 0)
-    start_x, start_y, end_x, end_y = max(np.min(x) - 100, 0), max(np.min(y) - 100, 0), min(np.max(x) + 100,
-                                                                                           mask.shape[0]), max(
-        np.max(y) + 100, mask.shape[1])
+    start_x, start_y = max(np.min(x) - 100, 0), max(np.min(y) - 100, 0)
+    end_x, end_y = min(np.max(x) + 100, mask.shape[0]), min(np.max(y) + 100, mask.shape[1])
     start = (start_x, start_y)
     end = (end_x, end_y)
     cropmask = mask[start_x:end_x, start_y:end_y]
