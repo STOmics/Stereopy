@@ -26,7 +26,7 @@ panel==0.14.4
 holoviews==1.17.1
 param==1.13.0
 hvplot>=0.9.0
-# colorcet==2.0.6
+colorcet>=3.1.0
 datashader>=0.15.2
 anndata>=0.7.5
 phenograph==1.5.7
