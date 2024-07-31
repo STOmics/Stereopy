@@ -50,7 +50,7 @@ class GenCccMicroEnvs(AlgorithmBase):
            The column `subgroup_result` is a list of sets, each set contains some groups and represents a micro-environment.
 
         2) Generating the micro environments by setting an appropriate `method` and `threshold` based on the result of first part.
-           On this part, the parameters befor `method` are all ignored.
+           On this part, all the parameters before `method` are ignored.
            The output is a dataframe like below:
 
             .. list-table::
@@ -73,7 +73,11 @@ class GenCccMicroEnvs(AlgorithmBase):
         :param dimension: 2 or 3.
         :param fill_rare: bool, whether simulate cells for rare cell type when calculating kde.
         :param min_num: if a cell type has cells < min_num, it is considered rare.
-        :param binsize: grid size used for kde.
+        :param binsize: grid size used for kde, it is used for gridding the space.
+                        For example, a sample from square chip is gridded into mesh grids that have 100 intersections(determined by the given binsize),
+                        For each cell type, fit the KDE according to the coordinates of all cells of this type and calculate KDE values of the 100 intersections.
+                        Then KL divergence between each pair of cell types is calculated based on the calculated KDE values,
+                        which is then used to construct the microenvironments.
         :param eps: fill eps to zero kde to avoid inf KL divergence.
         :param show_dividing_by_thresholds: whether to display the result while running the first part of this function.
         :param method: define micro environments using two methods:
@@ -111,7 +115,7 @@ class GenCccMicroEnvs(AlgorithmBase):
             if dimension == 3:
                 if self.stereo_exp_data.position_z is None:
                     raise InvalidMicroEnvInput(
-                        "The position of cells must has the third dimension while setting `dimension` to 3.")
+                        "The position of cells must have the third dimension while setting `dimension` to 3.")
                 coord['coord_z'] = self.stereo_exp_data.position_z
 
             gme = GetMicroEnvs()
