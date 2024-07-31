@@ -321,10 +321,12 @@ def __merge_for_stereo_exp_data(
         new_data.sn[str(batch)] = data.sn
         if i == 0:
             new_data.exp_matrix = data.exp_matrix.copy()
-            new_data.cells = Cell(cell_name=cell_names, cell_border=data.cells.cell_border, batch=data.cells.batch)
-            new_data.genes = Gene(gene_name=data.gene_names)
-            new_data.cells._obs = data.cells._obs.copy(deep=True)
-            new_data.cells._obs.index = cell_names
+            # new_data.cells = Cell(cell_name=cell_names, cell_border=data.cells.cell_border, batch=data.cells.batch)
+            # new_data.genes = Gene(gene_name=data.gene_names)
+            # new_data.cells._obs = data.cells._obs.copy(deep=True)
+            # new_data.cells._obs.index = cell_names
+            new_data.cells = Cell(obs=data.cells._obs.copy(deep=True), cell_border=data.cells.cell_border, batch=data.cells.batch)
+            new_data.genes = Gene(var=data.genes._var.copy(deep=True))
             new_data.position = data.position
             if data.position_z is None:
                 new_data.position_z = np.repeat([[0]], repeats=data.position.shape[0], axis=0).astype(
@@ -337,7 +339,7 @@ def __merge_for_stereo_exp_data(
             new_data.offset_y = data.offset_y
             new_data.attr = data.attr
         else:
-            current_obs = data.cells._obs.copy()
+            current_obs = data.cells._obs.copy(deep=True)
             current_obs.index = cell_names
             new_data.cells._obs = pd.concat([new_data.cells._obs, current_obs])
             if new_data.cell_borders is not None and data.cell_borders is not None:

@@ -48,7 +48,7 @@ def read_gem(
         bin_type: str = "bins",
         bin_size: int = 100,
         is_sparse: bool = True,
-        bin_coord_offset: bool = False,
+        center_coordinates: bool = False,
         gene_name_index: bool = False
 ):
     """
@@ -66,9 +66,9 @@ def read_gem(
         the size of bin to merge, when `bin_type` is set to `'bins'`.
     is_sparse
         the expression matrix is sparse matrix, if `True`, otherwise `np.ndarray`.
-    bin_coord_offset
-        if set it to True, the coordinates of bins are calculated as
-        ((gene_coordinates - min_coordinates) // bin_size) * bin_size + min_coordinates + bin_size/2
+    center_coordinates
+        if set it to True, the coordinate of each bin will be the center of the bin,
+        otherwise, the coordinate of each bin will be the left-top corner of the bin.
     gene_name_index
         In a v0.1 gem file, the column geneID is the gene name actually, but in a v0.2,
         geneID just a ID for genes and there is an additional column called geneName where is the gene name,
@@ -106,7 +106,7 @@ def read_gem(
     if data.bin_type == 'cell_bins':
         gdf = parse_cell_bin_coor(df)
     else:
-        if bin_coord_offset:
+        if center_coordinates:
             df = parse_bin_coor(df, bin_size)
         else:
             df = parse_bin_coor_no_offset(df, bin_size)
@@ -153,7 +153,7 @@ def read_gem(
         'maxExp': data.exp_matrix.max(),  # noqa
         'resolution': resolution,
     }
-    data.bin_coord_offset = bin_coord_offset
+    data.center_coordinates = center_coordinates
     logger.info(f'the martrix has {data.cell_names.size} cells, and {data.gene_names.size} genes.')
     return data
 
@@ -732,6 +732,7 @@ def read_h5ad(
         flavor: str = 'scanpy',
         bin_type: str = None,
         bin_size: int = None,
+        spatial_key: str = 'spatial',
         **kwargs
 ) -> Union[StereoExpData, AnnBasedStereoExpData]:
     """
@@ -742,20 +743,22 @@ def read_h5ad(
     file_path
         the path of the h5ad file.
     anndata
-        the object of AnnData which to be loaded, only available while `flavor` is `'scanpy'`.
+        the object of AnnData to be loaded, only available while `flavor` is `'scanpy'`.
         `file_path` and `anndata` only can input one of them.
     flavor
         the format of the h5ad file, defaults to `'scanpy'`.
         `scanpy`: AnnData format of scanpy
-        `stereopy`: h5ad format of stereo
+        `stereopy`: h5 format of stereo
     bin_type
-        the bin type includes `'bins'` or `'cell_bins'`.
+        the bin type includes `'bins'` and `'cell_bins'`.
     bin_size
         the size of bin to merge, when `bin_type` is set to `'bins'`.
+    spatial_key
+        the key of spatial information in AnnData.obsm, default to `'spatial'`.
+        Only available while `flavor` is `'scanpy'`.
     Returns
     ---------------
-    An object of StereoExpData while `flavor` is `'stereopy'` or an object of AnnBasedStereoExpData while `flavor` is
-    `'scanpy'`
+    An object of StereoExpData while `flavor` is `'stereopy'` or an object of AnnBasedStereoExpData while `flavor` is `'scanpy'`
 
     """
     flavor = flavor.lower()
@@ -775,7 +778,7 @@ def read_h5ad(
         if file_path is not None and anndata is not None:
             raise Exception("'file_path' and 'anndata' only can input one of them")
         return AnnBasedStereoExpData(h5ad_file_path=file_path, based_ann_data=anndata, bin_type=bin_type,
-                                     bin_size=bin_size, **kwargs)
+                                     bin_size=bin_size, spatial_key=spatial_key, **kwargs)
     else:
         raise ValueError("Invalid value for 'flavor'")
 

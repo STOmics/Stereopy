@@ -209,7 +209,7 @@ class PolySelection(object):
 
         if selected_areas.bin_type == 'bins':
             @nb.njit(cache=True, nogil=True, parallel=True)
-            def __get_filtering_flag(data, bin_size, position, bin_coord_offset, num_threads, drop):
+            def __get_filtering_flag(data, bin_size, position, center_coordinates, num_threads, drop):
                 num_threads = min(position.shape[0], num_threads)
                 num_per_thread = position.shape[0] // num_threads
                 num_left = position.shape[0] % num_threads
@@ -227,7 +227,7 @@ class PolySelection(object):
                     end = interval[i + 1]
                     for j in range(start, end):
                         x_start, y_start = position[j]
-                        if bin_coord_offset:
+                        if center_coordinates:
                             x_start -= bin_size // 2
                             y_start -= bin_size // 2
                         x_end = x_start + bin_size
@@ -242,7 +242,7 @@ class PolySelection(object):
                 original_gem_df[['x', 'y', 'UMICount']].to_numpy(),
                 selected_areas.bin_size,
                 selected_areas.position,
-                selected_areas.bin_coord_offset,
+                selected_areas.center_coordinates,
                 nb.get_num_threads(),
                 drop
             )
