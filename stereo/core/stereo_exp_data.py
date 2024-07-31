@@ -105,7 +105,7 @@ class StereoExpData(Data):
         self._attr = attr if attr is not None else {'resolution': 500}
         self._merged = merged
         self._sn = self.get_sn_from_path(file_path)
-        self.bin_coord_offset = False
+        self.center_coordinates = False
 
     def get_sn_from_path(self, file_path):
         """
