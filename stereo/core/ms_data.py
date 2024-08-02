@@ -729,7 +729,7 @@ class MSData(_MSDataStruct):
             merged_data.cells._obs.drop(columns=obs_columns, inplace=True)
         var_columns = merged_data.genes._var.columns
         if 'real_gene_name' in var_columns:
-            var_columns.drop('real_gene_name')
+            var_columns = var_columns.drop('real_gene_name')
         if len(var_columns) > 0:
             merged_data.genes._var.drop(columns=var_columns, inplace=True)
         

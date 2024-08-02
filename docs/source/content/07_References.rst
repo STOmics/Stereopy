@@ -68,7 +68,7 @@ References
 
 .. [Zhang23]
    Chao Zhang, Qiang Kang, Mei Li, Hongqing Xie, Shuangsang Fang, Xun Xu,
-   *BatchEval Pipeline: Batch Effect Evaluation Workflow for Multiple Datasets Joint Analysis*, bioRxiv
+   *BatchEval Pipeline: Batch Effect Evaluation Workflow for Multiple Datasets Joint Analysis*, bioRxiv.
 
 .. [Zheng17] 
    Grace X Y Zheng, Jessica M Terry, Phillip Belgrader, Paul Ryvkin, Zachary W Bent, Ryan Wilson, Solongo B Ziraldo, Tobias D Wheeler, Geoff P McDermott, Junjie Zhu, Mark T Gregory, Joe Shuga, Luz Montesclaros, Jason G Underwood, Donald A Masquelier, Stefanie Y Nishimura, Michael Schnall-Levin, Paul W Wyatt, Christopher M Hindson, Rajiv Bharadwaj, Alexander Wong, Kevin D Ness, Lan W Beppu, H Joachim Deeg, Christopher McFarland, Keith R Loeb, William J Valente, Nolan G Ericson, Emily A Stevens, Jerald P Radich, Tarjei S Mikkelsen, Benjamin J Hindson, Jason H Bielas, 
@@ -76,4 +76,8 @@ References
 
 .. [Xia23]
    Tianyi Xia, Luni Hu, Lulu Zuo, Yunjia Zhang, Mengyang Xu, Qin Lu, Lei Zhang, Lei Cao, Taotao Pan, Bohan Zhang, Bowen Ma, Chuan Chen, Junfu Guo, Chang Shi, Mei Li, Chao Liu, Yuxiang Li, Yong Zhang, Shuangsang Fang,
-   *ST-GEARS: Advancing 3D Downstream Research through Accurate Spatial Information Recovery*, bioRxiv
+   *ST-GEARS: Advancing 3D Downstream Research through Accurate Spatial Information Recovery*, bioRxiv.
+
+.. [Bai23]
+   Yong Bai, Xiangyu Guo, Keyin Liu, Bingjie Zheng, Yingyue Wang, Qiuhong Luo, Jianhua Yin, Liang Wu, Yuxiang Li, Yong Zhang, Ao Chen, Xun Xu, Xin Jin,
+   *Efficient reliability analysis of spatially resolved transcriptomics at varying resolutions using SpaSEG*, bioRxiv.
