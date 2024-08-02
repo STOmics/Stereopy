@@ -1,5 +1,5 @@
 Tutorials (Multi-sample)
-==============
+=========================
 As clearly stated in the title, this part emphasizes the functions on multiple samples, to delve into biological tissue sample.
 Compared to uni-sample, researches on multi-sample analysis aim to interpret relations in a huge dataset, even reconstruct the 3D mesh visualization.
 Here we introduce the basic workflow (Clustering on MSData) and critical analysis based on multiple samples.
