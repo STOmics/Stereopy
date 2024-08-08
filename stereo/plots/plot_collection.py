@@ -375,6 +375,8 @@ class PlotCollection:
         :param vmax: The value representing the higher limit of the color scale. Values greater than vmax are plotted with the same color as vmax.
         """  # noqa
         from .scatter import multi_scatter
+        if isinstance(cells_key, str):
+            cells_key = [cells_key]
         if title is None:
             title = [' '.join(i.split('_')) for i in cells_key]
         if isinstance(x_label, str):
