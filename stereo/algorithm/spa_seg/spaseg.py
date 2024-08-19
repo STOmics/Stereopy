@@ -115,8 +115,8 @@ class SpaSEG():
             loss_MSE = torch.nn.MSELoss()
 
             # edge loss definition
-            loss_edge_vertical = torch.nn.L1Loss(size_average=True)
-            loss_edge_horizontal = torch.nn.L1Loss(size_average=True)
+            loss_edge_vertical = torch.nn.L1Loss(reduction='mean')
+            loss_edge_horizontal = torch.nn.L1Loss(reduction='mean')
 
             vertical_target = torch.zeros(data.shape[0], im.shape[1] - 1, im.shape[2], self.output_dim)
             horizontal_target = torch.zeros(data.shape[0], im.shape[1], im.shape[2] - 1, self.output_dim)
