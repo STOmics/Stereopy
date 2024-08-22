@@ -1261,7 +1261,6 @@ def read_gef(
         }
         logger.info(f'the matrix has {data.cell_names.size} cells, and {data.gene_names.size} genes.')
         gef.cgef_close()
-        del gef
         return data
     else:
         if is_cell_bin:

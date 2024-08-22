@@ -104,6 +104,32 @@ def _check_indices(
 
     return col_keys, index_keys, index_aliases
 
+def _check_order(order, count):
+    if order is None:
+        return [None] * count
+    elif not isinstance(order, (list, np.ndarray, pd.Index)):
+        raise ValueError("order must be a list, np.ndarray, pd.Index or None")
+    
+    if isinstance(order, pd.Index):
+        order = [order] * count
+    elif isinstance(order, np.ndarray):
+        if order.ndim == 1:
+            order = [order] * count
+        elif order.ndim == 2:
+            if order.shape[0] < count:
+                raise ValueError("order must have the same number of rows as keys")
+        else:
+            raise ValueError("order must be 1D or 2D")
+    elif isinstance(order, list):
+        if len(order) == 0:
+            return [None] * count
+        elif isinstance(order[0], (list, np.ndarray, pd.Index)):
+            if len(order) != count:
+                raise ValueError("order must have the same number of elements as keys")
+        elif isinstance(order[0], (str, int, float, np.number)):
+            order = [order] * count
+    return order
+
 
 def _get_array_values(
         X,
@@ -309,7 +335,8 @@ def violin_distribution(
         else:
             axs = [ax]
         fig = axs[0].figure
-        for ax, y, ylab in zip(axs, ys, y_label):
+        orders = _check_order(order, len(ys))
+        for ax, y, ylab, order in zip(axs, ys, y_label, orders):
             ax = sns.violinplot(x=x, y=y, data=obs_df, order=order, orient='vertical', scale=scale, ax=ax,
                                 palette=palette)
             if show_stripplot:

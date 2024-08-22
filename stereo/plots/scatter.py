@@ -170,7 +170,7 @@ def base_scatter(
         show_ticks: bool = False,
         vmin: float = None,
         vmax: float = None,
-        hue_order: any = None,
+        hue_order: Union[list, np.ndarray] = None,
         width: float = None,
         height: float = None,
         boundary: list = None,
@@ -178,8 +178,8 @@ def base_scatter(
         plotting_scale_width: float = 2000,
         data_resolution: int = None,
         data_bin_offset: int = 1,
-        foreground_alpha: float = 0.5,
-        base_image: list = None,
+        foreground_alpha: float = None,
+        base_image: np.ndarray = None,
         base_im_cmap: str = 'Greys',
         base_im_boundary: list = None,
         base_im_value_range: tuple = None,
@@ -247,8 +247,11 @@ def base_scatter(
             bg_mask = np.where(base_image == bg_pixel, bg_value, 0)
             base_image += bg_mask
         ax.imshow(base_image, cmap=base_im_cmap, extent=base_im_boundary)
+        if foreground_alpha is None:
+            foreground_alpha = 0.5
     else:
-        foreground_alpha = 1
+        if foreground_alpha is None:
+            foreground_alpha = 1
 
     if color_bar:
         colors = stereo_conf.linear_colors(palette, reverse=color_bar_reverse)

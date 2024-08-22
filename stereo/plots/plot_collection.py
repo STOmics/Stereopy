@@ -877,7 +877,7 @@ class PlotCollection:
         :param show_others: whether to show others when groups is not None.
                             by default, if `base_image` is None, `show_others` is True, otherwise `show_others` is False.
         :param others_color: the color of others, only available when `groups` is not None and `show_others` is True.
-        :param title: the plot title.
+        :param title: the plot title, defaults to None to be set as `res_key`, set it to False to disable the title.
         :param x_label: the x label.
         :param y_label: the y label.
         :param dot_size: the dot size.
@@ -971,6 +971,11 @@ class PlotCollection:
         if 'marker' in kwargs:
             marker = kwargs['marker']
             del kwargs['marker']
+
+        if title is None:
+            title = res_key
+        elif title is False:
+            title = None
 
         fig = base_scatter(
             x, y,
