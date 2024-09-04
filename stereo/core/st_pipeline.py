@@ -679,6 +679,8 @@ class StPipeline(object):
             n_pcs: int = None,
             svd_solver: Literal['auto', 'full', 'arpack', 'randomized'] = 'auto',
             hvg_res_key: Optional[str] = 'highly_variable_genes',
+            random_state: Optional[Union[None, int, np.random.RandomState]] = 0,
+            dtype: str = 'float32',
             res_key: str = 'pca'):
         """
         Principal component analysis.
@@ -705,6 +707,8 @@ class StPipeline(object):
                         run randomized SVD.
 
         :param hvg_res_key: the key of highly variable genes to get targeted result,`use_highly_genes=True` is a necessary prerequisite.
+        :param random_state: change to use different initial states for the optimization, fixed value to fixed result.
+        :param dtype: numpy data type string to which to convert the result.
         :param res_key: the key for storage of PCA result.
 
         :return: Computation result of principal component analysis is stored in `self.result` where the result key is `'pca'`.
@@ -719,10 +723,20 @@ class StPipeline(object):
             exp_matrix = self.data.exp_matrix[:, hvgs]
         else:
             exp_matrix = self.data.exp_matrix
-        res = pca(exp_matrix, n_pcs, svd_solver=svd_solver)
+        if n_pcs is None:
+            n_pcs = min(exp_matrix.shape) - 1
+            if n_pcs > 50:
+                n_pcs = 50
+        res = pca(exp_matrix, n_pcs, svd_solver=svd_solver, random_state=random_state, dtype=dtype)
 
         self.result[res_key] = pd.DataFrame(res['x_pca'])
         self.result[f'{res_key}_variance_ratio'] = res['variance_ratio']
+        if use_highly_genes:
+            pcs = np.zeros((self.data.shape[1], n_pcs), dtype=res['pcs'].dtype)
+            pcs[hvgs] = res['pcs']
+        else:
+            pcs = res['pcs']
+        self.result['PCs'] = pcs
         key = 'pca'
         self.reset_key_record(key, res_key)
 
@@ -855,16 +869,23 @@ class StPipeline(object):
 
         :return: Neighbors result is stored in `self.result` where the result key is `'neighbors'`.
         """
-        if pca_res_key not in self.result:
+        if pca_res_key != 'spatial' and pca_res_key not in self.result:
             raise Exception(f'{pca_res_key} is not in the result, please check and run the pca func.')
         if n_jobs > cpu_count():
             n_jobs = -1
+        if pca_res_key == 'spatial':
+            pca_res = self.data.position
+        else:
+            pca_res = self.result[pca_res_key].to_numpy()
         if n_pcs is None:
-            n_pcs = self.result[pca_res_key].shape[1]
+            n_pcs = pca_res.shape[1]
         from ..algorithm.neighbors import find_neighbors
-        neighbor, dists, connectivities = find_neighbors(x=self.result[pca_res_key].values, method=method, n_pcs=n_pcs,
+        neighbor, dists, connectivities = find_neighbors(x=pca_res, method=method, n_pcs=n_pcs,
                                                          n_neighbors=n_neighbors, metric=metric, knn=knn, n_jobs=n_jobs)
-        res = {'neighbor': neighbor, 'connectivities': connectivities, 'nn_dist': dists}
+        res = {
+            'neighbor': neighbor,
+            'connectivities': connectivities, 'nn_dist': dists,
+            'n_neighbors': n_neighbors, 'method': method, 'metric': metric}
         self.result[res_key] = res
         key = 'neighbors'
         self.reset_key_record(key, res_key)

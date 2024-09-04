@@ -286,14 +286,14 @@ class StereoExpData(Data):
         """
         Get the genes matrix.
         """
-        return self._genes._matrix
+        return self._genes.matrix
 
     @property
     def genes_pairwise(self):
         """
         Get the genes pairwise.
         """
-        return self._genes._pairwise
+        return self._genes.pairwise
 
     @property
     def cells(self):
@@ -319,14 +319,32 @@ class StereoExpData(Data):
         """
         Get the cells matrix.
         """
-        return self._cells._matrix
+        return self._cells.matrix
 
     @property
     def cells_pairwise(self):
         """
         Get the cells pairwise.
         """
-        return self._cells._pairwise
+        return self._cells.pairwise
+
+    @property
+    def n_cells(self):
+        """
+        Get the number of cells.
+
+        :return:
+        """
+        return self.cells.size
+
+    @property
+    def n_genes(self):
+        """
+        Get the number of genes.
+
+        :return:
+        """
+        return self.genes.size
 
     @property
     def exp_matrix(self) -> Union[np.ndarray, spmatrix]:
@@ -567,11 +585,11 @@ class StereoExpData(Data):
         if self.cells_matrix:
             format_str += f"\ncells_matrix = {list(self.cells_matrix.keys())}"
         if self.genes_matrix:
-            format_str += f"\ngenes_matrix = {list(self.cells_matrix.keys())}"
+            format_str += f"\ngenes_matrix = {list(self.genes_matrix.keys())}"
         if self.cells_pairwise:
-            format_str += f"\ncells_pairwise = {list(self.cells._pairwise.keys())}"
+            format_str += f"\ncells_pairwise = {list(self.cells_pairwise.keys())}"
         if self.genes_pairwise:
-            format_str += f"\ngenes_pairwise = {list(self.genes._pairwise.keys())}"
+            format_str += f"\ngenes_pairwise = {list(self.genes_pairwise.keys())}"
         format_key_record = {
             key: value
             for key, value in self.tl.key_record.items() if value
@@ -586,7 +604,7 @@ class StereoExpData(Data):
             format_str += f"\nkey_record: {format_key_record}"
         result_key = []
         for rks in self.tl.key_record.values():
-            if rks is not None:
+            if rks is not None and len(rks) > 0:
                 result_key += rks
         for rk in self.tl.result.keys():
             if rk not in result_key:
@@ -673,6 +691,10 @@ class AnnBasedStereoExpData(StereoExpData):
         if 'resolution' in self._ann_data.uns:
             self.attr = {'resolution': self._ann_data.uns['resolution']}
             del self._ann_data.uns['resolution']
+        
+        if 'merged' in self._ann_data.uns:
+            self.merged = self._ann_data.uns['merged']
+            del self._ann_data.uns['merged']
 
         if bin_type is not None and 'bin_type' not in self._ann_data.uns:
             self._ann_data.uns['bin_type'] = bin_type

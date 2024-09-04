@@ -70,6 +70,36 @@ Workflow
 Latest Additions
 ------------------
 
+Version 1.4.0
+~~~~~~~~~~~~~~~~~~~
+1.4.0 : 2024-09-06
+
+.. _SpaSEG: Tutorials(Multi-sample)/SpaSEG.html
+.. |SpaSEG| replace:: **SpaSEG**
+
+.. _st.plt.cells_plotting: content/stereo.plots.PlotCollection.cells_plotting.html
+.. |st.plt.cells_plotting| replace:: `st.plt.cells_plotting`
+
+.. _st.io.write_h5mu: content/stereo.io.write_h5mu.html
+.. |st.io.write_h5mu| replace:: `st.io.write_h5mu`
+
+.. _st.io.mudata_to_msdata: content/stereo.io.mudata_to_msdata.html
+.. |st.io.mudata_to_msdata| replace:: `st.io.mudata_to_msdata`
+
+Features:
+
+1. Addition of new algorithm |SpaSEG|_ for multiple **SRT** analysis.
+2. Addition of **colorbar** or **legend** for `st.plt.cells_plotting`.
+3. |st.plt.cells_plotting|_ supports exporting plots as **PNG**, **SVG** or **PDF**.
+4. Addition of method |st.io.write_h5mu|_ and |st.io.mudata_to_msdata|_ for conversion between **MSData** and **MuData**.
+
+BUG Fixes:
+
+1. Fixed the problem that **CellCorrection** is incompatible with small-size images (less than 2000px in any dimension) when using the method **EDM**.
+2. Fixed the problem that `MSData.to_integrate` is incompatible when the number of cells in the integrated sample is less than the total number of cells in all single samples.
+3. Fixed the problem that `st.plt.time_series_tree_plot` can not capture the result of **PAGA**, leading to an incorrect plot.
+4. Fixed other bugs.
+
 Version 1.3.1
 ~~~~~~~~~~~~~~~~~~~
 1.3.1 : 2024-06-28
@@ -104,24 +134,6 @@ BUG Fixes:
 1. Fixed the problem that `st.io.read_gem` is incompatible with **GEM** files containing **geneID**.
 2. Fixed the bug of losing part of metadata when writing **StereoExpData** / **MSData** into **Stereo-h5ad** or **h5ms** file.
 3. Fixed the incompatibility problem with **AnnData** when performing `st.tl.sctransform`.
-
-Version 1.2.0
-~~~~~~~~~~~~~~~~~~~
-1.2.0 : 2024-03-30
-
-Features:
-
-1. `st.io.read_gem` and `st.io.read_gef` support expression matrix files with geneID information.
-2. Analysis results of `find_marker_genes`  will be saved into the output AnnData h5ad.
-3. Upgraded tissue segmentation algorithm.
-4. Addition of `st.tl.adjusted_rand_score` to calculate the adjusted Rand coefficient between two clusters.
-5. Addition of `st.tl.silhouette_score` to calculate the average silhouette coefficient of a cluster.
-6. `h5ad2rds.R` is compatible with AnnData version > 0.7.5, to convert from h5ad to rds files.
-7. Addition of the clustering category labels to the graph of `st.plt.paga_compare`.
-
-BUG Fixes:
-
-1. Fixed the error of high memory consumption when converting `X.raw` into AnnData.
 
 
 .. toctree::

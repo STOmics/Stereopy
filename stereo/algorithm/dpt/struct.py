@@ -10,6 +10,7 @@ from typing import (
 )
 
 import numpy as np
+import pandas as pd
 import scipy
 from scipy.sparse import (
     issparse,
@@ -211,10 +212,13 @@ def _backwards_compat_get_full_eval(stereo_exp_data):
 
 
 def _backwards_compat_get_full_X_diffmap(stereo_exp_data) -> np.ndarray:
+    X_diffmap = stereo_exp_data.tl.result['X_diffmap']
+    if isinstance(X_diffmap, pd.DataFrame):
+        X_diffmap = X_diffmap.to_numpy()
     if 'X_diffmap0' in stereo_exp_data.tl.result:
-        return np.c_[stereo_exp_data.tl.result['X_diffmap0'].values[:, None], stereo_exp_data.tl.result['X_diffmap']]
+        return np.c_[stereo_exp_data.tl.result['X_diffmap0'].values[:, None], X_diffmap]
     else:
-        return stereo_exp_data.tl.result['X_diffmap']
+        return X_diffmap
 
 
 def _get_indices_distances_from_dense_matrix(D, n_neighbors: int):

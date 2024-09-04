@@ -3,6 +3,38 @@ Release Notes
 
 .. role:: small
 
+Version 1.4.0
+------------------
+1.4.0 : 2024-09-06
+~~~~~~~~~~~~~~~~~~~
+
+.. _SpaSEG: ../Tutorials(Multi-sample)/SpaSEG.html
+.. |SpaSEG| replace:: **SpaSEG**
+
+.. _st.plt.cells_plotting: stereo.plots.PlotCollection.cells_plotting.html
+.. |st.plt.cells_plotting| replace:: `st.plt.cells_plotting`
+
+.. _st.io.write_h5mu: stereo.io.write_h5mu.html
+.. |st.io.write_h5mu| replace:: `st.io.write_h5mu`
+
+.. _st.io.mudata_to_msdata: stereo.io.mudata_to_msdata.html
+.. |st.io.mudata_to_msdata| replace:: `st.io.mudata_to_msdata`
+
+Features:
+
+1. Addition of new algorithm |SpaSEG|_ for multiple **SRT** analysis.
+2. Addition of **colorbar** or **legend** for `st.plt.cells_plotting`.
+3. |st.plt.cells_plotting|_ supports exporting plots as **PNG**, **SVG** or **PDF**.
+4. Addition of method |st.io.write_h5mu|_ and |st.io.mudata_to_msdata|_ for conversion between **MSData** and **MuData**.
+
+BUG Fixes:
+
+1. Fixed the problem that **CellCorrection** is incompatible with small-size images (less than 2000px in any dimension) when using the method **EDM**.
+2. Fixed the problem that `MSData.to_integrate` is incompatible when the number of cells in the integrated sample is less than the total number of cells in all single samples.
+3. Fixed the problem that `st.plt.time_series_tree_plot` can not capture the result of **PAGA**, leading to an incorrect plot.
+4. Fixed other bugs.
+
+
 Version 1.3.1
 ------------------
 1.3.1 : 2024-06-28

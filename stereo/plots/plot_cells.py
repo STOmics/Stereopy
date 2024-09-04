@@ -53,7 +53,13 @@ class PlotCells:
                 if not np.any(np.isin(self.data.genes.gene_name, color_key)):
                     raise ValueError(f'The gene {color_key} is not found.')
         else:
-            self.palette = 'stereo_30' if palette is None else 'custom'
+            if palette is None:
+                self.palette = 'stereo_30'
+            elif isinstance(palette, str):
+                self.palette = palette
+            else:
+                self.palette = 'custom'
+            # self.palette = 'stereo_30' if palette is None else 'custom'
             if color_key in self.data.tl.result:
                 res = self.data.tl.result[color_key]
                 self.cluster_res = np.array(res['group'])
@@ -254,10 +260,10 @@ class PlotCells:
         #     value='stereo_30', options=list(stereo_conf.colormaps.keys()), name='color theme', width=200
         # )
         self.color_map_key_continuous = pn.widgets.Select(
-            value=self.palette, options=list(stereo_conf.linear_colormaps.keys()), name='color theme', width=200
+            value=self.palette, options=sorted(list(stereo_conf.linear_colormaps.keys())), name='color theme', width=200
         )
         self.color_map_key_discrete = pn.widgets.Select(
-            value=self.palette, options=list(stereo_conf.colormaps.keys()), name='color theme', width=200
+            value=self.palette, options=sorted(list(set(stereo_conf.colormaps.keys()) | {self.palette})), name='color theme', width=200
         )
         if self.cluster_res is None:
             self.color_map_key_discrete.visible = False

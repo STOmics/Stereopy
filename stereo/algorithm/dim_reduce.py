@@ -47,7 +47,7 @@ def factor_analysis(x, n_pcs):
     return tran_x
 
 
-def pca(x, n_pcs, svd_solver='auto', random_state=0):
+def pca(x, n_pcs, svd_solver='auto', random_state=0, dtype='float32'):
     """
     Principal component analysis.
 
@@ -81,16 +81,10 @@ def pca(x, n_pcs, svd_solver='auto', random_state=0):
             )
             svd_solver = 'arpack'
         if x.dtype.char not in "fFdD":
-            x = x.astype(np.float32)
-            logger.info('exp_matrix dType is changed to float32')
+            x = x.astype(dtype)
+            logger.info(f'exp_matrix dType is not float, it is changed to {dtype}')
         output = _pca_with_sparse(x, n_pcs, solver=svd_solver, random_state=random_state)
-        # this is just a wrapper for the results
-        # pca_ = PCA(n_components=n_pcs, svd_solver=svd_solver)
-        # pca_.components_ = output['components']
-        # pca_.explained_variance_ = output['variance']
-        # pca_.explained_variance_ratio_ = output['variance_ratio']
-        # return dict([('x_pca', output['X_pca']), ('variance', output['variance']), ('variance_ratio', output['variance_ratio']), ('pcs', pca_.components_.T)]) # noqa
-        return dict(
+        result = dict(
             [('x_pca', output['X_pca']), ('variance', output['variance']), ('variance_ratio', output['variance_ratio']),
              ('pcs', output['components'].T)])
     else:
@@ -99,7 +93,13 @@ def pca(x, n_pcs, svd_solver='auto', random_state=0):
         variance = pca_obj.explained_variance_
         variance_ratio = pca_obj.explained_variance_ratio_
         pcs = pca_obj.components_.T
-        return dict([('x_pca', x_pca), ('variance', variance), ('variance_ratio', variance_ratio), ('pcs', pcs)])
+        result = dict([('x_pca', x_pca), ('variance', variance), ('variance_ratio', variance_ratio), ('pcs', pcs)])
+    
+    if result['x_pca'].dtype.descr != np.dtype(dtype).descr:
+        logger.info(f'x_pca dType is changed from {result["x_pca"].dtype} to {dtype}')
+        result['x_pca'] = result['x_pca'].astype(dtype)
+
+    return result
 
 
 def _pca_with_sparse(X, n_pcs, solver='arpack', mu=None, random_state=None):

@@ -57,8 +57,7 @@ class MSDataPipeLine(object):
     
     @result_keys.setter
     def result_keys(self, result_keys):
-        self._result_keys = result_keys
-        self._reset_result_keys()
+        self._result_keys = self._reset_result_keys(result_keys)
     
     @property
     def mode(self):
@@ -76,12 +75,14 @@ class MSDataPipeLine(object):
     def scope(self, scope):
         self.__scope = scope
     
-    def _reset_result_keys(self):
-        for scope_key, result_keys in self._result_keys.items():
-            self._result_keys[scope_key] = []
-            for rk in result_keys:
+    def _reset_result_keys(self, origin_result_keys: dict = None):
+        result_keys = {}
+        for scope_key, scope_result_keys in origin_result_keys.items():
+            result_keys[scope_key] = []
+            for rk in scope_result_keys:
                 if rk in self.result[scope_key]:
-                    self._result_keys[scope_key].append(rk)
+                    result_keys[scope_key].append(rk)
+        return result_keys
 
     def _use_integrate_method(self, item, *args, **kwargs):
         if "mode" in kwargs:
@@ -106,54 +107,13 @@ class MSDataPipeLine(object):
         scope_key = self.ms_data.generate_scope_key(ms_data_view._names)
         self.ms_data.scopes_data[scope_key] = ms_data_view.merged_data
 
-        def set_result_key_method(key):
-            self.result_keys.setdefault(scope_key, [])
-            if key in self.result_keys[scope_key]:
-                self.result_keys[scope_key].remove(key)
-            self.result_keys[scope_key].append(key)
+        # def set_result_key_method(key):
+        #     self.result_keys.setdefault(scope_key, [])
+        #     if key in self.result_keys[scope_key]:
+        #         self.result_keys[scope_key].remove(key)
+        #     self.result_keys[scope_key].append(key)
         
-        ms_data_view.merged_data.tl.result.set_result_key_method = set_result_key_method
-
-        # def callback_func(key, value):
-        #     # key_name = "scope_[" + ",".join(
-        #     #     [str(self.ms_data._names.index(name)) for name in ms_data_view._names]) + "]"
-        #     self.ms_data.tl.result.setdefault(key_name, {})
-        #     self.ms_data.tl.result[key_name][key] = value
-
-        # ms_data_view._merged_data.tl.result.set_item_callback = callback_func
-
-        # def get_item_method(name):
-        #     # key_name = "scope_[" + ",".join(
-        #     #     [str(self.ms_data._names.index(name)) for name in ms_data_view._names]) + "]"
-        #     scope_result = self.ms_data.tl.result.get(key_name, None)
-        #     if scope_result is None:
-        #         raise KeyError
-        #     method_result = scope_result.get(name, None)
-        #     return method_result
-
-        # ms_data_view._merged_data.tl.result.get_item_method = get_item_method
-
-        # def contain_method(item):
-        #     # key_name = "scope_[" + ",".join(
-        #     #     [str(self.ms_data._names.index(name)) for name in ms_data_view._names]) + "]"
-        #     scope_result = self.ms_data.tl.result.get(key_name, None)
-        #     if scope_result is None:
-        #         return False
-        #     method_result = scope_result.get(item, None)
-        #     if method_result is None:
-        #         return False
-        #     return True
-
-        # ms_data_view._merged_data.tl.result.contain_method = contain_method
-
-        # def reset_key_record(key, res_key):
-        #     # key_name = "scope_[" + ",".join(
-        #     #     [str(self.ms_data._names.index(name)) for name in ms_data_view._names]) + "]"
-
-        #     ms_data_view._merged_data.tl._reset_key_record(key, res_key)
-        #     self._key_record[key_name] = ms_data_view._merged_data.tl.key_record
-
-        # ms_data_view._merged_data.tl.reset_key_record = reset_key_record
+        # ms_data_view.merged_data.tl.result.set_result_key_method = set_result_key_method
 
         new_attr = self.__class__.BASE_CLASS.__dict__.get(item, None)
         if new_attr is None:
@@ -178,17 +138,6 @@ class MSDataPipeLine(object):
             *args,
             **kwargs
         )
-
-        # def log_delayed_task(idx, *arg, **kwargs):
-        #     logger.info(f'data_obj(idx={idx}) in ms_data start to run {item}')
-        #     return new_attr(*arg, **kwargs)
-
-        # return log_delayed_task(
-        #     0,
-        #     ms_data_view.merged_data.__getattribute__(self.__class__.ATTR_NAME),
-        #     *args,
-        #     **kwargs
-        # )
 
     def _run_isolated_method(self, item, *args, **kwargs):
         if "mode" in kwargs:
@@ -276,27 +225,6 @@ class MSDataPipeLine(object):
                 self._run_isolated_method(item, *args, **kwargs)
             else:
                 raise Exception("`mode` should be one of [`integrate`, `isolated`]")
-            # if "mode" in kwargs:
-            #     if kwargs["mode"] == "integrate":
-            #         # if self.ms_data.merged_data:
-            #         #     return self._use_integrate_method(item, *args, **kwargs)
-            #         # else:
-            #         #     raise Exception(
-            #         #         "`mode` integrate should merge first, using `ms_data.integrate`"
-            #         #     )
-            #         return self._use_integrate_method(item, *args, **kwargs)
-            #     elif kwargs["mode"] == "isolated":
-            #         self._run_isolated_method(item, *args, **kwargs)
-            #     else:
-            #         raise Exception("`mode` should be one of [`integrate`, `isolated`]")
-            # else:
-            #     # if self.ms_data.merged_data:
-            #     #     return self._use_integrate_method(item, *args, **kwargs)
-            #     # else:
-            #     #     raise Exception(
-            #     #         "`mode` integrate should merge first, using `ms_data.integrate`"
-            #     #     )
-            #     return self._use_integrate_method(item, *args, **kwargs)
 
         return temp
     

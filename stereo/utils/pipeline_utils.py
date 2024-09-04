@@ -159,9 +159,9 @@ def cluster_bins_to_cellbins(
         bins_cluster_res_key: str,
 ):
     """
-    Mapping clustering result of bins to corresponding cellbins.
+    Mapping cluster result of bins to corresponding cellbins.
 
-    The clustering of a cell will be mapped to the clustering of a bin if this cell's coordinate is within this bin.
+    The cluster of a cell will be mapped to the cluster of a bin if this cell's coordinate is within this bin.
 
     :param bins_data: StereoExpData object of bins.
     :param cellbins_data: StereoExpData object of cellbins.

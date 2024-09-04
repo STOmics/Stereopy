@@ -30,6 +30,8 @@ from stereo.core.ms_data import MSData
 from stereo.io import h5ad, stereo_to_anndata
 from stereo.log_manager import logger, LogManager
 
+from .reader import to_interval
+
 environ['HDF5_USE_FILE_LOCKING'] = "FALSE"
 
 
@@ -109,7 +111,10 @@ def _write_one_h5ad(f: h5py.File, data: StereoExpData, use_raw=False, use_result
         if len(sn_list) > 0:
             sn_data = pd.DataFrame(sn_list, columns=['batch', 'sn'])
             h5ad.write(sn_data, f, 'sn', save_as_matrix=True)
-    h5ad.write(data.genes, f, 'genes')
+    genes = deepcopy(data.genes)
+    if 'mean_bin' in genes:
+        genes['mean_bin'] = [str(interval) for interval in genes['mean_bin']]
+    h5ad.write(genes, f, 'genes')
     h5ad.write(data.cells, f, 'cells')
     if data.position_z is None:
         position = data.position
@@ -174,10 +179,12 @@ def _write_one_h5ad_result(data, f, key_record):
             # write result[res_key]
             if analysis_key == 'hvg':
                 # interval to str
-                hvg_df: pd.DataFrame = deepcopy(data.tl.result[res_key])
-                if 'mean_bin' in hvg_df.columns:
-                    hvg_df.mean_bin = [str(interval) for interval in data.tl.result[res_key].mean_bin]
-                h5ad.write(hvg_df, f, f'{res_key}@hvg')  # -> dataframe
+                # hvg_df: pd.DataFrame = deepcopy(data.tl.result[res_key])
+                # if 'mean_bin' in hvg_df.columns:
+                #     hvg_df.mean_bin = [str(interval) for interval in data.tl.result[res_key].mean_bin]
+                # h5ad.write(hvg_df, f, f'{res_key}@hvg')  # -> dataframe
+                hvg_columns = dict.get(data.tl.result, res_key)
+                h5ad.write(hvg_columns, f, f'{res_key}@hvg')  # -> dict
             if analysis_key in ['pca', 'umap', 'totalVI', 'spatial_alignment_integration']:
                 h5ad.write(data.tl.result[res_key].values, f, f'{res_key}@{analysis_key}')  # -> array
                 if analysis_key == 'pca':
@@ -194,7 +201,8 @@ def _write_one_h5ad_result(data, f, key_record):
                     else:
                         h5ad.write(value, f, f'{neighbor_key}@{res_key}@neighbors')  # -> Neighbors
             if analysis_key == 'cluster':
-                h5ad.write(data.tl.result[res_key], f, f'{res_key}@cluster')  # -> dataframe
+                if res_key not in data.cells:
+                    h5ad.write(data.tl.result[res_key], f, f'{res_key}@cluster')  # -> dataframe
             if analysis_key == 'gene_exp_cluster':
                 h5ad.write(data.tl.result[res_key], f, f'{res_key}@gene_exp_cluster', save_as_matrix=True)
             if analysis_key == 'marker_genes':
@@ -329,8 +337,8 @@ def write_h5ms(ms_data, output: str, anndata_as_anndata: bool = True):
                 else:
                     _write_one_h5ad(g, merged_data, use_raw=True, use_result=True)
         h5ad.write_list(f, 'names', ms_data.names)
-        h5ad.write_dataframe(f, 'obs', ms_data.obs)
-        h5ad.write_dataframe(f, 'var', ms_data.var)
+        # h5ad.write_dataframe(f, 'obs', ms_data.obs)
+        # h5ad.write_dataframe(f, 'var', ms_data.var)
         h5ad.write(ms_data.var_type, f, 'var_type')
         h5ad.write(ms_data.relationship, f, 'relationship')
         if len(ms_data.tl.result_keys) > 0:
@@ -515,6 +523,12 @@ def write_h5mu(ms_data: MSData, output: str = None, compression: Optional[Litera
     :param compression: The compression method used to save the h5mu file.
 
     :return: The MuData object.
+
+    .. note::
+
+        You need to install the mudata package before using this function:
+
+            pip install mudata
     """
 
     try:
@@ -533,37 +547,36 @@ def write_h5mu(ms_data: MSData, output: str = None, compression: Optional[Litera
     
     merged_adata_list = []
     merged_adata_keys = []
-    merged_adata_all = None
+    # merged_adata_all = None
     for scope_name, merged_data in ms_data.scopes_data.items():
         adata = stereo_to_anndata(merged_data, flavor='scanpy', split_batches=False)
-        # saved_name = f"merged_{scope_name}"
-        # adata_dict[scope_name] = adata
         merged_adata_list.append(adata)
         merged_adata_keys.append(scope_name)
-        if merged_data is ms_data.merged_data:
-            merged_adata_all = adata
+        # if merged_data is ms_data.merged_data:
+        #     merged_adata_all = adata
 
-    new_ms_data = MSData(
-        _data_list=[AnnBasedStereoExpData(based_ann_data=adata) for adata in adata_list],
-        _names=deepcopy(ms_data.names),
-        _merged_data=AnnBasedStereoExpData(based_ann_data=merged_adata_all),
-        _scopes_data={key: AnnBasedStereoExpData(based_ann_data=adata) for key, adata in zip(merged_adata_keys, merged_adata_list)},
-        _var_type=ms_data.var_type,
-        _relationship=ms_data.relationship,
-        _relationship_info=deepcopy(ms_data.relationship_info)
-    )
-    new_ms_data.tl.result_keys = deepcopy(ms_data.tl.result_keys)
-    # new_ms_data.tl._reset_result_keys()
+    # new_ms_data = MSData(
+    #     _data_list=[AnnBasedStereoExpData(based_ann_data=adata) for adata in adata_list],
+    #     _names=deepcopy(ms_data.names),
+    #     _merged_data=AnnBasedStereoExpData(based_ann_data=merged_adata_all),
+    #     _scopes_data={key: AnnBasedStereoExpData(based_ann_data=adata) for key, adata in zip(merged_adata_keys, merged_adata_list)},
+    #     _var_type=ms_data.var_type,
+    #     _relationship=ms_data.relationship,
+    #     _relationship_info=deepcopy(ms_data.relationship_info)
+    # )
+    # new_ms_data.tl.result_keys = deepcopy(ms_data.tl.result_keys)
+    
+    result_keys = ms_data.tl._reset_result_keys(ms_data.tl.result_keys)
     
     adata_dict = {key: adata for key, adata in zip(adata_keys, adata_list)}
     adata_dict.update({key: adata for key, adata in zip(merged_adata_keys, merged_adata_list)})
     mudata = MuData(adata_dict)
 
-    mudata.uns['names'] = new_ms_data.names
-    mudata.uns['var_type'] = new_ms_data.var_type
-    mudata.uns['relationship'] = new_ms_data.relationship
-    mudata.uns['relationship_info'] = new_ms_data.relationship_info
-    mudata.uns['result_keys'] = new_ms_data.tl.result_keys
+    mudata.uns['names'] = ms_data.names
+    mudata.uns['var_type'] = ms_data.var_type
+    mudata.uns['relationship'] = ms_data.relationship
+    mudata.uns['relationship_info'] = ms_data.relationship_info
+    mudata.uns['result_keys'] = result_keys
 
     if output is not None:
         mudata.write_h5mu(output, compression=compression)

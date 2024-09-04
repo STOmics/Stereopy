@@ -75,7 +75,10 @@ class PlotTimeSeries(PlotBase):
             tmp_exp_data = stereo_exp_data.exp_matrix[cell_flag]
             for gene in genes:
                 # branch2exp[gene][x] = tmp_exp_data.sub_by_name(gene_name=[gene]).exp_matrix.toarray().flatten()
-                branch2exp[gene][x] = tmp_exp_data[:, stereo_exp_data.gene_names == gene].toarray().flatten()
+                if stereo_exp_data.issparse():
+                    branch2exp[gene][x] = tmp_exp_data[:, stereo_exp_data.gene_names == gene].toarray().flatten()
+                else:
+                    branch2exp[gene][x] = tmp_exp_data[:, stereo_exp_data.gene_names == gene].flatten()
 
         fig = plt.figure(figsize=(4 * len(genes), 6))
         ax = fig.subplots(1, len(genes))
@@ -468,21 +471,26 @@ class PlotTimeSeries(PlotBase):
         # 创建画布
         if n_col == None:
             n_col = int(np.ceil(np.sqrt(NC)))
+        
+        if n_col > NC:
+            n_col = NC
+        
+        n_row = int(np.ceil(NC / n_col))
 
         if (width == None) and (height == None):
-            fig = plt.figure(figsize=(n_col * 5, int(np.ceil(NC / n_col)) * 5))
+            fig = plt.figure(figsize=(n_col * 5, n_row * 5))
         elif (width == None):
-            fig = plt.figure(figsize=(n_col * height / np.ceil(NC / n_col), height))
+            fig = plt.figure(figsize=(n_col * height / n_row, height))
         elif (height == None):
-            fig = plt.figure(figsize=(width, width * np.ceil(NC / n_col) / n_col))
+            fig = plt.figure(figsize=(width, width * n_row / n_col))
         else:
             fig = plt.figure(figsize=(width, height))
 
         plt.set_loglevel('WARNING')
-        axs = fig.subplots(int(np.ceil(NC / n_col)), n_col)
+        axs = fig.subplots(n_row, n_col)
         for x in range(NC):
-            if NC == n_col:
-                ax = axs[x % n_col]
+            if n_row == 1 or n_col == 1:
+                ax = axs[x]
             else:
                 ax = axs[int(x / n_col), x % n_col]
             tmp = data.genes_matrix[FUZZY_C_WEIGHT][:, x]
@@ -519,7 +527,7 @@ class PlotTimeSeries(PlotBase):
                 ax.set_xticklabels(list(data.genes_matrix[CELLTYPE_MEAN].columns), rotation=20, ha='right')
             ax.set_title(f'Cluster {x + 1}' if title != '' else '')
 
-        for x in range(int(np.ceil(NC / n_col)) * n_col - NC):
+        for x in range(n_row * n_col - NC):
             y = x + NC
             ax = axs[int(y / n_col), y % n_col]
             ax.axis('off')

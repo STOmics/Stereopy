@@ -273,6 +273,8 @@ def _read_stereo_h5ad_from_group(f: Union[h5py.File, h5py.Group], data: StereoEx
             data.cells = h5ad.read_group(f[k])
         elif k == 'genes':
             data.genes = h5ad.read_group(f[k])
+            if 'mean_bin' in data.genes:
+                data.genes['mean_bin'] = [to_interval(interval_string) for interval_string in data.genes['mean_bin']]
         elif k == 'position':
             position = h5ad.read_dataset(f[k])
             data.position = position[:, [0, 1]]
@@ -337,11 +339,13 @@ def _read_stereo_h5_result(key_record: dict, data: StereoExpData, f: Union[h5py.
         res_keys = key_record[analysis_key]
         for res_key in res_keys:
             if analysis_key == 'hvg':
-                hvg_df = h5ad.read_group(f[f'{res_key}@hvg'])
-                # str to interval
-                if 'mean_bin' in hvg_df.columns:
-                    hvg_df['mean_bin'] = [to_interval(interval_string) for interval_string in hvg_df['mean_bin']]
-                data.tl.result[res_key] = hvg_df
+                # hvg_df = h5ad.read_group(f[f'{res_key}@hvg'])
+                # # str to interval
+                # if 'mean_bin' in hvg_df.columns:
+                #     hvg_df['mean_bin'] = [to_interval(interval_string) for interval_string in hvg_df['mean_bin']]
+                # data.tl.result[res_key] = hvg_df
+                hvg_columns = h5ad.read_dataset(f[f'{res_key}@hvg'])
+                dict.setdefault(data.tl.result, res_key, list(hvg_columns))
             if analysis_key in ['pca', 'umap', 'totalVI', 'spatial_alignment_integration']:
                 data.tl.result[res_key] = pd.DataFrame(h5ad.read_dataset(f[f'{res_key}@{analysis_key}']))
                 if analysis_key == 'pca':
@@ -357,8 +361,15 @@ def _read_stereo_h5_result(key_record: dict, data: StereoExpData, f: Union[h5py.
                 }
                 if f'neighbor@{res_key}@neighbors' in f:
                     data.tl.result[res_key]['neighbor'] = h5ad.read_group(f[f'neighbor@{res_key}@neighbors'])
+                if f'n_neighbors@{res_key}@neighbors' in f:
+                    data.tl.result[res_key]['n_neighbors'] = h5ad.read_dataset(f[f'n_neighbors@{res_key}@neighbors'])
+                if f'method@{res_key}@neighbors' in f:
+                    data.tl.result[res_key]['method'] = h5ad.read_dataset(f[f'method@{res_key}@neighbors'])
+                if f'metric@{res_key}@neighbors' in f:
+                    data.tl.result[res_key]['metric'] = h5ad.read_dataset(f[f'metric@{res_key}@neighbors'])
             if analysis_key == 'cluster':
-                data.tl.result[res_key] = h5ad.read_group(f[f'{res_key}@cluster'])
+                if f'{res_key}@cluster' in f:
+                    data.tl.result[res_key] = h5ad.read_group(f[f'{res_key}@cluster'])
                 gene_cluster_res_key = f'gene_exp_{res_key}'
                 if ('gene_exp_cluster' not in data.tl.key_record) or (
                         gene_cluster_res_key not in data.tl.key_record['gene_exp_cluster']):
@@ -926,6 +937,7 @@ def stereo_to_anndata(
             adata.obsm['cell_border'] = data.cells.cell_border
         if 'key_record' not in adata.uns:
             adata.uns['key_record'] = deepcopy(data.tl.key_record)
+        adata.uns['merged'] = data.merged
 
     if data.sn is not None:
         if isinstance(data.sn, str):
@@ -943,9 +955,9 @@ def stereo_to_anndata(
                 logger.info(f"Adding data.tl.result['{res_key}'] into adata.var .")
                 adata.uns[key] = {'params': {}, 'source': 'stereopy', 'method': key}
                 for i in data.tl.result[res_key]:
-                    if i == 'mean_bin':
-                        continue
                     adata.var[i] = data.tl.result[res_key][i]
+                    if 'mean_bin' in adata.var.columns:
+                        adata.var.drop(columns='mean_bin', inplace=True)
             elif key == 'sct':
                 res_key = data.tl.key_record[key][-1]
                 zero_index_data = data.tl.result[res_key][0]
@@ -983,6 +995,15 @@ def stereo_to_anndata(
                     adata.uns[res_key] = {}
                     adata.uns[res_key]['connectivities_key'] = sc_con
                     adata.uns[res_key]['distance_key'] = sc_dis
+                    params = {}
+                    if 'n_neighbors' in data.tl.result[res_key]:
+                        params['n_neighbors'] = data.tl.result[res_key]['n_neighbors']
+                    if 'method' in data.tl.result[res_key]:
+                        params['method'] = data.tl.result[res_key]['method']
+                    if 'metric' in data.tl.result[res_key]:
+                        params['metric'] = data.tl.result[res_key]['metric']
+                    if len(params) > 0:
+                        adata.uns[res_key]['params'] = params
             elif key == 'cluster':
                 cell_name_index = data.cells.cell_name.astype('str')
                 for res_key in data.tl.key_record[key]:
@@ -1465,6 +1486,12 @@ def mudata_to_msdata(
                             if None, use the one like 'scope_[0,1,2]' whose square brackets contain index sequence of all samples.
 
     :return: The MSData object.
+
+    .. note::
+
+        You need to install the mudata package before using this function:
+
+            pip install mudata
     """
     try:
         from mudata import read_h5mu
@@ -1542,5 +1569,7 @@ def mudata_to_msdata(
             if n not in ms_data.scopes_data:
                 continue
             ms_data.tl.result_keys[n] = list(k)
+    
+    del mudata
 
     return ms_data

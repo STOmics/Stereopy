@@ -13,7 +13,9 @@ from typing import Optional
 import numpy as np
 import pandas as pd
 from anndata import AnnData
+from scipy.sparse import spmatrix
 
+from stereo.log_manager import logger
 
 class Gene(object):
     def __init__(
@@ -54,6 +56,14 @@ class Gene(object):
     def __len__(self):
         return self.size
     
+    @property
+    def matrix(self):
+        return self._matrix
+    
+    @property
+    def pairwise(self):
+        return self._pairwise
+
     @property
     def size(self):
         return self.gene_name.size
@@ -148,21 +158,44 @@ class Gene(object):
         :param index: a numpy array of index info.
         :return: the subset of Gene object.
         """
-        # if isinstance(index, list) or isinstance(index, slice):
-        #     self._var = self._var.iloc[index].copy()
-        # elif isinstance(index, np.ndarray):
-        #     if index.dtype == bool:
-        #         self._var = self._var[index].copy()
-        #     else:
-        #         self._var = self._var.iloc[index].copy()
-        # else:
-        #     self._var = self._var.iloc[index].copy()
         if isinstance(index, pd.Series):
             index = index.to_numpy()
         self._var = self._var.iloc[index].copy()
         for col in self._var.columns:
             if self._var[col].dtype.name == 'category':
                 self._var[col] = self._var[col].cat.remove_unused_categories()
+        
+        for key, value in self._matrix.items():
+            if isinstance(value, pd.DataFrame):
+                self._matrix[key] = value.iloc[index].copy()
+                self._matrix[key].reset_index(drop=True, inplace=True)
+            elif isinstance(value, (np.ndarray, spmatrix)):
+                self._matrix[key] = value[index]
+            else:
+                logger.warning(f'Subsetting from {key} of type {type(value)} in gene.matrix is not supported.')
+
+        for key, value in self._pairwise.items():
+            if isinstance(value, pd.DataFrame):
+                columns = value.columns[index]
+                self._pairwise[key] = value.iloc[index][columns].copy()
+                self._pairwise[key].reset_index(drop=True, inplace=True)
+            elif isinstance(value, (np.ndarray, spmatrix)):
+                if len(value.shape) != 2:
+                    logger.warning(f'Subsetting from {key} of shape {value.shape} in gene.pairwise is not supported.')
+                    continue
+                self._pairwise[key] = value[index][:, index]
+            elif isinstance(value, dict):
+                for k, v in value.items():
+                    if isinstance(v, pd.DataFrame):
+                        columns = v.columns[index]
+                        self._pairwise[key][k] = v.iloc[index][columns].copy()
+                        self._pairwise[key][k].reset_index(drop=True, inplace=True)
+                    elif isinstance(v, (np.ndarray, spmatrix)):
+                        self._pairwise[key][k] = v[index][:, index]
+                    else:
+                        logger.warning(f'Subsetting from {key}.{k} of type {type(v)} in gene.pairwise is not supported.')
+            else:
+                logger.warning(f'Subsetting from {key} of type {type(value)} in gene.pairwise is not supported.')
         return self
 
     def to_df(self, copy=False):
@@ -209,6 +242,14 @@ class AnnBasedGene(Gene):
     @property
     def _var(self):
         return self.__based_ann_data.var
+    
+    @property
+    def matrix(self):
+        return self.__based_ann_data.varm
+    
+    @property
+    def pairwise(self):
+        return self.__based_ann_data.varp
     
     # @property
     # def loc(self):

@@ -562,6 +562,8 @@ class PlotRegulatoryNetwork(PlotBase):
             view_vertical: int = 0,
             view_horizontal: int = 0,
             show_axis: bool = False,
+            width: int = None,
+            height: int = None,
             **kwargs):
         """Plot genes of one regulon on a 3D map
 
@@ -598,7 +600,12 @@ class PlotRegulatoryNetwork(PlotBase):
 
         # plot
         fig = plt.figure()
-        ax = Axes3D(fig)
+        if width is not None:
+            fig.set_figwidth(width)
+        if height is not None:
+            fig.set_figheight(height)
+        # ax = Axes3D(fig)
+        ax: Axes3D = fig.add_subplot(projection='3d')
         sc = ax.scatter(cell_coor[:, 0],
                         cell_coor[:, 1],
                         cell_coor[:, 2],
@@ -610,12 +617,12 @@ class PlotRegulatoryNetwork(PlotBase):
         # set view angle
         ax.view_init(view_vertical, view_horizontal)
         # scale axis
-        xlen = cell_coor[:, 0].max() - cell_coor[:, 0].min()
-        ylen = cell_coor[:, 1].max() - cell_coor[:, 1].min()
-        zlen = cell_coor[:, 2].max() - cell_coor[:, 2].min()
-        yscale = ylen / xlen
-        zscale = zlen / xlen
-        ax.get_proj = lambda: np.dot(Axes3D.get_proj(ax), np.diag([1, yscale, zscale, 1]))
+        # xlen = cell_coor[:, 0].max() - cell_coor[:, 0].min()
+        # ylen = cell_coor[:, 1].max() - cell_coor[:, 1].min()
+        # zlen = cell_coor[:, 2].max() - cell_coor[:, 2].min()
+        # yscale = ylen / xlen
+        # zscale = zlen / xlen
+        # ax.get_proj = lambda: np.dot(Axes3D.get_proj(ax), np.diag([1, yscale, zscale, 1]))
 
         if not show_axis:
             plt.box(False)

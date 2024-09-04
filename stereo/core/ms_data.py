@@ -129,31 +129,6 @@ class _MSDataView(object):
     def merged_data(self, merged_data):
         self._merged_data = merged_data
 
-    # def integrate(self, reorganize_coordinate=False, **kwargs):
-    #     from stereo.utils.data_helper import merge
-    #     if "result" not in kwargs:
-    #         raise Exception("_MSDataView.integrate requires a upstream ms_data.tl.result object")
-
-    #     self.tl.result = kwargs["result"]
-    #     del kwargs["result"]
-
-    #     if 'var_type' in kwargs:
-    #         del kwargs['var_type']
-
-    #     if len(self._data_list) > 1:
-    #         self._merged_data = merge(*self.data_list, reorganize_coordinate=reorganize_coordinate, var_type=self._msdata._var_type, **kwargs)
-    #     else:
-    #         # from copy import deepcopy
-    #         self._merged_data = deepcopy(self._data_list[0])
-
-    #     obs_columns = self._merged_data.cells._obs.columns.drop('batch')
-    #     if len(obs_columns) > 0:
-    #         self._merged_data.cells._obs.drop(columns=obs_columns, inplace=True)
-    #     var_columns = self._merged_data.genes._var.columns
-    #     if 'real_gene_name' in var_columns:
-    #         var_columns.drop('real_gene_name')
-    #     if len(var_columns) > 0:
-    #         self._merged_data.genes._var.drop(columns=var_columns, inplace=True)
     
     def to_msdata(self) -> MSData:
         return MSData(
@@ -618,6 +593,24 @@ class _MSDataStruct(object):
         if len(self._data_list) < len(self._names):
             self._names = self._names[0:len(self._data_list)]
         return self
+    
+class ScopesData(dict):
+    def __init__(self, ms_data: MSData, *args, **kwargs):
+        self._ms_data = ms_data
+        super().__init__(*args, **kwargs)
+    
+    def __setitem__(self, key, value):
+        if not isinstance(value, StereoExpData):
+            raise TypeError(f'value must be a StereoExpData object')
+        
+        def set_result_key_method(result_key):
+            self._ms_data.tl.result_keys.setdefault(key, [])
+            if result_key in self._ms_data.tl.result_keys[key]:
+                self._ms_data.tl.result_keys[key].remove(result_key)
+            self._ms_data.tl.result_keys[key].append(result_key)
+        value.tl.result.set_result_key_method = set_result_key_method
+
+        return super().__setitem__(key, value)
 
 
 @dataclass
@@ -626,7 +619,26 @@ class MSData(_MSDataStruct):
 
     _tl = None
     _plt = None
-    _scopes_data: Dict[str, StereoExpData] = field(default_factory=dict)
+    _scopes_data: Dict[str, StereoExpData] = None
+
+    def __post_init__(self) -> object:
+        if self._scopes_data is None:
+            self._scopes_data = ScopesData(self)
+        else:
+            self._scopes_data = self.__reset_scopes_data(self._scopes_data)
+        super().__post_init__()
+        return self
+
+    def __reset_scopes_data(self, value):
+        if not isinstance(value, dict):
+            raise TypeError(f'value must be a dict object')
+        if not isinstance(value, ScopesData):
+            scopes_data = ScopesData(self)
+            for scope_key, scope_data in value.items():
+                scopes_data[scope_key] = scope_data
+        else:
+            scopes_data = value
+        return scopes_data
 
     @property
     def tl(self):
@@ -646,7 +658,7 @@ class MSData(_MSDataStruct):
     
     @scopes_data.setter
     def scopes_data(self, value):
-        self._scopes_data = value
+        self._scopes_data = self.__reset_scopes_data(value)
 
     @property
     def mss(self):
@@ -733,13 +745,13 @@ class MSData(_MSDataStruct):
         if len(var_columns) > 0:
             merged_data.genes._var.drop(columns=var_columns, inplace=True)
         
-        def set_result_key_method(key):
-            self.tl.result_keys.setdefault(scope_key, [])
-            if key in self.tl.result_keys[scope_key]:
-                self.tl.result_keys[scope_key].remove(key)
-            self.tl.result_keys[scope_key].append(key)
+        # def set_result_key_method(key):
+        #     self.tl.result_keys.setdefault(scope_key, [])
+        #     if key in self.tl.result_keys[scope_key]:
+        #         self.tl.result_keys[scope_key].remove(key)
+        #     self.tl.result_keys[scope_key].append(key)
         
-        merged_data.tl.result.set_result_key_method = set_result_key_method
+        # merged_data.tl.result.set_result_key_method = set_result_key_method
         
         scope_key = self.generate_scope_key(scope)
         self._scopes_data[scope_key] = merged_data
@@ -821,10 +833,6 @@ class MSData(_MSDataStruct):
         >>> ms_data.to_integrate(res_key='celltype', scope=slice_generator[:], _from=slice_generator[:], type='obs', item=['celltype'] * ms_data.num_slice)
 
         """
-        # assert self.merged_data, "`to_integrate` need running function `integrate`"
-        # assert self._names[scope] == self._names[_from], f"`scope`: {scope} should equal with _from: {_from}"
-        # assert len(item) == len(self._names[_from]), "`item`'s length not equal to _from"
-        # scope_names = self._names[scope]
         assert self[scope]._names == self[_from]._names, f"`scope`: {scope} should equal with _from: {_from}"
         assert isinstance(item, str) or len(item) == len(self[_from]._names), "`item`'s length not equal to _from"
         scope_names = self[scope]._names
@@ -841,7 +849,6 @@ class MSData(_MSDataStruct):
         else:
             raise Exception(f"`type`: {type} not in ['obs', 'var'], this should not happens!")
         
-        # for idx, stereo_exp_data in enumerate(self._data_list[scope]):
         data_list = self[scope]._data_list
         if item is None:
             item = res_key
@@ -849,15 +856,26 @@ class MSData(_MSDataStruct):
             item = [item] * len(data_list)
         for idx, stereo_exp_data in enumerate(data_list):
             if type == 'obs':
-                res = stereo_exp_data.cells[item[idx]]
+                res: pd.Series = stereo_exp_data.cells[item[idx]]
                 sample_idx = self._names.index(scope_names[idx])
-                new_index = res.index.astype('str') + f'-{sample_idx}'
+                new_index: pd.Series = res.index.astype('str') + f'-{sample_idx}'
                 # res.index = new_index
                 if scope_key in self._scopes_data:
-                    self._scopes_data[scope_key].cells.loc[new_index, res_key] = res.to_numpy()
-                
+                    index_intersect = np.intersect1d(new_index, self._scopes_data[scope_key].cell_names)
+                    # isin = np.isin(new_index, index_intersect)
+                    isin = new_index.isin(index_intersect)
+                    _res = res[isin].to_numpy()
+                    _index = new_index[isin]
+                    self._scopes_data[scope_key].cells.loc[_index, res_key] = _res
+                if self._scopes_data[scope_key] is self._merged_data:
+                    continue
                 if self._merged_data is not None:
-                    self._merged_data.cells.loc[new_index, res_key] = res.to_numpy()
+                    index_intersect = np.intersect1d(new_index, self._merged_data.cell_names)
+                    # isin = np.isin(new_index, index_intersect)
+                    isin = new_index.isin(index_intersect)
+                    _res = res[isin].to_numpy()
+                    _index = new_index[isin]
+                    self._merged_data.cells.loc[_index, res_key] = _res
             elif type == 'var':
                 raise NotImplementedError
             else:
@@ -869,7 +887,7 @@ class MSData(_MSDataStruct):
                     self._scopes_data[scope_key].tl.result.set_result_key_method(res_key)
                     self._scopes_data[scope_key].cells[res_key] = self._scopes_data[scope_key].cells[res_key].astype('category')
 
-                if self._merged_data is not None:
+                if self._merged_data is not None and self._merged_data is not self._scopes_data[scope_key]:
                     self._merged_data.tl.reset_key_record('cluster', res_key)
                     self._merged_data.tl.result.set_result_key_method(res_key)
                     self._merged_data.cells[res_key] = self._merged_data.cells[res_key].astype('category')
@@ -945,27 +963,21 @@ class MSData(_MSDataStruct):
         
         
         """
-        # assert self.merged_data, "`to_integrate` need running function `integrate`"
-        # assert self._names[scope] == self._names[to], f"`scope`: {scope} should equal with to: {to}"
-        # assert len(item) == len(self._names[to]), "`item`'s length not equal to `to`"
         assert self[scope]._names == self[to]._names, f"`scope`: {scope} should equal with to: {to}"
         assert isinstance(item, str) or len(item) == len(self[to]._names), "`item`'s length not equal to `to`"
 
         scope_names = self[scope]._names
-        # scope_key_name = "scope_[" + ",".join([str(self._names.index(name)) for name in scope_names]) + "]"
         scope_key = self.generate_scope_key(scope_names)
         merged_res: pd.DataFrame = self.tl.result[scope_key][res_key].copy(deep=True)
         if type == "obs":
             # TODO: only support cluster data
             if "bins" not in merged_res.columns or "group" not in merged_res.columns:
                 raise Exception("Only soupport cluster result currently.")
-            # merged_res.index = merged_res.apply(lambda row: row['bins'].rsplit('-', 1)[0], axis=1)
             merged_res.set_index('bins', inplace=True)
         elif type == "var":
             # TODO: only support hvg data
             merged_res.index = self._scopes_data[scope_key].genes.gene_name
 
-        # for idx, stereo_exp_data in enumerate(self._data_list[scope]):
         data_list = self[scope]._data_list
         if item is None:
             item = res_key
@@ -980,11 +992,13 @@ class MSData(_MSDataStruct):
                     stereo_exp_data.cells['batch']
                 )
                 stereo_exp_data.cells._obs[column_name] = merged_res['group']
+                
                 if fill is not np.NaN:
                     if stereo_exp_data.cells._obs[column_name].dtype.name == 'category':
-                        stereo_exp_data.cells._obs[column_name].cat.remove_unused_categories(inplace=True)
                         stereo_exp_data.cells._obs[column_name].cat.add_categories(fill, inplace=True)
                     stereo_exp_data.cells._obs[column_name].fillna(fill, inplace=True)
+                if stereo_exp_data.cells._obs[column_name].dtype.name == 'category':
+                    stereo_exp_data.cells._obs[column_name].cat.remove_unused_categories(inplace=True)
                 stereo_exp_data.cells._obs.index = original_index
             elif type == 'var':
                 intersect = np.intersect1d(stereo_exp_data.genes.gene_name, merged_res.index)
@@ -1029,10 +1043,14 @@ class MSData(_MSDataStruct):
         return f'''ms_data: {self.shape}
 num_slice: {self.num_slice}
 names: {self.names}
+merged_data: {None if self._merged_data is None else f"id({id(self._merged_data)})"}
 obs: {self.obs.columns.to_list()}
 var: {self.var.columns.to_list()}
 relationship: {self.relationship}
 var_type: {self._var_type} to {len(self.var.index)}
+current_mode: {self.tl.mode}
+current_scope: {self.generate_scope_key(self.tl.scope)}
+scopes_data: {[key + ":" + f"id({id(value)})" for key, value in self._scopes_data.items()]}
 mss: {[key + ":" + str(value) for key, value in self.tl.result_keys.items()]}
 '''
 

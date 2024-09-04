@@ -19,6 +19,7 @@ class PlotGenesInPseudotime(PlotBase):
             self,
             marker_genes_res_key: str = 'marker_genes',
             group: str = None,
+            pseudotime_key: str = 'dpt_pseudotime',
             sort_by: Literal[
                 'scores',
                 'pvalues',
@@ -54,7 +55,10 @@ class PlotGenesInPseudotime(PlotBase):
         if marker_genes_res_key not in self.pipeline_res:
             raise KeyError(f"Can not find 'find_marker_genes' result by key '{marker_genes_res_key}'.")
 
-        if 'dpt_pseudotime' not in self.pipeline_res:
+        # if 'dpt_pseudotime' not in self.pipeline_res:
+        #     raise KeyError("Can not find pseudotime infomation.")
+
+        if pseudotime_key not in self.stereo_exp_data.cells and pseudotime_key not in self.pipeline_res:
             raise KeyError("Can not find pseudotime infomation.")
 
         marker_genes_res: dict = self.pipeline_res[marker_genes_res_key]
@@ -78,7 +82,11 @@ class PlotGenesInPseudotime(PlotBase):
         topn = min(topn, marker_genes_res_used.shape[0])
         genes = marker_genes_res_used[0:topn]['genes'].to_numpy()
 
-        ptime = self.pipeline_res['dpt_pseudotime']
+        # ptime = self.pipeline_res['dpt_pseudotime']
+        if pseudotime_key in self.stereo_exp_data.cells:
+            ptime = self.stereo_exp_data.cells[pseudotime_key].to_numpy()
+        else:
+            ptime = self.pipeline_res[pseudotime_key]
 
         if width is None:
             width = self.__DEFAULT_FIGURE_WIDTH

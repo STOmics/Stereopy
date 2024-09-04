@@ -315,7 +315,7 @@ def __merge_for_stereo_exp_data(
         data: StereoExpData = data_list[i]
         batch = i if batch_tags is None or i >= len(batch_tags) else batch_tags[i]
         data.cells.batch = batch
-        cell_names = np.char.add(data.cells.cell_name, f"-{i}")
+        cell_names = np.char.add(data.cells.cell_name, f"-{batch}")
         if issparse:
             data.array2sparse()
         new_data.sn[str(batch)] = data.sn
@@ -325,7 +325,7 @@ def __merge_for_stereo_exp_data(
             # new_data.genes = Gene(gene_name=data.gene_names)
             # new_data.cells._obs = data.cells._obs.copy(deep=True)
             # new_data.cells._obs.index = cell_names
-            new_data.cells = Cell(obs=data.cells._obs.copy(deep=True), cell_border=data.cells.cell_border, batch=data.cells.batch)
+            new_data.cells = Cell(obs=data.cells._obs.copy(deep=True), cell_name=cell_names, cell_border=data.cells.cell_border, batch=data.cells.batch)
             new_data.genes = Gene(var=data.genes._var.copy(deep=True))
             new_data.position = data.position
             if data.position_z is None:

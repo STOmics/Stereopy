@@ -70,6 +70,14 @@ class Cell(object):
         return self.size
     
     @property
+    def matrix(self):
+        return self._matrix
+    
+    @property
+    def pairwise(self):
+        return self._pairwise
+    
+    @property
     def size(self):
         return self._obs.index.size
     
@@ -185,15 +193,6 @@ class Cell(object):
 
         if self.cell_border is not None:
             self.cell_border = self.cell_border[index]
-        # if isinstance(index, list) or isinstance(index, slice):
-        #     self._obs = self._obs.iloc[index].copy()
-        # elif isinstance(index, np.ndarray):
-        #     if index.dtype == bool:
-        #         self._obs = self._obs[index].copy()
-        #     else:
-        #         self._obs = self._obs.iloc[index].copy()
-        # else:
-        #     self._obs = self._obs.iloc[index].copy()
         if isinstance(index, pd.Series):
             index = index.to_numpy()
         self._obs = self._obs.iloc[index].copy()
@@ -303,6 +302,14 @@ class AnnBasedCell(Cell):
     @property
     def _obs(self):
         return self.__based_ann_data.obs
+    
+    @property
+    def matrix(self):
+        return self.__based_ann_data.obsm
+    
+    @property
+    def pairwise(self):
+        return self.__based_ann_data.obsp
     
     # @property
     # def loc(self):
