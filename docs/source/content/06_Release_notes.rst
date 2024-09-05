@@ -5,7 +5,7 @@ Release Notes
 
 Version 1.4.0
 ------------------
-1.4.0 : 2024-09-06
+1.4.0 : 2024-09-05
 ~~~~~~~~~~~~~~~~~~~
 
 .. _SpaSEG: ../Tutorials(Multi-sample)/SpaSEG.html
