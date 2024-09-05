@@ -85,6 +85,10 @@ class StPipeline(object):
     def key_record(self):
         return self._key_record
 
+    @key_record.setter
+    def key_record(self, key_record):
+        self._key_record = key_record
+
     @property
     def raw(self) -> Union[StereoExpData, AnnBasedStereoExpData]:
         """
@@ -921,12 +925,15 @@ class StPipeline(object):
         from ..io.reader import stereo_to_anndata
         import squidpy as sq
         neighbor, connectivities, dists = copy.deepcopy(self.get_neighbors_res(neighbors_res_key))
-        adata = stereo_to_anndata(self.data, split_batches=False)
+        if isinstance(self.data, AnnBasedStereoExpData):
+            adata = self.data.adata
+        else:
+            adata = stereo_to_anndata(self.data, split_batches=False)
         sq.gr.spatial_neighbors(adata, n_neighs=n_neighbors)
         connectivities.data[connectivities.data > 0] = 1
         adj = connectivities + adata.obsp['spatial_connectivities']
         adj.data[adj.data > 0] = 1
-        res = {'neighbor': neighbor, 'connectivities': adj, 'nn_dist': dists}
+        res = {'neighbor': neighbor, 'connectivities': adj, 'nn_dist': dists, 'n_neighbors': n_neighbors}
         self.result[res_key] = res
         key = 'neighbors'
         self.reset_key_record(key, res_key)
@@ -1669,3 +1676,8 @@ class AnnBasedStPipeline(StPipeline):
         if 'key_record' not in self.data.adata.uns:
             self.data.adata.uns['key_record'] = self._key_record
         return self.data.adata.uns['key_record']
+
+    @key_record.setter
+    def key_record(self, key_record):
+        self._key_record = key_record
+        self.data.adata.uns['key_record'] = key_record

@@ -601,8 +601,8 @@ def split_for_ann_based_stereo_exp_data(data: AnnBasedStereoExpData = None):
     # data.array2sparse()
     batch = np.unique(data.cells.batch)
     for bno in batch:
-        adata = data.adata[data.adata.obs['batch'] == bno]
-        adata.uns = adata.uns.copy()
+        adata = data.adata[data.adata.obs['batch'] == bno].copy()
+        # adata.uns = adata.uns.copy()
         new_data = AnnBasedStereoExpData(based_ann_data=adata, spatial_key=data.spatial_key)
         new_data.tl.key_record = deepcopy(data.tl.key_record)
         new_data.sn = data.sn[bno]

@@ -573,14 +573,16 @@ class AnnBasedResult(_BaseResult, object):
         assert type(value) is dict and not {'connectivities', 'nn_dist'} - set(value.keys()), \
             'not enough key to set connectivities'
         self.__based_ann_data.uns[key] = {
-            'params': {
-                'method': value['method'],
-                'n_neighbors': value['n_neighbors'],
-                'metric': value['metric'],
-            },
+            'params': {},
             'source': 'stereopy',
             'method': 'neighbors'
         }
+        if 'method' in value:
+            self.__based_ann_data.uns[key]['params']['method'] = value['method']
+        if 'n_neighbors' in value:
+            self.__based_ann_data.uns[key]['params']['n_neighbors'] = value['n_neighbors']
+        if 'metric' in value:
+            self.__based_ann_data.uns[key]['params']['metric'] = value['metric']
         if key == 'neighbors':
             self.__based_ann_data.uns[key]['connectivities_key'] = 'connectivities'
             self.__based_ann_data.uns[key]['distances_key'] = 'distances'
