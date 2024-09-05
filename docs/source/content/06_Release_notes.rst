@@ -29,7 +29,7 @@ Features:
 
 BUG Fixes:
 
-1. Fixed the problem that **CellCorrection** is incompatible with small-size images (less than 2000px in any dimension) when using the method **EDM**.
+1. Fixed the problem that **CellCorrection** is incompatible with small-size images (less than 2000px in any dimension) when using the **EDM** method.
 2. Fixed the problem that `MSData.to_integrate` is incompatible when the number of cells in the integrated sample is less than the total number of cells in all single samples.
 3. Fixed the problem that `st.plt.time_series_tree_plot` can not capture the result of **PAGA**, leading to an incorrect plot.
 4. Fixed other bugs.
