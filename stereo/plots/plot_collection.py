@@ -1377,6 +1377,10 @@ class PlotCollection:
                 
                 sudo apt-get install libgtk-3-dev libasound2-dev
             
+            or on CentOS, are as follows:
+
+                sudo yum install gtk3-devel alsa-lib-devel
+            
             On others Linux, you may need to install the corresponding libraries according to the error message.
 
             There are two ways to export the plot, one is to manupulate on browser when you run it on jupyter notebook,
