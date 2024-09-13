@@ -889,7 +889,8 @@ class StPipeline(object):
         res = {
             'neighbor': neighbor,
             'connectivities': connectivities, 'nn_dist': dists,
-            'n_neighbors': n_neighbors, 'method': method, 'metric': metric}
+            'params': {'n_neighbors': n_neighbors, 'method': method, 'metric': metric}
+        }
         self.result[res_key] = res
         key = 'neighbors'
         self.reset_key_record(key, res_key)
@@ -933,7 +934,7 @@ class StPipeline(object):
         connectivities.data[connectivities.data > 0] = 1
         adj = connectivities + adata.obsp['spatial_connectivities']
         adj.data[adj.data > 0] = 1
-        res = {'neighbor': neighbor, 'connectivities': adj, 'nn_dist': dists, 'n_neighbors': n_neighbors}
+        res = {'neighbor': neighbor, 'connectivities': adj, 'nn_dist': dists, 'params': {'n_neighbors': n_neighbors}}
         self.result[res_key] = res
         key = 'neighbors'
         self.reset_key_record(key, res_key)

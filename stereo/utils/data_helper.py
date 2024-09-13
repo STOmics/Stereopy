@@ -240,6 +240,8 @@ def reorganize_data_coordinates(
 
 def __parse_space_between(space_between: str):
     import re
+    if isinstance(space_between, (int, float, np.number)):
+        return float(space_between)
     if space_between == '0':
         return 0.0
     pattern = r"^\d+(\.\d)*(nm|um|mm|cm|dm|m)$"
@@ -294,16 +296,21 @@ def merge(
 
 @merge.register(StereoExpData)
 def __merge_for_stereo_exp_data(
-        *data_list: StereoExpData,
-        reorganize_coordinate: Union[bool, int] = False,
-        horizontal_offset_additional: Union[int, float] = 0,
-        vertical_offset_additional: Union[int, float] = 0,
-        space_between: Optional[str] = '0',
-        var_type: str = "intersect",
-        batch_tags: Union[list, np.ndarray, pd.Series] = None
+    *data_list: StereoExpData,
+    reorganize_coordinate: Union[bool, int] = False,
+    horizontal_offset_additional: Union[int, float] = 0,
+    vertical_offset_additional: Union[int, float] = 0,
+    space_between: Optional[str] = '0',
+    var_type: str = "intersect",
+    batch_tags: Union[list, np.ndarray, pd.Series] = None
 ):
     if data_list is None or len(data_list) < 2:
         raise Exception("At least two slices of data need to be input.")
+    
+    all_issparse = np.array([data.issparse() for data in data_list])
+
+    if not np.all(all_issparse) and not np.all(~all_issparse):
+        raise Exception("All slices of data should be in the same format, either sparse or ndarray.")
 
     space_between = __parse_space_between(space_between)
     data_count = len(data_list)
@@ -311,28 +318,33 @@ def __merge_for_stereo_exp_data(
     new_data.sn = {}
     current_position_z = 0
     issparse = data_list[0].issparse()
+    merge_raw = True
+    raw_list = []
     for i in range(data_count):
         data: StereoExpData = data_list[i]
+        if data.raw is None:
+            merge_raw = False
+        else:
+            raw_list.append(data.raw)
         batch = i if batch_tags is None or i >= len(batch_tags) else batch_tags[i]
         data.cells.batch = batch
         cell_names = np.char.add(data.cells.cell_name, f"-{batch}")
-        if issparse:
-            data.array2sparse()
         new_data.sn[str(batch)] = data.sn
         if i == 0:
             new_data.exp_matrix = data.exp_matrix.copy()
-            # new_data.cells = Cell(cell_name=cell_names, cell_border=data.cells.cell_border, batch=data.cells.batch)
-            # new_data.genes = Gene(gene_name=data.gene_names)
-            # new_data.cells._obs = data.cells._obs.copy(deep=True)
-            # new_data.cells._obs.index = cell_names
-            new_data.cells = Cell(obs=data.cells._obs.copy(deep=True), cell_name=cell_names, cell_border=data.cells.cell_border, batch=data.cells.batch)
+            new_data.cells = Cell(
+                obs=data.cells._obs.copy(deep=True),
+                cell_name=cell_names,
+                cell_border=data.cells.cell_border,
+                batch=data.cells.batch
+            )
             new_data.genes = Gene(var=data.genes._var.copy(deep=True))
-            new_data.position = data.position
+            position = data.position
             if data.position_z is None:
-                new_data.position_z = np.repeat([[0]], repeats=data.position.shape[0], axis=0).astype(
-                    data.position.dtype)
+                position_z = np.repeat([[0]], repeats=data.n_cells, axis=0).astype(position.dtype)
             else:
-                new_data.position_z = data.position_z
+                position_z = data.position_z
+            new_data.spatial = np.concatenate([position, position_z], axis=1)
             new_data.bin_type = data.bin_type
             new_data.bin_size = data.bin_size
             new_data.offset_x = data.offset_x
@@ -344,13 +356,14 @@ def __merge_for_stereo_exp_data(
             new_data.cells._obs = pd.concat([new_data.cells._obs, current_obs])
             if new_data.cell_borders is not None and data.cell_borders is not None:
                 new_data.cells.cell_border = np.concatenate([new_data.cells.cell_border, data.cells.cell_border])
-            new_data.position = np.concatenate([new_data.position, data.position])
+            position = data.position
             if data.position_z is None:
                 current_position_z += space_between / data.attr['resolution']
-                new_data.position_z = np.concatenate(
-                    [new_data.position_z, np.repeat([[current_position_z]], repeats=data.position.shape[0], axis=0)])
+                position_z = np.repeat([[current_position_z]], repeats=data.n_cells, axis=0)
             else:
-                new_data.position_z = np.concatenate([new_data.position_z, data.position_z])
+                position_z = data.position_z
+            current_spatial = np.concatenate([position, position_z], axis=1)
+            new_data.spatial = np.concatenate([new_data.spatial, current_spatial], axis=0)
             if var_type == "intersect":
                 new_data.genes.gene_name, ind1, ind2 = \
                     np.intersect1d(new_data.genes.gene_name, data.genes.gene_name, return_indices=True)
@@ -379,12 +392,23 @@ def __merge_for_stereo_exp_data(
                         new_data.attr['minExp'] = new_data.exp_matrix.min()
                     elif key == 'maxExp':
                         new_data.attr['maxExp'] = new_data.exp_matrix.max()
-                    elif key == 'resolution':
-                        new_data.attr['resolution'] = value
+                    else:
+                        new_data.attr[key] = value
     if reorganize_coordinate:
         new_data.position, new_data.position_offset, new_data.position_min = reorganize_data_coordinates(
             new_data.cells.batch, new_data.position, new_data.position_offset, new_data.position_min,
             reorganize_coordinate, horizontal_offset_additional, vertical_offset_additional
+        )
+    
+    if merge_raw:
+        new_data.tl._raw = __merge_for_stereo_exp_data(
+            *raw_list,
+            reorganize_coordinate=reorganize_coordinate,
+            horizontal_offset_additional=horizontal_offset_additional,
+            vertical_offset_additional=vertical_offset_additional,
+            space_between=space_between,
+            var_type=var_type,
+            batch_tags=batch_tags
         )
 
     return new_data

@@ -67,6 +67,15 @@ def _(v, f, k):
 def _(v, f, k):
     write_neighbors(f, k, v)
 
+@write.register(dict)
+def _(v, f, k):
+    write_dict(f, k, v)
+
+def write_dict(f: Union[h5py.File, h5py.Group], key, value, dataset_kwargs=MappingProxyType({})):
+    g = f.create_group(key)
+    g.attrs['encoding-type'] = 'dict'
+    for k, v in value.items():
+        write(v, g, k)
 
 def write_array(f: Union[h5py.File, h5py.Group], key, value, dataset_kwargs=MappingProxyType({})):
     # Convert unicode to fixed length strings

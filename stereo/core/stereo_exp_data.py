@@ -49,7 +49,8 @@ class StereoExpData(Data):
             offset_x: Optional[str] = None,
             offset_y: Optional[str] = None,
             attr: Optional[dict] = None,
-            merged: bool = False
+            merged: bool = False,
+            spatial_key: str = 'spatial'
     ):
 
         """
@@ -91,9 +92,9 @@ class StereoExpData(Data):
         self._exp_matrix = exp_matrix
         self._genes = genes if isinstance(genes, Gene) else Gene(gene_name=genes)
         self._cells = cells if isinstance(cells, Cell) else Cell(cell_name=cells)
-        self._raw_position = None
-        self._position = position
-        self._position_z = position_z
+        # self._raw_position = None
+        # self._position = position
+        # self._position_z = position_z
         self._position_offset = None
         self._position_min = None
         self._bin_type = bin_type
@@ -106,6 +107,29 @@ class StereoExpData(Data):
         self._merged = merged
         self._sn = self.get_sn_from_path(file_path)
         self.center_coordinates = False
+        self.spatial_key = spatial_key
+        self.__set_position(position, position_z, spatial_key)
+    
+    def __set_position(self, position, position_z=None, spatial_key='spatial'):
+        assert isinstance(spatial_key, str), "spatial_key must be str."
+        if position is not None:
+            assert position is not None, "position must be not None."
+            assert isinstance(position, np.ndarray), "position must be np.ndarray."
+            assert position.ndim == 2, "position must be 2 dimensions."
+            assert position.shape[1] == 2, "the length of position's second dimension must be 2."
+            assert position.shape[0] == self.n_cells, "the length of position must be equal to the number of cells."
+
+        if position_z is not None:
+            assert position is not None, "position must be gave when position_z is not None."
+            assert isinstance(position_z, np.ndarray), "position_z must be np.ndarray."
+            assert position_z.size == self.n_cells, "the length of position_z must be equal to the number of cells."
+            if position_z.ndim == 1:
+                position_z = position_z.reshape(-1, 1)
+            position = np.concatenate([position, position_z], axis=1)
+
+        if position is not None:
+            self.cells_matrix[spatial_key] = position
+
 
     def get_sn_from_path(self, file_path):
         """
@@ -147,8 +171,8 @@ class StereoExpData(Data):
         """
         if cell_index is not None:
             self.exp_matrix = self.exp_matrix[cell_index, :]
-            self.position = self.position[cell_index, :] if self.position is not None else None
-            self.position_z = self.position_z[cell_index] if self.position_z is not None else None
+            # self.position = self.position[cell_index, :] if self.position is not None else None
+            # self.position_z = self.position_z[cell_index] if self.position_z is not None else None
             self.cells = self.cells.sub_set(cell_index)
         if gene_index is not None:
             self.exp_matrix = self.exp_matrix[:, gene_index]
@@ -335,7 +359,7 @@ class StereoExpData(Data):
 
         :return:
         """
-        return self.cells.size
+        return self.exp_matrix.shape[0]
 
     @property
     def n_genes(self):
@@ -344,7 +368,7 @@ class StereoExpData(Data):
 
         :return:
         """
-        return self.genes.size
+        return self.exp_matrix.shape[1]
 
     @property
     def exp_matrix(self) -> Union[np.ndarray, spmatrix]:
@@ -356,14 +380,14 @@ class StereoExpData(Data):
         return self._exp_matrix
 
     @exp_matrix.setter
-    def exp_matrix(self, pos_array):
+    def exp_matrix(self, exp_matrix):
         """
         set the value of self._exp_matrix.
 
         :param pos_array: np.ndarray or sparse.spmatrix.
         :return:
         """
-        self._exp_matrix = pos_array
+        self._exp_matrix = exp_matrix
 
     @property
     def bin_type(self):
@@ -398,13 +422,23 @@ class StereoExpData(Data):
     def bin_size(self, bin_size):
         self._bin_size = bin_size
 
-    @property
-    def raw_position(self):
-        return self._raw_position
+    # @property
+    # def raw_position(self):
+    #     return self._raw_position
 
-    @raw_position.setter
-    def raw_position(self, pos):
-        self._raw_position = pos
+    # @raw_position.setter
+    # def raw_position(self, pos):
+    #     self._raw_position = pos
+    
+    @property
+    def spatial(self):
+        return self.cells_matrix[self.spatial_key]
+
+    @spatial.setter
+    def spatial(self, spatial):
+        assert isinstance(spatial, np.ndarray), "spatial must be np.ndarray."
+        assert spatial.ndim in (2, 3), "spatial must be 2 or 3 dimensions."
+        self.cells_matrix[self.spatial_key] = spatial
 
     @property
     def position(self):
@@ -413,7 +447,12 @@ class StereoExpData(Data):
 
         :return:
         """
-        return self._position
+        # return self._position
+        if self.spatial_key not in self.cells_matrix:
+            return None
+        if self.cells_matrix[self.spatial_key].shape[1] >= 2:
+            return self.cells_matrix[self.spatial_key][:, 0:2]
+        return None
 
     @position.setter
     def position(self, pos):
@@ -423,15 +462,43 @@ class StereoExpData(Data):
         :param pos: the value of position, a np.ndarray .
         :return:
         """
-        self._position = pos
+        # self._position = pos
+        assert isinstance(pos, np.ndarray), "position must be np.ndarray."
+        assert pos.ndim == 2, "position must be 2 dimensions."
+        assert pos.shape[1] == 2, "the length of position's second dimension must be 2."
+        assert pos.shape[0] == self.n_cells, "the length of position must be equal to the number of cells."
+        if self.spatial_key not in self.cells_matrix:
+            self.cells_matrix[self.spatial_key] = pos
+        else:
+            if self.cells_matrix[self.spatial_key].shape[1] == 1:
+                self.cells_matrix[self.spatial_key] = np.concatenate([pos, self.cells_matrix[self.spatial_key]], axis=1)
+            else:
+                self.cells_matrix[self.spatial_key][:, [0, 1]] = pos
 
     @property
     def position_z(self):
-        return self._position_z
+        # return self._position_z
+        if self.spatial_key not in self.cells_matrix:
+            return None
+        if self.cells_matrix[self.spatial_key].shape[1] >= 3:
+            return self.cells_matrix[self.spatial_key][:, 2:3]
+        if self.cells_matrix[self.spatial_key].shape[1] == 1:
+            return self.cells_matrix[self.spatial_key]
+        return None
 
     @position_z.setter
     def position_z(self, position_z):
-        self._position_z = position_z
+        # self._position_z = position_z
+        assert isinstance(position_z, np.ndarray), "position_z must be np.ndarray."
+        assert position_z.size == self.n_cells, "the length of position_z must be equal to the number of cells."
+        if position_z.ndim == 1:
+            position_z = position_z.reshape(-1, 1)
+        if self.spatial_key not in self.cells_matrix or self.cells_matrix[self.spatial_key].shape[1] == 1:
+            self.cells_matrix[self.spatial_key] = position_z
+        else:
+            self.cells_matrix[self.spatial_key] = np.concatenate(
+                [self.cells_matrix[self.spatial_key][:, [0, 1]], position_z], axis=1
+            )
 
     @property
     def position_offset(self):
@@ -706,6 +773,14 @@ class AnnBasedStereoExpData(StereoExpData):
             sn = self.get_sn_from_path(h5ad_file_path)
             if sn is not None:
                 self._ann_data.uns['sn'] = pd.DataFrame([[-1, sn]], columns=['batch', 'sn'])
+        
+        if 'position_offset' in self._ann_data.uns:
+            self.position_offset = self._ann_data.uns['position_offset']
+            del self._ann_data.uns['position_offset']
+        
+        if 'position_min' in self._ann_data.uns:
+            self.position_min = self._ann_data.uns['position_min']
+            del self._ann_data.uns['position_min']
 
         from .st_pipeline import AnnBasedStPipeline
         self._tl = AnnBasedStPipeline(self._ann_data, self)
@@ -777,7 +852,7 @@ class AnnBasedStereoExpData(StereoExpData):
     @property
     def position(self):
         if self.spatial_key in self._ann_data.obsm:
-            return self._ann_data.obsm[self.spatial_key][:, [0, 1]]
+            return self._ann_data.obsm[self.spatial_key][:, 0:2]
         elif 'x' in self._ann_data.obs.columns and 'y' in self._ann_data.obs.columns:
             return self._ann_data.obs[['x', 'y']].to_numpy()
         return None
@@ -791,7 +866,7 @@ class AnnBasedStereoExpData(StereoExpData):
     def position_z(self):
         if self.spatial_key in self._ann_data.obsm:
             if self._ann_data.obsm[self.spatial_key].shape[1] >= 3:
-                return self._ann_data.obsm[self.spatial_key][:, [2]]
+                return self._ann_data.obsm[self.spatial_key][:, 2:3]
             else:
                 return None
         elif 'z' in self._ann_data.obs.columns:

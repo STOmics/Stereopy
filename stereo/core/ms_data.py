@@ -6,7 +6,10 @@ from copy import deepcopy
 import numpy as np
 import pandas as pd
 
-from . import StPipeline, StereoExpData
+from . import(
+    StPipeline, AnnBasedStPipeline,
+    StereoExpData, AnnBasedStereoExpData
+)
 from .ms_pipeline import MSDataPipeLine
 from ..plots.plot_collection import PlotCollection
 
@@ -270,16 +273,35 @@ class _MSDataStruct(object):
     _data_dict: Dict[int, str] = field(default_factory=dict)
     __idx_generator: int = _default_idx()
 
+    def __check_data_list(self, data_list):
+        if not isinstance(data_list, list):
+            raise TypeError('data_list must be a list object')
+        first_data = data_list[0]
+        for data in data_list[1:]:
+            if type(data) != type(first_data):
+                raise TypeError('each data in data_list must be the same type, available types: StereoExpData and AnnBasedStereoExpData')
+        return data_list
+
     def __post_init__(self) -> object:
         while len(self._data_list) > len(self._names):
             self._names.append(self.__get_auto_key())
         if not self._name_dict or not self._data_dict:
             self.reset_name(default_key=False)
+        self.__check_data_list(self._data_list)
         return self
+    
+    def __iter__(self):
+        return iter(self._data_list)
 
     @property
     def data_list(self):
         return self._data_list
+    
+    @data_list.setter
+    def data_list(self, data_list: List[StereoExpData]):
+        self.__check_data_list(data_list)
+        assert len(data_list) == len(self._names), 'length of data_list must be equal to length of names'
+        self._data_list = list(data_list)
 
     @property
     def merged_data(self):
@@ -729,7 +751,7 @@ class MSData(_MSDataStruct):
                 batch_tags = None
             else:
                 batch_tags = [self._names.index(name) for name in self[scope].names]
-            merged_data = merge(*data_list, var_type=self._var_type, batch_tags=batch_tags)
+            merged_data = merge(*data_list, var_type=self._var_type, batch_tags=batch_tags, **kwargs)
         else:
             merged_data = deepcopy(data_list[0])
             batch = self._names.index(self[scope].names[0])
@@ -1066,5 +1088,5 @@ mss: {[key + ":" + str(value) for key, value in self.tl.result_keys.items()]}
             return write_h5mu(self, filename)
 
 
-TL = type('TL', (MSDataPipeLine,), {'ATTR_NAME': 'tl', "BASE_CLASS": StPipeline})
-PLT = type('PLT', (MSDataPipeLine,), {'ATTR_NAME': 'plt', "BASE_CLASS": PlotCollection})
+TL = type('TL', (MSDataPipeLine,), {'ATTR_NAME': 'tl', "BASE_CLASS": None})
+PLT = type('PLT', (MSDataPipeLine,), {'ATTR_NAME': 'plt', "BASE_CLASS": None})

@@ -170,7 +170,15 @@ class Result(_BaseResult, dict):
         elif name in self.HVG_NAMES or any([n in name for n in self.HVG_NAMES]):
             if dict.__contains__(self, name):
                 return self._get_hvg_res(name)
-        return dict.__getitem__(self, name)
+        res = dict.__getitem__(self, name)
+        if 'connectivities_key' in res and 'distances_key' in res:
+            return {
+                'neighbor': None,
+                'connectivities': cells._pairwise[res['connectivities_key']],
+                'nn_dist': cells._pairwise[res['distances_key']],
+                'params': res['params'] if 'params' in res else {}
+            }
+        return res
     
     def _get_hvg_res(self, name):
         hvg_colunms = []
@@ -287,8 +295,23 @@ class Result(_BaseResult, dict):
         #     f'the future, make sure your code set the property correctly. ',
         #     category=FutureWarning
         # )
-        self.__stereo_exp_data.cells._pairwise[key] = value
+        params = {}
+        if key == 'neighbors':
+            connectivities_key = 'connectivities'
+            distance_key = 'distances'
+        else:
+            connectivities_key = f'{key}_connectivities'
+            distance_key = f'{key}_distances'
+        params['connectivities_key'] = connectivities_key
+        params['distances_key'] = distance_key
+        if 'params' in value:
+            params['params'] = value['params']
+
+        # self.__stereo_exp_data.cells._pairwise[key] = value
+        self.__stereo_exp_data.cells._pairwise[connectivities_key] = value['connectivities']
+        self.__stereo_exp_data.cells._pairwise[distance_key] = value['nn_dist']
         self.CONNECTIVITY_NAMES.add(key)
+        dict.__setitem__(self, key, params)
 
     def _set_reduce_res(self, key, value):
         # assert type(value) is pd.DataFrame, 'reduce result must be pandas.DataFrame'
@@ -395,25 +418,15 @@ class AnnBasedResult(_BaseResult, object):
                 'group': self.__based_ann_data.obs[name].values
             })
         elif name in AnnBasedResult.CONNECTIVITY_NAMES:
-            n_neighbors = method = metric = None
-            if name in self.__based_ann_data.uns and 'params' in self.__based_ann_data.uns[name]:
-                if 'n_neighbors' in self.__based_ann_data.uns[name]['params']:
-                    n_neighbors = self.__based_ann_data.uns[name]['params']['n_neighbors']
-                if 'method' in self.__based_ann_data.uns[name]['params']:
-                    method = self.__based_ann_data.uns[name]['params']['method']
-                if 'metric' in self.__based_ann_data.uns[name]['params']:
-                    metric = self.__based_ann_data.uns[name]['params']['metric']
             neighbors_res = {
                 'neighbor': None,  # TODO really needed?
                 'connectivities': self.__based_ann_data.obsp['connectivities'],
                 'nn_dist': self.__based_ann_data.obsp['distances'],
             }
-            if n_neighbors is not None:
-                neighbors_res['n_neighbors'] = n_neighbors
-            if method is not None:
-                neighbors_res['method'] = method
-            if metric is not None:
-                neighbors_res['metric'] = metric
+            if 'params' in self.__based_ann_data.uns[name]:
+                neighbors_res['params'] = self.__based_ann_data.uns[name]['params']
+            else:
+                neighbors_res['params'] = {}
             return neighbors_res
         elif name in AnnBasedResult.REDUCE_NAMES:
             return pd.DataFrame(self.__based_ann_data.obsm[f'X_{name}'], copy=False)
@@ -457,24 +470,15 @@ class AnnBasedResult(_BaseResult, object):
         uns_obj = self.__based_ann_data.uns.get(name, None)
         if uns_obj is not None and type(uns_obj) is dict and 'params' in uns_obj and \
                 'connectivities_key' in uns_obj and 'distances_key' in uns_obj:
-            n_neighbors = method = metric = None
-            if 'n_neighbors' in uns_obj['params']:
-                n_neighbors = uns_obj['params']['n_neighbors']
-            if 'method' in uns_obj['params']:
-                method = uns_obj['params']['method']
-            if 'metric' in uns_obj['params']:
-                metric = uns_obj['params']['metric']
             neighbors_res = {
                 'neighbor': None,  # TODO really needed?
                 'connectivities': self.__based_ann_data.obsp[uns_obj['connectivities_key']],
                 'nn_dist': self.__based_ann_data.obsp[uns_obj['distances_key']],
             }
-            if n_neighbors is not None:
-                neighbors_res['n_neighbors'] = n_neighbors
-            if method is not None:
-                neighbors_res['method'] = method
-            if metric is not None:
-                neighbors_res['metric'] = metric
+            if 'params' in uns_obj:
+                neighbors_res['params'] = uns_obj['params']
+            else:
+                neighbors_res['params'] = {}
             return neighbors_res
         elif uns_obj is not None:
             return uns_obj
@@ -577,12 +581,8 @@ class AnnBasedResult(_BaseResult, object):
             'source': 'stereopy',
             'method': 'neighbors'
         }
-        if 'method' in value:
-            self.__based_ann_data.uns[key]['params']['method'] = value['method']
-        if 'n_neighbors' in value:
-            self.__based_ann_data.uns[key]['params']['n_neighbors'] = value['n_neighbors']
-        if 'metric' in value:
-            self.__based_ann_data.uns[key]['params']['metric'] = value['metric']
+        if 'params' in value:
+            self.__based_ann_data.uns[key]['params'] = value['params']
         if key == 'neighbors':
             self.__based_ann_data.uns[key]['connectivities_key'] = 'connectivities'
             self.__based_ann_data.uns[key]['distances_key'] = 'distances'

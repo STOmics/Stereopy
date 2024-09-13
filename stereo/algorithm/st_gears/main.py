@@ -1,5 +1,11 @@
 from typing import Optional, Union, List
 
+try:
+    from tensorflow.python.ops.numpy_ops import np_config
+    np_config.enable_numpy_behavior()
+except:
+    pass
+
 from stereo.algorithm.ms_algorithm_base import MSDataAlgorithmBase
 from stereo.core.stereo_exp_data import AnnBasedStereoExpData
 from stereo.io.reader import stereo_to_anndata

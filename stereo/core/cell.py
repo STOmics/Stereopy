@@ -190,11 +190,10 @@ class Cell(object):
         :param index: a numpy array of index info.
         :return: the subset of Cell object.
         """
-
-        if self.cell_border is not None:
-            self.cell_border = self.cell_border[index]
         if isinstance(index, pd.Series):
             index = index.to_numpy()
+        if self.cell_border is not None:
+            self.cell_border = self.cell_border[index]
         self._obs = self._obs.iloc[index].copy()
         for col in self._obs.columns:
             if self._obs[col].dtype.name == 'category':
@@ -301,6 +300,10 @@ class AnnBasedCell(Cell):
 
     @property
     def _obs(self):
+        return self.__based_ann_data.obs
+    
+    @property
+    def obs(self):
         return self.__based_ann_data.obs
     
     @property

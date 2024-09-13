@@ -120,6 +120,10 @@ def _write_one_h5ad(f: h5py.File, data: StereoExpData, use_raw=False, use_result
         position = data.position
     else:
         position = np.concatenate([data.position, data.position_z], axis=1)
+    if data.position_offset is not None:
+        h5ad.write(data.position_offset, f, 'position_offset')
+    if data.position_min is not None:
+        h5ad.write(data.position_min, f, 'position_min')
     h5ad.write(position, f, 'position')
     if issparse(data.exp_matrix):
         sp_format = 'csr' if isinstance(data.exp_matrix, csr_matrix) else 'csc'
