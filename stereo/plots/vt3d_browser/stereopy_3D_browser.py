@@ -10,7 +10,7 @@ from copy import deepcopy
 
 import numpy as np
 import pandas as pd
-from IPython.display import IFrame
+# from IPython.display import IFrame
 from natsort import natsorted
 from scipy import stats
 
@@ -621,6 +621,7 @@ def server_task(httpd, ip, port):
 
 
 def endServer(ip='127.0.0.1', port=7654):
+    from IPython.display import IFrame
     return IFrame(src=f'http://{ip}:{port}/endnow', width=500, height=50)
 
 
