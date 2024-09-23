@@ -42,7 +42,7 @@ setup(
     author='STOmics',
     author_email='tanliwei@stomics.tech',
     license='MIT License',
-    python_requires='>=3.8,<3.9',
+    python_requires='>=3.8',
     install_requires=[
         l.strip() for l in Path('requirements.txt').read_text('utf-8').splitlines()
     ],
