@@ -301,6 +301,12 @@ def _read_stereo_h5ad_from_group(f: Union[h5py.File, h5py.Group], data: StereoEx
                 for _, row in sn_data.iterrows():
                     batch, sn = row[0], row[1]
                     data.sn[str(batch)] = str(sn)
+        elif k == 'layers':
+            for layer_key in f[k].keys():
+                if isinstance(f[k][layer_key], h5py.Group):
+                    data.layers[layer_key] = h5ad.read_group(f[k][layer_key])
+                else:
+                    data.layers[layer_key] = h5ad.read_dataset(f[k][layer_key])
 
     # read raw
     if use_raw is True and 'exp_matrix@raw' in f.keys():
@@ -996,7 +1002,7 @@ def stereo_to_anndata(
                     logger.info(f"Adding info into adata.uns['{res_key}'].")
                     adata.uns[res_key] = {}
                     adata.uns[res_key]['connectivities_key'] = sc_con
-                    adata.uns[res_key]['distance_key'] = sc_dis
+                    adata.uns[res_key]['distances_key'] = sc_dis
                     if 'params' in data.tl.result[res_key]:
                         adata.uns[res_key]['params'] = data.tl.result[res_key]['params']
             elif key == 'cluster':

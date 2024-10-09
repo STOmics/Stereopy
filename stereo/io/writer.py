@@ -125,11 +125,16 @@ def _write_one_h5ad(f: h5py.File, data: StereoExpData, use_raw=False, use_result
     if data.position_min is not None:
         h5ad.write(data.position_min, f, 'position_min')
     h5ad.write(position, f, 'position')
-    if issparse(data.exp_matrix):
-        sp_format = 'csr' if isinstance(data.exp_matrix, csr_matrix) else 'csc'
-        h5ad.write(data.exp_matrix, f, 'exp_matrix', sp_format)
-    else:
-        h5ad.write(data.exp_matrix, f, 'exp_matrix')
+    # if issparse(data.exp_matrix):
+    #     sp_format = 'csr' if isinstance(data.exp_matrix, csr_matrix) else 'csc'
+    #     h5ad.write(data.exp_matrix, f, 'exp_matrix', sp_format)
+    # else:
+    #     h5ad.write(data.exp_matrix, f, 'exp_matrix')
+    h5ad.write(data.exp_matrix, f, 'exp_matrix')
+    
+    h5ad.write(data.layers, f, 'layers')
+    
+    
     # h5ad.write(data.bin_type, f, 'bin_type')
     # h5ad.write(data.bin_size, f, 'bin_size')
     # h5ad.write(data.merged, f, 'merged')
@@ -152,11 +157,12 @@ def _write_one_h5ad(f: h5py.File, data: StereoExpData, use_raw=False, use_result
                 position = np.concatenate([data.tl.raw.position, data.tl.raw.position_z], axis=1)
             h5ad.write(position, f, 'position@raw')
         # save raw exp_matrix
-        if issparse(data.tl.raw.exp_matrix):
-            sp_format = 'csr' if isinstance(data.tl.raw.exp_matrix, csr_matrix) else 'csc'
-            h5ad.write(data.tl.raw.exp_matrix, f, 'exp_matrix@raw', sp_format)
-        else:
-            h5ad.write(data.tl.raw.exp_matrix, f, 'exp_matrix@raw')
+        # if issparse(data.tl.raw.exp_matrix):
+        #     sp_format = 'csr' if isinstance(data.tl.raw.exp_matrix, csr_matrix) else 'csc'
+        #     h5ad.write(data.tl.raw.exp_matrix, f, 'exp_matrix@raw', sp_format)
+        # else:
+        #     h5ad.write(data.tl.raw.exp_matrix, f, 'exp_matrix@raw')
+        h5ad.write(data.tl.raw.exp_matrix, f, 'exp_matrix@raw')
 
     if use_result is True:
         _write_one_h5ad_result(data, f, key_record)
@@ -199,11 +205,12 @@ def _write_one_h5ad_result(data, f, key_record):
                 for neighbor_key, value in data.tl.result[res_key].items():
                     if value is None:
                         continue
-                    if issparse(value):
-                        sp_format = 'csr' if isinstance(value, csr_matrix) else 'csc'
-                        h5ad.write(value, f, f'{neighbor_key}@{res_key}@neighbors', sp_format)  # -> csr_matrix
-                    else:
-                        h5ad.write(value, f, f'{neighbor_key}@{res_key}@neighbors')  # -> Neighbors
+                    # if issparse(value):
+                    #     sp_format = 'csr' if isinstance(value, csr_matrix) else 'csc'
+                    #     h5ad.write(value, f, f'{neighbor_key}@{res_key}@neighbors', sp_format)  # -> csr_matrix
+                    # else:
+                    #     h5ad.write(value, f, f'{neighbor_key}@{res_key}@neighbors')  # -> Neighbors
+                    h5ad.write(value, f, f'{neighbor_key}@{res_key}@neighbors')  # -> Neighbors
             if analysis_key == 'cluster':
                 if res_key not in data.cells:
                     h5ad.write(data.tl.result[res_key], f, f'{res_key}@cluster')  # -> dataframe

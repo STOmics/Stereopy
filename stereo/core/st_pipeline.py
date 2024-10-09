@@ -23,7 +23,7 @@ from typing import (
 import numpy as np
 import pandas as pd
 from anndata import AnnData
-from scipy.sparse import issparse
+from scipy.sparse import issparse, csr_matrix
 from typing_extensions import Literal
 
 from .result import Result, AnnBasedResult
@@ -151,6 +151,32 @@ class StPipeline(object):
             self.key_record[key].append(res_key)
         else:
             self.key_record[key] = [res_key]
+    
+    def review_key_record(self):
+        for key, res_keys in self.key_record.items():
+            new_res_keys = []
+            for res_key in res_keys:
+                if not res_key in self.result:
+                    if dict.__contains__(self.result, res_key):
+                        dict.__delitem__(self.result, res_key)
+                else:
+                    new_res_keys.append(res_key)
+            self.key_record[key] = new_res_keys
+    
+    def set_layer(
+        self,
+        key: str,
+        value: Union[np.ndarray, csr_matrix, pd.DataFrame] = None
+    ):
+        """
+        Set the layer value.
+
+        :param key: the key of layer to be set.
+        :param value: the expression matrix to be set.
+        :return:
+        """
+        assert isinstance(key, str), "key must be string."
+        self.data.layers[key] = value if value is not None else self.data.exp_matrix
 
     @logit
     def cal_qc(self):
@@ -182,8 +208,8 @@ class StPipeline(object):
         max_genes: Optional[int] = None,
         pct_counts_mt: Optional[float] = None,
         cell_list: Optional[list] = None,
-        filter_raw: Optional[bool] = True,
         excluded: Optional[bool] = False,
+        filter_raw: Optional[bool] = True,
         inplace: bool = True,
         **kwargs
     ):
@@ -204,10 +230,10 @@ class StPipeline(object):
             maximum number of `pct_counts_mt` required for a cell to pass filtering.
         cell_list
             the list of cells to be retained.
+        excluded
+            set it to True to exclude the cells specified by parameter `cell_list` while False to include.
         filter_raw
             whether to filter raw data meanwhile.
-        excluded
-            set it to True to exclude the cells which are specified by parameter `cell_list` while False to include.
         inplace
             whether to replace the previous data or return a new data.
 
@@ -222,13 +248,13 @@ class StPipeline(object):
         min_genes = kwargs.get('min_n_genes_by_counts', None) if min_genes is None else min_genes
         max_genes = kwargs.get('max_n_genes_by_counts', None) if max_genes is None else max_genes
         data = filter_cells(self.data, min_counts, max_counts, min_genes, max_genes, pct_counts_mt,
-                            cell_list, excluded, inplace)
-        if data.raw is not None and filter_raw:
-            # filter_cells(data.raw, min_gene, max_gene, min_n_genes_by_counts, max_n_genes_by_counts, pct_counts_mt,
-            #              cell_list, True)
-            filter_cells(data.raw, cell_list=data.cell_names, inplace=True)
-            if isinstance(data, AnnBasedStereoExpData):
-                data.adata.raw = data.raw.adata
+                            cell_list, excluded, filter_raw, inplace)
+        # if data.raw is not None and filter_raw:
+        #     # filter_cells(data.raw, min_gene, max_gene, min_n_genes_by_counts, max_n_genes_by_counts, pct_counts_mt,
+        #     #              cell_list, True)
+        #     filter_cells(data.raw, cell_list=data.cell_names, inplace=True)
+        #     if isinstance(data, AnnBasedStereoExpData):
+        #         data.adata.raw = data.raw.adata
         return data
 
     @logit
@@ -240,9 +266,9 @@ class StPipeline(object):
         max_counts: Optional[int] = None,
         gene_list: Optional[Union[list, np.ndarray]] = None,
         mean_umi_gt: Optional[float] = None,
-        filter_raw: Optional[bool] = True,
         excluded: Optional[bool] = False,
         filter_mt_genes: Optional[bool] = False,
+        filter_raw: Optional[bool] = True,
         inplace: bool = True,
         **kwargs
     ):
@@ -266,9 +292,11 @@ class StPipeline(object):
         filter_raw
             whether to filter raw data meanwhile.
         excluded
-            set it to True to exclude the genes which are specified by parameter `gene_list` while False to include.
+            set it to True to exclude the genes specified by parameter `gene_list` while False to include.
         filter_mt_genes
             whether to filter out mitochondrial genes.
+        filter_raw
+            whether to filter raw data meanwhile.
         inplace
             whether to replace the previous data or return a new data.
 
@@ -282,11 +310,12 @@ class StPipeline(object):
         max_cells = kwargs.get('max_cell', None) if max_cells is None else max_cells
         min_counts = kwargs.get('min_count', None) if min_counts is None else min_counts
         max_counts = kwargs.get('max_count', None) if max_counts is None else max_counts
-        data = filter_genes(self.data, min_cells, max_cells, min_counts, max_counts, gene_list, mean_umi_gt, excluded, filter_mt_genes, inplace)
-        if data.raw is not None and filter_raw:
-            filter_genes(data.raw, gene_list=data.genes.gene_name, inplace=True)
-            if isinstance(data, AnnBasedStereoExpData):
-                data.adata.raw = data.raw.adata
+        data = filter_genes(self.data, min_cells, max_cells, min_counts, max_counts, 
+                            gene_list, mean_umi_gt, excluded, filter_mt_genes, filter_raw, inplace)
+        # if data.raw is not None and filter_raw:
+        #     filter_genes(data.raw, gene_list=data.genes.gene_name, inplace=True)
+        #     if isinstance(data, AnnBasedStereoExpData):
+        #         data.adata.raw = data.raw.adata
         return data
 
     @logit
@@ -315,15 +344,17 @@ class StPipeline(object):
             raise KeyError(f'Can not find result of highly_variable_genes function by key {hvg_res_key}.')
 
         from ..preprocess import filter_genes
-        hvgs_flag = self.result[hvg_res_key]['highly_variable'].to_numpy()
-        hvgs = self.data.gene_names[hvgs_flag]
-        hvg_result_filtered = self.result[hvg_res_key][hvgs_flag]
-        data = filter_genes(self.data, gene_list=hvgs, inplace=inplace)
-        if data.raw is not None and filter_raw:
-            filter_genes(data.raw, gene_list=hvgs, inplace=True)
-            if isinstance(data, AnnBasedStereoExpData):
-                data.adata.raw = data.raw.adata
-        data.tl.result[hvg_res_key] = hvg_result_filtered
+        hvgs_flag = self.result[hvg_res_key]['highly_variable']
+        hvgs_flag.fillna(False, inplace=True)
+        hvgs_flag = hvgs_flag.to_numpy()
+        hvgs: pd.Series = self.data.gene_names[hvgs_flag]
+        # hvg_result_filtered = self.result[hvg_res_key][hvgs_flag]
+        data = filter_genes(self.data, gene_list=hvgs, filter_raw=filter_raw, inplace=inplace)
+        # if data.raw is not None and filter_raw:
+        #     filter_genes(data.raw, gene_list=hvgs, inplace=True)
+        #     if isinstance(data, AnnBasedStereoExpData):
+        #         data.adata.raw = data.raw.adata
+        # data.tl.result[hvg_res_key] = hvg_result_filtered
         return data
 
     @logit
@@ -358,11 +389,11 @@ class StPipeline(object):
         Depending on `inplace`, if `True`, the data will be replaced by those filtered.
         """
         from ..preprocess.filter import filter_coordinates
-        data = filter_coordinates(self.data, min_x, max_x, min_y, max_y, inplace)
-        if data.raw is not None and filter_raw:
-            filter_coordinates(data.raw, min_x, max_x, min_y, max_y, True)
-            if isinstance(data, AnnBasedStereoExpData):
-                data.adata.raw = data.raw.adata
+        data = filter_coordinates(self.data, min_x, max_x, min_y, max_y, filter_raw, inplace)
+        # if data.raw is not None and filter_raw:
+        #     filter_coordinates(data.raw, min_x, max_x, min_y, max_y, True)
+        #     if isinstance(data, AnnBasedStereoExpData):
+        #         data.adata.raw = data.raw.adata
         return data
 
     @logit
@@ -400,17 +431,21 @@ class StPipeline(object):
         if cluster_res_key not in self.result:
             raise Exception(f'{cluster_res_key} is not in the result, please check and run the func of cluster.')
 
-        data, cluster_res = filter_by_clusters(self.data, self.result[cluster_res_key], groups, excluded, inplace)
-        data.tl.result[cluster_res_key] = cluster_res
+        # data, cluster_res = filter_by_clusters(self.data, cluster_res_key, groups, excluded, inplace)
+        # data.tl.result[cluster_res_key] = cluster_res
+        data = filter_by_clusters(self.data, cluster_res_key, groups, excluded, filter_raw, inplace)
         gene_exp_cluster_key = f'gene_exp_{cluster_res_key}'
         if gene_exp_cluster_key in data.tl.result:
             if isinstance(groups, str):
                 groups = [groups]
-            data.tl.result[gene_exp_cluster_key] = data.tl.result[gene_exp_cluster_key][groups]
-        if data.raw is not None and filter_raw:
-            filter_cells(data.raw, cell_list=data.cell_names, inplace=True)
-            if isinstance(data, AnnBasedStereoExpData):
-                data.adata.raw = data.raw.adata
+            if excluded:
+                data.tl.result[gene_exp_cluster_key] = data.tl.result[gene_exp_cluster_key].drop(groups, axis=1)
+            else:
+                data.tl.result[gene_exp_cluster_key] = data.tl.result[gene_exp_cluster_key][groups]
+        # if data.raw is not None and filter_raw:
+        #     filter_cells(data.raw, cell_list=data.cell_names, inplace=True)
+        #     if isinstance(data, AnnBasedStereoExpData):
+        #         data.adata.raw = data.raw.adata
         return data
 
     @logit
@@ -673,7 +708,7 @@ class StPipeline(object):
         if hvg_res_key not in self.result:
             raise Exception(f'{hvg_res_key} is not in the result, please check and run the normalization func.')
         df = self.result[hvg_res_key]
-        genes_index = df['highly_variable'].values
+        genes_index = df['highly_variable'].fillna(False).values
         data.sub_by_index(gene_index=genes_index)
         return data
 
@@ -723,7 +758,7 @@ class StPipeline(object):
         from ..algorithm.dim_reduce import pca
 
         if use_highly_genes:
-            hvgs = self.result[hvg_res_key]['highly_variable']
+            hvgs = self.result[hvg_res_key]['highly_variable'].fillna(False)
             exp_matrix = self.data.exp_matrix[:, hvgs]
         else:
             exp_matrix = self.data.exp_matrix
@@ -1647,10 +1682,10 @@ class StPipeline(object):
 
 class AnnBasedStPipeline(StPipeline):
 
-    def __init__(self, based_ann_data: AnnData, data: AnnBasedStereoExpData):
+    def __init__(self, data: AnnBasedStereoExpData):
         super().__init__(data)
-        self.__based_ann_data = based_ann_data
-        self.result = AnnBasedResult(based_ann_data)
+        # self.__based_ann_data = based_ann_data
+        self.result = AnnBasedResult(data)
 
     # def subset_by_hvg(self, hvg_res_key, use_raw=False, inplace=True):
     #     data: AnnBasedStereoExpData = self.data if inplace else copy.deepcopy(self.data)
@@ -1671,6 +1706,15 @@ class AnnBasedStPipeline(StPipeline):
     def raw_checkpoint(self):
         super().raw_checkpoint()
         self.data._ann_data.raw = self.data._ann_data
+    
+    def review_key_record(self):
+        for key, res_keys in self.key_record.items():
+            new_res_keys = []
+            for res_key in res_keys:
+                if res_key not in self.result:
+                    continue
+                new_res_keys.append(res_key)
+            self.key_record[key] = new_res_keys
     
     @property
     def key_record(self):

@@ -9,7 +9,8 @@
 change log:
     2021/08/12  add to_andata function , by wuyiran.
 """
-import copy
+from __future__ import annotations
+from copy import deepcopy
 from typing import Optional
 from typing import Union
 from warnings import warn
@@ -109,6 +110,7 @@ class StereoExpData(Data):
         self.center_coordinates = False
         self.spatial_key = spatial_key
         self.__set_position(position, position_z, spatial_key)
+        self._layers = None
     
     def __set_position(self, position, position_z=None, spatial_key='spatial'):
         assert isinstance(spatial_key, str), "spatial_key must be str."
@@ -161,7 +163,7 @@ class StereoExpData(Data):
             self._tl = StPipeline(self)
         return self._tl
 
-    def sub_by_index(self, cell_index=None, gene_index=None):
+    def sub_by_index(self, cell_index=None, gene_index=None, filter_raw=True):
         """
         Get data subset by indexl list of cells or genes.
 
@@ -174,21 +176,25 @@ class StereoExpData(Data):
             # self.position = self.position[cell_index, :] if self.position is not None else None
             # self.position_z = self.position_z[cell_index] if self.position_z is not None else None
             self.cells = self.cells.sub_set(cell_index)
+            for key, value in self.layers.items():
+                self.layers[key] = value[cell_index, :]
         if gene_index is not None:
             self.exp_matrix = self.exp_matrix[:, gene_index]
             self.genes = self.genes.sub_set(gene_index)
+            for key, value in self.layers.items():
+                self.layers[key] = value[:, gene_index]
+
+        filter_raw = filter_raw and self.raw is not None
+        if filter_raw:
+            self.raw.sub_by_index(cell_index, gene_index, False)
         return self
 
-    @numba.jit(cache=True, forceobj=True, nogil=True)
-    def get_index(self, data, names):
-        index_list = []
-        for name in names:
-            index_list.append(np.argwhere(data == name)[0][0])
-
-        return index_list
-
-    def sub_by_name(self, cell_name: Optional[Union[np.ndarray, list]] = None,
-                    gene_name: Optional[Union[np.ndarray, list]] = None):
+    def sub_by_name(
+        self,
+        cell_name: Optional[Union[np.ndarray, list]] = None,
+        gene_name: Optional[Union[np.ndarray, list]] = None,
+        filter_raw: bool = True
+    ):
         """
         Get data subset by name list of cells or genes.
 
@@ -196,7 +202,7 @@ class StereoExpData(Data):
         :param gene_name: a list of gene name.
         :return:
         """
-        data = copy.deepcopy(self)
+        data = deepcopy(self)
         cell_index, gene_index = None, None
         if cell_name is not None:
             cell_index = self.cells.obs.index.get_indexer(cell_name)
@@ -204,7 +210,7 @@ class StereoExpData(Data):
         if gene_name is not None:
             gene_index = self.genes.var.index.get_indexer(gene_name)
             gene_index = gene_index[gene_index != -1]
-        return data.sub_by_index(cell_index, gene_index)
+        return data.sub_by_index(cell_index, gene_index, filter_raw)
 
     def sub_exp_matrix_by_name(
             self,
@@ -251,6 +257,13 @@ class StereoExpData(Data):
         if (bin_type is not None) and (bin_type not in ['bins', 'cell_bins']):
             logger.error(f"the bin type `{bin_type}` is not in the range, please check!")
             raise Exception
+    
+    @property
+    def layers(self):
+        if self._layers is None:
+            from .data_component import Layers
+            self._layers = Layers(self)
+        return self._layers
 
     @property
     def shape(self):
@@ -455,25 +468,25 @@ class StereoExpData(Data):
         return None
 
     @position.setter
-    def position(self, pos):
+    def position(self, position):
         """
         set the value of self._position.
 
         :param pos: the value of position, a np.ndarray .
         :return:
         """
-        # self._position = pos
-        assert isinstance(pos, np.ndarray), "position must be np.ndarray."
-        assert pos.ndim == 2, "position must be 2 dimensions."
-        assert pos.shape[1] == 2, "the length of position's second dimension must be 2."
-        assert pos.shape[0] == self.n_cells, "the length of position must be equal to the number of cells."
+        # self._position = position
+        assert isinstance(position, np.ndarray), "position must be np.ndarray."
+        assert position.ndim == 2, "position must be 2 dimensions."
+        assert position.shape[1] == 2, "the length of position's second dimension must be 2."
+        assert position.shape[0] == self.n_cells, "the length of position must be equal to the number of cells."
         if self.spatial_key not in self.cells_matrix:
-            self.cells_matrix[self.spatial_key] = pos
+            self.cells_matrix[self.spatial_key] = position
         else:
             if self.cells_matrix[self.spatial_key].shape[1] == 1:
-                self.cells_matrix[self.spatial_key] = np.concatenate([pos, self.cells_matrix[self.spatial_key]], axis=1)
+                self.cells_matrix[self.spatial_key] = np.concatenate([position, self.cells_matrix[self.spatial_key]], axis=1)
             else:
-                self.cells_matrix[self.spatial_key][:, [0, 1]] = pos
+                self.cells_matrix[self.spatial_key][:, [0, 1]] = position
 
     @property
     def position_z(self):
@@ -657,6 +670,7 @@ class StereoExpData(Data):
             format_str += f"\ncells_pairwise = {list(self.cells_pairwise.keys())}"
         if self.genes_pairwise:
             format_str += f"\ngenes_pairwise = {list(self.genes_pairwise.keys())}"
+        format_str += f"\n{str(self.layers)}"
         format_key_record = {
             key: value
             for key, value in self.tl.key_record.items() if value
@@ -725,6 +739,11 @@ class StereoExpData(Data):
         from stereo.io.reader import stereo_to_anndata
         adata = stereo_to_anndata(self, flavor='scanpy', split_batches=False)
         return AnnBasedStereoExpData(based_ann_data=adata)
+    
+
+    def _remove_unused_categories(self):
+        self.cells._remove_unused_categories()
+        self.genes._remove_unused_categories()
         
 
 
@@ -752,8 +771,8 @@ class AnnBasedStereoExpData(StereoExpData):
             self._ann_data = based_ann_data
         else:
             self._ann_data = anndata.read_h5ad(h5ad_file_path)
-        self._genes = AnnBasedGene(self._ann_data, self._genes.gene_name)
-        self._cells = AnnBasedCell(self._ann_data, self._cells.cell_name)
+        self._genes = AnnBasedGene(self._ann_data)
+        self._cells = AnnBasedCell(self._ann_data)
 
         if 'resolution' in self._ann_data.uns:
             self.attr = {'resolution': self._ann_data.uns['resolution']}
@@ -783,7 +802,7 @@ class AnnBasedStereoExpData(StereoExpData):
             del self._ann_data.uns['position_min']
 
         from .st_pipeline import AnnBasedStPipeline
-        self._tl = AnnBasedStPipeline(self._ann_data, self)
+        self._tl = AnnBasedStPipeline(self)
         if 'key_record' in self._ann_data.uns:
             key_record = self._ann_data.uns['key_record']
             self._tl._key_record = self._ann_data.uns['key_record'] = {key: list(value) for key, value in key_record.items()}
@@ -807,6 +826,10 @@ class AnnBasedStereoExpData(StereoExpData):
     #         return getattr(self._ann_data, name)
     #     else:
     #         return None
+
+    @property
+    def layers(self):
+        return self._ann_data.layers
 
     @property
     def exp_matrix(self):
@@ -939,29 +962,33 @@ class AnnBasedStereoExpData(StereoExpData):
             raise TypeError(f'sn must be type of str or dict, but now is {type(sn)}')
         self._ann_data.uns['sn'] = pd.DataFrame(sn_list, columns=['batch', 'sn'])
 
-    def sub_by_index(self, cell_index=None, gene_index=None):
+    def sub_by_index(self, cell_index=None, gene_index=None, filter_raw=True):
         if cell_index is not None:
             self._ann_data._inplace_subset_obs(cell_index)
         if gene_index is not None:
             self._ann_data._inplace_subset_var(gene_index)
-        # if self._ann_data.raw:
-        #     self.tl.raw = AnnBasedStereoExpData(based_ann_data=self._ann_data.raw.to_adata())
+        filter_raw = filter_raw and self.raw is not None
+        if filter_raw:
+            self.raw.sub_by_index(cell_index, gene_index, False)
+            if gene_index is not None:
+                self._ann_data._raw = self._ann_data.raw[:, gene_index]
         return self
 
     def sub_by_name(
-            self,
-            cell_name: Optional[Union[np.ndarray, list]] = None,
-            gene_name: Optional[Union[np.ndarray, list]] = None
+        self,
+        cell_name: Optional[Union[np.ndarray, list]] = None,
+        gene_name: Optional[Union[np.ndarray, list]] = None,
+        filter_raw: bool = True
     ):
-        data = AnnBasedStereoExpData(self.file, based_ann_data=self._ann_data.copy())
-        data._ann_data.obs_names_make_unique()
-        data._ann_data.var_names_make_unique()
-        if cell_name is not None:
-            data._ann_data._inplace_subset_obs(cell_name)
-        if gene_name is not None:
-            data._ann_data._inplace_subset_var(gene_name)
-        # if data._ann_data.raw:
-        #     data.tl.raw = AnnBasedStereoExpData(based_ann_data=data._ann_data.raw.to_adata())
+        # data = AnnBasedStereoExpData(self.file, based_ann_data=self._ann_data.copy())
+        # data._ann_data.obs_names_make_unique()
+        # data._ann_data.var_names_make_unique()
+        # if cell_name is not None:
+        #     data._ann_data._inplace_subset_obs(cell_name)
+        # if gene_name is not None:
+        #     data._ann_data._inplace_subset_var(gene_name)
+        data = deepcopy(self)
+        data.sub_by_index(cell_name, gene_name, filter_raw)
         return data
 
     # @staticmethod

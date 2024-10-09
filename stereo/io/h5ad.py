@@ -49,8 +49,8 @@ def _(v, f, k, save_as_matrix=False):
 
 
 @write.register(sparse.spmatrix)
-def _(v, f, k, sp_format):
-    write_spmatrix(f, k, v, sp_format)
+def _(v, f, k):
+    write_spmatrix(f, k, v)
 
 
 @write.register(Gene)
@@ -94,9 +94,10 @@ def write_scalar(f, key, value, dataset_kwargs=MappingProxyType({})):
     write_array(f, key, np.array(value), dataset_kwargs=dataset_kwargs)
 
 
-def write_spmatrix(f, k, v, fmt: str, dataset_kwargs=MappingProxyType({})):
+def write_spmatrix(f, k, v, dataset_kwargs=MappingProxyType({})):
     g = f.create_group(k)
-    g.attrs['encoding-type'] = f'{fmt}_matrix'
+    # g.attrs['encoding-type'] = f'{fmt}_matrix'
+    g.attrs['encoding-type'] = type(v).__name__
     g.attrs['shape'] = v.shape
     # Allow resizing
     if 'maxshape' not in dataset_kwargs:

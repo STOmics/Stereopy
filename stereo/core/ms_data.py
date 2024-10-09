@@ -774,6 +774,8 @@ class MSData(_MSDataStruct):
         #     self.tl.result_keys[scope_key].append(key)
         
         # merged_data.tl.result.set_result_key_method = set_result_key_method
+
+        merged_data.tl.review_key_record()
         
         scope_key = self.generate_scope_key(scope)
         self._scopes_data[scope_key] = merged_data

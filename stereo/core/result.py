@@ -14,7 +14,7 @@ class _BaseResult(object):
         'leiden', 'louvain', 'phenograph', 'annotation', 'leiden_from_bins', 'louvain_from_bins',
         'phenograph_from_bins', 'annotation_from_bins', 'celltype', 'cell_type'
     }
-    NOT_CLUSTER_PREFIX = {
+    PREFIX_FOR_NON_CLUSTER = {
         'gene_exp', 'silhouette_score', 'adjusted_rand_score'
     }
     CONNECTIVITY_NAMES = {'neighbors'}
@@ -52,12 +52,12 @@ class Result(_BaseResult, dict):
 
     def __init__(
         self,
-        stereo_exp_data: Union[StereoExpData, AnnBasedStereoExpData],
+        stereo_exp_data: StereoExpData,
         *args,
         **kwargs
     ):
         # super().__init__()
-        if not isinstance(stereo_exp_data, (StereoExpData, AnnBasedStereoExpData)):
+        if not isinstance(stereo_exp_data, StereoExpData):
             raise TypeError("stereo_exp_data must be an object of StereoExpData.")
         
         _BaseResult.__init__(self)
@@ -106,7 +106,21 @@ class Result(_BaseResult, dict):
             return True
         elif item in self.__stereo_exp_data.cells_pairwise:
             return True
-        return dict.__contains__(self, item)
+        is_contained = dict.__contains__(self, item)
+        if is_contained:
+            res = dict.__getitem__(self, item)
+            if type(res) is dict and 'connectivities_key' in res and 'distances_key' in res:
+                if res['connectivities_key'] in self.__stereo_exp_data.cells_pairwise and \
+                        res['distances_key'] in self.__stereo_exp_data.cells_pairwise:
+                    return True
+                else:
+                    return False
+            if item in self.HVG_NAMES or any([n in item for n in self.HVG_NAMES]):
+                if self._get_hvg_res(item) is not None:
+                    return True
+                else:
+                    return False
+        return is_contained
 
     def __getitem__(self, name):
         if self.get_item_method:
@@ -171,7 +185,7 @@ class Result(_BaseResult, dict):
             if dict.__contains__(self, name):
                 return self._get_hvg_res(name)
         res = dict.__getitem__(self, name)
-        if 'connectivities_key' in res and 'distances_key' in res:
+        if type(res) is dict and 'connectivities_key' in res and 'distances_key' in res:
             return {
                 'neighbor': None,
                 'connectivities': cells._pairwise[res['connectivities_key']],
@@ -194,13 +208,13 @@ class Result(_BaseResult, dict):
 
     def _real_set_item(self, type, key, value):
         if type == Result.CLUSTER:
-            for prefix in Result.NOT_CLUSTER_PREFIX:
+            for prefix in Result.PREFIX_FOR_NON_CLUSTER:
                 if key.startswith(prefix):
                     return False
             self._set_cluster_res(key, value)
         elif type == Result.CONNECTIVITY:
             self._set_connectivities_res(key, value)
-        elif type == Result.REDUCE and not key.endswith('variance_ratio'):
+        elif type == Result.REDUCE and 'variance_ratio' not in key:
             self._set_reduce_res(key, value)
         elif type == Result.HVG:
             self._set_hvg_res(key, value)
@@ -231,9 +245,9 @@ class Result(_BaseResult, dict):
             elif not {"means", "dispersions", "dispersions_norm", "highly_variable"} - set(value.columns.values):
                 self._set_hvg_res(key, value)
                 return
-            elif key.startswith('gene_exp_'):
-                dict.__setitem__(self, key, value)
-                return
+            # elif key.startswith('gene_exp_'):
+            #     dict.__setitem__(self, key, value)
+            #     return
             # elif len(value.shape) == 2 and value.shape[0] > 399 and value.shape[1] > 399:
             # elif len(value.shape) == 2 and \
             #     value.shape[0] == self.__stereo_exp_data.shape[0] and value.shape[1] <= self.__stereo_exp_data.shape[1]:
@@ -298,18 +312,18 @@ class Result(_BaseResult, dict):
         params = {}
         if key == 'neighbors':
             connectivities_key = 'connectivities'
-            distance_key = 'distances'
+            distances_key = 'distances'
         else:
             connectivities_key = f'{key}_connectivities'
-            distance_key = f'{key}_distances'
+            distances_key = f'{key}_distances'
         params['connectivities_key'] = connectivities_key
-        params['distances_key'] = distance_key
+        params['distances_key'] = distances_key
         if 'params' in value:
             params['params'] = value['params']
 
         # self.__stereo_exp_data.cells._pairwise[key] = value
         self.__stereo_exp_data.cells._pairwise[connectivities_key] = value['connectivities']
-        self.__stereo_exp_data.cells._pairwise[distance_key] = value['nn_dist']
+        self.__stereo_exp_data.cells._pairwise[distances_key] = value['nn_dist']
         self.CONNECTIVITY_NAMES.add(key)
         dict.__setitem__(self, key, params)
 
@@ -346,18 +360,27 @@ class Result(_BaseResult, dict):
 
 class AnnBasedResult(_BaseResult, object):
 
-    def __init__(self, based_ann_data: AnnData):
+    def __init__(self, data: AnnBasedStereoExpData):
         super().__init__()
-        self.__based_ann_data = based_ann_data
+        # self.__stereo_exp_data = data
+        self.__based_ann_data = data.adata
     
-    @property
-    def adata(self):
-        return self.__based_ann_data
+    # @property
+    # def adata(self):
+    #     return self.__based_ann_data
 
     def __contains__(self, item):
         if item in AnnBasedResult.CLUSTER_NAMES:
             return item in self.__based_ann_data.obs
         elif item in AnnBasedResult.CONNECTIVITY_NAMES:
+            if item in self.__based_ann_data.uns and type(self.__based_ann_data.uns[item]) is dict:
+                if 'connectivities_key' in self.__based_ann_data.uns[item] and \
+                        'distances_key' in self.__based_ann_data.uns[item]:
+                        if self.__based_ann_data.uns[item]['connectivities_key'] in self.__based_ann_data.obsp and \
+                            self.__based_ann_data.uns[item]['distances_key'] in self.__based_ann_data.obsp:
+                            return True
+                        else:
+                            return False
             return item in self.__based_ann_data.uns
         elif item in AnnBasedResult.REDUCE_NAMES:
             return f'X_{item}' in self.__based_ann_data.obsm
@@ -371,9 +394,9 @@ class AnnBasedResult(_BaseResult, object):
                 return True
             elif AnnBasedResult.RENAME_DICT.get(item, None) in self.__based_ann_data.uns:
                 return True
-        elif item.startswith('gene_exp_'):
-            if item in self.__based_ann_data.uns:
-                return True
+        # elif item.startswith('gene_exp_'):
+        #     if item in self.__based_ann_data.uns:
+        #         return True
         elif item.startswith('paga'):
             if item in self.__based_ann_data.uns:
                 return True
@@ -408,6 +431,12 @@ class AnnBasedResult(_BaseResult, object):
             return True
         uns_obj = self.__based_ann_data.uns.get(item, None)
         if uns_obj is not None:
+            if type(uns_obj) is dict and 'connectivities_key' in uns_obj and 'distances_key' in uns_obj:
+                if uns_obj['connectivities_key'] in self.__based_ann_data.obsp and \
+                        uns_obj['distances_key'] in self.__based_ann_data.obsp:
+                    return True
+                else:
+                    return False
             return True
         return False
 
@@ -441,8 +470,8 @@ class AnnBasedResult(_BaseResult, object):
         elif name in AnnBasedResult.MARKER_GENES_NAMES or \
             any([n in name for n in AnnBasedResult.MARKER_GENES_NAMES]):
             return self._get_marker_genes_res(name)
-        elif name.startswith('gene_exp_'):
-            return self.__based_ann_data.uns[name]
+        # elif name.startswith('gene_exp_'):
+        #     return self.__based_ann_data.uns[name]
         # elif name.startswith('regulatory_network_inference'):
         #     return self.__based_ann_data.uns[name]
 
@@ -486,13 +515,13 @@ class AnnBasedResult(_BaseResult, object):
 
     def _real_set_item(self, type, key, value):
         if type == AnnBasedResult.CLUSTER:
-            for prefix in AnnBasedResult.NOT_CLUSTER_PREFIX:
+            for prefix in AnnBasedResult.PREFIX_FOR_NON_CLUSTER:
                 if key.startswith(prefix):
                     return False
             self._set_cluster_res(key, value)
         elif type == AnnBasedResult.CONNECTIVITY:
             self._set_connectivities_res(key, value)
-        elif type == AnnBasedResult.REDUCE and not key.endswith('variance_ratio'):
+        elif type == AnnBasedResult.REDUCE and 'variance_ratio' not in key:
             self._set_reduce_res(key, value)
         elif type == AnnBasedResult.HVG_NAMES:
             self._set_hvg_res(key, value)
@@ -522,7 +551,7 @@ class AnnBasedResult(_BaseResult, object):
                 self._set_hvg_res(key, value)
                 return
             elif key.startswith('gene_exp_'):
-                self.__based_ann_data.uns[key] = value
+                self.__based_ann_data.varm[key] = value
                 return
             # elif len(value.shape) == 2 and \
             #         value.shape[0] == self.__based_ann_data.shape[0] and value.shape[1] <= self.__based_ann_data.shape[1]:

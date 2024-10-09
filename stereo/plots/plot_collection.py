@@ -1146,9 +1146,9 @@ class PlotCollection:
         :param markers_num: top N makers, defaults to 10.
         :param genes: name of genes which would be shown on plot, markers_num is ignored if it is set, defaults to None.
         :param groups: cell types which would be shown on plot, all cell types would be shown if set it to None, defaults to None.
-        :param values_to_plot: specify the value which color the plot, the mean expression in group would be set if set it to None defaults to None.
+        :param values_to_plot: specify the value to color the plot, the mean expression in group would be set by default.
                         available values include: [scores, logfoldchanges, pvalues, pvalues_adj, log10_pvalues, log10_pvalues_adj].
-        :param sort_by: specify the value which sort by when select top N markers, defaults to 'scores'
+        :param sort_by: specify the value which sort by when selecting top N markers, defaults to 'scores'
                         available values include: [scores, logfoldchanges, pvalues, pvalues_adj].
         :param out_path: the path to save the figure.
         :param out_dpi: the dpi when the figure is saved.
