@@ -46,6 +46,35 @@ class Gene(object):
     def __len__(self):
         return self.size
     
+    def get_index(self, gene_list=None, only_highly_genes=False):
+        only_highly_genes = only_highly_genes and 'highly_variable' in self.var.columns
+        if only_highly_genes:
+            highly_variable = self.var['highly_variable'].fillna(False).to_numpy()
+            used_gene_index = np.arange(self.size)[highly_variable]
+        else:
+            used_gene_index = np.arange(self.size)
+
+        if gene_list is None:
+            return used_gene_index
+        
+        if isinstance(gene_list, (int, np.integer, str)):
+            gene_list = [gene_list]
+        
+        if isinstance(gene_list, (list, np.ndarray, pd.Index)):
+            gene_list = np.array(gene_list)
+            if isinstance(gene_list[0], (int, np.integer)):
+                # gene_index = np.intersect1d(used_gene_index, gene_list)
+                isin = np.isin(gene_list, used_gene_index)
+                gene_index = gene_list[isin]
+            else:
+                gene_index = self.var.index.get_indexer(gene_list)
+                gene_index = gene_index[gene_index != -1]
+                isin = np.isin(gene_index, used_gene_index)
+                gene_index = gene_index[isin]
+            return gene_index
+        else:
+            raise TypeError('gene_list must be a int or str or list or np.ndarray or pd.Index object.')
+    
     @property
     def matrix(self):
         return self._matrix

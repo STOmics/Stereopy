@@ -1,7 +1,5 @@
-from typing import Union
 from copy import deepcopy
 
-from anndata import AnnData
 import numpy as np
 from scipy.sparse import spmatrix
 import pandas as pd
@@ -50,7 +48,7 @@ class Layers(dict):
         super().__setitem__(key, value)
     
     def __str__(self) -> str:
-        info = f"layers with keys {list(self.keys())}."
+        info = f"Layers with keys: {', '.join(list(self.keys()))}"
         return info
 
     def __repr__(self) -> str:

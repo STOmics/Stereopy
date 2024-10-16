@@ -223,7 +223,9 @@ class StereoExpData(Data):
             if isinstance(cell_name, str) or isinstance(cell_name, int):
                 cell_name = [cell_name]
             if order_preserving:
-                index = [np.argwhere(self.cell_names == c)[0][0] for c in cell_name]
+                # index = [np.argwhere(self.cell_names == c)[0][0] for c in cell_name]
+                index = self.cells.obs.index.get_indexer(cell_name)
+                index = index[index != -1]
             else:
                 index = np.isin(self.cell_names, cell_name)
             new_exp_matrix = new_exp_matrix[index]
@@ -231,11 +233,46 @@ class StereoExpData(Data):
             if isinstance(gene_name, str):
                 gene_name = [gene_name]
             if order_preserving:
-                index = [np.argwhere(self.gene_names == g)[0][0] for g in gene_name]
+                # index = [np.argwhere(self.gene_names == g)[0][0] for g in gene_name]
+                index = self.genes.var.index.get_indexer(gene_name)
+                index = index[index != -1]
             else:
                 index = np.isin(self.gene_names, gene_name)
             new_exp_matrix = new_exp_matrix[:, index]
         return new_exp_matrix
+    
+    def get_index(self, cell_list=None, gene_list=None, only_highly_genes=False):
+        return self.cells.get_index(cell_list), self.genes.get_index(gene_list, only_highly_genes)
+    
+    def get_exp_matrix(
+        self,
+        use_raw: bool = False,
+        layer: Optional[str] = None,
+        cell_list: Optional[Union[np.ndarray, list, str, int]] = None,
+        gene_list: Optional[Union[np.ndarray, list, str, int]] = None,
+        only_highly_genes: bool = False
+    ) -> Union[np.ndarray, spmatrix]:
+        cell_index, gene_index = self.get_index(cell_list, gene_list, only_highly_genes)
+        if layer is not None:
+            assert layer in self.layers, f"layer '{layer}' is not exist."
+            exp_matrix = self.layers[layer]
+        else:
+            if use_raw is None:
+                use_raw = True if self.raw is not None else False
+            else:
+                use_raw = use_raw and self.raw is not None
+            if use_raw:
+                if self.raw.shape != self.shape:
+                    exp_matrix = self.raw.get_exp_matrix(cell_list=self.cell_names, gene_list=self.gene_names)
+                else:
+                    exp_matrix = self.raw.exp_matrix
+            else:
+                exp_matrix = self.exp_matrix
+        if cell_index.size != self.cells.size:
+            exp_matrix = exp_matrix[cell_index, :]
+        if gene_index.size != self.genes.size:
+            exp_matrix = exp_matrix[:, gene_index]
+        return exp_matrix
 
     def check(self):
         """

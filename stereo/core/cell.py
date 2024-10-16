@@ -57,6 +57,24 @@ class Cell(object):
     def __len__(self):
         return self.size
     
+    def get_index(self, cell_list=None):
+        if cell_list is None:
+            return np.arange(self.size)
+        
+        if isinstance(cell_list, (int, np.integer, str)):
+            cell_list = [cell_list]
+        
+        if isinstance(cell_list, (list, np.ndarray, pd.Index)):
+            cell_list = np.array(cell_list)
+            if isinstance(cell_list[0], (int, np.integer)):
+                cell_index = cell_list[(cell_list >= 0) & (cell_list < self.size)]
+            else:
+                cell_index = self.obs.index.get_indexer(cell_list)
+                cell_index = cell_index[cell_index >= 0]
+            return cell_index
+        else:
+            raise TypeError('cell_list must be a int or str or list or np.ndarray or pd.Index object.')
+    
     @property
     def matrix(self):
         return self._matrix

@@ -664,7 +664,8 @@ class AnnBasedResult(_BaseResult, object):
             'method': method,
             'control_groups': marker_genes_result['params']['reference'],
             'corr_method': marker_genes_result['params']['corr_method'],
-            'use_raw': marker_genes_result['params']['use_raw']
+            'use_raw': marker_genes_result['params']['use_raw'],
+            'layer': marker_genes_result['params']['layer']
         }
         if 'marker_genes_res_key' in marker_genes_result['params']:
             marker_genes_result_reconstructed['parameters']['marker_genes_res_key'] = \
