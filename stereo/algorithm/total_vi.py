@@ -264,6 +264,7 @@ class TotalVi(MSDataAlgorithmBase):
             public_thresholds: dict = None,
             rna_thresholds: dict = None,
             protein_thresholds: dict = None,
+            protein_list: list = None
     ):
         if self._use_hvg:
             rna_data = self._hvg_data
@@ -283,13 +284,16 @@ class TotalVi(MSDataAlgorithmBase):
                 for column, threshold in public_thresholds.items():
                     cell_type_df = cell_type_df[cell_type_df[column] > threshold]
 
-            pro_rows = cell_type_df.index.str.contains("_")
-            data_pro = cell_type_df.iloc[pro_rows]
+            # pro_rows = cell_type_df.index.str.contains("_")
+            # data_pro = cell_type_df.iloc[pro_rows]
+            pro_rows = np.intersect1d(cell_type_df.index, protein_list)
+            data_pro = cell_type_df[cell_type_df.index.isin(pro_rows)]
             if protein_thresholds is not None:
                 for column, threshold in protein_thresholds.items():
                     data_pro = data_pro[data_pro[column] > threshold]
 
-            data_rna = cell_type_df.iloc[~pro_rows]
+            # data_rna = cell_type_df.iloc[~pro_rows]
+            data_rna = cell_type_df[~cell_type_df.index.isin(pro_rows)]
             if rna_thresholds is not None:
                 for column, threshold in rna_thresholds.items():
                     data_rna = data_rna[data_rna[column] > threshold]
