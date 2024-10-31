@@ -34,7 +34,7 @@ def get_version(rel_path: str) -> str:
 setup(
     name='stereopy',
     version=get_version("stereo/common.py"),
-    setup_requires=['setuptools_scm', 'numpy', 'panel', 'pytest', 'quilt3', 'scipy', 'phenograph'],
+    setup_requires=['setuptools_scm', 'numpy>=1.23.5', 'panel', 'pytest', 'quilt3', 'scipy', 'phenograph'],
     description='Spatial transcriptomic analysis in python.',
     long_description=Path('README.md').read_text('utf-8'),
     long_description_content_type="text/markdown",
