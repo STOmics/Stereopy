@@ -64,7 +64,7 @@ hotspotsc==1.1.1
 distributed>=2023.3.2.1
 # keras==2.7.0
 pyarrow>=10.0.1
-tables>=3.6.1
+# tables>=3.6.1
 spatialpandas>=0.4.4
 # selenium>=4.4.3
 loompy==3.0.6
@@ -85,3 +85,6 @@ plotly>=5.15.0
 cusingler
 cell-bin==1.3.4.1
 # stio==0.1.0
+
+pysal<=2.6.0
+pygam>=0.8.0

@@ -311,7 +311,7 @@ def base_scatter(
         ax.legend_.remove()
 
     if not show_ticks:
-        ax.set_aspect('equal', adjustable='datalim')
+        # ax.set_aspect('equal', adjustable='box')
         ax.set_yticks([])
         ax.set_xticks([])
 

@@ -1051,13 +1051,13 @@ class MSData(_MSDataStruct):
         from stereo.preprocess.filter import filter_by_clusters
         batch_data = pd.DataFrame({
             'bins': data.cells.cell_name,
-            'group': data.cells._obs[batch_key].astype('category')
+            'group': data.cells[batch_key].astype('category')
         })
 
         sub_data_list = []
         sub_data_names = []
         for batch_code in batch_data['group'].cat.categories:
-            sub_data, _ = filter_by_clusters(data, batch_data, groups=batch_code, inplace=False)
+            sub_data = filter_by_clusters(data, batch_key, groups=batch_code, inplace=False)
             sub_data_list.append(sub_data)
             sub_data_names.append(batch_code)
         

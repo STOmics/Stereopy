@@ -234,20 +234,26 @@ def _write_one_h5ad_result(data, f, key_record):
                         h5ad.write(parameters_df, f, f'{cluster}@{res_key}@marker_genes')  # -> dataframe
             if analysis_key == 'sct':
                 h5ad.write(
-                    csr_matrix(data.tl.result[res_key][0]['counts']), f, f'exp_matrix@{res_key}@sct_counts', 'csr'
+                    csr_matrix(data.tl.result[res_key][0]['counts']), f, f'exp_matrix@{res_key}@sct_counts'
                 )
                 h5ad.write(
-                    csr_matrix(data.tl.result[res_key][0]['data']), f, f'exp_matrix@{res_key}@sct_data', 'csr'
+                    csr_matrix(data.tl.result[res_key][0]['data']), f, f'exp_matrix@{res_key}@sct_data'
                 )
                 h5ad.write(
-                    csr_matrix(data.tl.result[res_key][0]['scale.data']), f, f'exp_matrix@{res_key}@sct_scale',
-                    'csr'
+                    csr_matrix(data.tl.result[res_key][0]['scale.data']), f, f'exp_matrix@{res_key}@sct_scale'
                 )
-                h5ad.write(list(data.tl.result[res_key][1]['umi_genes']), f, f'genes@{res_key}@sct')
-                h5ad.write(list(data.tl.result[res_key][1]['umi_cells']), f, f'cells@{res_key}@sct')
-                h5ad.write(list(data.tl.result[res_key][1]['top_features']), f, f'genes@{res_key}@sct_top_features')
-                h5ad.write(list(data.tl.result[res_key][0]['scale.data'].index), f,
-                           f'genes@{res_key}@sct_scale_genename')
+                h5ad.write(
+                    list(data.tl.result[res_key][1]['umi_genes']), f, f'genes@{res_key}@sct'
+                )
+                h5ad.write(
+                    list(data.tl.result[res_key][1]['umi_cells']), f, f'cells@{res_key}@sct'
+                )
+                h5ad.write(
+                    list(data.tl.result[res_key][1]['top_features']), f, f'genes@{res_key}@sct_top_features'
+                )
+                h5ad.write(
+                    list(data.tl.result[res_key][0]['scale.data'].index), f, f'genes@{res_key}@sct_scale_genename'
+                )
                 # TODO ignored other result of the sct
             if analysis_key == 'spatial_hotspot':
                 # Hotspot object

@@ -193,7 +193,8 @@ class StereoExpData(Data):
         self,
         cell_name: Optional[Union[np.ndarray, list]] = None,
         gene_name: Optional[Union[np.ndarray, list]] = None,
-        filter_raw: bool = True
+        filter_raw: bool = True,
+        copy: bool = True
     ):
         """
         Get data subset by name list of cells or genes.
@@ -202,7 +203,7 @@ class StereoExpData(Data):
         :param gene_name: a list of gene name.
         :return:
         """
-        data = deepcopy(self)
+        data = deepcopy(self) if copy else self
         cell_index, gene_index = None, None
         if cell_name is not None:
             cell_index = self.cells.obs.index.get_indexer(cell_name)
@@ -250,7 +251,8 @@ class StereoExpData(Data):
         layer: Optional[str] = None,
         cell_list: Optional[Union[np.ndarray, list, str, int]] = None,
         gene_list: Optional[Union[np.ndarray, list, str, int]] = None,
-        only_highly_genes: bool = False
+        only_highly_genes: bool = False,
+        to_array: bool = False
     ) -> Union[np.ndarray, spmatrix]:
         cell_index, gene_index = self.get_index(cell_list, gene_list, only_highly_genes)
         if layer is not None:
@@ -272,7 +274,10 @@ class StereoExpData(Data):
             exp_matrix = exp_matrix[cell_index, :]
         if gene_index.size != self.genes.size:
             exp_matrix = exp_matrix[:, gene_index]
-        return exp_matrix
+        if to_array:
+            return exp_matrix.toarray() if issparse(exp_matrix) else exp_matrix
+        else:
+            return exp_matrix
 
     def check(self):
         """
@@ -1015,7 +1020,8 @@ class AnnBasedStereoExpData(StereoExpData):
         self,
         cell_name: Optional[Union[np.ndarray, list]] = None,
         gene_name: Optional[Union[np.ndarray, list]] = None,
-        filter_raw: bool = True
+        filter_raw: bool = True,
+        copy: bool = True
     ):
         # data = AnnBasedStereoExpData(self.file, based_ann_data=self._ann_data.copy())
         # data._ann_data.obs_names_make_unique()
@@ -1024,7 +1030,7 @@ class AnnBasedStereoExpData(StereoExpData):
         #     data._ann_data._inplace_subset_obs(cell_name)
         # if gene_name is not None:
         #     data._ann_data._inplace_subset_var(gene_name)
-        data = deepcopy(self)
+        data = deepcopy(self) if copy else self
         data.sub_by_index(cell_name, gene_name, filter_raw)
         return data
 

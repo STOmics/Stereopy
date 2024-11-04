@@ -215,7 +215,7 @@ class Result(_BaseResult, dict):
         elif type == Result.CONNECTIVITY:
             self._set_connectivities_res(key, value)
         elif type == Result.REDUCE and 'variance_ratio' not in key:
-            self._set_reduce_res(key, value)
+            return self._set_reduce_res(key, value)
         elif type == Result.HVG:
             self._set_hvg_res(key, value)
         elif type == Result.MARKER_GENES:
@@ -330,17 +330,25 @@ class Result(_BaseResult, dict):
     def _set_reduce_res(self, key, value):
         # assert type(value) is pd.DataFrame, 'reduce result must be pandas.DataFrame'
         if not isinstance(value, (pd.DataFrame, np.ndarray)):
-            raise TypeError('reduce result must be pandas.DataFrame or numpy.ndarray')
+            # raise TypeError('reduce result must be pandas.DataFrame or numpy.ndarray')
+            return False
         # warn(
         #     f'{key} will be moved from `StereoExpData.tl.result` to `StereoExpData.cells_matrix` in the '
         #     f'future, make sure your code set the property correctly. ',
         #     category=FutureWarning
         # )
-        if value.shape[0] == self.__stereo_exp_data.n_cells:
+        if value.shape[0] == self.__stereo_exp_data.n_cells and \
+                value.shape[1] < self.__stereo_exp_data.n_genes:
             self.__stereo_exp_data.cells._matrix[key] = value
-        elif value.shape[0] == self.__stereo_exp_data.n_genes:
+            self.REDUCE_NAMES.add(key)
+            return True
+        elif value.shape[0] == self.__stereo_exp_data.n_genes and \
+                value.shape[1] < self.__stereo_exp_data.n_cells:
             self.__stereo_exp_data.genes._matrix[key] = value
-        self.REDUCE_NAMES.add(key)
+            self.REDUCE_NAMES.add(key)
+            return True
+        else:
+            return False
 
     def _set_hvg_res(self, key, value):
         assert type(value) is pd.DataFrame, 'hvg result must be pandas.DataFrame'
@@ -355,7 +363,22 @@ class Result(_BaseResult, dict):
         dict.__setitem__(self, key, value)
 
     def set_value(self, key, value):
-        dict.__setitem__(self, key, value)
+        if hasattr(value, 'shape'):
+            if len(value.shape) >= 2:
+                if value.shape[0:2] == (self.__stereo_exp_data.n_cells, self.__stereo_exp_data.n_cells):
+                    self.__stereo_exp_data.cells_pairwise[key] = value
+                elif value.shape[0:2] == (self.__stereo_exp_data.n_genes, self.__stereo_exp_data.n_genes):
+                    self.__stereo_exp_data.genes_pairwise[key] = value
+                elif value.shape[0] == self.__stereo_exp_data.n_cells:
+                    self.__stereo_exp_data.cells_matrix[key] = value
+                elif value.shape[0] == self.__stereo_exp_data.n_genes:
+                    self.__stereo_exp_data.genes_matrix[key] = value
+                else:
+                    dict.__setitem__(self, key, value)
+            else:
+                dict.__setitem__(self, key, value)
+        else:
+            dict.__setitem__(self, key, value)
 
 
 class AnnBasedResult(_BaseResult, object):
@@ -522,7 +545,7 @@ class AnnBasedResult(_BaseResult, object):
         elif type == AnnBasedResult.CONNECTIVITY:
             self._set_connectivities_res(key, value)
         elif type == AnnBasedResult.REDUCE and 'variance_ratio' not in key:
-            self._set_reduce_res(key, value)
+            return self._set_reduce_res(key, value)
         elif type == AnnBasedResult.HVG_NAMES:
             self._set_hvg_res(key, value)
         elif type == AnnBasedResult.MARKER_GENES:
@@ -626,17 +649,22 @@ class AnnBasedResult(_BaseResult, object):
     def _set_reduce_res(self, key, value, start_with_X=True):
         # assert type(value) is pd.DataFrame, 'reduce result must be pandas.DataFrame'
         if not isinstance(value, (pd.DataFrame, np.ndarray)):
-            raise TypeError('reduce result must be pandas.DataFrame or numpy.ndarray')
+            # raise TypeError('reduce result must be pandas.DataFrame or numpy.ndarray')
+            return False
         if isinstance(value, pd.DataFrame):
             value = value.to_numpy(copy=True)
-        if self.__based_ann_data.shape[0] == value.shape[0]:
+        if value.shape[0] == self.__based_ann_data.n_obs and value.shape[1] < self.__based_ann_data.n_vars:
             if start_with_X:
                 self.__based_ann_data.uns[key] = {'params': {}, 'source': 'stereopy', 'method': key}
                 self.__based_ann_data.obsm[f'X_{key}'] = value
             else:
                 self.__based_ann_data.obsm[key] = value
-        elif self.__based_ann_data.shape[1] == value.shape[0]:
+            return True
+        elif value.shape[0] == self.__based_ann_data.n_vars and value.shape[1] < self.__based_ann_data.n_obs:
             self.__based_ann_data.varm[key] = value
+            return True
+        else:
+            return False
 
     def _set_hvg_res(self, key, value):
         self.__based_ann_data.uns[key] = {'params': {}, 'source': 'stereopy', 'method': key}
@@ -710,10 +738,21 @@ class AnnBasedResult(_BaseResult, object):
 
     def set_value(self, key, value):
         if hasattr(value, 'shape'):
-            if (len(value.shape) >= 1) and (value.shape[0] == self.__based_ann_data.shape[0]):
-                self.__based_ann_data.obsm[key] = value
-            elif (len(value.shape) >= 2) and (value.shape[1] == self.__based_ann_data.shape[1]):
-                self.__based_ann_data.varm[key] = value
+            # if (len(value.shape) >= 1) and (value.shape[0] == self.__based_ann_data.shape[0]):
+            #     self.__based_ann_data.obsm[key] = value
+            # elif (len(value.shape) >= 2) and (value.shape[1] == self.__based_ann_data.shape[1]):
+            #     self.__based_ann_data.varm[key] = value
+            if len(value.shape) >= 2:
+                if value.shape[0:2] == (self.__based_ann_data.n_obs, self.__based_ann_data.n_obs):
+                    self.__based_ann_data.obsp[key] = value
+                elif value.shape[0:2] == (self.__based_ann_data.n_vars, self.__based_ann_data.n_vars):
+                    self.__based_ann_data.varp[key] = value
+                elif value.shape[0] == self.__based_ann_data.n_obs:
+                    self.__based_ann_data.obsm[key] = value
+                elif value.shape[0] == self.__based_ann_data.n_vars:
+                    self.__based_ann_data.varm[key] = value
+                else:
+                    self.__based_ann_data.uns[key] = value
             else:
                 self.__based_ann_data.uns[key] = value
         else:
