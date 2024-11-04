@@ -30,7 +30,11 @@ def cal_cells_indicators(data: StereoExpData, use_raw, layer):
     # exp_matrix = data.exp_matrix
     data.cells.total_counts = cal_total_counts(exp_matrix)
     data.cells.n_genes_by_counts = cal_n_genes_by_counts(exp_matrix)
-    data.cells.pct_counts_mt = cal_pct_counts_mt(exp_matrix, data.gene_names)
+    if data.genes.real_gene_name is not None:
+        gene_names = data.genes.real_gene_name
+    else:
+        gene_names = data.gene_names
+    data.cells.pct_counts_mt = cal_pct_counts_mt(exp_matrix, gene_names)
     return data
 
 
