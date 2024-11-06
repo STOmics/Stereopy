@@ -17,7 +17,8 @@ from tqdm import tqdm
 from typing import Literal, Union, List
 
 from stereo.core.stereo_exp_data import StereoExpData
-from stereo.preprocess.filter import filter_cells, filter_genes
+from stereo.preprocess.filter import filter_genes
+from stereo.plots.decorator import download
 from stereo.log_manager import logger
 
 
@@ -125,12 +126,6 @@ class Trainer:
 
         # read gene expression, cell ptime and tfs files.
         if data_type == "p_time":
-            # if type(expression_matrix_path) == list:
-            #     expression_matrix_path = expression_matrix_path[0]
-            # self.adata = sc.read(expression_matrix_path)
-            # self.adata.obs["ptime"] = pd.read_table(ptime_path, index_col=0)
-            # self.tfs_path = tfs_path
-
             if type(data) == list:
                 data = data[0]
             self.data = data
@@ -138,16 +133,12 @@ class Trainer:
             self.tfs_path = tfs_path
 
             if min_cells == None:
-                # min_cells = round(self.adata.n_obs*0.3)
                 min_cells = round(self.data.n_cells * 0.3)
 
-            # filter out genes expressed in few cells
-            # sc.pp.filter_genes(self.adata, min_cells=min_cells, inplace=True)
             filter_genes(self.data, min_cells=min_cells, inplace=True)
             logger.info(f"Genes expressed in less than {min_cells} cells have been filtered.")
 
             all_tfs = pd.read_csv(self.tfs_path,header=None)
-            # self.genes = self.adata.var_names
             self.genes = self.data.genes.var.index
             self.tfs = self.genes.intersection(all_tfs[0].tolist())
 
@@ -161,9 +152,6 @@ class Trainer:
                     "In 2_time mode, you should provide a list contains two data objects through the data parameter."
                 )
 
-            # self.adata1 = sc.read(expression_matrix_path[0])
-            # self.adata2 = sc.read(expression_matrix_path[1])
-            # self.cell_mapping = pd.read_csv(cell_mapping_path, index_col=0)
             self.data1 = data[0]
             self.data2 = data[1]
             self.cell_mapping = cell_mapping
@@ -177,25 +165,11 @@ class Trainer:
                     "In 2_time mode, you should provide a list contains two min_cells parameters to filter two data objects."
                 )
 
-            # sc.pp.filter_genes(self.adata1, min_cells=min_cells[0], inplace=True)
-            # sc.pp.filter_genes(self.adata2, min_cells=min_cells[1], inplace=True)
             filter_genes(self.data1, min_cells=min_cells[0], inplace=True)
             filter_genes(self.data2, min_cells=min_cells[1], inplace=True)
 
-            # only use the mapping cells
-            # self.adata1 = self.adata1[self.cell_mapping.slice1]
-            # self.adata2 = self.adata2[self.cell_mapping.slice2]
-            # filter_cells(self.data1, cell_list=self.cell_mapping['slice1'], inplace=True)
-            # filter_cells(self.data2, cell_list=self.cell_mapping['slice2'], inplace=True)
-
             # get same genes
-            # same_genes = list(self.adata1.var_names & self.adata2.var_names)
-            # self.adata1 = self.adata1[:, same_genes]
-            # self.adata2 = self.adata2[:, same_genes]
-            # self.genes = self.adata1.var_names
             same_genes = list(self.data1.genes.var.index & self.data2.genes.var.index)
-            # filter_genes(self.data1, gene_list=same_genes, inplace=True)
-            # filter_genes(self.data2, gene_list=same_genes, inplace=True)
             self.data1 = self.data1.sub_by_name(cell_name=self.cell_mapping['slice1'], gene_name=same_genes, copy=False)
             self.data2 = self.data2.sub_by_name(cell_name=self.cell_mapping['slice2'], gene_name=same_genes, copy=False)
             self.genes = self.data1.genes.var.index
@@ -364,6 +338,7 @@ class Trainer:
         # return plt
     
 
+    @download
     def plot_scatter(
         self,
         num_rows: int = 3,
@@ -522,6 +497,7 @@ class Trainer:
         self.train_dl = DataLoader(train_set, batch_size=batch_size, shuffle=True)
         self.test_dl = DataLoader(test_set, batch_size=batch_size)
 
+    @download
     def plot_gene_regulation(self, min_weight, min_node_num, cmap="coolwarm") -> None:
         """
         Draw the gene regulation network graph.
@@ -577,6 +553,8 @@ class Trainer:
             labels=label_name_new,
             bbox={"boxstyle": "round", "facecolor": "white", "edgecolor": "orange", "linewidth": 1},
         )
+
+        return fig
 
     def get_one_hot(
         self,

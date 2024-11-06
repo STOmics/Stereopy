@@ -43,11 +43,7 @@ def transfer_matrix(
         matrix(dim:n_obs*m_obs) of transition probability.
     """
     ## data process
-    # common_genes = list(set(adata1.var.index)&set(adata2.var.index))
-    # common_genes = np.intersect1d(data1.gene_names, data2.gene_names)
     common_genes = list(set(data1.gene_names) & set(data2.gene_names))
-    # adata1 = adata1[:, common_genes]
-    # adata2 = adata2[:, common_genes]
     data1 = data1.sub_by_name(gene_name=common_genes)
     data2 = data2.sub_by_name(gene_name=common_genes)
     

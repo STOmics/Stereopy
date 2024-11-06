@@ -215,13 +215,21 @@ def base_scatter(
 
     """  # noqa
     if not ax:
-        if width is None or height is None:
-            figsize = (7, 7)
+        # if width is None or height is None:
+        #     figsize = (7, 7)
+        # else:
+        #     width = width / 100 if width >= 100 else 7
+        #     height = height / 100 if height >= 100 else 7
+        #     figsize = (width, height)
+        if width is None:
+            width = 7
         else:
             width = width / 100 if width >= 100 else 7
+        if height is None:
+            height = 7
+        else:
             height = height / 100 if height >= 100 else 7
-            figsize = (width, height)
-        _, ax = plt.subplots(figsize=figsize)
+        _, ax = plt.subplots(figsize=(width, height))
     dot_size = PLOT_SCATTER_SIZE_FACTOR / len(hue) if dot_size is None else dot_size
     # add a color bar
 

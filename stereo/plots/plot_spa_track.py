@@ -210,20 +210,42 @@ class PlotSpaTrack:
             [lap_endpoints[~endpoints_index], lap_endpoints[endpoints_index]]
         )
 
+        dot_size = PLOT_SCATTER_SIZE_FACTOR / self.stereo_exp_data.n_cells if dot_size is None else dot_size
+
         fig: Figure = base_scatter(
-            position[:, 0],
-            position[:, 1],
-            hue=lap_endpoints,
-            palette=['red', 'blue', '#828282'],
+            position[:-2, 0],
+            position[:-2, 1],
+            hue=lap_endpoints[:-2],
+            palette=['#828282'],
             title='LAP endpoints',
             x_label=x_label,
             y_label=y_label,
             dot_size=dot_size,
             marker=marker,
             invert_y=invert_y,
-            hue_order=['start', 'end', 'others'],
+            # hue_order=['start', 'end', 'others'],
             width=width,
             height=height,
+            show_legend=False,
+            **kwargs
+        )
+        ax: Axes = plt.gca()
+        base_scatter(
+            position[-2:, 0],
+            position[-2:, 1],
+            hue=lap_endpoints[-2:],
+            palette=['red', 'blue'],
+            title='LAP endpoints',
+            x_label=x_label,
+            y_label=y_label,
+            dot_size=dot_size * 3,
+            marker=marker,
+            invert_y=invert_y,
+            hue_order=['start', 'end'],
+            width=width,
+            height=height,
+            show_legend=True,
+            ax=ax,
             **kwargs
         )
         
@@ -346,9 +368,11 @@ class PlotSpaTrack:
     def assess_start_cluster_plot(
         self,
         palette: str = 'stereo_30',
-        width: int = 10,
-        height: int = 9
+        width: int = 1000,
+        height: int = 900
     ):
+        width = width / 100
+        height = height / 100
         return assess_start_cluster_plot(
             self.stereo_exp_data,
             use_col=self.pipeline_res['spa_track']['cluster_res_key'],
@@ -436,8 +460,10 @@ class PlotSpaTrack:
             cell_color_list=colors
         )
         if width is not None:
+            width = width / 100
             fig.set_figwidth(width)
         if height is not None:
+            height = height / 100
             fig.set_figheight(height)
         return fig
 
@@ -482,7 +508,9 @@ class PlotSpaTrack:
             cell_color_list=colors
         )
         if width is not None:
+            width = width / 100
             fig.set_figwidth(width)
         if height is not None:
+            height = height / 100
             fig.set_figheight(height)
         return fig

@@ -115,6 +115,7 @@ nbsphinx_thumbnails = {
     "Tutorials/Cell_Community_Detection": "_static/CellCommunityDetection.png",
     "Tutorials/Cell_Segmentation": "_static/CellSegmentation.png",
     "Tutorials/Trajectory_Analysis": "_static/TrajectoryAnalysis.png",
+    "Tutorials/SpaTrack": "_static/SpaTrack.png",
     "Tutorials(Multi-sample)/Batch_Effect": "_static/batches_integration.png",
     "Tutorials(Multi-sample)/3D_Cell_Cell_Communication": "_static/3D_Cell_Cell_Communication.png",
     "Tutorials(Multi-sample)/3D_Gene_Regulatory_Network": "_static/gene_regulatory_network.png",

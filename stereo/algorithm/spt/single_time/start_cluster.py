@@ -68,6 +68,8 @@ def assess_start_cluster_plot(
 
     plt.tight_layout()
 
+    return ax1.get_figure()
+
     
     
         

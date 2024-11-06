@@ -197,8 +197,8 @@ def auto_estimate_para(
     ----------
     data
         An object of StereoExpData.
-    n_top_genes
-         highly variable expression gene number (Default: 2000)
+    hvg_gene_number
+        highly variable expression gene number (Default: 2000)
 
     """
     ## 01 Average expression value of highly variable genes in each spot
@@ -484,10 +484,10 @@ def get_neigh_trans(
         # )
         logger.info("Automatically calculate neighbors using the pca result spcified by key pca.")
         logger.info(f"The number of neighbors is: {n_neigh_gene}")
-        logger.info(f"The neighbors are stored in 'neighbors_spa_track'.")
-        data.tl.neighbors(pca_res_key='pca', n_neighbors=n_neigh_gene, res_key='neighbors_spa_track')
+        logger.info(f"The neighbors are stored in 'nbrs_velocity'.")
+        data.tl.neighbors(pca_res_key='pca', n_neighbors=n_neigh_gene, res_key='nbrs_velocity')
 
-        neigh_gene = data.tl.result['neighbors_spa_track']["nn_dist"].indices.reshape(
+        neigh_gene = data.tl.result['nbrs_velocity']["nn_dist"].indices.reshape(
             -1, n_neigh_gene - 1
         )
         logger.info(neigh_gene.shape)

@@ -6,3 +6,4 @@ This section introduces several functions to infer the cell fate.
 
     Trajectory_Analysis
     RNA_Velocity
+    SpaTrack
