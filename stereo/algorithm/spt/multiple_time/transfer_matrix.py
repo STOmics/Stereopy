@@ -52,8 +52,8 @@ def transfer_matrix(
     exp_martix_2 = data2.get_exp_matrix(use_raw=False, layer=layer, to_array=True)
     
     ## Calculate spatial coordinates diatances
-    spa_dist_1 = spatial_dist(data1)
-    spa_dist_2 = spatial_dist(data2)
+    spa_dist_1 = spatial_dist(data1, spatial_key=spatial_key)
+    spa_dist_2 = spatial_dist(data2, spatial_key=spatial_key)
     
     ## Calculate gene expression dissimilarity
     M = gene_dist(exp_martix_1, exp_martix_2)
