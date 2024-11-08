@@ -343,6 +343,9 @@ class PlotCollection:
             title: Optional[str] = None,
             vmin: float = None,
             vmax: float = None,
+            base_image: Optional[str] = None,
+            base_im_cmap: Optional[str] = 'Greys',
+            base_im_to_gray : bool = False,
             **kwargs
     ):
         """
@@ -357,6 +360,11 @@ class PlotCollection:
         :param x_label: list of x label.
         :param y_label: list of y label.
         :param title: the title label.
+        :param vmin: The value representing the lower limit of the color scale. Values smaller than vmin are plotted with the same color as vmin.
+        :param vmax: The value representing the higher limit of the color scale. Values greater than vmax are plotted with the same color as vmax.
+        :param base_image: the path of mask image to be displayed as background, it must already be registered to the same coordinate system as the data.
+        :param base_im_cmap: the color map of the base image, only availabel when base image is gray scale image.
+        :param base_im_to_gray: whether to convert the base image to gray scale if base image is RGB/RGBA image.
         :param show_plotting_scale: wheter to display the plotting scale.
         :param out_path: the path to save the figure.
         :param out_dpi: the dpi when the figure is saved.
@@ -371,10 +379,39 @@ class PlotCollection:
                 if set it to `False`, the coordinates will not be changed.
         :param horizontal_offset_additional: the additional offset between each slice on horizontal direction while reorganizing coordinates.
         :param vertical_offset_additional: the additional offset between each slice on vertical direction while reorganizing coordinates.
-        :param vmin: The value representing the lower limit of the color scale. Values smaller than vmin are plotted with the same color as vmin.
-        :param vmax: The value representing the higher limit of the color scale. Values greater than vmax are plotted with the same color as vmax.
         """  # noqa
         from .scatter import multi_scatter
+        x = self.data.position[:, 0]
+        y = self.data.position[:, 1]
+        x_min, x_max = int(x.min()), int(x.max())
+        y_min, y_max = int(y.min()), int(y.max())
+        boundary = [x_min, x_max, y_min, y_max]
+        marker = 's'
+
+        base_im_boundary = None
+        base_image_data = None
+        base_im_value_range = None
+        if base_image is not None:
+            # base_image_data = tiff.imread(base_image)
+            with tiff.TiffFile(base_image) as tif:
+                base_image_data = tif.asarray()
+                if x_min > 0 or y_min > 0:
+                    x_min = max(0, x_min - PLOT_BASE_IMAGE_EXPANSION)
+                    y_min = max(0, y_min - PLOT_BASE_IMAGE_EXPANSION)
+                    x_max += PLOT_BASE_IMAGE_EXPANSION
+                    y_max += PLOT_BASE_IMAGE_EXPANSION
+                    base_image_data = base_image_data[y_min:(y_max + 1), x_min:(x_max + 1)]
+                base_im_boundary = [x_min, x_max, y_max, y_min]
+                shaped_metadata = tif.shaped_metadata
+                if shaped_metadata is not None:
+                    metadata = shaped_metadata[0]
+                    if 'value_range' in metadata:
+                        base_im_value_range = metadata['value_range']
+            marker = 'o' 
+        
+        if 'marker' not in kwargs:
+            kwargs['marker'] = marker
+        
         if isinstance(cells_key, str):
             cells_key = [cells_key]
         if title is None:
@@ -398,6 +435,12 @@ class PlotCollection:
             height=height,
             vmin=vmin,
             vmax=vmax,
+            boundary=boundary,
+            base_image=base_image_data,
+            base_im_cmap=base_im_cmap,
+            base_im_boundary=base_im_boundary,
+            base_im_value_range=base_im_value_range,
+            base_im_to_gray=base_im_to_gray,
             **kwargs
         )
         return fig
@@ -823,7 +866,7 @@ class PlotCollection:
                 height=height,
                 **kwargs)
         else:
-            self.data.array2sparse()
+            # self.data.array2sparse()
             if gene_names is None:
                 raise ValueError('gene name must be set if cluster_key is None')
             if isinstance(gene_names, str):
@@ -1146,9 +1189,9 @@ class PlotCollection:
         :param markers_num: top N makers, defaults to 10.
         :param genes: name of genes which would be shown on plot, markers_num is ignored if it is set, defaults to None.
         :param groups: cell types which would be shown on plot, all cell types would be shown if set it to None, defaults to None.
-        :param values_to_plot: specify the value which color the plot, the mean expression in group would be set if set it to None defaults to None.
+        :param values_to_plot: specify the value to color the plot, the mean expression in group would be set by default.
                         available values include: [scores, logfoldchanges, pvalues, pvalues_adj, log10_pvalues, log10_pvalues_adj].
-        :param sort_by: specify the value which sort by when select top N markers, defaults to 'scores'
+        :param sort_by: specify the value which sort by when selecting top N markers, defaults to 'scores'
                         available values include: [scores, logfoldchanges, pvalues, pvalues_adj].
         :param out_path: the path to save the figure.
         :param out_dpi: the dpi when the figure is saved.
@@ -1376,6 +1419,10 @@ class PlotCollection:
             for example, on Ubuntu, the following libraries need to be installed:
                 
                 sudo apt-get install libgtk-3-dev libasound2-dev
+            
+            or on CentOS, are as follows:
+
+                sudo yum install gtk3-devel alsa-lib-devel
             
             On others Linux, you may need to install the corresponding libraries according to the error message.
 

@@ -252,15 +252,11 @@ def stack_slices_pairwise(
 
     # new_slices = []
     for i in range(len(slices)):
-        if isinstance(slices[i], AnnBasedStereoExpData):
-            if slices[i].position_z is not None:
-                slices[i].adata.obsm['spatial_paste_pairwise'] = np.concatenate((new_coor[i], slices[i].position_z), axis=1)
-            else:
-                slices[i].adata.obsm['spatial_paste_pairwise'] = new_coor[i]
-            slices[i].spatial_key = 'spatial_paste_pairwise'
+        if slices[i].position_z is not None:
+            slices[i].cells_matrix['spatial_paste_pairwise'] = np.concatenate((new_coor[i], slices[i].position_z), axis=1)
         else:
-            slices[i].raw_position = slices[i].position
-            slices[i].position = new_coor[i]
+            slices[i].cells_matrix['spatial_paste_pairwise'] = new_coor[i]
+        slices[i].spatial_key = 'spatial_paste_pairwise'
 
     if not output_params:
         return slices
@@ -321,25 +317,17 @@ def stack_slices_center(
         new_coor.append(y)
 
     for i in range(len(slices)):
-        if isinstance(slices[i], AnnBasedStereoExpData):
-            if slices[i].position_z is not None:
-                slices[i].adata.obsm['spatial_paste_center'] = np.concatenate((new_coor[i], slices[i].position_z), axis=1)
-            else:
-                slices[i].adata.obsm['spatial_paste_center'] = new_coor[i]
-            slices[i].spatial_key = 'spatial_paste_center'
+        if slices[i].position_z is not None:
+            slices[i].cells_matrix['spatial_paste_center'] = np.concatenate((new_coor[i], slices[i].position_z), axis=1)
         else:
-            slices[i].raw_position = slices[i].position
-            slices[i].position = new_coor[i]
-
-    if isinstance(center_slice, AnnBasedStereoExpData):
-        if center_slice.position_z is not None:
-            center_slice.adata.obsm['spatial_paste_center'] = np.concatenate((center_slice.position, center_slice.position_z), axis=1)
-        else:
-            center_slice.adata.obsm['spatial_paste_center'] = c
-        center_slice.spatial_key = 'spatial_paste_center'
+            slices[i].cells_matrix['spatial_paste_center'] = new_coor[i]
+        slices[i].spatial_key = 'spatial_paste_center'
+    if center_slice.position_z is not None:
+        center_slice.cells_matrix['spatial_paste_center'] = np.concatenate((center_slice.position, center_slice.position_z), axis=1)
     else:
-        center_slice.raw_position = center_slice.position
-        center_slice.position = c
+        center_slice.cells_matrix['spatial_paste_center'] = c
+    center_slice.spatial_key = 'spatial_paste_center'
+
     if not output_params:
         return center_slice, slices
     else:

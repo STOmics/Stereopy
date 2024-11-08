@@ -42,9 +42,8 @@ class GetNiche(AlgorithmBase):
         assert cluster_1 != cluster_2, "cluster_1 can not equal to cluster_2."
 
         data_full = self.stereo_exp_data
-        cluster = self.pipeline_res[cluster_res_key]
-        data_1, _ = filter_by_clusters(data_full, cluster_res=cluster, groups=cluster_1, inplace=False)
-        data_2, _ = filter_by_clusters(data_full, cluster_res=cluster, groups=cluster_2, inplace=False)
+        data_1 = filter_by_clusters(data_full, cluster_res_key=cluster_res_key, groups=cluster_1, inplace=False)
+        data_2 = filter_by_clusters(data_full, cluster_res_key=cluster_res_key, groups=cluster_2, inplace=False)
 
         coord_1 = data_1.position.astype(np.int64)
         coord_2 = data_2.position.astype(np.int64)
@@ -76,7 +75,7 @@ class GetNiche(AlgorithmBase):
             neighbors = np.zeros((n1, n12), dtype=int)
             shift = np.zeros(n1, dtype=np.float64)
 
-            cluster_label = cluster['group']
+            cluster_label = self.pipeline_res[cluster_res_key]['group']
             info_entropy = np.zeros(n1, dtype=np.float64)
             
             for i in range(n1):

@@ -34,24 +34,14 @@ class PlotCells:
             use_raw=True
     ):
         self.data: StereoExpData = data
-        # if cluster_res_key in self.data.tl.result:
-        #     res = self.data.tl.result[cluster_res_key]
-        #     self.cluster_res = np.array(res['group'])
-        #     self.cluster_id = natsorted(np.unique(self.cluster_res).tolist())
-        #     n = len(self.cluster_id)
-        #     cmap = stereo_conf.get_colors('stereo_30', n)
-        #     self.cluster_color_map = OrderedDict({k: v for k, v in zip(self.cluster_id, cmap)})
-        # else:
-        #     self.cluster_res = None
-        #     self.cluster_id = []
         if color_by != 'cluster':
             self.palette = 'stereo' if palette is None else palette
             assert isinstance(self.palette, str), f'The palette must be a name of palette when color_by is {color_by}'
             self.cluster_res = None
             self.cluster_id = []
-            if color_by == 'gene':
-                if not np.any(np.isin(self.data.genes.gene_name, color_key)):
-                    raise ValueError(f'The gene {color_key} is not found.')
+            # if color_by == 'gene':
+            #     if not np.any(np.isin(self.data.genes.gene_name, color_key)):
+            #         raise ValueError(f'The gene {color_key} is not found.')
         else:
             if palette is None:
                 self.palette = 'stereo_30'
@@ -59,15 +49,11 @@ class PlotCells:
                 self.palette = palette
             else:
                 self.palette = 'custom'
-            # self.palette = 'stereo_30' if palette is None else 'custom'
             if color_key in self.data.tl.result:
                 res = self.data.tl.result[color_key]
                 self.cluster_res = np.array(res['group'])
                 self.cluster_id = natsorted(np.unique(self.cluster_res).tolist())
                 n = len(self.cluster_id)
-                # if isinstance(palette, str):
-                #     cmap = stereo_conf.get_colors(self.palette, n)
-                #     self.cluster_color_map = OrderedDict({k: v for k, v in zip(self.cluster_id, cmap)})
                 if isinstance(palette, (list, np.ndarray)):
                     stereo_conf.palette_custom = list(palette)
                 elif isinstance(palette, dict):
@@ -111,11 +97,6 @@ class PlotCells:
 
     def _set_width_and_height(self, width, height):
         if width is None or height is None:
-            # width = 500
-            # min_position = np.min(self.data.position, axis=0)
-            # max_position = np.max(self.data.position, axis=0)
-            # p_width, p_height = max_position - min_position
-            # height = int(np.ceil(width / (p_width / p_height)))
             if width is None and height is not None:
                 width = height
             elif width is not None and height is None:
@@ -188,40 +169,35 @@ class PlotCells:
         polygons = []
         color = []
         position = []
-        if self.use_raw:
-            if self.data.shape != self.data.raw.shape:
-                cells_isin = np.isin(self.data.raw.cell_names, self.data.cell_names)
-                genes_isin = np.isin(self.data.raw.gene_names, self.data.gene_names)
-                exp_matrix = self.data.raw.exp_matrix[cells_isin][:, genes_isin]
-                gene_names = self.data.raw.gene_names[genes_isin]
-            else:
-                exp_matrix = self.data.raw.exp_matrix
-                gene_names = self.data.raw.gene_names
-        else:
-            exp_matrix = self.data.exp_matrix
-            gene_names = self.data.gene_names
+        exp_matrix = self.data.get_exp_matrix(use_raw=self.use_raw, cell_list=self.data.cell_names, gene_list=self.data.gene_names)
+        gene_names = self.data.gene_names if self.data.genes.real_gene_name is None else self.data.genes.real_gene_name
         total_counts = cal_total_counts(exp_matrix)
         n_genes_by_counts = cal_n_genes_by_counts(exp_matrix)
         pct_counts_mt = cal_pct_counts_mt(exp_matrix, gene_names)
+        counts_in_selected_gene = []
         if color_by == 'gene':
-            in_bool = np.isin(self.data.genes.gene_name, self.color_key)
+            a = self.color_key.find('(')
+            if a != -1:
+                color_key = self.color_key[:a]
+            else:
+                color_key = self.color_key
+            in_bool = np.isin(self.data.genes.gene_name, color_key)
+            if not np.any(in_bool) and self.data.genes.real_gene_name is not None:
+                in_bool = np.isin(self.data.genes.real_gene_name, color_key)
         for i, cell_border in enumerate(self.data.cells.cell_border):
             cell_border = cell_border[cell_border[:, 0] < 32767] + self.data.position[i]
             cell_border = cell_border.reshape((-1,)).tolist()
             polygons.append([cell_border])
             if color_by == 'total_counts':
-                # color.append(self.data.cells.total_counts[i])
                 color.append(total_counts[i])
             elif color_by == 'n_genes_by_counts':
-                # color.append(self.data.cells.n_genes_by_counts[i])
                 color.append(n_genes_by_counts[i])
             elif color_by == 'gene':
                 color.append(exp_matrix[i, in_bool].sum())
+                counts_in_selected_gene.append(color[-1])
             elif color_by == 'cluster':
-                # color.append(self.cluster_res[i] if self.cluster_res is not None else self.data.cells.total_counts[i])
                 color.append(self.cluster_res[i] if self.cluster_res is not None else total_counts[i])
             else:
-                # color.append(self.data.cells.total_counts[i])
                 color.append(total_counts[i])
             position.append(str(tuple(self.data.position[i].astype(np.uint32))))
 
@@ -230,14 +206,13 @@ class PlotCells:
             'polygons': polygons,
             'color': color,
             'position': position,
-            # 'total_counts': self.data.cells.total_counts.astype(np.uint32),
-            # 'pct_counts_mt': self.data.cells.pct_counts_mt,
-            # 'n_genes_by_counts': self.data.cells.n_genes_by_counts.astype(np.uint32),
             'total_counts': total_counts,
             'pct_counts_mt': pct_counts_mt,
             'n_genes_by_counts': n_genes_by_counts,
             'cluster_id': np.zeros_like(self.data.cell_names) if self.cluster_res is None else self.cluster_res
         })
+        if len(counts_in_selected_gene) > 0:
+            polygons_detail['counts_in_selected_gene'] = counts_in_selected_gene
 
         tooltips = [
             ('Position', '@position'),
@@ -245,6 +220,8 @@ class PlotCells:
             ('Pct Counts Mt', '@pct_counts_mt'),
             ('nGenes By Counts', '@n_genes_by_counts'),
             ('Cluster Id', '@cluster_id')]
+        if len(counts_in_selected_gene) > 0:
+            tooltips.append(('Counts In Selected Gene', '@counts_in_selected_gene'))
         hover_tool = HoverTool(tooltips=tooltips)
 
         vdims = polygons_detail.columns.tolist()
@@ -298,6 +275,9 @@ class PlotCells:
             gene_names_selector_value = self.data.genes.gene_name[i]
         gene_idx_sorted = np.argsort(self.data.genes.n_counts * -1)
         gene_names_sorted = self.data.genes.gene_name[gene_idx_sorted].tolist()
+        if self.data.genes.real_gene_name is not None:
+            real_gene_name_sorted = self.data.genes.real_gene_name[gene_idx_sorted].tolist()
+            gene_names_sorted = [f'{gene}({real_gene})' for gene, real_gene in zip(gene_names_sorted, real_gene_name_sorted)]
         self.gene_names = pn.widgets.Select(name='genes', value=gene_names_selector_value, 
                                             options=gene_names_sorted, size=10, width=200)
         
@@ -527,15 +507,15 @@ class PlotCells:
         if type == 'colorbar':
             min_value = min(plot_data['color'])
             max_value = max(plot_data['color'])
-            ticks_num = 100
-            ticks_interval = (max_value - min_value) / (ticks_num - 1)
-            ticks = [min(min_value + i * ticks_interval, max_value) for i in range(ticks_num)]
+            # ticks_num = 100
+            # ticks_interval = (max_value - min_value) / (ticks_num - 1)
+            # ticks = [min(min_value + i * ticks_interval, max_value) for i in range(ticks_num)]
             color_mapper = EqHistColorMapper(palette=cmap, low=min_value, high=max_value)
 
             data_source = ColumnDataSource(data={
-                'x': [0] * len(ticks),
-                'y': [0] * len(ticks),
-                'color': ticks
+                'x': [0] * len(plot_data['color']),
+                'y': [0] * len(plot_data['color']),
+                'color': plot_data['color']
             })
             figure_list[0].circle(x='x', y='y', color={'field': 'color', 'transform': color_mapper}, size=0, source=data_source)
             ticker = BinnedTicker(mapper=color_mapper, num_major_ticks=8)

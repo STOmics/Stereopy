@@ -16,14 +16,17 @@ def sc_transform(
         do_correct_umi=False,
         exp_matrix_key='scale.data',
         seed_use=1448145,
+        filter_raw=True,
+        layer=None,
         **kwargs
 ):
-    if not issparse(data.exp_matrix):
-        data.exp_matrix = csr_matrix(data.exp_matrix)
+    exp_matrix = data.get_exp_matrix(use_raw=False, layer=layer)
+    if not issparse(exp_matrix):
+        exp_matrix = csr_matrix(exp_matrix)
 
     # set do_correct_umi as False for less memory cost
     res = SCTransform(
-        data.exp_matrix.T.tocsr(),
+        exp_matrix.T.tocsr(),
         data.gene_names,
         data.cell_names,
         n_genes=n_genes,
@@ -36,15 +39,9 @@ def sc_transform(
     )
     new_exp_matrix = res[0][exp_matrix_key]
     if issparse(new_exp_matrix):
-        # data.sub_by_index(gene_index=res[1]['umi_genes'])
-        filter_genes(data, gene_list=res[1]['umi_genes'], inplace=True)
-        data.exp_matrix = new_exp_matrix.T.tocsr()
-        # gene_index = np.isin(data.gene_names, res[1]['umi_genes'])
-        # data.genes = data.genes.sub_set(gene_index)
+        filter_genes(data, gene_list=res[1]['umi_genes'], filter_raw=filter_raw, inplace=True)
+        new_exp_matrix = new_exp_matrix.T.tocsr()
     else:
-        # data.sub_by_index(gene_index=new_exp_matrix.index.to_numpy())
-        filter_genes(data, gene_list=new_exp_matrix.index.to_numpy(), inplace=True)
-        data.exp_matrix = new_exp_matrix.T.to_numpy()
-        # gene_index = np.isin(data.gene_names, new_exp_matrix.index.values)
-        # data.genes = data.genes.sub_set(gene_index)
-    return res[0], res[1]
+        filter_genes(data, gene_list=new_exp_matrix.index.to_numpy(), filter_raw=filter_raw, inplace=True)
+        new_exp_matrix = new_exp_matrix.T.to_numpy()
+    return res[0], res[1], new_exp_matrix

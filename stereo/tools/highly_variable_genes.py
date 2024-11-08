@@ -69,6 +69,7 @@ class HighlyVariableGenes(ToolBase):
             max_mean: Optional[float] = 3,
             span: Optional[float] = 0.3,
             n_bins: int = 20,
+            layer: Optional[str] = None
     ):
         self.n_top_genes = n_top_genes
         self.min_disp = min_disp
@@ -77,6 +78,7 @@ class HighlyVariableGenes(ToolBase):
         self.max_mean = max_mean
         self.span = span
         self.n_bins = n_bins
+        self.layer = layer
         super(HighlyVariableGenes, self).__init__(data=data, groups=groups, method=method)
 
     @ToolBase.method.setter
@@ -86,9 +88,10 @@ class HighlyVariableGenes(ToolBase):
 
     def fit(self):
         group_info = None if self.groups is None else self.groups['group'].astype('category')
+        exp_matrix = self.data.get_exp_matrix(use_raw=False, layer=self.layer)
         if self.method == 'seurat_v3':
             df = highly_variable_genes_seurat_v3(
-                self.data.exp_matrix,
+                exp_matrix,
                 n_top_genes=self.n_top_genes,
                 span=self.span,
                 batch_info=group_info
@@ -97,7 +100,7 @@ class HighlyVariableGenes(ToolBase):
         else:
             if self.groups is None:
                 df = highly_variable_genes_single_batch(
-                    self.data.exp_matrix,
+                    exp_matrix,
                     min_disp=self.min_disp,
                     max_disp=self.max_disp,
                     min_mean=self.min_mean,
@@ -112,7 +115,7 @@ class HighlyVariableGenes(ToolBase):
                 df = []
                 gene_list = self.data.gene_names
                 for batch in batches:
-                    data_subset = self.data.exp_matrix[group_info == batch]
+                    data_subset = exp_matrix[group_info == batch]
                     # Filter to genes that are in the dataset
                     # with settings.verbosity.override(Verbosity.error):
                     filt = filter_genes(data_subset, min_cells=1)[0]

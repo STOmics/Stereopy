@@ -5,13 +5,16 @@ from typing import (
     Optional
 )
 
+try:
+    from tensorflow.python.ops.numpy_ops import np_config
+    np_config.enable_numpy_behavior()
+except:
+    pass
+
 from stereo.algorithm.ms_algorithm_base import MSDataAlgorithmBase
 from stereo.log_manager import logger
-from .helper import stack_slices_center
-from .helper import stack_slices_pairwise
-from .methods import center_align
-from .methods import pairwise_align
-
+from .helper import stack_slices_center, stack_slices_pairwise
+from .methods import center_align, pairwise_align
 
 class Paste(MSDataAlgorithmBase):
     def main(
@@ -33,12 +36,6 @@ class Paste(MSDataAlgorithmBase):
         """
         if method not in ('pairwise', 'center'):
             raise ValueError(f'Error method({method}), it must be one of pairwise and center')
-        
-        try:
-            from tensorflow.python.ops.numpy_ops import np_config
-            np_config.enable_numpy_behavior()
-        except:
-            pass
 
         logger.info(f'Using method {method}')
         if method == 'pairwise':
