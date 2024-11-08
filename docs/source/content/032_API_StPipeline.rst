@@ -16,6 +16,7 @@ which is compromised of basic preprocessing, embedding, clustering, and so on.
    :toctree: .
 
     core.StPipeline
+    core.StPipeline.set_layer
     core.StPipeline.cal_qc
     core.StPipeline.filter_cells
     core.StPipeline.filter_genes

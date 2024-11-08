@@ -1,5 +1,9 @@
 SpaTrack
 ====================
+
+Introducion
+--------------------
+
 Trajectory inference (TI) provides important insights in understanding cell development and biological process.
 However, the integration of transcriptomic profiles and spatial locations to organize spatiotemporal cell orders is currently remaining challenges. 
 Here we introduce spaTrack, which effectively constructs cell trajectories from an optimal-transport matrix at single cell resolution, 
@@ -9,6 +13,22 @@ spaTrack has the potential to capture fine local details of trajectory within a 
 as well as reconstruct cell dynamics across multiple tissue sections in a time series. To capture potential dynamic drivers, 
 spaTrack models the fate of a cell as a function of expression profile along the time points driven by transcription factors, 
 which facilitates the identification of key molecular regulators that govern cellular trajectories.
+
+Highlighted features
+---------------------
+
+1. reconstructs fine local trajectories from ST data.
+2. integrates spatial transition matrix of multiple samples to generate complete trajectories.
+3. traces cell trajectory across multiple tissue sections via direct mapping without integrating data.
+4. captures the driven factors of differentiation.
+5. could be extensively applied on both ST data and scRNA-seq data.
+6. requires lower computing memory and loads than RNA-velocity methods, making it a fast and effective option for TI study.
+
+Turorials
+---------------------
+
+We provide the following five tutorials as reference cases to illustrate the application of spaTrack in inferring cell trajectories 
+on ST data of single slices with a single starting point and multiple starting points, as well as ST data of multiple time slices, and scRNA-seq data.
 
 .. nbgallery::
 

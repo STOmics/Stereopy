@@ -866,7 +866,7 @@ class PlotCollection:
                 height=height,
                 **kwargs)
         else:
-            self.data.array2sparse()
+            # self.data.array2sparse()
             if gene_names is None:
                 raise ValueError('gene name must be set if cluster_key is None')
             if isinstance(gene_names, str):

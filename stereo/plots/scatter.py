@@ -215,23 +215,24 @@ def base_scatter(
 
     """  # noqa
     if not ax:
-        # if width is None or height is None:
-        #     figsize = (7, 7)
-        # else:
-        #     width = width / 100 if width >= 100 else 7
-        #     height = height / 100 if height >= 100 else 7
-        #     figsize = (width, height)
+        min_x, max_x = np.min(x), np.max(x)
+        min_y, max_y = np.min(y), np.max(y)
+        data_width = (max_x - min_x) / 100
+        data_height = (max_y - min_y) / 100
+        default_width = 7
+        default_height = 7 * data_height / data_width
         if width is None:
-            width = 7
+            width = default_width
         else:
-            width = width / 100 if width >= 100 else 7
+            width = width / 100 if width >= 100 else default_width
         if height is None:
-            height = 7
+            height = default_height
         else:
-            height = height / 100 if height >= 100 else 7
+            height = height / 100 if height >= 100 else default_height
         _, ax = plt.subplots(figsize=(width, height))
     dot_size = PLOT_SCATTER_SIZE_FACTOR / len(hue) if dot_size is None else dot_size
     # add a color bar
+    
 
     if invert_y:
         ax.invert_yaxis()
@@ -276,27 +277,17 @@ def base_scatter(
         sm = plt.cm.ScalarMappable(cmap=cmap, norm=norm)
         sm.set_array([])
         ax.figure.colorbar(sm)
-        # if ax.legend_ is not None:
-        #     ax.legend_.remove()
     else:
         from natsort import natsorted
         import collections
         g = natsorted(set(hue))
         if hue_order is None:
             hue_order = g
-        # if isinstance(palette, (dict, collections.OrderedDict)):
-        #     palette = [palette[i] for i in g if i in palette]
-        # if len(palette) < len(g):
-        #     colors = stereo_conf.get_colors(palette, n=len(g))
-        # else:
-        #     colors = palette
-        # color_dict = collections.OrderedDict(dict([(g[i], colors[i]) for i in range(len(g))]))
         colors = stereo_conf.get_colors(palette, n=len(g), order=hue_order)
         color_dict = dict(zip(hue_order, colors))
         sns.scatterplot(x=x, y=y, hue=hue, hue_order=hue_order, linewidth=0, marker=marker,
                         palette=color_dict, size=hue, sizes=(dot_size, dot_size), ax=ax, alpha=foreground_alpha)
         handles, labels = ax.get_legend_handles_labels()
-        # ax.legend_.remove()
         legd = ax.legend(handles, labels, ncol=legend_ncol, bbox_to_anchor=(1.02, 1),
                   loc='upper left', borderaxespad=0, frameon=False)
         for lh in legd.legendHandles:
@@ -372,14 +363,21 @@ def multi_scatter(
     hue_length = len(hue) if isinstance(hue, list) else hue.shape[0]
     ncols = min(ncols, hue_length)
     nrows = np.ceil(hue_length / ncols).astype(int)
-    # each panel will have the size of rcParams['figure.figsize']
-    if width is None or height is None:
-        figsize = (ncols * 10, nrows * 8)
+    min_x, max_x = np.min(x), np.max(x)
+    min_y, max_y = np.min(y), np.max(y)
+    data_width = (max_x - min_x) / 100
+    data_height = (max_y - min_y) / 100
+    default_width = 8 + 2
+    default_height = 8 * data_height / data_width
+    if width is None:
+        width = ncols * default_width
     else:
-        width = width / 100 if width >= 100 else ncols * 8
-        height = height / 100 if height >= 100 else nrows * 8
-        figsize = (width, height)
-    fig = plt.figure(figsize=figsize)
+        width = width / 100 if width >= 100 else ncols * default_width
+    if height is None:
+        height = nrows * default_height
+    else:
+        height = height / 100 if height >= 100 else nrows * default_height
+    fig = plt.figure(figsize=(width, height))
     left = 0.2 / ncols
     bottom = 0.13 / nrows
     axs = gridspec.GridSpec(
@@ -412,6 +410,10 @@ def multi_scatter(
                      data_resolution=data_resolution,
                      **kwargs
                      )
+    # if width is not None:
+    #     fig.set_figwidth(width)
+    # if height is not None:
+    #     fig.set_figheight(height)
     return fig
 
 

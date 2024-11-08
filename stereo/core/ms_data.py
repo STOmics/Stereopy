@@ -276,6 +276,8 @@ class _MSDataStruct(object):
     def __check_data_list(self, data_list):
         if not isinstance(data_list, list):
             raise TypeError('data_list must be a list object')
+        if len(data_list) == 0:
+            return data_list
         first_data = data_list[0]
         for data in data_list[1:]:
             if type(data) != type(first_data):

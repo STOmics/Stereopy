@@ -3,6 +3,80 @@ Release Notes
 
 .. role:: small
 
+Version 1.5.0
+------------------
+1.5.0 : 2024-11-08
+~~~~~~~~~~~~~~~~~~~
+
+.. _SpaTrack: ../Tutorials/SpaTrack.html
+.. |SpaTrack| replace:: **SpaTrack**
+
+.. _Layer: stereo.core.StPipeline.set_layer.html
+.. |Layer| replace:: **Layer**
+
+.. _st.tl.cal_qc: stereo.core.StPipeline.cal_qc.html
+.. |st.tl.cal_qc| replace:: `st.tl.cal_qc`
+
+.. _st.tl.filter_cells: stereo.core.StPipeline.filter_cells.html
+.. |st.tl.filter_cells| replace:: `st.tl.filter_cells`
+
+.. _st.tl.filter_genes: stereo.core.StPipeline.filter_genes.html
+.. |st.tl.filter_genes| replace:: `st.tl.filter_genes`
+
+.. _st.tl.log1p: stereo.core.StPipeline.log1p.html
+.. |st.tl.log1p| replace:: `st.tl.log1p`
+
+.. _st.tl.normalize_total: stereo.core.StPipeline.normalize_total.html
+.. |st.tl.normalize_total| replace:: `st.tl.normalize_total`
+
+.. _st.tl.scale: stereo.core.StPipeline.scale.html
+.. |st.tl.scale| replace:: `st.tl.scale`
+
+.. _st.tl.quantile: stereo.core.StPipeline.quantile.html
+.. |st.tl.quantile| replace:: `st.tl.quantile`
+
+.. _st.tl.disksmooth_zscore: stereo.core.StPipeline.disksmooth_zscore.html
+.. |st.tl.disksmooth_zscore| replace:: `st.tl.disksmooth_zscore`
+
+.. _st.tl.sctransform: stereo.core.StPipeline.sctransform.html
+.. |st.tl.sctransform| replace:: `st.tl.sctransform`
+
+.. _st.tl.highly_variable_genes: stereo.core.StPipeline.highly_variable_genes.html
+.. |st.tl.highly_variable_genes| replace:: `st.tl.highly_variable_genes`
+
+.. _st.tl.pca: stereo.core.StPipeline.pca.html
+.. |st.tl.pca| replace:: `st.tl.pca`
+
+.. _st.tl.find_marker_genes: stereo.core.StPipeline.find_marker_genes.html
+.. |st.tl.find_marker_genes| replace:: `st.tl.find_marker_genes`
+
+.. _st.plt.spatial_scatter: stereo.plots.PlotCollection.spatial_scatter.html
+.. |st.plt.spatial_scatter| replace:: `st.plt.spatial_scatter`
+
+Features:
+
+1. Addition of new algorithm |SpaTrack|_ for trajectory inference.
+2. Addition of |Layer|_ for saving expression matrices at different analysis stages, the functions that can use expression matrices in **Layer** as following:
+            * |st.tl.cal_qc|_
+            * |st.tl.filter_cells|_
+            * |st.tl.filter_genes|_
+            * |st.tl.log1p|_
+            * |st.tl.normalize_total|_
+            * |st.tl.scale|_
+            * |st.tl.quantile|_
+            * |st.tl.disksmooth_zscore|_
+            * |st.tl.sctransform|_
+            * |st.tl.highly_variable_genes|_
+            * |st.tl.pca|_
+            * |st.tl.find_marker_genes|_
+3. Merger of multiple samples can merge some analysis result in every single samples when data type is **StereoExpData**.
+4. |st.plt.spatial_scatter|_ supports setting base image as background to display simultaneously on the plot.
+
+BUG Fixes:
+
+1. Fixed the problem that the proportion of chondriogenes was calculated incorrectly when input data contains **geneID**.
+2. Fixed the problem that saving **MSData** into **h5mu** was failed after running `st.tl.highly_variable_genes`.
+
 Version 1.4.0
 ------------------
 1.4.0 : 2024-09-05
