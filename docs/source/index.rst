@@ -136,7 +136,7 @@ Features:
             * |st.tl.pca|_
             * |st.tl.find_marker_genes|_
 3. Merger of multiple samples can merge some analysis result in every single samples when data type is **StereoExpData**.
-4. |st.plt.spatial_scatter|_ supports setting base image as background to display simultaneously on the plot.
+4. |st.plt.spatial_scatter|_ supports setting **regist.tif** as background to display simultaneously on the plot.
 
 BUG Fixes:
 
