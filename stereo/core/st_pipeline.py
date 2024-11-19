@@ -794,6 +794,8 @@ class StPipeline(object):
         n_bins
             number of bins for binning the mean gene expression. Normalization is done with respect to
             each bin. If just a single gene falls into a bin, the normalized dispersion is artificially set to 1.
+        layer
+            the key of layer to be used instead of the data.exp_matrix.
         res_key
             the key for getting the result from `self.result`.
 
@@ -868,6 +870,7 @@ class StPipeline(object):
         :param hvg_res_key: the key of highly variable genes to get targeted result,`use_highly_genes=True` is a necessary prerequisite.
         :param random_state: change to use different initial states for the optimization, fixed value to fixed result.
         :param dtype: numpy data type string to which to convert the result.
+        :param layer: the key of layer to be used instead of the data.exp_matrix.
         :param res_key: the key for storage of PCA result.
 
         :return: Computation result of principal component analysis is stored in `self.result` where the result key is `'pca'`.
@@ -1253,7 +1256,7 @@ class StPipeline(object):
         :param case_groups: case group, default all clusters.
         :param control_groups: control group, default the rest of groups.
         :param corr_method: p-value correction method, only available for `t_test` and `wilcoxon_test`.
-        :param use_raw: whether to use raw express matrix for analysis, default True.
+        :param use_raw: whether to use raw express matrix for analysis, default True, it will be ignored if `layer` is not None.
         :param use_highly_genes: whether to use only the expression of hypervariable genes as input, default True.
         :param hvg_res_key: the key of highly variable genes to get corresponding result.
         :param res_key: the key for storing result of marker genes.
@@ -1263,6 +1266,7 @@ class StPipeline(object):
                 larger or equal to 1, less or equal to 50.
         :param ascending: default to False.
         :param n_jobs: the number of parallel jobs to run. default to 4.
+        :param layer: the key of layer to be used instead of the data.exp_matrix, `use_raw` is ignored if it is not None.
         :return: The result of marker genes is stored in `self.result` where the key is `'marker_genes'`.
         """
         from ..tools.find_markers import FindMarker

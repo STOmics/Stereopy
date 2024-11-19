@@ -70,11 +70,13 @@ def read_gem(
         if set it to True, the coordinate of each bin will be the center of the bin,
         otherwise, the coordinate of each bin will be the left-top corner of the bin.
     gene_name_index
-        In a v0.1 gem file, the column geneID is the gene name actually, but in a v0.2,
-        geneID just a ID for genes and there is an additional column called geneName where is the gene name,
-        When the version of gem file is v0.2, set `gene_name_index` to True to set column geneName as index, otherwise,
-        set column geneID, if a v0.1 gem file, `gene_name_index` will be ignored and column geneID is set as index.
-
+        In a **v0.1** gem file, the column **geneID** actually is the **gene name**, but in **v0.2**,
+        **geneID** is just the **ID** for genes and there is an additional column called **geneName** which is the **gene name**,
+        When being **v0.2**, setting `gene_name_index` to True means setting column **geneName** as index,
+        otherwise, setting column **geneID** as index and the column **geneName** is stored in `data.real_gene_names`,
+        if **v0.1**, `gene_name_index` will be ignored and the column **geneID** will be set as index,
+        regardless of **v0.1** or **v0.2**, the column set as index is stored in `data.gene_names`,
+        the index mentioned here is the index of `data.genes`.
     Returns
     -------------
     An object of StereoExpData.
@@ -1181,9 +1183,13 @@ def read_gef(
     region
         restrict data to the region condition, like [minX, maxX, minY, maxY].
     gene_name_index
-        `True` to set gene name as index if the version of gef file is 4 or greater,
-        otherwise to set gene id, if the version is 3 or less, `gene_name_index` would
-        be forced to `True` because there is no gene id in this case.
+        In a gef file whose version is 3 or lower, there is only a column called **geneName** which is the **gene name**,
+        but in the version higher than 3, additional column called **geneID** is added, which is the **ID** for genes,
+        When being higher version, setting `gene_name_index` to True means setting column **geneName** as index,
+        otherwise, setting column **geneID** as index and the column **geneName** is stored in `data.real_gene_names`,
+        if lower version, `gene_name_index` will be ignored and the column **geneID** will be set as index,
+        regardless of lower or higher version, the column set as index is stored in `data.gene_names`,
+        the index mentioned here is the index of `data.genes`.
     num_threads
         the number of threads to read the data, only available when `bin_type` is `'bins'`.
         -1 means to use all the cores of the machine.

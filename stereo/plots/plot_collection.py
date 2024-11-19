@@ -1402,7 +1402,7 @@ class PlotCollection:
         :param horizontal_offset_additional: the additional offset between each slice on horizontal direction while reorganizing coordinates.
         :param vertical_offset_additional: the additional offset between each slice on vertical direction while reorganizing coordinates.
 
-        :return the figure object if `show` is set to False, otherwise, show the figure directly.
+        :return: the figure object if `show` is set to False, otherwise, show the figure directly.
 
         .. note::
         

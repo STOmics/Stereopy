@@ -81,3 +81,7 @@ References
 .. [Bai23]
    Yong Bai, Xiangyu Guo, Keyin Liu, Bingjie Zheng, Yingyue Wang, Qiuhong Luo, Jianhua Yin, Liang Wu, Yuxiang Li, Yong Zhang, Ao Chen, Xun Xu, Xin Jin,
    *Efficient reliability analysis of spatially resolved transcriptomics at varying resolutions using SpaSEG*, bioRxiv.
+
+.. [Shen23]
+    Xunan Shen, Ke Huang, Lulu Zuo, Zhongfei Ye, Zeyu Li, Qichao Yu, Xuanxuan Zou, Xiaoyu Wei, Ping Xu, Xin Jin, Xun Xu, Liang Wu, Hongmei Zhu, Pengfei Qin,
+    *Inferring cell trajectories of spatial transcriptomics via optimal transport analysis*, bioRxiv.

@@ -12,7 +12,7 @@ taking into account both profile of gene expression and distance cost of cell tr
 spaTrack has the potential to capture fine local details of trajectory within a single tissue section of spatial transcriptomics (ST) data, 
 as well as reconstruct cell dynamics across multiple tissue sections in a time series. To capture potential dynamic drivers, 
 spaTrack models the fate of a cell as a function of expression profile along the time points driven by transcription factors, 
-which facilitates the identification of key molecular regulators that govern cellular trajectories.
+which facilitates the identification of key molecular regulators that govern cellular trajectories [`Shen <https://www.biorxiv.org/content/10.1101/2023.09.04.556175v2>`_].
 
 Highlighted features
 ---------------------
