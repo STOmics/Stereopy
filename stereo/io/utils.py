@@ -74,7 +74,7 @@ def transform_marker_genes_to_anndata(marker_genes_res: dict):
         'reference': marker_genes_res['parameters']['control_groups'],
         'method': method,
         'use_raw': marker_genes_res['parameters']['use_raw'],
-        'layer': None,
+        'layer': marker_genes_res['parameters']['layer'],
         'corr_method': marker_genes_res['parameters']['corr_method']
     }
     if 'marker_genes_res_key' in marker_genes_res['parameters']:

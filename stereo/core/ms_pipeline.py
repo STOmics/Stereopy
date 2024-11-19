@@ -24,7 +24,7 @@ class _scope_slice(object):
 
 class MSDataPipeLine(object):
     ATTR_NAME = 'tl'
-    BASE_CLASS = StPipeline
+    BASE_CLASS = None
 
     def __init__(self, _ms_data):
         super().__init__()
@@ -34,6 +34,7 @@ class MSDataPipeLine(object):
         self._key_record = dict()
         self.__mode = "integrate"
         self.__scope = slice(None)
+        self.__class__.BASE_CLASS = getattr(self.ms_data[0], self.__class__.ATTR_NAME).__class__
 
     @property
     def result(self):
@@ -91,12 +92,6 @@ class MSDataPipeLine(object):
         scope = kwargs.get("scope", slice(None))
         del kwargs["scope"]
 
-        # if item in {"cal_qc", "filter_cells", "filter_genes", "sctransform", "log1p", "normalize_total",
-        #             "scale", "raw_checkpoint", "batches_integrate"}:
-        #     if scope != slice(None):
-        #         raise Exception(f'{item} use integrate should use all sample')
-        #     ms_data_view = self.ms_data
-        # elif scope == slice(None):
         if len(self.ms_data[scope]) == len(self.ms_data):
             ms_data_view = self.ms_data
             if ms_data_view.merged_data is None:
@@ -107,15 +102,8 @@ class MSDataPipeLine(object):
         scope_key = self.ms_data.generate_scope_key(ms_data_view._names)
         self.ms_data.scopes_data[scope_key] = ms_data_view.merged_data
 
-        # def set_result_key_method(key):
-        #     self.result_keys.setdefault(scope_key, [])
-        #     if key in self.result_keys[scope_key]:
-        #         self.result_keys[scope_key].remove(key)
-        #     self.result_keys[scope_key].append(key)
-        
-        # ms_data_view.merged_data.tl.result.set_result_key_method = set_result_key_method
-
-        new_attr = self.__class__.BASE_CLASS.__dict__.get(item, None)
+        # new_attr = self.__class__.BASE_CLASS.__dict__.get(item, None)
+        new_attr = getattr(self.__class__.BASE_CLASS, item, None)
         if new_attr is None:
             if self.__class__.ATTR_NAME == "tl":
                 from stereo.algorithm.algorithm_base import AlgorithmBase
@@ -134,7 +122,8 @@ class MSDataPipeLine(object):
 
         logger.info(f'data_obj(idx=0) in ms_data start to run {item}')
         return new_attr(
-            ms_data_view.merged_data.__getattribute__(self.__class__.ATTR_NAME),
+            # ms_data_view.merged_data.__getattribute__(self.__class__.ATTR_NAME),
+            getattr(ms_data_view.merged_data, self.__class__.ATTR_NAME),
             *args,
             **kwargs
         )
@@ -146,23 +135,26 @@ class MSDataPipeLine(object):
         if "scope" in kwargs:
             del kwargs["scope"]
 
-        new_attr = self.__class__.BASE_CLASS.__dict__.get(item, None)
+        # new_attr = self.__class__.BASE_CLASS.__dict__.get(item, None)
+        new_attr = getattr(self.__class__.BASE_CLASS, item, None)
         if self.__class__.ATTR_NAME == 'tl':
             n_jobs = min(len(ms_data_view.data_list), cpu_count())
         else:
             n_jobs = 1
         if new_attr:
-            def log_delayed_task(idx, *arg, **kwargs):
+            def log_delayed_task(idx, obj, *arg, **kwargs):
                 logger.info(f'data_obj(idx={idx}) in ms_data start to run {item}')
                 if self.__class__.ATTR_NAME == 'plt':
                     out_path = kwargs.get('out_path', None)
                     if out_path is not None:
                         path_name, ext = os.path.splitext(out_path)
                         kwargs['out_path'] = f'{path_name}_{idx}{ext}'
-                new_attr(*arg, **kwargs)
+                tl_or_plt = getattr(obj, self.__class__.ATTR_NAME)
+                new_attr(tl_or_plt, *arg, **kwargs)
 
             Parallel(n_jobs=n_jobs, backend='threading', verbose=100)(
-                delayed(log_delayed_task)(idx, obj.__getattribute__(self.__class__.ATTR_NAME), *args, **kwargs)
+                # delayed(log_delayed_task)(idx, obj.__getattribute__(self.__class__.ATTR_NAME), *args, **kwargs)
+                delayed(log_delayed_task)(idx, obj, *args, **kwargs)
                 for idx, obj in enumerate(ms_data_view.data_list)
             )
         else:

@@ -120,39 +120,56 @@ def _write_one_h5ad(f: h5py.File, data: StereoExpData, use_raw=False, use_result
         position = data.position
     else:
         position = np.concatenate([data.position, data.position_z], axis=1)
+    if data.position_offset is not None:
+        h5ad.write(data.position_offset, f, 'position_offset')
+    if data.position_min is not None:
+        h5ad.write(data.position_min, f, 'position_min')
     h5ad.write(position, f, 'position')
-    if issparse(data.exp_matrix):
-        sp_format = 'csr' if isinstance(data.exp_matrix, csr_matrix) else 'csc'
-        h5ad.write(data.exp_matrix, f, 'exp_matrix', sp_format)
-    else:
-        h5ad.write(data.exp_matrix, f, 'exp_matrix')
+    # if issparse(data.exp_matrix):
+    #     sp_format = 'csr' if isinstance(data.exp_matrix, csr_matrix) else 'csc'
+    #     h5ad.write(data.exp_matrix, f, 'exp_matrix', sp_format)
+    # else:
+    #     h5ad.write(data.exp_matrix, f, 'exp_matrix')
+    h5ad.write(data.exp_matrix, f, 'exp_matrix')
+    
+    h5ad.write(data.layers, f, 'layers')
+    
+    
     # h5ad.write(data.bin_type, f, 'bin_type')
     # h5ad.write(data.bin_size, f, 'bin_size')
     # h5ad.write(data.merged, f, 'merged')
 
     use_raw = use_raw and data.tl.raw is not None
     if use_raw is True:
-        same_genes = np.array_equal(data.tl.raw.gene_names, data.gene_names)
-        same_cells = np.array_equal(data.tl.raw.cell_names, data.cell_names)
-        if not same_genes:
-            # if raw genes differ from genes
-            h5ad.write(data.tl.raw.genes, f, 'genes@raw')
-        if not same_cells:
-            # if raw cells differ from cells
-            h5ad.write(data.tl.raw.cells, f, 'cells@raw')
-        if not (same_genes | same_cells):
-            # if either raw genes or raw cells are different
-            if data.tl.raw.position_z is None:
-                position = data.tl.raw.position
-            else:
-                position = np.concatenate([data.tl.raw.position, data.tl.raw.position_z], axis=1)
-            h5ad.write(position, f, 'position@raw')
+        # same_genes = np.array_equal(data.tl.raw.gene_names, data.gene_names)
+        # same_cells = np.array_equal(data.tl.raw.cell_names, data.cell_names)
+        # if not same_genes:
+        #     # if raw genes differ from genes
+        #     h5ad.write(data.tl.raw.genes, f, 'genes@raw')
+        # if not same_cells:
+        #     # if raw cells differ from cells
+        #     h5ad.write(data.tl.raw.cells, f, 'cells@raw')
+        # if not (same_genes | same_cells):
+        #     # if either raw genes or raw cells are different
+        #     if data.tl.raw.position_z is None:
+        #         position = data.tl.raw.position
+        #     else:
+        #         position = np.concatenate([data.tl.raw.position, data.tl.raw.position_z], axis=1)
+        #     h5ad.write(position, f, 'position@raw')
         # save raw exp_matrix
-        if issparse(data.tl.raw.exp_matrix):
-            sp_format = 'csr' if isinstance(data.tl.raw.exp_matrix, csr_matrix) else 'csc'
-            h5ad.write(data.tl.raw.exp_matrix, f, 'exp_matrix@raw', sp_format)
+        # if issparse(data.tl.raw.exp_matrix):
+        #     sp_format = 'csr' if isinstance(data.tl.raw.exp_matrix, csr_matrix) else 'csc'
+        #     h5ad.write(data.tl.raw.exp_matrix, f, 'exp_matrix@raw', sp_format)
+        # else:
+        #     h5ad.write(data.tl.raw.exp_matrix, f, 'exp_matrix@raw')
+        h5ad.write(data.tl.raw.cells, f, 'cells@raw')
+        h5ad.write(data.tl.raw.genes, f, 'genes@raw')
+        h5ad.write(data.tl.raw.exp_matrix, f, 'exp_matrix@raw')
+        if data.tl.raw.position_z is None:
+            position = data.tl.raw.position
         else:
-            h5ad.write(data.tl.raw.exp_matrix, f, 'exp_matrix@raw')
+            position = np.concatenate([data.tl.raw.position, data.tl.raw.position_z], axis=1)
+        h5ad.write(position, f, 'position@raw')
 
     if use_result is True:
         _write_one_h5ad_result(data, f, key_record)
@@ -195,11 +212,12 @@ def _write_one_h5ad_result(data, f, key_record):
                 for neighbor_key, value in data.tl.result[res_key].items():
                     if value is None:
                         continue
-                    if issparse(value):
-                        sp_format = 'csr' if isinstance(value, csr_matrix) else 'csc'
-                        h5ad.write(value, f, f'{neighbor_key}@{res_key}@neighbors', sp_format)  # -> csr_matrix
-                    else:
-                        h5ad.write(value, f, f'{neighbor_key}@{res_key}@neighbors')  # -> Neighbors
+                    # if issparse(value):
+                    #     sp_format = 'csr' if isinstance(value, csr_matrix) else 'csc'
+                    #     h5ad.write(value, f, f'{neighbor_key}@{res_key}@neighbors', sp_format)  # -> csr_matrix
+                    # else:
+                    #     h5ad.write(value, f, f'{neighbor_key}@{res_key}@neighbors')  # -> Neighbors
+                    h5ad.write(value, f, f'{neighbor_key}@{res_key}@neighbors')  # -> Neighbors
             if analysis_key == 'cluster':
                 if res_key not in data.cells:
                     h5ad.write(data.tl.result[res_key], f, f'{res_key}@cluster')  # -> dataframe
@@ -223,20 +241,26 @@ def _write_one_h5ad_result(data, f, key_record):
                         h5ad.write(parameters_df, f, f'{cluster}@{res_key}@marker_genes')  # -> dataframe
             if analysis_key == 'sct':
                 h5ad.write(
-                    csr_matrix(data.tl.result[res_key][0]['counts']), f, f'exp_matrix@{res_key}@sct_counts', 'csr'
+                    csr_matrix(data.tl.result[res_key][0]['counts']), f, f'exp_matrix@{res_key}@sct_counts'
                 )
                 h5ad.write(
-                    csr_matrix(data.tl.result[res_key][0]['data']), f, f'exp_matrix@{res_key}@sct_data', 'csr'
+                    csr_matrix(data.tl.result[res_key][0]['data']), f, f'exp_matrix@{res_key}@sct_data'
                 )
                 h5ad.write(
-                    csr_matrix(data.tl.result[res_key][0]['scale.data']), f, f'exp_matrix@{res_key}@sct_scale',
-                    'csr'
+                    csr_matrix(data.tl.result[res_key][0]['scale.data']), f, f'exp_matrix@{res_key}@sct_scale'
                 )
-                h5ad.write(list(data.tl.result[res_key][1]['umi_genes']), f, f'genes@{res_key}@sct')
-                h5ad.write(list(data.tl.result[res_key][1]['umi_cells']), f, f'cells@{res_key}@sct')
-                h5ad.write(list(data.tl.result[res_key][1]['top_features']), f, f'genes@{res_key}@sct_top_features')
-                h5ad.write(list(data.tl.result[res_key][0]['scale.data'].index), f,
-                           f'genes@{res_key}@sct_scale_genename')
+                h5ad.write(
+                    list(data.tl.result[res_key][1]['umi_genes']), f, f'genes@{res_key}@sct'
+                )
+                h5ad.write(
+                    list(data.tl.result[res_key][1]['umi_cells']), f, f'cells@{res_key}@sct'
+                )
+                h5ad.write(
+                    list(data.tl.result[res_key][1]['top_features']), f, f'genes@{res_key}@sct_top_features'
+                )
+                h5ad.write(
+                    list(data.tl.result[res_key][0]['scale.data'].index), f, f'genes@{res_key}@sct_scale_genename'
+                )
                 # TODO ignored other result of the sct
             if analysis_key == 'spatial_hotspot':
                 # Hotspot object

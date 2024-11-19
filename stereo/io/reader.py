@@ -70,11 +70,13 @@ def read_gem(
         if set it to True, the coordinate of each bin will be the center of the bin,
         otherwise, the coordinate of each bin will be the left-top corner of the bin.
     gene_name_index
-        In a v0.1 gem file, the column geneID is the gene name actually, but in a v0.2,
-        geneID just a ID for genes and there is an additional column called geneName where is the gene name,
-        When the version of gem file is v0.2, set `gene_name_index` to True to set column geneName as index, otherwise,
-        set column geneID, if a v0.1 gem file, `gene_name_index` will be ignored and column geneID is set as index.
-
+        In a **v0.1** gem file, the column **geneID** actually is the **gene name**, but in **v0.2**,
+        **geneID** is just the **ID** for genes and there is an additional column called **geneName** which is the **gene name**,
+        When being **v0.2**, setting `gene_name_index` to True means setting column **geneName** as index,
+        otherwise, setting column **geneID** as index and the column **geneName** is stored in `data.real_gene_names`,
+        if **v0.1**, `gene_name_index` will be ignored and the column **geneID** will be set as index,
+        regardless of **v0.1** or **v0.2**, the column set as index is stored in `data.gene_names`,
+        the index mentioned here is the index of `data.genes`.
     Returns
     -------------
     An object of StereoExpData.
@@ -122,6 +124,7 @@ def read_gem(
     cols = df['geneID'].map(genes_dict)
     # logger.info(f'the martrix has {len(cells)} cells, and {len(genes)} genes.')
     exp_matrix = csr_matrix((df['UMICount'], (rows, cols)), shape=(cells.shape[0], genes.shape[0]), dtype=np.int32)
+    data.exp_matrix = exp_matrix if is_sparse else exp_matrix.toarray()
     data.cells = Cell(cell_name=cells)
     data.genes = Gene(gene_name=genes)
 
@@ -129,7 +132,6 @@ def read_gem(
         gene_names = df.groupby(by='geneID').aggregate({'geneName': lambda n: np.unique(n)[0]})['geneName']
         data.genes['real_gene_name'] = gene_names
 
-    data.exp_matrix = exp_matrix if is_sparse else exp_matrix.toarray()
     if data.bin_type == 'bins':
         # data.position = df.loc[:, ['x_center', 'y_center']].drop_duplicates().values
         data.position = df.loc[:, ['bin_x', 'bin_y']].drop_duplicates().values
@@ -276,10 +278,11 @@ def _read_stereo_h5ad_from_group(f: Union[h5py.File, h5py.Group], data: StereoEx
             if 'mean_bin' in data.genes:
                 data.genes['mean_bin'] = [to_interval(interval_string) for interval_string in data.genes['mean_bin']]
         elif k == 'position':
-            position = h5ad.read_dataset(f[k])
-            data.position = position[:, [0, 1]]
-            if position.shape[1] >= 3:
-                data.position_z = position[:, [2]]
+            data.spatial = h5ad.read_dataset(f[k])
+        elif k == 'position_offset':
+            data.position_offset = h5ad.read_group(f[k])
+        elif k == 'position_min':
+            data.position_min = h5ad.read_group(f[k])
         elif k == 'bin_type':
             data.bin_type = h5ad.read_dataset(f[k])
         elif k == 'bin_size':
@@ -300,6 +303,12 @@ def _read_stereo_h5ad_from_group(f: Union[h5py.File, h5py.Group], data: StereoEx
                 for _, row in sn_data.iterrows():
                     batch, sn = row[0], row[1]
                     data.sn[str(batch)] = str(sn)
+        elif k == 'layers':
+            for layer_key in f[k].keys():
+                if isinstance(f[k][layer_key], h5py.Group):
+                    data.layers[layer_key] = h5ad.read_group(f[k][layer_key])
+                else:
+                    data.layers[layer_key] = h5ad.read_dataset(f[k][layer_key])
 
     # read raw
     if use_raw is True and 'exp_matrix@raw' in f.keys():
@@ -353,20 +362,17 @@ def _read_stereo_h5_result(key_record: dict, data: StereoExpData, f: Union[h5py.
                     if f'{variance_ratio_key}@{analysis_key}_variance_ratio' in f.keys():
                         data.tl.result[variance_ratio_key] = h5ad.read_dataset(f[f'{variance_ratio_key}@{analysis_key}_variance_ratio'])  # noqa
             if analysis_key == 'neighbors':
-                data.tl.result[res_key] = {
+                neighbor_res = {
                     # 'neighbor': h5ad.read_group(f[f'neighbor@{res_key}@neighbors']),
                     'neighbor': None,
                     'connectivities': h5ad.read_group(f[f'connectivities@{res_key}@neighbors']),
                     'nn_dist': h5ad.read_group(f[f'nn_dist@{res_key}@neighbors'])
                 }
                 if f'neighbor@{res_key}@neighbors' in f:
-                    data.tl.result[res_key]['neighbor'] = h5ad.read_group(f[f'neighbor@{res_key}@neighbors'])
-                if f'n_neighbors@{res_key}@neighbors' in f:
-                    data.tl.result[res_key]['n_neighbors'] = h5ad.read_dataset(f[f'n_neighbors@{res_key}@neighbors'])
-                if f'method@{res_key}@neighbors' in f:
-                    data.tl.result[res_key]['method'] = h5ad.read_dataset(f[f'method@{res_key}@neighbors'])
-                if f'metric@{res_key}@neighbors' in f:
-                    data.tl.result[res_key]['metric'] = h5ad.read_dataset(f[f'metric@{res_key}@neighbors'])
+                    neighbor_res['neighbor'] = h5ad.read_group(f[f'neighbor@{res_key}@neighbors'])
+                if f'params@{res_key}@neighbors' in f:
+                    neighbor_res['params'] = h5ad.read_group(f[f'params@{res_key}@neighbors'])
+                data.tl.result[res_key] = neighbor_res
             if analysis_key == 'cluster':
                 if f'{res_key}@cluster' in f:
                     data.tl.result[res_key] = h5ad.read_group(f[f'{res_key}@cluster'])
@@ -934,9 +940,13 @@ def stereo_to_anndata(
         if data.attr is not None and 'resolution' in data.attr:
             adata.uns['resolution'] = data.attr['resolution']
         if data.bin_type == 'cell_bins' and data.cells.cell_border is not None:
-            adata.obsm['cell_border'] = data.cells.cell_border
+            adata.obsm['cell_border'] = deepcopy(data.cells.cell_border)
         if 'key_record' not in adata.uns:
             adata.uns['key_record'] = deepcopy(data.tl.key_record)
+        if data.position_offset is not None:
+            adata.uns['position_offset'] = deepcopy(data.position_offset)
+        if data.position_min is not None:
+            adata.uns['position_min'] = deepcopy(data.position_min)
         adata.uns['merged'] = data.merged
 
     if data.sn is not None:
@@ -947,6 +957,9 @@ def stereo_to_anndata(
             for bno, sn in data.sn.items():
                 sn_list.append([bno, sn])
         adata.uns['sn'] = pd.DataFrame(sn_list, columns=['batch', 'sn'])
+    
+    for key, value in data.layers.items():
+        adata.layers[key] = deepcopy(value)
 
     for key in data.tl.key_record.keys():
         if data.tl.key_record[key]:
@@ -994,16 +1007,9 @@ def stereo_to_anndata(
                     logger.info(f"Adding info into adata.uns['{res_key}'].")
                     adata.uns[res_key] = {}
                     adata.uns[res_key]['connectivities_key'] = sc_con
-                    adata.uns[res_key]['distance_key'] = sc_dis
-                    params = {}
-                    if 'n_neighbors' in data.tl.result[res_key]:
-                        params['n_neighbors'] = data.tl.result[res_key]['n_neighbors']
-                    if 'method' in data.tl.result[res_key]:
-                        params['method'] = data.tl.result[res_key]['method']
-                    if 'metric' in data.tl.result[res_key]:
-                        params['metric'] = data.tl.result[res_key]['metric']
-                    if len(params) > 0:
-                        adata.uns[res_key]['params'] = params
+                    adata.uns[res_key]['distances_key'] = sc_dis
+                    if 'params' in data.tl.result[res_key]:
+                        adata.uns[res_key]['params'] = data.tl.result[res_key]['params']
             elif key == 'cluster':
                 cell_name_index = data.cells.cell_name.astype('str')
                 for res_key in data.tl.key_record[key]:
@@ -1180,9 +1186,13 @@ def read_gef(
     region
         restrict data to the region condition, like [minX, maxX, minY, maxY].
     gene_name_index
-        `True` to set gene name as index if the version of gef file is 4 or greater,
-        otherwise to set gene id, if the version is 3 or less, `gene_name_index` would
-        be forced to `True` because there is no gene id in this case.
+        In a gef file whose version is 3 or lower, there is only a column called **geneName** which is the **gene name**,
+        but in the version higher than 3, additional column called **geneID** is added, which is the **ID** for genes,
+        When being higher version, setting `gene_name_index` to True means setting column **geneName** as index,
+        otherwise, setting column **geneID** as index and the column **geneName** is stored in `data.real_gene_names`,
+        if lower version, `gene_name_index` will be ignored and the column **geneID** will be set as index,
+        regardless of lower or higher version, the column set as index is stored in `data.gene_names`,
+        the index mentioned here is the index of `data.genes`.
     num_threads
         the number of threads to read the data, only available when `bin_type` is `'bins'`.
         -1 means to use all the cores of the machine.
@@ -1215,11 +1225,6 @@ def read_gef(
             if cell_num == 0 or gene_num == 0:
                 raise Exception('Can not find the data based on the gene list or region.')
             exp_matrix = csr_matrix((count, (cell_ind, gene_ind)), shape=(cell_num, gene_num), dtype=np.uint32)
-            position = np.array(
-                list((zip(np.right_shift(uniq_cell, 32), np.bitwise_and(uniq_cell, 0xffffffff))))).astype('uint32')
-
-            data.position = position
-            # logger.info(f'the matrix has {cell_num} cells, and {gene_num} genes.')
 
             uniq_cell_borders = cell_borders[np.in1d(gef.get_cell_names(), uniq_cell)]
             data.cells = Cell(cell_name=uniq_cell, cell_border=uniq_cell_borders)
@@ -1238,34 +1243,21 @@ def read_gef(
                 data.genes['real_gene_name'] = gene_names
 
             data.exp_matrix = exp_matrix if is_sparse else exp_matrix.toarray()
+            data.position = np.array(
+                list((zip(np.right_shift(uniq_cell, 32), np.bitwise_and(uniq_cell, 0xffffffff))))).astype('uint32')
         else:
-            # from gefpy.cell_exp_reader import CellExpReader
-            # cell_bin_gef = CellExpReader(file_path)
-            # data.position = cell_bin_gef.positions
-            # logger.info(f'the matrix has {cell_bin_gef.cell_num} cells, and {cell_bin_gef.gene_num} genes.')
-            # exp_matrix = csr_matrix((cell_bin_gef.count, (cell_bin_gef.rows, cell_bin_gef.cols)),
-            #                         shape=(cell_bin_gef.cell_num, cell_bin_gef.gene_num), dtype=np.uint32)
-            # data.cells = Cell(cell_name=cell_bin_gef.cells, cell_border=cell_borders)
-            # data.cells['dnbCount'] = cell_bin_gef.dnbCount
-            # data.cells['area'] = cell_bin_gef.area
-            # data.genes = Gene(gene_name=cell_bin_gef.genes)
-            # data.exp_matrix = exp_matrix if is_sparse else exp_matrix.toarray()
             cell_names = gef.get_cell_names()
             cell_num = gef.get_cell_num()
             gene_names, gene_id = gef.get_gene_names()
             gene_names = gene_names.astype('U')
             gene_id = gene_id.astype('U')
             gene_num = gef.get_gene_num()
-            # logger.info(f'the matrix has {cell_num} cells, and {gene_num} genes.')
             indices, indptr, count = gef.get_sparse_matrix_indices(order='cell')
             exp_matrix = csr_matrix((count, indices, indptr), shape=(cell_num, gene_num), dtype=np.uint32)
             data.cells = Cell(cell_name=cell_names, cell_border=cell_borders)
             cells = gef.get_cells()
             data.cells['dnbCount'] = cells['dnbCount']
             data.cells['area'] = cells['area']
-            data.position = np.zeros(shape=(cell_num, 2), dtype=np.uint32)
-            data.position[:, 0] = cells['x']
-            data.position[:, 1] = cells['y']
             if len(gene_id[0]) == 0:
                 gene_name_index = True
             if gene_name_index:
@@ -1277,6 +1269,9 @@ def read_gef(
                 data.genes['real_gene_name'] = gene_names
 
             data.exp_matrix = exp_matrix if is_sparse else exp_matrix.toarray()
+            data.position = np.zeros(shape=(cell_num, 2), dtype=np.uint32)
+            data.position[:, 0] = cells['x']
+            data.position[:, 1] = cells['y']
         data.attr = {
             'resolution': read_gef_info(file_path)['resolution']
         }
@@ -1315,8 +1310,6 @@ def read_gef(
             gene_num = gene_names.size
             if cell_num == 0 or gene_num == 0:
                 raise Exception('Can not find the data based on the gene list or region.')
-            data.position = np.array(
-                list((zip(np.right_shift(uniq_cell, 32), np.bitwise_and(uniq_cell, 0xffffffff))))).astype('uint32')
             data.cells = Cell(cell_name=uniq_cell)
 
             exp_matrix = csr_matrix((count, (cell_ind, gene_ind)), shape=(cell_num, gene_num), dtype=np.uint32)
@@ -1332,24 +1325,13 @@ def read_gef(
                 data.genes['real_gene_name'] = gene_names
 
             data.exp_matrix = exp_matrix if is_sparse else exp_matrix.toarray()
+            data.position = np.array(
+                list((zip(np.right_shift(uniq_cell, 32), np.bitwise_and(uniq_cell, 0xffffffff))))).astype('uint32')
         else:
-            # gene_num = gef.get_gene_num()
-            # uniq_cells, rows, count = gef.get_exp_data()
-            # cell_num = len(uniq_cells)
-            # logger.info(f'the matrix has {cell_num} cells, and {gene_num} genes.')
-            # cols, uniq_genes, _ = gef.get_gene_data()
-            # data.position = np.array(list(
-            #     (zip(np.right_shift(uniq_cells, 32), np.bitwise_and(uniq_cells, 0xffffffff))))).astype('uint32')
-            # exp_matrix = csr_matrix((count, (rows, cols)), shape=(cell_num, gene_num), dtype=np.uint32)
-            # data.cells = Cell(cell_name=uniq_cells)
-            # data.genes = Gene(gene_name=uniq_genes)
-            # data.exp_matrix = exp_matrix if is_sparse else exp_matrix.toarray()
             cell_names = gef.get_cell_names()
             cell_num = gef.get_cell_num()
             gene_names, gene_id = gef.get_gene_names()
             gene_num = gef.get_gene_num()
-            data.position = np.array(list(
-                (zip(np.right_shift(cell_names, 32), np.bitwise_and(cell_names, 0xffffffff))))).astype('uint32')
             data.cells = Cell(cell_name=cell_names)
             if len(gene_id[0]) == 0: # an old version gef file, no gene id
                 gene_name_index = True
@@ -1365,6 +1347,8 @@ def read_gef(
                 data.genes = Gene(gene_name=gene_id)
                 data.genes['real_gene_name'] = gene_names
             data.exp_matrix = exp_matrix if is_sparse else exp_matrix.toarray()
+            data.position = np.array(list(
+                (zip(np.right_shift(cell_names, 32), np.bitwise_and(cell_names, 0xffffffff))))).astype('uint32')
             
         logger.info(f'the matrix has {data.cell_names.size} cells, and {data.gene_names.size} genes.')
     logger.info('read_gef end.')

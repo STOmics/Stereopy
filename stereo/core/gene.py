@@ -33,28 +33,47 @@ class Gene(object):
             self._var = pd.DataFrame(index=gene_name if gene_name is None else gene_name.astype('U'))
         self._matrix = dict()
         self._pairwise = dict()
-        # self.loc = self._var.loc
 
     def __contains__(self, item):
         return item in self._var.columns
-
-    # def __setattr__(self, key, value):
-    #     if key in {'_var', '_matrix', '_pairwise', 'gene_name', 'loc'}:
-    #         object.__setattr__(self, key, value)
-    #     else:
-    #         if value is not None:
-    #             self._var[key] = value
 
     def __setitem__(self, key, value):
         self._var[key] = value
 
     def __getitem__(self, key):
-        # if key not in self._var.columns:
-        #     return None
         return self._var[key]
     
     def __len__(self):
         return self.size
+    
+    def get_index(self, gene_list=None, only_highly_genes=False):
+        only_highly_genes = only_highly_genes and 'highly_variable' in self.var.columns
+        if only_highly_genes:
+            highly_variable = self.var['highly_variable'].fillna(False).to_numpy()
+            used_gene_index = np.arange(self.size)[highly_variable]
+        else:
+            used_gene_index = np.arange(self.size)
+
+        if gene_list is None:
+            return used_gene_index
+        
+        if isinstance(gene_list, (int, np.integer, str)):
+            gene_list = [gene_list]
+        
+        if isinstance(gene_list, (list, np.ndarray, pd.Index)):
+            gene_list = np.array(gene_list)
+            if isinstance(gene_list[0], (int, np.integer)):
+                # gene_index = np.intersect1d(used_gene_index, gene_list)
+                isin = np.isin(gene_list, used_gene_index)
+                gene_index = gene_list[isin]
+            else:
+                gene_index = self.var.index.get_indexer(gene_list)
+                gene_index = gene_index[gene_index != -1]
+                isin = np.isin(gene_index, used_gene_index)
+                gene_index = gene_index[isin]
+            return gene_index
+        else:
+            raise TypeError('gene_list must be a int or str or list or np.ndarray or pd.Index object.')
     
     @property
     def matrix(self):
@@ -67,6 +86,10 @@ class Gene(object):
     @property
     def size(self):
         return self.gene_name.size
+    
+    @property
+    def shape(self):
+        return self._var.shape
     
     @property
     def loc(self):
@@ -161,14 +184,10 @@ class Gene(object):
         if isinstance(index, pd.Series):
             index = index.to_numpy()
         self._var = self._var.iloc[index].copy()
-        for col in self._var.columns:
-            if self._var[col].dtype.name == 'category':
-                self._var[col] = self._var[col].cat.remove_unused_categories()
         
         for key, value in self._matrix.items():
             if isinstance(value, pd.DataFrame):
                 self._matrix[key] = value.iloc[index].copy()
-                self._matrix[key].reset_index(drop=True, inplace=True)
             elif isinstance(value, (np.ndarray, spmatrix)):
                 self._matrix[key] = value[index]
             else:
@@ -178,7 +197,6 @@ class Gene(object):
             if isinstance(value, pd.DataFrame):
                 columns = value.columns[index]
                 self._pairwise[key] = value.iloc[index][columns].copy()
-                self._pairwise[key].reset_index(drop=True, inplace=True)
             elif isinstance(value, (np.ndarray, spmatrix)):
                 if len(value.shape) != 2:
                     logger.warning(f'Subsetting from {key} of shape {value.shape} in gene.pairwise is not supported.')
@@ -189,13 +207,13 @@ class Gene(object):
                     if isinstance(v, pd.DataFrame):
                         columns = v.columns[index]
                         self._pairwise[key][k] = v.iloc[index][columns].copy()
-                        self._pairwise[key][k].reset_index(drop=True, inplace=True)
                     elif isinstance(v, (np.ndarray, spmatrix)):
                         self._pairwise[key][k] = v[index][:, index]
                     else:
                         logger.warning(f'Subsetting from {key}.{k} of type {type(v)} in gene.pairwise is not supported.')
             else:
                 logger.warning(f'Subsetting from {key} of type {type(value)} in gene.pairwise is not supported.')
+        self._remove_unused_categories()
         return self
 
     def to_df(self, copy=False):
@@ -214,18 +232,29 @@ class Gene(object):
 
     def _repr_html_(self):
         return self._var._repr_html_()
-
+    
+    def _remove_unused_categories(self):
+        for col in self.var.columns:
+            if self.var[col].dtype.name == 'category':
+                self.var[col] = self.var[col].cat.remove_unused_categories()
+        
+        for ins in (self._matrix, self._pairwise):
+            for key, value in ins.items():
+                if isinstance(value, pd.DataFrame):
+                    for col in value.columns:
+                        if value[col].dtype.name == 'category':
+                            value[col] = value[col].cat.remove_unused_categories()
 
 class AnnBasedGene(Gene):
 
     def __init__(self, based_ann_data: AnnData, gene_name: Optional[np.ndarray] = None):
         self.__based_ann_data = based_ann_data
-        super(AnnBasedGene, self).__init__(gene_name=gene_name)
+        # super(AnnBasedGene, self).__init__(gene_name=gene_name)
 
-    def __setattr__(self, key, value):
-        if key == '_var':
-            return
-        object.__setattr__(self, key, value)
+    # def __setattr__(self, key, value):
+    #     if key == '_var':
+    #         return
+    #     object.__setattr__(self, key, value)
 
     def __str__(self):
         return str(self.__based_ann_data.var)
@@ -241,6 +270,10 @@ class AnnBasedGene(Gene):
 
     @property
     def _var(self):
+        return self.__based_ann_data._var
+    
+    @property
+    def var(self):
         return self.__based_ann_data.var
     
     @property

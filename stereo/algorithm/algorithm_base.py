@@ -4,10 +4,11 @@ import sys
 import time
 from abc import ABCMeta
 from dataclasses import dataclass
-from typing import final
+from typing import final, Union
 
 from .algorithm_err_code import ErrorCode
 from ..core.stereo_exp_data import StereoExpData
+from ..core.result import Result, AnnBasedResult
 from ..log_manager import logger
 
 
@@ -25,7 +26,7 @@ class AlgorithmBase(metaclass=ABCMeta):
 
     # common object variable
     stereo_exp_data: StereoExpData = None
-    pipeline_res: dict = None
+    pipeline_res: Union[Result, AnnBasedResult] = None
 
     _steps_order_by_name = list()
 
