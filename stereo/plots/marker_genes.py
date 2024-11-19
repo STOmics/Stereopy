@@ -170,10 +170,13 @@ def make_draw_df(
         gene_group_labels.append(label)
         gene_group_positions.append((start, start + len(gene_list) - 1))
         start += len(gene_list)
-    if marker_res['parameters']['use_raw']:
-        draw_df = data_helper.exp_matrix2df(data.raw, gene_name=np.array(gene_names))
-    else:
-        draw_df = data_helper.exp_matrix2df(data, gene_name=np.array(gene_names))
+    # if marker_res['parameters']['use_raw']:
+    #     draw_df = data_helper.exp_matrix2df(data.raw, gene_name=np.array(gene_names))
+    # else:
+    #     draw_df = data_helper.exp_matrix2df(data, gene_name=np.array(gene_names))
+    use_raw = marker_res['parameters']['use_raw']
+    layer = marker_res['parameters']['layer']
+    draw_df = data_helper.exp_matrix2df(data, use_raw=use_raw, layer=layer, gene_name=gene_names)
     draw_df = pd.concat([draw_df, group], axis=1)
     draw_df['group'] = draw_df['group'].astype('category')
     draw_df = draw_df.set_index(['group'])

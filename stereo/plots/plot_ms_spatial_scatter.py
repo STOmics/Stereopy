@@ -34,7 +34,6 @@ class PlotMsSpatialScatter(MSDataPlotBase):
         height: Optional[int] = None,
         x_label: Optional[Union[list, str]] = 'spatial1',
         y_label: Optional[Union[list, str]] = 'spatial2',
-        title: Optional[str] = None,
         vmin: float = None,
         vmax: float = None,
         marker: str = 'o',
@@ -61,7 +60,6 @@ class PlotMsSpatialScatter(MSDataPlotBase):
                         by default, it will be set to 6 times of `nrows`.
         :param x_label: the label of x-axis, defaults to 'spatial1'.
         :param y_label: the label of y-axis, defaults to 'spatial2'.
-        :param title: the title of each slice plot, defaults to None.
         :param vmin: The value representing the lower limit of the color scale. Values smaller than vmin are plotted with the same color as vmin.
         :param vmax: The value representing the higher limit of the color scale. Values greater than vmax are plotted with the same color as vmax.
                         vmin and vmax will be ignored when `color_by` is 'cluster'.
@@ -162,13 +160,6 @@ class PlotMsSpatialScatter(MSDataPlotBase):
                 x = data.position[:, 0]
                 y = data.position[:, 1]
                 hue = hue_list[idx]
-                # if color_by == 'cluster':
-                #     title = color_key
-                # elif color_by == 'gene':
-                #     title = color_key
-                # else:
-                #     title = color_by
-                # ax.set_title(title)
                 ax.set_title(f'sample {self.ms_data.names[idx]}')
                 if len(hue) == 0:
                     continue
@@ -186,7 +177,7 @@ class PlotMsSpatialScatter(MSDataPlotBase):
 
         return fig
 
-    def _get_row_col(self, ncols: int):
+    def _get_row_col(self, ncols: int = None):
         if ncols is None:
             ncols = self.__default_ncols
         ncols = min(ncols, self.ms_data.num_slice)

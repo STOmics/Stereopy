@@ -23,6 +23,7 @@ The plot collection for StereoExpData object.
     :toctree: .
 
     plots.PlotCollection.cells_plotting
+    plots.plot_cells.PlotCells.save_plot
     plots.PlotCollection.cluster_scatter
     plots.PlotCollection.gaussian_smooth_scatter_by_gene
     plots.PlotCollection.genes_count

@@ -10,12 +10,15 @@ import os
 from pathlib import Path
 from typing import Optional
 from typing import Union
+from collections import OrderedDict
 from copy import deepcopy
 
 import matplotlib.colors as mpl_colors
 from colorcet import palette, aliases, cetnames_flipped
 from matplotlib import rcParams
 from matplotlib import rcParamsDefault
+import numpy as np
+import seaborn as sns
 
 
 class StereoConfig(object):
@@ -46,26 +49,40 @@ class StereoConfig(object):
         self._log_format = log_format
         self.out_dir = output
         self.data_dir = data_dir if data_dir else os.path.join(os.path.dirname(os.path.abspath(__file__)), 'data')
+        self._palette_custom = None
+
+
+    @property
+    def palette_custom(self):
+        return self._palette_custom
+    
+    @palette_custom.setter
+    def palette_custom(self, palette_custom):
+        if not isinstance(palette_custom, list):
+            raise ValueError('palette_custom should be a list of colors')
+        self._palette_custom = palette_custom
 
     @property
     def colormaps(self):
-        # colormaps = deepcopy(palette)
-        colormaps = {k: v for k, v in palette.items() if 'glasbey' in k and '_bw_' not in k}
-        colormaps['stereo_30'] = ["#E41A1C", "#377EB8", "#4DAF4A", "#984EA3", "#FF7F00", "#A65628", "#FFFF33",
-                                  "#F781BF", "#999999", "#E5D8BD", "#B3CDE3", "#CCEBC5", "#FED9A6", "#FBB4AE",
-                                  "#8DD3C7", "#BEBADA", "#80B1D3", "#B3DE69", "#FCCDE5", "#BC80BD", "#FFED6F",
-                                  "#8DA0CB", "#E78AC3", "#E5C494", "#CCCCCC", "#FB9A99", "#E31A1C", "#CAB2D6",
-                                  "#6A3D9A", "#B15928"]
+        color_keys = sorted([k for k in palette.keys() if 'glasbey' in k and '_bw_' not in k])
+        colormaps = OrderedDict([(k, palette[k]) for k in color_keys])
+        # colormaps = {k: v for k, v in palette.items() if 'glasbey' in k and '_bw_' not in k}
+        colormaps['stereo_30'] = [
+            "#E41A1C", "#377EB8", "#4DAF4A", "#984EA3", "#FF7F00", "#A65628",
+            "#FFFF33", "#F781BF", "#999999", "#E5D8BD", "#B3CDE3", "#CCEBC5",
+            "#FED9A6", "#FBB4AE", "#8DD3C7", "#BEBADA", "#80B1D3", "#B3DE69",
+            "#FCCDE5", "#BC80BD", "#FFED6F", "#8DA0CB", "#E79AD3", "#E5C494",
+            "#CCCCCC", "#FB9A99", "#10E03C", "#DAB2D6", "#6A3D9A", "#D15928"
+        ]
+        if self.palette_custom is not None:
+            colormaps['custom'] = self.palette_custom
         return colormaps
 
     @property
     def linear_colormaps(self):
-        # colormaps = deepcopy(palette)
-        colormaps = {}
-        for k, v in palette.items():
-            if 'glasbey' in k or k in aliases or k in cetnames_flipped:
-                continue
-            colormaps[k] = v
+        color_keys = sorted([k for k in palette.keys() if not ('glasbey' in k or k in aliases or k in cetnames_flipped)])
+        colormaps = OrderedDict([(k, palette[k]) for k in color_keys])
+
         stmap_colors = ['#0c3383', '#0a88ba', '#f2d338', '#f28f38', '#d91e1e']
         nodes = [0.0, 0.25, 0.50, 0.75, 1.0]
         mycmap = mpl_colors.LinearSegmentedColormap.from_list("mycmap", list(zip(nodes, stmap_colors)))
@@ -75,30 +92,54 @@ class StereoConfig(object):
 
     def linear_colors(self, colors, reverse=False):
         if isinstance(colors, str):
-            if colors not in self.linear_colormaps:
-                raise ValueError(f'{colors} not in colormaps, color value range in {self.linear_colormaps.keys()}')
+            linear_colormaps = deepcopy(palette)
+            linear_colormaps.update(self.linear_colormaps)
+            if colors not in linear_colormaps:
+                # raise ValueError(f'{colors} not in colormaps, color value range in {self.linear_colormaps.keys()}')
+                mycmap = sns.color_palette(colors, as_cmap=True)
+                colors = [mpl_colors.rgb2hex(mycmap(i)) for i in range(mycmap.N)]
+                return colors[::-1] if reverse else colors
             else:
-                return self.linear_colormaps[colors][::-1] if reverse else self.linear_colormaps[colors]
-        elif isinstance(colors, list):
-            return colors
+                return linear_colormaps[colors][::-1] if reverse else linear_colormaps[colors]
+        elif isinstance(colors, (list, tuple, np.ndarray)):
+            mycmap = mpl_colors.LinearSegmentedColormap.from_list("mycmap", colors)
+            colors = [mpl_colors.rgb2hex(mycmap(i)) for i in range(mycmap.N)]
+            return colors[::-1] if reverse else colors
         else:
             raise ValueError('colors should be str or list type')
 
-    def get_colors(self, colors, n=None):
+    def get_colors(self, colors, n=None, order=None):
         if isinstance(colors, str):
-            if colors not in self.colormaps:
-                raise ValueError(f'{colors} not in colormaps, color value range in {self.colormaps.keys()}')
-            if n is not None:
-                if n > len(self.colormaps[colors]):
-                    mycmap = mpl_colors.LinearSegmentedColormap.from_list("mycmap", self.colormaps[colors], N=n)
-                    color_list = [mpl_colors.rgb2hex(mycmap(i)) for i in range(n)]
-                else:
-                    color_list = self.colormaps[colors][0: n]
-                return color_list
+            colormaps = deepcopy(palette)
+            colormaps.update(self.colormaps)
+            if colors not in colormaps:
+                # raise ValueError(f'{colors} not in colormaps, color value range in {self.colormaps.keys()}')
+                mycmap = sns.color_palette(colors, as_cmap=True)
+                colormaps[colors] = colormaps_selected = [mpl_colors.rgb2hex(mycmap(i)) for i in range(mycmap.N)]
             else:
-                return self.colormaps[colors]
+                colormaps_selected = colormaps[colors]
+        elif isinstance(colors, (dict, OrderedDict)):
+            if order is not None:
+                colormaps_selected = [colors[k] for k in order if k in colors]
+            else:
+                colormaps_selected = list(colors.values())
+        elif isinstance(colors, (list, tuple, np.ndarray)):
+            colormaps_selected = list(colors)
         else:
-            return colors
+            raise ValueError('colors should be str, dict, list, tuple or np.ndarray type')
+        
+        if n is not None:
+            if n > len(colormaps_selected):
+                mycmap = mpl_colors.LinearSegmentedColormap.from_list("mycmap", colormaps_selected, N=n)
+                colormaps_selected = [mpl_colors.rgb2hex(mycmap(i)) for i in range(n)]
+            else:
+                if colors == 'stereo_30':
+                    colormaps_selected = colormaps_selected[:n]
+                else:
+                    index_selected = np.linspace(0, len(colormaps_selected), n, endpoint=False, dtype=int)
+                    colormaps_selected = [colormaps_selected[i] for i in index_selected]
+        
+        return colormaps_selected
 
     @property
     def log_file(self) -> Union[str, Path, None]:

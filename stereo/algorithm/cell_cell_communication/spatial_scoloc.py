@@ -334,10 +334,9 @@ class GetMicroEnvs:
         for t in thresh:
             sub = self.split_micro_envs(pairwise_kl_df, type_name, t)
             threshold.append(t)
-            subgroup.append(sub)
+            subgroup.append(str(sub))
             if len(sub) == 1:
                 break
-        subgroup = str(subgroup)
         subgroup_df = pd.DataFrame({"threshold": threshold, "subgroup_result": subgroup})
         return subgroup_df
 

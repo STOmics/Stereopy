@@ -250,7 +250,7 @@ class TotalVi(MSDataAlgorithmBase):
 
         if h5mu_file_name is None:
             h5mu_file_name = f'{self._rna_data.sn}_{self._rna_data.bin_size}.h5mu'
-        mudata.write(f"{out_dir}/{h5mu_file_name}", mdata)
+        mudata.write_h5mu(f"{out_dir}/{h5mu_file_name}", mdata, compression='gzip')
 
         self._differential_expression = de_df
         self._use_cluster_res_key = use_cluster_res_key

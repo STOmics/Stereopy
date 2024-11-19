@@ -36,16 +36,15 @@ In output part, we support writing StereoExpData as H5ad file for storage.
     io.read_gem
     io.read_gef
     io.read_h5ad
-    io.read_ann_h5ad
-    io.read_stereo_h5ad
     io.read_seurat_h5ad
-    io.anndata_to_stereo
+    io.read_h5ms
+    io.mudata_to_msdata
     io.stereo_to_anndata
     io.write_h5ad
     io.write_mid_gef
     io.update_gef
-    io.read_h5ms
     io.write_h5ms
+    io.write_h5mu
     core.ms_data.MSData.integrate
     core.ms_data.MSData.to_integrate
     core.ms_data.MSData.to_isolated

@@ -3,6 +3,112 @@ Release Notes
 
 .. role:: small
 
+Version 1.5.0
+------------------
+1.5.0 : 2024-11-08
+~~~~~~~~~~~~~~~~~~~
+
+.. _SpaTrack: ../Tutorials/SpaTrack.html
+.. |SpaTrack| replace:: **SpaTrack**
+
+.. _Layer: stereo.core.StPipeline.set_layer.html
+.. |Layer| replace:: **Layer**
+
+.. _st.tl.cal_qc: stereo.core.StPipeline.cal_qc.html
+.. |st.tl.cal_qc| replace:: `st.tl.cal_qc`
+
+.. _st.tl.filter_cells: stereo.core.StPipeline.filter_cells.html
+.. |st.tl.filter_cells| replace:: `st.tl.filter_cells`
+
+.. _st.tl.filter_genes: stereo.core.StPipeline.filter_genes.html
+.. |st.tl.filter_genes| replace:: `st.tl.filter_genes`
+
+.. _st.tl.log1p: stereo.core.StPipeline.log1p.html
+.. |st.tl.log1p| replace:: `st.tl.log1p`
+
+.. _st.tl.normalize_total: stereo.core.StPipeline.normalize_total.html
+.. |st.tl.normalize_total| replace:: `st.tl.normalize_total`
+
+.. _st.tl.scale: stereo.core.StPipeline.scale.html
+.. |st.tl.scale| replace:: `st.tl.scale`
+
+.. _st.tl.quantile: stereo.core.StPipeline.quantile.html
+.. |st.tl.quantile| replace:: `st.tl.quantile`
+
+.. _st.tl.disksmooth_zscore: stereo.core.StPipeline.disksmooth_zscore.html
+.. |st.tl.disksmooth_zscore| replace:: `st.tl.disksmooth_zscore`
+
+.. _st.tl.sctransform: stereo.core.StPipeline.sctransform.html
+.. |st.tl.sctransform| replace:: `st.tl.sctransform`
+
+.. _st.tl.highly_variable_genes: stereo.core.StPipeline.highly_variable_genes.html
+.. |st.tl.highly_variable_genes| replace:: `st.tl.highly_variable_genes`
+
+.. _st.tl.pca: stereo.core.StPipeline.pca.html
+.. |st.tl.pca| replace:: `st.tl.pca`
+
+.. _st.tl.find_marker_genes: stereo.core.StPipeline.find_marker_genes.html
+.. |st.tl.find_marker_genes| replace:: `st.tl.find_marker_genes`
+
+.. _st.plt.spatial_scatter: stereo.plots.PlotCollection.spatial_scatter.html
+.. |st.plt.spatial_scatter| replace:: `st.plt.spatial_scatter`
+
+Features:
+
+1. Addition of new algorithm |SpaTrack|_ for trajectory inference.
+2. Addition of |Layer|_ for saving expression matrices at different analysis stages, the functions that can use expression matrices in **Layer** as following:
+            * |st.tl.cal_qc|_
+            * |st.tl.filter_cells|_
+            * |st.tl.filter_genes|_
+            * |st.tl.log1p|_
+            * |st.tl.normalize_total|_
+            * |st.tl.scale|_
+            * |st.tl.quantile|_
+            * |st.tl.disksmooth_zscore|_
+            * |st.tl.sctransform|_
+            * |st.tl.highly_variable_genes|_
+            * |st.tl.pca|_
+            * |st.tl.find_marker_genes|_
+3. Merger of multiple samples can merge some analysis result in every single samples when data type is **StereoExpData**.
+4. |st.plt.spatial_scatter|_ supports setting **regist.tif** as background to display simultaneously on the plot.
+
+BUG Fixes:
+
+1. Fixed the problem that the proportion of chondriogenes was calculated incorrectly when input data contains **geneID**.
+2. Fixed the problem that saving **MSData** into **h5mu** was failed after running `st.tl.highly_variable_genes`.
+
+Version 1.4.0
+------------------
+1.4.0 : 2024-09-05
+~~~~~~~~~~~~~~~~~~~
+
+.. _SpaSEG: ../Tutorials(Multi-sample)/SpaSEG.html
+.. |SpaSEG| replace:: **SpaSEG**
+
+.. _st.plt.cells_plotting: stereo.plots.PlotCollection.cells_plotting.html
+.. |st.plt.cells_plotting| replace:: `st.plt.cells_plotting`
+
+.. _st.io.write_h5mu: stereo.io.write_h5mu.html
+.. |st.io.write_h5mu| replace:: `st.io.write_h5mu`
+
+.. _st.io.mudata_to_msdata: stereo.io.mudata_to_msdata.html
+.. |st.io.mudata_to_msdata| replace:: `st.io.mudata_to_msdata`
+
+Features:
+
+1. Addition of new algorithm |SpaSEG|_ for multiple **SRT** analysis.
+2. Addition of **colorbar** or **legend** for `st.plt.cells_plotting`.
+3. |st.plt.cells_plotting|_ supports exporting plots as **PNG**, **SVG** or **PDF**.
+4. Addition of method |st.io.write_h5mu|_ and |st.io.mudata_to_msdata|_ for conversion between **MSData** and **MuData**.
+
+BUG Fixes:
+
+1. Fixed the problem that **CellCorrection** is incompatible with small-size images (less than 2000px in any dimension) when using the **EDM** method.
+2. Fixed the problem that `MSData.to_integrate` is incompatible when the number of cells in the integrated sample is less than the total number of cells in all single samples.
+3. Fixed the problem that `st.plt.time_series_tree_plot` can not capture the result of **PAGA**, leading to an incorrect plot.
+4. Fixed other bugs.
+
+
 Version 1.3.1
 ------------------
 1.3.1 : 2024-06-28

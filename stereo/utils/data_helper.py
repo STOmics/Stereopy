@@ -10,6 +10,7 @@ from math import ceil
 from typing import Optional
 from typing import Union
 from functools import singledispatch
+from copy import deepcopy
 
 import anndata as ad
 import numba as nb
@@ -21,6 +22,7 @@ from natsort import natsorted
 from stereo.core.cell import Cell
 from stereo.core.gene import Gene
 from stereo.core.stereo_exp_data import StereoExpData, AnnBasedStereoExpData
+from stereo.log_manager import logger
 
 
 def select_group(groups, cluster, all_groups):
@@ -42,18 +44,32 @@ def get_position_array(data, obs_key='spatial'):
     return np.array(data.obsm[obs_key])[:, 0: 2]
 
 
-def exp_matrix2df(data: StereoExpData, cell_name: Optional[np.ndarray] = None, gene_name: Optional[np.ndarray] = None):
-    # if data.tl.raw:
-    #     cell_isin = np.isin(data.tl.raw.cell_names, data.cell_names)
-    #     gene_isin = np.isin(data.tl.raw.gene_names, data.gene_names)
-    #     exp_matrix = data.tl.raw.exp_matrix[cell_isin, :][:, gene_isin]
-    # else:
-    #     exp_matrix = data.exp_matrix
-    cell_index = [np.argwhere(data.cells.cell_name == i)[0][0] for i in cell_name] if cell_name is not None else None
-    gene_index = [np.argwhere(data.genes.gene_name == i)[0][0] for i in gene_name] if gene_name is not None else None
-    # x = exp_matrix[cell_index, :] if cell_index is not None else exp_matrix
-    x = data.exp_matrix[cell_index, :] if cell_index is not None else data.exp_matrix
-    x = x[:, gene_index] if gene_index is not None else x
+# def exp_matrix2df(data: StereoExpData, cell_name: Optional[np.ndarray] = None, gene_name: Optional[np.ndarray] = None):
+#     # if data.tl.raw:
+#     #     cell_isin = np.isin(data.tl.raw.cell_names, data.cell_names)
+#     #     gene_isin = np.isin(data.tl.raw.gene_names, data.gene_names)
+#     #     exp_matrix = data.tl.raw.exp_matrix[cell_isin, :][:, gene_isin]
+#     # else:
+#     #     exp_matrix = data.exp_matrix
+#     cell_index = [np.argwhere(data.cells.cell_name == i)[0][0] for i in cell_name] if cell_name is not None else None
+#     gene_index = [np.argwhere(data.genes.gene_name == i)[0][0] for i in gene_name] if gene_name is not None else None
+#     # x = exp_matrix[cell_index, :] if cell_index is not None else exp_matrix
+#     x = data.exp_matrix[cell_index, :] if cell_index is not None else data.exp_matrix
+#     x = x[:, gene_index] if gene_index is not None else x
+#     x = x if isinstance(x, np.ndarray) else x.toarray()
+#     index = cell_name if cell_name is not None else data.cell_names
+#     columns = gene_name if gene_name is not None else data.gene_names
+#     df = pd.DataFrame(data=x, index=index, columns=columns)
+    return df
+
+def exp_matrix2df(
+    data: StereoExpData,
+    use_raw=False,
+    layer: Optional[str] = None,
+    cell_name: Optional[np.ndarray] = None,
+    gene_name: Optional[np.ndarray] = None
+):
+    x = data.get_exp_matrix(use_raw=use_raw, layer=layer, cell_list=cell_name, gene_list=gene_name)
     x = x if isinstance(x, np.ndarray) else x.toarray()
     index = cell_name if cell_name is not None else data.cell_names
     columns = gene_name if gene_name is not None else data.gene_names
@@ -100,11 +116,12 @@ def _union_merge_array(arr1: np.ndarray, arr2: np.ndarray, col1: np.ndarray, col
         return col1, np.concatenate([arr1, arr2])
 
     new_col = np.union1d(col1, col2)
+    new_col_index = pd.Index(new_col)
+    ind1_in_new_col = new_col_index.get_indexer(col1)
+    ind2_in_new_col = new_col_index.get_indexer(col2)
     merged_arr = np.zeros([arr1.shape[0] + arr2.shape[0], new_col.size], dtype=arr1.dtype)
-    ind1, ind2 = np.where(col1 == new_col[:, None])
-    merged_arr[0:arr1.shape[0], ind1] = arr1[:, ind2]
-    ind1, ind2 = np.where(col2 == new_col[:, None])
-    merged_arr[arr1.shape[0]:(arr1.shape[0] + arr2.shape[0]), ind1] = arr2[:, ind2]
+    merged_arr[0:arr1.shape[0], ind1_in_new_col] = arr1
+    merged_arr[arr1.shape[0]:(arr1.shape[0] + arr2.shape[0]), ind2_in_new_col] = arr2
     return new_col, merged_arr
 
 
@@ -182,6 +199,83 @@ def _union_merge_csr_matrix(mtx1: sp.csr_matrix, mtx2: sp.csr_matrix, col1: np.n
 
     return new_col, sp.csr_matrix((data, indices, indptr), shape=(mtx1.shape[0] + mtx2.shape[0], new_col.size))
 
+def _merge_matrix(data1: StereoExpData, data2: StereoExpData, var_type: str):
+    layer_keys = list(data1.layers.keys())
+    if var_type == "intersect":
+        data1.genes.gene_name, ind1, ind2 = \
+            np.intersect1d(data1.genes.gene_name, data2.genes.gene_name, return_indices=True)
+        if data1.issparse():
+            data1.exp_matrix = sp.vstack([data1.exp_matrix[:, ind1], data2.exp_matrix[:, ind2]])
+        else:
+            data1.exp_matrix = np.concatenate([data1.exp_matrix[:, ind1], data2.exp_matrix[:, ind2]])
+        for key in data1.genes_matrix.keys():
+            if isinstance(data1.genes_matrix[key], pd.DataFrame):
+                data1.genes_matrix[key] = deepcopy(data1.genes_matrix[key].iloc[ind1])
+            else:
+                data1.genes_matrix[key] = deepcopy(data1.genes_matrix[key][ind1])
+        for key in data2.genes_matrix.keys():
+            if key in data1.genes_matrix:
+                continue
+            if isinstance(data2.genes_matrix[key], pd.DataFrame):
+                data1.genes_matrix[key] = deepcopy(data2.genes_matrix[key].iloc[ind2])
+            else:
+                data1.genes_matrix[key] = deepcopy(data2.genes_matrix[key][ind2])
+        for key in layer_keys:
+            if key not in data2.layers:
+                del data1.layers[key]
+                continue
+            if type(data1.layers[key]) != type(data2.layers[key]):
+                del data1.layers[key]
+                continue
+            if isinstance(data1.layers[key], np.ndarray):
+                data1.layers[key] = np.concatenate([data1.layers[key][:, ind1], data2.layers[key][:, ind2]])
+            elif isinstance(data1.layers[key], sp.csr_matrix):
+                data1.layers[key] = sp.vstack([data1.layers[key][:, ind1], data2.layers[key][:, ind2]])
+
+    elif var_type == "union":
+        original_var_index_1 = data1.genes.var.index
+        original_var_index_2 = data2.genes.var.index
+        data1.genes.gene_name, data1.exp_matrix = _union_merge(
+            data1.exp_matrix, data2.exp_matrix, 
+            data1.genes.gene_name, data2.genes.gene_name
+        )
+        for key in data1.genes_matrix.keys():
+            if isinstance(data1.genes_matrix[key], np.ndarray):
+                tmep_matrix = np.empty((data1.n_genes, data1.genes_matrix[key].shape[1]), dtype=data1.genes_matrix[key].dtype)
+                tmep_matrix[:] = np.nan
+                indexer = data1.genes.var.index.get_indexer(original_var_index_1)
+                tmep_matrix[indexer] = data1.genes_matrix[key]
+                data1.genes_matrix[key] = tmep_matrix
+            elif isinstance(data1.genes_matrix[key], pd.DataFrame):
+                data1.genes_matrix[key] = data1.genes_matrix[key].reindex(data1.genes.gene_name)
+            elif isinstance(data1.genes_matrix[key], sp.csr_matrix):
+                matrix: sp.csr_matrix = data1.genes_matrix[key]
+                indexer = original_var_index_1.get_indexer(data1.genes.gene_name)
+                new_indptr = np.zeros(data1.n_genes + 1, dtype=matrix.indptr.dtype)
+                new_indices = np.zeros(matrix.indices.size, dtype=matrix.indices.dtype)
+                new_data = np.zeros(matrix.data.size, dtype=matrix.data.dtype)
+                for i, j in enumerate(indexer):
+                    if j == -1:
+                        new_indptr[i + 1] = new_indptr[i]
+                        continue
+                    new_indptr[i + 1] = new_indptr[i] + matrix.indptr[j + 1] - matrix.indptr[j]
+                    new_indices[new_indptr[i]:new_indptr[i + 1]] = matrix.indices[matrix.indptr[j]:matrix.indptr[j + 1]]
+                    new_data[new_indptr[i]:new_indptr[i + 1]] = matrix.data[matrix.indptr[j]:matrix.indptr[j + 1]]
+                data1.genes_matrix[key] = sp.csr_matrix((new_data, new_indices, new_indptr), shape=(data1.n_genes, matrix.shape[1]))
+        for key in layer_keys:
+            if key not in data2.layers:
+                del data1.layers[key]
+                continue
+            if type(data1.layers[key]) != type(data2.layers[key]):
+                del data1.layers[key]
+                continue
+            _, data1.layers[key] = _union_merge(
+                data1.layers[key], data2.layers[key], 
+                original_var_index_1, original_var_index_2
+            )
+    else:
+        raise Exception(f"got an unexpected var_type: {var_type}")
+    return data1
 
 def reorganize_data_coordinates(
         cells_batch: np.ndarray,
@@ -240,6 +334,8 @@ def reorganize_data_coordinates(
 
 def __parse_space_between(space_between: str):
     import re
+    if isinstance(space_between, (int, float, np.number)):
+        return float(space_between)
     if space_between == '0':
         return 0.0
     pattern = r"^\d+(\.\d)*(nm|um|mm|cm|dm|m)$"
@@ -294,16 +390,21 @@ def merge(
 
 @merge.register(StereoExpData)
 def __merge_for_stereo_exp_data(
-        *data_list: StereoExpData,
-        reorganize_coordinate: Union[bool, int] = False,
-        horizontal_offset_additional: Union[int, float] = 0,
-        vertical_offset_additional: Union[int, float] = 0,
-        space_between: Optional[str] = '0',
-        var_type: str = "intersect",
-        batch_tags: Union[list, np.ndarray, pd.Series] = None
+    *data_list: StereoExpData,
+    reorganize_coordinate: Union[bool, int] = False,
+    horizontal_offset_additional: Union[int, float] = 0,
+    vertical_offset_additional: Union[int, float] = 0,
+    space_between: Optional[str] = '0',
+    var_type: str = "intersect",
+    batch_tags: Union[list, np.ndarray, pd.Series] = None
 ):
     if data_list is None or len(data_list) < 2:
         raise Exception("At least two slices of data need to be input.")
+    
+    all_issparse = np.array([data.issparse() for data in data_list])
+
+    if not np.all(all_issparse) and not np.all(~all_issparse):
+        raise Exception("All slices of data should be in the same format, either sparse or ndarray.")
 
     space_between = __parse_space_between(space_between)
     data_count = len(data_list)
@@ -311,58 +412,125 @@ def __merge_for_stereo_exp_data(
     new_data.sn = {}
     current_position_z = 0
     issparse = data_list[0].issparse()
+    merge_raw = True
+    raw_list = []
     for i in range(data_count):
         data: StereoExpData = data_list[i]
+        if data.raw is None:
+            merge_raw = False
+        else:
+            raw_list.append(data.raw)
         batch = i if batch_tags is None or i >= len(batch_tags) else batch_tags[i]
         data.cells.batch = batch
-        cell_names = np.char.add(data.cells.cell_name, f"-{i}")
-        if issparse:
-            data.array2sparse()
+        cell_names = np.char.add(data.cells.cell_name, f"-{batch}")
         new_data.sn[str(batch)] = data.sn
         if i == 0:
             new_data.exp_matrix = data.exp_matrix.copy()
-            new_data.cells = Cell(cell_name=cell_names, cell_border=data.cells.cell_border, batch=data.cells.batch)
-            new_data.genes = Gene(gene_name=data.gene_names)
-            new_data.cells._obs = data.cells._obs.copy(deep=True)
-            new_data.cells._obs.index = cell_names
-            new_data.position = data.position
+            new_data.cells = Cell(
+                obs=data.cells.obs.set_index(cell_names),
+                # cell_name=cell_names,
+                # cell_border=data.cells.cell_border,
+                batch=data.cells.batch
+            )
+            new_data.genes = Gene(var=data.genes.var.copy(deep=True))
+            # position = data.position
             if data.position_z is None:
-                new_data.position_z = np.repeat([[0]], repeats=data.position.shape[0], axis=0).astype(
-                    data.position.dtype)
+                position_z = np.repeat([[0]], repeats=data.n_cells, axis=0).astype(data.position.dtype)
             else:
-                new_data.position_z = data.position_z
+                position_z = data.position_z
+            # new_data.spatial = np.concatenate([position, position_z], axis=1)
+            new_data.file_format = data.file_format
+            new_data.spatial_key = data.spatial_key
             new_data.bin_type = data.bin_type
             new_data.bin_size = data.bin_size
             new_data.offset_x = data.offset_x
             new_data.offset_y = data.offset_y
             new_data.attr = data.attr
+            cells_matrix_keys = []
+            # genes_matrix_keys = list(data.genes_matrix.keys())
+            for key, value in data.cells_matrix.items():
+                if isinstance(value, (np.ndarray, sp.csr_matrix)):
+                    new_data.cells_matrix[key] = value.copy()
+                    cells_matrix_keys.append(key)
+                elif isinstance(value, pd.DataFrame):
+                    new_data.cells_matrix[key] = value.copy(deep=True)
+                    if np.all(value.index == data.cell_names):
+                        new_data.cells_matrix[key].index = cell_names
+                    cells_matrix_keys.append(key)
+                else:
+                    logger.warning(f"got an unexpected type of cells_matrix: {type(value)}")
+            for key, value in data.genes_matrix.items():
+                new_data.genes_matrix[key] = deepcopy(value)
+                if isinstance(value, pd.DataFrame):
+                    new_data.genes_matrix[key].index = data.genes.gene_name
+            
+            # layer_keys = list(data.layers.keys())
+            for key, value in data.layers.items():
+                new_data.layers[key] = deepcopy(value)
+            
+            new_data.tl.key_record = deepcopy(data.tl.key_record)
+            for key, result in data.tl.result.items():
+                dict.__setitem__(new_data.tl.result, key, deepcopy(result))
         else:
-            current_obs = data.cells._obs.copy()
-            current_obs.index = cell_names
-            new_data.cells._obs = pd.concat([new_data.cells._obs, current_obs])
-            if new_data.cell_borders is not None and data.cell_borders is not None:
-                new_data.cells.cell_border = np.concatenate([new_data.cells.cell_border, data.cells.cell_border])
-            new_data.position = np.concatenate([new_data.position, data.position])
+            current_obs = data.cells.obs.set_index(cell_names)
+            new_data.cells._obs = pd.concat([new_data.cells.obs, current_obs])
+            # if new_data.cell_borders is not None and data.cell_borders is not None:
+            #     new_data.cells.cell_border = np.concatenate([new_data.cells.cell_border, data.cells.cell_border])
+            # position = data.position
             if data.position_z is None:
                 current_position_z += space_between / data.attr['resolution']
-                new_data.position_z = np.concatenate(
-                    [new_data.position_z, np.repeat([[current_position_z]], repeats=data.position.shape[0], axis=0)])
+                position_z = np.concatenate([position_z, np.repeat([[current_position_z]], repeats=data.n_cells, axis=0)], axis=0)
             else:
-                new_data.position_z = np.concatenate([new_data.position_z, data.position_z])
-            if var_type == "intersect":
-                new_data.genes.gene_name, ind1, ind2 = \
-                    np.intersect1d(new_data.genes.gene_name, data.genes.gene_name, return_indices=True)
-                if issparse:
-                    new_data.exp_matrix = sp.vstack([new_data.exp_matrix[:, ind1], data.exp_matrix[:, ind2]])
-                else:
-                    new_data.exp_matrix = np.concatenate([new_data.exp_matrix[:, ind1], data.exp_matrix[:, ind2]])
-            elif var_type == "union":
-                new_data.genes.gene_name, new_data.exp_matrix = _union_merge(
-                    new_data.exp_matrix, data.exp_matrix, 
-                    new_data.genes.gene_name, data.genes.gene_name
-                )
-            else:
-                raise Exception(f"got an unexpected var_type: {var_type}")
+                position_z = np.concatenate([position_z, data.position_z], axis=0)
+            # current_spatial = np.concatenate([position, position_z], axis=1)
+            # new_data.spatial = np.concatenate([new_data.spatial, current_spatial], axis=0)
+            # if var_type == "intersect":
+            #     new_data.genes.gene_name, ind1, ind2 = \
+            #         np.intersect1d(new_data.genes.gene_name, data.genes.gene_name, return_indices=True)
+            #     if issparse:
+            #         new_data.exp_matrix = sp.vstack([new_data.exp_matrix[:, ind1], data.exp_matrix[:, ind2]])
+            #     else:
+            #         new_data.exp_matrix = np.concatenate([new_data.exp_matrix[:, ind1], data.exp_matrix[:, ind2]])
+            #     for key in new_data.genes_matrix.keys():
+            #         if isinstance(new_data.genes_matrix[key], pd.DataFrame):
+            #             new_data.genes_matrix[key] = deepcopy(new_data.genes_matrix[key].iloc[ind1])
+            #         else:
+            #             new_data.genes_matrix[key] = deepcopy(new_data.genes_matrix[key][ind1])
+            #     for key in data.genes_matrix.keys():
+            #         if key in new_data.genes_matrix:
+            #             continue
+            #         if isinstance(data.genes_matrix[key], pd.DataFrame):
+            #             new_data.genes_matrix[key] = deepcopy(data.genes_matrix[key].iloc[ind2])
+            #         else:
+            #             new_data.genes_matrix[key] = deepcopy(data.genes_matrix[key][ind2])
+            # elif var_type == "union":
+            #     new_data.genes.gene_name, new_data.exp_matrix = _union_merge(
+            #         new_data.exp_matrix, data.exp_matrix, 
+            #         new_data.genes.gene_name, data.genes.gene_name
+            #     )
+            # else:
+            #     raise Exception(f"got an unexpected var_type: {var_type}")
+            _merge_matrix(new_data, data, var_type)
+            
+            for key in cells_matrix_keys:
+                if key not in data.cells_matrix:
+                    del new_data.cells_matrix[key]
+                    continue
+                if type(new_data.cells_matrix[key]) != type(data.cells_matrix[key]):
+                    del new_data.cells_matrix[key]
+                    continue
+                if isinstance(new_data.cells_matrix[key], np.ndarray):
+                    new_data.cells_matrix[key] = np.concatenate([new_data.cells_matrix[key], data.cells_matrix[key]])
+                elif isinstance(new_data.cells_matrix[key], sp.spmatrix):
+                    new_data.cells_matrix[key] = sp.vstack([new_data.cells_matrix[key], data.cells_matrix[key]])
+                elif isinstance(new_data.cells_matrix[key], pd.DataFrame):
+                    if np.all(data.cells_matrix[key].index == data.cell_names):
+                        new_data.cells_matrix[key] = pd.concat([new_data.cells_matrix[key], data.cells_matrix[key]], axis=0)
+                        new_data.cells_matrix[key].index = new_data.cell_names
+                    else:
+                        new_data.cells_matrix[key] = pd.concat([new_data.cells_matrix[key], data.cells_matrix[key]], axis=0)
+            cells_matrix_keys = list(new_data.cells_matrix.keys())
+            
             if new_data.offset_x is not None and data.offset_x is not None:
                 new_data.offset_x = min(new_data.offset_x, data.offset_x)
             if new_data.offset_y is not None and data.offset_y is not None:
@@ -377,12 +545,44 @@ def __merge_for_stereo_exp_data(
                         new_data.attr['minExp'] = new_data.exp_matrix.min()
                     elif key == 'maxExp':
                         new_data.attr['maxExp'] = new_data.exp_matrix.max()
-                    elif key == 'resolution':
-                        new_data.attr['resolution'] = value
+                    else:
+                        new_data.attr[key] = value
+            
+            for key, result in data.tl.result.items():
+                if not dict.__contains__(new_data.tl.result, key):
+                    dict.__setitem__(new_data.tl.result, key, deepcopy(result))
+            
+            for key, key_list in data.tl.key_record.items():
+                if key not in new_data.tl.key_record:
+                    new_data.tl.key_record[key] = deepcopy(key_list)
+                elif len(key_list) > 0:
+                    for k in key_list:
+                        if k not in new_data.tl.key_record[key]:
+                            new_data.tl.key_record[key].append(k)
+
+    new_data.tl.review_key_record()
+
+    new_data.position_z = position_z
     if reorganize_coordinate:
         new_data.position, new_data.position_offset, new_data.position_min = reorganize_data_coordinates(
             new_data.cells.batch, new_data.position, new_data.position_offset, new_data.position_min,
             reorganize_coordinate, horizontal_offset_additional, vertical_offset_additional
+        )
+    
+    for column in new_data.cells.obs.columns:
+        if column in data_list[0].cells.obs.columns and \
+                data_list[0].cells.obs[column].dtype.name != new_data.cells.obs[column].dtype.name:
+            new_data.cells.obs[column] = new_data.cells.obs[column].astype(data_list[0].cells.obs[column].dtype.name)
+    
+    if merge_raw:
+        new_data.tl._raw = __merge_for_stereo_exp_data(
+            *raw_list,
+            reorganize_coordinate=reorganize_coordinate,
+            horizontal_offset_additional=horizontal_offset_additional,
+            vertical_offset_additional=vertical_offset_additional,
+            space_between=space_between,
+            var_type=var_type,
+            batch_tags=batch_tags
         )
 
     return new_data
@@ -475,10 +675,13 @@ def __merge_for_ann_based_stereo_exp_data(
     new_data.offset_y = offset_y
     new_data.attr = attr
     new_data.sn = sn
+    new_data.file_format = data_list[0].file_format
 
     if new_data.adata.obsm[spatial_key].shape[1] == 2:
         position_z = np.concatenate(position_z_list, axis=0)
         new_data.position_z = position_z
+    
+    new_data.tl.review_key_record()
     
     if reorganize_coordinate:
         new_data.position, new_data.position_offset, new_data.position_min = reorganize_data_coordinates(
@@ -515,18 +718,33 @@ def split_for_stereo_exp_data(data: StereoExpData = None):
         cell_idx = np.where(data.cells.batch == bno)[0]
         cell_names = data.cell_names[cell_idx]
         new_data = StereoExpData(
+            file_format=data.file_format,
             bin_type=data.bin_type,
             bin_size=data.bin_size,
+            exp_matrix=deepcopy(data.exp_matrix),
             cells=deepcopy(data.cells),
-            genes=deepcopy(data.genes)
+            genes=deepcopy(data.genes),
+            # offset_x=data.offset_x,
+            # offset_y=data.offset_y,
+            attr=deepcopy(data.attr),
+            spatial_key=data.spatial_key,
         )
-        new_data.cells = new_data.cells.sub_set(cell_idx)
-        if data.position_offset is not None:
-            new_data.position = data.position[cell_idx] - data.position_offset[bno]
-        else:
-            new_data.position = data.position[cell_idx]
-        new_data.position_z = data.position_z[cell_idx]
-        new_data.exp_matrix = data.exp_matrix[cell_idx]
+        for key, value in data.layers.items():
+            new_data.layers[key] = deepcopy(value)
+        new_data.tl.raw = data.tl.raw
+        new_data.position_offset = data.position_offset
+        new_data.position_min = data.position_min
+        # new_data.cells = new_data.cells.sub_set(cell_idx)
+        # if data.position_offset is not None:
+        #     new_data.position = data.position[cell_idx] - data.position_offset[bno]
+        # else:
+        #     new_data.position = data.position[cell_idx]
+        # new_data.position_z = data.position_z[cell_idx]
+        # new_data.exp_matrix = data.exp_matrix[cell_idx]
+        new_data.sub_by_index(cell_index=cell_idx)
+        new_data.reset_position()
+        # if data.position_offset is not None:
+        #     new_data.position = new_data.position - data.position_offset[bno]
         new_data.tl.key_record = deepcopy(data.tl.key_record)
         new_data.sn = data.sn[bno]
         for key, all_res_key in data.tl.key_record.items():
@@ -574,8 +792,8 @@ def split_for_stereo_exp_data(data: StereoExpData = None):
             else:
                 for res_key in all_res_key:
                     new_data.tl.result[res_key] = result[res_key]
-        if data.tl.raw is not None:
-            new_data.tl.raw = data.tl.raw.tl.filter_cells(cell_list=cell_names, inplace=False)
+        # if data.tl.raw is not None:
+        #     new_data.tl.raw = data.tl.raw.tl.filter_cells(cell_list=cell_names, inplace=False)
         if 'gene_exp_cluster' in data.tl.key_record:
             for cluster_res_key in data.tl.key_record['cluster']:
                 gene_exp_cluster_res = cell_cluster_to_gene_exp_cluster(new_data, cluster_res_key)
@@ -599,16 +817,19 @@ def split_for_ann_based_stereo_exp_data(data: AnnBasedStereoExpData = None):
     # data.array2sparse()
     batch = np.unique(data.cells.batch)
     for bno in batch:
-        adata = data.adata[data.adata.obs['batch'] == bno]
-        adata.uns = adata.uns.copy()
+        adata = data.adata[data.adata.obs['batch'] == bno].copy()
+        # adata.uns = adata.uns.copy()
         new_data = AnnBasedStereoExpData(based_ann_data=adata, spatial_key=data.spatial_key)
         new_data.tl.key_record = deepcopy(data.tl.key_record)
         new_data.sn = data.sn[bno]
-        if data.position_offset is not None:
-            new_data.position = new_data.position - data.position_offset[bno]
+        new_data.position_offset = data.position_offset
+        new_data.position_min = data.position_min
+        new_data.reset_position()
+        # if data.position_offset is not None:
+        #     new_data.position = new_data.position - data.position_offset[bno]
 
-        if data.tl.raw is not None:
-            new_data.tl.raw = data.tl.raw.tl.filter_cells(cell_list=new_data.cells.cell_name, inplace=False)
+        # if data.tl.raw is not None:
+        #     new_data.tl.raw = data.tl.raw.tl.filter_cells(cell_list=new_data.cells.cell_name, inplace=False)
         if 'gene_exp_cluster' in data.tl.key_record:
             for cluster_res_key in data.tl.key_record['cluster']:
                 gene_exp_cluster_res = cell_cluster_to_gene_exp_cluster(new_data, cluster_res_key)
