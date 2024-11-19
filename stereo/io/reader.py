@@ -957,6 +957,9 @@ def stereo_to_anndata(
             for bno, sn in data.sn.items():
                 sn_list.append([bno, sn])
         adata.uns['sn'] = pd.DataFrame(sn_list, columns=['batch', 'sn'])
+    
+    for key, value in data.layers.items():
+        adata.layers[key] = deepcopy(value)
 
     for key in data.tl.key_record.keys():
         if data.tl.key_record[key]:
