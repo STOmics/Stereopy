@@ -8,8 +8,7 @@ pandas>=1.5.3
 scipy==1.10.1
 seaborn==0.12.2
 h5py>=3.7.0
-# gefpy>=1.1.9
-# setuptools>=41.0.0,<60.0.0
+gefpy>=1.1.11
 setuptools==69.5.1
 #todo python3.8/site-packages/umap/distances.py:1053: NumbaDeprecationWarning: The 'nopython' keyword argument was not supplied to the 'numba.jit' decorator.
 #The implicit default value for this argument is currently False, but it will be changed to True in Numba 0.59.0.
@@ -19,7 +18,6 @@ statsmodels>=0.14.0
 leidenalg>=0.10.1
 umap-learn==0.5.1
 KDEpy==1.1.0
-# Jinja2==3.0.3
 shapely>=2.0.0
 # pyviz-comms==2.2.1
 packaging>=23.1
@@ -43,31 +41,18 @@ arboreto==0.1.6
 squidpy==1.2.2
 xarray>=0.20.1
 
-# segmentation
-# albumentations==0.4.6
-# glog==0.3.1
 slideio>=1.0.0
-# torchvision==0.11.1
 tqdm>=4.60.0
 scikit-learn>=1.3.0
 pillow>=10.1.0
-#opencv-python==4.5.1.48
 scikit-image>=0.22.0
 tifffile==2024.9.20
-# torch==1.10.0
 opencv-python>=4.8.0.76
-# tensorflow==2.7.0
-# tensorflow-io-gcs-filesystem==0.24.0
-# protobuf<3.21.0a0,>=3.20.1
-# protobuf>=3.20.1
 hotspotsc==1.1.1
-# git+https://github.com/YosefLab/Hotspot.git@v1.1.2
+# hotspotsc @ git+https://github.com/YosefLab/Hotspot.git@v1.1.2
 distributed>=2023.3.2.1
-# keras==2.7.0
 pyarrow>=17.0.0
-# tables>=3.6.1
 spatialpandas>=0.4.4
-# selenium>=4.4.3
 loompy==3.0.6
 gtfparse==1.2.1
 harmonypy==0.0.6
@@ -75,13 +60,11 @@ SQLAlchemy==1.3.24
 fbpca>=1.0
 geosketch>=1.2
 pyscenic>=0.12.1
-onnxruntime==1.15.1
+# onnxruntime==1.15.1
 POT==0.9.1
 distinctipy==1.3.4
-# joypy>=0.2.4
 lxml>=4.8.0
 fastcluster>=1.2.6
-# biopython==1.83
 pycirclize>=1.7.1
 plotly>=5.24.1
 # cusingler

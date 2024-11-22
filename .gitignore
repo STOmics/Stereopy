@@ -142,3 +142,4 @@ ubuntu_enviroment.txt
 
 docs/source/content/stereo*
 docs/build
+setup.py
