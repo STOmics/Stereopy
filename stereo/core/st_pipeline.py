@@ -1275,7 +1275,7 @@ class StPipeline(object):
             raise Exception(f'layer {layer} is not exist.')
         if use_highly_genes and hvg_res_key not in self.result:
             raise Exception(f'{hvg_res_key} is not in the result, please check and run the highly_var_genes func.')
-        if layer is not None and use_raw and self.raw is None:
+        if layer is None and use_raw and self.raw is None:
             raise Exception('self.raw must be set if use_raw is True.')
         if cluster_res_key not in self.result:
             raise Exception(f'{cluster_res_key} is not in the result, please check and run the func of cluster.')
