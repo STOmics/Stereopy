@@ -168,7 +168,7 @@ class MSDataPipeLine(object):
             def log_delayed_task(idx, obj, *arg, **kwargs):
                 logger.info(f'data_obj(idx={idx}) in ms_data start to run {item}')
                 new_attr = base.get_attribute_helper(item, obj, obj.tl.result)
-                if base == PlotBase:
+                if base.__name__ == 'PlotBase':
                     out_path = kwargs.get('out_path', None)
                     if out_path is not None:
                         path_name, ext = os.path.splitext(out_path)

@@ -1,5 +1,80 @@
 [build-system]
 requires = [
-    "setuptools>=61.0.0"
+    "setuptools>=69.5.1"
 ]
 build-backend = "setuptools.build_meta"
+
+[project]
+name = "stereopy"
+description = 'Spatial transcriptomic analysis in python.'
+requires-python = ">=3.8, <3.9"
+license = {text = 'MIT License'}
+authors = [
+    {name = "STOmics", email = "tanliwei@stomics.tech"}
+]
+keywords = ["stereopy", "stereo"]
+readme = 'README.md'
+classifiers= [
+    'Natural Language :: English',
+    'License :: OSI Approved :: MIT License',
+    'Operating System :: POSIX :: Linux',
+    'Programming Language :: Python :: 3',
+    'Programming Language :: Python :: 3.8',
+    'Topic :: Scientific/Engineering :: Bio-Informatics',
+    'Topic :: Scientific/Engineering :: Visualization',
+]
+dynamic = ["version", "dependencies"]
+
+[project.optional-dependencies]
+image-cpu = [
+    "cell-bin==1.3.4.1",
+    "tensorflow==2.12.0",
+    "torch==2.4.1+cpu",
+    "torchvision==0.19.1+cpu",
+    "albumentations==1.3.1",
+    "patchify",
+    "fastremap",
+    "roifile",
+    "onnxruntime",
+]
+image-cu11 = [
+    "cell-bin==1.3.4.1",
+    "tensorflow==2.12.0",
+    "torch==2.4.1+cu118",
+    "torchvision==0.19.1+cu118",
+    "albumentations==1.3.1",
+    "patchify",
+    "fastremap",
+    "roifile",
+    "onnxruntime-gpu"
+]
+image-cu12 = [
+    "tensorflow==2.12.0",
+    "torch==2.4.1+cu124",
+    "torchvision==0.19.1+cu124",
+    "albumentations==1.3.1",
+    "patchify",
+    "fastremap",
+    "roifile",
+    "onnxruntime-gpu"
+]
+singler-gpu = ["cusingler"]
+all-cu11 = [
+    "stereopy[image-cu11]",
+    "stereopy[singler-gpu]"
+]
+all-cu12 = [
+    "stereopy[image-cu12]",
+    "stereopy[singler-gpu]"
+]
+
+[tool.setuptools.dynamic]
+version = {attr = "stereo.common.version"}
+dependencies = {file = "requirements.txt"}
+
+[project.scripts]
+ccd = "stereo.scripts.ccd:main"
+
+[project.urls]
+Homepage = "https://github.com/STOmics/Stereopy"
+Documentation = "https://stereopy.readthedocs.io/en/latest/index.html"
