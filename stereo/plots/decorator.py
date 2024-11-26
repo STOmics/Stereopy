@@ -24,7 +24,8 @@ def plot_scale(func):
                 kwargs['show_plotting_scale'] = False
             else:
                 kwargs.setdefault('show_plotting_scale', True)
-                data_resolution = data.resolution if data.bin_type == 'cell_bins' else data.resolution * data.bin_size
+                # data_resolution = data.resolution if data.bin_type == 'cell_bins' else data.resolution * data.bin_size
+                data_resolution = data.resolution
                 data_bin_offset = 1 if data.bin_type == 'cell_bins' else data.bin_size
                 kwargs.setdefault('data_resolution', data_resolution)
                 kwargs.setdefault('data_bin_offset', data_bin_offset)

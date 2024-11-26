@@ -46,12 +46,20 @@ def _plot_scale(
     ax_left, ax_right = ax.get_xlim()
     ax_bottom, ax_top = ax.get_ylim()
 
+    if plotting_scale_width is None:
+        data_width = max_x - min_x + 1
+        data_height = max_y - min_y + 1
+        plotting_scale_width = max(np.ceil(min(data_width, data_height) / 5), 10)
+        highest_num = plotting_scale_width // (10 ** np.log10(plotting_scale_width).astype(int))
+        plotting_scale_width = highest_num * (10 ** np.log10(plotting_scale_width).astype(int))
+
     plotting_scale_height = plotting_scale_width / 10
 
     horizontal_start_x = min_x
     bin_count = plotting_scale_width // data_bin_offset
 
-    horizontal_end_x = horizontal_start_x + (bin_count - 1) * data_bin_offset
+    # horizontal_end_x = horizontal_start_x + (bin_count - 1) * data_bin_offset
+    horizontal_end_x = horizontal_start_x + plotting_scale_width - 1
     horizontal_text_location_x = horizontal_start_x + plotting_scale_width / 2
 
     vertical_x_location = min_x - plotting_scale_height * 2
@@ -61,7 +69,8 @@ def _plot_scale(
     if invert_y:
         horizontal_y_location = min_y - plotting_scale_height * 2
         vertical_start_y = min_y
-        vertical_end_y = vertical_start_y + (bin_count - 1) * data_bin_offset
+        # vertical_end_y = vertical_start_y + (bin_count - 1) * data_bin_offset
+        vertical_end_y = vertical_start_y + plotting_scale_width - 1
         vertical_text_location_y = vertical_start_y + plotting_scale_width / 2
         vertices = [
             (horizontal_start_x, horizontal_y_location - plotting_scale_height),
@@ -75,7 +84,8 @@ def _plot_scale(
     else:
         horizontal_y_location = max_y + plotting_scale_height * 2
         vertical_start_y = max_y
-        vertical_end_y = vertical_start_y - (bin_count - 1) * data_bin_offset
+        # vertical_end_y = vertical_start_y - (bin_count - 1) * data_bin_offset
+        vertical_end_y = vertical_start_y - plotting_scale_width + 1
         vertical_text_location_y = vertical_start_y - plotting_scale_width / 2
         vertices = [
             (horizontal_start_x, horizontal_y_location + plotting_scale_height),
@@ -98,7 +108,8 @@ def _plot_scale(
     patch = PathPatch(path, facecolor='none', lw=2)
     ax.add_patch(patch)
 
-    real_length = data_resolution * bin_count
+    # real_length = data_resolution * bin_count
+    real_length = data_resolution * plotting_scale_width
     unit = 'nm'
     if real_length >= 1e9:
         real_length /= 1e9
@@ -135,20 +146,48 @@ def _plot_scale(
     t1_top_left = trans.transform_point((bbox.x0, bbox.y1))
     if invert_y:
         if t1_top_left[1] <= ax_top:
-            new_ax_top = ax_top - plotting_scale_height * 4
+            new_ax_top = ax_top - plotting_scale_height * 6
             ax.set_ylim(top=new_ax_top)
     else:
         if t1_top_left[1] >= ax_top:
-            new_ax_top = ax_top + plotting_scale_height * 4
+            new_ax_top = ax_top + plotting_scale_height * 6
             ax.set_ylim(top=new_ax_top)
 
     bbox = t2.get_window_extent(renderer)
     trans = ax.transData.inverted()
     t2_top_left = trans.transform_point((bbox.x0, bbox.y1))
     if t2_top_left[0] <= ax_left:
-        new_ax_lef = ax_left - plotting_scale_height * 4
+        new_ax_lef = ax_left - plotting_scale_height * 6
         ax.set_xlim(left=new_ax_lef)
 
+def _plot_base_image(
+    base_image: np.ndarray,
+    base_im_to_gray: bool,
+    base_im_cmap: str,
+    base_im_value_range: tuple,
+    base_im_boundary: list,
+    ax: Axes,
+    invert_y: bool
+):
+    if len(base_image.shape) == 3 and base_im_to_gray:
+        from cv2 import cvtColor, COLOR_BGR2GRAY
+        base_image = cvtColor(base_image[:, :, [2, 1, 0]], COLOR_BGR2GRAY)
+    if len(base_image.shape) == 3 and base_image.dtype == np.uint16:
+        if base_im_value_range is None:
+            bmin, bmax = base_image.min(), base_image.max()
+        else:
+            bmin, bmax = base_im_value_range
+        base_image = plt.Normalize(bmin, bmax)(base_image).data
+    if len(base_image.shape) == 3:
+        bg_pixel = np.array([0, 0, 0], dtype=base_image.dtype)
+        if base_image.dtype == np.uint8:
+            bg_value = 255
+        else:
+            bg_value = 1.0
+        bg_mask = np.where(base_image == bg_pixel, bg_value, 0)
+        bg_mask = bg_mask.astype(base_image.dtype)
+        base_image += bg_mask
+    ax.imshow(base_image, cmap=base_im_cmap, extent=base_im_boundary, origin='upper' if invert_y else 'lower')
 
 def base_scatter(
         x: Optional[Union[np.ndarray, list]],
@@ -175,7 +214,7 @@ def base_scatter(
         height: float = None,
         boundary: list = None,
         show_plotting_scale: bool = False,
-        plotting_scale_width: float = 2000,
+        plotting_scale_width: float = None,
         data_resolution: int = None,
         data_bin_offset: int = 1,
         foreground_alpha: float = None,
@@ -238,24 +277,7 @@ def base_scatter(
         ax.invert_yaxis()
 
     if base_image is not None:
-        if len(base_image.shape) == 3 and base_im_to_gray:
-            from cv2 import cvtColor, COLOR_BGR2GRAY
-            base_image = cvtColor(base_image[:, :, [2, 1, 0]], COLOR_BGR2GRAY)
-        if len(base_image.shape) == 3 and base_image.dtype == np.uint16:
-            if base_im_value_range is None:
-                bmin, bmax = base_image.min(), base_image.max()
-            else:
-                bmin, bmax = base_im_value_range
-            base_image = plt.Normalize(bmin, bmax)(base_image).data
-        if len(base_image.shape) == 3:
-            bg_pixel = np.array([0, 0, 0], dtype=base_image.dtype)
-            if base_image.dtype == np.uint8:
-                bg_value = 255
-            else:
-                bg_value = 1.0
-            bg_mask = np.where(base_image == bg_pixel, bg_value, 0)
-            base_image += bg_mask
-        ax.imshow(base_image, cmap=base_im_cmap, extent=base_im_boundary)
+        _plot_base_image(base_image, base_im_to_gray, base_im_cmap, base_im_value_range, base_im_boundary, ax, invert_y)
         if foreground_alpha is None:
             foreground_alpha = 0.5
     else:
@@ -336,6 +358,7 @@ def multi_scatter(
         height=None,
         show_plotting_scale=False,
         data_resolution=None,
+        axes: Axes = None,
         **kwargs
 ):
     """
@@ -410,10 +433,6 @@ def multi_scatter(
                      data_resolution=data_resolution,
                      **kwargs
                      )
-    # if width is not None:
-    #     fig.set_figwidth(width)
-    # if height is not None:
-    #     fig.set_figheight(height)
     return fig
 
 
