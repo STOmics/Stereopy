@@ -987,7 +987,7 @@ class StPipeline(object):
     @logit
     def neighbors(self,
                   pca_res_key: str = 'pca',
-                  method: Literal['umap', 'gauss'] = 'umap',
+                  method: Literal['umap', 'gauss', 'rapids'] = 'umap',
                   metric: str = 'euclidean',
                   n_pcs: int = None,
                   n_neighbors: int = 10,
@@ -998,7 +998,8 @@ class StPipeline(object):
         Compute a spatial neighborhood graph over all cells.
 
         :param pca_res_key: the key of PCA analysis to get corresponding result from `self.result`.
-        :param method: use `umap` or `gauss` to compute connectivities.
+        :param method: use `umap` or `gauss` to compute connectivities,
+                        set to `rapids` means to run on GPU using the `umap` method.
         :param metric: a known metric's name or a callable that returns a distance,
                         include:
                             * euclidean

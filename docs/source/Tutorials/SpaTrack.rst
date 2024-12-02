@@ -24,6 +24,17 @@ Highlighted features
 5. could be extensively applied on both ST data and scRNA-seq data.
 6. requires lower computing memory and loads than RNA-velocity methods, making it a fast and effective option for TI study.
 
+Preparation
+---------------------
+
+Torch is the necessary dependency and needs to be installed first.
+
+    CPU: pip install torch==2.4.1+cpu --extra-index-url https://download.pytorch.org/whl
+
+    GPU(CUDA11): pip install torch==2.4.1+cu118 --extra-index-url https://download.pytorch.org/whl/
+
+    GPU(CUDA12): pip install torch==2.4.1+cu124 --extra-index-url https://download.pytorch.org/whl/
+
 Turorials
 ---------------------
 
