@@ -43,6 +43,9 @@ class Cell(object):
             self.batch = self._set_batch(batch)
         self.cell_border = cell_border
         self.cell_point = None
+    
+    def __getattr__(self, key):
+        return getattr(self._obs, key)
 
     def __contains__(self, item):
         return item in self._obs.columns
@@ -91,17 +94,17 @@ class Cell(object):
     def shape(self):
         return self._obs.shape
     
-    @property
-    def loc(self):
-        return self._obs.loc
+    # @property
+    # def loc(self):
+    #     return self._obs.loc
     
-    @property
-    def iloc(self):
-        return self._obs.iloc
+    # @property
+    # def iloc(self):
+    #     return self._obs.iloc
     
-    @property
-    def to_csv(self):
-        return self._obs.to_csv
+    # @property
+    # def to_csv(self):
+    #     return self._obs.to_csv
     
     @property
     def obs(self):
@@ -314,11 +317,11 @@ class AnnBasedCell(Cell):
     #     else:
     #         object.__setattr__(self, key, value)
 
-    def __str__(self):
-        return str(self.__based_ann_data.obs)
+    # def __str__(self):
+    #     return str(self.__based_ann_data.obs)
 
-    def __repr__(self):
-        return self.__str__()
+    # def __repr__(self):
+    #     return self.__str__()
 
     def __getitem__(self, item):
         return self.__based_ann_data.obs[item]

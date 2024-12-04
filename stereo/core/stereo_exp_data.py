@@ -856,7 +856,40 @@ class AnnBasedStereoExpData(StereoExpData):
         self.file_format = 'h5ad'
 
     def __str__(self):
-        return str(self._ann_data)
+        # return str(self._ann_data)
+        format_str = f"AnnBasedStereoExpData object with n_cells X n_genes = {self.shape[0]} X {self.shape[1]}"
+        format_str += f"\nadata: {id(self._ann_data)}"
+        format_str += f"\nbin_type: {self.bin_type}"
+        if self.bin_type == 'bins':
+            format_str += f"\n{'bin_size: %d' % self.bin_size}"
+        format_str += f"\noffset_x = {self.offset_x}"
+        format_str += f"\noffset_y = {self.offset_y}"
+        format_str += str(self.cells)
+        format_str += str(self.genes)
+        if self.cells_matrix:
+            format_str += f"\ncells_matrix = {list(self.cells_matrix.keys())}"
+        if self.genes_matrix:
+            format_str += f"\ngenes_matrix = {list(self.genes_matrix.keys())}"
+        if self.cells_pairwise:
+            format_str += f"\ncells_pairwise = {list(self.cells_pairwise.keys())}"
+        if self.genes_pairwise:
+            format_str += f"\ngenes_pairwise = {list(self.genes_pairwise.keys())}"
+        format_str += f"\n{str(self.layers)}"
+        format_key_record = {
+            key: value
+            for key, value in self.tl.key_record.items() if value
+        }
+        if format_key_record:
+            format_str += f"\nkey_record: {format_key_record}"
+        result_key = []
+        for rks in self.tl.key_record.values():
+            if rks is not None and len(rks) > 0:
+                result_key += rks
+        for rk in self.tl.result.keys():
+            if rk not in result_key:
+                result_key.append(rk)
+        format_str += f"\nresult: {result_key}"
+        return format_str
 
     def __repr__(self):
         return self.__str__()

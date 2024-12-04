@@ -387,6 +387,7 @@ class AnnBasedResult(_BaseResult, object):
         super().__init__()
         # self.__stereo_exp_data = data
         self.__based_ann_data = data.adata
+        self.__result_keys = []
     
     # @property
     # def adata(self):
@@ -556,6 +557,8 @@ class AnnBasedResult(_BaseResult, object):
 
     def __setitem__(self, key, value):
         super().__setitem__(key, value)
+
+        self.__result_keys.append(key)
 
         for name_type, name_dict in AnnBasedResult.TYPE_NAMES_DICT.items():
             if key in name_dict and self._real_set_item(name_type, key, value):
@@ -757,6 +760,9 @@ class AnnBasedResult(_BaseResult, object):
                 self.__based_ann_data.uns[key] = value
         else:
             self.__based_ann_data.uns[key] = value
+    
+    def keys(self):
+        return self.__result_keys
 
 
 class MSDataPipeLineResult(dict):
