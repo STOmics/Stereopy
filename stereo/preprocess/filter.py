@@ -40,7 +40,7 @@ def filter_cells(
         use_raw=True,
         layer=None,
         inplace=True
-    ):
+) -> StereoExpData:
     """
     filter cells based on numbers of genes expressed.
 
@@ -99,7 +99,7 @@ def filter_genes(
         use_raw=True,
         layer=None,
         inplace=True
-):
+) -> StereoExpData:
     """
     filter genes based on the numbers of cells.
 
@@ -156,7 +156,7 @@ def filter_coordinates(
         max_y=None,
         filter_raw=True,
         inplace=True
-):
+) -> StereoExpData:
     """
     filter cells based on the coordinates of cells.
 
@@ -187,36 +187,6 @@ def filter_coordinates(
     data.sub_by_index(cell_index=obs_subset, filter_raw=filter_raw)
     return data
 
-
-# def filter_by_clusters(
-#         data: StereoExpData,
-#         cluster_res: pd.DataFrame,
-#         groups: Union[str, np.ndarray, List[str]],
-#         excluded: bool = False,
-#         inplace: bool = True
-# ) -> Tuple[StereoExpData, pd.DataFrame]:
-#     """_summary_
-
-#     :param data: StereoExpData object.
-#     :param cluster_res: clustering result.
-#     :param groups: the groups in clustering result which will be filtered.
-#     :param inplace: whether inplace the original data or return a new data.
-#     :param excluded: bool type.
-#     :return: StereoExpData object
-#     """
-#     data = data if inplace else copy.deepcopy(data)
-#     all_groups = cluster_res['group']
-#     if isinstance(groups, str):
-#         groups = [groups]
-#     is_in_bool = all_groups.isin(groups).to_numpy()
-#     if excluded:
-#         is_in_bool = ~is_in_bool
-#     data.sub_by_index(cell_index=is_in_bool)
-#     cluster_res = cluster_res[is_in_bool].copy()
-#     cluster_res['group'] = cluster_res['group'].to_numpy()
-#     cluster_res['group'] = cluster_res['group'].astype('category')
-#     return data, cluster_res
-
 def filter_by_clusters(
         data: StereoExpData,
         cluster_res_key: str,
@@ -224,7 +194,7 @@ def filter_by_clusters(
         excluded: bool = False,
         filter_raw: bool = True,
         inplace: bool = False
-) -> Tuple[StereoExpData, pd.DataFrame]:
+) -> StereoExpData:
     """_summary_
 
     :param data: StereoExpData object.

@@ -38,8 +38,10 @@ def _plot_scale(
         boundary: list
 ):
     if boundary is None:
-        min_x, max_x = np.min(x).astype(int), np.max(x).astype(int)
-        min_y, max_y = np.min(y).astype(int), np.max(y).astype(int)
+        # min_x, max_x = np.min(x).astype(int), np.max(x).astype(int)
+        # min_y, max_y = np.min(y).astype(int), np.max(y).astype(int)
+        min_x, max_x = np.min(x), np.max(x)
+        min_y, max_y = np.min(y), np.max(y)
     else:
         min_x, max_x, min_y, max_y = boundary
 
@@ -49,7 +51,8 @@ def _plot_scale(
     if plotting_scale_width is None:
         data_width = max_x - min_x + 1
         data_height = max_y - min_y + 1
-        plotting_scale_width = max(np.ceil(min(data_width, data_height) / 5), 10)
+        # plotting_scale_width = max(np.ceil(min(data_width, data_height) / 5), 10)
+        plotting_scale_width = np.ceil(min(data_width, data_height) / 5)
         highest_num = plotting_scale_width // (10 ** np.log10(plotting_scale_width).astype(int))
         plotting_scale_width = highest_num * (10 ** np.log10(plotting_scale_width).astype(int))
 
@@ -59,7 +62,8 @@ def _plot_scale(
     bin_count = plotting_scale_width // data_bin_offset
 
     # horizontal_end_x = horizontal_start_x + (bin_count - 1) * data_bin_offset
-    horizontal_end_x = horizontal_start_x + plotting_scale_width - 1
+    # horizontal_end_x = horizontal_start_x + plotting_scale_width - 1
+    horizontal_end_x = horizontal_start_x + plotting_scale_width
     horizontal_text_location_x = horizontal_start_x + plotting_scale_width / 2
 
     vertical_x_location = min_x - plotting_scale_height * 2
@@ -70,7 +74,8 @@ def _plot_scale(
         horizontal_y_location = min_y - plotting_scale_height * 2
         vertical_start_y = min_y
         # vertical_end_y = vertical_start_y + (bin_count - 1) * data_bin_offset
-        vertical_end_y = vertical_start_y + plotting_scale_width - 1
+        # vertical_end_y = vertical_start_y + plotting_scale_width - 1
+        vertical_end_y = vertical_start_y + plotting_scale_width
         vertical_text_location_y = vertical_start_y + plotting_scale_width / 2
         vertices = [
             (horizontal_start_x, horizontal_y_location - plotting_scale_height),
@@ -85,7 +90,8 @@ def _plot_scale(
         horizontal_y_location = max_y + plotting_scale_height * 2
         vertical_start_y = max_y
         # vertical_end_y = vertical_start_y - (bin_count - 1) * data_bin_offset
-        vertical_end_y = vertical_start_y - plotting_scale_width + 1
+        # vertical_end_y = vertical_start_y - plotting_scale_width + 1
+        vertical_end_y = vertical_start_y - plotting_scale_width
         vertical_text_location_y = vertical_start_y - plotting_scale_width / 2
         vertices = [
             (horizontal_start_x, horizontal_y_location + plotting_scale_height),

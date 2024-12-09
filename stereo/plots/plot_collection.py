@@ -422,8 +422,10 @@ class PlotCollection:
         from .scatter import multi_scatter
         x = self.data.position[:, 0]
         y = self.data.position[:, 1]
-        x_min, x_max = int(x.min()), int(x.max())
-        y_min, y_max = int(y.min()), int(y.max())
+        # x_min, x_max = int(x.min()), int(x.max())
+        # y_min, y_max = int(y.min()), int(y.max())
+        x_min, x_max = x.min(), x.max()
+        y_min, y_max = y.min(), y.max()
         boundary = [x_min, x_max, y_min, y_max]
         marker = 's'
 
