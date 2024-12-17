@@ -169,7 +169,8 @@ class TotalVi(MSDataAlgorithmBase):
             out_dir: str = None,
             diff_exp_file_name: str = None,
             h5mu_file_name: str = None,
-            fragment: int = 5
+            fragment: int = 5,
+            batch_size: int = 64
     ):
         import os.path as opth
         if out_dir is None or not opth.exists(out_dir):
@@ -225,7 +226,7 @@ class TotalVi(MSDataAlgorithmBase):
                 gene_list = rna.var_names[rna_start:]
             denoised_rna_, denoised_protein_ = \
                 self._total_vi_instance.get_normalized_expression(n_samples=25,
-                                                                  batch_size=64,
+                                                                  batch_size=batch_size,
                                                                   gene_list=gene_list,
                                                                   return_mean=True)
             denoised_rna_list.append(denoised_rna_)
