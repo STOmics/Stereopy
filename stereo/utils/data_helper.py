@@ -716,7 +716,7 @@ def split_for_stereo_exp_data(data: StereoExpData = None):
     result = data.tl.result
     for bno in batch:
         cell_idx = np.where(data.cells.batch == bno)[0]
-        cell_names = data.cell_names[cell_idx]
+        # cell_names = data.cell_names[cell_idx]
         new_data = StereoExpData(
             file_format=data.file_format,
             bin_type=data.bin_type,
@@ -742,6 +742,8 @@ def split_for_stereo_exp_data(data: StereoExpData = None):
         # new_data.position_z = data.position_z[cell_idx]
         # new_data.exp_matrix = data.exp_matrix[cell_idx]
         new_data.sub_by_index(cell_index=cell_idx)
+        new_data.cells.obs.index = new_data.cells.obs.index.str.replace(f'-{bno}$', '', regex=True)
+        new_data.raw.cells.obs.index = new_data.raw.cells.obs.index.str.replace(f'-{bno}$', '', regex=True)
         new_data.reset_position()
         # if data.position_offset is not None:
         #     new_data.position = new_data.position - data.position_offset[bno]
@@ -773,12 +775,12 @@ def split_for_stereo_exp_data(data: StereoExpData = None):
                     new_data.tl.result[res_key] = result[res_key]
             elif key == 'sct':
                 for res_key in all_res_key:
-                    cells_bool_list = np.isin(result[res_key][0]['umi_cells'], cell_names)
+                    cells_bool_list = np.isin(result[res_key][0]['umi_cells'], new_data.cell_names)
                     # sct `counts` and `data` should have same shape
                     new_data.tl.result[res_key] = (
                         new_data,
                         {
-                            'cells': cell_names,
+                            'cells': new_data.cell_names,
                             'genes': result[res_key][0]['umi_genes'],
                             'filtered_corrected_counts': result[res_key][0]['counts'][cells_bool_list, :],
                             'filtered_normalized_counts': result[res_key][0]['data'][cells_bool_list, :]
@@ -818,6 +820,7 @@ def split_for_ann_based_stereo_exp_data(data: AnnBasedStereoExpData = None):
     batch = np.unique(data.cells.batch)
     for bno in batch:
         adata = data.adata[data.adata.obs['batch'] == bno].copy()
+        adata.obs_names = adata.obs_names.str.replace(f'-{bno}$', '', regex=True)
         # adata.uns = adata.uns.copy()
         new_data = AnnBasedStereoExpData(based_ann_data=adata, spatial_key=data.spatial_key)
         new_data.tl.key_record = deepcopy(data.tl.key_record)
