@@ -22,6 +22,7 @@ class GenCccMicroEnvs(AlgorithmBase):
             binsize: float = 2,
             eps: float = 1e-20,
             show_dividing_by_thresholds: bool = True,
+            seed_used: int = 1024,
             method: str = 'split',
             threshold: float = None,
             output_path: str = None,
@@ -80,6 +81,7 @@ class GenCccMicroEnvs(AlgorithmBase):
                         which is then used to construct the microenvironments.
         :param eps: fill eps to zero kde to avoid inf KL divergence.
         :param show_dividing_by_thresholds: whether to display the result while running the first part of this function.
+        :param seed_used: the seed used for random number generator, fix it for reproducibility.
         :param method: define micro environments using two methods:
                         1) minimum spanning tree, or
                         2) pruning the fully connected tree based on a given threshold of KL, then split the graph into multiple strongly connected component.
@@ -129,7 +131,8 @@ class GenCccMicroEnvs(AlgorithmBase):
                 min_num=min_num,
                 binsize=binsize,
                 eps=eps,
-                output_path=output_path
+                output_path=output_path,
+                seed_used=seed_used
             )
             self.pipeline_res[res_key] = {
                 'output_path': output_path,
