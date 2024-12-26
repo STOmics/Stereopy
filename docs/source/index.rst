@@ -72,7 +72,7 @@ Latest Additions
 
 Version 1.5.1
 ~~~~~~~~~~~~~~~~~~~
-1.5.1 : 2024-12-27
+1.5.1 : 2024-12-26
 
 .. _st.io.stereo_to_anndata: content/stereo.io.stereo_to_anndata.html
 .. |st.io.stereo_to_anndata| replace:: `st.io.stereo_to_anndata`
@@ -194,23 +194,6 @@ BUG Fixes:
 2. Fixed the problem that `MSData.to_integrate` is incompatible when the number of cells in the integrated sample is less than the total number of cells in all single samples.
 3. Fixed the problem that `st.plt.time_series_tree_plot` can not capture the result of **PAGA**, leading to an incorrect plot.
 4. Fixed other bugs.
-
-Version 1.3.1
-~~~~~~~~~~~~~~~~~~~
-1.3.1 : 2024-06-28
-
-Features:
-
-1. Addition of new method **'adaptive'** for `st.tl.get_niche <content/stereo.algorithm.get_niche.GetNiche.main.html>`_ (the original method is named **'fixed'**).
-2. Changed some parameter names of `st.tl.filter_cells <content/stereo.core.StPipeline.filter_cells.html>`_ and `st.tl.filter_genes <content/stereo.core.StPipeline.filter_genes.html>`_ for eliminating ambiguity(old parameter names are still compatible).
-3. Filter the results of **PCA** and **UMAP** simultaneously when running `st.tl.filter_cells`.
-
-BUG Fixes:
-
-1. Fixed the problem that `ms_data.to_isolated` is incompatible with that there are duplicate **cell names** in different samples.
-2. Fixed the problem that `st.io.read_gef` is incompatible with those **GEF** files that contain **gene names** ending with **'_{number}'** (like **'ABC_123'**).
-3. Upgraded **gefpy** to latest for fixing the error that **gene names** are lost after running **CellCorrection**.
-
 
 .. toctree::
     :titlesonly:
