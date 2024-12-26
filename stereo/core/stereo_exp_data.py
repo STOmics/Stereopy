@@ -724,7 +724,7 @@ class StereoExpData(Data):
         #     category=FutureWarning
         # )
         if format_key_record:
-            format_str += f"\nkey_record: {format_key_record}"
+            format_str += f"\ntl.key_record: {format_key_record}"
         result_key = []
         for rks in self.tl.key_record.values():
             if rks is not None and len(rks) > 0:
@@ -732,7 +732,7 @@ class StereoExpData(Data):
         for rk in self.tl.result.keys():
             if rk not in result_key:
                 result_key.append(rk)
-        format_str += f"\nresult: {result_key}"
+        format_str += f"\ntl.result: {result_key}"
         return format_str
 
     def __repr__(self):
@@ -848,6 +848,11 @@ class AnnBasedStereoExpData(StereoExpData):
         if 'key_record' in self._ann_data.uns:
             key_record = self._ann_data.uns['key_record']
             self._tl._key_record = self._ann_data.uns['key_record'] = {key: list(value) for key, value in key_record.items()}
+        
+        if 'result_keys' in self._ann_data.uns:
+            result_keys = self._ann_data.uns['result_keys']
+            self._tl.result.keys().extend(result_keys)
+            del self._ann_data.uns['result_keys']
 
         if self._ann_data.raw:
             self._tl._raw = AnnBasedStereoExpData(based_ann_data=self._ann_data.raw.to_adata())
@@ -858,7 +863,7 @@ class AnnBasedStereoExpData(StereoExpData):
     def __str__(self):
         # return str(self._ann_data)
         format_str = f"AnnBasedStereoExpData object with n_cells X n_genes = {self.shape[0]} X {self.shape[1]}"
-        format_str += f"\nadata: {id(self._ann_data)}"
+        format_str += f"\nadata: id({id(self._ann_data)})"
         format_str += f"\nbin_type: {self.bin_type}"
         if self.bin_type == 'bins':
             format_str += f"\n{'bin_size: %d' % self.bin_size}"
@@ -880,7 +885,7 @@ class AnnBasedStereoExpData(StereoExpData):
             for key, value in self.tl.key_record.items() if value
         }
         if format_key_record:
-            format_str += f"\nkey_record: {format_key_record}"
+            format_str += f"\ntl.key_record: {format_key_record}"
         result_key = []
         for rks in self.tl.key_record.values():
             if rks is not None and len(rks) > 0:
@@ -888,7 +893,7 @@ class AnnBasedStereoExpData(StereoExpData):
         for rk in self.tl.result.keys():
             if rk not in result_key:
                 result_key.append(rk)
-        format_str += f"\nresult: {result_key}"
+        format_str += f"\ntl.result: {result_key}"
         return format_str
 
     def __repr__(self):

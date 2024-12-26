@@ -24,6 +24,7 @@ class _BaseResult(object):
         'marker_genes', 'marker_genes_filtered',
         'rank_genes_groups', 'rank_genes_groups_filtered'
     }
+    SCT_NAMES = {'sctransform', 'sct'}
 
     RENAME_DICT = {
         'highly_variable_genes': 'hvg',
@@ -31,13 +32,14 @@ class _BaseResult(object):
         'marker_genes_filtered': 'rank_genes_groups_filtered'
     }
 
-    CLUSTER, CONNECTIVITY, REDUCE, HVG, MARKER_GENES = 0, 1, 2, 3, 4
+    CLUSTER, CONNECTIVITY, REDUCE, HVG, MARKER_GENES, SCT = 0, 1, 2, 3, 4, 5
     TYPE_NAMES_DICT = {
         CLUSTER: CLUSTER_NAMES,
         CONNECTIVITY: CONNECTIVITY_NAMES,
         REDUCE: REDUCE_NAMES,
         HVG: HVG_NAMES,
-        MARKER_GENES: MARKER_GENES_NAMES
+        MARKER_GENES: MARKER_GENES_NAMES,
+        SCT: SCT_NAMES
     }
 
     def __init__(self):
@@ -418,6 +420,15 @@ class AnnBasedResult(_BaseResult, object):
                 return True
             elif AnnBasedResult.RENAME_DICT.get(item, None) in self.__based_ann_data.uns:
                 return True
+        elif item in AnnBasedResult.SCT_NAMES:
+            if item in self.__based_ann_data.uns and type(self.__based_ann_data.uns[item]) is dict:
+                sct_key = self.__based_ann_data.uns[item].get('sct_key', None)
+                sct_id = self.__based_ann_data.uns[item].get('id', None)
+                if sct_key is not None and sct_id is not None:
+                    sct_key_1 = f"{sct_key}_{sct_id}_1"
+                    sct_key_2 = f"{sct_key}_{sct_id}_2"
+                    if sct_key_1 in self.__based_ann_data.uns and sct_key_2 in self.__based_ann_data.uns:
+                            return True
         # elif item.startswith('gene_exp_'):
         #     if item in self.__based_ann_data.uns:
         #         return True
@@ -494,6 +505,15 @@ class AnnBasedResult(_BaseResult, object):
         elif name in AnnBasedResult.MARKER_GENES_NAMES or \
             any([n in name for n in AnnBasedResult.MARKER_GENES_NAMES]):
             return self._get_marker_genes_res(name)
+        elif name in AnnBasedResult.SCT_NAMES or any([n in name for n in AnnBasedResult.SCT_NAMES]):
+            if name in self.__based_ann_data.uns and type(self.__based_ann_data.uns[name]) is dict and \
+                'sct_key' in self.__based_ann_data.uns[name] and 'id' in self.__based_ann_data.uns[name]:
+                # sct_key = self.__based_ann_data.uns[name]['sct_key']
+                # sct_id = self.__based_ann_data.uns[name]['id'] 
+                # sct_key_1 = f"{sct_key}_{sct_id}_1"
+                # sct_key_2 = f"{sct_key}_{sct_id}_2"
+                # return self.__based_ann_data.uns[sct_key_1], self.__based_ann_data.uns[sct_key_2]
+                return self._get_sctransform_res(name)
         # elif name.startswith('gene_exp_'):
         #     return self.__based_ann_data.uns[name]
         # elif name.startswith('regulatory_network_inference'):
@@ -533,6 +553,11 @@ class AnnBasedResult(_BaseResult, object):
             else:
                 neighbors_res['params'] = {}
             return neighbors_res
+        elif uns_obj is not None and type(uns_obj) is dict and 'sct_key' in uns_obj and 'id' in uns_obj:
+            # sct_key_1 = f'{uns_obj["sct_key"]}_{uns_obj["id"]}_1'
+            # sct_key_2 = f'{uns_obj["sct_key"]}_{uns_obj["id"]}_2'
+            # return self.__based_ann_data.uns[sct_key_1], self.__based_ann_data.uns[sct_key_2]
+            return self._get_sctransform_res(name)
         elif uns_obj is not None:
             return uns_obj
         raise KeyError(name)
@@ -551,6 +576,8 @@ class AnnBasedResult(_BaseResult, object):
             self._set_hvg_res(key, value)
         elif type == AnnBasedResult.MARKER_GENES:
             self._set_marker_genes_res(key, value)
+        elif type == AnnBasedResult.SCT:
+            self._set_sctransform_res(key, value)
         else:
             return False
         return True
@@ -618,6 +645,11 @@ class AnnBasedResult(_BaseResult, object):
                 # TODO this is hard-code method to guess it's a reduce ndarray
                 # self.__based_ann_data.varm[key] = value
                 self._set_reduce_res(key, value)
+                return
+        elif type(value) is tuple:
+            if len(value) == 2 and type(value[0]) is dict and \
+                'counts' in value[0] and 'data' in value[0] and 'scale.data' in value[0]:
+                self._set_sctransform_res(key, value)
                 return
 
         self.__based_ann_data.uns[key] = value
@@ -738,6 +770,29 @@ class AnnBasedResult(_BaseResult, object):
         from stereo.io.utils import transform_marker_genes_to_anndata
         key = AnnBasedResult.RENAME_DICT.get(key, key)
         self.__based_ann_data.uns[key] = transform_marker_genes_to_anndata(value)
+    
+    def _get_sctransform_res(self, key):
+        sct_key = self.__based_ann_data.uns[key]['sct_key']
+        sct_id = self.__based_ann_data.uns[key]['id']
+        sct_key_1 = f'{sct_key}_{sct_id}_1'
+        sct_key_2 = f'{sct_key}_{sct_id}_2'
+        res_1 = self.__based_ann_data.uns[sct_key_1]
+        if isinstance(res_1['scale.data'], dict):
+            res_1['scale.data'] = pd.DataFrame(
+                res_1['scale.data']['data'], index=res_1['scale.data']['index'], columns=res_1['scale.data']['columns']
+            )
+        res_2 = self.__based_ann_data.uns[sct_key_2]
+        return res_1, res_2
+    
+    def _set_sctransform_res(self, key, value):
+        if isinstance(value, tuple) and len(value) == 2:
+            sct_key_1 = f'{key}_{id(value)}_1'
+            sct_key_2 = f'{key}_{id(value)}_2'
+            self.__based_ann_data.uns[key] = {'sct_key': key, 'id': id(value)}
+            self.__based_ann_data.uns[sct_key_1] = value[0]
+            self.__based_ann_data.uns[sct_key_2] = value[1]
+        else:
+            raise ValueError('sctransform result must be a tuple with 2 elements')
 
     def set_value(self, key, value):
         if hasattr(value, 'shape'):

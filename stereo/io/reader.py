@@ -992,17 +992,38 @@ def stereo_to_anndata(
                     if 'mean_bin' in adata.var.columns:
                         adata.var.drop(columns='mean_bin', inplace=True)
             elif key == 'sct':
-                res_key = data.tl.key_record[key][-1]
-                zero_index_data = data.tl.result[res_key][0]
-                one_index_data = data.tl.result[res_key][1]
-                logger.info(f"Adding data.tl.result['{res_key}'] into adata.uns['sct_'] .")
-                adata.uns['sct_counts'] = csr_matrix(zero_index_data['counts'].T)
-                adata.uns['sct_data'] = csr_matrix(zero_index_data['data'].T)
-                adata.uns['sct_scale'] = csr_matrix(zero_index_data['scale.data'].T.to_numpy())
-                adata.uns['sct_scale_genename'] = list(zero_index_data['scale.data'].index)
-                adata.uns['sct_top_features'] = list(one_index_data['top_features'])
-                adata.uns['sct_cellname'] = list(one_index_data['umi_cells'].astype('str'))
-                adata.uns['sct_genename'] = list(one_index_data['umi_genes'])
+                for res_key in data.tl.key_record[key]:
+                    sct_result = data.tl.result[res_key]
+                    if not (res_key in adata.uns and 'sct_key' in adata.uns[res_key] and 'id' in adata.uns[res_key]):
+                        sct_key_1 = f'{res_key}_{id(sct_result)}_1'
+                        sct_key_2 = f'{res_key}_{id(sct_result)}_2'
+                        adata.uns[res_key] = {'sct_key': res_key, 'id': id(sct_result)}
+                        adata.uns[sct_key_1] = sct_result[0]
+                        if isinstance(sct_result[0]['scale.data'], pd.DataFrame):
+                            adata.uns[sct_key_1]['scale.data'] = {
+                                'data': sct_result[0]['scale.data'].to_numpy(),
+                                'index': sct_result[0]['scale.data'].index.to_numpy(),
+                                'columns': sct_result[0]['scale.data'].columns.to_numpy()
+                            }
+                        adata.uns[sct_key_2] = {
+                            'top_features': sct_result[1]['top_features'],
+                            'umi_cells': sct_result[1]['umi_cells'],
+                            'umi_genes': sct_result[1]['umi_genes']
+                        }
+                    else:
+                        sct_key_1 = f'{res_key}_{adata.uns[res_key]["id"]}_1'
+                        sct_key_2 = f'{res_key}_{adata.uns[res_key]["id"]}_2'
+                        if isinstance(sct_result[0]['scale.data'], pd.DataFrame):
+                            adata.uns[sct_key_1]['scale.data'] = {
+                                'data': sct_result[0]['scale.data'].to_numpy(),
+                                'index': sct_result[0]['scale.data'].index.to_numpy(),
+                                'columns': sct_result[0]['scale.data'].columns.to_numpy()
+                            }
+                        adata.uns[sct_key_2] = {
+                            'top_features': sct_result[1]['top_features'],
+                            'umi_cells': sct_result[1]['umi_cells'],
+                            'umi_genes': sct_result[1]['umi_genes']
+                        }
             elif key in ['pca', 'umap', 'tsne', 'totalVI', 'spatial_alignment_integration']:
                 # pca :we do not keep variance and PCs(for varm which will be into feature.finding in pca of seurat.)
                 res_key = data.tl.key_record[key][-1]
@@ -1163,6 +1184,8 @@ def stereo_to_anndata(
                 adata.uns['spatial'][im_library_id]['metadata']['image_dir'] = image_dir.absolute().as_posix()
                 
 
+    if len(data.tl.result.keys()) > 0:
+        adata.uns['result_keys'] = list(data.tl.result.keys())
     logger.info("Finished conversion to anndata.")
 
     if output is not None:
