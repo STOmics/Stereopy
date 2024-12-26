@@ -43,12 +43,6 @@ The paper of Stereopy has been pre-printed on bioRxiv!
 `Stereopy: modeling comparative and spatiotemporal cellular heterogeneity via multi-sample spatial transcriptomics <https://doi.org/10.1101/2023.12.04.569485>`_.
 
 
-Upcoming functions
---------------------
-* Batch Effect removal funciton
-* ...
-
-
 Highlights
 ------------
 
