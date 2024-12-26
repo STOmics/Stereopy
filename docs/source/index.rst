@@ -70,6 +70,27 @@ Workflow
 Latest Additions
 ------------------
 
+Version 1.5.1
+~~~~~~~~~~~~~~~~~~~
+1.5.1 : 2024-12-27
+
+.. _st.io.stereo_to_anndata: content/stereo.io.stereo_to_anndata.html
+.. |st.io.stereo_to_anndata| replace:: `st.io.stereo_to_anndata`
+
+.. _h5ad2rds.R: Tutorials/Format_Conversion.html
+.. |h5ad2rds.R| replace:: **h5ad2rds.R**
+
+Features:
+
+1. |st.io.stereo_to_anndata|_ supports adding image information into the converted **AnnData** object.
+2. |h5ad2rds.R|_ supports adding image information into the converted **RDS** file.
+3. Optimized the visualization of the plotting scale for spatial scatter plot when inputting small data.
+
+BUG Fixes:
+
+1. Fixed the problem that the layers was lost when converting **StereoExpData** to **AnnData** by using `st.io.stereo_to_anndata`.
+2. Fixed the problem that the result of `st.tl.gen_ccc_micro_envs` cannot be reproduced.
+
 Version 1.5.0
 ~~~~~~~~~~~~~~~~~~~
 1.5.0 : 2024-11-08

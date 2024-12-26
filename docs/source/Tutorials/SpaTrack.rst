@@ -29,6 +29,8 @@ Preparation
 
 Torch is the necessary dependency and needs to be installed first.
 
+    pip install pysal==2.6.0 pygam==0.8.0
+
     CPU: pip install torch==2.4.1+cpu --extra-index-url https://download.pytorch.org/whl
 
     GPU(CUDA11): pip install torch==2.4.1+cu118 --extra-index-url https://download.pytorch.org/whl/
