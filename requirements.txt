@@ -7,7 +7,7 @@ pandas>=1.5.3
 scipy==1.10.1
 seaborn==0.12.2
 h5py>=3.7.0
-gefpy>=1.1.9
+gefpy>=1.1.20
 setuptools==69.5.1
 #todo python3.8/site-packages/umap/distances.py:1053: NumbaDeprecationWarning: The 'nopython' keyword argument was not supplied to the 'numba.jit' decorator.
 #The implicit default value for this argument is currently False, but it will be changed to True in Numba 0.59.0.

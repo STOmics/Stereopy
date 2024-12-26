@@ -36,6 +36,7 @@ image = [
     "fastremap",
     "roifile",
     "onnxruntime",
+    "tables"
 ]
 image-cu11 = [
     "cell-bin==1.3.4.1",
@@ -46,7 +47,8 @@ image-cu11 = [
     "patchify",
     "fastremap",
     "roifile",
-    "onnxruntime-gpu"
+    "onnxruntime-gpu",
+    "tables"
 ]
 image-cu12 = [
     "tensorflow==2.12.0",
@@ -56,7 +58,8 @@ image-cu12 = [
     "patchify",
     "fastremap",
     "roifile",
-    "onnxruntime-gpu"
+    "onnxruntime-gpu",
+    "tables"
 ]
 singler-gpu = ["cusingler"]
 spt = [
