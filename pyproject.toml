@@ -26,7 +26,7 @@ classifiers= [
 dynamic = ["version", "dependencies"]
 
 [project.optional-dependencies]
-image-cpu = [
+image = [
     "cell-bin==1.3.4.1",
     "tensorflow==2.12.0",
     "torch==2.4.1+cpu",
@@ -36,6 +36,7 @@ image-cpu = [
     "fastremap",
     "roifile",
     "onnxruntime",
+    "tables"
 ]
 image-cu11 = [
     "cell-bin==1.3.4.1",
@@ -46,7 +47,8 @@ image-cu11 = [
     "patchify",
     "fastremap",
     "roifile",
-    "onnxruntime-gpu"
+    "onnxruntime-gpu",
+    "tables"
 ]
 image-cu12 = [
     "tensorflow==2.12.0",
@@ -56,16 +58,41 @@ image-cu12 = [
     "patchify",
     "fastremap",
     "roifile",
-    "onnxruntime-gpu"
+    "onnxruntime-gpu",
+    "tables"
 ]
 singler-gpu = ["cusingler"]
+spt = [
+    "torch==2.4.1+cpu",
+    "pysal<=2.6.0",
+    "pygam>=0.8.0",
+    "nbformat",
+]
+spt-cu11 = [
+    "torch==2.4.1+cu118",
+    "pysal<=2.6.0",
+    "pygam>=0.8.0",
+    "nbformat",
+]
+spt-cu12 = [
+    "torch==2.4.1+cu124",
+    "pysal<=2.6.0",
+    "pygam>=0.8.0",
+    "nbformat",
+]
+all = [
+    "stereopy[image]",
+    "stereopy[spt]"
+]
 all-cu11 = [
     "stereopy[image-cu11]",
-    "stereopy[singler-gpu]"
+    "stereopy[singler-gpu]",
+    "stereopy[spt-cu11]"
 ]
 all-cu12 = [
     "stereopy[image-cu12]",
-    "stereopy[singler-gpu]"
+    "stereopy[singler-gpu]",
+    "stereopy[spt-cu12]"
 ]
 
 [tool.setuptools.dynamic]

@@ -117,11 +117,11 @@ class GetNiche(AlgorithmBase):
         else:
             raise InvalidNicheMethod(method)
         
-        data_result = filter_cells(data_full, cell_list=cell_list, inplace=inplace)
-        if filter_raw and data_result.raw is not None:
-            filter_cells(data_result.raw, cell_list=cell_list, inplace=True)
-            if isinstance(data_result, AnnBasedStereoExpData):
-                data_result.adata.raw = data_result.raw.adata
+        data_result = filter_cells(data_full, cell_list=cell_list, inplace=inplace, filter_raw=filter_raw)
+        # if filter_raw and data_result.raw is not None:
+        #     filter_cells(data_result.raw, cell_list=cell_list, inplace=True)
+        #     if isinstance(data_result, AnnBasedStereoExpData):
+        #         data_result.adata.raw = data_result.raw.adata
 
 
         return data_result

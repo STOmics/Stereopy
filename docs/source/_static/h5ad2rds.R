@@ -11,12 +11,14 @@ library(stringr)
 args <- arg_parser("Converting h5ad file(.h5ad) to RDS.")
 args <- add_argument(args, "--infile", help = "input .h5ad file")
 # args <- add_argument(args, "--assay", help = "assay name")
+args <- add_argument(args, "--image_dir", help = "The path of the directory saving the tissue_lowres_image.png")
 args <- add_argument(args, "--outfile", help = "output RDS file")
 argv <- parse_args(args)
 
 infile=argv$infile
 # assay=argv$assay
 assay='Spatial'
+image_dir=argv$image_dir
 outfile=argv$outfile
 
 FileType <- function(file) {
@@ -663,6 +665,9 @@ H5ADToH5Seurat <- function(
         if (!isTRUE(x = reduc %in% names(x = dfile[['reductions']]))) {
           next
         }
+        if (reduc == 'spatial') {
+          next
+        }
         if (verbose) {
           message("Adding miscellaneous information for ", reduc)
         }
@@ -745,6 +750,9 @@ H5ADToH5Seurat <- function(
       x = names(x = source[['uns']]),
       y = c('neighbors', names(x = dfile[['reductions']]))
     )
+    if (isTRUE(x = 'spatial' %in% names(x = source[['uns']])) && isFALSE(x = 'spatial' %in% misc)) {
+        misc <- append(misc, 'spatial')
+    }
     for (i in misc) {
       if (verbose) {
         message("Adding ", i, " to miscellaneous data")
@@ -1351,16 +1359,51 @@ H5SeuratToH5AD <- function(
   return(dfile)
 }
 
+addimg2rds <- function(
+    obj=object,
+    image_dir="."
+){
+  image <- Read10X_Image(image_dir,
+                         image.name = "tissue_lowres_image.png",
+                         assay = assay,
+                         slice = "slice1",
+                         filter.matrix = TRUE)
+  # the image id sometimes got messed up in a format of scientific. The following code to make the image-ids are in the correct format. The image id is from tissue_positions_list rownames
+  imgIDs <- Cells(image)
+  idx <- c() # extract which ids has format issue
+  for (e in imgIDs){
+    if(grepl("e\\+", e)){
+      x <- which(imgIDs %in% e)
+      idx <- append(idx,x)
+    }
+  }
+  for(i in idx){ # correct image-ids
+    imgIDs[i] <- as.character(format(as.numeric(imgIDs[i]), scientific = FALSE))
+  }
+
+  rownames(image@coordinates) <- imgIDs
+  image <- image[Cells(x = obj)]
+  DefaultAssay(image) <- assay
+  obj[['slice1']] <- image
+  return(obj)
+}
+
 t1=proc.time()
-if ( is.null(infile) ) {
+if ( is.na(infile) ) {
   print('positional argument `infile` is null')
   quit('no', -1)
 }
 
-filename = str_split(basename(infile),".h5ad$",simplify=T)[,1]
-Convert(infile, dest = paste0('./',filename,'.h5seurat'),assay = assay, overwrite = TRUE)
+if (is.na(outfile)) {
+  print('positional argument `outfile` is null')
+  quit('no', -1)
+}
 
-f <- H5File$new(paste0('./',filename,'.h5seurat'), "r+")
+filename = str_split(basename(infile),".h5ad$",simplify=T)[,1]
+h5seurat_file <- paste0(dirname(outfile),"/",filename,".h5seurat")
+Convert(infile, dest = h5seurat_file,assay = assay, overwrite = TRUE)
+
+f <- H5File$new(h5seurat_file, "r+")
 groups <- f$ls(recursive = TRUE)
 
 for (name in groups$name[grepl("(?i)(?=.*meta.data.*)(?=.*categories.*).*",groups$name,perl=TRUE)]) {
@@ -1381,7 +1424,7 @@ for (name in groups$name[grepl("(?i)(?=.*meta.data.*)(?=.*code.*).*",groups$name
 
 f$close_all()
 
-h5_file <- paste0('./',filename,'.h5seurat')
+h5_file <- h5seurat_file
 print(paste(c("Finished! Converting h5ad to h5seurat file at:", h5_file), sep=" ", collapse=NULL))
 t2=proc.time()
 t=t2-t1
@@ -1492,12 +1535,26 @@ t=t3-t1
 print(paste0('rds time consuming: ',t[3][[1]]))
 
 print("Start to saveRDS...")
-if (outfile=='None'){
-    filename = str_split(basename(infile),".h5ad$",simplify=T)[,1]
-}else{
-    filename = outfile
-}
+# if (outfile=='None'){
+#     filename = str_split(basename(infile),".h5ad$",simplify=T)[,1]
+# }else{
+#     filename = outfile
+# }
 # outfile = paste0('./',filename)
+if (is.na(image_dir)) {
+    if ('spatial' %in% names(x = object@misc)) {
+        spatial <- object@misc$spatial
+        library_id = names(x = spatial)[1]
+        image_dir <- spatial[[library_id]]$metadata$image_dir
+    }
+}
+if (!is.na(image_dir)) {
+    print(paste("add image to rds! image_dir:", image_dir))
+    object <- addimg2rds(
+        obj = object,
+        image_dir = image_dir
+    )
+}
 saveRDS(object, outfile)
 print("Finished RDS.")
 quit('yes', 0)

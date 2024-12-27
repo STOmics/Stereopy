@@ -169,7 +169,8 @@ class Trainer:
             filter_genes(self.data2, min_cells=min_cells[1], inplace=True)
 
             # get same genes
-            same_genes = list(self.data1.genes.var.index & self.data2.genes.var.index)
+            # same_genes = list(self.data1.genes.var.index & self.data2.genes.var.index)
+            same_genes = list(self.data1.genes.var.index.intersection(self.data2.genes.var.index))
             self.data1 = self.data1.sub_by_name(cell_name=self.cell_mapping['slice1'], gene_name=same_genes, copy=False)
             self.data2 = self.data2.sub_by_name(cell_name=self.cell_mapping['slice2'], gene_name=same_genes, copy=False)
             self.genes = self.data1.genes.var.index

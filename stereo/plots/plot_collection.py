@@ -326,6 +326,44 @@ class PlotCollection:
                 **kwargs
             )
         return fig
+    
+    def __create_base_image_data(
+        self,
+        base_image_path: str,
+        data_x_min: int,
+        data_x_max: int,
+        data_y_min: int,
+        data_y_max: int,
+        invert_y: bool,
+        clip: bool = True,
+    ):
+        base_im_boundary = None
+        base_image_data = None
+        base_im_value_range = None
+        with tiff.TiffFile(base_image_path) as tif:
+            base_image_data = tif.asarray()
+            if clip:
+                if data_x_min > 0 or data_y_min > 0:
+                    data_x_min = max(0, data_x_min - PLOT_BASE_IMAGE_EXPANSION)
+                    data_y_min = max(0, data_y_min - PLOT_BASE_IMAGE_EXPANSION)
+                    data_x_max += PLOT_BASE_IMAGE_EXPANSION
+                    data_y_max += PLOT_BASE_IMAGE_EXPANSION
+                    base_image_data = base_image_data[data_y_min:(data_y_max + 1), data_x_min:(data_x_max + 1)]
+                if invert_y:
+                    base_im_boundary = [data_x_min, data_x_max, data_y_max, data_y_min]
+                else:
+                    base_im_boundary = [data_x_min, data_x_max, data_y_min, data_y_max]
+            else:
+                if invert_y:
+                    base_im_boundary = [0, base_image_data.shape[1] - 1, base_image_data.shape[0] - 1, 0]
+                else:
+                    base_im_boundary = [0, base_image_data.shape[1] - 1, 0, base_image_data.shape[0] - 1]
+            shaped_metadata = tif.shaped_metadata
+            if shaped_metadata is not None:
+                metadata = shaped_metadata[0]
+                if 'value_range' in metadata:
+                    base_im_value_range = metadata['value_range']
+        return base_image_data, base_im_boundary, base_im_value_range
 
     @download
     @plot_scale
@@ -346,6 +384,7 @@ class PlotCollection:
             base_image: Optional[str] = None,
             base_im_cmap: Optional[str] = 'Greys',
             base_im_to_gray : bool = False,
+            clip_base_image: bool = True,
             **kwargs
     ):
         """
@@ -383,8 +422,10 @@ class PlotCollection:
         from .scatter import multi_scatter
         x = self.data.position[:, 0]
         y = self.data.position[:, 1]
-        x_min, x_max = int(x.min()), int(x.max())
-        y_min, y_max = int(y.min()), int(y.max())
+        # x_min, x_max = int(x.min()), int(x.max())
+        # y_min, y_max = int(y.min()), int(y.max())
+        x_min, x_max = x.min(), x.max()
+        y_min, y_max = y.min(), y.max()
         boundary = [x_min, x_max, y_min, y_max]
         marker = 's'
 
@@ -392,21 +433,10 @@ class PlotCollection:
         base_image_data = None
         base_im_value_range = None
         if base_image is not None:
-            # base_image_data = tiff.imread(base_image)
-            with tiff.TiffFile(base_image) as tif:
-                base_image_data = tif.asarray()
-                if x_min > 0 or y_min > 0:
-                    x_min = max(0, x_min - PLOT_BASE_IMAGE_EXPANSION)
-                    y_min = max(0, y_min - PLOT_BASE_IMAGE_EXPANSION)
-                    x_max += PLOT_BASE_IMAGE_EXPANSION
-                    y_max += PLOT_BASE_IMAGE_EXPANSION
-                    base_image_data = base_image_data[y_min:(y_max + 1), x_min:(x_max + 1)]
-                base_im_boundary = [x_min, x_max, y_max, y_min]
-                shaped_metadata = tif.shaped_metadata
-                if shaped_metadata is not None:
-                    metadata = shaped_metadata[0]
-                    if 'value_range' in metadata:
-                        base_im_value_range = metadata['value_range']
+            base_image_data, base_im_boundary, base_im_value_range = self.__create_base_image_data(
+                base_image, x_min, x_max, y_min, y_max, invert_y=kwargs.get('invert_y', True), clip=clip_base_image
+            )
+            boundary = base_im_boundary[0:2] + [min(base_im_boundary[2:4]), max(base_im_boundary[2:4])]
             marker = 'o' 
         
         if 'marker' not in kwargs:
@@ -910,6 +940,7 @@ class PlotCollection:
             base_image: Optional[str] = None,
             base_im_cmap: Optional[str] = 'Greys',
             base_im_to_gray : bool = False,
+            clip_base_image: bool = True,
             **kwargs
     ):
         """
@@ -994,21 +1025,10 @@ class PlotCollection:
         base_image_data = None
         base_im_value_range = None
         if base_image is not None:
-            # base_image_data = tiff.imread(base_image)
-            with tiff.TiffFile(base_image) as tif:
-                base_image_data = tif.asarray()
-                if x_min > 0 or y_min > 0:
-                    x_min = max(0, x_min - PLOT_BASE_IMAGE_EXPANSION)
-                    y_min = max(0, y_min - PLOT_BASE_IMAGE_EXPANSION)
-                    x_max += PLOT_BASE_IMAGE_EXPANSION
-                    y_max += PLOT_BASE_IMAGE_EXPANSION
-                    base_image_data = base_image_data[y_min:(y_max + 1), x_min:(x_max + 1)]
-                base_im_boundary = [x_min, x_max, y_max, y_min]
-                shaped_metadata = tif.shaped_metadata
-                if shaped_metadata is not None:
-                    metadata = shaped_metadata[0]
-                    if 'value_range' in metadata:
-                        base_im_value_range = metadata['value_range']
+            base_image_data, base_im_boundary, base_im_value_range = self.__create_base_image_data(
+                base_image, x_min, x_max, y_min, y_max, invert_y=kwargs.get('invert_y', True), clip=clip_base_image
+            )
+            boundary = base_im_boundary[0:2] + [min(base_im_boundary[2:4]), max(base_im_boundary[2:4])]
             marker = '.'
 
         if 'marker' in kwargs:

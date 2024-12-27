@@ -43,12 +43,6 @@ The paper of Stereopy has been pre-printed on bioRxiv!
 `Stereopy: modeling comparative and spatiotemporal cellular heterogeneity via multi-sample spatial transcriptomics <https://doi.org/10.1101/2023.12.04.569485>`_.
 
 
-Upcoming functions
---------------------
-* Batch Effect removal funciton
-* ...
-
-
 Highlights
 ------------
 
@@ -69,6 +63,27 @@ Workflow
 
 Latest Additions
 ------------------
+
+Version 1.5.1
+~~~~~~~~~~~~~~~~~~~
+1.5.1 : 2024-12-26
+
+.. _st.io.stereo_to_anndata: content/stereo.io.stereo_to_anndata.html
+.. |st.io.stereo_to_anndata| replace:: `st.io.stereo_to_anndata`
+
+.. _h5ad2rds.R: Tutorials/Format_Conversion.html
+.. |h5ad2rds.R| replace:: **h5ad2rds.R**
+
+Features:
+
+1. |st.io.stereo_to_anndata|_ supports adding image information into the converted **AnnData** object.
+2. |h5ad2rds.R|_ supports adding image information into the converted **RDS** file.
+3. Optimized the visualization of the plotting scale for spatial scatter plot when inputting small data.
+
+BUG Fixes:
+
+1. Fixed the problem that the layers was lost when converting **StereoExpData** to **AnnData** by using `st.io.stereo_to_anndata`.
+2. Fixed the problem that the result of `st.tl.gen_ccc_micro_envs` cannot be reproduced.
 
 Version 1.5.0
 ~~~~~~~~~~~~~~~~~~~
@@ -173,23 +188,6 @@ BUG Fixes:
 2. Fixed the problem that `MSData.to_integrate` is incompatible when the number of cells in the integrated sample is less than the total number of cells in all single samples.
 3. Fixed the problem that `st.plt.time_series_tree_plot` can not capture the result of **PAGA**, leading to an incorrect plot.
 4. Fixed other bugs.
-
-Version 1.3.1
-~~~~~~~~~~~~~~~~~~~
-1.3.1 : 2024-06-28
-
-Features:
-
-1. Addition of new method **'adaptive'** for `st.tl.get_niche <content/stereo.algorithm.get_niche.GetNiche.main.html>`_ (the original method is named **'fixed'**).
-2. Changed some parameter names of `st.tl.filter_cells <content/stereo.core.StPipeline.filter_cells.html>`_ and `st.tl.filter_genes <content/stereo.core.StPipeline.filter_genes.html>`_ for eliminating ambiguity(old parameter names are still compatible).
-3. Filter the results of **PCA** and **UMAP** simultaneously when running `st.tl.filter_cells`.
-
-BUG Fixes:
-
-1. Fixed the problem that `ms_data.to_isolated` is incompatible with that there are duplicate **cell names** in different samples.
-2. Fixed the problem that `st.io.read_gef` is incompatible with those **GEF** files that contain **gene names** ending with **'_{number}'** (like **'ABC_123'**).
-3. Upgraded **gefpy** to latest for fixing the error that **gene names** are lost after running **CellCorrection**.
-
 
 .. toctree::
     :titlesonly:
