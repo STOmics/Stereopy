@@ -47,7 +47,9 @@ class TotalVi(MSDataAlgorithmBase):
             res_key: str = 'totalVI',
             rna_use_raw: bool = False,
             protein_use_raw: bool = False,
-            use_gpu: Union[int, str, bool] = None,
+            # use_gpu: Union[int, str, bool] = None,
+            accelerator: Union[str, None] = None,
+            devices: Union[str, list[int], int, None] = None,
             num_threads: int = None,
             train_kwargs: Optional[dict] = {},
             **kwags
@@ -136,7 +138,8 @@ class TotalVi(MSDataAlgorithmBase):
 
         total_vi = scvi.model.TOTALVI(mdata, **kwags)
         scvi.settings.dl_num_workers = num_threads
-        total_vi.train(use_gpu=use_gpu, **train_kwargs)
+        # total_vi.train(use_gpu=use_gpu, **train_kwargs)
+        total_vi.train(accelerator=accelerator, devices=devices, **train_kwargs)
 
         if not self._use_hvg:
             rna = rna_data
@@ -166,7 +169,8 @@ class TotalVi(MSDataAlgorithmBase):
             out_dir: str = None,
             diff_exp_file_name: str = None,
             h5mu_file_name: str = None,
-            fragment: int = 5
+            fragment: int = 5,
+            batch_size: int = 64
     ):
         import os.path as opth
         if out_dir is None or not opth.exists(out_dir):
@@ -222,7 +226,7 @@ class TotalVi(MSDataAlgorithmBase):
                 gene_list = rna.var_names[rna_start:]
             denoised_rna_, denoised_protein_ = \
                 self._total_vi_instance.get_normalized_expression(n_samples=25,
-                                                                  batch_size=64,
+                                                                  batch_size=batch_size,
                                                                   gene_list=gene_list,
                                                                   return_mean=True)
             denoised_rna_list.append(denoised_rna_)
@@ -260,6 +264,7 @@ class TotalVi(MSDataAlgorithmBase):
             public_thresholds: dict = None,
             rna_thresholds: dict = None,
             protein_thresholds: dict = None,
+            protein_list: list = None
     ):
         if self._use_hvg:
             rna_data = self._hvg_data
@@ -279,13 +284,16 @@ class TotalVi(MSDataAlgorithmBase):
                 for column, threshold in public_thresholds.items():
                     cell_type_df = cell_type_df[cell_type_df[column] > threshold]
 
-            pro_rows = cell_type_df.index.str.contains("_")
-            data_pro = cell_type_df.iloc[pro_rows]
+            # pro_rows = cell_type_df.index.str.contains("_")
+            # data_pro = cell_type_df.iloc[pro_rows]
+            pro_rows = np.intersect1d(cell_type_df.index, protein_list)
+            data_pro = cell_type_df[cell_type_df.index.isin(pro_rows)]
             if protein_thresholds is not None:
                 for column, threshold in protein_thresholds.items():
                     data_pro = data_pro[data_pro[column] > threshold]
 
-            data_rna = cell_type_df.iloc[~pro_rows]
+            # data_rna = cell_type_df.iloc[~pro_rows]
+            data_rna = cell_type_df[~cell_type_df.index.isin(pro_rows)]
             if rna_thresholds is not None:
                 for column, threshold in rna_thresholds.items():
                     data_rna = data_rna[data_rna[column] > threshold]
