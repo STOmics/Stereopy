@@ -716,7 +716,7 @@ def split_for_stereo_exp_data(data: StereoExpData = None):
     result = data.tl.result
     for bno in batch:
         cell_idx = np.where(data.cells.batch == bno)[0]
-        cell_names = data.cell_names[cell_idx]
+        # cell_names = data.cell_names[cell_idx]
         new_data = StereoExpData(
             file_format=data.file_format,
             bin_type=data.bin_type,
@@ -742,6 +742,8 @@ def split_for_stereo_exp_data(data: StereoExpData = None):
         # new_data.position_z = data.position_z[cell_idx]
         # new_data.exp_matrix = data.exp_matrix[cell_idx]
         new_data.sub_by_index(cell_index=cell_idx)
+        new_data.cells.obs.index = new_data.cells.obs.index.str.replace(f'-{bno}$', '', regex=True)
+        new_data.raw.cells.obs.index = new_data.raw.cells.obs.index.str.replace(f'-{bno}$', '', regex=True)
         new_data.reset_position()
         # if data.position_offset is not None:
         #     new_data.position = new_data.position - data.position_offset[bno]
@@ -773,17 +775,30 @@ def split_for_stereo_exp_data(data: StereoExpData = None):
                     new_data.tl.result[res_key] = result[res_key]
             elif key == 'sct':
                 for res_key in all_res_key:
-                    cells_bool_list = np.isin(result[res_key][0]['umi_cells'], cell_names)
+                    umi_cells = pd.Index(result[res_key][1]['umi_cells'])
+                    umi_cells = umi_cells.str.replace('-\d+$', '', regex=True).to_numpy()
+                    cells_bool_list = np.isin(umi_cells, new_data.cell_names)
+                    # genes_bool_list = np.isin(result[res_key][1]['umi_genes'], new_data.gene_names)
+                    res1 = {
+                        'counts': result[res_key][0]['counts'][:, cells_bool_list],
+                        'data': result[res_key][0]['data'][:, cells_bool_list]
+                    }
+                    if isinstance(result[res_key][0]['scale.data'], pd.DataFrame):
+                        columns = result[res_key][0]['scale.data'].columns[cells_bool_list]
+                        scale_data = result[res_key][0]['scale.data'][columns].copy()
+                        scale_data.columns = columns.str.replace('-\d+$', '', regex=True)
+                    else:
+                        scale_data = result[res_key][0]['scale.data'][:, cells_bool_list]
+                    res1['scale.data'] = scale_data
+
+                    res2 = {
+                        'umi_cells': pd.Index(umi_cells[cells_bool_list]).str.replace('-\d+$', '', regex=True).to_numpy(),
+                        'umi_genes': result[res_key][1]['umi_genes'].copy(),
+                        'top_features': result[res_key][1]['top_features'].copy()
+                    }
+
                     # sct `counts` and `data` should have same shape
-                    new_data.tl.result[res_key] = (
-                        new_data,
-                        {
-                            'cells': cell_names,
-                            'genes': result[res_key][0]['umi_genes'],
-                            'filtered_corrected_counts': result[res_key][0]['counts'][cells_bool_list, :],
-                            'filtered_normalized_counts': result[res_key][0]['data'][cells_bool_list, :]
-                        }
-                    )
+                    new_data.tl.result[res_key] = (res1, res2)
             elif key == 'tsne':
                 for res_key in all_res_key:
                     new_data.tl.result[res_key] = result[res_key]
@@ -818,6 +833,7 @@ def split_for_ann_based_stereo_exp_data(data: AnnBasedStereoExpData = None):
     batch = np.unique(data.cells.batch)
     for bno in batch:
         adata = data.adata[data.adata.obs['batch'] == bno].copy()
+        adata.obs_names = adata.obs_names.str.replace(f'-{bno}$', '', regex=True)
         # adata.uns = adata.uns.copy()
         new_data = AnnBasedStereoExpData(based_ann_data=adata, spatial_key=data.spatial_key)
         new_data.tl.key_record = deepcopy(data.tl.key_record)
@@ -830,6 +846,27 @@ def split_for_ann_based_stereo_exp_data(data: AnnBasedStereoExpData = None):
 
         # if data.tl.raw is not None:
         #     new_data.tl.raw = data.tl.raw.tl.filter_cells(cell_list=new_data.cells.cell_name, inplace=False)
+        for key, res_keys in new_data.tl.key_record.items():
+            if key == 'sct' and res_keys is not None and len(res_keys) > 0:
+                for res_key in res_keys:
+                    sct_key = new_data.adata.uns[res_key]['sct_key']
+                    sct_id = new_data.adata.uns[res_key]['id']
+                    sct_key_1 = f'{sct_key}_{sct_id}_1'
+                    sct_key_2 = f'{sct_key}_{sct_id}_2'
+                    umi_cells = pd.Index(new_data.adata.uns[sct_key_2]['umi_cells'])
+                    umi_cells = umi_cells.str.resplace('-\d+$', '', regex=True).to_numpy()
+                    cells_bool_list = np.isin(umi_cells, new_data.cell_names)
+                    new_data.adata.uns[sct_key_1]['counts'] = new_data.adata.uns[sct_key_1]['counts'][:, cells_bool_list]
+                    new_data.adata.uns[sct_key_1]['data'] = new_data.adata.uns[sct_key_1]['data'][:, cells_bool_list]
+                    if isinstance(new_data.adata.uns[sct_key_1]['scale.data'], pd.DataFrame):
+                        columns = new_data.adata.uns[sct_key_1]['scale.data'].columns[cells_bool_list]
+                        scale_data = new_data.adata.uns[sct_key_1]['scale.data'][columns].copy()
+                        scale_data.columns = columns.str.replace('-\d+$', '', regex=True)
+                    else:
+                        scale_data = new_data.adata.uns[sct_key_1]['scale.data'][:, cells_bool_list]
+                    new_data.adata.uns[sct_key_1]['scale.data'] = scale_data
+                    new_data.adata.uns[sct_key_2]['umi_cells'] = pd.Index(umi_cells[cells_bool_list]).str.replace('-\d+$', '', regex=True).to_numpy()
+
         if 'gene_exp_cluster' in data.tl.key_record:
             for cluster_res_key in data.tl.key_record['cluster']:
                 gene_exp_cluster_res = cell_cluster_to_gene_exp_cluster(new_data, cluster_res_key)

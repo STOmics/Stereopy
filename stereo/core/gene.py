@@ -256,11 +256,11 @@ class AnnBasedGene(Gene):
     #         return
     #     object.__setattr__(self, key, value)
 
-    def __str__(self):
-        return str(self.__based_ann_data.var)
+    # def __str__(self):
+    #     return str(self.__based_ann_data.var)
 
-    def __repr__(self):
-        return self.__str__()
+    # def __repr__(self):
+    #     return self.__str__()
 
     def __getitem__(self, item):
         return self.__based_ann_data.var[item]

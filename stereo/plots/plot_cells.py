@@ -161,6 +161,7 @@ class PlotCells:
                 else:
                     bg_value = 1.0
                 bg_mask = np.where(image_data == bg_pixel, bg_value, 0)
+                bg_mask = bg_mask.astype(image_data.dtype)
                 image_data += bg_mask
                 image_xarray = xr.DataArray(data=image_data, coords=[range(min_y, max_y), range(min_x, max_x), range(0, image_data.shape[2])], dims=['y', 'x', 'channel'])
         return image_xarray

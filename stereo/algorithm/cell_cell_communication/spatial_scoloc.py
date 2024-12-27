@@ -34,7 +34,8 @@ class GetMicroEnvs:
              min_num: int = 30,
              binsize: float = 2,
              eps: float = 1e-20,
-             output_path: str = None
+             output_path: str = None,
+             seed_used: int = 1024
              ):
         """
         Generate the micro-environment file used for the CCC analysis.
@@ -90,8 +91,9 @@ class GetMicroEnvs:
         for col in type_name:
             pairwise_kl_df[col] = pairwise_kl_df[col].apply(lambda x: [])
         # do bootstrap
+        np.random.seed(seed_used)
         for i in range(n_boot):
-            random.seed(i)
+            # random.seed(i)
             # Get the bootstrap sample
             idx = np.random.choice(range(n_cell), round(n_cell * boot_prop), replace=True)
             data_boot = data.iloc[idx,]
