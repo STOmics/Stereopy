@@ -68,9 +68,7 @@ Use the latest version of dev branch on Github, you need to clone the repository
 
     cd stereopy
 
-    pip install -r requirements.txt
-
-    python setup.py install
+    pip install -e .
 
 
 Troubleshooting 
