@@ -496,7 +496,7 @@ class StPipeline(object):
         inplace
             whether to replace the data.exp_matrix or save the result in `data.layers`.
         add_layer
-            whether to save the result in `data.layers` simultaneously when `inplace` is False.
+            whether to save the result in `data.layers` simultaneously when `inplace` is True.
         res_key
             the key to save the result in `data.layers` when `inplace` is False or `add_layer` is True.
 
@@ -535,7 +535,7 @@ class StPipeline(object):
         inplace
             whether to replace the data.exp_matrix or save the result in `data.layers`.
         add_layer
-            whether to save the result in `data.layers` simultaneously when `inplace` is False.
+            whether to save the result in `data.layers` simultaneously when `inplace` is True.
         res_key
             the key to save the result in `data.layers` when `inplace` is False or `add_layer` is True.
 
@@ -576,7 +576,7 @@ class StPipeline(object):
         inplace
             whether to replace the data.exp_matrix or save the result in `data.layers`.
         add_layer
-            whether to save the result in `data.layers` simultaneously when `inplace` is False.
+            whether to save the result in `data.layers` simultaneously when `inplace` is True.
         res_key
             the key to save the result in `data.layers` when `inplace` is False or `add_layer` is True.
 
@@ -612,7 +612,7 @@ class StPipeline(object):
         inplace
             whether to replace the data.exp_matrix or save the result in `data.layers`.
         add_layer
-            whether to save the result in `data.layers` simultaneously when `inplace` is False.
+            whether to save the result in `data.layers` simultaneously when `inplace` is True.
         res_key
             the key to save the result in `data.layers` when `inplace` is False or `add_layer` is True.
         
@@ -653,7 +653,7 @@ class StPipeline(object):
         inplace
             whether to replace the data.exp_matrix or save the result in `data.layers`.
         add_layer
-            whether to save the result in `data.layers` simultaneously when `inplace` is False.
+            whether to save the result in `data.layers` simultaneously when `inplace` is True.
         res_key
             the key to save the result in `data.layers` when `inplace` is False or `add_layer` is True.
         
@@ -714,7 +714,7 @@ class StPipeline(object):
         layer
             the key of layer to be used instead of the data.exp_matrix.
         add_layer
-            whether to save the result in `data.layers` simultaneously when `inplace` is False.
+            whether to save the result in `data.layers` simultaneously when `inplace` is True.
 
         Returns
         -----------
