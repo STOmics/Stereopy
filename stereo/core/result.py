@@ -831,7 +831,8 @@ class MSDataPipeLineResult(dict):
         else:
             current_scope_key = self._ms_data.generate_scope_key(self._ms_data.tl.scope)
             if current_scope_key in self._ms_data.scopes_data:
-                return self._ms_data.scopes_data[current_scope_key].tl.result[key]
+                if key in self._ms_data.scopes_data[current_scope_key].tl.result:
+                    return self._ms_data.scopes_data[current_scope_key].tl.result[key]
         return dict.__getitem__(self, key)
     
     def __contains__(self, key: object) -> bool:

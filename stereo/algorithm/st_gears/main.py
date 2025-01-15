@@ -52,7 +52,7 @@ class StGears(MSDataAlgorithmBase):
         :param start_i: The index of first sample to calulate, defaults to 0
         :param end_i: The index of last sample to calulate, defaults to None.
                         By default, it is the last of all samples.
-        :param tune_alpha_li: List of regularization factor in Fused Gromov Wasserstin (FGW) OT problem formulation, to be
+        :param tune_alpha_li: List of regularization factor in Fused Gromov Wasserstein (FGW) OT problem formulation, to be
                         automatically tunned. Refer to this paper for the FGW formulation:
                         Optimal transport for structured data with application on graphs. T Vayer, L Chapel, R Flamary,
                         R Tavenard… - arXiv preprint arXiv …, 2018 - arxiv.org
