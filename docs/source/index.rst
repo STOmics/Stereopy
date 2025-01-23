@@ -20,7 +20,7 @@
 .. ~~~~~~~~~~~~
 
 
-|stars| |pypi| |downloads| |docs| 
+|stars| |pypi| |downloads| |docs| |doi|
 
 
 Stereopy -  Spatial Transcriptomics Analysis in Python
@@ -220,4 +220,8 @@ BUG Fixes:
 .. |pypi| image:: https://img.shields.io/pypi/v/stereopy
     :target: https://pypi.org/project/stereopy/
     :alt: PyPI
+
+.. |doi| image:: https://zenodo.org/badge/344680781.svg
+    :target: https://doi.org/10.5281/zenodo.14722435
+    :alt: DOI
 
