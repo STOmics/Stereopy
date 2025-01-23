@@ -2,6 +2,7 @@
 [![pypi](https://img.shields.io/pypi/v/stereopy)](https://pypi.org/project/stereopy/)
 [![downloads](https://static.pepy.tech/personalized-badge/stereopy?period=total&units=international_system&left_color=grey&right_color=blue&left_text=downloads)](https://pepy.tech/project/stereopy)
 [![docs](https://img.shields.io/static/v1?label=docs&message=stereopy&color=green)](https://stereopy.readthedocs.io/en/latest/index.html)
+[![DOI](https://zenodo.org/badge/344680781.svg)](https://doi.org/10.5281/zenodo.14722435)
 
 ## **Stereopy**: Spatial Transcriptomics Analysis in Python
 
