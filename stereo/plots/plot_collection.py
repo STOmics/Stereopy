@@ -739,7 +739,7 @@ class PlotCollection:
     def batches_umap(
             self,
             res_key: str,
-            title: Optional[str] = 'umap between batches',
+            title: Optional[str] = 'umap of each batch',
             x_label: Optional[str] = 'umap1',
             y_label: Optional[str] = 'umap2',
             bfig_title: Optional[str] = 'all batches',
@@ -785,8 +785,9 @@ class PlotCollection:
         batch_number_unique = np.unique(umap_res['batch'])
         batch_count = len(batch_number_unique)
         cmap = stereo_conf.get_colors(palette, batch_count, order=batch_number_unique)
+        cmap_dict = {bn: c for bn, c in zip(batch_number_unique, cmap)}
         fig_all = umap_res.hvplot.scatter(
-            x='x', y='y', c='batch', cmap=cmap, cnorm='eq_hist',
+            x='x', y='y', c='batch', cmap=cmap_dict, cnorm='eq_hist',
         ).opts(
             width=main_width,
             height=main_height,
@@ -796,6 +797,7 @@ class PlotCollection:
             size=dot_size,
             toolbar='disable',
             colorbar=False,
+            show_legend=False
         )
         bfig_all = hv.render(fig_all)
         bfig_all.axis.major_tick_line_alpha = 0
@@ -819,6 +821,7 @@ class PlotCollection:
                 size=(dot_size / 3),
                 toolbar='disable',
                 colorbar=False,
+                show_legend=False
             )
             bfig = hv.render(fig)
             bn = str(bn)
