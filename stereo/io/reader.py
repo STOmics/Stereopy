@@ -1159,7 +1159,7 @@ def stereo_to_anndata(
             raise ValueError("The image library id is necessary when adding image.")
         Image.MAX_IMAGE_PIXELS = None # for reading large images
         with Image.open(im_path) as im:
-            height, width = im.size
+            width, height = im.size
             height_hires = np.round(height * im_hires / 100).astype(int)
             width_hires = np.round(width * im_hires / 100).astype(int)
             hires = im.resize((width_hires, height_hires), Image.Resampling.NEAREST)
