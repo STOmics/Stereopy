@@ -1147,6 +1147,10 @@ def stereo_to_anndata(
         logger.info("Rename QC info.")
         adata.obs.rename(columns={'total_counts': "nCount_Spatial", "n_genes_by_counts": "nFeature_Spatial",
                                   "pct_counts_mt": 'percent.mito'}, inplace=True)
+        real_gene_name = None
+        if 'real_gene_name' in adata.var.columns and output is not None:
+            real_gene_name = adata.var['real_gene_name']
+            adata.var.drop(columns=['real_gene_name'], inplace=True)
     
     if image is not None:
         from PIL import Image
@@ -1211,6 +1215,9 @@ def stereo_to_anndata(
     if output is not None:
         adata.write_h5ad(output, compression=compression)
         logger.info(f"Finished output to {output}")
+        if flavor == 'seurat':
+            if real_gene_name is not None:
+                adata.var['real_gene_name'] = real_gene_name
 
     return adata
 

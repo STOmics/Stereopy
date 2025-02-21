@@ -11,6 +11,7 @@ Likewise, functions performed on one sample could also be used on multi-sample d
     MSData_Clustering
     Batch_QC
     Batch_Effect
+    Spatial_Alignment
     Comparative_Analysis
     Time_Series_Analysis
     3D_Cell_Cell_Communication

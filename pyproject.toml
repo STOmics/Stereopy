@@ -80,19 +80,43 @@ spt-cu12 = [
     "pygam>=0.8.0",
     "nbformat",
 ]
+spatialign = [
+    "torch==2.4.1+cpu",
+    "torch_geometric",
+    "torch_cluster",
+    "torch_scatter",
+    "torch_sparse",
+]
+spatialign-cu11 = [
+    "torch==2.4.1+cu118",
+    "torch_geometric",
+    "torch_cluster",
+    "torch_scatter",
+    "torch_sparse",
+]
+spatialign-cu12 = [
+    "torch==2.4.1+cu124",
+    "torch_geometric",
+    "torch_cluster",
+    "torch_scatter",
+    "torch_sparse",
+]
 all = [
     "stereopy[image]",
-    "stereopy[spt]"
+    "stereopy[spt]",
+    "stereopy[spatialign]"
 ]
 all-cu11 = [
     "stereopy[image-cu11]",
     "stereopy[singler-gpu]",
-    "stereopy[spt-cu11]"
+    "stereopy[spt-cu11]",
+    "stereopy[spatialign-cu11]"
 ]
 all-cu12 = [
     "stereopy[image-cu12]",
     "stereopy[singler-gpu]",
-    "stereopy[spt-cu12]"
+    "stereopy[spt-cu12]",
+    "stereopy[spatialign-cu12]"
 ]
 
 [tool.setuptools.dynamic]
