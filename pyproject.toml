@@ -66,18 +66,21 @@ spt = [
     "torch==2.4.1+cpu",
     "pysal<=2.6.0",
     "pygam>=0.8.0",
+    "quantecon==0.7.2",
     "nbformat",
 ]
 spt-cu11 = [
     "torch==2.4.1+cu118",
     "pysal<=2.6.0",
     "pygam>=0.8.0",
+    "quantecon==0.7.2",
     "nbformat",
 ]
 spt-cu12 = [
     "torch==2.4.1+cu124",
     "pysal<=2.6.0",
     "pygam>=0.8.0",
+    "quantecon==0.7.2",
     "nbformat",
 ]
 spatialign = [
