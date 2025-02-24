@@ -104,9 +104,9 @@ pygam>=0.8.0
 nbformat
 
 torch_geometric
-torch_cluster
-torch_scatter
-torch_sparse
+# torch_cluster
+# torch_scatter
+# torch_sparse
 
 
 Sphinx>=7.1.2
