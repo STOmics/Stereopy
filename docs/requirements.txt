@@ -101,6 +101,7 @@ ipywidgets==8.0.4
 mudata>=0.2.3
 pysal<=2.6.0
 pygam>=0.8.0
+quantecon==0.7.2
 nbformat
 
 torch_geometric
