@@ -15,6 +15,8 @@ args <- add_argument(args, "--image_dir", help = "The path of the directory savi
 args <- add_argument(args, "--outfile", help = "output RDS file")
 argv <- parse_args(args)
 
+if (is.null(image_dir)) {image_dir=NA}
+
 infile=argv$infile
 # assay=argv$assay
 assay='Spatial'
@@ -1380,8 +1382,9 @@ addimg2rds <- function(
   for(i in idx){ # correct image-ids
     imgIDs[i] <- as.character(format(as.numeric(imgIDs[i]), scientific = FALSE))
   }
-
-  rownames(image@coordinates) <- imgIDs
+  if (class(image) %in% "VisiumV1"){
+    rownames(image@coordinates) <- imgIDs
+  }
   image <- image[Cells(x = obj)]
   DefaultAssay(image) <- assay
   obj[['slice1']] <- image
