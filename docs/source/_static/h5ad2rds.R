@@ -1422,6 +1422,22 @@ for (name in groups$name[grepl("(?i)(?=.*meta.data.*)(?=.*code.*).*",groups$name
   grp$write(args = list(1:grp$dims), value = grp$read() + 1)
 }
 
+for (name in groups$name[grepl("(?i)(?=.*meta.features.*)(?=.*categories.*).*",groups$name,perl=TRUE)]) {
+  names <- strsplit(name, "/")[[1]]
+  names <- c(names[1:length(names) - 1], "levels")
+  new_name <- paste(names, collapse = "/")
+  f[[new_name]] <- f[[name]]
+}
+
+for (name in groups$name[grepl("(?i)(?=.*meta.features.*)(?=.*code.*).*",groups$name,perl=TRUE)]) {
+  names <- strsplit(name, "/")[[1]]
+  names <- c(names[1:length(names) - 1], "values")
+  new_name <- paste(names, collapse = "/")
+  f[[new_name]] <- f[[name]]
+  grp <- f[[new_name]]
+  grp$write(args = list(1:grp$dims), value = grp$read() + 1)
+}
+
 f$close_all()
 
 h5_file <- h5seurat_file
