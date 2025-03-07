@@ -16,7 +16,7 @@ numba==0.56.4
 statsmodels>=0.14.0
 leidenalg>=0.10.1
 umap-learn==0.5.1
-KDEpy==1.1.0
+KDEpy==1.1.11
 shapely>=2.0.0
 # pyviz-comms==2.2.1
 packaging>=23.1
