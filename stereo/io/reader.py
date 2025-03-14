@@ -1209,20 +1209,8 @@ def stereo_to_anndata(
     logger.info("Finished conversion to anndata.")
 
     if output is not None:
-        if 'real_gene_name' in adata.var.columns:
-            adata.uns['real_gene_name'] = adata.var['real_gene_name'].to_numpy()
-            adata.var.drop(columns='real_gene_name', inplace=True)
-        if adata.raw is not None and 'real_gene_name' in adata.raw.var.columns:
-            adata.uns['raw_real_gene_name'] = adata.raw.var['real_gene_name'].to_numpy()
-            adata.raw.var.drop(columns='real_gene_name', inplace=True)
         adata.write_h5ad(output, compression=compression)
         logger.info(f"Finished output to {output}")
-        if 'real_gene_name' in adata.uns:
-            adata.var['real_gene_name'] = adata.uns['real_gene_name']
-            del adata.uns['real_gene_name']
-        if adata.raw is not None and 'raw_real_gene_name' in adata.uns:
-            adata.raw.var['real_gene_name'] = adata.uns['raw_real_gene_name']
-            del adata.uns['raw_real_gene_name']
 
     return adata
 

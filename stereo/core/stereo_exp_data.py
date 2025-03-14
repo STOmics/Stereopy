@@ -842,15 +842,6 @@ class AnnBasedStereoExpData(StereoExpData):
         if 'position_min' in self._ann_data.uns:
             self.position_min = self._ann_data.uns['position_min']
             del self._ann_data.uns['position_min']
-        
-        if 'real_gene_name' in self._ann_data.uns and 'real_gene_name' not in self._ann_data.var.columns:
-            self._ann_data.var['real_gene_name'] = self._ann_data.uns['real_gene_name']
-            del self._ann_data.uns['real_gene_name']
-        
-        if self._ann_data.raw and 'raw_real_gene_name' in self._ann_data.uns \
-            and 'real_gene_name' not in self._ann_data.raw.var.columns:
-            self._ann_data.raw.var['real_gene_name'] = self._ann_data.uns['raw_real_gene_name']
-            del self._ann_data.uns['raw_real_gene_name']
 
         from .st_pipeline import AnnBasedStPipeline
         self._tl = AnnBasedStPipeline(self)

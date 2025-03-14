@@ -43,6 +43,10 @@ AttrExists <- function(x, name) {
   return(exists)
 }
 
+UpdateKey <- function(key) {
+  return(paste0(tolower(x = key), '_'))
+}
+
 GuessDType <- function(x, stype = 'utf8', ...) {
   dtype <- guess_dtype(x = x, ...)
   if (inherits(x = dtype, what = 'H5T_STRING')) {
