@@ -736,108 +736,224 @@ class PlotCollection:
             fig.figure.show()
         return fig
 
+    # def batches_umap(
+    #         self,
+    #         res_key: str,
+    #         title: Optional[str] = 'umap of each batch',
+    #         x_label: Optional[str] = 'umap1',
+    #         y_label: Optional[str] = 'umap2',
+    #         bfig_title: Optional[str] = 'all batches',
+    #         dot_size: Optional[int] = 1,
+    #         palette: Optional[Union[str, list, dict]] = 'stereo_30',
+    #         width: Optional[int] = None,
+    #         height: Optional[int] = None
+    # ):
+    #     """
+    #     Plot batch umap
+
+    #     :param res_key: the result key of UMAP.
+    #     :param title:  the plot titles.
+    #     :param x_label: the x label.
+    #     :param y_label: the y label.
+    #     :param bfig_title: the big figure title.
+    #     :param dot_size: the dot size.
+    #     :param palette: a palette name, a list of colors whose length is equal to the batches,
+    #                     or a dict whose keys are batch numbers and values are colors.
+    #     :param width: the figure width in pixels.
+    #     :param height: the figure height in pixels.
+
+    #     """
+    #     import holoviews as hv
+    #     import panel as pn
+    #     from bokeh.models import Title
+    #     pn.extension()
+    #     hv.extension('bokeh')
+
+    #     assert self.data.cells.batch is not None, "there is no batches number list"
+    #     if width is None or height is None:
+    #         main_width, main_height = 500, 500
+    #         sub_width, sub_height = 200, 200
+    #     else:
+    #         main_width = width
+    #         main_height = height
+    #         sub_width = np.ceil(width * 0.4).astype(np.int32)
+    #         sub_height = np.ceil(height * 0.4).astype(np.int32)
+
+    #     umap_res = self.check_res_key(res_key)
+    #     umap_res = umap_res.rename(columns={0: 'x', 1: 'y'})
+    #     umap_res['batch'] = self.data.cells.batch.astype(np.uint16)
+    #     batch_number_unique = np.unique(umap_res['batch'])
+    #     batch_count = len(batch_number_unique)
+    #     cmap = stereo_conf.get_colors(palette, batch_count, order=batch_number_unique)
+    #     cmap_dict = {bn: c for bn, c in zip(batch_number_unique, cmap)}
+    #     fig_all = umap_res.hvplot.scatter(
+    #         x='x', y='y', c='batch', cmap=cmap_dict, cnorm='eq_hist',
+    #     ).opts(
+    #         width=main_width,
+    #         height=main_height,
+    #         invert_yaxis=True,
+    #         xlabel=x_label,
+    #         ylabel=y_label,
+    #         size=dot_size,
+    #         toolbar='disable',
+    #         colorbar=False,
+    #         show_legend=False
+    #     )
+    #     bfig_all = hv.render(fig_all)
+    #     bfig_all.axis.major_tick_line_alpha = 0
+    #     bfig_all.axis.minor_tick_line_alpha = 0
+    #     bfig_all.axis.major_label_text_alpha = 0
+    #     bfig_all.axis.axis_line_alpha = 0
+    #     bfig_all.title = Title(text=bfig_title, align='center')
+    #     bfig_batches = []
+    #     pn_rows = []
+    #     for i, bn, c in zip(range(batch_count), batch_number_unique, cmap):
+    #         sub_umap_res = umap_res[umap_res.batch == bn]
+    #         fig = sub_umap_res.hvplot.scatter(
+    #             x='x', y='y',
+    #             c='batch', color=c, cnorm='eq_hist',
+    #         ).opts(
+    #             width=sub_width,
+    #             height=sub_height,
+    #             xaxis=None,
+    #             yaxis=None,
+    #             invert_yaxis=True,
+    #             size=(dot_size / 3),
+    #             toolbar='disable',
+    #             colorbar=False,
+    #             show_legend=False
+    #         )
+    #         bfig = hv.render(fig)
+    #         bn = str(bn)
+    #         bfig.title = Title(text=f'sn: {self.data.sn[bn]}', align='center')
+    #         bfig_batches.append(bfig)
+    #         if ((i + 1) % 2) == 0 or i == (batch_count - 1):
+    #             pn_rows.append(pn.Row(*bfig_batches))
+    #             bfig_batches.clear()
+
+    #     return pn.Column(
+    #         f"\n# {title}",
+    #         pn.Row(
+    #             pn.Column(bfig_all),
+    #             pn.Column(*pn_rows)
+    #         )
+    #     )
+    @download
     def batches_umap(
             self,
             res_key: str,
             title: Optional[str] = 'umap of each batch',
             x_label: Optional[str] = 'umap1',
             y_label: Optional[str] = 'umap2',
-            bfig_title: Optional[str] = 'all batches',
-            dot_size: Optional[int] = 1,
+            main_title: Optional[str] = 'batches',
+            sub_titles: Optional[list] = None,
+            dot_size: Optional[int] = 3,
             palette: Optional[Union[str, list, dict]] = 'stereo_30',
             width: Optional[int] = None,
-            height: Optional[int] = None
+            height: Optional[int] = None,
+            sub_cols: Optional[int] = 2,
+            **kwargs
     ):
         """
-        Plot batch umap
+        Plot the umap of batches, the leftmost is the umap for all batches
+        while the others are for each batch.
 
         :param res_key: the result key of UMAP.
         :param title:  the plot titles.
         :param x_label: the x label.
         :param y_label: the y label.
-        :param bfig_title: the big figure title.
+        :param main_title: the title of the leftmost plot.
+        :param sub_titles: a list of titles of the plots except the leftmost one.
         :param dot_size: the dot size.
         :param palette: a palette name, a list of colors whose length is equal to the batches,
                         or a dict whose keys are batch numbers and values are colors.
         :param width: the figure width in pixels.
         :param height: the figure height in pixels.
+        :param sub_cols: the number of columns for the plots except the leftmost one.
+        :param out_path: the path to save the figure.
+        :param out_dpi: the dpi when the figure is saved.
 
         """
-        import holoviews as hv
-        import panel as pn
-        from bokeh.models import Title
-        pn.extension()
-        hv.extension('bokeh')
-
-        assert self.data.cells.batch is not None, "there is no batches number list"
-        if width is None or height is None:
-            main_width, main_height = 500, 500
-            sub_width, sub_height = 200, 200
-        else:
-            main_width = width
-            main_height = height
-            sub_width = np.ceil(width * 0.4).astype(np.int32)
-            sub_height = np.ceil(height * 0.4).astype(np.int32)
+        assert self.data.cells.batch is not None, \
+            "there are no batch numbers, it may not be a data merged from multiple slices."
 
         umap_res = self.check_res_key(res_key)
         umap_res = umap_res.rename(columns={0: 'x', 1: 'y'})
-        umap_res['batch'] = self.data.cells.batch.astype(np.uint16)
-        batch_number_unique = np.unique(umap_res['batch'])
+        umap_res['batch'] = self.data.cells.batch
+        batch_number_unique = natsorted(np.unique(umap_res['batch']))
         batch_count = len(batch_number_unique)
         cmap = stereo_conf.get_colors(palette, batch_count, order=batch_number_unique)
         cmap_dict = {bn: c for bn, c in zip(batch_number_unique, cmap)}
-        fig_all = umap_res.hvplot.scatter(
-            x='x', y='y', c='batch', cmap=cmap_dict, cnorm='eq_hist',
-        ).opts(
-            width=main_width,
-            height=main_height,
-            invert_yaxis=True,
-            xlabel=x_label,
-            ylabel=y_label,
-            size=dot_size,
-            toolbar='disable',
-            colorbar=False,
-            show_legend=False
+
+        default_main_width = 500
+        default_main_height = 500
+        default_sub_width = 250
+        default_sub_height = 250
+        sub_rows = batch_count // sub_cols + 1 if batch_count % sub_cols != 0 else batch_count // sub_cols
+        if sub_rows == 1:
+            sub_rows = 2
+        if width is None:
+            width = default_main_width + default_sub_width * sub_cols
+            sub_width = default_sub_width
+        else:
+            sub_width = np.ceil(width / (sub_cols + 2)).astype(np.int32)
+        if height is None:
+            height = max(default_main_height, default_sub_height * sub_rows)
+            sub_height = sub_width
+        else:
+            sub_height = np.ceil(height / sub_rows).astype(np.int32)
+
+        width_ratios = [width - sub_width * sub_cols] + [sub_width] * sub_cols
+        height_ratios = [sub_height] * sub_rows
+        fig = plt.figure(figsize=(width / 100, height / 100))
+        gs = fig.add_gridspec(sub_rows, sub_cols + 1, width_ratios=width_ratios, height_ratios=height_ratios)
+
+        if title is not None:
+            fig.suptitle(title, fontsize=20, fontweight='bold', va='top', ha='center')
+
+        if 'show_legend' in kwargs:
+            del kwargs['show_legend']
+
+        if sub_rows >= 2:
+            ax_main = fig.add_subplot(gs[0:2, 0])
+        else:
+            ax_main = fig.add_subplot(gs[:, 0])
+        base_scatter(
+            umap_res['x'],
+            umap_res['y'],
+            hue=umap_res['batch'],
+            palette=cmap_dict,
+            title=main_title,
+            color_bar=False,
+            x_label=x_label,
+            y_label=y_label,
+            dot_size=dot_size,
+            width=width,
+            height=height,
+            ax=ax_main,
+            show_legend=False,
+            **kwargs
         )
-        bfig_all = hv.render(fig_all)
-        bfig_all.axis.major_tick_line_alpha = 0
-        bfig_all.axis.minor_tick_line_alpha = 0
-        bfig_all.axis.major_label_text_alpha = 0
-        bfig_all.axis.axis_line_alpha = 0
-        bfig_all.title = Title(text=bfig_title, align='center')
-        bfig_batches = []
-        pn_rows = []
         for i, bn, c in zip(range(batch_count), batch_number_unique, cmap):
             sub_umap_res = umap_res[umap_res.batch == bn]
-            fig = sub_umap_res.hvplot.scatter(
-                x='x', y='y',
-                c='batch', color=c, cnorm='eq_hist',
-            ).opts(
+            ax = fig.add_subplot(gs[i // sub_cols, i % sub_cols + 1])
+            base_scatter(
+                sub_umap_res['x'],
+                sub_umap_res['y'],
+                hue=sub_umap_res['batch'],
+                palette={bn: c},
+                color_bar=False,
+                dot_size=dot_size,
                 width=sub_width,
                 height=sub_height,
-                xaxis=None,
-                yaxis=None,
-                invert_yaxis=True,
-                size=(dot_size / 3),
-                toolbar='disable',
-                colorbar=False,
-                show_legend=False
+                ax=ax,
+                show_legend=False,
+                **kwargs
             )
-            bfig = hv.render(fig)
-            bn = str(bn)
-            bfig.title = Title(text=f'sn: {self.data.sn[bn]}', align='center')
-            bfig_batches.append(bfig)
-            if ((i + 1) % 2) == 0 or i == (batch_count - 1):
-                pn_rows.append(pn.Row(*bfig_batches))
-                bfig_batches.clear()
-
-        return pn.Column(
-            f"\n# {title}",
-            pn.Row(
-                pn.Column(bfig_all),
-                pn.Column(*pn_rows)
-            )
-        )
+            sub_tilte = f'batch-{bn}' if sub_titles is None else sub_titles[i]
+            ax.set_title(sub_tilte, fontsize=10, fontweight='bold')
+        fig.tight_layout(pad=1)
+        return fig
 
     @download
     def umap(
