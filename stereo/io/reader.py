@@ -1337,6 +1337,7 @@ def read_gef(
         cellborders_coord_list, coord_count_per_cell = gef.get_cellborders([])
         border_points_count_per_cell = int(coord_count_per_cell / 2)
         cell_borders = cellborders_coord_list.reshape((-1, border_points_count_per_cell, 2))
+        cells = gef.get_cells()
         if gene_list is not None or region is not None:
             if gene_list is None:
                 gene_list = []
@@ -1353,6 +1354,7 @@ def read_gef(
             data.cells = Cell(cell_name=uniq_cell, cell_border=uniq_cell_borders)
             data.cells['dnbCount'] = dnb_cnt
             data.cells['area'] = cell_area
+            data.cells['id'] = cells['id'][np.in1d(gef.get_cell_names(), uniq_cell)]
 
             if len(gene_id[0]) == 0:
                 gene_name_index = True
@@ -1378,9 +1380,10 @@ def read_gef(
             indices, indptr, count = gef.get_sparse_matrix_indices(order='cell')
             exp_matrix = csr_matrix((count, indices, indptr), shape=(cell_num, gene_num), dtype=np.uint32)
             data.cells = Cell(cell_name=cell_names, cell_border=cell_borders)
-            cells = gef.get_cells()
+            # cells = gef.get_cells()
             data.cells['dnbCount'] = cells['dnbCount']
             data.cells['area'] = cells['area']
+            data.cells['id'] = cells['id']
             if len(gene_id[0]) == 0:
                 gene_name_index = True
             if gene_name_index:
