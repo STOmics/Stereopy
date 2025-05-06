@@ -55,6 +55,10 @@ def read_gem(
     """
     Read the Stereo-seq GEM file, and generate the StereoExpData object.
 
+    .. seealso::
+
+        `st.io.read_gef <stereo.io.read_gef.html>`_
+
     Parameters
     -------------
     file_path
@@ -475,6 +479,10 @@ def read_h5ms(file_path, use_raw=True, use_result=True):
     """
     Load a h5ms file as an object of MSData
 
+    .. seealso::
+
+        `st.io.write_h5ms <stereo.io.write_h5ms.html>`_
+
     :param file_path: The path of h5ms file to be loaded.
     :param use_raw: Whether to load the raw data of each StereoExpData in MSData, defaults to True.
     :param use_result: Whether to load the analysis results which had been saved in h5ms file, defaults to True.
@@ -754,7 +762,13 @@ def read_h5ad(
         **kwargs
 ) -> Union[StereoExpData, AnnBasedStereoExpData]:
     """
-    Read a h5ad file or load a AnnData object
+    Read a h5 file or load an AnnData object.
+
+    .. seealso::
+
+        `st.io.write_h5ad <stereo.io.write_h5ad.html>`_
+
+        `st.io.stereo_to_anndata <stereo.io.stereo_to_anndata.html>`_
 
     Parameters
     ------------------
@@ -765,8 +779,8 @@ def read_h5ad(
         `file_path` and `anndata` only can input one of them.
     flavor
         the format of the h5ad file, defaults to `'scanpy'`.
-        `scanpy`: AnnData format of scanpy
-        `stereopy`: h5 format of stereo
+        `scanpy`: h5 format of AnnData
+        `stereopy`: h5 format of StereoExpData
     bin_type
         the bin type includes `'bins'` and `'cell_bins'`.
     bin_size
@@ -869,6 +883,12 @@ def stereo_to_anndata(
 ) -> AnnData:
     """
     Transform the StereoExpData object into Anndata format.
+
+    .. seealso::
+
+        `st.io.read_h5ad <stereo.io.read_h5ad.html>`_
+
+        `st.io.write_h5ad <stereo.io.write_h5ad.html>`_
 
     Parameters
     -----------------------
@@ -1139,7 +1159,7 @@ def stereo_to_anndata(
             raise ValueError("The image library id is necessary when adding image.")
         Image.MAX_IMAGE_PIXELS = None # for reading large images
         with Image.open(im_path) as im:
-            height, width = im.size
+            width, height = im.size
             height_hires = np.round(height * im_hires / 100).astype(int)
             width_hires = np.round(width * im_hires / 100).astype(int)
             hires = im.resize((width_hires, height_hires), Image.Resampling.NEAREST)
@@ -1270,6 +1290,10 @@ def read_gef(
     """
     Read the GEF (.h5) file, and generate the StereoExpData object.
 
+    .. seealso::
+
+        `st.io.read_gem <stereo.io.read_gem.html>`_
+
     Parameters
     ---------------
     file_path
@@ -1313,6 +1337,7 @@ def read_gef(
         cellborders_coord_list, coord_count_per_cell = gef.get_cellborders([])
         border_points_count_per_cell = int(coord_count_per_cell / 2)
         cell_borders = cellborders_coord_list.reshape((-1, border_points_count_per_cell, 2))
+        cells = gef.get_cells()
         if gene_list is not None or region is not None:
             if gene_list is None:
                 gene_list = []
@@ -1329,6 +1354,7 @@ def read_gef(
             data.cells = Cell(cell_name=uniq_cell, cell_border=uniq_cell_borders)
             data.cells['dnbCount'] = dnb_cnt
             data.cells['area'] = cell_area
+            data.cells['id'] = cells['id'][np.in1d(gef.get_cell_names(), uniq_cell)]
 
             if len(gene_id[0]) == 0:
                 gene_name_index = True
@@ -1354,9 +1380,10 @@ def read_gef(
             indices, indptr, count = gef.get_sparse_matrix_indices(order='cell')
             exp_matrix = csr_matrix((count, indices, indptr), shape=(cell_num, gene_num), dtype=np.uint32)
             data.cells = Cell(cell_name=cell_names, cell_border=cell_borders)
-            cells = gef.get_cells()
+            # cells = gef.get_cells()
             data.cells['dnbCount'] = cells['dnbCount']
             data.cells['area'] = cells['area']
+            data.cells['id'] = cells['id']
             if len(gene_id[0]) == 0:
                 gene_name_index = True
             if gene_name_index:
@@ -1559,6 +1586,10 @@ def mudata_to_msdata(
 ):
     """
     Read a h5mu file and convert it to a MSData object.
+
+    .. seealso::
+
+        `st.io.write_h5mu <stereo.io.write_h5mu.html>`_
 
     :param file_path: The path of the MuData file, defaults to None
     :param sample_names: The names of single samples that are saved in the MuData object, defaults to None,

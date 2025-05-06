@@ -3,6 +3,18 @@ Release Notes
 
 .. role:: small
 
+Version 1.6.0
+------------------
+1.6.0 : 2025-02-21
+~~~~~~~~~~~~~~~~~~~
+
+.. _Spatialign: ../Tutorials(Multi-sample)/Spatial_Alignment.html
+.. |Spatialign| replace:: **Spatialign**
+
+Features:
+
+1. Addition of new algorithm |Spatialign|_ for batch effect removal.
+
 Version 1.5.1
 ------------------
 1.5.1 : 2024-12-26

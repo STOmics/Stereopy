@@ -43,6 +43,10 @@ AttrExists <- function(x, name) {
   return(exists)
 }
 
+UpdateKey <- function(key) {
+  return(paste0(tolower(x = key), '_'))
+}
+
 GuessDType <- function(x, stype = 'utf8', ...) {
   dtype <- guess_dtype(x = x, ...)
   if (inherits(x = dtype, what = 'H5T_STRING')) {
@@ -1414,6 +1418,22 @@ for (name in groups$name[grepl("(?i)(?=.*meta.data.*)(?=.*categories.*).*",group
 }
 
 for (name in groups$name[grepl("(?i)(?=.*meta.data.*)(?=.*code.*).*",groups$name,perl=TRUE)]) {
+  names <- strsplit(name, "/")[[1]]
+  names <- c(names[1:length(names) - 1], "values")
+  new_name <- paste(names, collapse = "/")
+  f[[new_name]] <- f[[name]]
+  grp <- f[[new_name]]
+  grp$write(args = list(1:grp$dims), value = grp$read() + 1)
+}
+
+for (name in groups$name[grepl("(?i)(?=.*meta.features.*)(?=.*categories.*).*",groups$name,perl=TRUE)]) {
+  names <- strsplit(name, "/")[[1]]
+  names <- c(names[1:length(names) - 1], "levels")
+  new_name <- paste(names, collapse = "/")
+  f[[new_name]] <- f[[name]]
+}
+
+for (name in groups$name[grepl("(?i)(?=.*meta.features.*)(?=.*code.*).*",groups$name,perl=TRUE)]) {
   names <- strsplit(name, "/")[[1]]
   names <- c(names[1:length(names) - 1], "values")
   new_name <- paste(names, collapse = "/")

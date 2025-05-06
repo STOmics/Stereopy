@@ -32,6 +32,14 @@ from .gene import AnnBasedGene
 from .gene import Gene
 from ..log_manager import logger
 
+def gene_name_2_gene_id(gene_name_input, real_gene_name, gene_id):
+    gene_name_input = np.array(gene_name_input, dtype='U')
+    tmp = gene_name_input[:, None] == real_gene_name
+    ind = np.nonzero(tmp)[1]
+    if len(ind) > 0:
+        return gene_id[ind]
+    return gene_name_input
+
 
 class StereoExpData(Data):
     def __init__(
@@ -209,6 +217,8 @@ class StereoExpData(Data):
             cell_index = self.cells.obs.index.get_indexer(cell_name)
             cell_index = cell_index[cell_index != -1]
         if gene_name is not None:
+            if data.genes.real_gene_name is not None:
+                gene_name = gene_name_2_gene_id(gene_name, data.genes.real_gene_name, data.genes.gene_name)
             gene_index = self.genes.var.index.get_indexer(gene_name)
             gene_index = gene_index[gene_index != -1]
         return data.sub_by_index(cell_index, gene_index, filter_raw)
@@ -1061,23 +1071,12 @@ class AnnBasedStereoExpData(StereoExpData):
         filter_raw: bool = True,
         copy: bool = True
     ):
-        # data = AnnBasedStereoExpData(self.file, based_ann_data=self._ann_data.copy())
-        # data._ann_data.obs_names_make_unique()
-        # data._ann_data.var_names_make_unique()
-        # if cell_name is not None:
-        #     data._ann_data._inplace_subset_obs(cell_name)
-        # if gene_name is not None:
-        #     data._ann_data._inplace_subset_var(gene_name)
         data = deepcopy(self) if copy else self
+        if gene_name is not None:
+            if data.genes.real_gene_name is not None:
+                gene_name = gene_name_2_gene_id(gene_name, data.genes.real_gene_name, data.genes.gene_name)
         data.sub_by_index(cell_name, gene_name, filter_raw)
         return data
-
-    # @staticmethod
-    # def merge(*data, batch_key='batch'):
-    #     from anndata import concat
-    #     ann_data = concat([d._ann_data for d in data], axis=0, merge='same', label=batch_key, index_unique='-')
-    #     return AnnBasedStereoExpData(based_ann_data=ann_data)
-    
     
     @property
     def adata(self):

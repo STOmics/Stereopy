@@ -43,7 +43,19 @@ def write_h5ad(
         output: str = None,
         split_batches: bool = True):
     """
-    Write the StereoExpData into a H5ad file.
+    Write the **StereoExpData** object into a h5 file, we recommend you to set the suffix of the file as **.h5st**.
+    
+    This is a specific format for **StereoExpData** object, not the format of **AnnData** which is suffixed with **.h5ad**.
+
+    When reading it back using `st.io.read_h5ad`, the parameter `flavor` should be set to **'stereopy'**.
+
+    If you want to save the **StereoExpData** object into a **.h5ad** file, you can use `st.io.stereo_to_anndata`.
+
+    .. seealso::
+
+        `st.io.read_h5ad <stereo.io.read_h5ad.html>`_
+        
+        `st.io.stereo_to_anndata <stereo.io.stereo_to_anndata.html>`_
 
     Parameters
     ---------------------
@@ -333,6 +345,10 @@ def write_h5ms(ms_data, output: str, anndata_as_anndata: bool = True):
     """
     Save an object of MSData into a h5 file whose suffix is 'h5ms'.
 
+    .. seealso::
+
+        `st.io.read_h5ms <stereo.io.read_h5ms.html>`_
+
     :param ms_data: The object of MSData to be saved.
     :param output: The path of file into which MSData is saved.
     """
@@ -537,6 +553,10 @@ def update_gef(data: StereoExpData, gef_file: str, cluster_res_key: str):
 def write_h5mu(ms_data: MSData, output: str = None, compression: Optional[Literal["gzip", "lzf"]] = 'gzip'):
     """
     Convert the MSData to a MuData and save it as a h5mu file.
+
+    .. seealso::
+
+        `st.io.mudata_to_msdata <stereo.io.mudata_to_msdata.html>`_
 
     The single samples saved in MSData.data_list are named as 'sample_{i}'.
     The scope data merged from some samples are named starting with 'scope_[{i0,i1,i2...}]'.

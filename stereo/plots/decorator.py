@@ -39,12 +39,16 @@ def download(func):
     def wrapped(*args, **kwargs):
         out_path = None
         dpi = 100
+        transparent = False
         if 'out_path' in kwargs:
             out_path = kwargs['out_path']
             del kwargs['out_path']
         if 'out_dpi' in kwargs:
             dpi = kwargs['out_dpi']
             del kwargs['out_dpi']
+        if 'out_transparent' in kwargs:
+            transparent = kwargs['out_transparent']
+            del kwargs['out_transparent']
         fig: Figure = func(*args, **kwargs)
         if type(fig) is not Figure:
             return fig
@@ -66,7 +70,7 @@ def download(func):
                     dpi = dpi_input.value if dpi_input.value > 0 else 100
                     if out_path is not None and len(out_path) > 0:
                         out_path = f"{out_path}_{func.__name__}.{file_format}"
-                        figure.savefig(out_path, bbox_inches='tight', dpi=dpi)
+                        figure.savefig(out_path, bbox_inches='tight', dpi=dpi, transparent=transparent)
                         static_text.value = f'the plot has already been saved in the same directory as this notebook ' \
                                             f'and named as <font color="red"><b>{out_path}</b></font>'
                 finally:
@@ -80,7 +84,7 @@ def download(func):
                 pn.Row(export_button, static_text)
             )
         else:
-            fig.savefig(out_path, bbox_inches='tight', dpi=dpi)
+            fig.savefig(out_path, bbox_inches='tight', dpi=dpi, transparent=transparent)
 
     return wrapped
 
@@ -90,15 +94,19 @@ def download_only(func):
     def wrapped(*args, **kwargs):
         out_path = None
         dpi = 100
+        transparent = False
         if 'out_path' in kwargs:
             out_path = kwargs['out_path']
             del kwargs['out_path']
         if 'out_dpi' in kwargs:
             dpi = kwargs['out_dpi']
             del kwargs['out_dpi']
+        if 'out_transparent' in kwargs:
+            transparent = kwargs['out_transparent']
+            del kwargs['out_transparent']
         fig: Figure = func(*args, **kwargs)
         if type(fig) is Figure and out_path is not None:
-            fig.savefig(out_path, bbox_inches='tight', dpi=dpi)
+            fig.savefig(out_path, bbox_inches='tight', dpi=dpi, transparent=transparent)
         return fig
 
     return wrapped
