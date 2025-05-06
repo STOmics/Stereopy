@@ -136,6 +136,12 @@ class Cell(object):
     @n_genes_by_counts.setter
     def n_genes_by_counts(self, value):
         self._obs['n_genes_by_counts'] = value
+    
+    @property
+    def cell_id(self):
+        if 'id' not in self._obs.columns:
+            return self.cell_name
+        return self._obs['id'].to_numpy().astype('U')
 
     @property
     def cell_name(self):
