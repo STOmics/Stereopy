@@ -63,7 +63,7 @@ pyscenic>=0.12.1
 POT==0.9.1
 distinctipy>=1.2.2
 lxml>=4.8.0
-fastcluster>=1.2.6
+fastcluster==1.2.6
 pycirclize>=0.5.0
 plotly>=5.15.0
 # cusingler
