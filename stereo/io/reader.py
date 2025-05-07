@@ -1046,15 +1046,16 @@ def stereo_to_anndata(
                         }
             elif key in ['pca', 'umap', 'tsne', 'totalVI', 'spatial_alignment_integration']:
                 # pca :we do not keep variance and PCs(for varm which will be into feature.finding in pca of seurat.)
-                res_key = data.tl.key_record[key][-1]
-                sc_key = f'X_{key}'
-                logger.info(f"Adding data.tl.result['{res_key}'] into adata.obsm['{sc_key}'] .")
-                adata.obsm[sc_key] = data.tl.result[res_key].values
-                if key == 'pca':
-                    variance_ratio_key = f'{res_key}_variance_ratio'
-                    if variance_ratio_key in data.tl.result:
-                        logger.info(f"Adding data.tl.result['{variance_ratio_key}'] into adata.uns['{key}_variance_ratio'] .")
-                        adata.uns[variance_ratio_key] = data.tl.result[variance_ratio_key]
+                # res_key = data.tl.key_record[key][-1]
+                for res_key in data.tl.key_record[key]:
+                    sc_key = f'X_{res_key}' if not res_key.startswith('X_') else res_key
+                    logger.info(f"Adding data.tl.result['{res_key}'] into adata.obsm['{sc_key}'] .")
+                    adata.obsm[sc_key] = data.tl.result[res_key].values
+                    if key == 'pca':
+                        variance_ratio_key = f'{res_key}_variance_ratio'
+                        if variance_ratio_key in data.tl.result:
+                            logger.info(f"Adding data.tl.result['{variance_ratio_key}'] into adata.uns['{variance_ratio_key}'] .")
+                            adata.uns[variance_ratio_key] = data.tl.result[variance_ratio_key]
             elif key == 'neighbors':
                 # neighbor :seurat use uns for conversion to @graph slot, but scanpy canceled neighbors of uns at present. # noqa
                 # so this part could not be converted into seurat straightly.
