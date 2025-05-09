@@ -47,8 +47,7 @@ pillow>=10.1.0
 scikit-image>=0.21.0
 tifffile>=2023.2.3
 opencv-python>=4.8.0.76
-hotspotsc==1.1.1
-# hotspotsc @ git+https://github.com/YosefLab/Hotspot.git@v1.1.2
+hotspotsc==1.1.3
 distributed>=2023.3.2.1
 pyarrow>=10.0.1
 spatialpandas>=0.4.4

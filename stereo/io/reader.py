@@ -914,11 +914,11 @@ def stereo_to_anndata(
         it can be a grayscale image, a RGB image or a RGBA image.
     im_hires:
         The scale of image for high resolution, default to 4,
-        the size of image will be changed to (image.height * im_hires / 100, image.width * im_hires / 100),
+        the size of image will be changed to (image.width * im_hires / 100, image.height * im_hires / 100),
         this image will be added to adata.uns['spatial'][`im_library_id`]['images']['hires'].
     im_lowres:
         The scale of image for low resolution, default to 1,
-        the size of image will be changed to (image.height * im_lowres / 100, image.width * im_lowres / 100),
+        the size of image will be changed to (image.width * im_lowres / 100, image.height * im_lowres / 100),
         this image will be added to adata.uns['spatial'][`im_library_id`]['images']['lowres'].
     im_library_id:
         The id of image library, image will be added to adata.uns['spatial'][`im_library_id`],
