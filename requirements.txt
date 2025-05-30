@@ -17,7 +17,7 @@ numba>=0.56.4
 statsmodels>=0.14.0
 leidenalg>=0.10.1
 umap-learn==0.5.1
-KDEpy==1.1.0
+KDEpy==1.1.11
 shapely>=2.0.0
 # pyviz-comms==2.2.1
 packaging>=23.1
@@ -48,8 +48,7 @@ pillow>=10.1.0
 scikit-image>=0.22.0
 tifffile==2024.9.20
 opencv-python>=4.8.0.76
-hotspotsc==1.1.1
-# hotspotsc @ git+https://github.com/YosefLab/Hotspot.git@v1.1.2
+hotspotsc==1.1.3
 distributed>=2023.3.2.1
 pyarrow>=17.0.0
 spatialpandas>=0.4.4

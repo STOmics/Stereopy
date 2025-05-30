@@ -136,6 +136,10 @@ def filter_genes(
     if max_counts:
         gene_subset &= data.genes.n_counts <= max_counts
     if gene_list is not None:
+        if data.genes.real_gene_name is not None:
+            tmp = np.isin(data.genes.real_gene_name, gene_list)
+            if np.any(tmp):
+                gene_list = data.genes.gene_name[tmp]
         if excluded:
             gene_subset &= ~np.isin(data.gene_names, gene_list)
         else:

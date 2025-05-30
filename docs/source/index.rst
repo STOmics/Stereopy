@@ -20,7 +20,7 @@
 .. ~~~~~~~~~~~~
 
 
-|stars| |pypi| |downloads| |docs| 
+|stars| |pypi| |downloads| |docs| |doi|
 
 
 Stereopy -  Spatial Transcriptomics Analysis in Python
@@ -63,6 +63,17 @@ Workflow
 
 Latest Additions
 ------------------
+
+Version 1.6.0
+~~~~~~~~~~~~~~~~~~~
+1.6.0 : 2025-02-21
+
+.. _Spatialign: Tutorials(Multi-sample)/Spatial_Alignment.html
+.. |Spatialign| replace:: **Spatialign**
+
+Features:
+
+1. Addition of new algorithm |Spatialign|_ for batch effect removal.
 
 Version 1.5.1
 ~~~~~~~~~~~~~~~~~~~
@@ -159,36 +170,6 @@ BUG Fixes:
 2. Fixed the problem that saving **MSData** into **h5mu** was failed after running `st.tl.highly_variable_genes`.
 
 
-Version 1.4.0
-~~~~~~~~~~~~~~~~~~~
-1.4.0 : 2024-09-05
-
-.. _SpaSEG: Tutorials(Multi-sample)/SpaSEG.html
-.. |SpaSEG| replace:: **SpaSEG**
-
-.. _st.plt.cells_plotting: content/stereo.plots.PlotCollection.cells_plotting.html
-.. |st.plt.cells_plotting| replace:: `st.plt.cells_plotting`
-
-.. _st.io.write_h5mu: content/stereo.io.write_h5mu.html
-.. |st.io.write_h5mu| replace:: `st.io.write_h5mu`
-
-.. _st.io.mudata_to_msdata: content/stereo.io.mudata_to_msdata.html
-.. |st.io.mudata_to_msdata| replace:: `st.io.mudata_to_msdata`
-
-Features:
-
-1. Addition of new algorithm |SpaSEG|_ for multiple **SRT** analysis.
-2. Addition of **colorbar** or **legend** for `st.plt.cells_plotting`.
-3. |st.plt.cells_plotting|_ supports exporting plots as **PNG**, **SVG** or **PDF**.
-4. Addition of method |st.io.write_h5mu|_ and |st.io.mudata_to_msdata|_ for conversion between **MSData** and **MuData**.
-
-BUG Fixes:
-
-1. Fixed the problem that **CellCorrection** is incompatible with small-size images (less than 2000px in any dimension) when using the **EDM** method.
-2. Fixed the problem that `MSData.to_integrate` is incompatible when the number of cells in the integrated sample is less than the total number of cells in all single samples.
-3. Fixed the problem that `st.plt.time_series_tree_plot` can not capture the result of **PAGA**, leading to an incorrect plot.
-4. Fixed other bugs.
-
 .. toctree::
     :titlesonly:
     :maxdepth: 3
@@ -220,4 +201,8 @@ BUG Fixes:
 .. |pypi| image:: https://img.shields.io/pypi/v/stereopy
     :target: https://pypi.org/project/stereopy/
     :alt: PyPI
+
+.. |doi| image:: https://zenodo.org/badge/344680781.svg
+    :target: https://doi.org/10.5281/zenodo.14722435
+    :alt: DOI
 

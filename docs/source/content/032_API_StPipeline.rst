@@ -89,3 +89,4 @@ which is compromised of basic preprocessing, embedding, clustering, and so on.
     algorithm.ms_spa_track.MSSpaTrack.transfer_matrix
     algorithm.ms_spa_track.MSSpaTrack.generate_animate_input
     algorithm.ms_spa_track.MSSpaTrack.gr_training
+    algorithm.spatial_alignment.SpatialAlignment.main

@@ -19,6 +19,7 @@ class GetNiche(AlgorithmBase):
             cluster_res_key: str = None,
             method: str = 'fixed',
             theta: float = 0.1,
+            n: int = 5,
             filter_raw: bool = True,
             inplace: bool = False
     ):
@@ -33,6 +34,7 @@ class GetNiche(AlgorithmBase):
         :param cluster_res_key: the key which specifies the clustering result in data.tl.result.
         :param method: method for calculating niche, choose from 'fixed' or 'adaptive'.
         :param theta: the parameter used to control border region selection, only available for 'adaptive' method.
+        :param n: get the nearest n cells from `cluster_2` for each cell in the border region, only available for 'adaptive' method.
         :param filter_raw: this function will create a new data object by filtering cells,
                             this parameter determine whether to filter raw data meanwhile, default to True.
         :param inplace: whether to replace the previous express matrix or get a new StereoExpData object with the new express matrix, default by False. # noqa
@@ -109,19 +111,19 @@ class GetNiche(AlgorithmBase):
             cell_name_border = data_1.cell_names[border_index]
             """
             adaptive step 4: construct the niche for cluster_1 and cluster_2
+
+            get the nearest n cells from cluster_2 for each cell in the border
             """
-            neighbor_border = neighbors[border_index, n1:]  # filter border rows and columns of cluster_2
-            neighbor_index = np.any(neighbor_border, axis=0)
+            # neighbor_border = neighbors[border_index, n1:]  # filter border rows and columns of cluster_2
+            # neighbor_index = np.any(neighbor_border, axis=0)
+            dist_matrix_border = cdist(coord_1[border_index], coord_2)
+            neighbor_index = np.unique(np.argsort(dist_matrix_border, axis=1)[:, :n])
             cell_name_neighbor = data_2.cell_names[neighbor_index]
+
             cell_list = list(cell_name_border) + list(cell_name_neighbor)
         else:
             raise InvalidNicheMethod(method)
         
         data_result = filter_cells(data_full, cell_list=cell_list, inplace=inplace, filter_raw=filter_raw)
-        # if filter_raw and data_result.raw is not None:
-        #     filter_cells(data_result.raw, cell_list=cell_list, inplace=True)
-        #     if isinstance(data_result, AnnBasedStereoExpData):
-        #         data_result.adata.raw = data_result.raw.adata
-
 
         return data_result

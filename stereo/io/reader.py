@@ -914,11 +914,11 @@ def stereo_to_anndata(
         it can be a grayscale image, a RGB image or a RGBA image.
     im_hires:
         The scale of image for high resolution, default to 4,
-        the size of image will be changed to (image.height * im_hires / 100, image.width * im_hires / 100),
+        the size of image will be changed to (image.width * im_hires / 100, image.height * im_hires / 100),
         this image will be added to adata.uns['spatial'][`im_library_id`]['images']['hires'].
     im_lowres:
         The scale of image for low resolution, default to 1,
-        the size of image will be changed to (image.height * im_lowres / 100, image.width * im_lowres / 100),
+        the size of image will be changed to (image.width * im_lowres / 100, image.height * im_lowres / 100),
         this image will be added to adata.uns['spatial'][`im_library_id`]['images']['lowres'].
     im_library_id:
         The id of image library, image will be added to adata.uns['spatial'][`im_library_id`],
@@ -1046,15 +1046,16 @@ def stereo_to_anndata(
                         }
             elif key in ['pca', 'umap', 'tsne', 'totalVI', 'spatial_alignment_integration']:
                 # pca :we do not keep variance and PCs(for varm which will be into feature.finding in pca of seurat.)
-                res_key = data.tl.key_record[key][-1]
-                sc_key = f'X_{key}'
-                logger.info(f"Adding data.tl.result['{res_key}'] into adata.obsm['{sc_key}'] .")
-                adata.obsm[sc_key] = data.tl.result[res_key].values
-                if key == 'pca':
-                    variance_ratio_key = f'{res_key}_variance_ratio'
-                    if variance_ratio_key in data.tl.result:
-                        logger.info(f"Adding data.tl.result['{variance_ratio_key}'] into adata.uns['{key}_variance_ratio'] .")
-                        adata.uns[variance_ratio_key] = data.tl.result[variance_ratio_key]
+                # res_key = data.tl.key_record[key][-1]
+                for res_key in data.tl.key_record[key]:
+                    sc_key = f'X_{res_key}' if not res_key.startswith('X_') else res_key
+                    logger.info(f"Adding data.tl.result['{res_key}'] into adata.obsm['{sc_key}'] .")
+                    adata.obsm[sc_key] = data.tl.result[res_key].values
+                    if key == 'pca':
+                        variance_ratio_key = f'{res_key}_variance_ratio'
+                        if variance_ratio_key in data.tl.result:
+                            logger.info(f"Adding data.tl.result['{variance_ratio_key}'] into adata.uns['{variance_ratio_key}'] .")
+                            adata.uns[variance_ratio_key] = data.tl.result[variance_ratio_key]
             elif key == 'neighbors':
                 # neighbor :seurat use uns for conversion to @graph slot, but scanpy canceled neighbors of uns at present. # noqa
                 # so this part could not be converted into seurat straightly.
@@ -1159,7 +1160,7 @@ def stereo_to_anndata(
             raise ValueError("The image library id is necessary when adding image.")
         Image.MAX_IMAGE_PIXELS = None # for reading large images
         with Image.open(im_path) as im:
-            height, width = im.size
+            width, height = im.size
             height_hires = np.round(height * im_hires / 100).astype(int)
             width_hires = np.round(width * im_hires / 100).astype(int)
             hires = im.resize((width_hires, height_hires), Image.Resampling.NEAREST)
@@ -1337,6 +1338,7 @@ def read_gef(
         cellborders_coord_list, coord_count_per_cell = gef.get_cellborders([])
         border_points_count_per_cell = int(coord_count_per_cell / 2)
         cell_borders = cellborders_coord_list.reshape((-1, border_points_count_per_cell, 2))
+        cells = gef.get_cells()
         if gene_list is not None or region is not None:
             if gene_list is None:
                 gene_list = []
@@ -1353,6 +1355,7 @@ def read_gef(
             data.cells = Cell(cell_name=uniq_cell, cell_border=uniq_cell_borders)
             data.cells['dnbCount'] = dnb_cnt
             data.cells['area'] = cell_area
+            data.cells['id'] = cells['id'][np.in1d(gef.get_cell_names(), uniq_cell)]
 
             if len(gene_id[0]) == 0:
                 gene_name_index = True
@@ -1378,9 +1381,10 @@ def read_gef(
             indices, indptr, count = gef.get_sparse_matrix_indices(order='cell')
             exp_matrix = csr_matrix((count, indices, indptr), shape=(cell_num, gene_num), dtype=np.uint32)
             data.cells = Cell(cell_name=cell_names, cell_border=cell_borders)
-            cells = gef.get_cells()
+            # cells = gef.get_cells()
             data.cells['dnbCount'] = cells['dnbCount']
             data.cells['area'] = cells['area']
+            data.cells['id'] = cells['id']
             if len(gene_id[0]) == 0:
                 gene_name_index = True
             if gene_name_index:
