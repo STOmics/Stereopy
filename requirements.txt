@@ -2,10 +2,11 @@ dask>=2023.3.2
 bokeh==2.4.3
 imageio==2.31.1
 numpy==1.23.5
-matplotlib==3.7.1
+matplotlib>=3.7.1
 pandas>=1.5.3
 scipy==1.10.1
-seaborn==0.12.2
+# seaborn==0.12.2
+seaborn>=0.13.0
 h5py>=3.7.0
 gefpy>=1.1.20
 setuptools==69.5.1

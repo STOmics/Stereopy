@@ -97,7 +97,10 @@ class StereoConfig(object):
             if colors not in linear_colormaps:
                 # raise ValueError(f'{colors} not in colormaps, color value range in {self.linear_colormaps.keys()}')
                 mycmap = sns.color_palette(colors, as_cmap=True)
-                colors = [mpl_colors.rgb2hex(mycmap(i)) for i in range(mycmap.N)]
+                if isinstance(mycmap, mpl_colors.LinearSegmentedColormap):
+                    colors = [mpl_colors.rgb2hex(mycmap(i)) for i in range(mycmap.N)]
+                else:
+                    colors = [mpl_colors.rgb2hex(i) for i in mycmap]
                 return colors[::-1] if reverse else colors
             else:
                 return linear_colormaps[colors][::-1] if reverse else linear_colormaps[colors]
@@ -115,7 +118,10 @@ class StereoConfig(object):
             if colors not in colormaps:
                 # raise ValueError(f'{colors} not in colormaps, color value range in {self.colormaps.keys()}')
                 mycmap = sns.color_palette(colors, as_cmap=True)
-                colormaps[colors] = colormaps_selected = [mpl_colors.rgb2hex(mycmap(i)) for i in range(mycmap.N)]
+                if isinstance(mycmap, mpl_colors.LinearSegmentedColormap):
+                    colormaps[colors] = colormaps_selected = [mpl_colors.rgb2hex(mycmap(i)) for i in range(mycmap.N)]
+                else:
+                    colormaps[colors] = colormaps_selected = [mpl_colors.rgb2hex(i) for i in mycmap]
             else:
                 colormaps_selected = colormaps[colors]
         elif isinstance(colors, (dict, OrderedDict)):
