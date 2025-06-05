@@ -307,7 +307,6 @@ def base_scatter(
         ax.figure.colorbar(sm)
     else:
         from natsort import natsorted
-        import collections
         g = natsorted(set(hue))
         if hue_order is None:
             hue_order = g
@@ -316,11 +315,14 @@ def base_scatter(
         sns.scatterplot(x=x, y=y, hue=hue, hue_order=hue_order, linewidth=0, marker=marker,
                         palette=color_dict, size=hue, sizes=(dot_size, dot_size), ax=ax, alpha=foreground_alpha)
         handles, labels = ax.get_legend_handles_labels()
+        for handle in handles:
+            handle.set_marker('o')
+            handle.set_markersize(6)
         legd = ax.legend(handles, labels, ncol=legend_ncol, bbox_to_anchor=(1.02, 1),
-                  loc='upper left', borderaxespad=0, frameon=False)
-        for lh in legd.legendHandles:
-            # lh.set_alpha(1)
-            lh._sizes = [40]
+                        loc='upper left', borderaxespad=0, frameon=False)
+        # for lh in legd.legendHandles:
+        #     # lh.set_alpha(1)
+        #     lh._sizes = [40]
 
     ax.set_title(title, fontsize=18, fontweight='bold')
     ax.set_ylabel(y_label, fontsize=15)  # set y-axis labels
