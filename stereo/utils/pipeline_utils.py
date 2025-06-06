@@ -182,7 +182,7 @@ def cluster_bins_to_cellbins(
         cellbins_position = cellbins_position.astype(bins_position.dtype)
         for i in nb.prange(cells_count):
             cell_position = cellbins_position[i]
-            flag = (cell_position >= bins_position) & (cell_position <= bins_position_end)
+            flag = (cell_position >= bins_position) & (cell_position < bins_position_end)
             bool_list = flag[:, 0] & flag[:, 1]
             bins_groups_idx_selected = bins_groups_idx[bool_list]
             if bins_groups_idx_selected.size == 0:
@@ -196,7 +196,7 @@ def cluster_bins_to_cellbins(
     bins_groups_idx = np.arange(bins_data.cell_names.shape[0], dtype=np.int64)
     cells_groups_idx, cells_located, cells_filtered = \
         __locate_cellbins_to_bins(bins_data.position, bins_data.bin_size, bins_groups_idx, cellbins_data.cell_names,
-                                  cellbins_data.position)
+                                    cellbins_data.position)
     if len(cells_located) == 0:
         logger.warning("All cells can not be located to any bins!")
         return cellbins_data
