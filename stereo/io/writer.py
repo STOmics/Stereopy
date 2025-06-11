@@ -461,8 +461,8 @@ def write_mid_gef(data: StereoExpData, output: str):
     if data.attr is not None:
         for key, value in data.attr.items():
             bing["expression"].attrs.create(key, value)
-    h5f.attrs.create("version", 2)
-    h5f.attrs.create("omics", 'Transcriptomics')
+    h5f.attrs.create("version", np.array([2], dtype=np.uint32))
+    h5f.attrs.create("omics", np.array(['Transcriptomics'], dtype='S'))
     h5f.close()
 
 

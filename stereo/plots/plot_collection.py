@@ -633,7 +633,7 @@ class PlotCollection:
     @download
     def violin(
             self,
-            keys: Union[str, Sequence[str]] = [N_GENES_BY_COUNTS, PCT_COUNTS_MT, TOTAL_COUNTS],
+            keys: Union[str, Sequence[str]] = [TOTAL_COUNTS, N_GENES_BY_COUNTS, PCT_COUNTS_MT],
             x_label: Optional[str] = '',
             y_label: Optional[list] = None,
             show_stripplot: Optional[bool] = False,

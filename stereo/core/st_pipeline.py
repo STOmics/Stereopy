@@ -115,6 +115,7 @@ class StPipeline(object):
 
         :return:
         """
+        raise NotImplemented('This method remains to be implemented.')
         # self.data = self.raw
         self.data.exp_matrix = copy.deepcopy(self.raw.exp_matrix)
         self.data.cells = copy.deepcopy(self.raw.cells)

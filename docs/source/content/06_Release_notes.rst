@@ -3,6 +3,27 @@ Release Notes
 
 .. role:: small
 
+Version 1.6.1
+------------------
+1.6.1 : 2025-06-09
+~~~~~~~~~~~~~~~~~~~
+
+.. _st.io.stereo_to_anndata: stereo.io.stereo_to_anndata.html
+.. |st.io.stereo_to_anndata| replace:: `st.io.stereo_to_anndata`
+
+.. _st.plt.batches_umap: stereo.plots.PlotCollection.batches_umap.html
+.. |st.plt.batches_umap| replace:: `st.plt.batches_umap`
+
+Features:
+
+1. |st.io.stereo_to_anndata|_ supports adding multiple images.
+2. |st.plt.batches_umap|_ supports downloading.
+
+BUG Fixes:
+
+1. Pinned the version of **fastcluster** in dependencies to **1.2.6** for ensuring installation compatibility.
+2. Fixed the problem that the **width** and **height** of the images added to **AnnData** by `st.io.stereo_to_anndata` were swapped.
+
 Version 1.6.0
 ------------------
 1.6.0 : 2025-02-21

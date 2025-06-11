@@ -32,6 +32,8 @@ from stereo.constant import (
     N_GENES_BY_COUNTS
 )
 
+from stereo.stereo_config import stereo_conf
+
 
 def _check_indices(
         data_df: pd.DataFrame,
@@ -294,6 +296,9 @@ def violin_distribution(
 
     if multi_panel and group_by is None and len(ys) == 1:
         y = ys[0]
+        if palette is not None:
+            palette = stereo_conf.get_colors(palette, n=len(keys), order=keys)
+            palette = {k: p for k, p in zip(keys, palette)}
         g = sns.catplot(
             y=y,
             data=obs_df,
@@ -302,10 +307,11 @@ def violin_distribution(
             col=x,
             col_order=keys,
             sharey=False,
-            order=keys,
+            # order=keys,
             cut=0,
             inner=None,
-            palette=palette
+            palette=palette,
+            hue=x
         )
         fig = g.figure
 
@@ -331,14 +337,18 @@ def violin_distribution(
                 ax.tick_params(axis='x', labelrotation=rotation_angle)
     else:
         if ax is None:
-            axs = setup_axes(ax=ax, panels=['x'] if group_by is None else keys, show_ticks=True, right_margin=0.3, )[0]
+            axs = setup_axes(ax=ax, panels=['x'] if group_by is None else keys, show_ticks=True, right_margin=0.3)[0]
         else:
             axs = [ax]
         fig = axs[0].figure
         orders = _check_order(order, len(ys))
         for ax, y, ylab, order in zip(axs, ys, y_label, orders):
+            if palette is not None:
+                palette = stereo_conf.get_colors(palette, n=obs_df[x].unique().size, order=order)
+                if order is not None:
+                    palette = {o: p for o, p in zip(order, palette)}
             ax = sns.violinplot(x=x, y=y, data=obs_df, order=order, orient='vertical', scale=scale, ax=ax,
-                                palette=palette)
+                                palette=palette, hue=x)
             if show_stripplot:
                 ax = sns.stripplot(
                     x=x,

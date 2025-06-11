@@ -876,10 +876,10 @@ def stereo_to_anndata(
         base_adata: AnnData = None,
         split_batches: bool = True,
         compression: Optional[Literal["gzip", "lzf"]] = 'gzip',
-        image: Optional[str] = None,
-        im_hires: Optional[Union[int, float]] = 4,
-        im_lowres: Optional[Union[int, float]] = 1,
-        im_library_id: Optional[str] = None,
+        image: Optional[Union[str, List[str]]] = None,
+        im_hires: Optional[Union[int, float, List[int], List[float]]] = 4,
+        im_lowres: Optional[Union[int, float, List[int], List[float]]] = 1,
+        im_library_id: Optional[Union[str, List[str]]] = None,
 ) -> AnnData:
     """
     Transform the StereoExpData object into Anndata format.
@@ -893,7 +893,7 @@ def stereo_to_anndata(
     Parameters
     -----------------------
     data
-        the input StereoExpData object.
+        the input `StereoExpData` object.
     flavor
         if you want to convert the output file into h5ad of Seurat, please set `'seurat'`.
     sample_id
@@ -903,26 +903,33 @@ def stereo_to_anndata(
     output
         the path to output h5ad file.
     base_adata
-        the input Anndata object.
+        the input Anndata object,
+        if `data` is the type of `StereoExpData` and `base_adata` is not provided, a new Anndata object will be created,
+        if `data` is the type of `AnnBasedStereoExpData`, the `data.adata` is used as the base_adata.
     split_batches
         Whether to save each batch to a single file if it is a merged data, default to True.
     compression:
         The compression method to be used when saving data as a h5ad file, None means uncompressed, default to gzip.
     image:
-        The path of the **register.tif** to be added to adata.uns['spatial'][`im_library_id`],
+        A path or a list of paths to the images to be added to adata.uns['spatial'][`im_library_id`],
         the size of image will be changed by `im_hires` and `im_lowres`,
         it can be a grayscale image, a RGB image or a RGBA image.
     im_hires:
         The scale of image for high resolution, default to 4,
-        the size of image will be changed to (image.height * im_hires / 100, image.width * im_hires / 100),
-        this image will be added to adata.uns['spatial'][`im_library_id`]['images']['hires'].
+        the size of image will be changed to (image.width * im_hires / 100, image.height * im_hires / 100),
+        the image scaled by `im_hires` will be added to adata.uns['spatial'][`im_library_id`]['images']['hires'],
+        it can be a single value or a list of values whose length is the same as the number of images,
+        when it is a single value and `image` is a list of paths, the same value will be applied to all images.
     im_lowres:
         The scale of image for low resolution, default to 1,
-        the size of image will be changed to (image.height * im_lowres / 100, image.width * im_lowres / 100),
-        this image will be added to adata.uns['spatial'][`im_library_id`]['images']['lowres'].
+        the size of image will be changed to (image.width * im_lowres / 100, image.height * im_lowres / 100),
+        the image scaled by `im_lowres` will be added to adata.uns['spatial'][`im_library_id`]['images']['lowres'],
+        it can be a single value or a list of values whose length is the same as the number of images,
+        when it is a single value and `image` is a list of paths, the same value will be applied to all images.
     im_library_id:
         The id of image library, image will be added to adata.uns['spatial'][`im_library_id`],
-        it must be set while `image` is not None.
+        it must be set while `image` is not None,
+        if `image` is a list of paths, `im_library_id` must be a list of the same length.
     Returns
     -----------------
     An object of Anndata.
@@ -1151,59 +1158,75 @@ def stereo_to_anndata(
     
     if image is not None:
         from PIL import Image
-        im_path = Path(image)
-        if not im_path.exists():
-            raise FileNotFoundError(f'The image {image} is not found.')
-        if not im_path.is_file():
-            raise ValueError(f'The image {image} is not a file.')
+        import json
+        Image.MAX_IMAGE_PIXELS = None # for reading large images
         if im_library_id is None:
             raise ValueError("The image library id is necessary when adding image.")
-        Image.MAX_IMAGE_PIXELS = None # for reading large images
-        with Image.open(im_path) as im:
-            width, height = im.size
-            height_hires = np.round(height * im_hires / 100).astype(int)
-            width_hires = np.round(width * im_hires / 100).astype(int)
-            hires = im.resize((width_hires, height_hires), Image.Resampling.NEAREST)
-            hires_np = np.asarray(hires)
-            height_lowres = np.round(height * im_lowres / 100).astype(int)
-            width_lowres = np.round(width * im_lowres / 100).astype(int)
-            lowres = im.resize((width_lowres, height_lowres), Image.Resampling.NEAREST)
-            lowres_np = np.asarray(lowres)
-            adata.uns['spatial'] = {}
-            adata.uns['spatial'][im_library_id] = {
-                'images': {'hires': hires_np, 'lowres': lowres_np},
-                'metadata': {
-                    'source_image_path': im_path.as_posix(),
-                    'source_image_height': height,
-                    'source_image_width': width
-                },
-                'scalefactors': {
-                    'tissue_hires_scalef': im_hires / 100,
-                    'tissue_lowres_scalef': im_lowres / 100,
-                    'spot_diameter_fullres': np.sqrt(((0.22 * data.bin_size)**2) * 2),
-                    # 'spot_diameter_fullres': 2000000 / data.n_cells / (data.bin_size if data.bin_type == 'bins' else 1),
-                    'fiducial_diameter_fullres': 600
+
+        if not isinstance(image, list):
+            image = [image]
+        if not isinstance(im_hires, list):
+            im_hires = [im_hires] * len(image)
+        if not isinstance(im_lowres, list):
+            im_lowres = [im_lowres] * len(image)
+        if not isinstance(im_library_id, list):
+            im_library_id = [im_library_id]
+        assert len(image) == len(im_hires) == len(im_lowres) == len(im_library_id), \
+            "The length of image, im_hires, im_lowres and im_library_id must be the same."
+        image_list = image
+        im_hires_list = im_hires
+        im_lowres_list = im_lowres
+        im_library_id_list = im_library_id
+        adata.uns['spatial'] = {}
+        for image, im_hires, im_lowres, im_library_id in zip(image_list, im_hires_list, im_lowres_list, im_library_id_list):
+            im_path = Path(image)
+            if not im_path.exists():
+                raise FileNotFoundError(f'The image {image} is not found.')
+            if not im_path.is_file():
+                raise ValueError(f'The image {image} is not a file.')
+            
+            with Image.open(im_path) as im:
+                width, height = im.size
+                height_hires = np.round(height * im_hires / 100).astype(int)
+                width_hires = np.round(width * im_hires / 100).astype(int)
+                hires = im.resize((width_hires, height_hires), Image.Resampling.NEAREST)
+                hires_np = np.asarray(hires)
+                height_lowres = np.round(height * im_lowres / 100).astype(int)
+                width_lowres = np.round(width * im_lowres / 100).astype(int)
+                lowres = im.resize((width_lowres, height_lowres), Image.Resampling.NEAREST)
+                lowres_np = np.asarray(lowres)
+                adata.uns['spatial'][im_library_id] = {
+                    'images': {'hires': hires_np, 'lowres': lowres_np},
+                    'metadata': {
+                        'source_image_path': im_path.absolute().as_posix(),
+                        'source_image_height': height,
+                        'source_image_width': width
+                    },
+                    'scalefactors': {
+                        'tissue_hires_scalef': im_hires / 100,
+                        'tissue_lowres_scalef': im_lowres / 100,
+                        'spot_diameter_fullres': np.sqrt(((0.22 * data.bin_size)**2) * 2),
+                        # 'spot_diameter_fullres': 2000000 / data.n_cells / (data.bin_size if data.bin_type == 'bins' else 1),
+                        'fiducial_diameter_fullres': 600
+                    }
                 }
-            }
-            if output is not None:
-                import json
-                image_dir = Path(output).parent/'spatial'/im_library_id
-                image_dir.mkdir(parents=True, exist_ok=True)
-                with open(image_dir/'scalefactors_json.json', 'w') as fp:
-                    json.dump(adata.uns['spatial'][im_library_id]['scalefactors'], fp)
-                tissue_positions_list = pd.DataFrame({
-                    'row.names': data.cell_names,
-                    'tissue': 1,
-                    'row': data.position[:, 1],
-                    'col': data.position[:, 0],
-                    'imagerow': data.position[:, 1],
-                    'imagecol': data.position[:, 0]
-                })
-                tissue_positions_list.to_csv(image_dir/'tissue_positions_list.csv', index=False, sep=',', header=False)
-                hires.save(image_dir/'tissue_hires_image.png')
-                lowres.save(image_dir/'tissue_lowres_image.png')
-                adata.uns['spatial'][im_library_id]['metadata']['image_dir'] = image_dir.absolute().as_posix()
-                
+                if output is not None:
+                    image_dir = Path(output).parent/'spatial'/im_library_id
+                    image_dir.mkdir(parents=True, exist_ok=True)
+                    with open(image_dir/'scalefactors_json.json', 'w') as fp:
+                        json.dump(adata.uns['spatial'][im_library_id]['scalefactors'], fp)
+                    tissue_positions_list = pd.DataFrame({
+                        'row.names': data.cell_names,
+                        'tissue': 1,
+                        'row': data.position[:, 1],
+                        'col': data.position[:, 0],
+                        'imagerow': data.position[:, 1],
+                        'imagecol': data.position[:, 0]
+                    })
+                    tissue_positions_list.to_csv(image_dir/'tissue_positions_list.csv', index=False, sep=',', header=False)
+                    hires.save(image_dir/'tissue_hires_image.png')
+                    lowres.save(image_dir/'tissue_lowres_image.png')
+                    adata.uns['spatial'][im_library_id]['metadata']['image_dir'] = image_dir.absolute().as_posix()
 
     if len(data.tl.result.keys()) > 0:
         adata.uns['result_keys'] = list(data.tl.result.keys())
