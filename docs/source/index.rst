@@ -64,6 +64,26 @@ Workflow
 Latest Additions
 ------------------
 
+Version 1.6.1
+~~~~~~~~~~~~~~~~~~~
+1.6.1 : 2025-06-09
+
+.. _st.io.stereo_to_anndata: content/stereo.io.stereo_to_anndata.html
+.. |st.io.stereo_to_anndata| replace:: `st.io.stereo_to_anndata`
+
+.. _st.plt.batches_umap: content/stereo.plots.PlotCollection.batches_umap.html
+.. |st.plt.batches_umap| replace:: `st.plt.batches_umap`
+
+Features:
+
+1. |st.io.stereo_to_anndata|_ supports adding multiple images.
+2. |st.plt.batches_umap|_ supports downloading.
+
+BUG Fixes:
+
+1. Pinned the version of **fastcluster** in dependencies to **1.2.6** for ensuring installation compatibility.
+2. Fixed the problem that the **width** and **height** of the images added to **AnnData** by `st.io.stereo_to_anndata` were swapped.
+
 Version 1.6.0
 ~~~~~~~~~~~~~~~~~~~
 1.6.0 : 2025-02-21
@@ -95,79 +115,6 @@ BUG Fixes:
 
 1. Fixed the problem that the layers was lost when converting **StereoExpData** to **AnnData** by using `st.io.stereo_to_anndata`.
 2. Fixed the problem that the result of `st.tl.gen_ccc_micro_envs` cannot be reproduced.
-
-Version 1.5.0
-~~~~~~~~~~~~~~~~~~~
-1.5.0 : 2024-11-08
-
-.. _SpaTrack: Tutorials/SpaTrack.html
-.. |SpaTrack| replace:: **SpaTrack**
-
-.. _Layer: content/stereo.core.StPipeline.set_layer.html
-.. |Layer| replace:: **Layer**
-
-.. _st.tl.cal_qc: content/stereo.core.StPipeline.cal_qc.html
-.. |st.tl.cal_qc| replace:: `st.tl.cal_qc`
-
-.. _st.tl.filter_cells: content/stereo.core.StPipeline.filter_cells.html
-.. |st.tl.filter_cells| replace:: `st.tl.filter_cells`
-
-.. _st.tl.filter_genes: content/stereo.core.StPipeline.filter_genes.html
-.. |st.tl.filter_genes| replace:: `st.tl.filter_genes`
-
-.. _st.tl.log1p: content/stereo.core.StPipeline.log1p.html
-.. |st.tl.log1p| replace:: `st.tl.log1p`
-
-.. _st.tl.normalize_total: content/stereo.core.StPipeline.normalize_total.html
-.. |st.tl.normalize_total| replace:: `st.tl.normalize_total`
-
-.. _st.tl.scale: content/stereo.core.StPipeline.scale.html
-.. |st.tl.scale| replace:: `st.tl.scale`
-
-.. _st.tl.quantile: content/stereo.core.StPipeline.quantile.html
-.. |st.tl.quantile| replace:: `st.tl.quantile`
-
-.. _st.tl.disksmooth_zscore: content/stereo.core.StPipeline.disksmooth_zscore.html
-.. |st.tl.disksmooth_zscore| replace:: `st.tl.disksmooth_zscore`
-
-.. _st.tl.sctransform: content/stereo.core.StPipeline.sctransform.html
-.. |st.tl.sctransform| replace:: `st.tl.sctransform`
-
-.. _st.tl.highly_variable_genes: content/stereo.core.StPipeline.highly_variable_genes.html
-.. |st.tl.highly_variable_genes| replace:: `st.tl.highly_variable_genes`
-
-.. _st.tl.pca: content/stereo.core.StPipeline.pca.html
-.. |st.tl.pca| replace:: `st.tl.pca`
-
-.. _st.tl.find_marker_genes: content/stereo.core.StPipeline.find_marker_genes.html
-.. |st.tl.find_marker_genes| replace:: `st.tl.find_marker_genes`
-
-.. _st.plt.spatial_scatter: content/stereo.plots.PlotCollection.spatial_scatter.html
-.. |st.plt.spatial_scatter| replace:: `st.plt.spatial_scatter`
-
-Features:
-
-1. Addition of new algorithm |SpaTrack|_ for trajectory inference.
-2. Addition of |Layer|_ for saving expression matrices at different analysis stages, the functions that can use expression matrices in **Layer** as following:
-            * |st.tl.cal_qc|_
-            * |st.tl.filter_cells|_
-            * |st.tl.filter_genes|_
-            * |st.tl.log1p|_
-            * |st.tl.normalize_total|_
-            * |st.tl.scale|_
-            * |st.tl.quantile|_
-            * |st.tl.disksmooth_zscore|_
-            * |st.tl.sctransform|_
-            * |st.tl.highly_variable_genes|_
-            * |st.tl.pca|_
-            * |st.tl.find_marker_genes|_
-3. Merger of multiple samples can merge some analysis result in every single samples when data type is **StereoExpData**.
-4. |st.plt.spatial_scatter|_ supports setting **regist.tif** as background to display simultaneously on the plot.
-
-BUG Fixes:
-
-1. Fixed the problem that the proportion of chondriogenes was calculated incorrectly when input data contains **geneID**.
-2. Fixed the problem that saving **MSData** into **h5mu** was failed after running `st.tl.highly_variable_genes`.
 
 
 .. toctree::
