@@ -1371,7 +1371,8 @@ addimg2rds <- function(
                          image.name = "tissue_lowres_image.png",
                          assay = assay,
                          slice = "slice1",
-                         filter.matrix = TRUE)
+                         filter.matrix = TRUE,
+                         image.type = 'VisiumV1')
   # the image id sometimes got messed up in a format of scientific. The following code to make the image-ids are in the correct format. The image id is from tissue_positions_list rownames
   imgIDs <- Cells(image)
   idx <- c() # extract which ids has format issue

@@ -118,15 +118,21 @@ def read_gem(
         else:
             df = parse_bin_coor_no_offset(df, bin_size)
     
-    if gene_name_index and 'geneName' in df.columns:
-        df['geneID'] = df['geneName']
+    # if gene_name_index and 'geneName' in df.columns:
+    #     df['geneID'] = df['geneName']
 
-    cells = df['cell_id'].unique()
-    genes = df['geneID'].unique()
+    cells = np.sort(df['cell_id'].unique())
+    if gene_name_index and 'geneName' in df.columns:
+        sorted_indices = np.argsort(df['geneID'])
+        genes = df['geneName'].iloc[sorted_indices].unique()
+        gene_indices_column = 'geneName'
+    else:
+        genes = np.sort(df['geneID'].unique())
+        gene_indices_column = 'geneID'
     cells_dict = dict(zip(cells, range(0, len(cells))))
     genes_dict = dict(zip(genes, range(0, len(genes))))
-    rows = df['cell_id'].map(cells_dict)
-    cols = df['geneID'].map(genes_dict)
+    df['mtx_rows'] = rows = df['cell_id'].map(cells_dict)
+    df['mtx_cols'] = cols = df[gene_indices_column].map(genes_dict)
     # logger.info(f'the martrix has {len(cells)} cells, and {len(genes)} genes.')
     exp_matrix = csr_matrix((df['UMICount'], (rows, cols)), shape=(cells.shape[0], genes.shape[0]), dtype=np.int32)
     data.exp_matrix = exp_matrix if is_sparse else exp_matrix.toarray()
@@ -139,7 +145,7 @@ def read_gem(
 
     if data.bin_type == 'bins':
         # data.position = df.loc[:, ['x_center', 'y_center']].drop_duplicates().values
-        data.position = df.loc[:, ['bin_x', 'bin_y']].drop_duplicates().values
+        data.position = df.sort_values(by='mtx_rows').loc[:, ['bin_x', 'bin_y']].drop_duplicates().values
     else:
         data.position = gdf.loc[cells][['x_center', 'y_center']].values
         data.cells.cell_point = gdf.loc[cells]['cell_point'].values
@@ -190,9 +196,9 @@ def parse_bin_coor_no_offset(df: pd.DataFrame, bin_size: int):
     df['cell_id'] = np.bitwise_or(
         np.left_shift(df['bin_x'], 32),
         df['bin_y']
-    )
-    df.sort_values(by=['geneID', 'cell_id'], inplace=True)
-    df['cell_id'] = df['cell_id'].astype('U')
+    ).astype('U')
+    # df.sort_values(by=['geneID', 'cell_id'], inplace=True)
+    # df['cell_id'] = df['cell_id'].astype('U')
     return df
 
 
