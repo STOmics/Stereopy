@@ -66,7 +66,7 @@ Latest Additions
 
 Version 1.6.1
 ~~~~~~~~~~~~~~~~~~~
-1.6.1 : 2025-06-09
+1.6.1 : 2025-06-16
 
 .. _st.io.stereo_to_anndata: content/stereo.io.stereo_to_anndata.html
 .. |st.io.stereo_to_anndata| replace:: `st.io.stereo_to_anndata`

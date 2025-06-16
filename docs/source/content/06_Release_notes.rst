@@ -5,7 +5,7 @@ Release Notes
 
 Version 1.6.1
 ------------------
-1.6.1 : 2025-06-09
+1.6.1 : 2025-06-16
 ~~~~~~~~~~~~~~~~~~~
 
 .. _st.io.stereo_to_anndata: stereo.io.stereo_to_anndata.html
