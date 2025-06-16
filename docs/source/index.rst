@@ -83,6 +83,7 @@ BUG Fixes:
 
 1. Pinned the version of **fastcluster** in dependencies to **1.2.6** for ensuring installation compatibility.
 2. Fixed the problem that the **width** and **height** of the images added to **AnnData** by `st.io.stereo_to_anndata` were swapped.
+3. Fixed the problem that the order of **bins** is different in **GEM** and **GEF** under a same data.
 
 Version 1.6.0
 ~~~~~~~~~~~~~~~~~~~
