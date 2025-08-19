@@ -1,7 +1,8 @@
-dask>=2023.3.2
+dask>=2024.8.1, <2024.9.0
 bokeh==2.4.3
 imageio==2.31.1
-numpy==1.23.5
+numpy>=1.23.5
+contourpy==1.1.1
 matplotlib>=3.7.1, <=3.7.5
 pandas>=1.5.3
 scipy==1.10.1
@@ -13,7 +14,7 @@ setuptools==69.5.1
 #todo python3.8/site-packages/umap/distances.py:1053: NumbaDeprecationWarning: The 'nopython' keyword argument was not supplied to the 'numba.jit' decorator.
 #The implicit default value for this argument is currently False, but it will be changed to True in Numba 0.59.0.
 #See https://numba.readthedocs.io/en/stable/reference/deprecation.html#deprecation-of-object-mode-fall-back-behaviour-when-using-jit for details.
-numba==0.56.4
+numba>=0.56.4
 statsmodels>=0.14.0
 leidenalg>=0.10.1
 umap-learn==0.5.1
@@ -39,18 +40,18 @@ louvain>=0.8.0
 # igraph==0.9.11
 arboreto==0.1.6
 squidpy==1.2.2
-xarray==0.20.1
+xarray>=0.20.1
 
 slideio>=1.0.0
 tqdm>=4.60.0
 scikit-learn>=1.3.0
 pillow>=10.1.0
-scikit-image>=0.21.0
-tifffile>=2023.2.3
+scikit-image>=0.22.0
+tifffile==2024.9.20
 opencv-python>=4.8.0.76
 hotspotsc==1.1.3
 distributed>=2023.3.2.1
-pyarrow>=10.0.1
+pyarrow>=17.0.0
 spatialpandas>=0.4.4
 loompy==3.0.6
 gtfparse==1.2.1
@@ -61,13 +62,13 @@ geosketch>=1.2
 pyscenic>=0.12.1
 # onnxruntime==1.15.1
 POT==0.9.1
-distinctipy>=1.2.2
+distinctipy==1.3.4
 lxml>=4.8.0
-fastcluster==1.2.6
-pycirclize>=0.5.0
-plotly>=5.15.0
+fastcluster>=1.2.6
+pycirclize>=1.7.1
+plotly>=5.24.1
 # cusingler
-cell-bin==1.3.4.1
+# cell-bin==1.3.4.1
 
 # pysal<=2.6.0
 # pygam>=0.8.0
