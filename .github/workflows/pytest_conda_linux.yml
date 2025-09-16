@@ -1,0 +1,88 @@
+name: CPU PyTest in Conda Work Branch
+
+on:
+  push:
+    branches:
+      - 'work'
+    paths-ignore:
+      - '.github/workflows/**'
+      - 'docs/**'
+
+jobs:
+  build-linux-and-start-pytest:
+    runs-on: cpu
+    steps:
+      - uses: actions/checkout@v3
+    #   - name: Add conda to system path
+    #     run: |
+    #       # $CONDA_PREFIX is an environment variable pointing to the root of the miniconda directory
+    #       echo $CONDA_PREFIX/bin >> $GITHUB_PATH
+      - name: Install dependencies
+        run: |
+          echo "use conda in $(which conda)"
+          conda env update --file tests/workflows_conf/environment_linux_py38.yml --name test -q
+      - name: Activate conda enviroment
+        run: |
+          echo "use conda in $(which conda)"
+          conda init --all
+          source ~/.bashrc
+          conda activate test
+          echo "use pip in $(which pip)"
+          echo "use python in $(which python)"
+      - name: Install Stereopy dependencies
+        run: |
+          echo "use conda in $(which conda)"
+          conda init --all
+          source ~/.bashrc
+          conda activate test
+          echo "use pip in $(which pip)"
+          echo "use python in $(which python)"
+
+          pip install -r requirements.txt -q
+          pip install -r tests/extra_requirements.txt -q
+          pip install pathlib -q
+          pip install pytest-xdist
+
+          python setup.py develop
+      - name: Show Env Info
+        run: |
+          echo "use conda in $(which conda)"
+          conda init --all
+          source ~/.bashrc
+          conda activate test
+          echo "use pip in $(which pip)"
+          echo "use python in $(which python)"
+          conda info
+          env
+          pip list
+      - name: Test with pytest
+        run: |
+          echo "use conda in $(which conda)"
+          conda init --all
+          source ~/.bashrc
+          conda activate test
+          echo "use python in $(which python)"
+          # TODO ~/anaconda3/envs/test/bin/python -m pytest -m "not gpu and not heavy and not cell_cut_env" --durations=0
+          python -m pytest -m "not gpu and not heavy and not cell_cut_env" --durations=0
+
+          python setup.py develop
+      - name: Show Env Info
+        run: |
+          echo "use conda in $(which conda)"
+          conda init --all
+          source ~/.bashrc
+          conda activate test
+          echo "use pip in $(which pip)"
+          echo "use python in $(which python)"
+          conda info
+          env
+          pip list
+      - name: Test with pytest
+        run: |
+          echo "use conda in $(which conda)"
+          conda init --all
+          source ~/.bashrc
+          conda activate test
+          echo "use python in $(which python)"
+          # TODO ~/anaconda3/envs/test/bin/python -m pytest -m "not gpu and not heavy and not cell_cut_env" --durations=0
+          python -m pytest -m "not gpu and not heavy and not cell_cut_env" --durations=0

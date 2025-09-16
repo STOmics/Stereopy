@@ -1,4 +1,4 @@
-dask>=2024.8.1, <2024.9.0
+dask>=2023.3.2.1
 bokeh==2.4.3
 imageio==2.31.1
 numpy>=1.23.5
@@ -28,7 +28,7 @@ param==1.13.0
 hvplot>=0.9.0
 colorcet>=3.1.0
 datashader>=0.15.2
-anndata>=0.7.5
+anndata>=0.8.0
 phenograph==1.5.7
 requests>=2.31.0
 urllib3==2.1.0
@@ -46,10 +46,11 @@ slideio>=1.0.0
 tqdm>=4.60.0
 scikit-learn>=1.3.0
 pillow>=10.1.0
-scikit-image>=0.22.0
-tifffile==2024.9.20
+scikit-image>=0.21.0
+tifffile>=2023.2.3, <=2024.9.20
 opencv-python>=4.8.0.76
 hotspotsc==1.1.3
+# distributed>=2023.3.2.1, <2024.9.0
 distributed>=2023.3.2.1
 pyarrow>=17.0.0
 spatialpandas>=0.4.4
@@ -69,6 +70,7 @@ pycirclize>=1.7.1
 plotly>=5.24.1
 # cusingler
 # cell-bin==1.3.4.1
+cellbin2==1.1.0
 
 # pysal<=2.6.0
 # pygam>=0.8.0

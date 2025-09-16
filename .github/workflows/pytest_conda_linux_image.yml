@@ -1,0 +1,67 @@
+name: CPU PyTest in Conda Dev/Work Branch Image
+
+on:
+  push:
+    branches:
+      - 'dev'
+      - 'work'
+    paths-ignore:
+      - '.github/workflows/**'
+      - 'docs/**'
+
+jobs:
+  build-linux-and-start-pytest:
+    runs-on: cpu
+    steps:
+      - uses: actions/checkout@v3
+    #   - name: Add conda to system path
+    #     run: |
+    #       # $CONDA_PREFIX is an environment variable pointing to the root of the miniconda directory
+    #       echo $CONDA_PREFIX/bin >> $GITHUB_PATH
+      - name: Install dependencies
+        run: |
+          echo "use conda in $(which conda)"
+          conda env update --file tests/workflows_conf/environment_linux_py38.yml --name test_image -q
+      - name: Activate conda enviroment
+        run: |
+          echo "use conda in $(which conda)"
+          conda init --all
+          source ~/.bashrc
+          conda activate test_image
+          echo "use pip in $(which pip)"
+          echo "use python in $(which python)"
+      - name: Install Stereopy dependencies
+        run: |
+          echo "use conda in $(which conda)"
+          conda init --all
+          source ~/.bashrc
+          conda activate test_image
+          echo "use pip in $(which pip)"
+          echo "use python in $(which python)"
+
+          pip install -r requirements.txt -q
+          # TODO temporarily not install `tests/extra_requirements.txt`
+          pip install -r tests/extra_requirements.txt -q
+          pip install -r tests/image_requirements.txt -q
+          pip install pathlib -q
+
+          python setup.py develop
+      - name: Show Env Info
+        run: |
+          echo "use conda in $(which conda)"
+          conda init --all
+          source ~/.bashrc          
+          conda activate test_image
+          echo "use pip in $(which pip)"
+          echo "use python in $(which python)"
+          conda info
+          env
+          pip list
+      - name: Test with pytest
+        run: |
+          echo "use conda in $(which conda)"
+          conda init --all
+          source ~/.bashrc
+          conda activate test_image
+          echo "use python in $(which python)"
+          python -m pytest -m "cell_cut_env" --durations=0

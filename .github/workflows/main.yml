@@ -1,0 +1,50 @@
+name: Manual CPU PyTest in Conda
+
+on:
+  workflow_dispatch:
+    inputs:
+      python_version:
+        description: 'Choose python version this action test with'
+        required: true
+        default: 'py38'
+        type: choice
+        options:
+          - py38
+          - py39
+          - py310
+
+jobs:
+  build-linux-and-start-pytest:
+    runs-on: cpu
+    steps:
+      - uses: actions/checkout@v3
+      - name: Add conda to system path
+        run: |
+          # $CONDA_PREFIX is an environment variable pointing to the root of the miniconda directory
+          echo $CONDA_PREFIX/bin >> $GITHUB_PATH
+      - name: Install dependencies
+        run: |
+          conda env update --file tests/workflows_conf/environment_linux_${{ inputs.python_version }}.yml --name test_${{ inputs.python_version }} -q
+      - name: Install Stereopy dependencies
+        run: |
+          conda init bash
+          source ~/.bashrc
+          conda activate test_${{ inputs.python_version }}
+
+          pip install -r requirements.txt -q
+          pip install -r tests/extra_requirements.txt -q
+          pip install pathlib -q
+
+          $CONDA_PREFIX/envs/test_${{ inputs.python_version }}/bin/python setup.py develop
+      - name: Show Env Info
+        run: |
+          conda init bash
+          source ~/.bashrc
+          conda activate test_${{ inputs.python_version }}
+          which python
+          conda info
+          env
+          pip list
+      - name: Test with pytest
+        run: |
+          $CONDA_PREFIX/envs/test_${{ inputs.python_version }}/bin/python -m pytest -m "not gpu and not heavy and not cell_cut_env" --durations=0
