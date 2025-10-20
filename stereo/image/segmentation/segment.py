@@ -89,7 +89,8 @@ def cell_seg(
             gpu=gpu,
             post_processing_workers=post_processing_workers,
             tissue_mask=tissue_mask,
-            num_threads=num_threads
+            num_threads=num_threads,
+            stain=tissue_seg_staining_type
         )
         cell_seg_pipeline.run()
     elif method == VersionType.v1_pro.value:

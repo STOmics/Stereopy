@@ -15,7 +15,13 @@ import glob
 
 from functools import partial
 from multiprocessing import cpu_count
-from cellbin.modules.tissue_segmentation import TissueSegmentation
+# from cellbin.modules.tissue_segmentation import TissueSegmentation
+from cellbin2.utils.common import TechType
+from cellbin2.contrib.tissue_segmentor import TissueSegParam
+from cellbin2.contrib.tissue_segmentor import TissueSegInputInfo
+from cellbin2.contrib.tissue_segmentor import compute_chip_size
+from cellbin2.dnn.tissue_segmentor.utils import SupportModel
+from cellbin2.contrib.tissue_segmentor import TissueSegmentation
 
 from stereo.log_manager import logger
 
@@ -45,13 +51,54 @@ class SingleStrandDNATissueCut(object):
 
         if num_threads <= 0:
             num_threads = cpu_count()
-
-        self.seg_instance = TissueSegmentation(
-            model_path=model_path,
-            stype=staining_type,
-            gpu=gpu,
-            num_threads=num_threads
-        )
+        # adapt cellbin2 --------------------------------------------------------------------
+        usr_stype_to_inner = {
+            'ssdna': TechType.ssDNA,
+            'dapi': TechType.DAPI,
+            "he": TechType.HE,
+            "transcriptomics": TechType.Transcriptomics,
+            "rna": TechType.Transcriptomics,
+            'protein': TechType.Protein,
+            'mif': TechType.IF
+        }
+        staining_type = staining_type.lower()
+        s_type = usr_stype_to_inner.get(staining_type)
+        
+        cfg = TissueSegParam()
+        if model_path is not None:
+            setattr(cfg, f"{s_type.name}_weights_path", model_path)
+            
+        # # if model not support, auto download...
+        # model_name, mode = os.path.splitext(os.path.basename(model_path))
+        # save_dir=os.path.dirname(model_path)
+        # # os.path.basename(self.model_path)
+        # print(f"model name is {model_name}, model type is {mode}, save dir is {save_dir}")
+        # self.support_model = SupportModel()
+        # # Check if the stain type is supported by the model
+        # if s_type not in self.support_model.SUPPORTED_STAIN_TYPE_BY_MODEL[model_name]:
+        #     print(
+        #         f"{s_type.name} not in supported list of model: {model_name} \n"
+        #         f"{model_name} supported stain type list:\n"
+        #         f"{[i.name for i in self.support_model.SUPPORTED_STAIN_TYPE_BY_MODEL[model_name]]}"
+        #     )
+        #     exit()
+            
+        self.tissue_seg_info = TissueSegInputInfo()
+        self.tissue_seg_info.input_path = src_img_path
+        self.tissue_seg_info.weight_path_cfg = cfg
+        self.tissue_seg_info.stain_type = s_type
+        self.tissue_seg_info.weight_path_cfg.GPU = gpu
+        self.tissue_seg_info.chip_size = 0
+        self.t_num = num_threads
+        
+        # -----------------------------------------------------------------------------------
+        
+        # self.seg_instance = TissueSegmentation(
+        #     model_path=model_path,
+        #     stype=staining_type,
+        #     gpu=gpu,
+        #     num_threads=num_threads
+        # )
         self.images_data, self.files_dir, self.files_prefix = self.load_images(src_img_path)
         if dst_img_path is not None:
             os.makedirs(dst_img_path, exist_ok=True)
@@ -120,8 +167,28 @@ class SingleStrandDNATissueCut(object):
 
     def tissue_seg(self):
         for image_data, file_dir, file_prefix in zip(self.images_data, self.files_dir, self.files_prefix):
-            mask = self.seg_instance.run(image_data)
-            # mask = np.multiply(mask, 255).astype(np.uint8)
+            is_big_chip = False
+            chip_size = compute_chip_size(image_data)
+            if chip_size[0] > 1 or chip_size[1] > 1:
+                is_big_chip = True
+            support_model=SupportModel()
+            tissue_seg = TissueSegmentation(
+                support_model=support_model,
+                cfg=self.tissue_seg_info.weight_path_cfg,
+                stain_type=self.tissue_seg_info.stain_type,
+                gpu=self.tissue_seg_info.weight_path_cfg.GPU,
+                num_threads=self.t_num,
+                threshold_list=self.tissue_seg_info.threshold_list,
+                chip_size=chip_size,
+                is_big_chip=is_big_chip
+            )
+            
+            seg_mask = tissue_seg.run(img=image_data)
+            mask = seg_mask.tissue_mask
+            mask[mask > 0] = 255
+            
+            # mask = self.seg_instance.run(image_data)
+            # # mask = np.multiply(mask, 255).astype(np.uint8)
             self.mask.append(mask)
             save_file_name = f"{file_prefix}_tissue_cut.tif"
             if self.dst_img_path is not None:
@@ -230,3 +297,24 @@ class RNATissueCut(SingleStrandDNATissueCut):
     #         return self.get_img_from_x2tif_gef(gef_gem_path, self.bin_size)
     #     else:
     #         return self.get_img_from_x2tif_gem(gef_gem_path)
+
+if __name__ == '__main__':
+    print("begin tissue cut ... ")
+    # ssDNA_tissue_cut = SingleStrandDNATissueCut(
+    #     src_img_path='/zdswhst1/ST_BIOINTEL/P24Z32400N0004/wanruiwen/workspace/dev/wrw_test/SS200000135TL_D1_regist.tif',
+    #     dst_img_path='./tissue_seg/result',
+    #     model_path='/zdswhst1/ST_BIOINTEL/P24Z32400N0004/wanruiwen/workspace/dev/Stereopy/stereo/image/tissue_cut/tissueseg_bcdu_S_240618_tf.onnx',
+    #     staining_type='ssDNA',
+    #     gpu='-1' # set to -1 to run on cpu
+    # )
+
+    # ssDNA_tissue_cut.tissue_seg()
+    
+    # rna_tissue_cut = RNATissueCut(
+    #     dst_img_path='./tissue_seg_rna/result',
+    #     gef_path='/zdswhst1/ST_BIOINTEL/P24Z32400N0004/wanruiwen/workspace/dev/test-data/SS200000135TL_D1.raw.gef',
+    #     # model_path='/zdswhst1/ST_BIOINTEL/P24Z32400N0004/wanruiwen/workspace/dev/Stereopy/stereo/image/tissue_cut/',
+    #     gpu='-1' # set to -1 to run on cpu
+    # )
+    
+    # rna_tissue_cut.tissue_seg()
