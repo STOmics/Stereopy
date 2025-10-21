@@ -117,19 +117,22 @@ spatialign-cu12 = [
 all = [
     "stereopy[image]",
     "stereopy[spt]",
-    "stereopy[spatialign]"
+    "stereopy[spatialign]",
+    "stereopy[scvi]"
 ]
 all-cu11 = [
     "stereopy[image-cu11]",
     "stereopy[singler-gpu]",
     "stereopy[spt-cu11]",
-    "stereopy[spatialign-cu11]"
+    "stereopy[spatialign-cu11]",
+    "stereopy[scvi]"
 ]
 all-cu12 = [
     "stereopy[image-cu12]",
     "stereopy[singler-gpu]",
     "stereopy[spt-cu12]",
-    "stereopy[spatialign-cu12]"
+    "stereopy[spatialign-cu12]",
+    "stereopy[scvi]"
 ]
 
 [tool.setuptools.dynamic]
