@@ -63,6 +63,14 @@ Workflow
 
 Latest Additions
 ------------------
+Version 1.7.0
+~~~~~~~~~~~~~~~~~~~
+1.7.0 : 2025-10-20
+
+Features:
+
+1. Upgrade some third-party dependencies to be compatible with Python 3.10 version.
+2. Interface `stereo.image.segmentation_deepcell.segment.cell_seg_deepcell` `stereo.tools.cell_cut.CellCut.cell_cut` `stereo.image.segmentation.segment.cell_seg` is compatible with the cellbin2 version.
 
 Version 1.6.1
 ~~~~~~~~~~~~~~~~~~~
