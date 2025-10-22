@@ -1,5 +1,9 @@
 exclude .gitignore .readthedocs.yml 代码规范.md quick_start.ipynb requirements_*.txt 
 
+recursive-include stereo/data/ *
+
+recursive-include stereo/plots/vt3d_browser/ *
+
 recursive-exclude .github **
 
 recursive-exclude tests **

@@ -72,6 +72,9 @@ plotly>=5.24.1
 # cusingler
 # cell-bin==1.3.4.1
 cellbin2==1.1.0
+coloredlogs>=15.0.1
+boltons>=25.0.0
+bleach>=6.2.0
 
 # pysal<=2.6.0
 # pygam>=0.8.0
