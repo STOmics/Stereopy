@@ -20,7 +20,7 @@
 .. ~~~~~~~~~~~~
 
 
-|stars| |pypi| |downloads| |docs| 
+|stars| |pypi| |downloads| |docs| |doi|
 
 
 Stereopy -  Spatial Transcriptomics Analysis in Python
@@ -36,19 +36,11 @@ Meanwhile, we are still working on the improvement of performance and calculatio
 * Open to discuss and provide feedback on `Github <https://github.com/STOmics/stereopy>`_.
 * Follow changes in `Release Notes <https://stereopy.readthedocs.io/en/latest/content/06_Release_notes.html>`_.
 
-About MSData
+News
 --------------
-For multi-slice data analysis, we have recently launched a simple-to-use method that can distinguish uni-slice \
-and multi-sclie when working on the parallel processings, but the results of two parties can be interacted.
+The paper of Stereopy has been pre-printed on bioRxiv!
 
-In order to adapt to the new parameters and concepts in MSData analysis, the current version is a Beta one, which means there are \
-inevitably a handful of bugs. We sincerely hope to receive your feedback and suggestions for MSData.
-
-
-Upcoming functions
---------------------
-* New algorithm for Batch Effect Correction
-* GPU version for SingleR annotation
+`Stereopy: modeling comparative and spatiotemporal cellular heterogeneity via multi-sample spatial transcriptomics <https://doi.org/10.1101/2023.12.04.569485>`_.
 
 
 Highlights
@@ -64,7 +56,7 @@ Highlights
 Workflow
 ----------
 
-.. image:: ./_static/Stereopy_workflow_v0.14.0.png
+.. image:: ./_static/Stereopy_workflow_v1.0.0.png
     :alt: Title figure
     :width: 700px
     :align: center
@@ -72,61 +64,58 @@ Workflow
 Latest Additions
 ------------------
 
-Version 0.14.0b1 (Beta)
-~~~~~~~~~~~~~~~~~~~~~~~~~
-0.14.0b1 : 2023-9-15
+Version 1.6.1
+~~~~~~~~~~~~~~~~~~~
+1.6.1 : 2025-06-16
 
-Notice: this Beta version is specifically developed for multi-slice analysis.
+.. _st.io.stereo_to_anndata: content/stereo.io.stereo_to_anndata.html
+.. |st.io.stereo_to_anndata| replace:: `st.io.stereo_to_anndata`
+
+.. _st.plt.batches_umap: content/stereo.plots.PlotCollection.batches_umap.html
+.. |st.plt.batches_umap| replace:: `st.plt.batches_umap`
 
 Features:
 
-1. Addition of Cell Community Detection (CCD) analysis.
-2. Addition of Cell Co-occurrence analysis.
-3. Addition of Cellpose in cell segmentation, especially for cell cytoplasm using `model_type='cyto2'`.
-4. Addition of circos (`st.plt.ccc_circos_plot`) and sankey (`st.plt.ccc_sankey_plot`) plots in Cell-cell Communication analysis.
-5. Addition of volcano (`st.plt.TVG_volcano_plot`) and tree (`st.plt.time_series_tree_plot`) plots in Time Series analysis.
-6. Addition of PAGA tree plot, `st.plt.paga_plot`.
-7. Addition of visuallization of `st.tl.dendrogram`.
-8. Addition of version check using `st.__version__`.
-9. Supported obtain subset from a data object, using clustering output, by `st.tl.filter_by_clusters`.
-10. Supported filtering data using hvgs, by `st.tl.filter_by_hvgs`.
-11. Supported mapping the clustering result of SquareBin analysis to the same data but in CellBin.
-12. Supported writing annotation information into CGEF file, only clustering result available before.
-13. Supported saving images of PNG and PDF formats, in interactive interface.
-14. Optimized the function of `st.tl.find_marker_genes`.
-15. Optimized the modification of titles in horizontal axis, vertical axis and plot.
+1. |st.io.stereo_to_anndata|_ supports adding multiple images.
+2. |st.plt.batches_umap|_ supports downloading.
 
 BUG Fixes:
 
-1. Fixed the issue that SingleR calculating did not add filtration to the column field when traversing expression matrix, resulting in the subsequent absence of the column index.
-2. Fixed the issue that output Seurat h5ad could not be transformed into R format.
-3. Fixed the issue that clustering output of Leiden was in wrong data type under the scene of GPU acceleration, leading to errors in subsequent analysis which work on the clustering result.
-4. Fixed the issue that clustering result could not be written into GEF file, using `st.io.update_gef`, caused by data type error. From v0.12.1 on, `date.cells.cell_name` has changed from int to string. 
+1. Pinned the version of **fastcluster** in dependencies to **1.2.6** for ensuring installation compatibility.
+2. Fixed the problem that the **width** and **height** of the images added to **AnnData** by `st.io.stereo_to_anndata` were swapped.
+3. Fixed the problem that the order of **bins** is different in **GEM** and **GEF** under a same data.
 
-Version 0.13.0b1 (Beta)
-~~~~~~~~~~~~~~~~~~~~~~~~~
-0.13.0b1 : 2023-07-11
+Version 1.6.0
+~~~~~~~~~~~~~~~~~~~
+1.6.0 : 2025-02-21
 
-Notice: this Beta version is specifically developed for multi-slice analysis. Major update points are listed below.
+.. _Spatialign: Tutorials(Multi-sample)/Spatial_Alignment.html
+.. |Spatialign| replace:: **Spatialign**
 
-1. Addition of 3D Cell-cell Communication.
-2. Addition of 3D Gene Regulatory Network.
-3. Addition of Trajectory Inference, including PAGA and DPT algorithms.
-4. Addition of Batch QC function for evaluation on batch effect.
-5. Addition of `st.io.read_h5ad` for improved compatibility with AnnData H5ad, we highly recommend that instead of `st.io.read_ann_h5ad`.
-6. Addition of analysis workflow tutorial based on multi-slice data, with assistant parameters `scope` and `mode`.
-7. Addition of resetting the image order of multi-slice analysis results.
-8. Addition of 3D mesh visualization.
-9. Improved the performance of Gaussian Smoothing.
+Features:
 
-Version 0.12.1
-~~~~~~~~~~~~~~
-0.12.1 : 2023-06-21
+1. Addition of new algorithm |Spatialign|_ for batch effect removal.
 
-1. Addition of the pretreatment of calculating quality control metrics at the start of `st.tl.filter_genes` and `st.tl.filter_cells`.
-2. Fixed the bug that loaded data from GEF file had the same expression matrix but in different row order, through updating gefpy package to v0.6.24.
-3. Fixed the bug that `scale.data` had `np.nan` value in `st.tl.sctransform` , caused by data type limitation.
-4. Fixed the bug that dot symbol ( '.' ) caused identification error of cluster name in `.csv` output, when doing `st.tl.find_marker_genes`.
+Version 1.5.1
+~~~~~~~~~~~~~~~~~~~
+1.5.1 : 2024-12-26
+
+.. _st.io.stereo_to_anndata: content/stereo.io.stereo_to_anndata.html
+.. |st.io.stereo_to_anndata| replace:: `st.io.stereo_to_anndata`
+
+.. _h5ad2rds.R: Tutorials/Format_Conversion.html
+.. |h5ad2rds.R| replace:: **h5ad2rds.R**
+
+Features:
+
+1. |st.io.stereo_to_anndata|_ supports adding image information into the converted **AnnData** object.
+2. |h5ad2rds.R|_ supports adding image information into the converted **RDS** file.
+3. Optimized the visualization of the plotting scale for spatial scatter plot when inputting small data.
+
+BUG Fixes:
+
+1. Fixed the problem that the layers was lost when converting **StereoExpData** to **AnnData** by using `st.io.stereo_to_anndata`.
+2. Fixed the problem that the result of `st.tl.gen_ccc_micro_envs` cannot be reproduced.
 
 
 .. toctree::
@@ -136,6 +125,7 @@ Version 0.12.1
 
     content/00_Installation
     content/01_Usage_principles
+    Tutorials(Multi-sample)/Multi_sample
     Tutorials/index
     content/03_API
     content/04_Community
@@ -159,4 +149,8 @@ Version 0.12.1
 .. |pypi| image:: https://img.shields.io/pypi/v/stereopy
     :target: https://pypi.org/project/stereopy/
     :alt: PyPI
+
+.. |doi| image:: https://zenodo.org/badge/344680781.svg
+    :target: https://doi.org/10.5281/zenodo.14722435
+    :alt: DOI
 

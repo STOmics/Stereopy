@@ -5,8 +5,8 @@
 # @File    : __init__.py.py
 # @Software: PyCharm
 # @Email   : zhangchao5@genomics.cn
+# flake8: noqa
 from .dataset import DnnDataset
 from .early_stop import EarlyStopping
 from .loss import MultiCEFocalLoss
 from .trainer import domain_variance_score
-

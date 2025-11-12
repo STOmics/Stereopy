@@ -23,7 +23,7 @@ class MSDataPlotBase(metaclass=ABCMeta):
 
         try:
             __import__(f"{names[0]}")
-        except:
+        except Exception:
             raise AttributeError(f"No module named '{names[0]}'")
 
         for sub_cls in MSDataPlotBase.__subclasses__():

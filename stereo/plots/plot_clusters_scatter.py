@@ -1,13 +1,15 @@
-from typing import Sequence, Optional
+from typing import Optional, Sequence, Literal
+
 import matplotlib.pylab as plt
-from matplotlib.axes import Axes
-from matplotlib import gridspec
 import numpy as np
 import pandas as pd
+from matplotlib import gridspec
+from matplotlib.axes import Axes
 
-from stereo.plots.plot_base import PlotBase
-from stereo.utils.pipeline_utils import calc_pct_and_pct_rest, cell_cluster_to_gene_exp_cluster
 from stereo.log_manager import logger
+from stereo.plots.plot_base import PlotBase
+from stereo.utils.pipeline_utils import calc_pct_and_pct_rest
+from stereo.utils.pipeline_utils import cell_cluster_to_gene_exp_cluster
 
 
 class ClustersGenesScatter(PlotBase):
@@ -18,22 +20,27 @@ class ClustersGenesScatter(PlotBase):
     __title_font_size = 8
 
     def clusters_genes_scatter(
-        self,
-        cluster_res_key: str,
-        dendrogram_res_key: Optional[str] = None,
-        gene_names: Optional[Sequence[str]] = None,
-        groups: Optional[Sequence[str]] = None,
-        width: int = None,
-        height: int = None,
-        colormap: str = 'Reds',
-        standard_scale: str = 'gene'
+            self,
+            cluster_res_key: str,
+            dendrogram_res_key: Optional[str] = None,
+            topn: Optional[int] = 5,
+            gene_names: Optional[Sequence[str]] = None,
+            expression_kind: Literal['mean', 'sum'] = 'mean',
+            groups: Optional[Sequence[str]] = None,
+            width: int = None,
+            height: int = None,
+            colormap: str = 'Reds',
+            standard_scale: str = 'gene'
     ):
         """
         Scatter representing mean expression of genes on each cell cluster.
 
         :param cluster_res_key: the key to get cluster result.
         :param dendrogram_res_key: the key to get dendrogram result, defaults to None to avoid show dendrogram on plot.
+        :param topn: select `topn` expressed genes in each cluster, defaults to 5, ignored if `gene_names` is not None,
+                    the number of genes shown in plot may be more than `topn` because the `topn` genes in each cluster are not the same.
         :param gene_names: a list of genes to show, defaults to None to show all genes.
+        :param expression_kind: the kind of expression to show, 'mean' or 'sum', defaults to 'mean'.
         :param groups: a list of cell clusters to show, defaults to None to show all cell clusters.
         :param width: the figure width in pixels, defaults to None
         :param height: the figure height in pixels, defaults to None
@@ -53,15 +60,23 @@ class ClustersGenesScatter(PlotBase):
             else:
                 drg_res = self.pipeline_res[dendrogram_res_key]
                 if cluster_res_key != drg_res['cluster_res_key'][0]:
-                    raise KeyError(f'The cluster result used in dendrogram may not be the same as that specified by key {cluster_res_key}')
-        
-        if gene_names is None:
-            gene_names = self.stereo_exp_data.gene_names
-        else:
-            if isinstance(gene_names, str):
-                gene_names = np.array([gene_names], dtype='U')
-            elif not isinstance(gene_names, np.ndarray):
-                gene_names = np.array(gene_names, dtype='U')
+                    raise KeyError(f'The cluster result used in dendrogram may not be the same as that '
+                                   f'specified by key {cluster_res_key}')
+
+        if gene_names is not None:
+            topn = None
+
+        if topn is None:
+            if gene_names is None:
+                gene_names = self.stereo_exp_data.gene_names
+            else:
+                if isinstance(gene_names, str):
+                    gene_names = np.array([gene_names], dtype='U')
+                elif not isinstance(gene_names, np.ndarray):
+                    gene_names = np.array(gene_names, dtype='U')
+
+            if len(gene_names) == 0:
+                return None
 
         if groups is None or drg_res is not None:
             cluster_res: pd.DataFrame = self.pipeline_res[cluster_res_key]
@@ -77,6 +92,38 @@ class ClustersGenesScatter(PlotBase):
                 group_codes = np.array([group_codes], dtype='U')
             elif not isinstance(group_codes, np.ndarray):
                 group_codes = np.array(group_codes, dtype='U')
+
+        if topn is None:
+            genes_expression = cell_cluster_to_gene_exp_cluster(
+                self.stereo_exp_data,
+                cluster_res_key,
+                groups=groups,
+                genes=gene_names,
+                kind=expression_kind
+            )
+        else:
+            genes_expression = cell_cluster_to_gene_exp_cluster(
+                self.stereo_exp_data,
+                cluster_res_key,
+                groups=groups,
+                kind=expression_kind
+            )
+            gene_names = []
+            for c in genes_expression.columns:
+                gene_names.extend(genes_expression[c].sort_values(ascending=False).index[:topn].tolist())
+            gene_names = np.unique(gene_names)
+            genes_expression = genes_expression.loc[gene_names]
+
+        if standard_scale == 'cluster':
+            genes_expression -= genes_expression.min(0)
+            genes_expression = (genes_expression / genes_expression.max(0)).fillna(0)
+        elif standard_scale == 'gene':
+            genes_expression = genes_expression.sub(genes_expression.min(1), axis=0)
+            genes_expression = genes_expression.div(genes_expression.max(1), axis=0).fillna(0)
+        elif standard_scale is None:
+            pass
+        else:
+            logger.warning('Unknown type for standard_scale, ignored')
         
         pct, _ = calc_pct_and_pct_rest(
             self.stereo_exp_data,
@@ -87,28 +134,9 @@ class ClustersGenesScatter(PlotBase):
         if 'genes' in pct.columns:
             pct.set_index('genes', inplace=True)
 
-        mean_expression = cell_cluster_to_gene_exp_cluster(
-            self.stereo_exp_data,
-            cluster_res_key,
-            groups=groups,
-            genes=gene_names,
-            kind='mean'
-        )
-
-        if standard_scale == 'cluster':
-            mean_expression -= mean_expression.min(0)
-            mean_expression = (mean_expression / mean_expression.max(0)).fillna(0)
-        elif standard_scale == 'gene':
-            mean_expression = mean_expression.sub(mean_expression.min(1), axis=0)
-            mean_expression = mean_expression.div(mean_expression.max(1), axis=0).fillna(0)
-        elif standard_scale is None:
-            pass
-        else:
-            logger.warning('Unknown type for standard_scale, ignored')
-
         dot_plot_data = self._create_dot_plot_data(
             pct,
-            mean_expression,
+            genes_expression,
             group_codes,
             gene_names
         )
@@ -143,7 +171,6 @@ class ClustersGenesScatter(PlotBase):
             width_ratios=width_ratios,
             height_ratios=height_ratios,
             wspace=(0.15 / main_area_width),
-            # hspace=(0.13 / main_area_height)
             hspace=0
         )
 
@@ -153,7 +180,6 @@ class ClustersGenesScatter(PlotBase):
             width_ratios=[main_area_width],
             height_ratios=[self.__dendrogram_height, main_area_height],
             wspace=0,
-            # hspace=(0.13 / main_area_height),
             hspace=0,
             subplot_spec=axs[0, 0]
         )
@@ -164,7 +190,6 @@ class ClustersGenesScatter(PlotBase):
         if drg_res is not None:
             from .plot_dendrogram import PlotDendrogram
             ax_drg = fig.add_subplot(axs_main[0, 0], sharex=ax_scatter)
-            # ax_drg = fig.add_subplot(axs_main[0, 0])
             plt_drg = PlotDendrogram(self.stereo_exp_data, self.pipeline_res)
             plt_drg.dendrogram(
                 orientation='top',
@@ -177,27 +202,26 @@ class ClustersGenesScatter(PlotBase):
         axs_on_right = gridspec.GridSpecFromSubplotSpec(
             nrows=4,
             ncols=1,
-            # width_ratios=[main_area_width / 3, main_area_width / 6, main_area_width / 2],
             height_ratios=[0.55, 0.05, 0.2, 0.1],
             subplot_spec=axs[0, 1],
             hspace=0.1
         )
 
         ax_colorbar = fig.add_subplot(axs_on_right[1, 0])
-        self._plot_colorbar(ax_colorbar, main_im)
+        self._plot_colorbar(ax_colorbar, main_im, expression_kind)
 
         ax_dot_size_map = fig.add_subplot(axs_on_right[3, 0])
         self._plot_dot_size_map(ax_dot_size_map)
 
         return fig
-    
+
     def _dotplot(
-        self,
-        ax: Axes,
-        dot_plot_data: pd.DataFrame,
-        group_codes: Sequence[str],
-        gene_names: Sequence[str],
-        colormap: str
+            self,
+            ax: Axes,
+            dot_plot_data: pd.DataFrame,
+            group_codes: Sequence[str],
+            gene_names: Sequence[str],
+            colormap: str
     ):
         ax.set_xlim(left=-1, right=len(group_codes))
         ax.xaxis.set_ticks(range(len(group_codes)), group_codes)
@@ -213,25 +237,26 @@ class ClustersGenesScatter(PlotBase):
         )
 
     def _plot_colorbar(
-        self,
-        ax: Axes,
-        im
+            self,
+            ax: Axes,
+            im,
+            expression_kind: str
     ):
-        ax.set_title('Mean expression in group', fontdict={'fontsize': self.__title_font_size})
+        ax.set_title(f'{expression_kind.capitalize()} expression in group', fontdict={'fontsize': self.__title_font_size})
         plt.colorbar(im, cax=ax, orientation='horizontal', ticklocation='bottom')
 
     def _create_dot_plot_data(
-        self,
-        pct: pd.DataFrame,
-        mean_expression: pd.DataFrame,
-        group_codes: Sequence[str],
-        gene_names: Sequence[str]
+            self,
+            pct: pd.DataFrame,
+            genes_expression: pd.DataFrame,
+            group_codes: Sequence[str],
+            gene_names: Sequence[str]
     ):
         x = [i for i in range(len(group_codes))]
         data_list = []
         for y, g in enumerate(gene_names):
             dot_size = pct.loc[g][group_codes] * 100
-            dot_color = mean_expression.loc[g][group_codes]
+            dot_color = genes_expression.loc[g][group_codes]
             df = pd.DataFrame({
                 'x': x,
                 'y': y,
@@ -242,8 +267,8 @@ class ClustersGenesScatter(PlotBase):
         return pd.concat(data_list, axis=0)
 
     def _plot_dot_size_map(
-        self,
-        ax: Axes
+            self,
+            ax: Axes
     ):
         ax.set_title('Fraction of cells in group(%)', fontdict={'fontsize': self.__title_font_size})
         ax.set_xlim(left=5, right=105)

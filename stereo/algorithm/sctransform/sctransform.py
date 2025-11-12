@@ -1,15 +1,14 @@
-import time
 import random
-from typing import Union
+import time
 from typing import Optional
+from typing import Union
 
 import numpy as np
-import pandas as pd
 from scipy.sparse import csr_matrix
 
+from stereo.log_manager import logger
 from .scale_data import ScaleData
 from .vst import vst
-from stereo.log_manager import logger
 
 
 def SCTransform(
@@ -97,7 +96,7 @@ def SCTransform(
 
     # FIXME: ignore `batch_var`
     if 'batch_var' in kwargs:
-        logger.warning(f'`batch_var` not implemented yet, will add the feature in the future')
+        logger.warning('`batch_var` not implemented yet, will add the feature in the future')
         raise NotImplementedError
 
     if callable(clip_range):

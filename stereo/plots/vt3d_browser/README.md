@@ -19,10 +19,12 @@ pandas
 ```
 
 Try the below codes:
+
 ```
 sys.path.append('your-local-folder')
 from stereopy_3D_browser import launch,endServer
 ```
+
 ## Usage
 
 ### Quick start for explore annotation and gene expression data

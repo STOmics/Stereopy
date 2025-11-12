@@ -7,8 +7,8 @@
 
 
 import numpy as np
-from shapely.geometry import Point
 from shapely.geometry import LineString
+from shapely.geometry import Point
 from shapely.geometry import Polygon
 
 
@@ -32,18 +32,18 @@ class ConcaveHull(object):
 
     @staticmethod
     def dist_pt_to_group(a, b):  # a is a (n,2) , b is (1,2) arrays
-        d = np.sqrt(np.sum(np.square(np.subtract(a, b)), axis=1))
-        return d
+        return np.sqrt(np.sum(np.square(np.subtract(a, b)), axis=1))
 
     @staticmethod
     def get_lowest_latitude_index(points):
-        indices = np.argsort(points[:, 1])
-        return indices[0]
+        return np.argsort(points[:, 1])[0]
 
     @staticmethod
-    def norm_array(v):  # normalize row vectors in an array. observations are rows
-        norms = np.array(np.sqrt(np.sum(np.square(v), axis=1)), ndmin=2).transpose()
-        return np.divide(v, norms)
+    def norm_array(v):
+        """
+        normalize row vectors in an array. observations are rows
+        """
+        return np.divide(v, np.array(np.sqrt(np.sum(np.square(v), axis=1)), ndmin=2).transpose())
 
     @staticmethod
     def norm(v):
@@ -56,6 +56,7 @@ class ConcaveHull(object):
     def get_k_nearest(self, ix, k):
         """
         Calculates the k nearest point indices to the point indexed by ix
+
         :param ix: Index of the starting point
         :param k: Number of neighbors to consider
         :return: Array of indices into the data set array
@@ -65,7 +66,6 @@ class ConcaveHull(object):
         base_indices = np.arange(len(ixs))[ixs]
         distances = self.dist_pt_to_group(self.data_set[ixs, :], self.data_set[ix, :])
         sorted_indices = np.argsort(distances)
-
         kk = min(k, len(sorted_indices))
         k_nearest = sorted_indices[range(kk)]
         return base_indices[k_nearest]
@@ -78,15 +78,13 @@ class ConcaveHull(object):
             last_norm = np.array([-1, 0], ndmin=2)
         elif first == 0:
             # normalized vector pointing towards previous point
-            last_norm = self.norm(np.subtract(self.data_set[last, :], self.data_set[ix,:]))
+            last_norm = self.norm(np.subtract(self.data_set[last, :], self.data_set[ix, :]))
         # normalized row vectors pointing to set of k nearest neibs
-        ixs_norm = self.norm_array(np.subtract(self.data_set[ixs, :], self.data_set[ix,:]))
+        ixs_norm = self.norm_array(np.subtract(self.data_set[ixs, :], self.data_set[ix, :]))
         ang = np.zeros((ixs.shape[0], 1))
         for j in range(ixs.shape[0]):
             theta = np.arccos(np.dot(last_norm, ixs_norm[j, :]))
-            # ang[j,0] = theta
             z_comp = np.cross(last_norm, ixs_norm[j, :])
-            # ang[j,2] = z
             if z_comp <= 0:
                 ang[j, 0] = theta
             elif z_comp > 0:
@@ -102,7 +100,6 @@ class ConcaveHull(object):
         if recurse.k >= self.data_set.shape[0]:
             print(" max k reached, at k={0}".format(recurse.k))
             return None
-        print("k={0}".format(recurse.k))
         return recurse.calculate()
 
     def calculate(self):
@@ -149,7 +146,7 @@ class ConcaveHull(object):
             else:
                 # Calculates the headings between first_point and the knn points
                 # Returns angles in the same indexing sequence as in knn
-                angles = self.clockwise_angles(last_point, current_point, knn, 0)
+                angles = self.clockwise_angles(last_point, current_point, knn, 0)  # noqa
 
             # Calculate the candidate indexes (largest angles first). candidates =[0,1,2]  or [2,1,0] etc if kk=3
             candidates = np.argsort(-angles)
@@ -172,10 +169,9 @@ class ConcaveHull(object):
                 i += 1
 
             if invalid_hull:
-                print("invalid hull for all nearest neibs")
                 return self.recurse_calculate()
 
-            last_point = current_point  # record last point for clockwise angles
+            last_point = current_point  # record last point for clockwise angles # noqa
             current_point = knn[candidate]  # candidate = 0, 1, or 2 if kk=3
             hull = test_hull
             # we remove the newly found current point from the "mask" indicies so that it wont be passed to
@@ -192,8 +188,6 @@ class ConcaveHull(object):
             pt = Point(self.data_set[ix, :])
             if poly.intersects(pt) or pt.within(poly):
                 count += 1
-            else:
-                print("recaculate nearest k value")
 
         if count == total:
             return hull

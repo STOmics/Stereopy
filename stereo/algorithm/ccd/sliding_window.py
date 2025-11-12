@@ -1,18 +1,17 @@
-import os
 import multiprocessing as mp
+import os
 from collections import defaultdict
 
-# import scanpy as sc
+import anndata as ad
 import numpy as np
 import pandas as pd
-import anndata as ad
+# import scanpy as sc
 from anndata import AnnData
 from tqdm.auto import tqdm
 
-from .utils import timeit
-from .community_clustering_algorithm import CommunityClusteringAlgo
-
 from stereo.log_manager import logger
+from .community_clustering_algorithm import CommunityClusteringAlgo
+from .utils import timeit
 
 
 class SlidingWindow(CommunityClusteringAlgo):
@@ -22,8 +21,9 @@ class SlidingWindow(CommunityClusteringAlgo):
     This class extends the CommunityClusteringAlgo base class and provides the implementation of the sliding window
     algorithm for community clustering. It takes in a spatial transcriptomics dataset and additional parameters to
     perform community clustering using sliding windows.
-    
+
     """
+
     def __init__(self, adata, slice_id, input_file_path, **params):
         """
         This method initializes the SlidingWindow object by setting up the necessary attributes.
@@ -46,7 +46,9 @@ class SlidingWindow(CommunityClusteringAlgo):
         win_sizes = "_".join([str(i) for i in self.win_sizes_list])
         sliding_steps = "_".join([str(i) for i in self.sliding_steps_list])
         cluster_string = f"_r{self.resolution}" if self.cluster_algo == 'leiden' else f"_nc{self.n_clusters}"
-        self.params_suffix = f"_sldwin_sl{self.slice_id}_c{self.cluster_algo}{cluster_string}_ws{win_sizes}_ss{sliding_steps}_sct{self.scatter_thres}_dwr{self.downsample_rate}_mcc{self.min_cells_coeff}"
+        self.params_suffix = f"_sldwin_sl{self.slice_id}_c{self.cluster_algo}{cluster_string}_ws{win_sizes}_ss" \
+                             f"{sliding_steps}_sct{self.scatter_thres}_dwr{self.downsample_rate}_mcc" \
+                             f"{self.min_cells_coeff}"
         self.filename = self.adata.uns['sample_name']
         self.dir_path = os.path.join(self.adata.uns['algo_params']['out_path'], self.filename)
         # create results folder
@@ -54,12 +56,12 @@ class SlidingWindow(CommunityClusteringAlgo):
             os.mkdir(self.dir_path)
 
         self.method_key = 'sliding_window'
-    
+
     def run(self):
         """
         This method executes the sliding window algorithm for community clustering. If the 'tfile' attribute is not set,
         it calls the 'calc_feature_matrix' method with the first window size and sliding step from the respective lists.
-        
+
         Raises:
         - AttributeError: If the 'tfile' attribute ends with an extension other than '.h5ad'.
 
@@ -85,32 +87,35 @@ class SlidingWindow(CommunityClusteringAlgo):
         - win_size (int): The size of the sliding window.
         - sliding_step (int): The sliding step for moving the window.
 
-        """
-    
+        """  # noqa
+
         # window size needs to be a multiple of sliding step
-        sliding_step = (win_size/int((win_size/sliding_step))) if sliding_step!=None else win_size
-        bin_slide_ratio = int(win_size/sliding_step)
+        sliding_step = (win_size / int((win_size / sliding_step))) if sliding_step != None else win_size  # noqa
+        bin_slide_ratio = int(win_size / sliding_step)
 
         # create centroids for each sliding step of windows
         # dtype of obs DataFrame index column and annotation column should be 'str'
         # to remove the warning for editing the view of self.adata.obs we reinit the .obs
         self.adata.obs = self.adata.obs.copy()
-        self.adata.obs[f'Centroid_X_{win_size}'] = pd.Series(((self.adata.obsm['spatial'][:, 0])/sliding_step).astype(int), index=self.adata.obs_names)
-        self.adata.obs[f'Centroid_Y_{win_size}'] = pd.Series(((self.adata.obsm['spatial'][:, 1])/sliding_step).astype(int), index=self.adata.obs_names)
+        self.adata.obs[f'Centroid_X_{win_size}'] = pd.Series(
+            ((self.adata.obsm['spatial'][:, 0]) / sliding_step).astype(int), index=self.adata.obs_names)
+        self.adata.obs[f'Centroid_Y_{win_size}'] = pd.Series(
+            ((self.adata.obsm['spatial'][:, 1]) / sliding_step).astype(int), index=self.adata.obs_names)
         # need to understand borders and padding
         # subwindows belonging to borders will not have a complete cell count
         x_max = self.adata.obs[f'Centroid_X_{win_size}'].max()
         y_max = self.adata.obs[f'Centroid_Y_{win_size}'].max()
+        tmp_data = self.adata.obs[f'Centroid_X_{win_size}'].astype(str) + '_' + self.adata.obs[
+            f'Centroid_Y_{win_size}'].astype(str) + '_' + str(self.slice_id) + '_' + str(win_size)
+        self.adata.obs[f'window_spatial_{win_size}'] = tmp_data
 
-        self.adata.obs[f'window_spatial_{win_size}'] = self.adata.obs[f'Centroid_X_{win_size}'].astype(str) +'_'+self.adata.obs[f'Centroid_Y_{win_size}'].astype(str) + '_' + str(self.slice_id) + '_' + str(win_size)
-        
         tmp = self.adata.obs[[f'window_spatial_{win_size}', self.annotation]]
         ret = {}
         # calculate features for each subwindow
         for sw_ind, sw_data in tmp.groupby(f'window_spatial_{win_size}'):
-            templete_dic = {ct:0 for ct in self.unique_cell_type}
+            templete_dic = {ct: 0 for ct in self.unique_cell_type}
             for cell in sw_data[self.annotation]:
-                templete_dic[cell]+=1
+                templete_dic[cell] += 1
             ret[sw_ind] = templete_dic
         # merge features by windows
         feature_matrix = {}
@@ -122,8 +127,8 @@ class SlidingWindow(CommunityClusteringAlgo):
             z_curr = int(subwindow.split("_")[2])
             w_curr = int(subwindow.split("_")[3])
 
-            for slide_x in range(0, np.min([bin_slide_ratio, x_max-x_curr+1])):
-                for slide_y in range(0, np.min([bin_slide_ratio, y_max-y_curr+1])):
+            for slide_x in range(0, np.min([bin_slide_ratio, x_max - x_curr + 1])):
+                for slide_y in range(0, np.min([bin_slide_ratio, y_max - y_curr + 1])):
                     window_key = f'{x_curr + slide_x}_{y_curr + slide_y}_{z_curr}_{w_curr}'
                     if window_key in ret.keys():
                         feature_matrix[subwindow] = {
@@ -134,7 +139,7 @@ class SlidingWindow(CommunityClusteringAlgo):
         feature_matrix = pd.DataFrame(feature_matrix).T
         # feature_matrix is placed in AnnData object with specified spatial coordinated of the sliding windows
         self.tissue = AnnData(feature_matrix.astype(np.float32), dtype=np.float32)
-        # spatial coordinates are expanded with 3rd dimension with slice_id 
+        # spatial coordinates are expanded with 3rd dimension with slice_id
         # this should enable calculation of multi-slice cell communities
         self.tissue.obsm['spatial'] = np.array([x.split('_') for x in feature_matrix.index]).astype(int)
         self.tissue.obs['window_size'] = np.array([win_size for _ in feature_matrix.index])
@@ -148,7 +153,6 @@ class SlidingWindow(CommunityClusteringAlgo):
         min_cells_per_window = mean_cell_sum - self.min_cells_coeff * stddev_cell_sum
         self.tissue = self.tissue[self.tissue.obs['window_cell_sum'].values >= min_cells_per_window, :]
 
-    
     @timeit
     def community_calling(self, win_size, sliding_step):
         """
@@ -164,10 +168,10 @@ class SlidingWindow(CommunityClusteringAlgo):
         - win_size (int): The size of the sliding window.
         - sliding_step (int): The sliding step for moving the window.
 
-        """
-        sliding_step = (win_size/int((win_size/sliding_step))) if sliding_step!=None else win_size
-        
-        bin_slide_ratio = int(win_size/sliding_step)
+        """  # noqa
+        sliding_step = (win_size / int((win_size / sliding_step))) if sliding_step != None else win_size  # noqa
+
+        bin_slide_ratio = int(win_size / sliding_step)
         x_min = self.adata.obs[f'Centroid_X_{win_size}'].min()
         y_min = self.adata.obs[f'Centroid_Y_{win_size}'].min()
 
@@ -186,19 +190,23 @@ class SlidingWindow(CommunityClusteringAlgo):
                     window_key = f'{x_curr - slide_x}_{y_curr - slide_y}_{z_curr}_{win_size}'
                     if window_key in self.tissue.obs.index:
                         new_value = self.tissue.obs.loc[window_key, self.cluster_algo]
-                        subwindow_labels[new_value] = subwindow_labels[new_value] + 1 if new_value in subwindow_labels.keys() else 1
-            
+                        subwindow_labels[new_value] = subwindow_labels[
+                                                          new_value] + 1 if new_value in subwindow_labels.keys() else 1
+
             # MAX VOTE
-            # max vote is saved in a new variable (not changed in tissue.obs) so that it does not have diagonal effect on other labels during refinement
-            # max_voting result is created for each subwindow, while the self.cluster_algo clustering was defined for each window
-            cluster_max_vote.loc[location] = max(subwindow_labels, key=subwindow_labels.get) if subwindow_labels!={} else 'unknown'
+            # max vote is saved in a new variable (not changed in tissue.obs) so that it does not have diagonal effect on other labels during refinement # noqa
+            # max_voting result is created for each subwindow, while the self.cluster_algo clustering was defined for each window # noqa
+            cluster_max_vote.loc[location] = max(subwindow_labels,
+                                                 key=subwindow_labels.get) if subwindow_labels != {} else 'unknown'
 
         # copy clustering results from subwindows to cells of those subwindows in adata object
-        self.adata.obs.loc[:, f'tissue_{self.method_key}'] = list(cluster_max_vote.loc[self.adata.obs[f'window_spatial_{win_size}']])
+        self.adata.obs.loc[:, f'tissue_{self.method_key}'] = list(
+            cluster_max_vote.loc[self.adata.obs[f'window_spatial_{win_size}']])
         self.adata.obs[f'tissue_{self.method_key}'] = self.adata.obs[f'tissue_{self.method_key}'].astype('category')
 
-        logger.info(f'Sliding window cell mixture calculation done. Added results to adata.obs["tissue_{self.method_key}"]')
-    
+        logger.info(
+            f'Sliding window cell mixture calculation done. Added results to adata.obs["tissue_{self.method_key}"]')
+
 
 class SlidingWindowMultipleSizes(SlidingWindow):
     """Class for performing sliding window analysis with multiple window sizes."""
@@ -215,7 +223,7 @@ class SlidingWindowMultipleSizes(SlidingWindow):
 
         """
         super().__init__(adata, slice_id, input_file_path, **params)
-    
+
     def run(self):
         """
         This method calculates the feature matrix for each window size and sliding step combination, and concatenates
@@ -229,7 +237,7 @@ class SlidingWindowMultipleSizes(SlidingWindow):
             for i in range(n):
                 super().calc_feature_matrix(self.win_sizes_list[i], self.sliding_steps_list[i])
                 tissue_list.append(self.tissue)
-            
+
             self.tissue = ad.concat(tissue_list, axis=0, join='outer', fill_value=0.0)
         else:
             super().run()
@@ -248,7 +256,8 @@ class SlidingWindowMultipleSizes(SlidingWindow):
             super().community_calling(self.win_sizes_list[0], self.sliding_steps_list[0])
         else:
             self.community_calling_multiple_window_sizes_per_cell_multiprocessing()
-            logger.info(f'Sliding window cell mixture calculation done. Added results to adata.obs["tissue_{self.method_key}"]')
+            logger.info(
+                f'Sliding window cell mixture calculation done. Added results to adata.obs["tissue_{self.method_key}"]')
 
     @timeit
     def community_calling_multiple_window_sizes_per_cell_multiprocessing(self):
@@ -259,7 +268,7 @@ class SlidingWindowMultipleSizes(SlidingWindow):
         It gathers all windows that cover that subwindow in `cell_labels_all` and repeats this process for all
         window sizes. Finally, it performs majority voting to obtain the final label for each cell. The cells are
         split into as many batches as there are available CPUs and processed in parallel.
-        
+
         """
         # if cell batches are too small, caching is not efficient so we want at least 5000 cells per batch
         # TODO: Hope this advice useful. In the real high performance machine, it will be very terrifying if you
@@ -277,7 +286,7 @@ class SlidingWindowMultipleSizes(SlidingWindow):
         with mp.Pool(processes=num_cpus_used) as pool:
             split_df = np.array_split(self.adata.obs, num_cpus_used)
             partial_results = pool.map(self.community_calling_partial, split_df)
-        
+
         self.adata.obs[f'tissue_{self.method_key}'] = pd.concat(partial_results)
         self.adata.obs[f'tissue_{self.method_key}'] = self.adata.obs[f'tissue_{self.method_key}'].astype('category')
 
@@ -285,12 +294,13 @@ class SlidingWindowMultipleSizes(SlidingWindow):
         result = pd.Series(index=df.index, dtype='str')
         cache = {}
 
-        for index, cell in tqdm(df.iterrows(), desc="Per cell computation in a subset of all cells... ", total=df.shape[0]):
+        for index, cell in tqdm(df.iterrows(), desc="Per cell computation in a subset of all cells... ",
+                                total=df.shape[0]):
             cell_labels_all = defaultdict(int)
 
             for win_size, sliding_step in zip(self.win_sizes_list, self.sliding_steps_list):
-                sliding_step = (win_size/int((win_size/sliding_step)))
-                bin_slide_ratio = int(win_size/sliding_step)
+                sliding_step = (win_size / int((win_size / sliding_step)))
+                bin_slide_ratio = int(win_size / sliding_step)
 
                 x_min = self.adata.obs[f'Centroid_X_{win_size}'].min()
                 y_min = self.adata.obs[f'Centroid_Y_{win_size}'].min()
@@ -317,5 +327,5 @@ class SlidingWindowMultipleSizes(SlidingWindow):
                 }
             max_vote_label = max(cell_labels_all, key=cell_labels_all.get) if cell_labels_all != {} else 'unknown'
             result[index] = max_vote_label
-        
+
         return result

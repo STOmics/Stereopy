@@ -6,16 +6,24 @@
 @file:neighbors.py
 @time:2021/09/07
 """
-from ..log_manager import logger
+from types import MappingProxyType
+from typing import (
+    Optional,
+    Type,
+    Mapping,
+    Any,
+    Union
+)
+
 import numpy as np
 import pandas as pd
-from types import MappingProxyType
-from typing import Optional, Type, Mapping, Any, Union
 from natsort import natsorted
-from packaging import version
-from typing_extensions import Literal
-from scipy import sparse
 from numpy import random
+from packaging import version
+from scipy import sparse
+from typing_extensions import Literal
+
+from ..log_manager import logger
 
 AnyRandom = Union[None, int, random.RandomState]
 
@@ -27,7 +35,7 @@ except ImportError:
         pass
 
 
-    MutableVertexPartition.__module__ = 'louvain.VertexPartition'
+    MutableVertexPartition.__module__ = 'louvain.VertexPartition'  # noqa
 
 
 def louvain(
@@ -116,7 +124,7 @@ def louvain(
         except ImportError:
             raise ImportError(
                 "Your env don't have GPU related RAPIDS packages, if you want to run this option, follow the "
-                "guide at https://stereopy.readthedocs.io/en/latest/Tutorials/clustering_by_gpu.html")
+                "guide at https://stereopy.readthedocs.io/en/latest/Tutorials/Clustering_by_GPU.html")
 
         offsets = cudf.Series(adjacency.indptr)
         indices = cudf.Series(adjacency.indices)
@@ -148,9 +156,9 @@ def louvain(
         louvain_parts, _ = cugraph.louvain(g)
         groups = (
             louvain_parts.to_pandas()
-                .sort_values('vertex')[['partition']]
-                .to_numpy()
-                .ravel()
+            .sort_values('vertex')[['partition']]
+            .to_numpy()
+            .ravel()
         )
     elif flavor == 'taynaud':
         # this is deprecated

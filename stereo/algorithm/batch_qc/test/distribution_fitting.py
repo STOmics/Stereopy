@@ -5,10 +5,11 @@
 # @File    : distribution_fitting.py
 # @Software: PyCharm
 # @Email   : zhangchao5@genomics.cn
-import seaborn as sn
-import matplotlib.pyplot as plt
-from io import BytesIO
 from collections import defaultdict
+from io import BytesIO
+
+import matplotlib.pyplot as plt
+import seaborn as sn
 from scipy import stats
 
 
@@ -36,4 +37,3 @@ def distribution_fitting(merge_data, batch_key="batch", fit_key="total_counts"):
         plt.savefig(fig_buffer, format="png", bbox_inches='tight', dpi=300)
         buffer_dict[f"batch{c}"] = fig_buffer
     return buffer_dict
-

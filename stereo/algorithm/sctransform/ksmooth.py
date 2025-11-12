@@ -11,7 +11,7 @@ def ksmooth(x, y, xp, skrn, sbw):
     nx, nxp = len(x), len(xp)
     yp = np.zeros(nxp, dtype=float)
     o = np.array(sorted(range(0, len(x)), key=lambda i: x[i]))
-    return bdr_ksmooth(x.iloc[o, ].to_numpy(), y.iloc[o, ].to_numpy(), nx, xp, yp, nxp, krn, bw)
+    return bdr_ksmooth(x.iloc[o,].to_numpy(), y.iloc[o,].to_numpy(), nx, xp, yp, nxp, krn, bw)
 
 
 @numba.jit(nopython=True)

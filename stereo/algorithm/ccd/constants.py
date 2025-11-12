@@ -1,3 +1,4 @@
+# flake8: noqa
 COMMUNITY_DETECTION_DEFAULTS = {
     # File path to Anndata object with calculated cell mixtures for data windows, output of calc_feature_matrix.
     'tfile': None,
@@ -13,8 +14,8 @@ COMMUNITY_DETECTION_DEFAULTS = {
     'spot_size': 30,
     # Show logging messages. 0 - Show warnings, >0 show info.
     'verbose': 0,
-    # Save plots flag. 0 - No plotting/saving, 1 - save clustering plot, 2 - additionally save plots of cell type images statistics and cell mixture plots, 
-    # 3 - additionally save cell and cluster abundance plots and cell mixture plots for all slices and cluster mixture plots and boxplots for each slice, 
+    # Save plots flag. 0 - No plotting/saving, 1 - save clustering plot, 2 - additionally save plots of cell type images statistics and cell mixture plots,
+    # 3 - additionally save cell and cluster abundance plots and cell mixture plots for all slices and cluster mixture plots and boxplots for each slice,  # noqa
     # 4 - additionally save cell type images, abundance plots and cell percentage table for each slice, 5 - additionally save color plots.
     'plotting': 5,
     # Project name that is used to name a directory containing all the slices used.

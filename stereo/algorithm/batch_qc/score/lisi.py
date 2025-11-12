@@ -5,12 +5,13 @@
 # @File    : lisi.py
 # @Software: PyCharm
 # @Email   : zhangchao5@genomics.cn
-import psutil
-import pandas as pd
-import numpy as np
-from anndata import AnnData
 from functools import partial
 from multiprocessing import Pool
+
+import numpy as np
+import pandas as pd
+import psutil
+from anndata import AnnData
 
 from .get_neighbors import get_neighbors
 
@@ -26,7 +27,7 @@ def get_lisi(
         key: str = "batch",
         use_rep: str = "X_umap",
         n_neighbors: int = 30):
-    """"Calculate the Local inverse Simpson's Index (LISI) metric of the data regarding a specific sample attribute and embedding.
+    """"Calculate the Local inverse Simpson's Index (LISI) metric of the data regarding a specific sample attribute and embedding. # noqa
     The LISI metric measures if cells from different samples mix well in their local neighborhood.
 
     Parameters
@@ -36,7 +37,7 @@ def get_lisi(
     key: ``str``
         The sample attribute to be consider. Must exist in ``data.obs``.
     use_rep: ``str``
-         The embedding representation to be used. The key must be exist in ``data.obsm``. By default, use UMAP coordinates.
+         The embedding representation to be used. The key must be exist in ``data.obsm``. By default, use UMAP coordinates. # noqa
     n_neighbors: ``int``
         Number of nearest neighbors.
 
@@ -55,7 +56,9 @@ def get_lisi(
     get_neighbors(data, n_neighbors=n_neighbors, use_rep=use_rep)
 
     # add itself into the knn connectivity graph
-    assert f"{use_rep}_knn_connectivity" in data.obsm_keys(), f"Error, can not found '{use_rep}_knn_connectivity' in .obsm_keys(). Please calculate nearest neighbors graph first."
+    assert f"{use_rep}_knn_connectivity" in data.obsm_keys(), \
+        f"Error, can not found '{use_rep}_knn_connectivity' in .obsm_keys()." \
+        f" Please calculate nearest neighbors graph first."
     indices = np.concatenate((np.arange(n_sample).reshape(-1, 1), data.obsm[f"{use_rep}_knn_connectivity"][:, :-1]),
                              axis=1)
 
@@ -76,4 +79,3 @@ def get_lisi(
     lower = lisi_mean - 1.96 * std / np.sqrt(n_sample)
     upper = lisi_mean + 1.96 * std / np.sqrt(n_sample)
     return lisi_mean, lower, upper
-

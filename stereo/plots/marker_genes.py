@@ -6,22 +6,33 @@
 @file:marker_genes.py
 @time:2021/03/31
 """
-import natsort
 from collections import OrderedDict
+from typing import (
+    Optional,
+    Sequence,
+    Union,
+    Literal
+)
+
 import matplotlib.pyplot as plt
-from matplotlib.colors import Normalize
-from matplotlib.path import Path
-from matplotlib.patches import PathPatch
-from matplotlib import gridspec
-from matplotlib.axes import Axes
+import natsort
 import numpy as np
 import pandas as pd
+from matplotlib import gridspec
+from matplotlib.axes import Axes
+from matplotlib.colors import Normalize
+from matplotlib.patches import PathPatch
+from matplotlib.path import Path
 from scipy.sparse import spmatrix
-from typing import Optional, Sequence, Union, Literal
-from ._plot_basic.heatmap_plt import heatmap, plot_categories_as_colorblocks, plot_gene_groups_brackets
+
+from ._plot_basic.heatmap_plt import (
+    heatmap,
+    plot_categories_as_colorblocks,
+    plot_gene_groups_brackets
+)
 from ..core.stereo_exp_data import StereoExpData
-from ..utils import data_helper, pipeline_utils
-from ..log_manager import logger
+from ..utils import data_helper
+from ..utils import pipeline_utils
 
 
 def marker_genes_text(
@@ -50,6 +61,8 @@ def marker_genes_text(
     :param ncols: number of plot columns.
     :param sharey: share scale or not
     :param ax: axes object
+    :param width: the figure width.
+    :param height: the figure height.
     :param kwargs: other args for plot.
 
     """
@@ -124,7 +137,6 @@ def marker_genes_text(
 
         # print the 'score' label only on the first panel per row.
         if count % n_panels_x == 0:
-            # ax.set_ylabel('score')
             ax.set_ylabel(sort_key)
 
     if (sharey is True) and (not np.isinf(ymin)) and (not np.isinf(ymax)):
@@ -133,9 +145,17 @@ def marker_genes_text(
     return fig
 
 
-def make_draw_df(data: StereoExpData, group: pd.DataFrame, marker_res: dict, top_genes: int = 8,
-                 sort_key: str = 'scores', ascend: bool = False, gene_list: Optional[list] = None,
-                 min_value: Optional[int] = None, max_value: Optional[int] = None):
+def make_draw_df(
+        data: StereoExpData,
+        group: pd.DataFrame,
+        marker_res: dict,
+        top_genes: int = 8,
+        sort_key: str = 'scores',
+        ascend: bool = False,
+        gene_list: Optional[list] = None,
+        min_value: Optional[int] = None,
+        max_value: Optional[int] = None
+):
     gene_names_dict = get_groups_marker(marker_res, top_genes, sort_key, ascend, gene_list)
     gene_names = list()
     gene_group_labels = list()
@@ -150,7 +170,13 @@ def make_draw_df(data: StereoExpData, group: pd.DataFrame, marker_res: dict, top
         gene_group_labels.append(label)
         gene_group_positions.append((start, start + len(gene_list) - 1))
         start += len(gene_list)
-    draw_df = data_helper.exp_matrix2df(data, gene_name=np.array(gene_names))
+    # if marker_res['parameters']['use_raw']:
+    #     draw_df = data_helper.exp_matrix2df(data.raw, gene_name=np.array(gene_names))
+    # else:
+    #     draw_df = data_helper.exp_matrix2df(data, gene_name=np.array(gene_names))
+    use_raw = marker_res['parameters']['use_raw']
+    layer = marker_res['parameters']['layer']
+    draw_df = data_helper.exp_matrix2df(data, use_raw=use_raw, layer=layer, gene_name=gene_names)
     draw_df = pd.concat([draw_df, group], axis=1)
     draw_df['group'] = draw_df['group'].astype('category')
     draw_df = draw_df.set_index(['group'])
@@ -160,8 +186,13 @@ def make_draw_df(data: StereoExpData, group: pd.DataFrame, marker_res: dict, top
     return draw_df, gene_group_labels, gene_group_positions
 
 
-def get_groups_marker(marker_res: dict, top_genes: int = 8, sort_key: str = 'scores',
-                      ascend: bool = False, gene_list: Optional[list] = None):
+def get_groups_marker(
+        marker_res: dict,
+        top_genes: int = 8,
+        sort_key: str = 'scores',
+        ascend: bool = False,
+        gene_list: Optional[list] = None
+):
     groups = [key for key in marker_res.keys() if '.vs.' in key]
     groups = natsort.natsorted(groups)
     groups_genes = OrderedDict()
@@ -201,10 +232,8 @@ def plot_heatmap(
     :param kwargs: other args for plot.
 
     """
-    # kwargs.setdefault("figsize", (10, 10))
     kwargs.setdefault("colorbar_width", 0.2)
     colorbar_width = kwargs.get("colorbar_width")
-    # figsize = kwargs.get("figsize")
     cluster_block_width = kwargs.setdefault("cluster_block_width", 0.2) if show_group else 0
     if width is None or height is None:
         height = 10
@@ -244,15 +273,14 @@ def plot_heatmap(
     if height > max_cbar_height:
         # to make the colorbar shorter, the
         # ax is split and the lower portion is used.
-        axs2 = gridspec.GridSpecFromSubplotSpec(2, 1, subplot_spec=axs[1, 2],
-                                                height_ratios=[height - max_cbar_height, max_cbar_height],
-                                                )
+        axs2 = gridspec.GridSpecFromSubplotSpec(
+            2, 1, subplot_spec=axs[1, 2], height_ratios=[height - max_cbar_height, max_cbar_height],
+        )
         heatmap_cbar_ax = fig.add_subplot(axs2[1])
     else:
         heatmap_cbar_ax = fig.add_subplot(axs[1, 2])
 
-    heatmap(df=df, ax=heatmap_ax,
-            norm=Normalize(vmin=None, vmax=None), plot_colorbar=True, colorbar_ax=heatmap_cbar_ax,
+    heatmap(df=df, ax=heatmap_ax, norm=Normalize(vmin=None, vmax=None), plot_colorbar=True, colorbar_ax=heatmap_cbar_ax,
             show_xaxis=show_xaxis, show_yaxis=False, plot_hline=True)
     if show_group:
         plot_categories_as_colorblocks(
@@ -305,6 +333,8 @@ def marker_genes_heatmap(
     :param max_value: max value
     :param gene_list: gene name list
     :param do_log: calculate log or not
+    :param width: the figure width in pixels.
+    :param height: the figure height in pixels.
 
     """
     draw_df, group_labels, group_position = make_draw_df(data=data, group=cluster_res, marker_res=marker_res,
@@ -312,8 +342,9 @@ def marker_genes_heatmap(
                                                          gene_list=gene_list, min_value=min_value, max_value=max_value)
     if do_log:
         draw_df = np.log1p(draw_df)
-    return plot_heatmap(df=draw_df, show_labels=show_labels, show_group=show_group, show_group_txt=show_group_txt, 
-                        group_position=group_position, group_labels=group_labels, cluster_colors_array=cluster_colors_array,
+    return plot_heatmap(df=draw_df, show_labels=show_labels, show_group=show_group, show_group_txt=show_group_txt,
+                        group_position=group_position, group_labels=group_labels,
+                        cluster_colors_array=cluster_colors_array,
                         width=width, height=height)
 
 
@@ -327,7 +358,7 @@ class MarkerGenesScatterPlot:
 
     def __init__(
             self,
-            data: Union[spmatrix, np.ndarray],
+            data: StereoExpData,
             marker_genes_res: dict,
     ):
         self.data = data
@@ -361,7 +392,7 @@ class MarkerGenesScatterPlot:
         #     self.data, self.marker_genes_parameters['cluster_res_key'], kind='mean')
         
         for g in groups:
-            if 'mean_count' not in marker_genes_res_dict[g].columns:
+            if g in marker_genes_res_dict and 'mean_count' not in marker_genes_res_dict[g].columns:
                 genes = marker_genes_res_dict[g].index
                 marker_genes_res_dict[g]['mean_count'] = mean_expressin_in_group[g].loc[genes].to_numpy()
             dot_size = pct[g].loc[gene_names].to_numpy() * 100
@@ -420,10 +451,11 @@ class MarkerGenesScatterPlot:
             sort_by = 'log2fc'
         marker_genes_res_dict = self._store_marker_genes_result_by_group()
         mean_expressin_in_group = pipeline_utils.cell_cluster_to_gene_exp_cluster(
-            self.data, self.marker_genes_parameters['cluster_res_key'], kind='mean')
+            self.data, self.marker_genes_parameters['cluster_res_key'], kind='mean', filter_raw=False)
         for mg_key in marker_genes_group_keys:
             if genes is None:
-                topn_res = self.marker_genes_res[mg_key].sort_values(by=sort_by, ascending=False).head(markers_num)
+                isin = self.marker_genes_res[mg_key]['genes'].isin(self.data.gene_names)
+                topn_res = self.marker_genes_res[mg_key][isin].sort_values(by=sort_by, ascending=False).head(markers_num)
             else:
                 if isinstance(genes, str):
                     genes = [genes]
@@ -579,8 +611,11 @@ class MarkerGenesScatterPlot:
             self._create_plot_scatter_data(markers_num, genes, groups, values_to_plot, sort_by)
 
         if width is None or height is None:
-            main_area_width, main_area_height = self.__category_width * len(gene_names), self.__category_height * len(
-                group_names)
+            main_area_width = self.__category_width * len(gene_names)
+            if len(group_names) < 5:
+                main_area_height = self.__category_height * 6
+            else:
+                main_area_height = self.__category_height * len(group_names)
         else:
             width /= 100
             height /= 100

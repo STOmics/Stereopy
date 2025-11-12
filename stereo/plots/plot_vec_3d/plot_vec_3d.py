@@ -1,6 +1,6 @@
-from .vec import Vec
 import numpy as np
 
+from .vec import Vec
 from ..plot_base import PlotBase
 
 
@@ -37,8 +37,8 @@ class PlotVec3D(PlotBase):
                            filter, by passing 'mean' to fil_type. The diameter of kernel d equals to (2 * radius_val + 1)
                            Value neglected when passing 'gaussian' to fil_type
 
-        :return: todo：加入画图部分代码后添加
-        """
+        :return:
+        """  # noqa
 
         # todo: 1. assert
 

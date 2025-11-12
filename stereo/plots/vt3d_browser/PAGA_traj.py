@@ -1,16 +1,12 @@
 #!/usr/bin/env python
 # coding: utf-8
-import numpy as np
-import math
-from scipy.interpolate import CubicSpline
 import itertools
-import os
+import math
 from collections import Counter
-import matplotlib as mpl
 
 import matplotlib.pyplot as plt
-import matplotlib.patches as mpatches
-from sklearn.cluster import DBSCAN
+import numpy as np
+from scipy.interpolate import CubicSpline
 
 from stereo.core.stereo_exp_data import StereoExpData
 
@@ -59,8 +55,7 @@ def _cal_segment_dis(i, path_knot_len_li, n_per_inter):
     :param n_per_inter: interval上插值的个数
     :return:
     """
-    s_inter = np.linspace(path_knot_len_li[i], path_knot_len_li[i + 1], num=n_per_inter)
-    return list(s_inter)
+    return list(np.linspace(path_knot_len_li[i], path_knot_len_li[i + 1], num=n_per_inter))
 
 
 def generate_cubic_interp_points(x_known, y_known, z_known, n_per_inter):
@@ -71,7 +66,7 @@ def generate_cubic_interp_points(x_known, y_known, z_known, n_per_inter):
     :param y_known: np.NdArray (n_nodes,)
     :param z_known: np.NdArray (n_nodes,)
     :param n_per_inter: number of interpolated points to generate between each pair of connected nodes
-    :return: x_unknown_li [np.NdArray, np.NdArray, ...], each ele of the list includes the x of points along a interval between two nodes, plus the nodes themselves
+    :return: x_unknown_li [np.NdArray, np.NdArray, ...], each ele of the list includes the x of points along a interval between two nodes, plus the nodes themselves # noqa
              y_unknown_li
              com_tra_wei_li_plt: [np.NdArray, np.NdArray, ...]:
     """
@@ -140,7 +135,6 @@ class Traj:
         """
         choose_i = np.array([np.where(self.ty_all_no_dup_same_ord == ele)[0][0] for ele in choose_ty])
         choose_ind = np.array([ele for ele in itertools.permutations(choose_i, 2)])  # np.NdArray, (n,2)
-        # choose_ind = choose_ind.transpose()
 
         choose_mtx = np.zeros(self.con.shape, dtype=bool)
         choose_mtx[(choose_ind[:, 0], choose_ind[:, 1])] = 1
@@ -149,7 +143,7 @@ class Traj:
 
     def gen_repre_x_y_z_by_ty(self, ty_repre):
         """
-        calculate representative positions of spots for annotation, as central of gravity (CoG) of spots within a type of spots, if the CoG is located inside
+        calculate representative positions of spots for annotation, as central of gravity (CoG) of spots within a type of spots, if the CoG is located inside # noqa
         of spots region, or else as the same coordinate with a random spot within the type of spots
         :param: ty_repre: dictionary. keys mean name of type, values are np array of representing points coordinates
         :return: x_rep: (n_type,), y_rep：(n_type,), z_rep：(n_type,)
@@ -181,16 +175,14 @@ class Traj:
                        range(pi_index[0].shape[0])]  # 将clus的关系从邻接矩阵转化成[[], []]存储
         pi_index_li = [li for li in pi_index_li if not li[0] == li[1]]  # 去掉起始和终点相同的li
         pi_index_li = [sorted(li) for li in pi_index_li]  # 是li从较小index到较大index
-        # pi_index_li = np.array([li for li, _ in itertools.groupby(pi_index_li)])  # 去掉重复的li
         pi_index_li = np.unique(np.array(pi_index_li), axis=0)
-
         self.con_pair = pi_index_li
         return
 
     def compute_com_traj_li(self):
         """
         Compute a list of complete trajectories
-        :param lower_thresh_not_equal: threshold value that element on con matrix should surpass, to be considered a valid connection
+        :param lower_thresh_not_equal: threshold value that element on con matrix should surpass, to be considered a valid connection # noqa
         :return: com_tra_li: list of list of indices, e.g. [[0,1], [1,3,5,2]]
         """
 
@@ -223,8 +215,8 @@ class Traj:
                 inter = np.array(sorted([start, next]))
 
                 # 从pi_index_arr中去除此线段
-                del_ind = np.where((pi_index_arr[:, 0] == inter[0]) & (
-                        pi_index_arr[:, 1] == inter[1]))  # row index to be deleted, (1,)
+                # row index to be deleted, (1,)
+                del_ind = np.where((pi_index_arr[:, 0] == inter[0]) & (pi_index_arr[:, 1] == inter[1]))
                 pi_index_arr = np.delete(pi_index_arr, del_ind, axis=0)
 
                 # 把此线段信息加入到com_tra中
@@ -242,9 +234,7 @@ class Traj:
 
         # 2. 计算完整轨迹的集合
         pi_index_arr = np.array(self.con_pair)  # 待选线段的集合，每次循环都会更新 (n, 2)
-        # print('pi_index_arr', pi_index_arr)
         edge_arr = find_end_p_gathering_from_intervals(pi_index_arr)
-        # print('edge_arr', edge_arr)
         com_tra_li = []  # list of complete trajectories, 每次循环都会更新, [[], [], ...]
         while edge_arr.shape[0] >= 1:
             # 找到一个边界点
@@ -262,9 +252,9 @@ class Traj:
         """
         calculate position parameter for plotting curve
         :param n_per_inter: number of interpolated points per interval
-        :return: x_unknown_li_all_tra: [[np.NdArray]], y_unknown_li_all_tra: [[np.NdArray]], z_unknown_li_all_tra: [[np.NdArray]]
+        :return: x_unknown_li_all_tra: [[np.NdArray]], y_unknown_li_all_tra: [[np.NdArray]], z_unknown_li_all_tra: [[np.NdArray]]  # noqa
         """
-        # self.com_tra_li: [[1, 18, 10], [2, 12, 18], [3, 16, 0, 15, 12], [6, 7, 8, 19], [8, 11], [13, 4, 7, 9, 5, 17, 16], [9, 14]]
+        # self.com_tra_li: [[1, 18, 10], [2, 12, 18], [3, 16, 0, 15, 12], [6, 7, 8, 19], [8, 11], [13, 4, 7, 9, 5, 17, 16], [9, 14]]  # noqa
         x_unknown_li_all_tra = []
         y_unknown_li_all_tra = []
         z_unknown_li_all_tra = []
@@ -288,16 +278,18 @@ class Traj:
                     y_known = np.insert(y_known, 1, (y_known[0] + y_known[1]) / 2)
                     z_known = np.insert(z_known, 1, (z_known[0] + z_known[1]) / 2)
 
+                    # [arr, arr, ...]
                     x_unknown_li, y_unknown_li, z_unknown_li = generate_cubic_interp_points(x_known, y_known, z_known,
-                                                                                            n_per_inter)  # [arr, arr, ...]
+                                                                                            n_per_inter)
 
                     # 将多引入导致的两段，重新合并在一起
                     x_unknown_li = [np.concatenate((x_unknown_li[0], x_unknown_li[1]))] + x_unknown_li[2:]
                     y_unknown_li = [np.concatenate((y_unknown_li[0], y_unknown_li[1]))] + y_unknown_li[2:]
                     z_unknown_li = [np.concatenate((z_unknown_li[0], z_unknown_li[1]))] + z_unknown_li[2:]
                 else:
+                    # [arr, arr, ...]
                     x_unknown_li, y_unknown_li, z_unknown_li = generate_cubic_interp_points(x_known, y_known, z_known,
-                                                                                            n_per_inter)  # [arr, arr, ...]
+                                                                                            n_per_inter)
 
             x_unknown_li_all_tra.append(x_unknown_li)  # [[arr, arr, ...], [arr, arr, ...], ]
             y_unknown_li_all_tra.append(y_unknown_li)
@@ -362,13 +354,19 @@ class Traj:
         return wei_li
 
 
-def cal_plt_param_traj_clus_from_arr(con, x_raw, y_raw, z_raw, ty,
-                                     choose_ty, ty_repre_xyz,
-                                     count_thresh=0,
-                                     type_traj='curve',
-                                     lower_thresh_not_equal=0.5,
-                                     n_per_inter=100,
-                                     ):
+def cal_plt_param_traj_clus_from_arr(
+        con,
+        x_raw,
+        y_raw,
+        z_raw,
+        ty,
+        choose_ty,
+        ty_repre_xyz,
+        count_thresh=0,
+        type_traj='curve',
+        lower_thresh_not_equal=0.5,
+        n_per_inter=100,
+):
     """
     Visualize PAGA result in 3D.
 
@@ -399,7 +397,7 @@ def cal_plt_param_traj_clus_from_arr(con, x_raw, y_raw, z_raw, ty,
     mask_keep, keep_ty = traj.filter_minority(count_thresh)
     traj.revise_con_based_on_selection(keep_ty)
 
-    if not choose_ty is None:
+    if not choose_ty is None:  # noqa
         traj.revise_con_based_on_selection(choose_ty)
 
     traj.gen_repre_x_y_z_by_ty(ty_repre_xyz)
@@ -408,33 +406,40 @@ def cal_plt_param_traj_clus_from_arr(con, x_raw, y_raw, z_raw, ty,
 
     if type_traj == 'curve':
         traj.compute_com_traj_li()
-        # print(traj.com_tra_li)
         ctnames = [[traj.ty_all_no_dup_same_ord[i] for i in li] for li in traj.com_tra_li]
 
         x_unknown_li_all_tra, y_unknown_li_all_tra, z_unknown_li_all_tra = traj.cal_position_param_curve(n_per_inter)
         com_tra_wei_li = traj.compute_weight_on_com_tra_li()
-        # print(com_tra_wei_li)
-        # traj.com_tra_li,
         return x_unknown_li_all_tra, y_unknown_li_all_tra, z_unknown_li_all_tra, ctnames, com_tra_wei_li
 
     else:
         traj.compute_com_traj_li()
-        # print(traj.com_tra_li)
         ctnames = [[traj.ty_all_no_dup_same_ord[i[0]], traj.ty_all_no_dup_same_ord[i[1]]] for i in traj.con_pair]
-        print([[traj.ty_all_no_dup_same_ord[i] for i in li] for li in traj.com_tra_li])
         x_li, y_li, z_li = traj.cal_position_param_straight()
         wei_li = traj.compute_weight_on_pairs()
         return x_li, y_li, z_li, ctnames, wei_li
 
 
-def cal_plt_param_traj_clus_from_adata(data: StereoExpData, ty_col, choose_ty=None, trim=True, type_traj='curve', paga_key='paga', mesh_key='mesh'):
+def cal_plt_param_traj_clus_from_adata(
+        data: StereoExpData,
+        ty_col,
+        choose_ty=None,
+        trim=True,
+        type_traj='curve',
+        paga_key='paga',
+        mesh_key='mesh'
+):
     """
     to calculate plotting parameters from stereo_exp_data
 
-    :param stereo_exp_data
+    :param data: stereo_exp_data
     :param ty_col: name of column from stereo_exp_data.cells, that stores cell type data
     :param choose_ty: cell types to plot, chosen by users
     :param trim: to use connectivities_tree (trim=True) or just connectivities (trim=False), by paga
+    :param type_traj: Type of visualization, either in curve (parameter value: 'curve'), or in straight lines
+        (parameter value: 'straight'). default to `'curve'`.
+    :param paga_key: paga data key in uns. default to `'paga'`.
+    :param mesh_key: paga data key in uns. default to `'mesh'`.
     :return: parameters for plotting
     """
     # 1. acquire relevant parameter from adata
@@ -455,20 +460,19 @@ def cal_plt_param_traj_clus_from_adata(data: StereoExpData, ty_col, choose_ty=No
     if choose_ty is None:
         choose_ty = list(set(ty))
     ty_repre_xyz = {}
-    key_name = list(data.tl.result[mesh_key].keys())[0]  # sort of 'randomly' assign a type of algorithm result to generate representing point coordinate
+    # sort of 'randomly' assign a type of algorithm result to generate representing point coordinate
+    key_name = list(data.tl.result[mesh_key].keys())[0]
     for ty_name in choose_ty:
         try:
             xyz_repre = data.tl.result[mesh_key][key_name][ty_name]['repre']
-        except:
+        except Exception:
             xyz_repre = np.array(
                 [x_raw[ty == ty_name].mean(), y_raw[ty == ty_name].mean(), z_raw[ty == ty_name].mean()])
         ty_repre_xyz[ty_name] = xyz_repre
 
     # 2 calculate parameters for plotting cluster-to-cluster trajectory
-    x_unknown_li_all_tra, y_unknown_li_all_tra, z_unknown_li_all_tra, com_tra_li, com_tra_wei_li \
-        = cal_plt_param_traj_clus_from_arr(con_plt, x_raw, y_raw, z_raw, ty, choose_ty, ty_repre_xyz, type_traj=type_traj)
-
-    return x_unknown_li_all_tra, y_unknown_li_all_tra, z_unknown_li_all_tra, com_tra_li, com_tra_wei_li
+    return cal_plt_param_traj_clus_from_arr(con_plt, x_raw, y_raw, z_raw, ty, choose_ty, ty_repre_xyz,
+                                            type_traj=type_traj)
 
 
 def _plot_line(x_unknown, y_unknown, z_unknown, ax, wei):
@@ -479,12 +483,15 @@ def _plot_line(x_unknown, y_unknown, z_unknown, ax, wei):
 def _show_curve(x_unknown_li_all_tra, y_unknown_li_all_tra, z_unknown_li_all_tra, com_tra_li, com_tra_wei_li):
     ax = plt.figure().add_subplot(projection='3d')
     # 画轨迹连线
-    # self.com_tra_li: [[1, 18, 10], [2, 12, 18], [3, 16, 0, 15, 12], [6, 7, 8, 19], [8, 11], [13, 4, 7, 9, 5, 17, 16], [9, 14]]
+    # self.com_tra_li: [[1, 18, 10], [2, 12, 18], [3, 16, 0, 15, 12], [6, 7, 8, 19], [8, 11], [13, 4, 7, 9, 5, 17, 16],
+    # [9, 14]]
     for i, sin_tra in enumerate(com_tra_li):  # 对每条完整的轨迹
         for j in range(len(sin_tra) - 1):  # 对于这条轨迹每一个截断
-            _plot_line(x_unknown_li_all_tra[i][j],
-                       y_unknown_li_all_tra[i][j],
-                       z_unknown_li_all_tra[i][j],
-                       ax,
-                       com_tra_wei_li[i][j])
+            _plot_line(
+                x_unknown_li_all_tra[i][j],
+                y_unknown_li_all_tra[i][j],
+                z_unknown_li_all_tra[i][j],
+                ax,
+                com_tra_wei_li[i][j]
+            )
     return

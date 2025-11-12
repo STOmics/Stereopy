@@ -12,11 +12,12 @@ change log:
     2021/06/15 adjust for restructure base class . by: qindanhua.
 """
 
-import pandas as pd
-# from stereo.log_manager import logger
-from stereo.core.tool_base import ToolBase
-import numpy as np
 from typing import Optional
+
+import numpy as np
+import pandas as pd
+
+from stereo.core.tool_base import ToolBase
 
 
 class DimReduce(ToolBase):
@@ -55,6 +56,7 @@ class DimReduce(ToolBase):
     Or
     >>> dr.u_map(X, n_pcs=3, n_neighbors=5, min_dist=0.3)
     """
+
     def __init__(
             self,
             data=None,
@@ -93,7 +95,6 @@ class DimReduce(ToolBase):
             raise ValueError(f'{self.n_iter} should be int type')
 
     def fit(self, exp_matrix=None):
-
         from ..algorithm.dim_reduce import low_variance, factor_analysis, pca, t_sne, u_map
 
         self._check_params()
@@ -109,36 +110,55 @@ class DimReduce(ToolBase):
         else:
             pca_res = pca(exp_matrix, self.n_pcs)
             x_reduce = pca_res['x_pca']
-            # self.result.variance_ratio = pca_res['variance_ratio']
-            # self.result.variance_pca = pca_res['variance']
-            # self.result.pcs = pca_res['pcs']
         self.result = pd.DataFrame(x_reduce)
         return self.result
-        # self.add_result(result=self.result, key_added=self.name)
 
-    def plot_scatter(self,
-                     gene_name: Optional[list],
-                     file_path=None):
+    def plot_scatter(
+            self,
+            gene_name: Optional[list],
+            file_path: str = None,
+            palette: str = None,
+            vmin: float = None,
+            vmax: float = None,
+    ):
         """
         plot scatter after
+
         :param gene_name list of gene names
-        :param file_path:
-        :return:
-        """
-        # from scipy.sparse import issparse
-        # if issparse(self.data.exp_matrix):
-        #     self.data.exp_matrix = self.data.exp_matrix.toarray()
+        :param file_path: the path of input file.
+        :param palette: the color theme.
+        :param vmin: The value representing the lower limit of the color scale. Values smaller than vmin are plotted with the same color as vmin.
+        :param vmax: The value representing the lower limit of the color scale. Values smaller than vmin are plotted with the same color as vmin.
+
+        :return: None
+        """  # noqa
         from ..plots.scatter import plt, base_scatter, multi_scatter
 
         self.data.sparse2array()
-        if len(gene_name) > 1:
-            multi_scatter(self.result.matrix.values[:, 0], self.result.matrix.values[:, 1],
-                          hue=np.array(self.data.sub_by_name(gene_name=gene_name).exp_matrix).T,
-                          color_bar=True)
+
+        len_gene_name = len(gene_name)
+        if not palette:
+            palette = 'stereo' if len_gene_name > 1 else 'stereo_30'
+
+        if len_gene_name > 1:
+            multi_scatter(
+                self.result.matrix.values[:, 0],
+                self.result.matrix.values[:, 1],
+                hue=np.array(self.data.sub_by_name(gene_name=gene_name).exp_matrix).T,
+                color_bar=True,
+                vmin=vmin,
+                vmax=vmax,
+                palette=palette
+            )
         else:
-            base_scatter(self.result.matrix.values[:, 0], self.result.matrix.values[:, 1],
-                         hue=np.array(self.data.sub_by_name(gene_name=gene_name).exp_matrix[:, 0]),
-                         color_bar=True)
+            base_scatter(
+                self.result.matrix.values[:, 0],
+                self.result.matrix.values[:, 1],
+                hue=np.array(self.data.sub_by_name(gene_name=gene_name).exp_matrix[:, 0]),
+                color_bar=True,
+                vmin=vmin,
+                vmax=vmax,
+                palette=palette
+            )
         if file_path:
             plt.savefig(file_path)
-

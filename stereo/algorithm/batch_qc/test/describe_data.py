@@ -5,8 +5,8 @@
 # @File    : describe_data.py
 # @Software: PyCharm
 # @Email   : zhangchao5@genomics.cn
-import pandas as pd
 import numpy as np
+import pandas as pd
 
 
 def description_data(merge_data, condition=None):
@@ -62,4 +62,3 @@ def description_data(merge_data, condition=None):
     describe_df["describe_note"] = "'condition' is the different control variables designed in the experiment. " \
                                    "By default, a batch of data studies the same control variable."
     return describe_df, confound_df
-

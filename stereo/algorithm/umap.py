@@ -2,7 +2,7 @@
 # coding: utf-8
 """
 @file: umap.py
-@description: 
+@description:
 @author: Ping Qiu
 @email: qiuping1@genomics.cn
 @last modified by: Ping Qiu
@@ -12,10 +12,11 @@ change log:
 """
 
 import warnings
-from typing import Optional, Literal
-from packaging import version
+from typing import Literal
+from typing import Optional
 
 import numpy as np
+from packaging import version
 from sklearn.utils import check_random_state
 
 
@@ -160,7 +161,7 @@ def umap(
         except ImportError:
             raise ImportError(
                 "Your env don't have GPU related RAPIDS packages, if you want to run this option, follow the "
-                "guide at https://stereopy.readthedocs.io/en/latest/Tutorials/clustering_by_gpu.html")
+                "guide at https://stereopy.readthedocs.io/en/latest/Tutorials/Clustering_by_GPU.html")
 
         n_epochs = (
             500 if maxiter is None else maxiter

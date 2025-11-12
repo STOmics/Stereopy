@@ -96,7 +96,9 @@ class SingleR(AlgorithmBase):
         """  # noqa
         temp_res = set(self.stereo_exp_data.gene_names) & set(ref_exp_data.gene_names)
         interact_genes = [gene for gene in self.stereo_exp_data.gene_names.tolist() if gene in temp_res]
-        assert interact_genes, "no gene of `test_exp_data.gene_names` in `ref_exp_data.gene_names`"
+        assert interact_genes, "no gene of `test_exp_data.gene_names` in `ref_exp_data.gene_names`, " \
+                                 "if your input data is a gef or gem containing geneID, " \
+                                 "set parameter `gene_name_index` as True when loading data."
 
         total_start_time = time.time()
         test_exp_data = self.stereo_exp_data.sub_by_name(gene_name=interact_genes)
@@ -225,7 +227,7 @@ class SingleR(AlgorithmBase):
         except ImportError:
             raise ImportError(
                 "Your env don't have GPU related RAPIDS packages, if you want to run this option, follow the "
-                "guide at https://stereopy.readthedocs.io/en/latest/Tutorials/clustering_by_gpu.html")
+                "guide at https://stereopy.readthedocs.io/en/latest/Tutorials/Clustering_by_GPU.html")
 
     @staticmethod
     def load_cell_types(ref_exp_data, ref_use_col):

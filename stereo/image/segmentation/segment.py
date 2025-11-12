@@ -2,59 +2,106 @@
 # coding: utf-8
 
 import os
-import seg_utils.cell_seg_pipeline as pipeline
+
+from stereo.constant import VersionType
+from stereo.image.segmentation.seg_utils.v1 import CellSegPipeV1
+from stereo.image.segmentation.seg_utils.v1_pro import CellSegPipeV1Pro
+from stereo.image.segmentation.seg_utils.v3 import CellSegPipeV3
+from stereo.image.tissue_cut.pipeline import SingleStrandDNATissueCut
 
 
 def cell_seg(
-        model_path: str, 
-        img_path: str, 
-        out_path: str, 
-        depp_cro_size: int=20000, 
-        overlap: int=100, 
-        gpu: str='-1',
-        tissue_seg_model_path: str=None,
-        tissue_seg_method: str=None,
-        post_processing_workers: int=10
-    ):
+        model_path: str,
+        img_path: str,
+        out_path: str,
+        deep_crop_size: int = 20000,
+        overlap: int = 100,
+        post_processing_workers: int = 10,
+        is_water: bool = False,
+        method: str = 'v3',
+        need_tissue_cut=True,
+        tissue_seg_model_path: str = None,
+        tissue_seg_staining_type: str = None,
+        gpu: str = '-1',
+        num_threads: int = -1
+):
     """
-    Implement cell segmentation by deep learning model.
+    Cell segmentation on regist.tif/mask.tif by deeplearning model.
 
-    Parameters
-    -----------------
-    model_path
-        the path to deep learning model.
-    img_path
-        the path to image file.
-    out_path
-        the path to output mask result.
-    depp_cro_size
-        deep crop size.
-    overlap
-        overlap size.
-    gpu
-        set gpu id, if `'-1'`, use cpu for prediction.
-    tissue_seg_model_path
-	    the path of deep learning model of tissue segmentation, if set it to None, it would use OpenCV to process.
-    tissue_seg_method
-	    the method of tissue segmentation, 1 is based on deep learning and 0 is based on OpenCV.
-    post_processing_workers 
-	    the number of processes for post-processing.
-    Returns
-    ------------
-    None
+    :param model_path: the path of model used to cell segmentation.
+    :param img_path: the path of regist.tif/mask.tif.
+    :param out_path: the path of directory to save the result cell mask.tif.
+    :param deep_crop_size: deep crop size, defaults to 20000
+    :param overlap: over lap size, defaults to 100
+    :param post_processing_workers: the number of processes on post processing, defaults to 10.
+    :param is_water: defaults to False.
+    :param method: v1, v1_pro or v3, recommend to use v3.
+    :param need_tissue_cut: whether to run tissue segmentation, defaults to True.
+                            the method v1 and v1_pro have to run tissue segmentation, so these two methods must be based on regist.tif,
+                            method v3 can use mask.tif from tissue segmentation or regist.tif without tissue segmentation.
+    :param tissue_seg_model_path: the path of model used to tissue segmentation, defaults to None
+    :param tissue_seg_staining_type: the staining type of regist.mask, defaults to None
+    :param gpu: the gpu on which the model works, available for both cell segmtation and tissue segmtation, '-1' means working on cpu.
+    :param num_threads: the number of threads when model work on cpu, 
+                        available for both v3 cell segmtation and tissue segmtation, -1 means using all the cores.
 
     """
-    os.environ["CUDA_VISIBLE_DEVICES"] = str(gpu)
-    flag = 0
-    cell_seg_pipeline = pipeline.CellSegPipe(
-        model_path,
-        img_path,
-        out_path,
-        flag,
-        depp_cro_size,
-        overlap,
-        tissue_seg_model_path=tissue_seg_model_path,
-        tissue_seg_method=tissue_seg_method,
-        post_processing_workers=post_processing_workers
-    )
-    cell_seg_pipeline.run()
+    if method not in VersionType.get_version_list():
+        raise Exception("version must be %s" % ('、'.join(VersionType.get_version_list())))
+    
+    tissue_mask = None
+    if method in ('v1', 'v1_pro'):
+        need_tissue_cut = True
+    if need_tissue_cut:
+        tissue_seg = SingleStrandDNATissueCut(
+            src_img_path=img_path,
+            dst_img_path=out_path,
+            model_path=tissue_seg_model_path,
+            staining_type=tissue_seg_staining_type,
+            gpu=gpu,
+            num_threads=num_threads
+        )
+        tissue_seg.tissue_seg()
+        tissue_mask = tissue_seg.mask
+
+    # os.environ["CUDA_VISIBLE_DEVICES"] = str(gpu)
+    if method == VersionType.v1.value:
+        cell_seg_pipeline = CellSegPipeV1(
+            model_path,
+            img_path,
+            out_path,
+            is_water,
+            deep_crop_size,
+            overlap,
+            gpu=gpu,
+            post_processing_workers=post_processing_workers,
+            tissue_mask=tissue_mask
+        )
+        cell_seg_pipeline.run()
+    elif method == VersionType.v3.value:
+        cell_seg_pipeline = CellSegPipeV3(
+            model_path,
+            img_path,
+            out_path,
+            is_water,
+            deep_crop_size,
+            overlap,
+            gpu=gpu,
+            post_processing_workers=post_processing_workers,
+            tissue_mask=tissue_mask,
+            num_threads=num_threads
+        )
+        cell_seg_pipeline.run()
+    elif method == VersionType.v1_pro.value:
+        cell_seg_pipeline = CellSegPipeV1Pro(
+            model_path,
+            img_path,
+            out_path,
+            is_water,
+            deep_crop_size,
+            overlap,
+            gpu=gpu,
+            post_processing_workers=post_processing_workers,
+            tissue_mask=tissue_mask
+        )
+        cell_seg_pipeline.run()

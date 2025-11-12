@@ -1,11 +1,12 @@
 from dataclasses import dataclass
+from abc import ABCMeta
 
 from stereo.algorithm.algorithm_base import AlgorithmBase, _camel_to_snake
 from stereo.core.ms_data import MSData
 
 
 @dataclass
-class MSDataAlgorithmBase(AlgorithmBase):
+class MSDataAlgorithmBase(metaclass=ABCMeta):
     ms_data: MSData = None
     pipeline_res: dict = None
 
@@ -13,7 +14,7 @@ class MSDataAlgorithmBase(AlgorithmBase):
     def get_attribute_helper(item, ms_data: MSData, res: dict):
         try:
             __import__(f"stereo.algorithm.{item}")
-        except:
+        except Exception:
             # raise AttributeError(f"No attribute named 'StPipeline.{item}'")
             return None
 

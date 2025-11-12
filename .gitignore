@@ -136,3 +136,10 @@ tests/test_image/
 tests/test_data/
 
 .vscode/
+
+代码规范.md
+ubuntu_enviroment.txt
+
+docs/source/content/stereo*
+docs/build
+setup.py

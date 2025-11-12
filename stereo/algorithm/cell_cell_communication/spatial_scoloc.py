@@ -10,17 +10,14 @@
 # This file will be used as an input for our main CCC module.
 
 
-import os
 import random
-import time
-import pandas as pd
-import numpy as np
-import scanpy as sc
-import networkx as nx
+
 import igraph as ig
+import networkx as nx
+import numpy as np
+import pandas as pd
 from scipy import stats
 
-from stereo.log_manager import logger
 from stereo.algorithm.cell_cell_communication.analysis_helper import write_to_file
 from stereo.algorithm.cell_cell_communication.exceptions import InvalidMicroEnvInput
 
@@ -37,7 +34,8 @@ class GetMicroEnvs:
              min_num: int = 30,
              binsize: float = 2,
              eps: float = 1e-20,
-             output_path: str = None
+             output_path: str = None,
+             seed_used: int = 1024
              ):
         """
         Generate the micro-environment file used for the CCC analysis.
@@ -93,11 +91,12 @@ class GetMicroEnvs:
         for col in type_name:
             pairwise_kl_df[col] = pairwise_kl_df[col].apply(lambda x: [])
         # do bootstrap
+        np.random.seed(seed_used)
         for i in range(n_boot):
-            random.seed(i)
+            # random.seed(i)
             # Get the bootstrap sample
             idx = np.random.choice(range(n_cell), round(n_cell * boot_prop), replace=True)
-            data_boot = data.iloc[idx, ]
+            data_boot = data.iloc[idx,]
             # if a cell type has fewer than min_num cells, randomly assign some other cells to be of this type to make
             # the total cell number equal to min_num.
             if fill_rare:
@@ -123,16 +122,17 @@ class GetMicroEnvs:
                 if dimension == 2:
                     sample_points = np.vstack([sample['coord_x'].to_numpy(), sample['coord_y'].to_numpy()])
                 if dimension == 3:
-                    sample_points = np.vstack([sample['coord_x'].to_numpy(), sample['coord_y'].to_numpy(), sample['coord_z'].to_numpy()])
+                    sample_points = np.vstack(
+                        [sample['coord_x'].to_numpy(), sample['coord_y'].to_numpy(), sample['coord_z'].to_numpy()])
                 sample_points = self._check_coordinates(sample_points)
                 if not sample.empty:
                     kde = stats.gaussian_kde(sample_points)  # Calculate kernel
                     kde_at_grid = kde(grid_points.T)  # Calculate kde at the grid points
                     if np.any(kde_at_grid > 0):
-                        kde_at_grid = kde_at_grid/np.sum(kde_at_grid)
+                        kde_at_grid = kde_at_grid / np.sum(kde_at_grid)
                     kde_at_grid[kde_at_grid < eps] = eps  # fill zeros to avoid inf kl divergence
                 else:
-                    kde_at_grid = np.array([eps]*n_grid_points)
+                    kde_at_grid = np.array([eps] * n_grid_points)
 
                 kde_cell_type.append(kde_at_grid)
 
@@ -140,7 +140,7 @@ class GetMicroEnvs:
             kl_array = self._pairwise_kl_divergence(pairwise_kl_df, kde_cell_type, n_type)
             # get MST from the kl matrix
             tree_edge_df = self._get_mst(type_name, kl_array)
-            tree_edge_df['weight'] = [1.0/float(n_boot)] * tree_edge_df.shape[0]
+            tree_edge_df['weight'] = [1.0 / float(n_boot)] * tree_edge_df.shape[0]
             mst_boot.append(tree_edge_df)
 
         """
@@ -148,11 +148,11 @@ class GetMicroEnvs:
         """
         all_mst = pd.concat(mst_boot, ignore_index=True)
         final_mst = all_mst.groupby(['from', 'to']).agg('sum').reset_index()
-        
 
         """
         4. Average over all the bootstrap samples to get the final pairwise KL-divergence matrix
         """
+
         def mean_boot(ls):
             """
             define this function to avoid warning when calculate np.mean to empty list
@@ -167,10 +167,11 @@ class GetMicroEnvs:
             write_to_file(all_mst, 'mst_in_boot', output_path=output_path, output_format='csv')
             write_to_file(final_mst, 'mst_final', output_path=output_path, output_format='csv')
             write_to_file(pairwise_kl_df, 'pairwise_kl_divergence', output_path=output_path, output_format='csv')
-            write_to_file(subgroups_by_thrshold, 'split_by_different_threshold', output_path=output_path, output_format='csv')
+            write_to_file(subgroups_by_thrshold, 'split_by_different_threshold', output_path=output_path,
+                          output_format='csv')
 
         return all_mst, final_mst, pairwise_kl_df, subgroups_by_thrshold
-    
+
     def _check_coordinates(self, coordinates: np.ndarray):
         for coord in coordinates:
             if np.all(coord == coord[0]):
@@ -182,11 +183,11 @@ class GetMicroEnvs:
 
     # FIXME: change the default output path
     def generate_micro_envs(
-        self,
-        method,
-        threshold: float = None,
-        result_df: pd.DataFrame = None,
-        output_path: str = None
+            self,
+            method,
+            threshold: float = None,
+            result_df: pd.DataFrame = None,
+            output_path: str = None
     ):
         """
         5. Define micro environments using two methods:
@@ -251,7 +252,7 @@ class GetMicroEnvs:
         rare_type = [key for key, value in count_dict.items() if value < min_num]
         for t in rare_type:
             zero_row = data_onehot[data_onehot[t] == 0].index
-            fill_row = np.random.choice(zero_row, min_num-count_dict[t], replace=False)
+            fill_row = np.random.choice(zero_row, min_num - count_dict[t], replace=False)
             data_onehot.loc[fill_row, t] = 1
         return data_onehot
 
@@ -282,9 +283,9 @@ class GetMicroEnvs:
         ymin = np.min(pos_data_y) - 2 * binsize
         ymax = np.max(pos_data_y) + 2 * binsize
 
-        pos_data_x = (pos_data_x - xmin)/binsize
+        pos_data_x = (pos_data_x - xmin) / binsize
         pos_data_x = pos_data_x.astype(int)
-        pos_data_y = (pos_data_y - ymin)/binsize
+        pos_data_y = (pos_data_y - ymin) / binsize
         pos_data_y = pos_data_y.astype(int)
 
         X, Y = np.mgrid[xmin:xmax:binsize, ymin:ymax:binsize]
@@ -328,14 +329,14 @@ class GetMicroEnvs:
         min_kl = np.min(np.min(pairwise_kl_df))
         max_kl = np.max(np.max(pairwise_kl_df))
         n_type = len(type_name)
-        thresh = np.linspace(min_kl, max_kl, n_type*n_type)
+        thresh = np.linspace(min_kl, max_kl, n_type * n_type)
 
         threshold = []
         subgroup = []
         for t in thresh:
             sub = self.split_micro_envs(pairwise_kl_df, type_name, t)
             threshold.append(t)
-            subgroup.append(sub)
+            subgroup.append(str(sub))
             if len(sub) == 1:
                 break
         subgroup_df = pd.DataFrame({"threshold": threshold, "subgroup_result": subgroup})
@@ -362,51 +363,3 @@ class GetMicroEnvs:
         round_pd['to'] = type_name[yidx.tolist()]
         return round_pd
 
-
-if __name__ == "__main__":
-    fly = sc.read_h5ad(r'C:\Users\liuxiaobin\Desktop\E14-16h_a_count_normal_stereoseq.h5ad')
-    gene_name = [str(x) for x in fly.var_names]  # 13668 genes
-    spot_name = [str(x) for x in fly.obs_names]  # 15295 cells
-
-    # count_sp = fly.X  # 15295 x 13668 (16 slices)
-    # # count_df = pd.DataFrame(count_sp.tocsr().toarray(), columns=gene_name)
-    # count_df = pd.DataFrame(count_sp, columns=gene_name)
-    # count_df['cell'] = spot_name
-
-    coord_x = [x[0] for x in fly.obsm['spatial']]
-    coord_y = [x[1] for x in fly.obsm['spatial']]
-    coord_z = [x[2] for x in fly.obsm['spatial']]
-    coord = pd.DataFrame({'cell': spot_name, 'coord_x': coord_x, 'coord_y': coord_y, 'coord_z': coord_z})
-
-    cell_type = fly.obs['annotation']
-    meta = pd.DataFrame({'cell': spot_name, 'cell_type': cell_type}).reset_index(drop=True)
-
-    boot_prop = 0.8
-    n_boot = 100
-    dimension = 3
-    fill_rare = True
-    min_num = 30
-    binsize = 2
-    eps = 1e-20
-    output_path: str = r'E:\Stereopy\小试答辩\小试答辩3\测试数据'
-
-    tt = GetMicroEnvs()
-    final_mst, pairwise_kl_df, path = tt.main(meta, coord, n_boot=20)
-    tt.generate_micro_envs('mst', threshold=0.3, result_df=final_mst, output_path=path)
-    tt.generate_micro_envs('split', threshold=2, result_df=pairwise_kl_df, output_path=path)
-
-    mouse = sc.read_h5ad(r'C:\Users\liuxiaobin\Desktop\MouseBrainCellbin.h5ad')
-    gene_name = [str(x) for x in mouse.var_names]  # 22404 genes
-    spot_name = [str(x) for x in mouse.obs_names]  # 49921 cells
-
-    coord_x = [x[0] for x in mouse.obsm['spatial']]
-    coord_y = [x[1] for x in mouse.obsm['spatial']]
-    coord = pd.DataFrame({'cell': spot_name, 'coord_x': coord_x, 'coord_y': coord_y})
-
-    cell_type = mouse.obs['celltype_pred']
-    meta = pd.DataFrame({'cell': spot_name, 'cell_type': cell_type}).reset_index(drop=True)
-
-    mm = GetMicroEnvs()
-    final_mst, pairwise_kl_df, path = mm.main(meta, coord, n_boot=20, dimension=2)
-    mm.generate_micro_envs('mst', threshold=0.1, result_df=final_mst, output_path=path)
-    mm.generate_micro_envs('split', threshold=1, result_df=pairwise_kl_df, output_path=path)

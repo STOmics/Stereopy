@@ -8,6 +8,16 @@
 """
 from enum import Enum
 
+CHIP_RESOLUTION = {
+    "CL1": 900, "N1": 900, "V3": 715, "K2": 715,
+    "S2": 715, "S1": 900, "F3": 715, "F1": 800,
+    "V1": 800, "DP84": 715, "DP8": 850, "FP2": 500,
+    "SS2": 500, "FP1": 600, "E1": 700, "DP40": 700,
+    "G1": 700, "A": 500, "B": 500, "C": 500,
+    "D": 500, "U": 715, "V": 715, "W": 715,
+    "X": 715, "Y": 500
+}
+
 TMP = "tmp"
 PAGA = "paga"
 BATCH = "batch"
@@ -35,6 +45,8 @@ GREATER_PVALUE = "greater_pvalue"
 N_GENES_BY_COUNTS = "n_genes_by_counts"
 CELLTYPE_MEAN_SCALE = "celltype_mean_scale"
 CONNECTIVITIES_TREE = "connectivities_tree"
+PLOT_SCATTER_SIZE_FACTOR = 120000
+PLOT_BASE_IMAGE_EXPANSION = 500
 
 MODEL_URL = 'https://www.cellpose.org/models'
 CELLPOSE_GUI_PNG_URL = 'https://www.cellpose.org/static/images/cellpose_gui.png'
@@ -88,3 +100,13 @@ class ColorType(Enum):
 
 class RunMethodType(Enum):
     tvg_marker = "tvg_marker"
+
+
+class VersionType(Enum):
+    v1 = 'v1'
+    v1_pro = 'v1_pro'
+    v3 = 'v3'
+
+    @staticmethod
+    def get_version_list():
+        return [key.value for key in VersionType]

@@ -1,0 +1,19 @@
+name: CPU PyTest Demo in Conda Tanliwei Branch
+
+on:
+  push:
+    branches:
+      - 'tanliwei'
+    paths-ignore:
+      - '.github/workflows/**'
+      - 'docs/**'
+
+jobs:
+  build-linux-and-start-pytest:
+    runs-on: cpu
+    steps:
+      - name: 'See Working Dir'
+        run: |
+          echo "working dir is $(pwd)"
+
+      - uses: actions/checkout@v3

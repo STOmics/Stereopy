@@ -1,6 +1,7 @@
 from natsort import natsorted
 import numpy as np
 from scipy.sparse import csr_matrix
+import gzip
 
 def remove_genes_number(gene_names):
     underline = np.char.find(gene_names, '_', start=1, end=-1)
@@ -73,7 +74,7 @@ def transform_marker_genes_to_anndata(marker_genes_res: dict):
         'reference': marker_genes_res['parameters']['control_groups'],
         'method': method,
         'use_raw': marker_genes_res['parameters']['use_raw'],
-        'layer': None,
+        'layer': marker_genes_res['parameters']['layer'],
         'corr_method': marker_genes_res['parameters']['corr_method']
     }
     if 'marker_genes_res_key' in marker_genes_res['parameters']:
@@ -102,3 +103,17 @@ def transform_marker_genes_to_anndata(marker_genes_res: dict):
             recarr[group] = marker_genes_res[k][k1].to_numpy()
         marker_genes_result[k2] = recarr
     return marker_genes_result
+
+def get_gem_comments(gem_file_path: str):
+    if gem_file_path.endswith('.gz'):
+        open_func =  gzip.open
+    else:
+        open_func = open
+    
+    comments = []
+    with open_func(gem_file_path, 'rb') as fp:
+        for line in fp:
+            if not line.startswith(b'#'):
+                break
+            comments.append(line)
+    return len(comments), comments

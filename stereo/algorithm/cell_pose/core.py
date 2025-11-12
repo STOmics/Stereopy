@@ -1,23 +1,23 @@
 """
 Copright © 2023 Howard Hughes Medical Institute, Authored by Carsen Stringer and Marius Pachitariu.
 """
-import os
-import cv2
-import time
-import torch
 import datetime
+import os
+import time
+
+import cv2
 import fastremap
-
 import numpy as np
-from torch import nn
-from tqdm import trange, tqdm
+import torch
 from scipy.stats import mode
+from torch import nn
 from torch.utils import mkldnn as mkldnn_utils
+from tqdm import trange, tqdm
 
-from . import utils
 from . import metrics
 from . import resnet_torch
-from ... import logger as core_logger
+from . import utils
+from stereo.log_manager import logger as core_logger
 
 TORCH_ENABLED = True
 
@@ -65,7 +65,7 @@ def _use_gpu_torch(gpu_number=0):
         _ = torch.zeros([1, 2, 3]).to(device)
         core_logger.info('** TORCH CUDA version installed and working. **')
         return True
-    except:
+    except Exception:
         core_logger.info('TORCH CUDA version not installed/working.')
         return False
 
@@ -89,7 +89,7 @@ def assign_device(use_torch=True, gpu=False, device=0):
             gpu = True
             cpu = False
             core_logger.info('>>>> using GPU')
-        except:
+        except Exception:
             cpu = True
             gpu = False
 
@@ -112,10 +112,19 @@ def check_mkl():
 
 class UnetModel():
 
-    def __init__(self, gpu=False, pretrained_model=False,
-                 diam_mean=30., net_avg=False, device=None,
-                 residual_on=False, style_on=False, concatenation=True,
-                 nclasses=3, nchan=2):
+    def __init__(
+            self,
+            gpu=False,
+            pretrained_model=False,
+            diam_mean=30.,
+            net_avg=False,
+            device=None,
+            residual_on=False,
+            style_on=False,
+            concatenation=True,
+            nclasses=3,
+            nchan=2
+    ):
         self.unet = True
         self.torch = True
         self.mkldnn = None
@@ -131,10 +140,8 @@ class UnetModel():
         self.diam_mean = diam_mean
 
         ostr = ['off', 'on']
-        self.net_type = 'unet{}_residual_{}_style_{}_concatenation_{}'.format(nclasses,
-                                                                              ostr[residual_on],
-                                                                              ostr[style_on],
-                                                                              ostr[concatenation])
+        self.net_type = 'unet{}_residual_{}_style_{}_concatenation_{}'.format(
+            nclasses, ostr[residual_on], ostr[style_on], ostr[concatenation])
         if pretrained_model:
             core_logger.info(f'u-net net type: {self.net_type}')
         # create network
@@ -149,10 +156,27 @@ class UnetModel():
         if pretrained_model is not None and isinstance(pretrained_model, str):
             self.net.load_model(pretrained_model, device=self.device)
 
-    def eval(self, x, batch_size=8, channels=None, channels_last=False, invert=False, normalize=True,
-             rescale=None, do_3D=False, anisotropy=None, net_avg=False, augment=False,
-             channel_axis=None, z_axis=None, nolist=False, tile=True, cell_threshold=None, boundary_threshold=None,
-             min_size=15, compute_masks=True):
+    def eval(self,
+             x,
+             batch_size=8,
+             channels=None,
+             channels_last=False,
+             invert=False,
+             normalize=True,
+             rescale=None,
+             do_3D=False,
+             anisotropy=None,
+             net_avg=False,
+             augment=False,
+             channel_axis=None,
+             z_axis=None,
+             nolist=False,
+             tile=True,
+             cell_threshold=None,
+             boundary_threshold=None,
+             min_size=15,
+             compute_masks=True
+             ):
         """ segment list of images x
 
             Parameters
@@ -255,7 +279,7 @@ class UnetModel():
                 thresholds = np.load(model_path + '_cell_boundary_threshold.npy')
                 cell_threshold, boundary_threshold = thresholds
                 core_logger.info('>>>> found saved thresholds from validation set')
-            except:
+            except Exception:
                 core_logger.warning('WARNING: no thresholds found, using default / user input')
 
         cell_threshold = 2.0 if cell_threshold is None else cell_threshold
@@ -325,8 +349,17 @@ class UnetModel():
 
         return y, style
 
-    def _run_nets(self, img, net_avg=False, augment=False, tile=True, tile_overlap=0.1, bsize=224,
-                  return_conv=False, progress=None):
+    def _run_nets(
+            self,
+            img,
+            net_avg=False,
+            augment=False,
+            tile=True,
+            tile_overlap=0.1,
+            bsize=224,
+            return_conv=False,
+            progress=None
+    ):
         """ run network (if more than one, loop over networks and average results
 
         Parameters
@@ -382,8 +415,7 @@ class UnetModel():
 
         return y, style
 
-    def _run_net(self, imgs, augment=False, tile=True, tile_overlap=0.1, bsize=224,
-                 return_conv=False):
+    def _run_net(self, imgs, augment=False, tile=True, tile_overlap=0.1, bsize=224, return_conv=False):
         """ run network on image or stack of images
 
         (faster if augment is False)
@@ -473,7 +505,7 @@ class UnetModel():
 
         bsize: int (optional, default 224)
             size of tiles to use in pixels [bsize x bsize]
-         
+
         tile_overlap: float (optional, default 0.1)
             fraction of overlap of tiles when computing flows
 
@@ -557,9 +589,18 @@ class UnetModel():
             styles /= (styles ** 2).sum() ** 0.5
             return yf, styles
 
-    def _run_3D(self, imgs, rsz=1.0, anisotropy=None, net_avg=False,
-                augment=False, tile=True, tile_overlap=0.1,
-                bsize=224, progress=None):
+    def _run_3D(
+            self,
+            imgs,
+            rsz=1.0,
+            anisotropy=None,
+            net_avg=False,
+            augment=False,
+            tile=True,
+            tile_overlap=0.1,
+            bsize=224,
+            progress=None
+    ):
         """ run network on stack of images
 
         (faster if augment is False)
@@ -608,9 +649,7 @@ class UnetModel():
         """
         sstr = ['YX', 'ZY', 'ZX']
         if anisotropy is not None:
-            rescaling = [[rsz, rsz],
-                         [rsz * anisotropy, rsz],
-                         [rsz * anisotropy, rsz]]
+            rescaling = [[rsz, rsz], [rsz * anisotropy, rsz], [rsz * anisotropy, rsz]]
         else:
             rescaling = [rsz] * 3
         pm = [(0, 1, 2, 3), (1, 0, 2, 3), (2, 0, 1, 3)]
@@ -644,8 +683,7 @@ class UnetModel():
         loss = 8 * 1. / self.nclasses * self.criterion(y, lbl)
         return loss
 
-    def train(self, train_data, train_labels, train_files=None,
-              test_data=None, test_labels=None, test_files=None,
+    def train(self, train_data, train_labels, train_files=None, test_data=None, test_labels=None, test_files=None,
               channels=None, normalize=True, save_path=None, save_every=100, save_each=False,
               learning_rate=0.2, n_epochs=500, momentum=0.9, weight_decay=0.00001, batch_size=8,
               nimg_per_epoch=None, min_train_masks=5, rescale=False, model_name=None):
@@ -785,8 +823,7 @@ class UnetModel():
             self.criterion = nn.MSELoss(reduction='mean')
             self.criterion2 = nn.BCEWithLogitsLoss(reduction='mean')
 
-    def _train_net(self, train_data, train_labels,
-                   test_data=None, test_labels=None,
+    def _train_net(self, train_data, train_labels, test_data=None, test_labels=None,
                    save_path=None, save_every=100, save_each=False,
                    learning_rate=0.2, n_epochs=500, momentum=0.9, weight_decay=0.00001,
                    SGD=True, batch_size=8, nimg_per_epoch=None, rescale=True, model_name=None):
@@ -804,7 +841,7 @@ class UnetModel():
             self.learning_rate_const = mode(learning_rate)[0][0]
         else:
             self.learning_rate_const = learning_rate
-            # set learning rate schedule    
+            # set learning rate schedule
             if SGD:
                 LR = np.linspace(0, self.learning_rate_const, 10)
                 if self.n_epochs > 250:

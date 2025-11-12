@@ -1,0 +1,9 @@
+spatialign==0.0.5a0
+torch-cluster==1.6.0
+torch-geometric==2.0.2
+torch-scatter==2.0.9
+torch-sparse==0.6.13
+torch-spline-conv==1.2.1
+
+
+# conda install -c conda-forge gcc==8.5.0 gxx=8.5.0

@@ -1,19 +1,22 @@
-from collections import defaultdict
-from types import MappingProxyType
-from typing import Optional, Union, List, Sequence, Mapping, Any, Tuple, Literal
 import random
+from types import MappingProxyType
+from typing import (
+    Optional,
+    Union,
+    Mapping,
+    Any,
+    Literal
+)
 
-from sklearn.utils import check_random_state
-import numpy as np
-import pandas as pd
 import matplotlib.pyplot as plt
 import networkx as nx
-import igraph as ig
+import numpy as np
+import pandas as pd
+from sklearn.utils import check_random_state
 
-from stereo.plots.plot_base import PlotBase
 from stereo.log_manager import logger
+from stereo.plots.plot_base import PlotBase
 
-# _LAYOUTS = ('fr', 'drl', 'kk', 'grid_fr', 'lgl', 'rt', 'rt_circular', 'fa')
 _Layout = Literal[
     'fr',
     'drl',
@@ -55,14 +58,14 @@ class PlotPaga(PlotBase):
         return g
 
     def _compute_pos(
-        self, 
-        adjacency,
-        layout=None,
-        random_state=0,
-        init_pos=None,
-        adj_tree=None,
-        root=0,
-        layout_kwds: Mapping[str, Any] = MappingProxyType({}),
+            self,
+            adjacency,
+            layout=None,
+            random_state=0,
+            init_pos=None,
+            adj_tree=None,
+            root=0,
+            layout_kwds: Mapping[str, Any] = MappingProxyType({}),
     ):
         """
         compute the position for each node
@@ -76,11 +79,6 @@ class PlotPaga(PlotBase):
         import networkx as nx
 
         random_state = check_random_state(random_state)
-        #adjacency = pipeline_res['paga']['connectivities']
-
-        #if adj_tree == 'connectivities_tree':
-        #    adj_tree = pipeline_res['paga']['connectivities_tree']
-
         nx_g_solid = nx.Graph(adjacency)
         if layout is None:
             layout = 'fr'
@@ -95,7 +93,6 @@ class PlotPaga(PlotBase):
                 )
                 layout = 'fr'
         if layout == 'fa':
-            # np.random.seed(random_state)
             if init_pos is None:
                 init_coords = random_state.random_sample((adjacency.shape[0], 2))
             else:
@@ -141,11 +138,8 @@ class PlotPaga(PlotBase):
                 pos_list = g.layout(layout).coords
             else:
                 # I don't know why this is necessary
-                # np.random.seed(random_state)
                 if init_pos is None:
-                    init_coords = random_state.random_sample(
-                        (adjacency.shape[0], 2)
-                    ).tolist()
+                    init_coords = random_state.random_sample((adjacency.shape[0], 2)).tolist()
                 else:
                     init_pos = init_pos.copy()
                     # this is a super-weird hack that is necessary as igraph’s
@@ -162,26 +156,24 @@ class PlotPaga(PlotBase):
         if len(pos) == 1:
             pos[0] = (0.5, 0.5)
         pos_array = np.array([pos[n] for count, n in enumerate(nx_g_solid)])
-        #pipeline_res['paga']['pos'] = pos_array
         return pos_array
 
-
     def paga_plot(
-        self, 
-        adjacency: str = 'connectivities_tree',
-        threshold: float = 0.01,
-        layout: _Layout = 'fr',
-        random_state: int = 0,
-        #labels: Union[str, Sequence[str], Mapping[str, str], None] = None,
-        cmap: str = 'tab20',
-        ax: Optional[plt.Axes] = None,
-        width: Optional[int] = None,
-        height: Optional[int] = None
+            self,
+            adjacency: str = 'connectivities_tree',
+            threshold: float = 0.01,
+            layout: _Layout = 'fr',
+            random_state: int = 0,
+            cmap: str = 'tab20',
+            ax: Optional[plt.Axes] = None,
+            width: Optional[int] = None,
+            height: Optional[int] = None,
+            dot_size: Optional[int] = 30
     ):
         """
         abstract paga plot for the paga result.
 
-        :param adjacency: keyword to use for paga or paga tree, available values include 'connectivities' and 'connectivities_tree'.
+        :param adjacency: keyword to use for paga or paga tree, available values include 'connectivities' and 'connectivities_tree'. # noqa
         :param threshold: prune edges lower than threshold.
         :param layout: the method to layout each node.
         :param random_state: to control the random initializatio.
@@ -189,19 +181,18 @@ class PlotPaga(PlotBase):
         :param ax: subplot to plot.
         :param width: the figure width.
         :param height: the figure height.
+        :param dot_size: The marker size in points**2 (typographic points are 1/72 in.).
+            Default is 30.
 
         """
-        # calculate node positions 
+        # calculate node positions
         adjacency_mat = self.pipeline_res['paga'][adjacency].copy()
-        # if threshold is None:
-        #     threshold = 0.01  # default threshold
         if threshold > 0:
             adjacency_mat.data[adjacency_mat.data < threshold] = 0
             adjacency_mat.eliminate_zeros()
 
         pos = self._compute_pos(adjacency_mat, layout=layout, random_state=random_state)
         self.pipeline_res['paga']['pos'] = pos
-
 
         # network
         G = pd.DataFrame(adjacency_mat.todense())
@@ -212,68 +203,59 @@ class PlotPaga(PlotBase):
         Nodes2pos = dict(zip(ct_list, list(pos)))
 
         # define colors
-        # ct_list = self.stereo_exp_data.cells[self.pipeline_res['paga']['groups']].cat.categories
         color_list = plt.get_cmap(cmap, len(ct_list))
-        ct2color = {x:color_list.colors[i] for i,x in enumerate(ct_list)}
 
-        # fig_flag = 0
         # plotting
-        if ax == None:
+        if ax is None:
             _, ax = plt.subplots(1)
-            # fig_flag = 1
         if width is not None:
             ax.get_figure().set_figwidth(width)
         if height is not None:
             ax.get_figure().set_figheight(height)
 
-        ax.scatter(pos[:, 0], pos[:, 1], c = color_list.colors, zorder=1)
+        ax.scatter(pos[:, 0], pos[:, 1], c=color_list.colors, zorder=1, s=dot_size)
         for i in range(len(ct_list)):
             ax.text(pos[i, 0], pos[i, 1], s=ct_list[i], zorder=2)
-        for i,j in Edges:
+        for i, j in Edges:
             xi, yi = Nodes2pos[i]
             xj, yj = Nodes2pos[j]
-            ax.plot([xi,xj], [yi, yj], color='black', zorder=0)
+            ax.plot([xi, xj], [yi, yj], color='black', zorder=0)
         ax.set_xticks([])
         ax.set_yticks([])
-        # if fig_flag:
-        #     return fig
-        # else:
-        #     return ax
         return ax.get_figure()
 
-
     def _draw_graph(
-        self, 
-        layout: _Layout = 'fa',
-        init_pos: Union[str, bool, None] = None,
-        root: Optional[int] = None,
-        random_state = 0,
-        n_jobs: Optional[int] = None,
-        adjacency = None,
-        key_added_ext: Optional[str] = None,
-        obsp: Optional[str] = None,
-        copy: bool = False,
-        **kwds,
+            self,
+            layout: _Layout = 'fa',
+            init_pos: Union[str, bool, None] = None,
+            root: Optional[int] = None,
+            random_state=0,
+            n_jobs: Optional[int] = None,
+            adjacency=None,
+            key_added_ext: Optional[str] = None,
+            obsp: Optional[str] = None,
+            copy: bool = False,
+            **kwds,
     ):
-        """\
+        """
         Force-directed graph drawing [Islam11]_ [Jacomy14]_ [Chippada18]_.
-    
+
         An alternative to tSNE that often preserves the topology of the data
         better. This requires to run :func:`~scanpy.pp.neighbors`, first.
-    
+
         The default layout ('fa', `ForceAtlas2`) [Jacomy14]_ uses the package |fa2|_
         [Chippada18]_, which can be installed via `pip install fa2`.
-    
+
         `Force-directed graph drawing`_ describes a class of long-established
         algorithms for visualizing graphs.
         It has been suggested for visualizing single-cell data by [Islam11]_.
         Many other layouts as implemented in igraph [Csardi06]_ are available.
         Similar approaches have been used by [Zunder15]_ or [Weinreb17]_.
-    
+
         .. |fa2| replace:: `fa2`
         .. _fa2: https://github.com/bhargavchippada/forceatlas2
         .. _Force-directed graph drawing: https://en.wikipedia.org/wiki/Force-directed_graph_drawing
-    
+
         Parameters
         ----------
         adata
@@ -313,13 +295,13 @@ class PlotPaga(PlotBase):
         **kwds
             Parameters of chosen igraph layout. See e.g. `fruchterman-reingold`_
             [Fruchterman91]_. One of the most important ones is `maxiter`.
-    
+
             .. _fruchterman-reingold: http://igraph.org/python/doc/igraph.Graph-class.html#layout_fruchterman_reingold
-    
+
         Returns
         -------
         Depending on `copy`, returns or updates `adata` with the following field.
-    
+
         **X_draw_graph_layout** : `adata.obsm`
             Coordinates of graph layout. E.g. for layout='fa' (the default),
             the field is called 'X_draw_graph_fa'
@@ -345,7 +327,6 @@ class PlotPaga(PlotBase):
                 init_pos[subset] = group_pos - 0.5 * dist + noise
             else:
                 init_pos[subset] = group_pos
-
 
         # see whether fa2 is installed
         if layout == 'fa':
@@ -405,22 +386,23 @@ class PlotPaga(PlotBase):
         self.stereo_exp_data.cells_matrix['paga_pos'] = positions
         return positions
 
-    def paga_compare( 
-        self, 
-        adjacency: str = 'connectivities_tree',
-        color: Optional[str] = None,
-        size:int = 1,
-        threshold: float = 0.01,
-        layout: _Layout = 'fr',
-        random_state: int = 0,
-        cmap: str ='tab20',
-        width: int = 15,
-        height: int = 6
+    def draw_graph(
+            self,
+            adjacency: str = 'connectivities_tree',
+            color: Optional[str] = None,
+            size: int = 1,
+            threshold: float = 0.01,
+            layout: _Layout = 'fr',
+            random_state: int = 0,
+            cmap: str = 'tab20',
+            width: int = 15,
+            height: int = 6,
+            dot_size: int = 30
     ):
         """
-        abstract paga plot for the paga result and cell distribute around paga.
+        Force-directed graph drawing
 
-        :param adjacency: keyword to use for paga or paga tree, available values include 'connectivities' and 'connectivities_tree'.
+        :param adjacency: keyword to use for paga or paga tree, available values include 'connectivities' and 'connectivities_tree'. # noqa
         :param color: the col in cells or a gene name to display in compare plot.
         :param size: cell spot size.
         :param threshold: prune edges lower than threshold.
@@ -429,46 +411,157 @@ class PlotPaga(PlotBase):
         :param cmap: colormap to use, default with tab20.
         :param width: the figure width.
         :param height: the figure height.
+        :param dot_size: The marker size in points**2 (typographic points are 1/72 in.).
+            Default is 30.
 
         """
         # parameter setting
-        # if threshold is None:
-        #     threshold = 0.01 
-        # if layout is None:
-        #     layout = 'fr'
-
-        fig = plt.figure(figsize=(width,height))
+        fig = plt.figure(figsize=(width, height))
         ax = plt.subplot(1, 2, 1)
         # network
-        self.paga_plot(adjacency=adjacency, threshold=threshold, layout=layout, random_state=random_state, cmap=cmap, ax=ax)
+        self.paga_plot(adjacency=adjacency, threshold=threshold, random_state=random_state, cmap=cmap, ax=ax,
+                       dot_size=dot_size)
 
         # cell position
         cell_pos = self._draw_graph(layout=layout)
 
-        #cell_pos = self.stereo_exp_data.cells_matrix['paga_pos']
         # plotting
         ax = plt.subplot(1, 2, 2)
         if color is None:
             color = self.pipeline_res['paga']['groups']
         if (color not in self.stereo_exp_data.cells) and (color not in self.stereo_exp_data.gene_names):
-            logger.info(f"color is neither in cells nor in genes, use '{self.pipeline_res['paga']['groups']}' as default")
+            logger.info(
+                f"color is neither in cells nor in genes, use '{self.pipeline_res['paga']['groups']}' as default")
             color = self.pipeline_res['paga']['groups']
 
         if color in self.stereo_exp_data.cells:
             if self.stereo_exp_data.cells[color].dtype == 'category':
-                # ct_list = self.stereo_exp_data.cells[color].cat.categories
-                # color_list = plt.get_cmap(cmap, len(ct_list))
-                # ct2color = {x:color_list.colors[i] for i,x in enumerate(ct_list)}
-                # ax.scatter(cell_pos[:, 0], cell_pos[:, 1], s = size, c = [ct2color[x] for x in self.stereo_exp_data.cells[color]])
-                ax.scatter(cell_pos[:, 0], cell_pos[:, 1], s = size, c = self.stereo_exp_data.cells[color].cat.codes.to_numpy())
+                ax.scatter(cell_pos[:, 0], cell_pos[:, 1], s=size,
+                           c=self.stereo_exp_data.cells[color].cat.codes.to_numpy(), cmap=cmap)
+                cell_pos_df = pd.DataFrame(cell_pos)
+                cell_pos_df[color] = self.stereo_exp_data.cells[color].to_list()
+                cell_center_pos_df = cell_pos_df.groupby(color).mean()
+                for s, row in cell_center_pos_df.iterrows():
+                    ax.text(row[0], row[1], s)
             else:
-                ax.scatter(cell_pos[:, 0], cell_pos[:, 1], s = size, c = self.stereo_exp_data.cells[color])
-            # ax.scatter(cell_pos[:, 0], cell_pos[:, 1], s = size, c = self.stereo_exp_data.cells[color].to_numpy())
+                ax.scatter(cell_pos[:, 0], cell_pos[:, 1], s=size, c=self.stereo_exp_data.cells[color])
         elif color in self.stereo_exp_data.gene_names:
             gene_list = list(self.stereo_exp_data.genes.to_df().index)
             gene_index = gene_list.index(color)
             clist = self.stereo_exp_data.exp_matrix[:, gene_index]
-            ax.scatter(cell_pos[:, 0], cell_pos[:, 1], s = size, c = clist)
+            ax.scatter(cell_pos[:, 0], cell_pos[:, 1], s=size, c=clist)
+
+        ax.set_xticks([])
+        ax.set_yticks([])
+        return fig
+
+    def paga_compare(
+            self,
+            basis: Optional[str] = None,
+            adjacency: str = 'connectivities_tree',
+            color: Optional[str] = None,
+            size: int = 1,
+            threshold: float = 0.01,
+            cmap: str = 'tab20',
+            width: int = 15,
+            height: int = 6,
+            dot_size: int = 30
+    ):
+        """
+        abstract paga plot for the paga result and cell distribute around paga.
+
+        :param basis: the embedding of cells, default
+        :param adjacency: keyword to use for paga or paga tree, available values include 'connectivities' and 'connectivities_tree'. # noqa
+        :param color: the col in cells or a gene name to display in compare plot.
+        :param size: cell spot size.
+        :param threshold: prune edges lower than threshold.
+        :param cmap: colormap to use, default with tab20.
+        :param width: the figure width.
+        :param height: the figure height.
+        :param dot_size: The marker size in points**2 (typographic points are 1/72 in.).
+            Default is 30.
+
+        """
+
+        if color is None:
+            color = self.pipeline_res['paga']['groups']
+        if (color not in self.stereo_exp_data.cells) and (color not in self.stereo_exp_data.gene_names):
+            logger.info(
+                f"color is neither in cells nor in genes, use '{self.pipeline_res['paga']['groups']}' as default")
+            color = self.pipeline_res['paga']['groups']
+
+        if basis is None:
+            basis = 'umap'
+        if basis not in self.pipeline_res:
+            logger.info(
+                f"{basis} is not in result, use 'umap' as default")
+            basis = 'umap'
+            if basis not in self.pipeline_res:
+                logger.info(
+                    f"umap is not in result, please run umap first, try to use 'pca' instead")
+                basis = 'pca'
+                if basis not in self.pipeline_res:
+                    logger.info(
+                        f"pca is not in result, please specify a dim reduction result, try to run pca or umap first.")
+                    raise KeyError("basis not found: " + str(basis))
+
+        df = self.pipeline_res[basis].copy()
+        df = df[[0, 1]]
+        df[color] = list(self.stereo_exp_data.cells[color])
+        pos = df.groupby(color).mean()
+
+        # calculate node positions
+        adjacency_mat = self.pipeline_res['paga'][adjacency].copy()
+        if threshold > 0:
+            adjacency_mat.data[adjacency_mat.data < threshold] = 0
+            adjacency_mat.eliminate_zeros()
+
+        # network
+        G = pd.DataFrame(adjacency_mat.todense())
+        ct_list = self.stereo_exp_data.cells[color].cat.categories
+
+        pos = pos.loc[ct_list]
+        pos = pos.to_numpy()
+
+        G.index = ct_list
+        G.columns = ct_list
+        Edges = nx.from_pandas_adjacency(G).edges()
+        Nodes2pos = dict(zip(ct_list, list(pos)))
+
+        # parameter setting
+        fig = plt.figure(figsize=(width, height))
+        ax = plt.subplot(1, 2, 1)
+        # network
+        color_list = plt.get_cmap(cmap, len(ct_list))
+        ax.scatter(pos[:, 0], pos[:, 1], c=color_list.colors, zorder=1, s=dot_size)
+        for i in range(len(ct_list)):
+            ax.text(pos[i, 0], pos[i, 1], s=ct_list[i], zorder=2)
+        for i, j in Edges:
+            xi, yi = Nodes2pos[i]
+            xj, yj = Nodes2pos[j]
+            ax.plot([xi, xj], [yi, yj], color='black', zorder=0)
+
+        # plotting
+        ax = plt.subplot(1, 2, 2)
+
+        cell_pos = df[[0, 1]].to_numpy()
+
+        if color in self.stereo_exp_data.cells:
+            if self.stereo_exp_data.cells[color].dtype == 'category':
+                ax.scatter(cell_pos[:, 0], cell_pos[:, 1], s=size,
+                           c=self.stereo_exp_data.cells[color].cat.codes.to_numpy(), cmap=cmap)
+                cell_pos_df = pd.DataFrame(cell_pos)
+                cell_pos_df[color] = self.stereo_exp_data.cells[color].to_list()
+                cell_center_pos_df = cell_pos_df.groupby(color).mean()
+                for s, row in cell_center_pos_df.iterrows():
+                    ax.text(row[0], row[1], s)
+            else:
+                ax.scatter(cell_pos[:, 0], cell_pos[:, 1], s=size, c=self.stereo_exp_data.cells[color])
+        elif color in self.stereo_exp_data.gene_names:
+            gene_list = list(self.stereo_exp_data.genes.to_df().index)
+            gene_index = gene_list.index(color)
+            clist = self.stereo_exp_data.exp_matrix[:, gene_index]
+            ax.scatter(cell_pos[:, 0], cell_pos[:, 1], s=size, c=clist)
 
         ax.set_xticks([])
         ax.set_yticks([])

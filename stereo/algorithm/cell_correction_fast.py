@@ -4,15 +4,18 @@ Created on Fri Jul 22 10:13:48 2022
 
 @author: ywu28328
 """
-import pandas as pd
-import numpy as np
 import numba
+import numpy as np
+import pandas as pd
 from scipy.spatial import ConvexHull
 from tqdm import tqdm
+
 from ..log_manager import logger
-from ..utils.time_consume import log_consumed_time, TimeConsume
+from ..utils.time_consume import TimeConsume
+from ..utils.time_consume import log_consumed_time
 
 tc = TimeConsume()
+
 
 def parse_head(gem):
     if gem.endswith('.gz'):
@@ -25,7 +28,7 @@ def parse_head(gem):
     num_of_header_lines = 0
     eoh = 0
     for i, l in enumerate(f):
-        l = l.decode("utf-8")  # read in as binary, decode first
+        l = l.decode("utf-8")  # read in as binary, decode first # noqa
         if l.startswith('#'):  # header lines always start with '#'
             header += l
             num_of_header_lines += 1
@@ -78,13 +81,15 @@ def creat_cell_gxp(maskFile, geneFile, transposition=False):
     res = pd.merge(genedf, tissuedf, on=['x', 'y'], how='left').fillna(0)  # keep background data
     return res
 
+
 @numba.njit(cache=True, nogil=True)
 def find_nearest(array, value):
     return np.searchsorted(array, value, side="left")
 
+
 @numba.njit(cache=True, nogil=True)
 def calDis(p1, p2):
-    return np.sqrt(np.sum((p1 - p2)**2, axis=1))
+    return np.sqrt(np.sum((p1 - p2) ** 2, axis=1))
 
 
 @log_consumed_time
@@ -113,7 +118,7 @@ def allocate_free_pts(data: np.ndarray, cell_points, cells_index, free_points, f
                 length = (2 * hull_min_dis + hull_max_dis) // 2
             else:
                 length = hull_max_dis + 5
-        except:
+        except Exception:
             length = 5
         dis_matrix = calDis(sub_free_pts_np, centroid)
         idx = np.where(dis_matrix < length)
@@ -135,13 +140,14 @@ def load_data(gem_file, mask_file):
         data = gem_file
     else:
         data = creat_cell_gxp(mask_file, gem_file, transposition=False)
-    
+
     data.sort_values(by='label', ignore_index=True, inplace=True)
     data['tag'] = 'raw'
     positions = data[['x', 'y']].to_numpy(dtype=np.uint32)
     labels = data['label'].values.astype(dtype=np.uint32)
 
     return data.to_numpy(), positions, labels
+
 
 @log_consumed_time
 @numba.njit(cache=True, parallel=True, nogil=True)

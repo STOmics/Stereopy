@@ -1,14 +1,15 @@
+import inspect
 import re
 import sys
 import time
-import inspect
 from abc import ABCMeta
 from dataclasses import dataclass
-from typing import final
+from typing import final, Union
 
 from .algorithm_err_code import ErrorCode
-from ..log_manager import logger
 from ..core.stereo_exp_data import StereoExpData
+from ..core.result import Result, AnnBasedResult
+from ..log_manager import logger
 
 
 @dataclass
@@ -25,7 +26,7 @@ class AlgorithmBase(metaclass=ABCMeta):
 
     # common object variable
     stereo_exp_data: StereoExpData = None
-    pipeline_res: dict = None
+    pipeline_res: Union[Result, AnnBasedResult] = None
 
     _steps_order_by_name = list()
 
@@ -87,14 +88,16 @@ class AlgorithmBase(metaclass=ABCMeta):
     def get_attribute_helper(item, stereo_exp_data: StereoExpData, res: dict):
         try:
             __import__(f"stereo.algorithm.{item}")
-        except:
+        except Exception:
             raise AttributeError(f"No attribute named 'StPipeline.{item}'")
 
         # TODO: this may be not the best way to get sub-class
         # num of subclasses may be like 100-200 at most
         for sub_cls in AlgorithmBase.__subclasses__():
             sub_cls_name = _camel_to_snake(sub_cls.__name__.split(".")[-1])
-            if sub_cls_name == item and sub_cls.__name__ != 'ms_data_algorithm_base':
+            if sub_cls_name == 'ms_data_algorithm_base':
+                continue
+            if sub_cls_name == item:
                 # snake_cls_name as method name in pipeline
                 sub_obj = sub_cls(stereo_exp_data=stereo_exp_data, pipeline_res=res)
                 return sub_obj.main
@@ -109,7 +112,7 @@ def _camel_to_snake(value):
 
 
 STEP_FUNC_DESIGN_DOC = '''
-    The `step` functions defined in subclass of `AlgorithmBase`, whose names started with `step1_`, `step2_` ... 
+    The `step` functions defined in subclass of `AlgorithmBase`, whose names started with `step1_`, `step2_` ...
     `step{N}_`, will execute in ascending order by number `N` when someone run a not-overwrite `main` function.
 
     Example:
@@ -122,4 +125,4 @@ STEP_FUNC_DESIGN_DOC = '''
                 pass
 
     More examples are in `algorithm_example.py`.
-    '''
+    ''' # noqa

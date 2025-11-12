@@ -1,7 +1,8 @@
+import copy
+
 import cv2
 import numpy as np
 from PIL import Image
-import copy
 
 
 def up_sample(img, shape=(1024, 2048)):
@@ -16,7 +17,6 @@ def down_sample(img, shape=(1024, 2048)):
     image_thumb = ori_image.resize((shape[1], shape[0]), Image.NEAREST)
     image_thumb = np.array(image_thumb).astype(np.uint8)
     return image_thumb
-
 
 
 def ij_16_to_8(img):

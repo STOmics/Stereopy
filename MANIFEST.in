@@ -1,0 +1,5 @@
+exclude .gitignore .readthedocs.yml 代码规范.md quick_start.ipynb requirements_*.txt 
+
+recursive-exclude .github **
+
+recursive-exclude tests **

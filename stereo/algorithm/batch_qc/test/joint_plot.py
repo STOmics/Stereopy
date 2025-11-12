@@ -5,10 +5,11 @@
 # @File    : joint_plot.py
 # @Software: PyCharm
 # @Email   : zhangchao5@genomics.cn
+from io import BytesIO
+
 import matplotlib.pyplot as plt
 import seaborn as sn
 from anndata import AnnData
-from io import BytesIO
 
 
 def joint_plot(data: AnnData, batch_key: str = "batch", use_rep: str = "X_pca"):

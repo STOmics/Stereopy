@@ -1,6 +1,6 @@
+import os
 
 import torch
-import os
 import torch.nn as nn
 
 
@@ -10,9 +10,9 @@ class ConvBNReLU(nn.Module):
                  dilation=1, groups=1, bias=False):
         super(ConvBNReLU, self).__init__()
         self.conv = nn.Conv2d(
-                in_chan, out_chan, kernel_size=ks, stride=stride,
-                padding=padding, dilation=dilation,
-                groups=groups, bias=bias)
+            in_chan, out_chan, kernel_size=ks, stride=stride,
+            padding=padding, dilation=dilation,
+            groups=groups, bias=bias)
         self.bn = nn.BatchNorm2d(out_chan)
         self.relu = nn.ReLU(inplace=True)
 
@@ -39,7 +39,6 @@ class UpSample(nn.Module):
 
     def init_weight(self):
         nn.init.xavier_normal_(self.proj.weight, gain=1.)
-
 
 
 class DetailBranch(nn.Module):
@@ -96,7 +95,7 @@ class CEBlock(nn.Module):
         super(CEBlock, self).__init__()
         self.bn = nn.BatchNorm2d(128)
         self.conv_gap = ConvBNReLU(128, 128, 1, stride=1, padding=0)
-        #TODO: in paper here is naive conv2d, no bn-relu
+        # TODO: in paper here is naive conv2d, no bn-relu
         self.conv_last = ConvBNReLU(128, 128, 3, stride=1)
 
     def forward(self, x):
@@ -119,7 +118,7 @@ class GELayerS1(nn.Module):
                 in_chan, mid_chan, kernel_size=3, stride=1,
                 padding=1, groups=in_chan, bias=False),
             nn.BatchNorm2d(mid_chan),
-            nn.ReLU(inplace=True), # not shown in paper
+            nn.ReLU(inplace=True),  # not shown in paper
         )
         self.conv2 = nn.Sequential(
             nn.Conv2d(
@@ -156,7 +155,7 @@ class GELayerS2(nn.Module):
                 mid_chan, mid_chan, kernel_size=3, stride=1,
                 padding=1, groups=mid_chan, bias=False),
             nn.BatchNorm2d(mid_chan),
-            nn.ReLU(inplace=True), # not shown in paper
+            nn.ReLU(inplace=True),  # not shown in paper
         )
         self.conv2 = nn.Sequential(
             nn.Conv2d(
@@ -166,14 +165,14 @@ class GELayerS2(nn.Module):
         )
         self.conv2[1].last_bn = True
         self.shortcut = nn.Sequential(
-                nn.Conv2d(
-                    in_chan, in_chan, kernel_size=3, stride=2,
-                    padding=1, groups=in_chan, bias=False),
-                nn.BatchNorm2d(in_chan),
-                nn.Conv2d(
-                    in_chan, out_chan, kernel_size=1, stride=1,
-                    padding=0, bias=False),
-                nn.BatchNorm2d(out_chan),
+            nn.Conv2d(
+                in_chan, in_chan, kernel_size=3, stride=2,
+                padding=1, groups=in_chan, bias=False),
+            nn.BatchNorm2d(in_chan),
+            nn.Conv2d(
+                in_chan, out_chan, kernel_size=1, stride=1,
+                padding=0, bias=False),
+            nn.BatchNorm2d(out_chan),
         )
         self.relu = nn.ReLU(inplace=True)
 
@@ -255,17 +254,16 @@ class BGALayer(nn.Module):
         )
         self.up1 = nn.Upsample(scale_factor=4)
         self.up2 = nn.Upsample(scale_factor=4)
-        ##TODO: does this really has no relu?
+        # TODO: does this really has no relu?
         self.conv = nn.Sequential(
             nn.Conv2d(
                 128, 128, kernel_size=3, stride=1,
                 padding=1, bias=False),
             nn.BatchNorm2d(128),
-            nn.ReLU(inplace=True), # not shown in paper
+            nn.ReLU(inplace=True),  # not shown in paper
         )
 
     def forward(self, x_d, x_s):
-        dsize = x_d.size()[2:]
         left1 = self.left1(x_d)
         left2 = self.left2(x_d)
         right1 = self.right1(x_s)
@@ -276,7 +274,6 @@ class BGALayer(nn.Module):
         right = self.up2(right)
         out = self.conv(left + right)
         return out
-
 
 
 class SegmentHead(nn.Module):
@@ -294,7 +291,7 @@ class SegmentHead(nn.Module):
             nn.Sequential(
                 nn.Upsample(scale_factor=2),
                 ConvBNReLU(mid_chan, mid_chan2, 3, stride=1)
-                ) if aux else nn.Identity(),
+            ) if aux else nn.Identity(),
             nn.Conv2d(mid_chan2, out_chan, 1, 1, 0, bias=True),
             nn.Upsample(scale_factor=up_factor, mode='bilinear', align_corners=False)
         )
@@ -325,7 +322,6 @@ class TissueSeg(nn.Module):
         self.init_weights()
 
     def forward(self, x):
-        size = x.size()[2:]
         feat_d = self.detail(x)
         feat2, feat3, feat4, feat5_4, feat_s = self.segment(x)
         feat_head = self.bga(feat_d, feat_s)
@@ -349,7 +345,8 @@ class TissueSeg(nn.Module):
         for name, module in self.named_modules():
             if isinstance(module, (nn.Conv2d, nn.Linear)):
                 nn.init.kaiming_normal_(module.weight, mode='fan_out')
-                if not module.bias is None: nn.init.constant_(module.bias, 0)
+                if not module.bias is None:  # noqa
+                    nn.init.constant_(module.bias, 0)
             elif isinstance(module, nn.modules.batchnorm._BatchNorm):
                 if hasattr(module, 'last_bn') and module.last_bn:
                     nn.init.zeros_(module.weight)
@@ -363,7 +360,6 @@ class TissueSeg(nn.Module):
         for name, child in self.named_children():
             if name in state.keys():
                 child.load_state_dict(state[name], strict=True)
-
 
     def get_params(self):
         def add_param_to_list(mod, wd_params, nowd_params):

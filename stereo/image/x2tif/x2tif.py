@@ -1,13 +1,13 @@
 """
 Tools for converting gef/gem(txt) to tif image.
 """
+import gzip
 import os
 import sys
-import gzip
-from PIL import Image
 
 import numpy as np
 import pandas as pd
+from PIL import Image
 
 from stereo.log_manager import logger
 
@@ -19,7 +19,7 @@ USING_CROP = False
 CROP_SIZE = 10000
 
 
-def gef2image(gef_file_path, dump_to_disk: bool = False, out_dir: str = "./", bin_size=20):
+def gef2image(gef_file_path, dump_to_disk: bool = False, out_dir: str = "./", bin_size=1):
     """
     Convert gef file to tif image.
 

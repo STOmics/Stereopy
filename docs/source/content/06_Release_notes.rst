@@ -3,11 +3,279 @@ Release Notes
 
 .. role:: small
 
+Version 1.6.1
+------------------
+1.6.1 : 2025-06-16
+~~~~~~~~~~~~~~~~~~~
+
+.. _st.io.stereo_to_anndata: stereo.io.stereo_to_anndata.html
+.. |st.io.stereo_to_anndata| replace:: `st.io.stereo_to_anndata`
+
+.. _st.plt.batches_umap: stereo.plots.PlotCollection.batches_umap.html
+.. |st.plt.batches_umap| replace:: `st.plt.batches_umap`
+
+Features:
+
+1. |st.io.stereo_to_anndata|_ supports adding multiple images.
+2. |st.plt.batches_umap|_ supports downloading.
+
+BUG Fixes:
+
+1. Pinned the version of **fastcluster** in dependencies to **1.2.6** for ensuring installation compatibility.
+2. Fixed the problem that the **width** and **height** of the images added to **AnnData** by `st.io.stereo_to_anndata` were swapped.
+3. Fixed the problem that the order of **bins** is different in **GEM** and **GEF** under a same data.
+
+Version 1.6.0
+------------------
+1.6.0 : 2025-02-21
+~~~~~~~~~~~~~~~~~~~
+
+.. _Spatialign: ../Tutorials(Multi-sample)/Spatial_Alignment.html
+.. |Spatialign| replace:: **Spatialign**
+
+Features:
+
+1. Addition of new algorithm |Spatialign|_ for batch effect removal.
+
+Version 1.5.1
+------------------
+1.5.1 : 2024-12-26
+~~~~~~~~~~~~~~~~~~~
+
+.. _st.io.stereo_to_anndata: stereo.io.stereo_to_anndata.html
+.. |st.io.stereo_to_anndata| replace:: `st.io.stereo_to_anndata`
+
+.. _h5ad2rds.R: ../Tutorials/Format_Conversion.html
+.. |h5ad2rds.R| replace:: **h5ad2rds.R**
+
+Features:
+
+1. |st.io.stereo_to_anndata|_ supports adding image information into the converted **AnnData** object.
+2. |h5ad2rds.R|_ supports adding image information into the converted **RDS** file.
+3. Optimized the visualization of the plotting scale for spatial scatter plot when inputting small data.
+
+BUG Fixes:
+
+1. Fixed the problem that the layers was lost when converting **StereoExpData** to **AnnData** by using `st.io.stereo_to_anndata`.
+2. Fixed the problem that the result of `st.tl.gen_ccc_micro_envs` cannot be reproduced.
+
+Version 1.5.0
+------------------
+1.5.0 : 2024-11-08
+~~~~~~~~~~~~~~~~~~~
+
+.. _SpaTrack: ../Tutorials/SpaTrack.html
+.. |SpaTrack| replace:: **SpaTrack**
+
+.. _Layer: stereo.core.StPipeline.set_layer.html
+.. |Layer| replace:: **Layer**
+
+.. _st.tl.cal_qc: stereo.core.StPipeline.cal_qc.html
+.. |st.tl.cal_qc| replace:: `st.tl.cal_qc`
+
+.. _st.tl.filter_cells: stereo.core.StPipeline.filter_cells.html
+.. |st.tl.filter_cells| replace:: `st.tl.filter_cells`
+
+.. _st.tl.filter_genes: stereo.core.StPipeline.filter_genes.html
+.. |st.tl.filter_genes| replace:: `st.tl.filter_genes`
+
+.. _st.tl.log1p: stereo.core.StPipeline.log1p.html
+.. |st.tl.log1p| replace:: `st.tl.log1p`
+
+.. _st.tl.normalize_total: stereo.core.StPipeline.normalize_total.html
+.. |st.tl.normalize_total| replace:: `st.tl.normalize_total`
+
+.. _st.tl.scale: stereo.core.StPipeline.scale.html
+.. |st.tl.scale| replace:: `st.tl.scale`
+
+.. _st.tl.quantile: stereo.core.StPipeline.quantile.html
+.. |st.tl.quantile| replace:: `st.tl.quantile`
+
+.. _st.tl.disksmooth_zscore: stereo.core.StPipeline.disksmooth_zscore.html
+.. |st.tl.disksmooth_zscore| replace:: `st.tl.disksmooth_zscore`
+
+.. _st.tl.sctransform: stereo.core.StPipeline.sctransform.html
+.. |st.tl.sctransform| replace:: `st.tl.sctransform`
+
+.. _st.tl.highly_variable_genes: stereo.core.StPipeline.highly_variable_genes.html
+.. |st.tl.highly_variable_genes| replace:: `st.tl.highly_variable_genes`
+
+.. _st.tl.pca: stereo.core.StPipeline.pca.html
+.. |st.tl.pca| replace:: `st.tl.pca`
+
+.. _st.tl.find_marker_genes: stereo.core.StPipeline.find_marker_genes.html
+.. |st.tl.find_marker_genes| replace:: `st.tl.find_marker_genes`
+
+.. _st.plt.spatial_scatter: stereo.plots.PlotCollection.spatial_scatter.html
+.. |st.plt.spatial_scatter| replace:: `st.plt.spatial_scatter`
+
+Features:
+
+1. Addition of new algorithm |SpaTrack|_ for trajectory inference.
+2. Addition of |Layer|_ for saving expression matrices at different analysis stages, the functions that can use expression matrices in **Layer** as following:
+            * |st.tl.cal_qc|_
+            * |st.tl.filter_cells|_
+            * |st.tl.filter_genes|_
+            * |st.tl.log1p|_
+            * |st.tl.normalize_total|_
+            * |st.tl.scale|_
+            * |st.tl.quantile|_
+            * |st.tl.disksmooth_zscore|_
+            * |st.tl.sctransform|_
+            * |st.tl.highly_variable_genes|_
+            * |st.tl.pca|_
+            * |st.tl.find_marker_genes|_
+3. Merger of multiple samples can merge some analysis result in every single samples when data type is **StereoExpData**.
+4. |st.plt.spatial_scatter|_ supports setting **regist.tif** as background to display simultaneously on the plot.
+
+BUG Fixes:
+
+1. Fixed the problem that the proportion of chondriogenes was calculated incorrectly when input data contains **geneID**.
+2. Fixed the problem that saving **MSData** into **h5mu** was failed after running `st.tl.highly_variable_genes`.
+
+Version 1.4.0
+------------------
+1.4.0 : 2024-09-05
+~~~~~~~~~~~~~~~~~~~
+
+.. _SpaSEG: ../Tutorials(Multi-sample)/SpaSEG.html
+.. |SpaSEG| replace:: **SpaSEG**
+
+.. _st.plt.cells_plotting: stereo.plots.PlotCollection.cells_plotting.html
+.. |st.plt.cells_plotting| replace:: `st.plt.cells_plotting`
+
+.. _st.io.write_h5mu: stereo.io.write_h5mu.html
+.. |st.io.write_h5mu| replace:: `st.io.write_h5mu`
+
+.. _st.io.mudata_to_msdata: stereo.io.mudata_to_msdata.html
+.. |st.io.mudata_to_msdata| replace:: `st.io.mudata_to_msdata`
+
+Features:
+
+1. Addition of new algorithm |SpaSEG|_ for multiple **SRT** analysis.
+2. Addition of **colorbar** or **legend** for `st.plt.cells_plotting`.
+3. |st.plt.cells_plotting|_ supports exporting plots as **PNG**, **SVG** or **PDF**.
+4. Addition of method |st.io.write_h5mu|_ and |st.io.mudata_to_msdata|_ for conversion between **MSData** and **MuData**.
+
+BUG Fixes:
+
+1. Fixed the problem that **CellCorrection** is incompatible with small-size images (less than 2000px in any dimension) when using the **EDM** method.
+2. Fixed the problem that `MSData.to_integrate` is incompatible when the number of cells in the integrated sample is less than the total number of cells in all single samples.
+3. Fixed the problem that `st.plt.time_series_tree_plot` can not capture the result of **PAGA**, leading to an incorrect plot.
+4. Fixed other bugs.
+
+
+Version 1.3.1
+------------------
+1.3.1 : 2024-06-28
+~~~~~~~~~~~~~~~~~~~
+
+Features:
+
+1. Addition of new method **'adaptive'** for `st.tl.get_niche <stereo.algorithm.get_niche.GetNiche.main.html>`_ (the original method is named **'fixed'**).
+2. Changed some parameter names of `st.tl.filter_cells <stereo.core.StPipeline.filter_cells.html>`_ and `st.tl.filter_genes <stereo.core.StPipeline.filter_genes.html>`_ for eliminating ambiguity(old parameter names are still compatible).
+3. Filter the results of **PCA** and **UMAP** simultaneously when running `st.tl.filter_cells`.
+
+BUG Fixes:
+
+1. Fixed the problem that `ms_data.to_isolated` is incompatible with that there are duplicate **cell names** in different samples.
+2. Fixed the problem that `st.io.read_gef` is incompatible with those **GEF** files that contain **gene names** ending with **'_{number}'** (like **'ABC_123'**).
+3. Upgraded **gefpy** to latest for fixing the error that **gene names** are lost after running **CellCorrection**.
+
+
+Version 1.3.0
+------------------
+1.3.0 : 2024-05-31
+~~~~~~~~~~~~~~~~~~~
+
+Features:
+
+1. Addition of `MSData.tl.st_gears <../Tutorials(Multi-sample)/ST_Gears.html>`_ for spatial alignment of **Multi-sample**.
+2. `High Resolution Matrix Export <../Tutorials/High_Resolution_Export.html>`_ can support both **GEF** and **GEM** files.
+3. Addition of parameters `min_count` and `max_count` for `st.tl.filter_genes <stereo.core.StPipeline.filter_genes.html>`_.
+4. `MSData.integrate <stereo.core.ms_data.MSData.integrate.html>`_ can be compatible with sparse matrix when `MSData.var_type` is `union`.
+5. Addition of `MSData.tl.set_scope_and_mode <stereo.core.ms_pipeline.MSDataPipeLine.set_scope_and_mode.html>`_ to set `scope` and `mode` globally on **Multi-sample** analysis.
+6. Addition of `MSData.plt.ms_spatial_scatter <stereo.plots.PlotMsSpatialScatter.ms_spatial_scatter.html>`_ to plot spatial scatter plot for each **sample** in **Multi-sample** separately.
+
+BUG Fixes:
+
+1. Fixed the problem that `st.io.read_gem` is incompatible with **GEM** files containing **geneID**.
+2. Fixed the bug of losing part of metadata when writing **StereoExpData** / **MSData** into **Stereo-h5ad** or **h5ms** file.
+3. Fixed the incompatibility problem with **AnnData** when performing `st.tl.sctransform`.
+
+
+Version 1.2.0
+------------------
+1.2.0 : 2024-03-30
+~~~~~~~~~~~~~~~~~~~
+
+Features:
+
+1. `st.io.read_gem` and `st.io.read_gef` support expression matrix files with geneID information.
+2. Analysis results of `find_marker_genes`  will be saved into the output AnnData h5ad.
+3. Upgraded tissue segmentation algorithm.
+4. Addition of `st.tl.adjusted_rand_score` to calculate the adjusted Rand coefficient between two clusters.
+5. Addition of `st.tl.silhouette_score` to calculate the average silhouette coefficient of a cluster.
+6. `h5ad2rds.R` is compatible with AnnData version > 0.7.5, to convert from h5ad to rds files.
+7. Addition of the clustering category labels to the graph of `st.plt.paga_compare`.
+
+BUG Fixes:
+
+1. Fixed the error of high memory consumption when converting `X.raw` into AnnData.
+
+
+Version 1.1.0
+------------------
+1.1.0 : 2024-01-17
+~~~~~~~~~~~~~~~~~~~
+
+Features:
+
+1. Reconstructed `st.plt.violin` visualizing function which is now not only applied to display QC indicators;
+2. `ins.export_high_res_area` can handle expression matrix and image simultaneously, to lasso region of interest and corresponding sub-image.
+3. Interactive visualizing `st.plt.cells_plotting` supported displaying expression heatmap and spatial distribution of a single gene.
+4. When input GEF and GEM at cell level, information of DNB count and cell area would be added into `cells` / `obs`, and cell border would be added into `cells_matrix` / `obsm`.
+
+BUG Fixes:
+
+1. `slideio` package removed historical versions, resulting in an installation failure.
+2. Calculating error when performing `ms_data.tl.batch_qc`, due to abnormal `os.getlogin`.
+3. `st.plt.paga_time_series_plot` indicated that the image was too large to draw, due to unprocessed boundary values when computing median.
+
+Version 1.0.0
+------------------
+1.0.0 : 2023-12-04
+~~~~~~~~~~~~~~~~~~~
+
+Features:
+
+1. Addition of GPU acceleration on SinlgeR for large-volume data, and optimized calculating based on CPU version.
+2. Addition of `st.plt.elbow` to visualize PCA result, for appropriate number of pcs.
+3. Addition of color, max, min setting for colorbar, when plotting heatmap.
+4. Addition of cell segmentation of `Deep Learning Model V1_Pro`, which is improved based on `V1`.
+5. Supplemented parameters of `st.plt.auc_heatmap` and `st.plt.auc_heatmap_by_group`, full access to `seaborn.clustermap`;
+6. Addition of thread and seed setting in `st.tl.umap`, of which the default method have been changed to single thread with the sacrifice of computational efficiency to ensure reproducibility of results. More in https://umap-learn.readthedocs.io/en/latest/reproducibility.html.
+7. Modification of computing method of bin coordinates when reading GEM, consistent with GEF.
+8. Optimized `st.io.stereo_to_anndata` for efficient format conversion.
+9. Renamed `st.tl.spatial_alignment` function as `st.tl.paste`.
+10. `export_high_res_area` removed parameter `cgef`.
+
+BUG Fixes:
+
+1. Occasional square-hollowing area in `Deep Learning Model V3` of cell segmentation processing.
+2. `st.tl.annotation` could not set two or more clusters as a same name. 
+3. The data object `ins.selected_exp_data` obtained from `st.plt.interact_spatial_scatter` could not be used for subsequent analysis.
+4. Part of data was missing when performed `st.plt.interact_spatial_scatter` to output high-resolution matrix in GEF format.
+5. Some files met reading error, led by no default setting of `bin_type` and `bin_size` in `st.io.read_h5ms`.
+6. Error in Batch QC calculation due to data type problem.
+7. There is NaN in Cell Community Detection output after threshold filtering, resulting in a calculating error when performed Find marker genes based on it.
+8. `st.plt.paga_time_series_plot` indicated the image is too large to draw, leading to graph overlap, due to the limitation of matplotlib package.
+
 Version 0.14.0b1 (Beta)
 ------------------------
 0.14.0b1 : 2023-9-15
 ~~~~~~~~~~~~~~~~~~~~~~~~
-Notice: this Beta version is specifically developed for multi-slice analysis.
+Notice: this Beta version is specifically developed for multi-sample analysis.
 
 Features:
 
