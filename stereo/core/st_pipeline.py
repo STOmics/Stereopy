@@ -139,7 +139,7 @@ class StPipeline(object):
         """
         self.raw = self.data
 
-    def _reset_key_record(self, key, res_key):
+    def reset_key_record(self, key, res_key):
         """
         reset key and coordinated res_key in key_record.
         :param key:
@@ -735,8 +735,7 @@ class StPipeline(object):
         # data = self.data if inplace else copy.deepcopy(self.data)
         res1, res2, new_exp_matrix = sc_transform(self.data, n_cells, n_genes, filter_hvgs, var_features_n,
                                             exp_matrix_key=exp_matrix_key, seed_use=seed_use,
-                                                n_jobs=n_jobs, filter_raw=filter_raw,
-                                            layer=layer, **kwargs)
+                                            filter_raw=filter_raw, layer=layer, n_jobs=n_jobs, **kwargs)
         if inplace:
             self.data.exp_matrix = new_exp_matrix
             if add_layer:
@@ -891,11 +890,11 @@ class StPipeline(object):
         from ..algorithm.dim_reduce import pca
 
         exp_matrix = self.data.get_exp_matrix(use_raw=False, layer=layer, only_highly_genes=use_highly_genes)
-        if use_highly_genes:
-            hvgs = self.result[hvg_res_key]['highly_variable'].fillna(False)
-            exp_matrix = exp_matrix[:, hvgs]
-        else:
-            exp_matrix = self.data.exp_matrix
+        # if use_highly_genes:
+        #     hvgs = self.result[hvg_res_key]['highly_variable'].fillna(False)
+        #     exp_matrix = exp_matrix[:, hvgs]
+        # else:
+        #     exp_matrix = self.data.exp_matrix
         if n_pcs is None:
             n_pcs = min(exp_matrix.shape) - 1
             if n_pcs > 50:

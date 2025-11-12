@@ -1,5 +1,6 @@
 import time
 from random import sample
+from typing import Union
 from typing import Optional
 
 import numba

@@ -15,7 +15,8 @@ from scipy.special import polygamma
 from .bw import bwSJ
 
 
-def multi_pearson_residual(i, model_pars_final, regressor_data_final, umi, residual_type, min_variance, genes, bin_ind):
+def multi_pearson_residual(i, model_pars_final, regressor_data_final, umi, residual_type, min_variance,
+                           genes, bin_ind, res, bin_size):
     min_var = min_variance
     genes_bin = genes[bin_ind == i]
     mu = np.exp(np.dot(model_pars_final.loc[genes_bin, ['Intercept', 'log_umi']], regressor_data_final.T))

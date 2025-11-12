@@ -796,8 +796,7 @@ def read_h5ad(
         Only available while `flavor` is `'scanpy'`.
     Returns
     ---------------
-    An object of StereoExpData while `flavor` is `'stereopy'` or an object of AnnBasedStereoExpData while `flavor` is
-    `'scanpy'`
+    An object of StereoExpData while `flavor` is `'stereopy'` or an object of AnnBasedStereoExpData while `flavor` is `'scanpy'`
 
     """
     flavor = flavor.lower()
