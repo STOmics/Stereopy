@@ -15,7 +15,8 @@ from .reader import (
     stereo_to_anndata,
     read_gef_info,
     read_seurat_h5ad,
-    read_h5ad
+    read_h5ad,
+    read_h5ms
 )
 from .writer import (
     write,

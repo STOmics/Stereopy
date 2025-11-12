@@ -77,6 +77,24 @@ def download(func):
             fig.savefig(out_path, bbox_inches='tight', dpi=dpi)
     return wrapped
 
+def download_only(func):
+    @wraps(func)
+    def wrapped(*args, **kwargs):
+        out_path = None
+        dpi = 100
+        if 'out_path' in kwargs:
+            out_path = kwargs['out_path']
+            del kwargs['out_path']
+        if 'out_dpi' in kwargs:
+            dpi = kwargs['out_dpi']
+            del kwargs['out_dpi']
+        fig: Figure = func(*args, **kwargs)
+        if type(fig) is Figure and out_path is not None:
+            fig.savefig(out_path, bbox_inches='tight', dpi=dpi)
+        return fig
+
+    return wrapped
+
 def reorganize_coordinate(func):
     @wraps(func)
     def wrapped(*args, **kwargs):
@@ -106,14 +124,15 @@ def reorganize_coordinate(func):
                 if vertical_offset_additional < 0:
                     vertical_offset_additional = 0
             if reorganize_coordinate:
-                data.position, data.position_offset = \
+                data.position, data.position_offset, data.position_min = \
                     reorganize_data_coordinates(
-                        data.cells.batch, data.position, data.position_offset,
+                        data.cells.batch, data.position, data.position_offset, data.position_min,
                         reorganize_coordinate, horizontal_offset_additional, vertical_offset_additional
                     )
         res = func(*args, **kwargs)
         data.reset_position()
         return res
+
     return wrapped
 
 # def reorganize_coordinate(func):

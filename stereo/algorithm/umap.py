@@ -34,6 +34,7 @@ def umap(
         a: Optional[float] = None,
         b: Optional[float] = None,
         method: Literal['umap', 'rapids'] = 'umap',
+        parallel: bool = False
 ):
     """\
     Embed the neighborhood graph using UMAP [McInnes18]_.
@@ -150,7 +151,7 @@ def umap(
             random_state,
             'euclidean',
             {},
-            parallel=True,
+            parallel=parallel,
             verbose=True,
         )
     elif method == 'rapids':

@@ -105,9 +105,9 @@ class BatchClassifier:
             epoch_loss = []
             for idx, data in enumerate(self.train_loader):
                 x, y = data
-                x = x.to(self.device, non_blocking=True)
+                x = x.float().to(self.device, non_blocking=True)
                 y = y.long().to(self.device)
-                if torch.cuda.is_available():
+                if self.device.type == 'cuda' and torch.cuda.is_available():
                     with torch.cuda.amp.autocast():
                         y_hat = self.model(x)
                         loss = self.loss_fn(y_hat, y)
@@ -149,7 +149,7 @@ class BatchClassifier:
         batch_acc = []
         for idx, data in enumerate(self.train_loader):
             x, y = data
-            x = x.to(self.device)
+            x = x.float().to(self.device)
             y = y.long().to(self.device)
             with torch.no_grad():
                 y_hat = self.model(x)
@@ -171,7 +171,7 @@ class BatchClassifier:
         batch_acc = []
         for idx, data in enumerate(self.test_loader):
             x, y = data
-            x = x.to(self.device)
+            x = x.float().to(self.device)
             y = y.long().to(self.device)
             with torch.no_grad():
                 y_hat = self.model(x)

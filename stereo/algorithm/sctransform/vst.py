@@ -1,5 +1,6 @@
 import time
 from typing import Optional
+from typing import Union
 from random import sample
 
 import numba
@@ -8,6 +9,7 @@ import pandas as pd
 from joblib import Parallel, delayed
 from patsy.highlevel import dmatrix
 from scipy.sparse import csr_matrix
+from scipy.sparse import vstack
 
 from .bw import bwSJ
 from .ksmooth import ksmooth
@@ -47,7 +49,8 @@ def vst(
         fix_slope=False,
         scale_factor=None,
         vst_flavor=None,
-        seed_use=1448145
+        seed_use=1448145,
+        n_jobs=8,
 ):
     # TODO: `vst.flavor` not completed
     if vst_flavor is not None:
@@ -124,7 +127,7 @@ def vst(
     model_pars = get_model_pars(genes_step1, bin_size, umi[genes_step1_bool_list,][:, cells_step1_bool_list],
                                 model_str, cells_step1, method, data_step1, theta_given,
                                 theta_estimation_fun, exclude_poisson, fix_intercept, fix_slope, use_geometric_mean,
-                                use_geometric_mean_offset)
+                                use_geometric_mean_offset, n_jobs=n_jobs)
     logger.info(f'get_model_pars finished, cost {time.time() - start_time} seconds')
 
     min_theta = 1e-07
@@ -138,7 +141,8 @@ def vst(
             genes_log_gmean, cell_attr, batch_var, cells_step1,
             genes_step1, umi, bw_adjust, gmean_eps, theta_regularization,
             genes_amean, genes_var, exclude_poisson, fix_intercept,
-            fix_slope, use_geometric_mean, use_geometric_mean_offset
+            fix_slope, use_geometric_mean, use_geometric_mean_offset,
+            n_jobs=n_jobs
         )
     else:
         model_pars_fit, outliers = model_pars, None
@@ -160,12 +164,14 @@ def vst(
         # TODO `min_variance` not completed related to `vst_flavor`
         bin_ind = np.ceil(np.array(range(1, len(genes) + 1)) / bin_size)
         max_bin = int(np.max(bin_ind))
-        res = np.vstack(Parallel(n_jobs=cpu_count(), backend='threading')(
+        res = np.zeros([len(genes), len(regressor_data_final.index.values)], dtype=np.float64)
+        Parallel(n_jobs=n_jobs, backend='threading')(
             delayed(multi_pearson_residual)(i, model_pars_final, regressor_data_final, umi, residual_type, min_variance,
-                                            genes, bin_ind)
+                                            genes, bin_ind, res, bin_size)
             for i in range(1, max_bin + 1)
-        ))
-        res = pd.DataFrame(res, index=genes, columns=regressor_data_final.index.values)
+        )
+        # not convert res to pandas DataFrame
+        # res = pd.DataFrame(res, index=genes, columns=regressor_data_final.index.values)
     else:
         res = None
     logger.info(f'pearson_residual cost {time.time() - start_time} seconds')
@@ -189,7 +195,7 @@ def vst(
         if residual_type == "pearson":
             start_time = time.time()
             rv["umi_corrected"] = correct(rv, genes, do_round=True, do_pos=True, scale_factor=scale_factor,
-                                          bin_size=bin_size)
+                                          bin_size=bin_size, n_jobs=n_jobs)
             logger.info(f'umi_corrected cost {time.time() - start_time} seconds')
         else:
             logger.info("will not return corrected UMI because residual type is not set to `pearson`")
@@ -205,18 +211,36 @@ def vst(
         gene_attr["gmean"] = np.power(10, genes_log_gmean)
         umi_genes_mean = umi.mean(axis=1)
         gene_attr["amean"] = pd.DataFrame(umi_genes_mean, index=genes)
-        gene_attr["variance"] = \
-            pd.DataFrame(np.power((umi - umi_genes_mean), 2).sum(1) / (umi.shape[1] - 1), index=genes)[0]
+        # gene_attr["variance"] = \
+        #     pd.DataFrame(np.power((umi - umi_genes_mean), 2).sum(1) / (umi.shape[1] - 1), index=genes)[0]
+        gene_attr["variance"] = pd.DataFrame(
+            calulate_row_variant_stream(umi, umi_genes_mean), index=genes)[0]
         if rv['y'].shape[1] > 0:
             gene_attr["residual_mean"] = rv['y'].mean(1)
-            gene_attr["residual_variance"] = rv['y'].var(1)
+            # gene_attr["residual_variance"] = rv['y'].var(1)
+            gene_attr["residual_variance"] = \
+                calulate_row_variant_stream(rv['y'], gene_attr["residual_mean"].array)
         rv["gene_attr"] = gene_attr
+    
+    # convert to DataFrame here
+    rv['y'] = pd.DataFrame(rv['y'], index=genes, columns=regressor_data_final.index.values)
     return rv
+
+@numba.jit(forceobj=True)
+def calulate_row_variant_stream(a: Union[np.ndarray, csr_matrix], row_mean):
+    if row_mean.size != a.shape[0]:
+        raise RuntimeError("Input row mean size:{} not eaqual to input array"
+                           " rows: {}".format(row_mean.size, a.shape[0]))
+    # row_mean = row_mean.reshape((-1,1))
+    variants = np.zeros(row_mean.size, dtype=np.float64)
+    for i in range(a.shape[0]):
+        variants[i] = np.power(a[i] - row_mean[i], 2).sum() / (a.shape[1] - 1)
+    return variants
 
 
 def get_model_pars(genes_step1, bin_size, umi, model_str, cells_step1, method, data_step1, theta_given,
                    theta_estimation_fun, exclude_poisson, fix_intercept, fix_slope, use_geometric_mean,
-                   use_geometric_mean_offset) -> pd.DataFrame:
+                   use_geometric_mean_offset, n_jobs=8) -> pd.DataFrame:
     # TODO: ignore `fix_intercept`、`fix_slope`
     if fix_intercept or fix_slope:
         raise NotImplementedError
@@ -224,7 +248,7 @@ def get_model_pars(genes_step1, bin_size, umi, model_str, cells_step1, method, d
         raise NotImplementedError
     if method == 'poisson':
         model_pars = fit_poisson(umi=umi, model_str=model_str, data=data_step1,
-                                 theta_estimation_fun=theta_estimation_fun)
+                                 theta_estimation_fun=theta_estimation_fun, n_jobs=n_jobs)
     else:
         raise NotImplementedError
     if exclude_poisson:
@@ -250,7 +274,8 @@ def reg_model_pars(
         fix_intercept=False,
         fix_slope=False,
         use_geometric_mean=True,
-        use_geometric_mean_offset=False
+        use_geometric_mean_offset=False,
+        n_jobs=8
 ):
     genes = genes_log_gmean.index.values
     if exclude_poisson or fix_slope or fix_intercept:
@@ -266,7 +291,7 @@ def reg_model_pars(
     model_pars = model_pars[model_pars.columns[model_pars.columns.values != "theta"]]
     model_pars['dispersion_par'] = dispersion_par.values
 
-    outliers = Parallel(n_jobs=min(cpu_count(), 3), backend="threading")(
+    outliers = Parallel(n_jobs=min(n_jobs, 3), backend="threading")(
         delayed(is_outlier)(col, genes_log_gmean_step1)
         for _, col in model_pars.T.iterrows()
     )
@@ -315,37 +340,45 @@ def reg_model_pars(
     return model_pars_fit, outliers_pd
 
 
-def correct(x, genes, as_is=False, do_round=True, do_pos=True, scale_factor=None, bin_size=500):
+def correct(x, genes, as_is=False, do_round=True, do_pos=True, scale_factor=None, bin_size=500, n_jobs=8):
     if not as_is:
         cell_attr = x['cell_attr'].copy()
         cell_attr['log_umi'] = [np.median(cell_attr['log_umi'])] * len(cell_attr['log_umi'])
     else:
         cell_attr = x['cell_attr']
-    regressor_data = dmatrix("~log_umi", cell_attr, return_type='dataframe')
+    regressor_data = dmatrix("~log_umi", cell_attr, return_type='matrix')
     bin_ind = np.ceil(np.array(range(1, len(genes) + 1)) / bin_size)
     max_bin = int(np.max(bin_ind))
-    corrected_data = pd.concat(Parallel(n_jobs=cpu_count(), backend='threading')(
-        delayed(multi_correct_data)(x, genes, bin_ind, x['y'], i, regressor_data)
+
+    corrected_data = vstack(Parallel(n_jobs=n_jobs, backend='threading')(
+        delayed(multi_correct_data)(x, genes, bin_ind, x['y'], i, regressor_data, do_round, do_pos)
         for i in range(1, max_bin + 1)
     ))
-    if do_round:
-        corrected_data = np.round(corrected_data, 0)
-    if do_pos:
-        corrected_data[corrected_data < 0] = 0
-    return csr_matrix(corrected_data)
+
+    return corrected_data
 
 
 @numba.jit(cache=True, forceobj=True, nogil=True)
-def multi_correct_data(x, genes, bin_ind, data, i, regressor_data):
-    genes_bin = genes[bin_ind == i]
-    pearson_residual_ = data.loc[genes_bin]
-    coefs = x['model_pars_fit'].loc[genes_bin, ["Intercept", "log_umi"]]
-    theta = x['model_pars_fit'].loc[genes_bin, 'theta']
-    return get_correct_data(coefs, regressor_data, theta, pearson_residual_)
-
+def multi_correct_data(x, genes, bin_ind, data, i, regressor_data, do_round, do_pos):
+    # genes_bin = genes[bin_ind == i]
+    bin_selected = bin_ind == i
+    pearson_residual_ = data[bin_selected, :]
+    columns = list(x['model_pars_fit'].columns)
+    intercept_idx = columns.index("Intercept")
+    log_umi_idx = columns.index("log_umi")
+    theta_idx = columns.index("theta")
+    coefs = x['model_pars_fit'].iloc[bin_selected, [intercept_idx, log_umi_idx]]
+    theta = x['model_pars_fit'].iloc[bin_selected, theta_idx]
+    corrected_data1 = get_correct_data(coefs, regressor_data, theta, pearson_residual_)
+    if do_round:
+        # TODO round inplace
+        corrected_data1 = np.round(corrected_data1)
+    if do_pos:
+        corrected_data1[corrected_data1 < 0] = 0
+    return csr_matrix(corrected_data1)
 
 @numba.jit(cache=True, forceobj=True, nogil=True)
 def get_correct_data(coefs, regressor_data, theta, pearson_residual_):
     mu = np.exp(np.dot(coefs, regressor_data.T))
     variance = mu + np.power(mu, 2) / theta.to_numpy().reshape(-1, 1)
-    return mu + pearson_residual_.multiply(np.sqrt(variance))
+    return mu + pearson_residual_ * np.sqrt(variance)

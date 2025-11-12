@@ -29,6 +29,7 @@ def SCTransform(
         conserve_memory: Optional[bool] = False,
         return_only_var_genes: Optional[bool] = True,
         seed_use: Union[int, None] = 1448145,
+        n_jobs=8,
         **kwargs
 ):
     """
@@ -74,6 +75,8 @@ def SCTransform(
         default is True
     :param seed_use:
         Set a random seed. By default, sets the seed to 1448145. Setting None will not set a seed.
+    :param n_jobs:
+        number of jobs
     :param kwargs:
         Other arguments, such as `n_genes` defined for `vst`.
     :return:
@@ -112,6 +115,7 @@ def SCTransform(
     vst_args['return_corrected_umi'] = do_correct_umi
     vst_args['n_cells'] = min(n_cells, umi.shape[1])
     vst_args['seed_use'] = seed_use
+    vst_args['n_jobs'] = n_jobs
     # TODO: ignore `res_clip_range` used in 'conserve.memory' sct-method
     # res_clip_range = vst_args['res_clip_range'] if 'res_clip_range' in vst_args else [-math.sqrt(umi.shape[1]),
     #                                                                                  math.sqrt(umi.shape[1])]

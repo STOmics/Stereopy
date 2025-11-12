@@ -230,6 +230,10 @@ class CommunityClusteringAlgo(ABC):
         labels = np.unique(self.adata.obs[f'tissue_{self.method_key}'].values)
         if 'unknown' in labels:
             labels = labels[labels!='unknown']
+        if len(labels) > len(self.cluster_palette):
+            logger.warning(f"Number of clusters ({len(labels)}) is larger than pallette size. All clusters will be colored gray.")
+            self.cluster_palette = {l: '#CCCCCC' for l in labels}
+            self.cluster_palette['unknown'] = '#CCCCCC'
         plot_spatial(self.adata, annotation=f'tissue_{self.method_key}', palette=self.cluster_palette, spot_size=self.spot_size, ax=ax, title=f'{self.adata.uns["sample_name"]}')
         handles, labels = ax.get_legend_handles_labels()
         order = [el[0] for el in sorted(enumerate(labels), key=lambda x: float(x[1]) if x[1] != "unknown" else float('inf'))]
@@ -267,9 +271,10 @@ class CommunityClusteringAlgo(ABC):
         stats_table = {}
         # calculate cell type mixtures for every cluster
         for label, cluster_data in cell_types_communities.groupby(clustering_labels):
-            cell_type_dict = {ct:0 for ct in self.unique_cell_type}
-            for cell in cluster_data[self.annotation]:
-                cell_type_dict[cell]+=1
+            # cell_type_dict = {ct:0 for ct in self.unique_cell_type}
+            # for cell in cluster_data[self.annotation]:
+            #     cell_type_dict[cell]+=1
+            cell_type_dict = {ct: np.sum(cluster_data[self.annotation] == ct) for ct in self.unique_cell_type}
 
             # remove excluded cell types
             cell_type_dict = {k:cell_type_dict[k] for k in self.tissue.var.index.sort_values()}

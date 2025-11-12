@@ -12,14 +12,20 @@ from .bw import bwSJ
 
 
 def multi_pearson_residual(i, model_pars_final, regressor_data_final, umi, residual_type, min_variance,
-                           genes, bin_ind):
+                           genes, bin_ind, res, bin_size):
     min_var = min_variance
     genes_bin = genes[bin_ind == i]
     mu = np.exp(np.dot(model_pars_final.loc[genes_bin, ['Intercept', 'log_umi']], regressor_data_final.T))
     genes_bin_bool_list = np.isin(genes, genes_bin)
     y = umi[genes_bin_bool_list, :]
+    row_start = (i - 1) * bin_size
+    if row_start < 0:
+        row_start = 0
+    row_end = i * bin_size
+    if row_end > len(genes):
+        row_end = len(genes)
     if residual_type == "pearson":
-        return pearson_residual(y, mu, model_pars_final.loc[genes_bin, "theta"], min_var=min_var)
+        res[row_start:row_end, :] = pearson_residual(y, mu, model_pars_final.loc[genes_bin, "theta"], min_var=min_var)
     elif residual_type == "deviance":
         raise NotImplementedError
     else:
@@ -59,10 +65,10 @@ def make_cell_attr(umi, cells, latent_var, batch_var, latent_var_nonreg) -> pd.D
     return pd.DataFrame(tmp_dict_cell_attr, index=cells)
 
 
-def fit_poisson(umi, model_str, data, theta_estimation_fun="theta.ml") -> pd.DataFrame:
+def fit_poisson(umi, model_str, data, theta_estimation_fun="theta.ml", n_jobs=8) -> pd.DataFrame:
     # TODO: ignore `theta_estimation_fun`
     regressor_data = dmatrix("~log_umi", data, return_type='dataframe')
-    results = Parallel(n_jobs=cpu_count(), backend="threading")(
+    results = Parallel(n_jobs=n_jobs, backend="threading")(
         delayed(one_row_fit_poission)(regressor_data, y.toarray()[0], theta_estimation_fun)
         for y in umi
     )

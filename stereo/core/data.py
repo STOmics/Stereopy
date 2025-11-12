@@ -10,10 +10,11 @@
 change log:
     2021/06/11  create file.
 """
-from pathlib import Path
-from ..log_manager import logger
-from typing import Optional
 import os
+from pathlib import Path
+from typing import Optional
+
+from ..log_manager import logger
 
 
 class Data(object):
@@ -63,13 +64,13 @@ class Data(object):
         :return:
         """
         if path is None:
-            logger.warning(f'the output path is set as None.')
+            logger.warning('the output path is set as None.')
             return
         out_dir = os.path.dirname(path)
         if not os.path.exists(out_dir):
             os.makedirs(out_dir)
         if os.path.exists(path):
-            logger.warning(f'the output file is exists, we will replace it with new file.')
+            logger.warning('the output file is exists, we will replace it with new file.')
 
     @staticmethod
     def file_check(file):

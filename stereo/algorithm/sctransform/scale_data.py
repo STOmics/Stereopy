@@ -56,8 +56,6 @@ def ScaleData(
     if vars_to_regress:
         raise NotImplementedError
     max_block = int(np.ceil(len(features) / block_size))
-    scaled_data = pd.DataFrame(np.zeros(shape=scale_data.shape, dtype=np.double), index=scale_data.index.values,
-                               columns=scale_data.columns.values)
     for i in range(1, max_block + 1):
         my_inds = np.array(range(block_size * (i - 1), block_size * i))
         my_inds = my_inds[my_inds < len(features)]
@@ -67,5 +65,6 @@ def ScaleData(
             "center": do_center,
             "scale_max": scale_max,
         }
-        scaled_data.loc[features[my_inds]] = fast_row_scale(**arg_list)
-    return scaled_data
+        # scale in place
+        scale_data.loc[features[my_inds]] = fast_row_scale(**arg_list)
+    return scale_data

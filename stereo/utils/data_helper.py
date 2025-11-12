@@ -89,12 +89,13 @@ def reorganize_data_coordinates(
         cells_batch: np.ndarray,
         data_position: np.ndarray,
         data_position_offset: dict = None,
+        data_position_min: dict = None,
         reorganize_coordinate: Union[bool, int] = 2,
         horizontal_offset_additional: Union[int, float] = 0,
-        vertical_offset_additional: Union[int, float] = 0,
+        vertical_offset_additional: Union[int, float] = 0
 ):
     if not reorganize_coordinate:
-        return data_position, data_position_offset
+        return data_position, data_position_offset, data_position_min
 
     batches = natsorted(np.unique(cells_batch))
     data_count = len(batches)
@@ -102,6 +103,15 @@ def reorganize_data_coordinates(
     position_column_count = reorganize_coordinate
     max_xs = [0] * (position_column_count + 1)
     max_ys = [0] * (position_row_count + 1)
+
+    if data_position_min is None:
+        data_position_min = {}
+        for i, bno in enumerate(batches):
+            idx = np.where(cells_batch == bno)[0]
+            position_min = np.min(data_position[idx], axis=0)
+            data_position[idx] -= position_min
+            data_position_min[bno] = position_min
+
     for i, bno in enumerate(batches):
         idx = np.where(cells_batch == bno)[0]
         data_position[idx] -= data_position_offset[bno] if data_position_offset is not None else 0
@@ -125,11 +135,10 @@ def reorganize_data_coordinates(
             x_add += sum(max_xs[0:position_column_number]) + horizontal_offset_additional * position_column_number
         if position_row_number > 0:
             y_add += sum(max_ys[0:position_row_number]) + vertical_offset_additional * position_row_number
-        # position_offset = np.repeat([[x_add, y_add]], repeats=len(idx), axis=0).astype(np.uint32)
         position_offset = np.array([x_add, y_add], dtype=data_position.dtype)
         data_position[idx] += position_offset
         data_position_offset[bno] = position_offset
-    return data_position, data_position_offset
+    return data_position, data_position_offset, data_position_min
 
 
 def merge(
@@ -143,19 +152,20 @@ def merge(
     """
     Merge several slices of data.
 
-    :param data_list: several slices of data to be merged, at least two slices. 
+    :param data_list: several slices of data to be merged, at least two slices.
     :param reorganize_coordinate: whether to reorganize the coordinates of the obs(cells), 
-            if set it to a number, like 2, the coordinates will be reorganized to 2 columns on coordinate system as below:
+            if set it to a number, like 2, the coordinates will be reorganized to 2 columns on coordinate system as below
                             ---------------
                             | data1 data2
                             | data3 data4
-                            | data5 ...  
+                            | data5 ...
                             | ...   ...  
                             ---------------
             if set to `False`, the coordinates maybe overlap between slices.
     :param horizontal_offset_additional: the additional offset between each slice on horizontal direction while reorganizing coordinates.
     :param vertical_offset_additional: the additional offset between each slice on vertical direction while reorganizing coordinates.
     :param space_between: the distance between each slice, like '10nm', '1um', ..., it will be used for calculating the z-coordinate of each slice.
+    :param var_type: Which claims that `_var` is intersected by lots of `genes` from different samples.
 
     :return: A merged StereoExpData object.
     """
@@ -192,7 +202,6 @@ def merge(
     for i in range(data_count):
         data: StereoExpData = data_list[i]
         data.cells.batch = i
-        # cell_names = np.array([f"{cell_name}-{i}" for cell_name in data.cells.cell_name])
         cell_names = np.char.add(data.cells.cell_name, f"-{i}")
         data.array2sparse()
         new_data.sn[str(i)] = data.sn
@@ -233,8 +242,12 @@ def merge(
             elif var_type == "union":
                 old_gene_name = new_data.genes.gene_name
                 new_data.genes.gene_name = np.union1d(new_data.genes.gene_name, data.genes.gene_name)
+                if new_data.issparse():
+                    new_data.sparse2array()
+                if data.issparse():
+                    data.sparse2array()
                 new_data.exp_matrix = _union_merge(
-                    new_data.exp_matrix.toarray(), data.exp_matrix.toarray(), new_data.genes.gene_name, old_gene_name,
+                    new_data.exp_matrix, data.exp_matrix, new_data.genes.gene_name, old_gene_name,
                     data.genes.gene_name
                 )
             else:
@@ -256,11 +269,13 @@ def merge(
                     elif key == 'resolution':
                         new_data.attr['resolution'] = value
     if reorganize_coordinate:
-        new_data.position, new_data.position_offset = reorganize_data_coordinates(
-            new_data.cells.batch, new_data.position, new_data.position_offset,
+        new_data.position, new_data.position_offset, new_data.position_min = reorganize_data_coordinates(
+            new_data.cells.batch, new_data.position, new_data.position_offset, new_data.position_min,
             reorganize_coordinate, horizontal_offset_additional, vertical_offset_additional
         )
 
+    if not new_data.issparse():
+        new_data.array2sparse()
     return new_data
 
 
@@ -286,8 +301,12 @@ def split(data: StereoExpData = None):
     for bno in batch:
         cell_idx = np.where(data.cells.batch == bno)[0]
         cell_names = data.cell_names[cell_idx]
-        new_data = StereoExpData(bin_type=data.bin_type, bin_size=data.bin_size, cells=deepcopy(data.cells),
-                                 genes=deepcopy(data.genes))
+        new_data = StereoExpData(
+            bin_type=data.bin_type,
+            bin_size=data.bin_size,
+            cells=deepcopy(data.cells),
+            genes=deepcopy(data.genes)
+        )
         new_data.cells = new_data.cells.sub_set(cell_idx)
         if data.position_offset is not None:
             new_data.position = data.position[cell_idx] - data.position_offset[bno]

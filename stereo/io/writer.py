@@ -2,7 +2,7 @@
 # coding: utf-8
 """
 @file: writer.py
-@description: 
+@description:
 @author: Ping Qiu
 @email: qiuping1@genomics.cn
 @last modified by: Nils Mechtel
@@ -11,20 +11,24 @@ change log:
     2021/07/05  create file.
     2022/02/09  save raw data and result
 """
-from os import environ
 import pickle
 from copy import deepcopy
+from os import environ
 
 import h5py
 import numpy as np
 import pandas as pd
-from scipy.sparse import csr_matrix, issparse
+from scipy.sparse import (
+    csr_matrix,
+    issparse
+)
 
 from stereo.core.stereo_exp_data import StereoExpData
 from stereo.io import h5ad
 from stereo.log_manager import logger
 
 environ['HDF5_USE_FILE_LOCKING'] = "FALSE"
+
 
 def write_h5ad(
         data: StereoExpData,
@@ -45,13 +49,13 @@ def write_h5ad(
     use_result
         whether to save `result` and `res_key`.
     key_record
-        a dict includes selective `res_key` with the precondition that `use_result` 
-        is `True`, if None, it will save the `result` and `res_key` of 
+        a dict includes selective `res_key` with the precondition that `use_result`
+        is `True`, if None, it will save the `result` and `res_key` of
         `data.tl.key_record`,otherwise it will save the result and res_key of the dict.
     output
         the path to output file.
-	split_batches
-		Whether to save each batch to a single file if it is a merged data, default to True.
+    split_batches
+        Whether to save each batch to a single file if it is a merged data, default to True.
     Returns
     -------------------
     None
@@ -76,7 +80,8 @@ def write_h5ad(
         data.output = output
     else:
         if data.output is None:
-            logger.error("The output path must be set before writing.")
+            raise Exception("The output path must be set before writing.")
+
     with h5py.File(data.output, mode='w') as f:
         _write_one_h5ad(f, data, use_raw=use_raw, use_result=use_result, key_record=key_record)
 
@@ -194,7 +199,7 @@ def _write_one_h5ad_result(data, f, key_record):
                             value.append(pvalue)
                         parameters_df = pd.DataFrame({
                             'name': name,
-                            'value': value
+                            'value': str(value)
                         })
                         h5ad.write(parameters_df, f, f'{cluster}@{res_key}@marker_genes')  # -> dataframe
             if analysis_key == 'sct':
@@ -242,39 +247,38 @@ def _write_one_h5ad_result(data, f, key_record):
 
 
 def write_h5ms(ms_data, output: str):
+    """
+    Save an object of MSData into a h5 file whose suffix is 'h5ms'.
+
+    :param ms_data: The object of MSData to be saved.
+    :param output: The path of file into which MSData is saved.
+    """
     with h5py.File(output, mode='w') as f:
         f.create_group('sample')
         for idx, data in enumerate(ms_data._data_list):
             f['sample'].create_group(f'sample_{idx}')
             _write_one_h5ad(f['sample'][f'sample_{idx}'], data)
         if ms_data._merged_data:
-            f.create_group(f'sample_merged')
+            f.create_group('sample_merged')
             _write_one_h5ad(f['sample_merged'], ms_data._merged_data)
         h5ad.write_list(f, 'names', ms_data.names)
         h5ad.write_dataframe(f, 'obs', ms_data.obs)
         h5ad.write_dataframe(f, 'var', ms_data.var)
         h5ad.write(ms_data._var_type, f, 'var_type')
         h5ad.write(ms_data.relationship, f, 'relationship')
-        # TODO
-        # h5ad.write(ms_data.relationship_info, f, 'relationship_info')
         if ms_data.tl.result:
             mss_f = f.create_group('mss')
-            for key, value in ms_data.tl.result.items():
+            for key in ms_data.tl.result.keys():
                 data = StereoExpData()
                 data.tl.result = ms_data.tl.result[key]
-                # TODO only supported default name temporarily
-                for r_key in data.tl.result.keys():
-                    o_key = r_key
-                    if r_key in {'leiden', 'louvain', 'phenograph', 'annotation'}:
-                        o_key = 'cluster'
-                    data.tl.reset_key_record(o_key, r_key)
+                data.tl.key_record = ms_data.tl.key_record[key]
                 mss_f.create_group(key)
                 _write_one_h5ad_result(data, mss_f[key], data.tl.key_record)
 
 
 def write_mid_gef(data: StereoExpData, output: str):
     """
-    Write the StereoExpData object into a GEF (.h5) file. 
+    Write the StereoExpData object into a GEF (.h5) file.
 
     Parameters
     ---------------------
@@ -301,7 +305,7 @@ def write_mid_gef(data: StereoExpData, output: str):
         for k in zipped:
             final_exp.append(k)
 
-        ## count
+        # count
         g_len = len(final_gene)
         last_offset = 0 if g_len == 0 else final_gene[g_len - 1][1]
         last_count = 0 if g_len == 0 else final_gene[g_len - 1][2]
@@ -363,7 +367,7 @@ def update_gef(data: StereoExpData, gef_file: str, cluster_res_key: str):
         the path of the GEF file to add cluster result to.
     cluster_res_key
         the key to get cluster result from `data.tl.result`.
-    
+
     Returns
     --------------
     None
@@ -379,9 +383,7 @@ def update_gef(data: StereoExpData, gef_file: str, cluster_res_key: str):
     groups_code = groups.cat.categories.to_numpy()
     groups = groups.to_numpy()
     is_numeric = True
-    # for i, v in clu_result.iterrows():
     for bin, c, cidx in zip(bins, groups, groups_idx):
-        # cluster[str(v['bins'])] = v['group']
         if not isinstance(c, str):
             cluster[bin] = c
             cluster_idx[bin] = cidx
@@ -396,7 +398,7 @@ def update_gef(data: StereoExpData, gef_file: str, cluster_res_key: str):
     with h5py.File(gef_file, 'r+') as h5f:
         cell_names = np.bitwise_or(np.left_shift(h5f['cellBin']['cell']['x'].astype('uint64'), 32), h5f['cellBin']['cell']['y'].astype('uint64')).astype('U')
         celltid = np.zeros(h5f['cellBin']['cell'].shape, dtype='uint16')
-        
+
         for n, cell_name in enumerate(cell_names):
             if cell_name in cluster:
                 if is_numeric:
@@ -404,7 +406,6 @@ def update_gef(data: StereoExpData, gef_file: str, cluster_res_key: str):
                 else:
                     celltid[n] = cluster_idx[cell_name]
 
-        # h5f['cellBin']['cell']['cellTypeID'] = celltid
         if is_numeric:
             h5f['cellBin']['cell']['clusterID'] = celltid
         else:

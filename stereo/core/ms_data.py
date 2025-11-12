@@ -77,7 +77,7 @@ class _MSDataView(object):
         else:
             from copy import deepcopy
             self._merged_data = deepcopy(self._data_list[0])
-        
+
         obs_columns = self._merged_data.cells._obs.columns.tolist()
         obs_columns.remove('batch')
         if len(obs_columns) > 0:
@@ -99,7 +99,7 @@ class _MSDataStruct(object):
     Parameters
     ----------
     data_list: List[StereoExpData] `stereo_exp_data` array
-        An array of `stereo_exp_data` organized by some relationship defined by `_relationship` and `_relationship_info`.
+        An array of `stereo_exp_data` organized by some relationship defined by `_relationship` and `_relationship_info`
 
     merged_data: `stereo_exp_data` object
         An `stereo_exp_data` merged with `data_list` used batches integrate.
@@ -242,7 +242,7 @@ class _MSDataStruct(object):
     @names.setter
     def names(self, value: List[str]):
         if len(value) != len(self._data_list):
-            raise Exception(f'new names\' length should be same as data_list')
+            raise Exception('new names\' length should be same as data_list')
         self._names = value
         self.reset_name(default_key=False)
 
@@ -259,7 +259,7 @@ class _MSDataStruct(object):
     @property
     def relationship_info(self):
         return self._relationship_info
-    
+
     def reset_position(self, mode='integrate'):
         if mode == 'integrate' and self.merged_data:
             self.merged_data.reset_position()
@@ -532,46 +532,96 @@ class MSData(_MSDataStruct):
             _from: slice,
             type: Literal['obs', 'var'] = 'obs',
             item: Optional[list] = None,
-            fill=np.NaN
+            fill=np.NaN,
+            cluster: bool = True
     ):
-        assert self.merged_data, f"`to_integrate` need running function `integrate`"
+        """
+        Integrate an obs column or a var column from some single-samples spcified by `_from` to the merged sample. 
+
+        :param scope: Which integrate mss group to save result.
+        :param res_key: New column name in merged sample obs or var.
+        :param _from: Where to get the single-sample target infomation.
+        :param type: obs or var level, defaults to 'obs'
+        :param item: The column names in single-sample obs or var, defaults to None
+        :param fill: Default value when the merged sample has no conrresponding item, defaults to np.NaN
+        :param cluster: Whether it is a clustering result, defaults to True
+
+        .. note::
+
+            The length of `scope` must be equal to `_from`.
+
+            The `type` just only supports 'obs' now.
+        
+        Examples
+        --------
+        Constructing MSData from 5 single-samples.
+
+        >>> import stereo as st
+        >>> data1 = st.io.read_h5ad('../data/10.h5ad')
+        >>> data2 = st.io.read_h5ad('../data/11.h5ad')
+        >>> data3 = st.io.read_h5ad('../data/12.h5ad')
+        >>> data4 = st.io.read_h5ad('../data/13.h5ad')
+        >>> data5 = st.io.read_h5ad('../data/14.h5ad')
+        >>> ms_data = data1 + data2 + data3 + data4 + data5
+        >>> ms_data
+        ms_data: {'0': (493, 30254), '1': (285, 30254), '2': (753, 30254), '3': (731, 30254), '4': (412, 30254)}
+        num_slice: 5
+        names: ['0', '1', '2', '3', '4']
+        obs: []
+        var: []
+        relationship: other
+        var_type: intersect to 0
+        mss: []
+        
+        Integrating all samples to a merged one.
+
+        >>> ms_data.integrate()
+        
+        Integrating an obs column named as 'celltype' from first three samples to the merged sample, to name as 'celltype'
+
+        >>> from stereo.core.ms_pipeline import slice_generator
+        >>> ms_data.to_integrate(res_key='celltype', scope=slice_generator[0:3], _from=slice_generator[0:3], type='obs', item=['celltype'] * 3)
+
+        Integrating an obs column named as 'celltype' from all samples to the merged sample, to name as 'celltype'
+
+        >>> from stereo.core.ms_pipeline import slice_generator
+        >>> ms_data.to_integrate(res_key='celltype', scope=slice_generator[:], _from=slice_generator[:], type='obs', item=['celltype'] * ms_data.num_slice)
+
+        """
+        assert self.merged_data, "`to_integrate` need running function `integrate`"
         assert self._names[scope] == self._names[_from], f"`scope`: {scope} should equal with _from: {_from}"
-        assert len(item) == len(self._names[_from]), f"`item`'s length not equal to _from"
+        assert len(item) == len(self._names[_from]), "`item`'s length not equal to _from"
         scope_names = self._names[scope]
-        res_list = []
         if type == 'obs':
             self.merged_data.cells._obs[res_key] = fill
         elif type == 'var':
             raise NotImplementedError
         else:
             raise Exception(f"`type`: {type} not in ['obs', 'var'], this should not happens!")
-        
+
         for idx, stereo_exp_data in enumerate(self._data_list[scope]):
             if type == 'obs':
                 res = stereo_exp_data.cells._obs[item[idx]]
                 sample_idx = self._names.index(scope_names[idx])
                 new_index = res.index.astype('str') + f'-{sample_idx}'
-                res.index = new_index
-                self.merged_data.cells._obs.loc[new_index, res_key] = res
-                res_list.append(res.to_frame())
+                # res.index = new_index
+                self.merged_data.cells._obs.loc[new_index, res_key] = res.to_numpy()
             elif type == 'var':
-                # res = stereo_exp_data.genes._var[res_key]
-                # res_list.append(res.to_frame())
                 raise NotImplementedError
             else:
                 raise Exception(f"`type`: {type} not in ['obs', 'var'], this should not happens!")
         if type == 'obs':
-            # res_sum = pd.concat(res_list)
-            # merged_bool_list = np.isin(self.merged_data.cells._obs.index.values, res_sum.index.values, invert=True)
-            # self.merged_data.cells._obs.insert(0, res_key, pd.concat(res_list))
-            # if fill is not np.NaN:
-            #     self.merged_data.cells._obs[merged_bool_list][res_key] = fill
             scope_key_name = "scope_[" + ",".join([str(self._names.index(name)) for name in scope_names]) + "]"
             self.tl.result.setdefault(scope_key_name, {})
-            self.tl.result[scope_key_name][res_key] = self.merged_data.cells._obs[res_key].to_frame()
+            if cluster:
+                self.tl.result[scope_key_name][res_key] = pd.DataFrame({
+                    'bins': self.merged_data.cell_names,
+                    'group': self.merged_data.cells._obs[res_key].astype('category')
+                })
+                self.tl.result[scope_key_name][res_key].index = np.arange(self.merged_data.cell_names.size)
+            else:
+                self.tl.result[scope_key_name][res_key] = self.merged_data.cells._obs[res_key].to_frame()
         elif type == 'var':
-            # self.merged_data.genes._var.insert(0, res_key, pd.concat(res_list))
-            # self.tl.result[scope][res_key] = self.merged_data.genes._var[res_key].to_frame()
             raise NotImplementedError
         else:
             raise Exception(f"`type`: {type} not in ['obs', 'var'], this should not happens!")
@@ -585,9 +635,65 @@ class MSData(_MSDataStruct):
             item: Optional[list] = None,
             fill=np.NaN
     ):
-        assert self.merged_data, f"`to_integrate` need running function `integrate`"
+        """
+        Copy a result from mss group specfied by scope to some single-samples specfied by `to`.
+
+        :param scope: Which integrate mss group to get result.
+        :param res_key: the key to get result from mms group.
+        :param to: which single-samples are the result copy to.
+        :param type: obs or var level, defaults to 'obs'
+        :param item: New column name in obs or var of single-sample, defaults to None
+        :param fill: Default value when the single-sample has no conrresponding item, defaults to np.NaN
+
+        .. note::
+
+            The length of `scope` must be equal to `to`.
+            
+            Only supports clustering result when `type` is 'obs' and hvg result when `type` is 'var'.
+        
+        Examples
+        --------
+        Constructing MSData from 5 single-samples.
+
+        >>> import stereo as st
+        >>> data1 = st.io.read_h5ad('../data/10.h5ad')
+        >>> data2 = st.io.read_h5ad('../data/11.h5ad')
+        >>> data3 = st.io.read_h5ad('../data/12.h5ad')
+        >>> data4 = st.io.read_h5ad('../data/13.h5ad')
+        >>> data5 = st.io.read_h5ad('../data/14.h5ad')
+        >>> ms_data = data1 + data2 + data3 + data4 + data5
+        >>> ms_data
+        ms_data: {'0': (493, 30254), '1': (285, 30254), '2': (753, 30254), '3': (731, 30254), '4': (412, 30254)}
+        num_slice: 5
+        names: ['0', '1', '2', '3', '4']
+        obs: []
+        var: []
+        relationship: other
+        var_type: intersect to 0
+        mss: []
+        
+        Integrating all samples to a merged one.
+
+        >>> ms_data.integrate()
+
+        ... did a clustering, the key of result is 'leiden' ...
+
+        Copy the 'leiden' result to first three samples, to name as 'leiden'.
+
+        >>> from stereo.core.ms_pipeline import slice_generator
+        >>> ms_data.to_isolated(scope=slice_generator[0:3], res_key='leiden', to=slice_generator[0:3], type='obs', item=['leiden'] * 3)
+
+
+        Copy the 'leiden' result to all samples, to name as 'leiden'.
+
+        >>> from stereo.core.ms_pipeline import slice_generator
+        >>> ms_data.to_isolated(scope=slice_generator[:], res_key='leiden', to=slice_generator[:], type='obs', item=['leiden'] * 3)
+        
+        
+        """
+        assert self.merged_data, "`to_integrate` need running function `integrate`"
         assert self._names[scope] == self._names[to], f"`scope`: {scope} should equal with to: {to}"
-        assert len(item) == len(self._names[to]), f"`item`'s length not equal to `to`"
+        assert len(item) == len(self._names[to]), "`item`'s length not equal to `to`"
 
         scope_names = self._names[scope]
         scope_key_name = "scope_[" + ",".join([str(self._names.index(name)) for name in scope_names]) + "]"
@@ -619,6 +725,31 @@ class MSData(_MSDataStruct):
                     stereo_exp_data.genes._var[stereo_exp_data.genes._var[res_key].values == np.NaN] = fill
             else:
                 raise Exception(f"`type`: {type} not in ['obs', 'var'], this should not happens!")
+            
+    @staticmethod
+    def to_msdata(
+        data: StereoExpData,
+        batch_key: str = 'batch',
+        relationship: Optional[str] = 'other',
+        var_type: Optional[str] = 'intersect'
+    ):
+        if batch_key not in data.cells:
+            raise KeyError(f"The batch key '{batch_key}' is not in cells or obs.")
+        
+        from stereo.preprocess.filter import filter_by_clusters
+        batch_data = pd.DataFrame({
+            'bins': data.cells.cell_name,
+            'group': data.cells._obs[batch_key].astype('category')
+        })
+
+        sub_data_list = []
+        sub_data_names = []
+        for batch_code in batch_data['group'].cat.categories:
+            sub_data, _ = filter_by_clusters(data, batch_data, groups=batch_code, inplace=False)
+            sub_data_list.append(sub_data)
+            sub_data_names.append(batch_code)
+        
+        return MSData(_data_list=sub_data_list, _names=sub_data_names, _relationship=relationship, _var_type=var_type)
 
     def __str__(self):
         return f'''ms_data: {self.shape}

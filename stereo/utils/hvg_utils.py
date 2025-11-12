@@ -20,8 +20,23 @@ def get_mean_var(X, *, axis=0):
 
 @get_mean_var.register(np.ndarray)
 def _(x, *, axis=0):
-    mean = np.mean(x, axis=axis, dtype=np.float64)
-    mean_sq = np.multiply(x, x).mean(axis=axis, dtype=np.float64)
+    if x.ndim == 2:
+        mean = np.empty((x.shape[1],), dtype=np.float64)
+        transposed_arr = x.T
+        idx = 0
+        for row in transposed_arr:
+            mean[idx] = np.mean(row, axis=axis, dtype=np.float64)
+            idx += 1
+        
+        idx = 0
+        mean_sq = np.empty((x.shape[1],), dtype=np.float64)
+        for row in transposed_arr:
+            mean_sq[idx] = np.mean(np.multiply(row, row), axis=axis, dtype=np.float64)
+            idx += 1
+    else:
+        mean = np.mean(x, axis=axis, dtype=np.float64)
+        mean_sq = np.multiply(x, x).mean(axis=axis, dtype=np.float64)
+
     var = mean_sq - mean ** 2
     # enforce R convention (unbiased estimator) for variance
     var *= x.shape[axis] / (x.shape[axis] - 1)

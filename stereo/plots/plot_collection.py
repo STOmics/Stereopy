@@ -797,7 +797,7 @@ class PlotCollection:
         :return: Spatial scatter distribution of clusters.
         """
         res = self.check_res_key(res_key)
-        group_list = res['group'].to_numpy()
+        group_list = res['group'].to_numpy(copy=True)
         n = np.unique(group_list).size
         palette = stereo_conf.get_colors(colors, n=n)
         if groups is not None:
@@ -1013,7 +1013,7 @@ class PlotCollection:
     @download
     def hotspot_local_correlations(
             self,
-            res_key: str,
+            res_key: str = 'spatial_hotspot',
             width: Optional[int] = None,
             height: Optional[int] = None
     ):
@@ -1040,7 +1040,7 @@ class PlotCollection:
     @download
     def hotspot_modules(
             self,
-            res_key: str,
+            res_key: str = 'spatial_hotspot',
             ncols: Optional[int] = 2,
             dot_size: Optional[int] = None,
             palette: Optional[str] = 'stereo',

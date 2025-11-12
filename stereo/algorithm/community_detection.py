@@ -61,7 +61,7 @@ class _CommunityDetection:
             elif 'spatial_stereoseq' in slice._ann_data.obsm:
                 slice._ann_data.obsm['spatial'] = np.array(slice._ann_data.obsm['spatial_stereoseq'].copy())
             # annotation data must be of string type
-            slice._ann_data.obs[annotation] = slice._ann_data.obs[annotation].astype('str')
+            # slice._ann_data.obs[annotation] = slice._ann_data.obs[annotation].astype('str')
             # create a set of existing cell types in all slices
             self.cell_types = self.cell_types.union(set(slice._ann_data.obs[annotation].unique()))
             # if any of the samples lacks the cell type palette, set the flag
@@ -212,6 +212,11 @@ class _CommunityDetection:
             algo.community_calling()
             # copy final Cell Community Detection (CCD) result to original slices
             self.slices[slice_id]._ann_data.obs.loc[algo.adata.obs[f'tissue_{algo.method_key}'].index, 'cell_communities'] = algo.adata.obs[f'tissue_{algo.method_key}']
+            if np.nan in self.slices[slice_id]._ann_data.obs['cell_communities'].values:
+                if 'unknown' not in self.slices[slice_id]._ann_data.obs['cell_communities'].cat.categories:
+                    self.slices[slice_id]._ann_data.obs['cell_communities'] = self.slices[slice_id]._ann_data.obs[
+                        'cell_communities'].cat.add_categories('unknown')
+                self.slices[slice_id]._ann_data.obs['cell_communities'].fillna('unknown', inplace=True)
 
             # save anndata objects for further use
             if self.params['save_adata']:
@@ -232,11 +237,11 @@ class _CommunityDetection:
                     try:
                         algo.plot_stats()
                     except Exception as e:
-                        print('plot_stats raise exception while running multi slice, err=%s', str(e))
+                        print('plot_stats raise exception while running multi slice, err=%s' % str(e))
                     try:
                         algo.plot_celltype_table()
                     except Exception as e:
-                        print('plot_celltype_table raise exception while running multi slice, err=%s', str(e))
+                        print('plot_celltype_table raise exception while running multi slice, err=%s' % str(e))
                 if self.params['plotting'] > 2:
                     algo.plot_cluster_mixtures()
                     algo.boxplot_stats()
@@ -261,6 +266,7 @@ class _CommunityDetection:
 
         self.params['execution_time'] = end_time - start_time
         generate_report(self.params)
+        reset_figure_params()
    
     @timeit
     def cluster(self, merged_tissue): # TODO, merged_tissue da bude AnnBasedStereoExpData
@@ -281,12 +287,12 @@ class _CommunityDetection:
         merged_tissue = AnnBasedStereoExpData(h5ad_file_path=None, based_ann_data=merged_tissue)
         if self.params['cluster_algo'] == 'leiden':
             merged_tissue._ann_data.obsm['X_pca_dummy'] = merged_tissue._ann_data.X
-            merged_tissue.tl.neighbors(pca_res_key='X_pca_dummy', n_neighbors=15)
+            merged_tissue.tl.neighbors(pca_res_key='X_pca_dummy', n_neighbors=15, n_jobs=-1, res_key='neighbors')
             merged_tissue.tl.leiden(neighbors_res_key='neighbors', res_key='leiden', resolution=self.params['resolution'])
             merged_tissue._ann_data.obs['leiden'] = merged_tissue._ann_data.obs['leiden'].astype('int')
             merged_tissue._ann_data.obs['leiden'] -= 1
             merged_tissue._ann_data.obs['leiden'] = merged_tissue._ann_data.obs['leiden'].astype('str')
-            merged_tissue._ann_data.obs['leiden'] = merged_tissue._ann_data.obs['leiden'].astype('category')
+            # merged_tissue._ann_data.obs['leiden'] = merged_tissue._ann_data.obs['leiden'].astype('category')
         elif self.params['cluster_algo'] == 'spectral':
             merged_tissue._ann_data.obsm['X_pca_dummy'] = merged_tissue._ann_data.X
             merged_tissue.tl.neighbors(pca_res_key='X_pca_dummy', n_neighbors=15)
@@ -403,6 +409,9 @@ class _CommunityDetection:
         for (algo, ax) in zip(self.algo_list, axes.flatten()):
             palette = algo.cluster_palette if clustering else algo.annotation_palette
             annotation = f'tissue_{self.algo_list[0].method_key}' if clustering else self.algo_list[0].annotation
+            clusters = np.unique(algo.adata.obs[annotation].values)
+            if len(clusters) > len(cluster_palette):
+                logger.warning(f"Number of clusters ({len(clusters)}) is larger than pallette size. All clusters will be colored gray.")
             plot_spatial(algo.adata, annotation=annotation, palette=palette, spot_size=algo.spot_size, ax=ax)
             ax.get_legend().remove()
             ax.set_title(f'{algo.filename}', fontsize=6, loc='center', wrap=True)
@@ -684,6 +693,7 @@ class _CommunityDetection:
         finally:
             self.params['hide_plots'] = orig_hide_plots
             self.algo_list[slice_id].hide_plots = orig_hide_plots
+            reset_figure_params()
 
 
 class CommunityDetection(AlgorithmBase, _CommunityDetection):
@@ -719,7 +729,9 @@ class CommunityDetection(AlgorithmBase, _CommunityDetection):
 
         The window size and sliding step are optional CCD parameters. If not provided, the optimal window size is calculated throughout the iterative process with goal of having average number of cell-spots in all windows in range [30, 50]. Sliding step is set to the half of the window size.
 
-        Note: All the parameters are key word arguments.
+        .. note::
+
+            All the parameters are key word arguments.
 
         :param annotation: The key specified the cell type in obs.
         :param tfile: File path to Anndata object with calculated cell mixtures for data windows, output of calc_feature_matrix.

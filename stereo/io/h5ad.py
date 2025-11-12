@@ -75,7 +75,15 @@ def write_array(f, key, value, dataset_kwargs=MappingProxyType({})):
         value = value.astype(h5py.special_dtype(vlen=str))
     elif value.dtype.names is not None:
         value = _to_hdf5_vlen_strings(value)
-    f.create_dataset(key, data=value, **dataset_kwargs)
+        
+    if (value.ndim == 2) and (not value.flags.c_contiguous):
+        dset = f.create_dataset(key, shape=value.shape, dtype=value.dtype, **dataset_kwargs)
+        idx = 0
+        for row in value:
+            dset[idx] = row
+            idx += 1
+    else:
+        f.create_dataset(key, data=value, **dataset_kwargs)
 
 
 def write_list(f, key, value, dataset_kwargs=MappingProxyType({})):

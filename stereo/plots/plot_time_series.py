@@ -67,10 +67,13 @@ class PlotTimeSeries(PlotBase):
         branch2exp = defaultdict(dict)
         stereo_exp_data = self.stereo_exp_data
         for x in branch:
-            cell_list = stereo_exp_data.cells.to_df().loc[stereo_exp_data.cells[use_col] == x, :].index
-            tmp_exp_data = stereo_exp_data.sub_by_name(cell_name=cell_list)
+            # cell_list = stereo_exp_data.cells.to_df().loc[stereo_exp_data.cells[use_col] == x, :].index
+            # tmp_exp_data = stereo_exp_data.sub_by_name(cell_name=cell_list)
+            cell_flag = (stereo_exp_data.cells[use_col] == x).to_numpy()
+            tmp_exp_data = stereo_exp_data.exp_matrix[cell_flag]
             for gene in genes:
-                branch2exp[gene][x] = tmp_exp_data.sub_by_name(gene_name=[gene]).exp_matrix.toarray().flatten()
+                # branch2exp[gene][x] = tmp_exp_data.sub_by_name(gene_name=[gene]).exp_matrix.toarray().flatten()
+                branch2exp[gene][x] = tmp_exp_data[:, stereo_exp_data.gene_names == gene].toarray().flatten()
 
         fig = plt.figure(figsize=(4 * len(genes), 6))
         ax = fig.subplots(1, len(genes))

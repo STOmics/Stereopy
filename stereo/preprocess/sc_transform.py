@@ -12,6 +12,7 @@ def sc_transform(
         do_correct_umi=False,
         exp_matrix_key='scale.data',
         seed_use=1448145,
+        n_jobs=8,
         **kwargs
 ):
     if not issparse(data.exp_matrix):
@@ -28,6 +29,7 @@ def sc_transform(
         return_only_var_genes=filter_hvgs,
         variable_features_n=var_features_n,
         seed_use=seed_use,
+        n_jobs=n_jobs,
         **kwargs
     )
     new_exp_matrix = res[0][exp_matrix_key]
