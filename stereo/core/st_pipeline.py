@@ -891,11 +891,11 @@ class StPipeline(object):
         from ..algorithm.dim_reduce import pca
 
         exp_matrix = self.data.get_exp_matrix(use_raw=False, layer=layer, only_highly_genes=use_highly_genes)
-        # if use_highly_genes:
-        #     hvgs = self.result[hvg_res_key]['highly_variable'].fillna(False)
-        #     exp_matrix = exp_matrix[:, hvgs]
-        # else:
-        #     exp_matrix = self.data.exp_matrix
+        if use_highly_genes:
+            hvgs = self.result[hvg_res_key]['highly_variable'].fillna(False)
+            exp_matrix = exp_matrix[:, hvgs]
+        else:
+            exp_matrix = self.data.exp_matrix
         if n_pcs is None:
             n_pcs = min(exp_matrix.shape) - 1
             if n_pcs > 50:

@@ -969,7 +969,7 @@ def stereo_to_anndata(
             adata = AnnData(obs=data.cells.to_df(), var=data.genes.to_df())
         else:
             adata = AnnData(shape=data.exp_matrix.shape, dtype=np.float64, obs=data.cells.to_df(), var=data.genes.to_df())
-        adata.X = data.exp_matrix
+            adata.X = data.exp_matrix
     else:
         adata = base_adata
 
