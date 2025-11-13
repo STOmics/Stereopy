@@ -19,10 +19,10 @@ import pandas as pd
 import scipy.sparse as sp
 from natsort import natsorted
 
-from stereo_cloud.core.cell import Cell
-from stereo_cloud.core.gene import Gene
-from stereo_cloud.core.stereo_exp_data import StereoExpData, AnnBasedStereoExpData
-from stereo_cloud.log_manager import logger
+from stereo.core.cell import Cell
+from stereo.core.gene import Gene
+from stereo.core.stereo_exp_data import StereoExpData, AnnBasedStereoExpData
+from stereo.log_manager import logger
 
 
 def select_group(groups, cluster, all_groups):

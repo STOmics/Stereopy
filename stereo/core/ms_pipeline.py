@@ -7,10 +7,10 @@ from joblib import (
 
 import numpy as np
 
-from stereo_cloud.log_manager import logger
-from stereo_cloud.core import StPipeline
-from stereo_cloud.core.result import MSDataPipeLineResult
-from stereo_cloud.plots.decorator import download, download_only
+from stereo.log_manager import logger
+from stereo.core import StPipeline
+from stereo.core.result import MSDataPipeLineResult
+from stereo.plots.decorator import download, download_only
 
 
 class _scope_slice(object):
@@ -106,14 +106,14 @@ class MSDataPipeLine(object):
         new_attr = getattr(self.__class__.BASE_CLASS, item, None)
         if new_attr is None:
             if self.__class__.ATTR_NAME == "tl":
-                from stereo_cloud.algorithm.algorithm_base import AlgorithmBase
+                from stereo.algorithm.algorithm_base import AlgorithmBase
                 merged_data = ms_data_view.merged_data
                 new_attr = AlgorithmBase.get_attribute_helper(item, merged_data, merged_data.tl.result)
                 if new_attr:
                     logger.info(f'register algorithm {item} to {type(merged_data)}-{id(merged_data)}')
                     return new_attr(*args, **kwargs)
             else:
-                from stereo_cloud.plots.plot_base import PlotBase
+                from stereo.plots.plot_base import PlotBase
                 merged_data = ms_data_view.merged_data
                 new_attr = download(PlotBase.get_attribute_helper(item, merged_data, merged_data.tl.result))
                 if new_attr:
@@ -159,10 +159,10 @@ class MSDataPipeLine(object):
             )
         else:
             if self.__class__.ATTR_NAME == 'tl':
-                from stereo_cloud.algorithm.algorithm_base import AlgorithmBase
+                from stereo.algorithm.algorithm_base import AlgorithmBase
                 base = AlgorithmBase
             else:
-                from stereo_cloud.plots.plot_base import PlotBase
+                from stereo.plots.plot_base import PlotBase
                 base = PlotBase
 
             def log_delayed_task(idx, obj, *arg, **kwargs):
@@ -194,12 +194,12 @@ class MSDataPipeLine(object):
             raise AttributeError
 
         if self.__class__.ATTR_NAME == 'tl':
-            from stereo_cloud.algorithm.ms_algorithm_base import MSDataAlgorithmBase
+            from stereo.algorithm.ms_algorithm_base import MSDataAlgorithmBase
             run_method = MSDataAlgorithmBase.get_attribute_helper(item, self.ms_data, self.result)
             if run_method:
                 return run_method
         elif self.__class__.ATTR_NAME == 'plt':
-            from stereo_cloud.plots.ms_plot_base import MSDataPlotBase
+            from stereo.plots.ms_plot_base import MSDataPlotBase
             run_method = MSDataPlotBase.get_attribute_helper(item, self.ms_data, self.ms_data.tl.result)
             if run_method:
                 return download(run_method)
