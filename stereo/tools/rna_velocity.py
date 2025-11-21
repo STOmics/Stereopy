@@ -213,7 +213,9 @@ class RnaVelocity(object):
 
         x_array = np.right_shift(uniq_cell, 32).astype('str')
         y_array = np.bitwise_and(uniq_cell, 0xffffffff).astype('str')
-        position_cell_name = ['_'.join(map(str, i)) for i in zip(x_array, y_array)]
+        # i do not know why do this, just keep the cellid consistent
+        position_cell_name = [str(cell_id) for cell_id in uniq_cell]
+        # position_cell_name = ['_'.join(map(str, i)) for i in zip(x_array, y_array)]
         cn = len(uniq_cell)
         gn = len(gene_names)
         total_exp_matrix_coo = sparse.coo_matrix((count, (gene_ind, cell_ind)), shape=(gn, cn), dtype=np.uint32)
