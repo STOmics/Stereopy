@@ -67,18 +67,6 @@ Version 1.6.2
 ~~~~~~~~~~~~~~~~~~~
 1.6.2 : 2025-11-20
 
-.. _st.io.read_gef: content/stereo.io.read_gef.html
-.. |st.io.read_gef| replace:: `st.io.read_gef`
-
-.. _st.io.write_mid_gef: content/stereo.io.write_mid_gef.html
-.. |st.io.write_mid_gef| replace:: `stereo.io.write_mid_gef`
-
-.. _st.tools.generate_loom: content/stereo.tools.generate_loom.html
-.. |st.tools.generate_loom| replace:: `st.tools.generate_loom`
-
-Features:
-
-
 BUG Fixes:
 
 1. Fixed a crash issue in `st.io.read_gef` when reading GEF files with a gene expression level  larger than 4 x 10⁹.
