@@ -1455,13 +1455,20 @@ def read_gef(
             'maxExp': gef_attr[4],
             'resolution': gef_attr[5],
         }
+        
+        # add patch for precess exon matrix
+        is_contain_exon = gef.is_Contain_Exon()
 
         if gene_list is not None or region is not None:
             if gene_list is None:
                 gene_list = []
             if region is None:
                 region = []
-            uniq_cell, gene_names, count, cell_ind, gene_ind, gene_id = gef.get_filtered_data(region, gene_list)
+                
+            if is_contain_exon:
+                uniq_cell, gene_names, count, cell_ind, gene_ind, exon, gene_id = gef.get_filtered_data_exon(region, gene_list)
+            else:
+                uniq_cell, gene_names, count, cell_ind, gene_ind, gene_id = gef.get_filtered_data(region, gene_list)
             cell_num = uniq_cell.size
             gene_num = gene_names.size
             if cell_num == 0 or gene_num == 0:
@@ -1469,10 +1476,16 @@ def read_gef(
             data.cells = Cell(cell_name=uniq_cell)
 
             exp_matrix = csr_matrix((count, (cell_ind, gene_ind)), shape=(cell_num, gene_num), dtype=np.uint32)
+            if is_contain_exon:
+                exon_matrix = csr_matrix((exon, (cell_ind, gene_ind)), shape=(cell_num, gene_num), dtype=np.uint32)
+            
             if len(gene_id[0]) == 0:
                 gene_name_index = True
             if gene_name_index:
                 if len(gene_id[0]) > 0:
+                    if is_contain_exon:
+                        exon_matrix, _ = integrate_matrix_by_genes(gene_names, cell_num,
+                                                            exon_matrix.data, exon_matrix.indices, exon_matrix.indptr)
                     exp_matrix, gene_names = integrate_matrix_by_genes(gene_names, cell_num,
                                                             exp_matrix.data, exp_matrix.indices, exp_matrix.indptr)
                 data.genes = Gene(gene_name=gene_names)
@@ -1494,8 +1507,14 @@ def read_gef(
             
             cell_ind, gene_ind, count = gef.get_sparse_matrix_indices2()
             exp_matrix = csr_matrix((count, (cell_ind, gene_ind)), shape=(cell_num, gene_num), dtype=np.uint32)
+            if is_contain_exon:
+                _, _, _, _, _, exon, _ = gef.get_filtered_data_exon([], [])
+                exon_matrix = csr_matrix((exon, (cell_ind, gene_ind)), shape=(cell_num, gene_num), dtype=np.uint32)
             if gene_name_index:
                 if len(gene_id[0]) > 0:
+                    if is_contain_exon:
+                        exon_matrix, _ = integrate_matrix_by_genes(gene_names, cell_num,
+                                                            exon_matrix.data, exon_matrix.indices, exon_matrix.indptr)
                     exp_matrix, gene_names = integrate_matrix_by_genes(gene_names, cell_num,
                                                             exp_matrix.data, exp_matrix.indices, exp_matrix.indptr)
                 data.genes = Gene(gene_name=gene_names)
@@ -1503,6 +1522,8 @@ def read_gef(
                 data.genes = Gene(gene_name=gene_id)
                 data.genes['real_gene_name'] = gene_names
             data.exp_matrix = exp_matrix if is_sparse else exp_matrix.toarray()
+            if is_contain_exon:
+                data.exon_matrix = exon_matrix if is_sparse else exp_matrix.toarray()
             data.position = np.array(list(
                 (zip(np.right_shift(cell_names, 32), np.bitwise_and(cell_names, 0xffffffff))))).astype('uint32')
             

@@ -5,9 +5,9 @@ numpy==1.23.5
 matplotlib==3.7.1
 pandas>=1.5.3
 scipy==1.10.1
-seaborn==0.12.2
+seaborn>=0.13.0
 h5py>=3.7.0
-gefpy>=1.1.9
+gefpy>=1.2.6
 # setuptools>=41.0.0,<60.0.0
 setuptools==69.5.1
 #todo python3.8/site-packages/umap/distances.py:1053: NumbaDeprecationWarning: The 'nopython' keyword argument was not supplied to the 'numba.jit' decorator.
@@ -17,7 +17,7 @@ numba==0.56.4
 statsmodels>=0.14.0
 leidenalg>=0.10.1
 umap-learn==0.5.1
-KDEpy==1.1.0
+KDEpy==1.1.11
 # Jinja2==3.0.3
 shapely>=2.0.0
 # pyviz-comms==2.2.1

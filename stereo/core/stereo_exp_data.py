@@ -99,6 +99,7 @@ class StereoExpData(Data):
         super(StereoExpData, self).__init__(file_path=file_path, file_format=file_format,
                                             partitions=partitions, output=output)
         self._exp_matrix = exp_matrix
+        self._exon_matrix = None
         self._genes = genes if isinstance(genes, Gene) else Gene(gene_name=genes)
         self._cells = cells if isinstance(cells, Cell) else Cell(cell_name=cells)
         # self._raw_position = None
@@ -453,7 +454,26 @@ class StereoExpData(Data):
         :return:
         """
         self._exp_matrix = exp_matrix
+    
+    @property
+    def exon_matrix(self) -> Union[np.ndarray, spmatrix]:
+        """
+        Get the exon matrix.
 
+        :return:
+        """
+        return self._exon_matrix
+
+    @exon_matrix.setter
+    def exon_matrix(self, exon_matrix):
+        """
+        set the value of self._exon_matrix.
+
+        :param pos_array: np.ndarray or sparse.spmatrix.
+        :return:
+        """
+        self._exon_matrix = exon_matrix 
+    
     @property
     def bin_type(self):
         """

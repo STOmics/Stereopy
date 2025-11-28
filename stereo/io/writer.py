@@ -428,6 +428,12 @@ def write_mid_gef(data: StereoExpData, output: str):
             exp_np = exp_np[cells_isin, :][:, genes_isin]
     else:
         exp_np = data.exp_matrix
+    
+    has_exon = False
+    final_exon_list = []
+    if data.exon_matrix is not None:
+        has_exon = True
+        exon_np = data.exon_matrix
 
     for i in tqdm(range(exp_np.shape[1]), total=exp_np.shape[1]):
         gene_exp = exp_np[:, i]
@@ -435,6 +441,12 @@ def write_mid_gef(data: StereoExpData, output: str):
             gene_exp = gene_exp.toarray().flatten()
         c_idx = np.nonzero(gene_exp)[0]  # idx for all cells
         final_exp_list.append(np.concatenate((data.position[c_idx], gene_exp[c_idx].reshape(c_idx.shape[0], 1)), axis=1))
+        if has_exon:
+            gene_exon = exon_np[:, i]
+            if issparse(gene_exon):
+                gene_exon = gene_exon.toarray().flatten()
+            final_exon_list.append(gene_exon[c_idx].reshape(c_idx.shape[0], 1))
+            
         # zipped = np.concatenate((data.position[c_idx], gene_exp[c_idx].reshape(c_idx.shape[0], 1)), axis=1)
         # for k in zipped:
         #     final_exp.append(k)
@@ -450,6 +462,10 @@ def write_mid_gef(data: StereoExpData, output: str):
     final_exp = np.concatenate(final_exp_list, axis=0)
     final_exp_np = rfn.unstructured_to_structured(
         np.array(final_exp, dtype=int), np.dtype([('x', np.uint32), ('y', np.uint32), ('count', np.uint16)]))
+    if has_exon:
+        final_exon = np.concatenate(final_exon_list, axis=0)
+        final_exon_np = np.array(final_exon, dtype=np.uint32).flatten()
+        
     genetyp = np.dtype({'names': ['gene', 'offset', 'count'], 'formats': ['S32', np.uint32, np.uint32]})
     final_gene_np = np.array(final_gene, dtype=genetyp)
     h5f = h5py.File(output, "w")
@@ -457,6 +473,8 @@ def write_mid_gef(data: StereoExpData, output: str):
     binsz = "bin" + str(data.bin_size)
     bing = geneExp.create_group(binsz)
     geneExp[binsz]["expression"] = final_exp_np  # np.arry([(10,20,2), (20,40,3)], dtype=exptype)
+    if has_exon:
+        geneExp[binsz]["exon"] = final_exon_np
     geneExp[binsz]["gene"] = final_gene_np  # np.arry([("gene1",0,21), ("gene2",21,3)], dtype=genetype)
     if data.attr is not None:
         for key, value in data.attr.items():
