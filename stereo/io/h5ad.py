@@ -189,9 +189,10 @@ def write_dataframe(f, key, df, dataset_kwargs=MappingProxyType({}), save_as_mat
 def write_series(group, key, series, dataset_kwargs=MappingProxyType({})):
     # group here is an h5py type, otherwise categoricals won’t write
     if series.dtype == object:  # Assuming it’s string
+        clean_series = series.fillna("").astype(str) # fillna with empty string to avoid nan, and convert to str by wrw 2026-2-12
         group.create_dataset(
             key,
-            data=series.values,
+            data=clean_series.values,
             dtype=h5py.special_dtype(vlen=str),
             **dataset_kwargs,
         )
