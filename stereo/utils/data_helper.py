@@ -239,6 +239,16 @@ def _merge_matrix(data1: StereoExpData, data2: StereoExpData, var_type: str):
             data1.exp_matrix, data2.exp_matrix, 
             data1.genes.gene_name, data2.genes.gene_name
         )
+        
+        # merge var order by gene names, add by wrw 2026-2-11
+        for col in data2.genes.var.columns:
+            if col not in data1.genes.var.columns:
+                data1.genes.var[col] = data2.genes.var[col]
+            else:
+                var_other_reindexed = data2.genes.var.reindex(data1.genes.gene_name)
+                mask = data1.genes.var[col].isna() & var_other_reindexed[col].notna()
+                data1.genes.var.loc[mask, col] = var_other_reindexed.loc[mask, col]
+                
         for key in data1.genes_matrix.keys():
             if isinstance(data1.genes_matrix[key], np.ndarray):
                 tmep_matrix = np.empty((data1.n_genes, data1.genes_matrix[key].shape[1]), dtype=data1.genes_matrix[key].dtype)
