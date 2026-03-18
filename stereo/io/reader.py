@@ -1211,7 +1211,7 @@ def stereo_to_anndata(
                     'scalefactors': {
                         'tissue_hires_scalef': im_hires / 100,
                         'tissue_lowres_scalef': im_lowres / 100,
-                        'spot_diameter_fullres': np.sqrt(((0.22 * data.bin_size)**2) * 2),
+                        'spot_diameter_fullres': np.sqrt(((0.22 * adata.uns.get('bin_size', 1))**2) * 2),
                         # 'spot_diameter_fullres': 2000000 / data.n_cells / (data.bin_size if data.bin_type == 'bins' else 1),
                         'fiducial_diameter_fullres': 600
                     }
