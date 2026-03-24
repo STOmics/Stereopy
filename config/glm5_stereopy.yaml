@@ -83,6 +83,6 @@ agent:
 
 env:
   deployment:
-    image: "python:3.10-bullseye"
+    image: "python:3.11-bullseye"
   post_startup_commands:
     - "pip install numpy scipy pandas anndata h5py loompy flake8 pytest shapely colorcet seaborn"

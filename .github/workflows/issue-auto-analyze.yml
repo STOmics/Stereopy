@@ -25,11 +25,11 @@ jobs:
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
-          python-version: "3.10"
+          python-version: "3.11"
 
       - name: Install SWE-agent
         run: |
-          pip install sweagent
+          pip install "sweagent>=2.2,<2.3" || pip install "sweagent<2.3" || pip install sweagent
           sweagent --help || echo "SWE-agent installed"
 
       - name: Comment analysis started
