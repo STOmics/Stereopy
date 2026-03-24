@@ -1,0 +1,29 @@
+{
+  "openai/glm-5": {
+    "max_tokens": 16384,
+    "max_input_tokens": 128000,
+    "max_output_tokens": 16384,
+    "input_cost_per_token": 0.0000006,
+    "output_cost_per_token": 0.0000022,
+    "litellm_provider": "openai",
+    "mode": "chat"
+  },
+  "zai/glm-5": {
+    "max_tokens": 16384,
+    "max_input_tokens": 128000,
+    "max_output_tokens": 16384,
+    "input_cost_per_token": 0.0000006,
+    "output_cost_per_token": 0.0000022,
+    "litellm_provider": "zai",
+    "mode": "chat"
+  },
+  "openai/glm-4.7": {
+    "max_tokens": 16384,
+    "max_input_tokens": 200000,
+    "max_output_tokens": 16384,
+    "input_cost_per_token": 0.0000006,
+    "output_cost_per_token": 0.0000022,
+    "litellm_provider": "openai",
+    "mode": "chat"
+  }
+}

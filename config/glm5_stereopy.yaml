@@ -1,0 +1,88 @@
+agent:
+  model:
+    name: "openai/glm-5"
+    api_base: "https://open.bigmodel.cn/api/paas/v4/"
+    per_instance_cost_limit: 0
+    total_cost_limit: 0
+    per_instance_call_limit: 25
+    max_input_tokens: 0
+    temperature: 0.1
+    litellm_model_registry: "config/glm5_model_registry.json"
+
+  templates:
+    system_template: |-
+      You are a senior Python developer specialized in spatial transcriptomics.
+      You are working on Stereopy, a Python library built on AnnData for spatial transcriptomics analysis.
+
+      Key architecture:
+      - StereoExpData: main data container, exp_matrix can be numpy.ndarray or scipy.sparse
+      - AnnBasedStereoExpData: AnnData-backed variant
+      - MSData: multi-sample container holding multiple StereoExpData
+      - StPipeline / MSDataPipeLine: tool execution pipelines
+      - Results stored in data.tl.result[key], can be dict or DataFrame
+      - I/O formats: h5ad, h5ms, gef, gem, loom
+      - Gene/Cell objects have .to_df() returning pandas DataFrame
+      - bin_size=1 for cell_bins, otherwise actual bin size
+
+      Key modules:
+      - stereo/core/: Data models
+      - stereo/io/: File I/O (reader.py, writer.py, h5ad.py)
+      - stereo/tools/: Analysis tools (find_markers, clustering, etc.)
+      - stereo/algorithm/: Low-level algorithms
+      - stereo/plots/: Visualization
+
+      You can interact with a computer to solve tasks.
+      Make minimal, targeted changes. Always verify your fix works.
+
+    instance_template: |-
+      <uploaded_files>
+      {{working_dir}}
+      </uploaded_files>
+
+      I've uploaded the Stereopy repository in {{working_dir}}. Consider the following issue:
+
+      <issue_description>
+      {{problem_statement}}
+      </issue_description>
+
+      Please fix this issue with minimal changes to non-test files. Follow these steps:
+      1. Search and read code relevant to the issue
+      2. If there's a traceback, find and understand the root cause by tracing the call chain
+      3. Create a small script to reproduce the error if possible
+      4. Edit the source code to fix the issue
+      5. Rerun the reproduce script to verify the fix
+      6. Think about edge cases and make sure your fix handles them
+      Your thinking should be thorough and so it's fine if it's very long.
+
+    next_step_template: |-
+      OBSERVATION:
+      {{observation}}
+
+    next_step_no_output_template: |-
+      Your command ran successfully and did not produce any output.
+
+  tools:
+    env_variables:
+      PAGER: cat
+      MANPAGER: cat
+      LESS: -R
+      PIP_PROGRESS_BAR: "off"
+      TQDM_DISABLE: "1"
+      GIT_PAGER: cat
+    bundles:
+      - path: tools/registry
+      - path: tools/edit_anthropic
+      - path: tools/review_on_submit_m
+    registry_variables:
+      USE_FILEMAP: "true"
+    enable_bash_tool: true
+    parse_function:
+      type: "thought_action"
+
+  history_processors: []
+
+env:
+  deployment:
+    image: "python:3.10-bullseye"
+  post_startup_commands:
+    - "pip install numpy scipy pandas anndata h5py loompy flake8 pytest shapely colorcet seaborn"
