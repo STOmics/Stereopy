@@ -73,10 +73,12 @@ for ROW in $ISSUES; do
     echo "" >> "$TASK_FILE"
     echo "$ISSUE_BODY" >> "$TASK_FILE"
 
+    TASK_CONTENT=$(cat "$TASK_FILE")
     mini \
-        --agent-config config/glm5_stereopy.yaml \
-        --task-file "$TASK_FILE" \
-        --mode auto \
+        --config config/glm5_stereopy.yaml \
+        --task "$TASK_CONTENT" \
+        --yolo \
+        --exit-immediately \
         2>&1 | tee "swe_agent_issue_${ISSUE_NUM}.log" \
         || echo "  [WARN] mini-swe-agent failed on issue #$ISSUE_NUM"
 
