@@ -28,7 +28,7 @@ jobs:
           python-version: "3.10"
 
       - name: Install dependencies
-        run: pip install zhipuai PyGithub
+        run: pip install zhipuai PyGithub sniffio httpx
 
       - name: Analyze issue and locate relevant code
         id: analyze
