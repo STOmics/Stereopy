@@ -19,13 +19,12 @@ from ..log_manager import logger
 
 class RnaVelocity(object):
 
-    def __init__(self, gem_path=None, gef_path=None, gtf_path=None, out_dir=None, bin_size=100, use_gene_id=True):
+    def __init__(self, gem_path=None, gef_path=None, gtf_path=None, out_dir=None, bin_size=100):
         self.gem_path = gem_path
         self.gef_path = gef_path
         self.gtf_path = gtf_path
         self.out_dir = out_dir
         self.bin_size = bin_size
-        self.use_gene_id = use_gene_id
         self.check_input()
 
     def check_input(self):
@@ -273,16 +272,13 @@ class RnaVelocity(object):
             base["feature"] == "gene", ["gene_id", "gene_name", "seqname", "strand", "start", "end"]].copy()
         base_sub.drop_duplicates(keep="first", inplace=True)
 
-        # FIX: Match gene_list against gene_id column instead of gene_name
-        # gene_list from GEF/GEM contains gene IDs, not gene names
-        base_need = base_sub.loc[np.isin(base_sub["gene_id"], gene_list), :].copy()
-        base_need.drop_duplicates(subset=['gene_id'], keep='first', inplace=True)
+        base_need = base_sub.loc[np.isin(base_sub["gene_name"], gene_list), :].copy()
+        base_need.drop_duplicates(subset=['gene_name'], keep='first', inplace=True)
 
         df_row_attrs = pd.DataFrame(index=gene_list)
         df_row_attrs = df_row_attrs.reset_index()
-        # FIX: Rename to gene_id since that's what we're matching on
-        df_row_attrs.rename(columns={"index": "gene_id"}, inplace=True)
-        df_row_attrs = df_row_attrs.merge(base_need, on="gene_id", how="left")
+        df_row_attrs.rename(columns={"index": "gene_name"}, inplace=True)
+        df_row_attrs = df_row_attrs.merge(base_need, on="gene_name", how="left")
 
         return df_row_attrs
 
@@ -295,17 +291,10 @@ class RnaVelocity(object):
 
         :return: the output loom path.
         """
-        # FIX: Use gene_id as "Gene" attribute by default to avoid duplicate gene names
-        # This matches the behavior of st.io.read_gef which uses gene IDs as var_names
-        if self.use_gene_id:
-            gene_identifier = np.array(df_row_attrs.gene_id)
-        else:
-            gene_identifier = np.array(df_row_attrs.gene_name)
-        
         row_attrs = {"Accession": np.array(df_row_attrs.gene_id),
                      "Chromosome": np.array(df_row_attrs.seqname),
                      "End": np.array(df_row_attrs.end),
-                     "Gene": gene_identifier,
+                     "Gene": np.array(df_row_attrs.gene_name),
                      "Start": np.array(df_row_attrs.start),
                      "Strand": np.array(df_row_attrs.strand)}
 
@@ -328,8 +317,7 @@ def generate_loom(out_dir=None,
                   gef_path=None,
                   gtf_path=None,
                   bin_type='bins',
-                  bin_size=100,
-                  use_gene_id=True):
+                  bin_size=100):
     """
     generate loom file for Dynamo according gem/gef and gtf file
 
@@ -340,17 +328,11 @@ def generate_loom(out_dir=None,
     :param bin_type: the type of bin, if file format is stereo-seq file. `bins` or `cell_bins`.
     :param bin_size: the size of bin to merge. The parameter only takes effect.
                     when the value of data.bin_type is 'bins'.
-    :param use_gene_id: whether to use gene_id (True) or gene_name (False) as the primary gene identifier in the loom file.
-                        When True, the "Gene" attribute will contain gene IDs (e.g., ENSMUSG00000000001).
-                        When False, the "Gene" attribute will contain gene names (e.g., GeneA).
-                        Default is True to match the behavior of st.io.read_gef which uses gene IDs as var_names.
-                        Using gene IDs avoids issues with duplicate gene names.
 
     :return: the output loom path.
     """
 
-    rv = RnaVelocity(gem_path=gem_path, gef_path=gef_path, gtf_path=gtf_path, out_dir=out_dir, 
-                     bin_size=bin_size, use_gene_id=use_gene_id)
+    rv = RnaVelocity(gem_path=gem_path, gef_path=gef_path, gtf_path=gtf_path, out_dir=out_dir, bin_size=bin_size)
     if bin_type == 'bins':
         output_loom_file = rv.generate_loom_with_square_bin()
         return output_loom_file
