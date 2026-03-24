@@ -1,4 +1,4 @@
-name: "Auto Fix Issue (SWE-agent)"
+name: "Auto Fix Issue (mini-swe-agent)"
 
 on:
   issues:
@@ -27,10 +27,26 @@ jobs:
         with:
           python-version: "3.11"
 
-      - name: Install SWE-agent
+      - name: Install mini-swe-agent
         run: |
-          pip install "sweagent>=2.2,<2.3" || pip install "sweagent<2.3" || pip install sweagent
-          sweagent --help || echo "SWE-agent installed"
+          pip install mini-swe-agent
+          mini --help || echo "mini-swe-agent installed"
+
+      - name: Fetch issue body via GitHub API
+        id: issue
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GH_PAT }}
+          script: |
+            const issue = await github.rest.issues.get({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: ${{ github.event.issue.number }},
+            });
+            const fs = require('fs');
+            const content = `# Issue #${ issue.data.number }: ${ issue.data.title }\n\n${ issue.data.body || '(no body)' }`;
+            fs.writeFileSync('issue_body.md', content);
+            return content;
 
       - name: Comment analysis started
         uses: actions/github-script@v7
@@ -41,32 +57,29 @@ jobs:
               owner: context.repo.owner,
               repo: context.repo.repo,
               issue_number: ${{ github.event.issue.number }},
-              body: '## 🤖 SWE-agent 正在分析并修复此 issue...\n\n预计 5-15 分钟完成。\n\n[查看进度](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})'
+              body: '## 🤖 mini-swe-agent 正在分析并修复此 issue...\n\n预计 5-15 分钟完成。\n\n[查看进度](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})'
             });
 
-      - name: Run SWE-agent
+      - name: Run mini-swe-agent
         id: sweagent
         env:
           OPENAI_API_KEY: ${{ secrets.ZHIPUAI_API_KEY }}
+          MSWEA_COST_TRACKING: "ignore_errors"
         run: |
-          ISSUE_URL="https://github.com/${{ github.repository }}/issues/${{ github.event.issue.number }}"
-          echo "Running SWE-agent on: $ISSUE_URL"
+          echo "Running mini-swe-agent on issue #${{ github.event.issue.number }}"
 
-          sweagent run \
-            --config config/glm5_stereopy.yaml \
-            --agent.model.api_key="${OPENAI_API_KEY}" \
-            --env.repo.path=. \
-            --problem_statement.github_url="$ISSUE_URL" \
-            --actions.apply_patch_locally \
+          mini \
+            --agent-config config/glm5_stereopy.yaml \
+            --task-file issue_body.md \
+            --mode auto \
             2>&1 | tee swe_agent_output.log || true
 
-          # Check if SWE-agent produced changes
           if git diff --quiet; then
             echo "has_changes=false" >> "$GITHUB_OUTPUT"
-            echo "SWE-agent did not produce any changes"
+            echo "mini-swe-agent did not produce any changes"
           else
             echo "has_changes=true" >> "$GITHUB_OUTPUT"
-            echo "SWE-agent produced changes:"
+            echo "mini-swe-agent produced changes:"
             git diff --stat
           fi
 
@@ -81,7 +94,7 @@ jobs:
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git checkout -b "$BRANCH"
           git add -A
-          git commit -m "fix #${ISSUE_NUMBER}: auto-generated fix by SWE-agent + GLM-5"
+          git commit -m "fix #${ISSUE_NUMBER}: auto-generated fix by mini-swe-agent + GLM-5"
           git push origin "$BRANCH"
 
       - name: Comment with results (success)
@@ -97,7 +110,7 @@ jobs:
               repo: context.repo.repo,
               issue_number: issueNum,
               body: [
-                '## 🤖 SWE-agent 修复完成',
+                '## 🤖 mini-swe-agent 修复完成',
                 '',
                 `代码已推送到分支 \`${branch}\`。`,
                 '',
@@ -126,9 +139,9 @@ jobs:
               repo: context.repo.repo,
               issue_number: ${{ github.event.issue.number }},
               body: [
-                '## 🤖 SWE-agent 未能生成修复',
+                '## 🤖 mini-swe-agent 未能生成修复',
                 '',
-                'SWE-agent 分析了此 issue 但未产生代码修改。可能原因：',
+                'Agent 分析了此 issue 但未产生代码修改。可能原因：',
                 '- Issue 描述不够详细，缺少可复现的信息',
                 '- 问题过于复杂，需要人工介入',
                 '- 模型输出不符合预期格式',

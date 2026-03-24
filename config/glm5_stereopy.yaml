@@ -1,88 +1,74 @@
 agent:
-  model:
-    name: "openai/glm-5"
+  system_template: |
+    You are a senior Python developer specialized in spatial transcriptomics.
+    You are working on Stereopy, a Python library built on AnnData.
+
+    Key architecture:
+    - StereoExpData: main data container, exp_matrix can be numpy.ndarray or scipy.sparse
+    - AnnBasedStereoExpData: AnnData-backed variant
+    - MSData: multi-sample container holding multiple StereoExpData
+    - StPipeline / MSDataPipeLine: tool execution pipelines
+    - Results stored in data.tl.result[key], can be dict or DataFrame
+    - I/O formats: h5ad, h5ms, gef, gem, loom
+    - Gene/Cell objects have .to_df() returning pandas DataFrame
+    - bin_size=1 for cell_bins, otherwise actual bin size
+
+    Key modules:
+    - stereo/core/: Data models (stereo_exp_data, ms_data, ms_pipeline, st_pipeline, result)
+    - stereo/io/: File I/O (reader.py, writer.py, h5ad.py)
+    - stereo/tools/: Analysis tools (find_markers, clustering, dim_reduce)
+    - stereo/algorithm/: Low-level algorithms (mannwhitneyu, sctransform, single_r)
+    - stereo/plots/: Visualization
+
+    You can interact with a computer to solve tasks.
+    Make minimal, targeted changes. Always verify your fix works.
+
+  instance_template: |
+    Please solve this issue in the Stereopy repository: {{task}}
+
+    You can execute bash commands and edit files to implement the necessary changes.
+
+    ## Recommended Workflow
+
+    1. Analyze the codebase by finding and reading relevant files
+    2. Create a script to reproduce the issue if possible
+    3. Edit the source code to resolve the issue
+    4. Verify your fix works by running your script again
+    5. Test edge cases to ensure your fix is robust
+    6. Submit your changes: `echo COMPLETE_TASK_AND_SUBMIT_FINAL_OUTPUT`
+
+    ## Command Execution Rules
+
+    - Each response MUST include at least one bash tool call
+    - Directory changes are not persistent between commands
+    - Prefix commands with `cd /path && ...` if needed
+
+    ## Important Notes for Stereopy
+
+    - exp_matrix can be np.ndarray or scipy.sparse — always check type
+    - data.tl.result[key] can be dict or DataFrame — handle both
+    - Gene/Cell DataFrames may contain non-string object columns
+    - H5AD has two formats: standard AnnData and Stereopy-extended
+    - Only modify files under stereo/ and tests/
+    - Keep changes minimal — do not refactor unrelated code
+
+  step_limit: 25
+  cost_limit: 0
+  mode: auto
+
+environment:
+  env:
+    PAGER: cat
+    MANPAGER: cat
+    LESS: -R
+    PIP_PROGRESS_BAR: "off"
+    TQDM_DISABLE: "1"
+
+model:
+  model_name: "openai/glm-5"
+  model_kwargs:
     api_base: "https://open.bigmodel.cn/api/paas/v4/"
-    per_instance_cost_limit: 0
-    total_cost_limit: 0
-    per_instance_call_limit: 25
-    max_input_tokens: 0
     temperature: 0.1
-    litellm_model_registry: "config/glm5_model_registry.json"
-
-  templates:
-    system_template: |-
-      You are a senior Python developer specialized in spatial transcriptomics.
-      You are working on Stereopy, a Python library built on AnnData for spatial transcriptomics analysis.
-
-      Key architecture:
-      - StereoExpData: main data container, exp_matrix can be numpy.ndarray or scipy.sparse
-      - AnnBasedStereoExpData: AnnData-backed variant
-      - MSData: multi-sample container holding multiple StereoExpData
-      - StPipeline / MSDataPipeLine: tool execution pipelines
-      - Results stored in data.tl.result[key], can be dict or DataFrame
-      - I/O formats: h5ad, h5ms, gef, gem, loom
-      - Gene/Cell objects have .to_df() returning pandas DataFrame
-      - bin_size=1 for cell_bins, otherwise actual bin size
-
-      Key modules:
-      - stereo/core/: Data models
-      - stereo/io/: File I/O (reader.py, writer.py, h5ad.py)
-      - stereo/tools/: Analysis tools (find_markers, clustering, etc.)
-      - stereo/algorithm/: Low-level algorithms
-      - stereo/plots/: Visualization
-
-      You can interact with a computer to solve tasks.
-      Make minimal, targeted changes. Always verify your fix works.
-
-    instance_template: |-
-      <uploaded_files>
-      {{working_dir}}
-      </uploaded_files>
-
-      I've uploaded the Stereopy repository in {{working_dir}}. Consider the following issue:
-
-      <issue_description>
-      {{problem_statement}}
-      </issue_description>
-
-      Please fix this issue with minimal changes to non-test files. Follow these steps:
-      1. Search and read code relevant to the issue
-      2. If there's a traceback, find and understand the root cause by tracing the call chain
-      3. Create a small script to reproduce the error if possible
-      4. Edit the source code to fix the issue
-      5. Rerun the reproduce script to verify the fix
-      6. Think about edge cases and make sure your fix handles them
-      Your thinking should be thorough and so it's fine if it's very long.
-
-    next_step_template: |-
-      OBSERVATION:
-      {{observation}}
-
-    next_step_no_output_template: |-
-      Your command ran successfully and did not produce any output.
-
-  tools:
-    env_variables:
-      PAGER: cat
-      MANPAGER: cat
-      LESS: -R
-      PIP_PROGRESS_BAR: "off"
-      TQDM_DISABLE: "1"
-      GIT_PAGER: cat
-    bundles:
-      - path: tools/registry
-      - path: tools/edit_anthropic
-      - path: tools/review_on_submit_m
-    registry_variables:
-      USE_FILEMAP: "true"
-    enable_bash_tool: true
-    parse_function:
-      type: "thought_action"
-
-  history_processors: []
-
-env:
-  deployment:
-    image: "python:3.11-bullseye"
-  post_startup_commands:
-    - "pip install numpy scipy pandas anndata h5py loompy flake8 pytest shapely colorcet seaborn"
+    drop_params: true
+  litellm_model_registry: "config/glm5_model_registry.json"
+  cost_tracking: "ignore_errors"

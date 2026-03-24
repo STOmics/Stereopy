@@ -1,9 +1,12 @@
 #!/bin/bash
 #
-# Batch-run SWE-agent on all open issues labeled 'auto-fix'.
+# Batch-run mini-swe-agent on open issues labeled 'auto-fix'.
+#
+# Prerequisites:
+#   pip install mini-swe-agent
 #
 # Usage:
-#   export ZAI_API_KEY="your_zhipu_api_key"
+#   export OPENAI_API_KEY="your_zhipu_api_key"   # GLM-5 via OpenAI-compatible API
 #   export GITHUB_TOKEN="your_github_token"
 #   bash scripts/ci/batch_swe_agent.sh [--dry-run] [--limit N] [--delay SECONDS]
 #
@@ -24,14 +27,14 @@ while [[ $# -gt 0 ]]; do
     esac
 done
 
-if [ -z "${ZAI_API_KEY:-}" ] && [ -z "${OPENAI_API_KEY:-}" ]; then
-    echo "Error: ZAI_API_KEY or OPENAI_API_KEY must be set"
+if [ -z "${OPENAI_API_KEY:-}" ]; then
+    echo "Error: OPENAI_API_KEY must be set (use your ZhipuAI key)"
     exit 1
 fi
 
-API_KEY="${ZAI_API_KEY:-$OPENAI_API_KEY}"
+export MSWEA_COST_TRACKING="ignore_errors"
 
-echo "=== SWE-agent Batch Runner ==="
+echo "=== mini-swe-agent Batch Runner ==="
 echo "  Repo:    $REPO"
 echo "  Limit:   $LIMIT"
 echo "  Delay:   ${DELAY}s between issues"
@@ -42,42 +45,48 @@ ISSUES=$(gh issue list \
     --repo "$REPO" \
     --label "auto-fix" \
     --state open \
-    --json number,title \
-    --jq '.[:'"$LIMIT"'] | .[] | "\(.number)\t\(.title)"')
+    --json number,title,body \
+    --jq '.[:'"$LIMIT"'] | .[] | @base64')
 
 if [ -z "$ISSUES" ]; then
     echo "No open issues with 'auto-fix' label found."
     exit 0
 fi
 
-echo "Found issues:"
-echo "$ISSUES" | while IFS=$'\t' read -r num title; do
-    echo "  #$num: $title"
-done
-echo ""
-
-if [ "$DRY_RUN" = true ]; then
-    echo "(dry run — no actions taken)"
-    exit 0
-fi
-
 COUNT=0
-echo "$ISSUES" | while IFS=$'\t' read -r ISSUE_NUM ISSUE_TITLE; do
-    COUNT=$((COUNT + 1))
-    echo "=== [$COUNT] Processing issue #$ISSUE_NUM: $ISSUE_TITLE ==="
+for ROW in $ISSUES; do
+    ISSUE_NUM=$(echo "$ROW" | base64 -d | jq -r '.number')
+    ISSUE_TITLE=$(echo "$ROW" | base64 -d | jq -r '.title')
+    ISSUE_BODY=$(echo "$ROW" | base64 -d | jq -r '.body // "(no body)"')
 
-    sweagent run \
-        --config config/glm5_stereopy.yaml \
-        --agent.model.api_key="$API_KEY" \
-        --env.repo.github_url="https://github.com/${REPO}" \
-        --problem_statement.github_url="https://github.com/${REPO}/issues/${ISSUE_NUM}" \
-        --actions.apply_patch_locally \
+    COUNT=$((COUNT + 1))
+    echo "=== [$COUNT] Issue #$ISSUE_NUM: $ISSUE_TITLE ==="
+
+    if [ "$DRY_RUN" = true ]; then
+        echo "  (dry run — skipped)"
+        continue
+    fi
+
+    # Write issue to temp file
+    TASK_FILE="issue_${ISSUE_NUM}.md"
+    echo "# Issue #${ISSUE_NUM}: ${ISSUE_TITLE}" > "$TASK_FILE"
+    echo "" >> "$TASK_FILE"
+    echo "$ISSUE_BODY" >> "$TASK_FILE"
+
+    mini \
+        --agent-config config/glm5_stereopy.yaml \
+        --task-file "$TASK_FILE" \
+        --mode auto \
         2>&1 | tee "swe_agent_issue_${ISSUE_NUM}.log" \
-        || echo "  [WARN] SWE-agent failed on issue #$ISSUE_NUM"
+        || echo "  [WARN] mini-swe-agent failed on issue #$ISSUE_NUM"
+
+    rm -f "$TASK_FILE"
 
     echo "  Done with #$ISSUE_NUM"
-    echo "  Waiting ${DELAY}s..."
-    sleep "$DELAY"
+    if [ $COUNT -lt $LIMIT ]; then
+        echo "  Waiting ${DELAY}s..."
+        sleep "$DELAY"
+    fi
 done
 
 echo ""
