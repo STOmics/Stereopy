@@ -1,0 +1,98 @@
+name: "Auto Analyze Issue"
+
+on:
+  issues:
+    types: [labeled]
+
+permissions:
+  issues: write
+  contents: write
+  pull-requests: write
+
+jobs:
+  analyze:
+    if: github.event.label.name == 'auto-fix'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GH_PAT }}
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+
+      - name: Install dependencies
+        run: pip install zhipuai PyGithub
+
+      - name: Analyze issue and locate relevant code
+        id: analyze
+        env:
+          ZHIPUAI_API_KEY: ${{ secrets.ZHIPUAI_API_KEY }}
+          GITHUB_TOKEN: ${{ secrets.GH_PAT }}
+          ISSUE_NUMBER: ${{ github.event.issue.number }}
+          ISSUE_TITLE: ${{ github.event.issue.title }}
+          ISSUE_BODY: ${{ github.event.issue.body }}
+          REPO_NAME: ${{ github.repository }}
+        run: python scripts/ci/analyze_issue.py
+
+      - name: Post analysis comment on issue
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GH_PAT }}
+          script: |
+            const fs = require('fs');
+            const analysis = fs.readFileSync('analysis_result.md', 'utf8');
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: ${{ github.event.issue.number }},
+              body: analysis
+            });
+
+      - name: Create fix branch and push task file
+        env:
+          ISSUE_NUMBER: ${{ github.event.issue.number }}
+        run: |
+          BRANCH="auto-fix/issue-${ISSUE_NUMBER}"
+
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git checkout -b "$BRANCH"
+
+          mkdir -p .cursor
+          cp analysis_result.md .cursor/agent-task.md
+          cp analysis_context.json .cursor/agent-context.json
+
+          git add .cursor/
+          git commit -m "chore: add auto-fix agent task for issue #${ISSUE_NUMBER}"
+          git push origin "$BRANCH"
+
+      - name: Comment with next steps
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GH_PAT }}
+          script: |
+            const issueNum = ${{ github.event.issue.number }};
+            const branch = `auto-fix/issue-${issueNum}`;
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: issueNum,
+              body: [
+                '## 🤖 自动分析完成',
+                '',
+                `分支 \`${branch}\` 已创建，任务文件已就绪。`,
+                '',
+                '**下一步操作**：',
+                `1. 在 Cursor IDE 中 \`git fetch && git checkout ${branch}\``,
+                '2. 打开 `.cursor/agent-task.md`',
+                '3. 启动 Background Agent 执行修复',
+                '4. Agent 完成后 push 代码，CI 将自动创建 PR',
+              ].join('\n')
+            });

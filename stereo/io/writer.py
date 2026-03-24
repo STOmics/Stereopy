@@ -258,9 +258,12 @@ def _write_one_h5ad_result(data, f, key_record):
                 h5ad.write(
                     csr_matrix(data.tl.result[res_key][0]['data']), f, f'exp_matrix@{res_key}@sct_data'
                 )
-                h5ad.write(
-                    csr_matrix(data.tl.result[res_key][0]['scale.data']), f, f'exp_matrix@{res_key}@sct_scale'
-                )
+                if isinstance(data.tl.result[res_key][0]['scale.data'], pd.DataFrame):
+                    h5ad.write(data.tl.result[res_key][0]['scale.data'], f, f'exp_matrix@{res_key}@sct_scale')
+                else:
+                    h5ad.write(
+                        csr_matrix(data.tl.result[res_key][0]['scale.data']), f, f'exp_matrix@{res_key}@sct_scale'
+                    )
                 h5ad.write(
                     list(data.tl.result[res_key][1]['umi_genes']), f, f'genes@{res_key}@sct'
                 )
