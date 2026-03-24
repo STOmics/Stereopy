@@ -1,0 +1,54 @@
+---
+description: "Rules for auto-fix background agent working on Stereopy issue fixes"
+globs: ["stereo/**/*.py", "tests/**/*.py"]
+alwaysApply: true
+---
+
+## Project Overview
+
+Stereopy is a spatial transcriptomics Python library. Core data structure is `StereoExpData`,
+using `AnnData` as the underlying storage. Supports multi-sample processing via `MSData`.
+
+## Auto-Fix Workflow
+
+1. **Read first**: Open `.cursor/agent-task.md` for the full task description and analysis
+2. **Understand context**: Read all files mentioned in the analysis report
+3. **Minimal changes only**: Only modify code directly related to the issue
+4. **Preserve style**:
+   - 4-space indentation
+   - Type annotations are optional but encouraged
+   - Google-style docstrings
+   - Import grouping: stdlib → third-party → local
+5. **Error handling**:
+   - Use specific exception types, never bare `except`
+   - Add type checks at critical conversion points
+   - Use `from stereo.log_manager import logger` for logging
+6. **Testing**:
+   - Add tests in `tests/` directory
+   - File naming: `test_<module_name>.py`
+   - Use pytest style
+7. **Commit format**: `fix #<issue_number>: <brief description>`
+
+## Key Module Locations
+
+- Data model: `stereo/core/stereo_exp_data.py`
+- Multi-sample: `stereo/core/ms_data.py`, `stereo/core/ms_pipeline.py`
+- I/O: `stereo/io/reader.py`, `stereo/io/writer.py`, `stereo/io/h5ad.py`
+- Analysis tools: `stereo/tools/`
+- Algorithms: `stereo/algorithm/`
+- Visualization: `stereo/plots/`
+
+## Common Pitfalls
+
+- `exp_matrix` can be `np.ndarray` or `scipy.sparse` — check before operating
+- Results stored in `data.tl.result[key]` may be dict or DataFrame
+- H5AD files come in two formats: standard AnnData and Stereopy-extended
+- `Gene`/`Cell` DataFrames may contain non-string types in object columns
+- `bin_size` should be 1 for `cell_bins` type data
+
+## Constraints
+
+- Only modify files under `stereo/` and `tests/`
+- Do not change version numbers, CI configs, or `pyproject.toml`
+- Do not modify `.github/` workflow files
+- If unsure about a fix, add a `TODO` comment rather than guessing

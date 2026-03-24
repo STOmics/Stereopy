@@ -1,0 +1,57 @@
+name: "Auto-fix Guard Rails"
+
+on:
+  pull_request:
+    branches: [main]
+
+jobs:
+  safety-check:
+    if: contains(github.head_ref, 'auto-fix/')
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check diff size
+        run: |
+          STATS=$(git diff --stat origin/main...HEAD | tail -1)
+          echo "Diff stats: $STATS"
+          # Extract insertions + deletions
+          INSERTIONS=$(echo "$STATS" | grep -oP '\d+(?= insertion)' || echo 0)
+          DELETIONS=$(echo "$STATS" | grep -oP '\d+(?= deletion)' || echo 0)
+          TOTAL=$((INSERTIONS + DELETIONS))
+          echo "Total lines changed: $TOTAL"
+          if [ "$TOTAL" -gt 500 ]; then
+            echo "::error::Auto-fix PR changes too many lines ($TOTAL > 500). Manual review required."
+            exit 1
+          fi
+
+      - name: Check no sensitive files modified
+        run: |
+          SENSITIVE=$(git diff --name-only origin/main...HEAD | grep -iE '(setup\.py|setup\.cfg|pyproject\.toml|\.env|secret|password|credential|token)' || true)
+          if [ -n "$SENSITIVE" ]; then
+            echo "::error::Auto-fix PR modifies sensitive files:"
+            echo "$SENSITIVE"
+            exit 1
+          fi
+
+      - name: Check modification scope
+        run: |
+          UNEXPECTED=$(git diff --name-only origin/main...HEAD | grep -vE '^(stereo/|tests/|\.cursor/)' || true)
+          if [ -n "$UNEXPECTED" ]; then
+            echo "::warning::Files outside expected scope were modified:"
+            echo "$UNEXPECTED"
+          fi
+
+      - name: Check no workflow files modified
+        run: |
+          WORKFLOW_CHANGES=$(git diff --name-only origin/main...HEAD | grep -E '^\.github/' || true)
+          if [ -n "$WORKFLOW_CHANGES" ]; then
+            echo "::error::Auto-fix PR must not modify workflow files:"
+            echo "$WORKFLOW_CHANGES"
+            exit 1
+          fi

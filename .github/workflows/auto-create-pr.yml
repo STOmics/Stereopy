@@ -1,0 +1,204 @@
+name: "Auto Create PR"
+
+on:
+  push:
+    branches:
+      - "auto-fix/issue-*"
+
+permissions:
+  contents: read
+  pull-requests: write
+  issues: write
+
+jobs:
+  create-pr:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GH_PAT }}
+
+      - name: Check for actual code changes
+        id: check
+        run: |
+          CHANGES=$(git diff --name-only origin/main...HEAD -- 'stereo/' 'tests/' | wc -l)
+          echo "code_changes=$CHANGES" >> "$GITHUB_OUTPUT"
+
+          BRANCH=$(git branch --show-current)
+          ISSUE_NUM=$(echo "$BRANCH" | grep -oP 'issue-\K\d+' || echo "")
+          echo "issue_number=$ISSUE_NUM" >> "$GITHUB_OUTPUT"
+
+          # Skip if this is just the initial task-file commit (no stereo/ changes)
+          if [ "$CHANGES" -eq 0 ]; then
+            echo "No code changes in stereo/ or tests/, skipping PR creation."
+          else
+            echo "Found $CHANGES changed files, proceeding."
+          fi
+
+      - name: Setup Python
+        if: steps.check.outputs.code_changes != '0' && steps.check.outputs.issue_number != ''
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+
+      - name: Run lint check
+        if: steps.check.outputs.code_changes != '0' && steps.check.outputs.issue_number != ''
+        id: lint
+        continue-on-error: true
+        run: |
+          pip install ruff
+          CHANGED_FILES=$(git diff --name-only origin/main...HEAD -- '*.py' | grep -v '.cursor/' || true)
+          if [ -n "$CHANGED_FILES" ]; then
+            ruff check $CHANGED_FILES > lint_results.txt 2>&1 || true
+            cat lint_results.txt
+          else
+            echo "No Python files changed." > lint_results.txt
+          fi
+
+      - name: Run tests
+        if: steps.check.outputs.code_changes != '0' && steps.check.outputs.issue_number != ''
+        id: test
+        continue-on-error: true
+        run: |
+          pip install pytest 2>/dev/null || true
+          pip install -e "." 2>/dev/null || true
+          if [ -d "tests" ]; then
+            python -m pytest tests/ -x --tb=short -q > test_results.txt 2>&1 || true
+            cat test_results.txt
+          else
+            echo "No tests directory found." > test_results.txt
+          fi
+
+      - name: Create Pull Request
+        if: steps.check.outputs.code_changes != '0' && steps.check.outputs.issue_number != ''
+        uses: actions/github-script@v7
+        env:
+          LINT_FILE: lint_results.txt
+          TEST_FILE: test_results.txt
+        with:
+          github-token: ${{ secrets.GH_PAT }}
+          script: |
+            const fs = require('fs');
+            const issueNum = '${{ steps.check.outputs.issue_number }}';
+            const branch = context.ref.replace('refs/heads/', '');
+
+            if (!issueNum) {
+              console.log('Could not extract issue number from branch, skipping.');
+              return;
+            }
+
+            // Check if PR already exists for this branch
+            const existingPRs = await github.rest.pulls.list({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              head: `${context.repo.owner}:${branch}`,
+              state: 'open',
+            });
+            if (existingPRs.data.length > 0) {
+              console.log(`PR already exists: #${existingPRs.data[0].number}, skipping creation.`);
+              return;
+            }
+
+            // Get issue info
+            let issueTitle = `issue ${issueNum}`;
+            try {
+              const issue = await github.rest.issues.get({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: parseInt(issueNum),
+              });
+              issueTitle = issue.data.title;
+            } catch (e) {
+              console.log(`Could not fetch issue #${issueNum}: ${e.message}`);
+            }
+
+            // Get changed files
+            let changedFiles = 'Unable to determine';
+            try {
+              const compare = await github.rest.repos.compareCommits({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                base: 'main',
+                head: branch,
+              });
+              changedFiles = compare.data.files
+                .filter(f => !f.filename.startsWith('.cursor/'))
+                .map(f => `- \`${f.filename}\` (+${f.additions}/-${f.deletions})`)
+                .join('\n');
+              if (!changedFiles) changedFiles = 'No non-config files changed';
+            } catch (e) {
+              console.log(`Could not compare commits: ${e.message}`);
+            }
+
+            // Read lint and test results
+            let lintOutput = 'Not available';
+            let testOutput = 'Not available';
+            try { lintOutput = fs.readFileSync('lint_results.txt', 'utf8').substring(0, 2000); } catch {}
+            try { testOutput = fs.readFileSync('test_results.txt', 'utf8').substring(0, 2000); } catch {}
+
+            const body = [
+              `## Summary`,
+              `Auto-generated fix for #${issueNum}: ${issueTitle}`,
+              ``,
+              `## Changes`,
+              changedFiles,
+              ``,
+              `## Lint Results`,
+              '```',
+              lintOutput,
+              '```',
+              ``,
+              `## Test Results`,
+              '```',
+              testOutput,
+              '```',
+              ``,
+              `## Review Checklist`,
+              `- [ ] Fix logic is correct`,
+              `- [ ] No new lint errors introduced`,
+              `- [ ] Test coverage for the fix`,
+              `- [ ] No unrelated files modified`,
+              ``,
+              `---`,
+              `> 🤖 This PR was auto-generated by the Issue Auto-Fix pipeline.`,
+              `> Closes #${issueNum}`,
+            ].join('\n');
+
+            const pr = await github.rest.pulls.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: `fix #${issueNum}: ${issueTitle}`,
+              body: body,
+              head: branch,
+              base: 'main',
+            });
+
+            console.log(`PR created: #${pr.data.number}`);
+
+            // Label the PR
+            try {
+              await github.rest.issues.addLabels({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: pr.data.number,
+                labels: ['auto-fix', 'needs-review'],
+              });
+            } catch (e) {
+              console.log(`Could not add labels: ${e.message}`);
+            }
+
+            // Comment on the original issue
+            try {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: parseInt(issueNum),
+                body: `## 🎉 自动修复 PR 已创建\n\nPR: #${pr.data.number}\n\n请 review 后合并。`,
+              });
+            } catch (e) {
+              console.log(`Could not comment on issue: ${e.message}`);
+            }
