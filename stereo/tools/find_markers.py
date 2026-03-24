@@ -168,6 +168,7 @@ class FindMarker(ToolBase):
                 g
             )
         else:
+            x_mask = g_index if self.control_groups == 'rest' else None
             if self.control_groups != 'rest' and self.tie_term:
                 xy = np.vstack((g_data, others_data))
                 ranks = stats.rankdata(xy, axis=-1)
@@ -178,7 +179,7 @@ class FindMarker(ToolBase):
                 self.corr_method,
                 ranks,
                 tie_term,
-                g_index
+                x_mask
             )
         result['genes'] = self.data.gene_names[self.gene_index_used]
         if self.data.genes.real_gene_name is not None:

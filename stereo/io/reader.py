@@ -1088,8 +1088,11 @@ def stereo_to_anndata(
             elif key == 'cluster':
                 cell_name_index = data.cells.cell_name.astype('str')
                 for res_key in data.tl.key_record[key]:
-                    logger.info(f"Adding data.tl.result['{res_key}'] into adata.obs['{res_key}'] .")
-                    adata.obs[res_key] = pd.DataFrame(data.tl.result[res_key]['group'].values, index=cell_name_index)
+                    if isinstance(data.tl.result[res_key], dict):                           # issue 384 avoid keyerror group
+                        adata.obs[res_key] = pd.DataFrame(cell_name_index, index=cell_name_index)
+                    else:
+                        logger.info(f"Adding data.tl.result['{res_key}'] into adata.obs['{res_key}'] .")
+                        adata.obs[res_key] = pd.DataFrame(data.tl.result[res_key]['group'].values, index=cell_name_index)
             elif key in ('gene_exp_cluster', 'cell_cell_communication'):
                 for res_key in data.tl.key_record[key]:
                     # logger.info(f"Adding data.tl.result['{res_key}'] into adata.uns['{key}@{res_key}']")

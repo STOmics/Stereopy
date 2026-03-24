@@ -585,7 +585,8 @@ class AnnBasedResult(_BaseResult, object):
     def __setitem__(self, key, value):
         super().__setitem__(key, value)
 
-        self.__result_keys.append(key)
+        if key not in self.__result_keys:
+            self.__result_keys.append(key)
 
         for name_type, name_dict in AnnBasedResult.TYPE_NAMES_DICT.items():
             if key in name_dict and self._real_set_item(name_type, key, value):
@@ -752,7 +753,9 @@ class AnnBasedResult(_BaseResult, object):
             df_data = {k1: marker_genes_result[k2][c] for k1, k2 in key_map.items()}
             df = pd.DataFrame(df_data)
             if 'real_gene_name' in self.__based_ann_data.var.columns:
-                df['gene_name'] = self.__based_ann_data.var['real_gene_name'].loc[df['genes']].to_numpy()
+                # df['gene_name'] = self.__based_ann_data.var['real_gene_name'].loc[df['genes']].to_numpy()
+                # issue 392 改为用基因 ID 去索引 var，然后获取 real_gene_name 列
+                df['gene_name'] = self.__based_ann_data.var.loc[df['genes'], 'real_gene_name'].to_numpy()
             if 'pts' in marker_genes_result:
                 df['pct'] = marker_genes_result['pts'][c].loc[df['genes']].to_numpy()
                 df['pct_rest'] = marker_genes_result['pts_rest'][c].loc[df['genes']].to_numpy()

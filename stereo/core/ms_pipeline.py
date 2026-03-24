@@ -99,7 +99,8 @@ class MSDataPipeLine(object):
         else:
             ms_data_view = self.ms_data[scope]
 
-        scope_key = self.ms_data.generate_scope_key(ms_data_view._names)
+        # scope_key = self.ms_data.generate_scope_key(ms_data_view._names)
+        scope_key = self.ms_data.generate_scope_key(scope)              # issue 386 sometimes _name is not in _name_dict
         self.ms_data.scopes_data[scope_key] = ms_data_view.merged_data
 
         # new_attr = self.__class__.BASE_CLASS.__dict__.get(item, None)
