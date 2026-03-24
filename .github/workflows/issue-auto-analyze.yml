@@ -60,18 +60,27 @@ jobs:
               body: '## 🤖 mini-swe-agent 正在分析并修复此 issue...\n\n预计 5-15 分钟完成。\n\n[查看进度](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})'
             });
 
+      - name: Skip first-time setup wizard
+        run: |
+          mkdir -p ~/.config/mini-swe-agent
+          echo 'MSWEA_CONFIGURED=true' > ~/.config/mini-swe-agent/.env
+
       - name: Run mini-swe-agent
         id: sweagent
         env:
           OPENAI_API_KEY: ${{ secrets.ZHIPUAI_API_KEY }}
           MSWEA_COST_TRACKING: "ignore_errors"
+          MSWEA_CONFIGURED: "true"
         run: |
           echo "Running mini-swe-agent on issue #${{ github.event.issue.number }}"
 
+          TASK_CONTENT=$(cat issue_body.md)
+
           mini \
-            --agent-config config/glm5_stereopy.yaml \
-            --task-file issue_body.md \
-            --mode auto \
+            --config config/glm5_stereopy.yaml \
+            --task "$TASK_CONTENT" \
+            --yolo \
+            --exit-immediately \
             2>&1 | tee swe_agent_output.log || true
 
           if git diff --quiet; then

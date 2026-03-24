@@ -54,7 +54,6 @@ agent:
 
   step_limit: 25
   cost_limit: 0
-  mode: auto
 
 environment:
   env:
