@@ -315,11 +315,14 @@ def _read_stereo_h5ad_from_group(f: Union[h5py.File, h5py.Group], data: StereoEx
                     batch, sn = row[0], row[1]
                     data.sn[str(batch)] = str(sn)
         elif k == 'layers':
-            for layer_key in f[k].keys():
-                if isinstance(f[k][layer_key], h5py.Group):
-                    data.layers[layer_key] = h5ad.read_group(f[k][layer_key])
-                else:
-                    data.layers[layer_key] = h5ad.read_dataset(f[k][layer_key])
+            if isinstance(f[k], h5py.Group):
+                for layer_key in f[k].keys():
+                    if isinstance(f[k][layer_key], h5py.Group):
+                        data.layers[layer_key] = h5ad.read_group(f[k][layer_key])
+                    else:
+                        data.layers[layer_key] = h5ad.read_dataset(f[k][layer_key])
+            else:
+                data.layers[k] = h5ad.read_dataset(f[k])
 
     # read raw
     if use_raw is True and 'exp_matrix@raw' in f.keys():
