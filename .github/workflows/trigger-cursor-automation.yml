@@ -1,0 +1,40 @@
+# .github/workflows/trigger-cursor-automation.yml
+name: "Trigger Cursor Automation"
+
+on:
+  issues:
+    types: [labeled]
+
+jobs:
+  trigger:
+    if: github.event.label.name == 'cursor-fix'
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+
+    steps:
+      - name: Send to Cursor Webhook
+        env:
+          WEBHOOK_URL: ${{ secrets.CURSOR_WEBHOOK_URL }}
+          WEBHOOK_KEY: ${{ secrets.CURSOR_WEBHOOK_KEY }}
+        run: |
+          curl -X POST "$WEBHOOK_URL" \
+            -H "Authorization: Bearer $WEBHOOK_KEY" \
+            -H "Content-Type: application/json" \
+            -d '{
+              "issue_number": ${{ github.event.issue.number }},
+              "issue_title": ${{ toJSON(github.event.issue.title) }},
+              "issue_body": ${{ toJSON(github.event.issue.body) }},
+              "issue_url": "https://github.com/${{ github.repository }}/issues/${{ github.event.issue.number }}"
+            }'
+
+      - name: Comment on issue
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: ${{ github.event.issue.number }},
+              body: '## Cursor Automation triggered\n\nA cloud agent is working on this issue. A PR will be created automatically when the fix is ready.'
+            });
