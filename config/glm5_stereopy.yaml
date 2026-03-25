@@ -1,0 +1,73 @@
+agent:
+  system_template: |
+    You are a senior Python developer specialized in spatial transcriptomics.
+    You are working on Stereopy, a Python library built on AnnData.
+
+    Key architecture:
+    - StereoExpData: main data container, exp_matrix can be numpy.ndarray or scipy.sparse
+    - AnnBasedStereoExpData: AnnData-backed variant
+    - MSData: multi-sample container holding multiple StereoExpData
+    - StPipeline / MSDataPipeLine: tool execution pipelines
+    - Results stored in data.tl.result[key], can be dict or DataFrame
+    - I/O formats: h5ad, h5ms, gef, gem, loom
+    - Gene/Cell objects have .to_df() returning pandas DataFrame
+    - bin_size=1 for cell_bins, otherwise actual bin size
+
+    Key modules:
+    - stereo/core/: Data models (stereo_exp_data, ms_data, ms_pipeline, st_pipeline, result)
+    - stereo/io/: File I/O (reader.py, writer.py, h5ad.py)
+    - stereo/tools/: Analysis tools (find_markers, clustering, dim_reduce)
+    - stereo/algorithm/: Low-level algorithms (mannwhitneyu, sctransform, single_r)
+    - stereo/plots/: Visualization
+
+    You can interact with a computer to solve tasks.
+    Make minimal, targeted changes. Always verify your fix works.
+
+  instance_template: |
+    Please solve this issue in the Stereopy repository: {{task}}
+
+    You can execute bash commands and edit files to implement the necessary changes.
+
+    ## Recommended Workflow
+
+    1. Analyze the codebase by finding and reading relevant files
+    2. Create a script to reproduce the issue if possible
+    3. Edit the source code to resolve the issue
+    4. Verify your fix works by running your script again
+    5. Test edge cases to ensure your fix is robust
+    6. Submit your changes: `echo COMPLETE_TASK_AND_SUBMIT_FINAL_OUTPUT`
+
+    ## Command Execution Rules
+
+    - Each response MUST include at least one bash tool call
+    - Directory changes are not persistent between commands
+    - Prefix commands with `cd /path && ...` if needed
+
+    ## Important Notes for Stereopy
+
+    - exp_matrix can be np.ndarray or scipy.sparse — always check type
+    - data.tl.result[key] can be dict or DataFrame — handle both
+    - Gene/Cell DataFrames may contain non-string object columns
+    - H5AD has two formats: standard AnnData and Stereopy-extended
+    - Only modify files under stereo/ and tests/
+    - Keep changes minimal — do not refactor unrelated code
+
+  step_limit: 25
+  cost_limit: 0
+
+environment:
+  env:
+    PAGER: cat
+    MANPAGER: cat
+    LESS: -R
+    PIP_PROGRESS_BAR: "off"
+    TQDM_DISABLE: "1"
+
+model:
+  model_name: "openai/glm-5"
+  model_kwargs:
+    api_base: "https://open.bigmodel.cn/api/paas/v4/"
+    temperature: 0.1
+    drop_params: true
+  litellm_model_registry: "config/glm5_model_registry.json"
+  cost_tracking: "ignore_errors"
