@@ -1,0 +1,65 @@
+name: "Trigger Cursor Automation"
+
+on:
+  issues:
+    types: [labeled]
+
+jobs:
+  trigger:
+    if: github.event.label.name == 'cursor-fix'
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+
+    steps:
+      - name: Send to Cursor Webhook
+        uses: actions/github-script@v7
+        env:
+          WEBHOOK_URL: ${{ secrets.CURSOR_WEBHOOK_URL }}
+          WEBHOOK_KEY: ${{ secrets.CURSOR_WEBHOOK_KEY }}
+        with:
+          script: |
+            const webhookUrl = process.env.WEBHOOK_URL;
+            const webhookKey = process.env.WEBHOOK_KEY;
+
+            if (!webhookUrl || !webhookKey) {
+              core.warning('CURSOR_WEBHOOK_URL or CURSOR_WEBHOOK_KEY not set, skipping.');
+              return;
+            }
+
+            const payload = {
+              issue_number: context.issue.number,
+              issue_title: context.payload.issue.title,
+              issue_body: context.payload.issue.body || '(no body)',
+              issue_url: context.payload.issue.html_url,
+            };
+
+            console.log(`Sending issue #${payload.issue_number} to Cursor Webhook...`);
+
+            const resp = await fetch(webhookUrl, {
+              method: 'POST',
+              headers: {
+                'Authorization': `Bearer ${webhookKey}`,
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify(payload),
+            });
+
+            const body = await resp.text();
+            console.log(`Response: ${resp.status} ${resp.statusText}`);
+            console.log(`Body: ${body}`);
+
+            if (!resp.ok) {
+              core.setFailed(`Webhook returned ${resp.status}: ${body}`);
+            }
+
+      - name: Comment on issue
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: '## Cursor Automation triggered\n\nA cloud agent is working on this issue. A PR will be created automatically when the fix is ready.'
+            });
