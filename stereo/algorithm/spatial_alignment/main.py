@@ -59,8 +59,11 @@ class SpatialAlignment(AlgorithmBase):
 
         """
 
-        if not isinstance(self.stereo_exp_data, AnnBasedStereoExpData):
-            raise TypeError("The input data should be an object of AnnBasedStereoExpData.")
+        if isinstance(self.stereo_exp_data, AnnBasedStereoExpData):
+            adata = self.stereo_exp_data.adata
+        else:
+            logger.info('Converting StereoExpData to AnnData for spatial alignment.')
+            adata = stereo_to_anndata(self.stereo_exp_data, flavor='scanpy', split_batches=False)
 
         if use_hvg:
             if 'highly_variable' not in self.stereo_exp_data.genes:
@@ -71,7 +74,7 @@ class SpatialAlignment(AlgorithmBase):
             filter_genes(self.stereo_exp_data, gene_list=hvg_genes, inplace=True)
 
         self.model = Spatialign(
-            merge_data=self.stereo_exp_data.adata,
+            merge_data=adata,
             batch_key='batch',
             is_reduce=False,
             # n_pcs=n_pcs,
