@@ -19,9 +19,15 @@ You receive a webhook payload with a GitHub issue. You MUST complete **two phase
   "issue_url": "https://github.com/STOmics/Stereopy/issues/394",
   "issue_author": "username",
   "existing_labels": ["cursor-fix"],
-  "prior_triage": "... or null"
+  "prior_triage": "... or null",
+  "gh_token": "ghp_...",
+  "repo_full_name": "STOmics/Stereopy"
 }
 ```
+
+The `gh_token` and `repo_full_name` fields are for posting comments via the GitHub API.
+
+---
 
 ## PHASE 1 — Classify & Comment (stereopy-issue-responder)
 
@@ -45,34 +51,76 @@ Set `should_fix = true` ONLY when ALL conditions are met:
 
 ### 1.3 Post comment on the issue
 
-Use the "Comment on issue" tool. Format your comment exactly like this:
+**IMPORTANT: Do NOT use the built-in "Comment on issue" tool (it is not available).
+Instead, use Python + curl to post comments via the GitHub REST API.**
 
-```
-Thanks for reporting this.
+Follow these exact steps:
+
+**Step A** — Write your comment to a Python script that generates proper JSON:
+
+```bash
+python3 -c "
+import json
+
+comment = '''Dear @ISSUE_AUTHOR,
+
+Thank you for reporting this issue!
+
+**Short answer:** YOUR_SHORT_ANSWER_HERE
+
+---
 
 ## Assessment
-- Type: <category>
-- Severity: <low | medium | high>
-- Confidence: <high | medium | low>
+- **Type:** CATEGORY
+- **Severity:** SEVERITY
+- **Affected module:** \`stereo/path/file.py\`
 
-## What is happening
-<1-2 paragraphs explaining behavior from code perspective.
-Reference specific files: stereo/io/reader.py, stereo/core/result.py, etc.>
+## What Is Happening
+EXPLANATION_HERE
 
-## Is this expected?
-<Yes/No + explanation>
+## Is This Expected?
+YES_OR_NO_WITH_REASON
 
-## Recommended next steps
-<If bug + fixable: "A fix is being prepared automatically.">
-<If bug + not fixable: "A maintainer should review manually.">
-<If usage/question: provide clear answer with code examples>
-<If needs-info: list what is missing, @mention the author>
-<If feature request: acknowledge and note for roadmap>
+## Recommended Workflow
+**Step 1:** FIRST_ACTION
+DETAILS
 
-## Maintainer note
-<If bug: likely fix location, root cause, minimal fix scope>
-<If not bug: suggest doc improvement or example to add>
+**Step 2:** SECOND_ACTION
+DETAILS
+
+## Notes
+- NOTE_1
+- NOTE_2
+
+Please let us know if you have further questions!
+
+Best regards,
+Stereopy Maintainer'''
+
+print(json.dumps({'body': comment}))
+" > /tmp/issue_comment.json
 ```
+
+Replace all UPPERCASE placeholders with actual content from your analysis.
+
+**Step B** — Post the comment using curl:
+
+```bash
+curl -s -X POST \
+  -H "Authorization: token GH_TOKEN_FROM_PAYLOAD" \
+  -H "Accept: application/vnd.github.v3+json" \
+  -H "Content-Type: application/json" \
+  "https://api.github.com/repos/REPO_FULL_NAME/issues/ISSUE_NUMBER/comments" \
+  -d @/tmp/issue_comment.json
+```
+
+Replace:
+- `GH_TOKEN_FROM_PAYLOAD` with the `gh_token` value from the webhook payload
+- `REPO_FULL_NAME` with the `repo_full_name` value (e.g., `STOmics/Stereopy`)
+- `ISSUE_NUMBER` with the `issue_number` value
+
+**Step C** — Verify the response contains `"id":` to confirm the comment was posted.
+If curl fails, retry once. If it still fails, log the error and continue to Phase 2 if applicable.
 
 ### 1.4 Decision gate
 
@@ -141,6 +189,27 @@ Use the "Open pull request" tool:
 
 Closes #{issue_number}
 ```
+
+### 2.6 Comment fix status on the issue
+
+After the PR is created, post a follow-up comment on the issue using the same curl method from Phase 1:
+
+```bash
+python3 -c "
+import json
+comment = 'A fix has been submitted: PR_URL\n\nThis PR addresses the root cause described above. Please review when convenient.'
+print(json.dumps({'body': comment}))
+" > /tmp/fix_comment.json
+
+curl -s -X POST \
+  -H \"Authorization: token GH_TOKEN_FROM_PAYLOAD\" \
+  -H \"Accept: application/vnd.github.v3+json\" \
+  -H \"Content-Type: application/json\" \
+  \"https://api.github.com/repos/REPO_FULL_NAME/issues/ISSUE_NUMBER/comments\" \
+  -d @/tmp/fix_comment.json
+```
+
+Replace `PR_URL` with the actual PR link from step 2.5.
 
 ---
 

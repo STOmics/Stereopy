@@ -27,25 +27,35 @@ jobs:
               per_page: 20,
             });
             const alreadyProcessed = comments.data.some(c =>
-              c.body.includes('Cursor Automation triggered') ||
-              c.body.includes('## Assessment')
+              c.body.includes('## Assessment') ||
+              c.body.includes('**Short answer:**')
             );
             if (alreadyProcessed) {
               console.log('Issue already processed by Cursor, skipping.');
             }
             core.setOutput('skip', alreadyProcessed ? 'true' : 'false');
 
-      - name: Collect issue context
+      - name: Collect context and send to Cursor Webhook
         if: steps.guard.outputs.skip != 'true'
-        id: issue
         uses: actions/github-script@v7
+        env:
+          WEBHOOK_URL: ${{ secrets.CURSOR_WEBHOOK_URL }}
+          WEBHOOK_KEY: ${{ secrets.CURSOR_WEBHOOK_KEY }}
+          GH_PAT: ${{ secrets.GH_PAT }}
         with:
           github-token: ${{ secrets.GH_PAT }}
           script: |
+            const webhookUrl = process.env.WEBHOOK_URL;
+            const webhookKey = process.env.WEBHOOK_KEY;
+
+            if (!webhookUrl || !webhookKey) {
+              core.warning('CURSOR_WEBHOOK_URL or CURSOR_WEBHOOK_KEY not set, skipping.');
+              return;
+            }
+
             const issue = context.payload.issue;
             const labels = issue.labels.map(l => l.name);
 
-            // Collect existing triage comment if any
             const comments = await github.rest.issues.listComments({
               owner: context.repo.owner,
               repo: context.repo.repo,
@@ -64,35 +74,9 @@ jobs:
               issue_author: issue.user.login,
               existing_labels: labels,
               prior_triage: triageComment ? triageComment.body : null,
+              gh_token: process.env.GH_PAT,
+              repo_full_name: `${context.repo.owner}/${context.repo.repo}`,
             };
-
-            core.setOutput('payload', JSON.stringify(payload));
-
-      - name: Send to Cursor Webhook
-        if: steps.guard.outputs.skip != 'true'
-        uses: actions/github-script@v7
-        env:
-          WEBHOOK_URL: ${{ secrets.CURSOR_WEBHOOK_URL }}
-          WEBHOOK_KEY: ${{ secrets.CURSOR_WEBHOOK_KEY }}
-          ISSUE_PAYLOAD: ${{ steps.issue.outputs.payload }}
-        with:
-          script: |
-            const webhookUrl = process.env.WEBHOOK_URL;
-            const webhookKey = process.env.WEBHOOK_KEY;
-            const payloadStr = process.env.ISSUE_PAYLOAD;
-
-            if (!webhookUrl || !webhookKey) {
-              core.warning('CURSOR_WEBHOOK_URL or CURSOR_WEBHOOK_KEY not set, skipping.');
-              return;
-            }
-
-            let payload;
-            try {
-              payload = JSON.parse(payloadStr);
-            } catch (e) {
-              core.setFailed(`Failed to parse issue payload: ${e.message}`);
-              return;
-            }
 
             console.log(`Sending issue #${payload.issue_number} to Cursor Webhook...`);
 
@@ -112,25 +96,3 @@ jobs:
             if (!resp.ok) {
               core.setFailed(`Webhook returned ${resp.status}: ${body}`);
             }
-
-      - name: Comment that automation started
-        if: steps.guard.outputs.skip != 'true'
-        uses: actions/github-script@v7
-        with:
-          github-token: ${{ secrets.GH_PAT }}
-          script: |
-            await github.rest.issues.createComment({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              issue_number: context.issue.number,
-              body: [
-                '## Cursor Automation triggered',
-                '',
-                'A cloud agent is analyzing this issue. It will:',
-                '1. Classify the issue (bug / question / feature request / needs-info)',
-                '2. Post a detailed analysis comment',
-                '3. If confirmed as a fixable bug, automatically create a PR',
-                '',
-                'Estimated time: 5-15 minutes.',
-              ].join('\n')
-            });
