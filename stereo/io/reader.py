@@ -387,10 +387,18 @@ def _read_stereo_h5_result(key_record: dict, data: StereoExpData, f: Union[h5py.
             if analysis_key == 'cluster':
                 if f'{res_key}@cluster' in f:
                     data.tl.result[res_key] = h5ad.read_group(f[f'{res_key}@cluster'])
+                elif res_key in data.cells:
+                    data.tl.result[res_key] = pd.DataFrame({
+                        'bins': data.cells.cell_name,
+                        'group': data.cells[res_key].values
+                    })
                 gene_cluster_res_key = f'gene_exp_{res_key}'
                 if ('gene_exp_cluster' not in data.tl.key_record) or (
                         gene_cluster_res_key not in data.tl.key_record['gene_exp_cluster']):
-                    gene_cluster_res = cell_cluster_to_gene_exp_cluster(data, res_key)
+                    try:
+                        gene_cluster_res = cell_cluster_to_gene_exp_cluster(data, res_key)
+                    except Exception:
+                        gene_cluster_res = False
                     if gene_cluster_res is not False:
                         data.tl.result[gene_cluster_res_key] = gene_cluster_res
                         data.tl.reset_key_record('gene_exp_cluster', gene_cluster_res_key)
@@ -757,6 +765,28 @@ def read_ann_h5ad(
     return data
 
 
+def _detect_h5ad_flavor(file_path):
+    """Auto-detect whether an h5ad file is in Stereopy or standard AnnData (scanpy) format.
+
+    Returns 'stereopy' if Stereopy-specific keys are found, 'scanpy' if standard
+    AnnData keys are found, or None if detection is inconclusive.
+    """
+    try:
+        with h5py.File(file_path, mode='r') as f:
+            top_keys = set(f.keys())
+            stereopy_markers = {'cells', 'genes', 'exp_matrix'}
+            scanpy_markers = {'obs', 'var', 'X'}
+            has_stereopy = stereopy_markers.issubset(top_keys)
+            has_scanpy = scanpy_markers.issubset(top_keys)
+            if has_stereopy and not has_scanpy:
+                return 'stereopy'
+            elif has_scanpy and not has_stereopy:
+                return 'scanpy'
+    except Exception:
+        pass
+    return None
+
+
 # @ReadWriteUtils.check_file_exists
 def read_h5ad(
         file_path: str = None,
@@ -800,6 +830,15 @@ def read_h5ad(
 
     """
     flavor = flavor.lower()
+
+    if file_path is not None and anndata is None:
+        detected = _detect_h5ad_flavor(file_path)
+        if detected is not None and detected != flavor:
+            logger.warning(
+                f"The file appears to be in '{detected}' format, but flavor='{flavor}' was specified. "
+                f"Automatically switching to flavor='{detected}'."
+            )
+            flavor = detected
 
     if flavor == 'stereopy':
         if file_path is None:

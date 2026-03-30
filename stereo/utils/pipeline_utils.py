@@ -70,9 +70,10 @@ def cell_cluster_to_gene_exp_cluster(
     for _, cell_index in group_index.iterrows():
         cell_index = cell_index.to_numpy()[0]
         if kind == 'sum':
-            exp_tmp = exp_matrix[cell_index].sum(axis=0).A[0]
+            exp_tmp = exp_matrix[cell_index].sum(axis=0)
         else:
-            exp_tmp = exp_matrix[cell_index].mean(axis=0).A[0]
+            exp_tmp = exp_matrix[cell_index].mean(axis=0)
+        exp_tmp = np.asarray(exp_tmp).flatten()
         tmp.append(exp_tmp)
     cluster_exp_matrix = np.vstack(tmp)
     group_index.index.name = None
