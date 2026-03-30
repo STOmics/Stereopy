@@ -1088,11 +1088,24 @@ def stereo_to_anndata(
             elif key == 'cluster':
                 cell_name_index = data.cells.cell_name.astype('str')
                 for res_key in data.tl.key_record[key]:
-                    if isinstance(data.tl.result[res_key], dict):                           # issue 384 avoid keyerror group
-                        adata.obs[res_key] = pd.DataFrame(cell_name_index, index=cell_name_index)
-                    else:
+                    try:
+                        res = data.tl.result[res_key]
+                    except KeyError:
+                        logger.warning(f"Cluster result key '{res_key}' not found in data.tl.result, skipping.")
+                        continue
+                    if isinstance(res, pd.DataFrame) and 'group' in res.columns:
                         logger.info(f"Adding data.tl.result['{res_key}'] into adata.obs['{res_key}'] .")
-                        adata.obs[res_key] = pd.DataFrame(data.tl.result[res_key]['group'].values, index=cell_name_index)
+                        adata.obs[res_key] = pd.DataFrame(res['group'].values, index=cell_name_index)
+                    elif isinstance(res, dict) and 'group' in res:
+                        logger.info(f"Adding data.tl.result['{res_key}'] into adata.obs['{res_key}'] .")
+                        group_values = res['group']
+                        if hasattr(group_values, 'values'):
+                            group_values = group_values.values
+                        adata.obs[res_key] = pd.DataFrame(group_values, index=cell_name_index)
+                    else:
+                        logger.warning(
+                            f"Cluster result '{res_key}' does not contain expected 'group' column, skipping."
+                        )
             elif key in ('gene_exp_cluster', 'cell_cell_communication'):
                 for res_key in data.tl.key_record[key]:
                     # logger.info(f"Adding data.tl.result['{res_key}'] into adata.uns['{key}@{res_key}']")
