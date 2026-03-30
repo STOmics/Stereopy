@@ -12,6 +12,7 @@ from scipy import interpolate
 from scipy.special import digamma
 from scipy.special import polygamma
 
+from stereo.log_manager import logger
 from .bw import bwSJ
 
 
@@ -74,15 +75,19 @@ def fit_poisson(umi, model_str, data, theta_estimation_fun="theta.ml") -> pd.Dat
 
 @numba.jit(cache=True, forceobj=True, nogil=True)
 def one_row_fit_poission(regressor_data, y, theta_estimation_fun='theta.ml'):
-    fit = qpois_reg(regressor_data.to_numpy(), y, 1e-9, 100, 1.0001, True)
-    if theta_estimation_fun == "theta.ml":
-        theta = theta_ml(y=y, mu=fit['fitted'])
-    elif theta_estimation_fun == "theta.mm":
-        # TODO: `theta.mm` not yet finished
-        raise NotImplementedError
-    else:
-        raise Exception
-    return theta, fit['coefficients'][0], fit['coefficients'][1]
+    try:
+        fit = qpois_reg(regressor_data.to_numpy(), y, 1e-9, 100, 1.0001, True)
+        if theta_estimation_fun == "theta.ml":
+            theta = theta_ml(y=y, mu=fit['fitted'])
+        elif theta_estimation_fun == "theta.mm":
+            # TODO: `theta.mm` not yet finished
+            raise NotImplementedError
+        else:
+            raise Exception
+        return theta, fit['coefficients'][0], fit['coefficients'][1]
+    except (np.linalg.LinAlgError, FloatingPointError, ValueError):
+        logger.debug("Poisson regression failed for a gene, using fallback parameters")
+        return 100.0, 0.0, 0.0
 
 
 @numba.jit(cache=True, forceobj=True, nogil=True)
@@ -129,7 +134,10 @@ def qpois_reg(X, Y, tol, maxiters, minphi, returnfit):
         L2 = np.array(L2).T
         L2 = np.matmul(x_tr, L2)
 
-        b_new = b_old + np.matmul(np.linalg.inv(L2), L1)[0]
+        try:
+            b_new = b_old + np.matmul(np.linalg.inv(L2), L1)[0]
+        except np.linalg.LinAlgError:
+            b_new = b_old + np.matmul(np.linalg.pinv(L2), L1)[0]
         dif = np.sum(np.abs(b_new - b_old))
         b_old = b_new
         ij += 1
