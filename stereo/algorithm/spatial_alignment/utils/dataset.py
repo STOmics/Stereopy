@@ -163,8 +163,12 @@ class Dataset:
 
             dataset: Data = torch_geometric.transforms.KNNGraph(k=n_neigh, loop=True)(dataset)
             dataset.edge_weight = torch.ones(dataset.edge_index.size(1))
-            dataset.neigh_graph = torch.zeros((dataset.num_nodes, dataset.num_nodes), dtype=torch.float)
-            dataset.neigh_graph[dataset.edge_index[0], dataset.edge_index[1]] = 1.
+            n_nodes = dataset.num_nodes
+            neigh_indices = dataset.edge_index
+            neigh_values = torch.ones(neigh_indices.size(1), dtype=torch.float)
+            dataset.neigh_graph = torch.sparse_coo_tensor(
+                neigh_indices, neigh_values, size=(n_nodes, n_nodes)
+            ).coalesce()
             if is_undirected:
                 dataset.edge_index, dataset.edge_weight = to_undirected(dataset.edge_index, dataset.edge_weight)
                 dataset.edge_weight = torch.ones_like(dataset.edge_weight)

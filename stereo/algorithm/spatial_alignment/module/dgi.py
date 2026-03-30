@@ -54,9 +54,9 @@ class DGI(nn.Module):
         return x[torch.randperm(x.size(0))], edge_index, edge_weight, domain_idx
 
     def readout(self, z, neigh_mask):
-        v_sum = torch.mm(neigh_mask, z)
-        r_sum = torch.sum(neigh_mask, 1)
-        r_sum = r_sum.expand((v_sum.shape[1], r_sum.shape[0])).T
+        v_sum = torch.sparse.mm(neigh_mask, z) if neigh_mask.is_sparse else torch.mm(neigh_mask, z)
+        r_sum = torch.sparse.sum(neigh_mask, dim=1).to_dense() if neigh_mask.is_sparse else torch.sum(neigh_mask, 1)
+        r_sum = r_sum.unsqueeze(1)
         global_z = v_sum / r_sum
         global_z = F.normalize(global_z, p=2, dim=1)
         return global_z
