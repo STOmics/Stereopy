@@ -115,15 +115,28 @@ class StPipeline(object):
 
         :return:
         """
-        raise NotImplemented('This method remains to be implemented.')
-        # self.data = self.raw
-        self.data.exp_matrix = copy.deepcopy(self.raw.exp_matrix)
-        self.data.cells = copy.deepcopy(self.raw.cells)
-        self.data.genes = copy.deepcopy(self.raw.genes)
-        self.data.position = copy.deepcopy(self.raw.position)
-        self.data.position_z = copy.deepcopy(self.raw.position_z)
-        from stereo.preprocess.qc import cal_qc
-        cal_qc(self.data)
+        # raise NotImplemented('This method remains to be implemented.')
+        # # self.data = self.raw
+        # self.data.exp_matrix = copy.deepcopy(self.raw.exp_matrix)
+        # self.data.cells = copy.deepcopy(self.raw.cells)
+        # self.data.genes = copy.deepcopy(self.raw.genes)
+        # self.data.position = copy.deepcopy(self.raw.position)
+        # self.data.position_z = copy.deepcopy(self.raw.position_z)
+        # from stereo.preprocess.qc import cal_qc
+        # cal_qc(self.data)
+        
+        """
+        Return the raw data saved by `raw_checkpoint()`.
+        
+        Usage:
+            data.tl.raw_checkpoint()
+            data.tl.normalize()
+            # ... do some analysis ...
+            data = data.tl.reset_raw_data()
+        """
+        if self.raw is None:
+            raise ValueError("No raw data saved. Use `raw_checkpoint()` first.")
+        return self.raw
 
     def raw_checkpoint(self):
         """

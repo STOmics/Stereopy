@@ -1,0 +1,127 @@
+name: "Trigger Cursor PR Review"
+
+on:
+  pull_request:
+    types: [opened, reopened, ready_for_review]
+    branches:
+      - main
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  trigger:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+
+    steps:
+      - name: Skip forks and drafts
+        id: precheck
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const pr = context.payload.pull_request;
+            const repoFull = `${context.repo.owner}/${context.repo.repo}`;
+            const isFork = pr.head.repo.full_name !== repoFull;
+            core.setOutput('skip_fork', isFork ? 'true' : 'false');
+            core.setOutput('skip_draft', pr.draft ? 'true' : 'false');
+
+      - name: Skip if AI review already posted
+        if: steps.precheck.outputs.skip_fork != 'true' && steps.precheck.outputs.skip_draft != 'true'
+        id: guard
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GH_PAT }}
+          script: |
+            const pr = context.payload.pull_request;
+            const comments = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: pr.number,
+              per_page: 50,
+            });
+            const marker = '## Automated PR Review';
+            const already = comments.data.some(c => c.body && c.body.includes(marker));
+            if (already) {
+              console.log('PR already has an automated review comment, skipping.');
+            }
+            core.setOutput('skip', already ? 'true' : 'false');
+
+      - name: Collect PR context and send to Cursor Webhook
+        if: steps.precheck.outputs.skip_fork != 'true' && steps.precheck.outputs.skip_draft != 'true' && steps.guard.outputs.skip != 'true'
+        uses: actions/github-script@v7
+        env:
+          CURSOR_PR_WEBHOOK_URL: ${{ secrets.CURSOR_PR_REVIEW_WEBHOOK_URL }}
+          CURSOR_PR_WEBHOOK_KEY: ${{ secrets.CURSOR_PR_REVIEW_WEBHOOK_KEY }}
+          CURSOR_FALLBACK_URL: ${{ secrets.CURSOR_WEBHOOK_URL }}
+          CURSOR_FALLBACK_KEY: ${{ secrets.CURSOR_WEBHOOK_KEY }}
+          GH_PAT: ${{ secrets.GH_PAT }}
+        with:
+          github-token: ${{ secrets.GH_PAT }}
+          script: |
+            const pr = context.payload.pull_request;
+            const webhookUrl = process.env.CURSOR_PR_WEBHOOK_URL || process.env.CURSOR_FALLBACK_URL;
+            const webhookKey = process.env.CURSOR_PR_WEBHOOK_KEY || process.env.CURSOR_FALLBACK_KEY;
+
+            if (!webhookUrl || !webhookKey) {
+              core.warning('Set CURSOR_PR_REVIEW_WEBHOOK_URL/KEY or CURSOR_WEBHOOK_URL/KEY; skipping.');
+              return;
+            }
+
+            const files = await github.paginate(github.rest.pulls.listFiles, {
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: pr.number,
+              per_page: 100,
+            });
+
+            const changedFiles = files.map(f => ({
+              filename: f.filename,
+              status: f.status,
+              additions: f.additions,
+              deletions: f.deletions,
+              patch: f.patch ? f.patch.slice(0, 8000) : null,
+            }));
+
+            const summary = files
+              .slice(0, 40)
+              .map(f => `${f.filename} (${f.status} +${f.additions}/-${f.deletions})`)
+              .join('\n');
+
+            const payload = {
+              event_type: 'pull_request_review',
+              pr_number: pr.number,
+              pr_title: pr.title,
+              pr_body: pr.body || '(no description)',
+              pr_url: pr.html_url,
+              pr_author: pr.user.login,
+              head_sha: pr.head.sha,
+              head_ref: pr.head.ref,
+              base_ref: pr.base.ref,
+              base_sha: pr.base.sha,
+              changed_files: changedFiles,
+              files_changed_summary: summary || '(no files)',
+              gh_token: process.env.GH_PAT,
+              repo_full_name: `${context.repo.owner}/${context.repo.repo}`,
+            };
+
+            console.log(`Sending PR #${payload.pr_number} to Cursor PR review webhook...`);
+
+            const resp = await fetch(webhookUrl, {
+              method: 'POST',
+              headers: {
+                'Authorization': `Bearer ${webhookKey}`,
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify(payload),
+            });
+
+            const body = await resp.text();
+            console.log(`Response: ${resp.status} ${resp.statusText}`);
+            console.log(`Body: ${body}`);
+
+            if (!resp.ok) {
+              core.setFailed(`Webhook returned ${resp.status}: ${body}`);
+            }
