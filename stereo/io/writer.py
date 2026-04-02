@@ -143,8 +143,12 @@ def _write_one_h5ad(f: h5py.File, data: StereoExpData, use_raw=False, use_result
     # else:
     #     h5ad.write(data.exp_matrix, f, 'exp_matrix')
     h5ad.write(data.exp_matrix, f, 'exp_matrix')
-    
-    h5ad.write(data.layers, f, 'layers')
+
+    # `AnnBasedStereoExpData.layers` returns `anndata.layers` (MutableMapping), not a `dict`
+    # subclass. `h5ad.write` dispatches on exact type; non-dict values fall through to
+    # `write_scalar` and end up as a Dataset named "layers", which `read_stereo_h5ad` cannot
+    # load. Always persist as a plain dict so `write_dict` creates an HDF5 Group (Issue #403).
+    h5ad.write(dict(data.layers), f, 'layers')
     
     
     # h5ad.write(data.bin_type, f, 'bin_type')
