@@ -1,7 +1,7 @@
 # @FileName : rna_velocity.py
-# @Time     : 2022-09-19 10:12:00
-# @Author   : Xujunhao
-# @Email    : xujunhao@genomics.cn
+# @Time     : 2026-01-14
+# @Editer   : DNAStories
+
 import os
 import time
 
@@ -69,15 +69,16 @@ class RnaVelocity(object):
         else:
             logger.info("Getting layers")
             from gefpy.bgef_reader_cy import BgefR
-            gef = BgefR(self.gef_path, self.bin_size, 4)
+            # gef = BgefR(self.gef_path, self.bin_size, 4)
+            gef = BgefR(self.gef_path, self.bin_size, 4, True)
             # Determine whether the gef file contains exon information
             if gef.is_Contain_Exon():
                 # do not do any filtering
                 region = []
                 gene_list = []
-                uniq_cell, gene_names, count, cell_ind, gene_ind, exon = gef.get_filtered_data_exon(region, gene_list)
+                uniq_cell, gene_names, count, cell_ind, gene_ind, exon, gene_ids = gef.get_filtered_data_exon(region, gene_list)
 
-                layers = self.get_layers_gef(uniq_cell, gene_names, count, cell_ind, gene_ind, exon)
+                layers = self.get_layers_gef(uniq_cell, gene_names, count, cell_ind, gene_ind, exon, gene_ids)
                 logger.info("Getting row attrs from gtf")
                 df_row_attrs = self.get_row_attrs(layers["total"])
 
@@ -118,7 +119,6 @@ class RnaVelocity(object):
                 region = []
                 gene_list = []
                 uniq_cell, gene_names, count, cell_ind, gene_ind, exon = gef.get_filtered_data_exon(region, gene_list)
-
                 layers = self.get_layers_gef(uniq_cell, gene_names, count, cell_ind, gene_ind, exon)
                 logger.info("Getting row attrs from gtf")
                 df_row_attrs = self.get_row_attrs(layers["total"])
@@ -197,36 +197,40 @@ class RnaVelocity(object):
 
         return {"total": layer_total, "extron": layer_extron, "intron": layer_intron, "ambiguous": layer_ambiguous}
 
-    def get_layers_gef(self, uniq_cell, gene_names, count, cell_ind, gene_ind, exon):
+    def get_layers_gef(self, uniq_cell, gene_names, count, cell_ind, gene_ind, exon, gene_ids):
         """
         generate total_count, extron, intron matrix information according gef file.
 
         :uniq_cell: cell id.
-        :gene_names: gene_id.
+        :gene_names: gene Name.
         :count: list of total expression count.
         :cell_ind: list of cell index.
         :gene_ind: list of gene index.
         :exon: list of extron expression count.
+        :gene_ids: gene ID.
 
         :return: dictionnary of total_count, extron, intron matrix information
         """
 
         x_array = np.right_shift(uniq_cell, 32).astype('str')
         y_array = np.bitwise_and(uniq_cell, 0xffffffff).astype('str')
-        # i do not know why do this, just keep the cellid consistent
-        position_cell_name = [str(cell_id) for cell_id in uniq_cell]
-        # position_cell_name = ['_'.join(map(str, i)) for i in zip(x_array, y_array)]
+        position_cell_name = ['_'.join(map(str, i)) for i in zip(x_array, y_array)]
+
         cn = len(uniq_cell)
         gn = len(gene_names)
+
         total_exp_matrix_coo = sparse.coo_matrix((count, (gene_ind, cell_ind)), shape=(gn, cn), dtype=np.uint32)
-        layer_total = pd.DataFrame(total_exp_matrix_coo.toarray(), columns=position_cell_name, index=gene_names)
+        # layer_total_gene = pd.DataFrame(total_exp_matrix_coo.toarray(), columns=position_cell_name, index=gene_names)
+        layer_total_id = pd.DataFrame(total_exp_matrix_coo.toarray(), columns=position_cell_name, index=gene_ids)
 
         eson_exp_matrix_coo = sparse.coo_matrix((exon, (gene_ind, cell_ind)), shape=(gn, cn), dtype=np.uint32)
-        layer_extron = pd.DataFrame(eson_exp_matrix_coo.toarray(), columns=position_cell_name, index=gene_names)
-        layer_intron = layer_total - layer_extron
-        layer_ambiguous = layer_total - layer_extron - layer_intron
+        # layer_extron = pd.DataFrame(eson_exp_matrix_coo.toarray(), columns=position_cell_name, index=gene_names)
+        layer_extron = pd.DataFrame(eson_exp_matrix_coo.toarray(), columns=position_cell_name, index=gene_ids)
 
-        return {"total": layer_total, "extron": layer_extron, "intron": layer_intron, "ambiguous": layer_ambiguous}
+        layer_intron = layer_total_id - layer_extron
+        layer_ambiguous = layer_total_id - layer_extron - layer_intron
+
+        return {"total": layer_total_id, "extron": layer_extron, "intron": layer_intron, "ambiguous": layer_ambiguous}
 
     def cal_layer(self, df, which):
         """
@@ -267,18 +271,22 @@ class RnaVelocity(object):
         """
         base = gp.read_gtf(self.gtf_path)
         gene_list = list(layer_total.index)
-
+        if "gene_name" not in base.columns:
+            # if gene_name column is not in gtf file, create it and fill with gene_id
+            base["gene_name"] = base["gene_id"]
         base_sub = base.loc[
             base["feature"] == "gene", ["gene_id", "gene_name", "seqname", "strand", "start", "end"]].copy()
         base_sub.drop_duplicates(keep="first", inplace=True)
 
-        base_need = base_sub.loc[np.isin(base_sub["gene_name"], gene_list), :].copy()
-        base_need.drop_duplicates(subset=['gene_name'], keep='first', inplace=True)
+        base_need = base_sub.loc[np.isin(base_sub["gene_id"], gene_list), :].copy()
+        base_need.drop_duplicates(subset=['gene_id'], keep='first', inplace=True)
 
         df_row_attrs = pd.DataFrame(index=gene_list)
         df_row_attrs = df_row_attrs.reset_index()
-        df_row_attrs.rename(columns={"index": "gene_name"}, inplace=True)
-        df_row_attrs = df_row_attrs.merge(base_need, on="gene_name", how="left")
+        df_row_attrs.rename(columns={"index": "gene_id"}, inplace=True)
+        df_row_attrs = df_row_attrs.merge(base_need, on="gene_id", how="left")
+        if not df_row_attrs.empty:
+            logger.info("GTF attributes:\n%s", df_row_attrs.head(5).to_string())
 
         return df_row_attrs
 
@@ -291,13 +299,13 @@ class RnaVelocity(object):
 
         :return: the output loom path.
         """
-        row_attrs = {"Accession": np.array(df_row_attrs.gene_id),
+        row_attrs = {"Gene": np.array(df_row_attrs.gene_id),
+                     "Accession": np.array(df_row_attrs.gene_id),
                      "Chromosome": np.array(df_row_attrs.seqname),
                      "End": np.array(df_row_attrs.end),
-                     "Gene": np.array(df_row_attrs.gene_name),
+                     "Symbol": np.array(df_row_attrs.gene_name),
                      "Start": np.array(df_row_attrs.start),
                      "Strand": np.array(df_row_attrs.strand)}
-
         col_attrs = {"CellID": np.array(layers["total"].columns)}
 
         file_out = os.path.join(self.out_dir, "rna_velocity.loom")
