@@ -133,9 +133,8 @@ class PolySelection(object):
                 self.add_message.value = f'<font color="red"><b>{area_count} area has been added.</b></font>'
         self.add.loading = False
 
-    # def get_selected_boundary_coors(self) -> list:
     def get_selected_area_coors(self, drop=False) -> list:
-        selected_exp_data = self.get_selected_areas(drop)
+        selected_exp_data = self._resolve_selected_areas(drop)
         if selected_exp_data is not None:
             return selected_exp_data.position.tolist()
         return []
@@ -267,6 +266,23 @@ class PolySelection(object):
             selected_gem_df.to_csv(fp, sep='\t', index=False, mode='wb')
 
 
+    def _resolve_selected_areas(self, drop=False):
+        """Resolve selected areas from either the 'add' queue or the 'export' callback.
+
+        Falls back to ``self.selected_exp_data`` (populated by the 'export'
+        button callback) when ``list_poly_selection_coors`` is empty, so that
+        users do not have to click 'add' before calling ``export_high_res_area``.
+        """
+        if len(self.list_poly_selection_coors) > 0:
+            return self.get_selected_areas(drop)
+        if self.selected_exp_data is not None:
+            return self.selected_exp_data
+        raise Exception(
+            "No area has been selected. Please either:\n"
+            "  1) Select an area on the plot and click the 'export' button, or\n"
+            "  2) Select area(s), click 'add' for each, then call this method."
+        )
+
     def export_high_res_area(self, origin_file_path: str, output_path: str, drop: bool = False) -> str:
         """
         export selected area in high resolution
@@ -278,8 +294,8 @@ class PolySelection(object):
         """
         make_dirs(output_path)
         if self.data.file_format == 'gef':
-            coors = self.get_selected_area_coors(drop)
-            # print('coors length: %s' % len(coors))
+            selected_areas = self._resolve_selected_areas(drop)
+            coors = selected_areas.position.tolist()
             if not coors or len(coors) == 0:
                 raise Exception('Please select the data area in the picture first!')
 
@@ -290,7 +306,7 @@ class PolySelection(object):
             else:
                 cg.generate_bgef_by_coordinate(origin_file_path, output_path, coors, self.data.bin_size)
         elif self.data.file_format == 'gem':
-            selected_areas = self.get_selected_areas(drop=False)
+            selected_areas = self._resolve_selected_areas(drop)
             self.generate_gem_file(selected_areas, origin_file_path, output_path, drop)
         else:
             raise Exception('Only supports gef and gem file.')
