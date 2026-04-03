@@ -136,9 +136,20 @@ def vst(
         use_geometric_mean_offset)
     logger.info(f'get_model_pars finished, cost {time.time() - start_time} seconds')
 
+    model_pars.set_index(genes_step1, inplace=True)
+    valid_mask = model_pars.notna().all(axis=1)
+    n_failed = (~valid_mask).sum()
+    if n_failed > 0:
+        logger.warning(
+            f"Dropping {n_failed} gene(s) from model parameters due to failed Poisson regression "
+            f"(e.g. near-zero or constant expression in sampled cells)."
+        )
+        model_pars = model_pars.loc[valid_mask]
+        genes_step1 = model_pars.index.values
+        genes_log_gmean_step1 = genes_log_gmean_step1.loc[genes_step1]
+
     min_theta = 1e-07
     model_pars['theta'][model_pars['theta'] < min_theta] = min_theta
-    model_pars.set_index(genes_step1, inplace=True)
 
     start_time = time.time()
     if do_regularize:
