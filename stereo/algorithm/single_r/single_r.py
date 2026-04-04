@@ -94,11 +94,25 @@ class SingleR(AlgorithmBase):
 
         :return: `pandas.DataFrame`
         """  # noqa
-        temp_res = set(self.stereo_exp_data.gene_names) & set(ref_exp_data.gene_names)
-        interact_genes = [gene for gene in self.stereo_exp_data.gene_names.tolist() if gene in temp_res]
-        assert interact_genes, "no gene of `test_exp_data.gene_names` in `ref_exp_data.gene_names`, " \
-                                 "if your input data is a gef or gem containing geneID, " \
-                                 "set parameter `gene_name_index` as True when loading data."
+        test_gene_names = self.stereo_exp_data.gene_names
+        ref_gene_names = ref_exp_data.gene_names
+        temp_res = set(test_gene_names) & set(ref_gene_names)
+        interact_genes = [gene for gene in test_gene_names.tolist() if gene in temp_res]
+        if not interact_genes:
+            test_sample = test_gene_names[:5].tolist()
+            ref_sample = ref_gene_names[:5].tolist()
+            raise AssertionError(
+                "no gene of `test_exp_data.gene_names` in `ref_exp_data.gene_names`, "
+                "if your input data is a gef or gem containing geneID, "
+                "set parameter `gene_name_index` as True when loading data. "
+                "test gene_names sample (type={t}): {ts}, "
+                "ref gene_names sample (type={r}): {rs}".format(
+                    t=type(test_sample[0]).__name__ if test_sample else 'unknown',
+                    ts=test_sample,
+                    r=type(ref_sample[0]).__name__ if ref_sample else 'unknown',
+                    rs=ref_sample
+                )
+            )
 
         total_start_time = time.time()
         test_exp_data = self.stereo_exp_data.sub_by_name(gene_name=interact_genes)
