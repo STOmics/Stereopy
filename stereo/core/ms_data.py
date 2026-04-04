@@ -706,8 +706,14 @@ class MSData(_MSDataStruct):
             elif isinstance(scope, (list, tuple, np.ndarray, pd.Index)):
                 _, names = self.get_data_list(scope)
                 scope_key = f"scope_[{','.join([str(self._names.index(name)) for name in names])}]"  # noqa
-        except:
-            scope_key = scope
+        except Exception:
+            if isinstance(scope, (list, tuple, np.ndarray, pd.Index)):
+                scope_key = f"scope_[{','.join(str(s) for s in scope)}]"
+            elif isinstance(scope, slice):
+                names = self._names[scope]
+                scope_key = f"scope_[{','.join(str(self._names.index(n)) for n in names)}]"
+            else:
+                scope_key = str(scope)
         finally:
             return scope_key
     
