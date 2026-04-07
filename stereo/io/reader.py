@@ -1090,12 +1090,14 @@ def stereo_to_anndata(
                 for res_key in data.tl.key_record[key]:
                     result = data.tl.result[res_key]
                     if isinstance(result, pd.DataFrame) and 'group' in result.columns:                           # issue 384 avoid keyerror group
-                        # 普通 StereoExpData：result 是带 group 列的 DataFrame
+                        # StereoExpData：result is DataFrame have group col
+                        logger.info(f"Adding data.tl.result['{res_key}'] into adata.obs['{res_key}'] .")
                         adata.obs[res_key] = pd.DataFrame(result['group'].values, index=cell_name_index)
                     elif isinstance(result, dict):
-                        # AnnBasedStereoExpData：result 是 uns 里的元数据 dict
-                        # 真正的聚类标签在 cells/obs 里
+                        # AnnBasedStereoExpData：result is uns mate data dict
+                        # The actual clustering labels are located in the "cells/obs" section.
                         if res_key in data.cells._obs:
+                            logger.info(f"Adding data.cells._obs['{res_key}'] into adata.obs['{res_key}'] .")
                             adata.obs[res_key] = pd.DataFrame(data.cells._obs[res_key].values, index=cell_name_index)
                         else:
                             logger.warning(f"Cluster result '{res_key}' is metadata only, no group labels found, skipping.")
