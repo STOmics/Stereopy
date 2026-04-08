@@ -1480,6 +1480,8 @@ def read_gef(
                 uniq_cell, gene_names, count, cell_ind, gene_ind, exon, gene_id = gef.get_filtered_data_exon(region, gene_list)
             else:
                 uniq_cell, gene_names, count, cell_ind, gene_ind, gene_id = gef.get_filtered_data(region, gene_list)
+            gene_names = gene_names.astype('U')
+            gene_id = gene_id.astype('U')
             cell_num = uniq_cell.size
             gene_num = gene_names.size
             if cell_num == 0 or gene_num == 0:
@@ -1511,6 +1513,8 @@ def read_gef(
             cell_names = gef.get_cell_names()
             cell_num = gef.get_cell_num()
             gene_names, gene_id = gef.get_gene_names()
+            gene_names = gene_names.astype('U')
+            gene_id = gene_id.astype('U')
             gene_num = gef.get_gene_num()
             data.cells = Cell(cell_name=cell_names)
             if len(gene_id[0]) == 0: # an old version gef file, no gene id
