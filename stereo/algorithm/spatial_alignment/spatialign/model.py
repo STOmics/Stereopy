@@ -52,10 +52,12 @@ class Base(ABC):
 
     def set_device(self, gpu):
         if torch.cuda.is_available() and gpu is not None:
-            if (float(gpu) % 2 == 0) and float(gpu) >= 0:
-                device = torch.device(f"cuda:{gpu}")
+            gpu_id = int(gpu)
+            if 0 <= gpu_id < torch.cuda.device_count():
+                device = torch.device(f"cuda:{gpu_id}")
             else:
-                print(f"{get_format_time}  Got an invalid GPU device ids, can not using GPU device to training...")
+                print(f"{get_format_time()}  GPU {gpu_id} is not available "
+                      f"(found {torch.cuda.device_count()} device(s)), falling back to CPU...")
                 device = torch.device("cpu")
         else:
             device = torch.device("cpu")
