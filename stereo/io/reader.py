@@ -1207,11 +1207,11 @@ def stereo_to_anndata(
                 height_hires = np.round(height * im_hires / 100).astype(int)
                 width_hires = np.round(width * im_hires / 100).astype(int)
                 hires = im.resize((width_hires, height_hires), Image.Resampling.NEAREST)
-                hires_np = np.asarray(hires)
+                hires_np = np.array(hires)
                 height_lowres = np.round(height * im_lowres / 100).astype(int)
                 width_lowres = np.round(width * im_lowres / 100).astype(int)
                 lowres = im.resize((width_lowres, height_lowres), Image.Resampling.NEAREST)
-                lowres_np = np.asarray(lowres)
+                lowres_np = np.array(lowres)
                 adata.uns['spatial'][im_library_id] = {
                     'images': {'hires': hires_np, 'lowres': lowres_np},
                     'metadata': {
