@@ -77,16 +77,15 @@ class PlotCollection:
             raise AttributeError
 
         new_attr = PlotBase.get_attribute_helper(item, self.data, self.result)
+        if new_attr is None:
+            raise AttributeError(
+                f'{item} not existed, please check the function name you called!'
+            )
         if getattr(new_attr, '__download__', True):
             new_attr = download(new_attr)
-        if new_attr:
-            self.__setattr__(item, new_attr)
-            logger.info(f'register plot_func {item} to {self}')
-            return new_attr
-
-        raise AttributeError(
-            f'{item} not existed, please check the function name you called!'
-        )
+        self.__setattr__(item, new_attr)
+        logger.info(f'register plot_func {item} to {self}')
+        return new_attr
 
     @reorganize_coordinate
     def interact_cluster(

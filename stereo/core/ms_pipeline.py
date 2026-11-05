@@ -116,10 +116,15 @@ class MSDataPipeLine(object):
             else:
                 from stereo.plots.plot_base import PlotBase
                 merged_data = ms_data_view.merged_data
-                new_attr = download(PlotBase.get_attribute_helper(item, merged_data, merged_data.tl.result))
+                new_attr = PlotBase.get_attribute_helper(item, merged_data, merged_data.tl.result)
+                if new_attr is not None and getattr(new_attr, '__download__', True):
+                    new_attr = download(new_attr)
                 if new_attr:
                     logger.info(f'register plot_func {item} to {type(merged_data)}-{id(merged_data)}')
                     return new_attr(*args, **kwargs)
+            raise AttributeError(
+                '{0} not existed, please check the function name you called!'.format(item)
+            )
 
         logger.info(f'data_obj(idx=0) in ms_data start to run {item}')
         return new_attr(
@@ -169,7 +174,7 @@ class MSDataPipeLine(object):
             def log_delayed_task(idx, obj, *arg, **kwargs):
                 logger.info(f'data_obj(idx={idx}) in ms_data start to run {item}')
                 new_attr = base.get_attribute_helper(item, obj, obj.tl.result)
-                if base.__name__ == 'PlotBase':
+                if new_attr is not None and base.__name__ == 'PlotBase':
                     out_path = kwargs.get('out_path', None)
                     if out_path is not None:
                         path_name, ext = os.path.splitext(out_path)
